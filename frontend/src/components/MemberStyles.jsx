@@ -1,147 +1,67 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Trophy, Award, Calendar, Clock, Target } from 'lucide-react';
+import { Trophy, Calendar, ChevronRight, CheckCircle, Target } from 'lucide-react';
+import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 import MemberHeader from './MemberHeader.jsx';
 import '../styles/themes.css';
 import '../styles/MemberStyles.css';
-import config from '../config/config.js';
-import { fetchWithAuth } from '../utils/fetchWithAuth';
 
+const API_BASE = config.apiBaseUrl;
 
 const MemberStyles = () => {
   const { user } = useAuth();
-  const [memberStile, setMemberStile] = useState([]);
-  const [styleSpecificData, setStyleSpecificData] = useState({});
-  const [stile, setStile] = useState([]);
+  const [stileData, setStileData] = useState([]); // Array of { stil, stilData, analysis }
   const [loading, setLoading] = useState(true);
-  const [activeStyleTab, setActiveStyleTab] = useState(0);
-  const [trainingHoursNeeded, setTrainingHoursNeeded] = useState({});
 
   useEffect(() => {
-    if (user?.email) {
-      loadMemberData();
-    }
-  }, [user?.email]);
+    if (user?.mitglied_id) loadAll();
+  }, [user?.mitglied_id]);
 
-  const loadMemberData = async () => {
+  const loadAll = async () => {
     try {
-      // Lade Mitgliedsdaten
-      const memberResponse = await fetchWithAuth(`/mitglieder/by-email/${encodeURIComponent(user.email)}`);
-      if (!memberResponse.ok) return;
-      
-      const memberData = await memberResponse.json();
-      
-      // Lade alle verfügbaren Stile
-      await loadStile();
-      
-      // Lade Mitglied-Stile
-      await loadMemberStyles(memberData.mitglied_id);
-      
-    } catch (error) {
-      console.error('Fehler beim Laden der Mitgliedsdaten:', error);
+      const mitgliedId = user.mitglied_id;
+
+      // 1. Stile mit Graduierungen
+      const stileRes = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}/stile`);
+      if (!stileRes.ok) return;
+      const stileResult = await stileRes.json();
+      const stile = stileResult.success ? stileResult.stile : [];
+
+      // 2. Für jeden Stil: aktuelle Daten + Training-Analyse parallel laden
+      const enriched = await Promise.all(stile.map(async (stil) => {
+        const [dataRes, analysisRes] = await Promise.all([
+          fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}/stil/${stil.stil_id}/data`),
+          fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}/stil/${stil.stil_id}/training-analysis`),
+        ]);
+        const stilData = dataRes.ok ? (await dataRes.json()).data : null;
+        const analysis = analysisRes.ok ? (await analysisRes.json()).analysis : null;
+        return { stil, stilData, analysis };
+      }));
+
+      setStileData(enriched);
+    } catch (e) {
+      console.error('Fehler beim Laden der Stile:', e);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadStile = async () => {
-    try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/stile`);
-      if (response.ok) {
-        const data = await response.json();
-        setStile(data);
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden der Stile:', error);
-    }
-  };
-
-  const loadMemberStyles = async (memberId) => {
-    try {
-      const response = await fetchWithAuth(`/mitglieder/${memberId}/stile`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.stile) {
-          setMemberStile(result.stile);
-          
-          // Lade stilspezifische Daten für jeden Stil
-          result.stile.forEach(async (stil) => {
-            await loadStyleSpecificData(memberId, stil.stil_id);
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Fehler beim Laden der Mitglied-Stile:', error);
-    }
-  };
-
-  const loadStyleSpecificData = async (memberId, stilId) => {
-    try {
-      const response = await fetchWithAuth(`/mitglieder/${memberId}/stil/${stilId}/data`);
-      if (response.ok) {
-        const result = await response.json();
-        setStyleSpecificData(prev => ({
-          ...prev,
-          [stilId]: result.data
-        }));
-        
-        // Berechne benötigte Trainingsstunden
-        calculateTrainingHoursNeeded(stilId, result.data);
-      }
-    } catch (error) {
-      console.error(`Fehler beim Laden stilspezifischer Daten für Stil ${stilId}:`, error);
-    }
-  };
-
-  // Berechne benötigte Trainingsstunden bis zur nächsten Graduierung
-  const calculateTrainingHoursNeeded = (stilId, stilData) => {
-    const fullStilData = stile.find(s => s.stil_id === stilId);
-    if (!fullStilData?.graduierungen || !stilData) return;
-
-    const currentGraduationId = stilData.current_graduierung_id;
-    const currentIndex = fullStilData.graduierungen.findIndex(g => g.graduierung_id === currentGraduationId);
-    
-    if (currentIndex === -1 || currentIndex >= fullStilData.graduierungen.length - 1) {
-      // Keine nächste Graduierung verfügbar
-      setTrainingHoursNeeded(prev => ({
-        ...prev,
-        [stilId]: null
-      }));
-      return;
-    }
-
-    const nextGraduation = fullStilData.graduierungen[currentIndex + 1];
-    const hoursSinceLastExam = stilData.stunden_seit_letzter_pruefung || 0;
-    const requiredHours = nextGraduation.min_stunden || 0;
-    const hoursNeeded = Math.max(0, requiredHours - hoursSinceLastExam);
-
-    setTrainingHoursNeeded(prev => ({
-      ...prev,
-      [stilId]: {
-        hoursNeeded,
-        hoursCompleted: hoursSinceLastExam,
-        requiredHours,
-        nextGraduation: nextGraduation.name,
-        progress: Math.min(100, (hoursSinceLastExam / requiredHours) * 100)
-      }
-    }));
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Nicht angegeben';
-    return new Date(dateString).toLocaleDateString('de-DE');
+  const formatDate = (d) => {
+    if (!d) return null;
+    return new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   if (loading) {
     return (
       <div className="dashboard-container">
-        <MemberHeader />
-        <div className="dashboard-content">
-          <div className="member-styles-loading">
-            <div className="loading-spinner"></div>
-            <p>Lade Stil & Gurt Daten...</p>
+        <div className="dashboard-content mst-loading-center">
+          <div className="mst-spinner-center">
+            <div className="mst-spinner" />
+            <p>Lade Stil & Gürtel...</p>
           </div>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -149,216 +69,179 @@ const MemberStyles = () => {
   return (
     <div className="dashboard-container">
       <MemberHeader />
-      <div className="dashboard-content">
-        <div className="member-styles">
-          {/* Header */}
-          <div className="styles-header">
-            <h1>
-              <Trophy size={24} />
-              Meine Kampfkunst-Stile
+      <div className="dashboard-content mst-page-pad">
+        <div className="mst-centered-900">
+
+          {/* Page Header */}
+          <div className="mst-title-section">
+            <div className="mst-eyebrow">
+              技 — Waza
+            </div>
+            <h1 className="mst-gradient-title">
+              Stil & Gürtel
             </h1>
-            <p>Verwalte deine Stile, Graduierungen und Prüfungen</p>
+            <div className="mst-subtitle-caps">
+              Dein Fortschritt auf dem Weg zur Meisterschaft
+            </div>
           </div>
 
-          {/* Trainingsstunden-Tracker */}
-          {Object.values(trainingHoursNeeded).some(tracker => tracker !== null) && (
-            <div className="training-tracker-section">
-              <h2>
-                <Target size={20} />
-                Trainingsstunden-Tracker
-              </h2>
-              <div className="tracker-grid">
-                {Object.entries(trainingHoursNeeded).map(([stilId, tracker]) => {
-                  if (!tracker) return null;
-                  
-                  const stilData = memberStile.find(s => s.stil_id === parseInt(stilId));
-                  if (!stilData) return null;
-
-                  return (
-                    <div key={stilId} className="tracker-card">
-                      <div className="tracker-header">
-                        <h3>{stilData.name}</h3>
-                        <div className="tracker-badge">
-                          <span>🎯</span>
-                          <span>{tracker.nextGraduation}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="tracker-progress">
-                        <div className="progress-bar">
-                          <div 
-                            className="progress-fill" 
-                            style={{ width: `${tracker.progress}%` }}
-                          ></div>
-                        </div>
-                        <div className="progress-info">
-                          <span className="progress-text">
-                            {tracker.hoursCompleted}h / {tracker.requiredHours}h
-                          </span>
-                          <span className="progress-percentage">
-                            {Math.round(tracker.progress)}%
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="tracker-details">
-                        {tracker.hoursNeeded > 0 ? (
-                          <div className="hours-needed">
-                            <span className="hours-label">Noch benötigt:</span>
-                            <span className="hours-value">{tracker.hoursNeeded} Stunden</span>
-                          </div>
-                        ) : (
-                          <div className="hours-ready">
-                            <span>✅ Bereit für Prüfung!</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {memberStile.length === 0 ? (
-            <div className="no-styles">
-              <Trophy size={48} />
-              <h3>Noch keine Stile zugewiesen</h3>
-              <p>Wende dich an deinen Trainer, um Stile zuzuweisen.</p>
+          {stileData.length === 0 ? (
+            <div className="mst-empty-card">
+              <Trophy size={48} className="mst-empty-trophy" />
+              <h3 className="mst-empty-heading">Noch keine Stile zugewiesen</h3>
+              <p className="mst-empty-text">Wende dich an deinen Trainer, um Stile zuzuweisen.</p>
             </div>
           ) : (
-            <>
-              {/* Stil-Tabs */}
-              <div className="style-tabs">
-                {memberStile.map((memberStil, index) => {
-                  const fullStilData = stile.find(s => s.stil_id === memberStil.stil_id);
-                  return (
-                    <button
-                      key={memberStil.stil_id}
-                      className={`style-tab ${activeStyleTab === index ? 'active' : ''}`}
-                      onClick={() => setActiveStyleTab(index)}
-                    >
-                      <Trophy size={16} />
-                      {fullStilData?.name || memberStil.name}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Stil-Inhalt */}
-              {memberStile.map((memberStil, index) => {
-                if (activeStyleTab !== index) return null;
-                
-                const fullStilData = stile.find(s => s.stil_id === memberStil.stil_id);
-                const stilData = styleSpecificData[memberStil.stil_id];
-                const currentGraduation = stilData?.current_graduierung_id ? 
-                  fullStilData?.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id) : 
-                  fullStilData?.graduierungen?.[0];
+            <div className="mst-styles-col">
+              {stileData.map(({ stil, stilData, analysis }) => {
+                const grads = stil.graduierungen || [];
+                const currentGradId = stilData?.current_graduierung_id;
+                const currentGrad = grads.find(g => g.graduierung_id === currentGradId);
+                const currentIdx = grads.findIndex(g => g.graduierung_id === currentGradId);
+                const nextGrad = analysis?.next_graduation;
+                const sessionsCompleted = analysis?.training_sessions_completed || 0;
+                const sessionsRequired = analysis?.training_sessions_required || 0;
+                const progressPct = sessionsRequired > 0
+                  ? Math.min(100, Math.round((sessionsCompleted / sessionsRequired) * 100))
+                  : null;
+                const isReady = analysis?.is_ready_for_exam || false;
+                const beltColor = currentGrad?.farbe_hex || stilData?.farbe_hex || '#888';
 
                 return (
-                  <div key={memberStil.stil_id} className="style-content">
-                    {/* Stil-Header */}
-                    <div className="style-header">
-                      <div className="style-info">
-                        <h2>
-                          <Trophy size={20} />
-                          {fullStilData?.name || memberStil.name}
-                        </h2>
-                        <p className="style-description">
-                          {fullStilData?.beschreibung || 'Kampfkunst-Stil'}
-                        </p>
-                      </div>
-                      <div className="current-graduation">
-                        {currentGraduation && (
-                          <div className="graduation-badge">
-                            <Award size={16} />
-                            <span>{currentGraduation.name}</span>
+                  <div key={stil.stil_id} className="mst-stil-card">
+
+                    {/* Style Header Bar */}
+                    <div className="mst-stil-header">
+                      <Trophy size={20} className="mst-icon-primary" />
+                      <h2 className="mst-stil-name">
+                        {stil.name}
+                      </h2>
+                      {isReady && (
+                        <div className="mst-active-badge">
+                          <CheckCircle size={12} /> Prüfungsreif
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mst-card-body">
+
+                      {/* Current Belt + Next Belt */}
+                      <div className={`mst-belt-grid${nextGrad ? ' mst-belt-grid--with-next' : ''}`}>
+                        {/* Aktueller Gürtel */}
+                        <div className="mst-belt-current" style={{ '--bc': beltColor, '--bc44': `${beltColor}44` }}>
+                          <div className="mst-belt-bar" style={{ '--bc': beltColor, '--bc66': `${beltColor}66` }} />
+                          <div className="mst-belt-label">{currentGrad?.name || '—'}</div>
+                          <div className="mst-belt-caption">Aktueller Gürtel</div>
+                        </div>
+
+                        {/* Arrow */}
+                        {nextGrad && (
+                          <div className="mst-arrow-center">
+                            <ChevronRight size={24} className="mst-arrow-icon" />
+                          </div>
+                        )}
+
+                        {/* Nächster Gürtel */}
+                        {nextGrad && (
+                          <div className="mst-belt-next">
+                            <div className="mst-belt-bar mst-belt-bar--next" style={{ '--bc': nextGrad.farbe_hex || '#555' }} />
+                            <div className="mst-belt-label-secondary">{nextGrad.name}</div>
+                            <div className="mst-belt-caption">Nächster Gürtel</div>
                           </div>
                         )}
                       </div>
-                    </div>
 
-                    {/* Graduierungen */}
-                    {fullStilData?.graduierungen && fullStilData.graduierungen.length > 0 && (
-                      <div className="graduations-section">
-                        <h3>
-                          <Award size={18} />
-                          Graduierungen
-                        </h3>
-                        <div className="graduations-list">
-                          {fullStilData.graduierungen.map((graduation, gradIndex) => (
-                            <div 
-                              key={graduation.graduierung_id}
-                              className={`graduation-item ${
-                                currentGraduation?.graduierung_id === graduation.graduierung_id ? 'current' : ''
-                              }`}
-                            >
-                              <div className="graduation-rank">
-                                {gradIndex + 1}.
-                              </div>
-                              <div className="graduation-info">
-                                <span className="graduation-name">{graduation.name}</span>
-                                {graduation.beschreibung && (
-                                  <span className="graduation-description">{graduation.beschreibung}</span>
-                                )}
-                              </div>
-                              {currentGraduation?.graduierung_id === graduation.graduierung_id && (
-                                <div className="current-indicator">Aktuell</div>
-                              )}
+                      {/* Training Progress */}
+                      {nextGrad && sessionsRequired > 0 && (
+                        <div className="mst-progress-section">
+                          <div className="mst-progress-header">
+                            <div className="mst-progress-label">
+                              <Target size={14} className="u-text-accent" />
+                              Trainingseinheiten bis {nextGrad.name}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Prüfungsdaten */}
-                    <div className="exam-section">
-                      <h3>
-                        <Calendar size={18} />
-                        Prüfungsdaten
-                      </h3>
-                      <div className="exam-details">
-                        <div className="exam-item">
-                          <label>Letzte Prüfung:</label>
-                          <span>{formatDate(stilData?.letzte_pruefung)}</span>
-                        </div>
-                        <div className="exam-item">
-                          <label>Nächste Prüfung:</label>
-                          <span>{formatDate(stilData?.naechste_pruefung)}</span>
-                        </div>
-                        {stilData?.anmerkungen && (
-                          <div className="exam-item">
-                            <label>Anmerkungen:</label>
-                            <span>{stilData.anmerkungen}</span>
+                            <div className={`mst-progress-counter${isReady ? ' mst-progress-counter--ready' : ''}`}>
+                              {sessionsCompleted} / {sessionsRequired}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                          <div className="mst-progress-track">
+                            <div
+                              className={`mst-progress-fill${isReady ? ' mst-progress-fill--ready' : ''}`}
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                          <div className="mst-progress-note">
+                            {isReady ? '✓ Bereit für die Prüfung!' : `Noch ${sessionsRequired - sessionsCompleted} Einheiten`}
+                          </div>
+                        </div>
+                      )}
 
-                    {/* Trainingsstunden */}
-                    <div className="training-section">
-                      <h3>
-                        <Clock size={18} />
-                        Trainingsfortschritt
-                      </h3>
-                      <div className="training-stats">
-                        <div className="stat-item">
-                          <span className="stat-label">Trainingsstunden seit letzter Prüfung:</span>
-                          <span className="stat-value">{stilData?.stunden_seit_letzter_pruefung || 0}</span>
+                      {/* Belt Ladder */}
+                      {grads.length > 0 && (
+                        <div className="mst-progress-section">
+                          <div className="mst-grad-path-label">Graduierungsweg</div>
+                          <div className="mst-grad-path-items">
+                            {grads.map((grad, idx) => {
+                              const isCurrent = grad.graduierung_id === currentGradId;
+                              const isPast = idx < currentIdx;
+                              const isFuture = idx > currentIdx;
+                              return (
+                                <React.Fragment key={grad.graduierung_id}>
+                                  <div
+                                  className={`mst-grad-item${isCurrent ? ' mst-grad-item--current' : ''}`}
+                                  style={{ '--gc': grad.farbe_hex || '#ffd700', '--gc66': `${grad.farbe_hex || '#ffd700'}66`, '--gc88': `${grad.farbe_hex || '#ffd700'}88` }}
+                                >
+                                    {isCurrent && (
+                                      <div className="mst-arrow-indicator">▼</div>
+                                    )}
+                                    <div className={`mst-grad-belt-bar${isCurrent ? ' mst-grad-belt-bar--current' : isFuture ? ' mst-grad-belt-bar--future' : ''}`} style={{ '--gc': grad.farbe_hex || '#555' }} />
+                                    <div className={`mst-grad-name${isCurrent ? ' mst-grad-name--current' : isPast ? ' mst-grad-name--past' : ' mst-grad-name--future'}`}>
+                                      {grad.name}
+                                    </div>
+                                    {isPast && (
+                                      <CheckCircle size={9} className="u-text-success" />
+                                    )}
+                                  </div>
+                                  {idx < grads.length - 1 && (
+                                    <div className={`mst-grad-connector${isPast ? ' mst-grad-connector--past' : ''}`} />
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div className="stat-item">
-                          <span className="stat-label">Empfohlene Stunden bis nächster Graduierung:</span>
-                          <span className="stat-value">{currentGraduation?.min_stunden || 'Nicht definiert'}</span>
+                      )}
+
+                      {/* Exam Dates */}
+                      <div className="mst-exam-grid">
+                        <div className="mst-exam-box">
+                          <Calendar size={14} className="mst-icon-muted" />
+                          <div>
+                            <div className="mst-exam-box-label">Letzte Prüfung</div>
+                            <div className="mst-exam-date-text">
+                              {formatDate(analysis?.last_exam_date) || '—'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mst-exam-box">
+                          <Calendar size={14} className="mst-icon-primary" />
+                          <div>
+                            <div className="mst-exam-box-label">Nächste Prüfung</div>
+                            <div className={`mst-exam-date-primary${stilData?.naechste_pruefung ? ' mst-exam-date-primary--set' : ''}`}>
+                              {formatDate(stilData?.naechste_pruefung) || 'Nicht geplant'}
+                            </div>
+                          </div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 );
               })}
-            </>
+            </div>
           )}
         </div>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };

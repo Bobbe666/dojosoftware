@@ -2,7 +2,7 @@ import React from 'react';
 
 const AboutPage = () => {
   return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="u-page-container">
       <h1>Über uns</h1>
       <p>Diese Seite ist in Entwicklung.</p>
     </div>

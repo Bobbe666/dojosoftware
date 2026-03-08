@@ -6,6 +6,7 @@ import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIA
 import { useStandortContext } from '../context/StandortContext.jsx';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx'; // 🎨 Theme Switching
+import { useChatContext } from '../context/ChatContext.jsx';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 import config from '../config/config.js';
@@ -14,7 +15,7 @@ import '../styles/themes.css';         // Centralized theme system
 import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR components.css stehen!)
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
-import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun } from 'lucide-react';
+import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, MessageCircle } from 'lucide-react';
 
 const logo = '/dojo-logo.png';
 import DojoSwitcher from './DojoSwitcher';
@@ -32,15 +33,6 @@ import AgbStatusWidget from './AgbStatusWidget';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 
-// Zentrale Überschriften-Styles (Gold-Gradient wie Header)
-const headingStyle = {
-  background: 'linear-gradient(135deg, #ffd700, #ff6b35, #f7931e)',
-  WebkitBackgroundClip: 'text',
-  WebkitTextFillColor: 'transparent',
-  backgroundClip: 'text',
-  textShadow: 'none',
-  fontWeight: 600
-};
 
 function Dashboard() {
   const { t } = useTranslation('dashboard');
@@ -51,6 +43,7 @@ function Dashboard() {
   const { standorte } = useStandortContext(); // Multi-Location support
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
   const { theme, setTheme, isDarkMode, toggleDarkMode, themes } = useTheme(); // 🎨 Theme Switching
+  const { unreadCount: chatUnread } = useChatContext();
 
   // State für echte Daten
   const [stats, setStats] = useState({
@@ -75,6 +68,8 @@ function Dashboard() {
 
   // Tab-State für Dashboard
   const [activeTab, setActiveTab] = useState('checkin');
+  const [hilfeSupportView, setHilfeSupportView] = useState(null);
+  const [einstellungenView, setEinstellungenView] = useState(null);
 
   // User-Dropdown State
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -240,16 +235,11 @@ function Dashboard() {
     { id: 'pruefungswesen', label: t('tabs.pruefungswesen'), icon: '🏆' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
-    { id: 'artikelverwaltung', label: t('tabs.artikelverwaltung'), icon: '📦' },
-    { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🔧' },
-    { id: 'personal', label: t('tabs.personal'), icon: '👨‍🏫' },
-    { id: 'berichte', label: t('tabs.berichte'), icon: '📊' },
+    { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
+    { id: 'berichte', label: t('tabs.berichte'), icon: '📄' },
     { id: 'einstellungen', label: t('tabs.einstellungen'), icon: '⚙️' },
     { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
-    { id: 'support', label: t('tabs.support'), icon: '🎫' },
-    { id: 'wunschliste', label: t('tabs.wunschliste'), icon: '💡' },
-    { id: 'info', label: t('tabs.info'), icon: 'ℹ️' },
-    { id: 'hilfe', label: 'Hilfe', icon: '📚' }
+    { id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }
   ];
 
   const tabs = baseTabs;
@@ -319,6 +309,13 @@ function Dashboard() {
       path: '/dashboard/interessenten',
       badge: 'NEU',
       count: stats.interessenten || 0
+    },
+    {
+      icon: '🔑',
+      title: 'Passwörter',
+      description: 'Passwörter für Dojo-Mitglieder zurücksetzen',
+      path: '/dashboard/passwoerter',
+      featured: false
     }
   ];
 
@@ -360,11 +357,7 @@ function Dashboard() {
       description: 'Standorte & Filialen verwalten',
       path: '/dashboard/standorte',
       count: standorte?.length || 0
-    }
-  ];
-
-  // ✨ Personal - Trainer & Mitarbeiter ✨
-  const personalCards = [
+    },
     {
       icon: '👨‍🏫',
       title: 'Trainer',
@@ -393,22 +386,6 @@ function Dashboard() {
       featured: true
     },
     {
-      icon: '📈',
-      title: 'EÜR',
-      description: 'Einnahmen-Überschuss-Rechnung',
-      path: '/dashboard/euer',
-      badge: 'NEU',
-      featured: true
-    },
-    {
-      icon: '📉',
-      title: 'Ausgaben',
-      description: 'Betriebsausgaben erfassen',
-      path: '/dashboard/ausgaben',
-      badge: 'NEU',
-      featured: true
-    },
-    {
       icon: '💰',
       title: 'Beiträge',
       description: 'Mitgliedsbeiträge und Zahlungen',
@@ -424,24 +401,10 @@ function Dashboard() {
       featured: true
     },
     {
-      icon: '💳',
-      title: 'Lastschriftlauf',
-      description: 'SEPA-Lastschriften generieren und verwalten',
-      path: '/dashboard/lastschriftlauf',
-      featured: true
-    },
-    {
       icon: '📋',
       title: 'SEPA-Mandate',
       description: 'SEPA-Einzugsermächtigungen verwalten',
       path: '/dashboard/sepa-mandate',
-      featured: true
-    },
-    {
-      icon: '⚠️',
-      title: 'Mahnwesen',
-      description: 'Offene Rechnungen und Mahnungen',
-      path: '/dashboard/mahnwesen',
       featured: true
     },
     {
@@ -480,6 +443,22 @@ function Dashboard() {
       title: 'DATEV Export',
       description: 'Buchungsdaten für Steuerberater exportieren',
       path: '/dashboard/datev-export',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📁',
+      title: 'Artikelgruppen',
+      description: 'Kampfsport-Kategorien und Unterkategorien',
+      path: '/dashboard/artikelgruppen',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📦',
+      title: 'Artikelverwaltung',
+      description: 'Sortiment und Lagerbestände verwalten',
+      path: '/dashboard/artikel',
       badge: 'NEU',
       featured: true
     }
@@ -552,12 +531,11 @@ function Dashboard() {
       featured: true
     },
     {
-      icon: '🔑',
-      title: 'Passwörter',
-      description: 'Passwörter für Dojo-Mitglieder zurücksetzen',
-      path: '/dashboard/passwoerter',
-      featured: false
-    }
+      icon: 'ℹ️',
+      title: 'System & Info',
+      description: 'Statistiken, Versionsinfo & Changelog',
+      action: 'info'
+    },
   ];
 
   // ✨ Prüfungswesen - Termine & Prüfungen ✨
@@ -589,28 +567,16 @@ function Dashboard() {
     }
   ];
 
-  // ✨ Artikelverwaltung - Shop & Inventar ✨
-  const artikelverwaltungCards = [
+  // ✨ Berichte & Übersicht - Reporting ✨
+  const berichteCards = [
     {
-      icon: '📁',
-      title: 'Artikelgruppen',
-      description: 'Kampfsport-Kategorien und Unterkategorien',
-      path: '/dashboard/artikelgruppen',
+      icon: '📂',
+      title: 'DokumentenZentrale',
+      description: 'Alle Dokumente, Vorlagen & Verträge zentral verwalten',
+      path: '/dashboard/dokumentenzentrale',
       badge: 'NEU',
       featured: true
     },
-    {
-      icon: '📦',
-      title: 'Artikelverwaltung',
-      description: 'Sortiment und Lagerbestände verwalten',
-      path: '/dashboard/artikel',
-      badge: 'NEU',
-      featured: true
-    }
-  ];
-
-  // ✨ Berichte & Übersicht - Reporting ✨
-  const berichteCards = [
     {
       icon: '📊',
       title: 'Auswertungen',
@@ -624,7 +590,6 @@ function Dashboard() {
       title: 'Berichte & Dokumente',
       description: 'PDF-Berichte erstellen, ändern & verwalten',
       path: '/dashboard/berichte',
-      badge: 'NEU',
       featured: true
     },
     {
@@ -632,7 +597,6 @@ function Dashboard() {
       title: 'Vertragsdokumente',
       description: 'AGB, Datenschutz & Hausordnung verwalten',
       path: '/dashboard/vertragsdokumente',
-      badge: 'NEU',
       featured: true
     },
     {
@@ -640,7 +604,6 @@ function Dashboard() {
       title: 'Equipment',
       description: 'Inventar und Ausrüstung verwalten',
       path: '/dashboard/inventar',
-      badge: 'NEU',
       featured: true,
       count: stats.inventar || 0
     }
@@ -662,6 +625,28 @@ function Dashboard() {
       description: 'Statistiken, Zahlungen & Export',
       path: '/dashboard/events-dashboard',
       badge: 'NEU'
+    }
+  ];
+
+  // ✨ Hilfe & Support - kombinierter Tab ✨
+  const hilfeSupportCards = [
+    {
+      icon: '📚',
+      title: 'Help Center',
+      description: 'Anleitungen, FAQ und Dokumentation',
+      action: 'hilfe'
+    },
+    {
+      icon: '🎫',
+      title: 'Support-Tickets',
+      description: 'Probleme melden und Anfragen stellen',
+      action: 'support'
+    },
+    {
+      icon: '💡',
+      title: 'Wunschliste',
+      description: 'Feature-Wünsche und Verbesserungsvorschläge',
+      action: 'wunschliste'
     }
   ];
 
@@ -768,19 +753,15 @@ function Dashboard() {
 
   // 🏆 Super-Admin Dashboard: Zeige erweiterte Ansicht für TDA Int'l Org (NUR auf Hauptseite!)
   console.log('🔍 Super-Admin Dashboard Check:', { role, selectedDojo, isMainDashboard, pathname: location.pathname });
-  if (role === 'admin' && selectedDojo === 'super-admin' && isMainDashboard) {
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'super-admin' && isMainDashboard) {
     console.log('✅ Zeige Super-Admin Dashboard für TDA Int\'l Org');
     return (
       <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
-        <header className="dashboard-header" style={{
-          background: isDarkMode ? 'rgba(15, 15, 35, 0.85)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)'
-        }}>
+        <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🏆 TDA Int'l Org - Super-Admin</h2>
-            <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
+            <span className="version-badge">v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
@@ -802,45 +783,38 @@ function Dashboard() {
                 ← {t('header.dashboard')}
               </button>
             )}
+            {/* 💬 Chat-Icon */}
+            <button
+              onClick={() => navigate('/dashboard/chat')}
+              className="logout-button chat-header-badge-wrap dashboard-chat-wrap"
+              title="Chat"
+            >
+              <MessageCircle size={18} />
+              {chatUnread > 0 && (
+                <span className="chat-header-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>
+              )}
+            </button>
             {/* 👤 User-Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div className="dashboard-user-wrap">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="logout-button"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                className="logout-button dashboard-user-btn"
               >
                 <span>👤</span>
                 <span>{userDisplayName || 'User'}</span>
-                <span style={{ fontSize: '0.7rem' }}>▼</span>
+                <span className="dashboard-user-btn-arrow">▼</span>
               </button>
               {showUserMenu && (
-                <div style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                  background: '#1f2937', border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  minWidth: '200px', zIndex: 10000, overflow: 'hidden'
-                }}>
-                  <button onClick={toggleDarkMode} style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent',
-                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
-                  }}>
+                <div className="dashboard-user-dropdown">
+                  <button onClick={toggleDarkMode} className="dashboard-menu-btn">
                     {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                     <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
                   </button>
-                  <div style={{
-                    padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)'
-                  }}>
+                  <div className="dashboard-menu-row">
                     <span>🌐</span>
                     <LanguageSwitcher compact={true} showLabel={false} />
                   </div>
-                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent',
-                    border: 'none', color: '#ef4444', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
-                  }}>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} className="dashboard-menu-btn danger">
                     <span>🚪</span>
                     <span>{t('header.logout')}</span>
                   </button>
@@ -858,61 +832,50 @@ function Dashboard() {
   }
 
   // 🌐 Verband Dashboard: Zeige Verbandsverwaltung
-  if (role === 'admin' && selectedDojo === 'verband') {
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'verband') {
     console.log('✅ Zeige Verband Dashboard für TDA Verband');
     return (
       <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
-        <header className="dashboard-header" style={{
-          background: isDarkMode ? 'rgba(15, 15, 35, 0.85)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)'
-        }}>
+        <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🌐 TDA Verband</h2>
-            <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
+            <span className="version-badge">v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
+            {/* 💬 Chat-Icon */}
+            <button
+              onClick={() => navigate('/dashboard/chat')}
+              className="logout-button chat-header-badge-wrap dashboard-chat-wrap"
+              title="Chat"
+            >
+              <MessageCircle size={18} />
+              {chatUnread > 0 && (
+                <span className="chat-header-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>
+              )}
+            </button>
             {/* 👤 User-Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div className="dashboard-user-wrap">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="logout-button"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                className="logout-button dashboard-user-btn"
               >
                 <span>👤</span>
                 <span>{userDisplayName || 'User'}</span>
-                <span style={{ fontSize: '0.7rem' }}>▼</span>
+                <span className="dashboard-user-btn-arrow">▼</span>
               </button>
               {showUserMenu && (
-                <div style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                  background: '#1f2937', border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  minWidth: '200px', zIndex: 10000, overflow: 'hidden'
-                }}>
-                  <button onClick={toggleDarkMode} style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent',
-                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
-                  }}>
+                <div className="dashboard-user-dropdown">
+                  <button onClick={toggleDarkMode} className="dashboard-menu-btn">
                     {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                     <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
                   </button>
-                  <div style={{
-                    padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)'
-                  }}>
+                  <div className="dashboard-menu-row">
                     <span>🌐</span>
                     <LanguageSwitcher compact={true} showLabel={false} />
                   </div>
-                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent',
-                    border: 'none', color: '#ef4444', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
-                  }}>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} className="dashboard-menu-btn danger">
                     <span>🚪</span>
                     <span>{t('header.logout')}</span>
                   </button>
@@ -930,61 +893,50 @@ function Dashboard() {
   }
 
   // 🎫 Support Dashboard: Zeige Support-Ticketsystem
-  if (role === 'admin' && selectedDojo === 'support') {
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'support') {
     console.log('✅ Zeige Support Dashboard für Support Center');
     return (
       <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
-        <header className="dashboard-header" style={{
-          background: isDarkMode ? 'rgba(15, 15, 35, 0.85)' : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)'
-        }}>
+        <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
             <h2>🎫 Support Center</h2>
-            <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
+            <span className="version-badge">v{config.app.version}</span>
           </div>
           <div className="dashboard-header-right">
             <DojoSwitcher />
+            {/* 💬 Chat-Icon */}
+            <button
+              onClick={() => navigate('/dashboard/chat')}
+              className="logout-button chat-header-badge-wrap dashboard-chat-wrap"
+              title="Chat"
+            >
+              <MessageCircle size={18} />
+              {chatUnread > 0 && (
+                <span className="chat-header-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>
+              )}
+            </button>
             {/* 👤 User-Dropdown */}
-            <div style={{ position: 'relative' }}>
+            <div className="dashboard-user-wrap">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="logout-button"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                className="logout-button dashboard-user-btn"
               >
                 <span>👤</span>
                 <span>{userDisplayName || 'User'}</span>
-                <span style={{ fontSize: '0.7rem' }}>▼</span>
+                <span className="dashboard-user-btn-arrow">▼</span>
               </button>
               {showUserMenu && (
-                <div style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: '8px',
-                  background: '#1f2937', border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  minWidth: '200px', zIndex: 10000, overflow: 'hidden'
-                }}>
-                  <button onClick={toggleDarkMode} style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent',
-                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    color: 'rgba(255,255,255,0.9)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
-                  }}>
+                <div className="dashboard-user-dropdown">
+                  <button onClick={toggleDarkMode} className="dashboard-menu-btn">
                     {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                     <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
                   </button>
-                  <div style={{
-                    padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)'
-                  }}>
+                  <div className="dashboard-menu-row">
                     <span>🌐</span>
                     <LanguageSwitcher compact={true} showLabel={false} />
                   </div>
-                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} style={{
-                    width: '100%', padding: '12px 16px', background: 'transparent',
-                    border: 'none', color: '#ef4444', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', textAlign: 'left'
-                  }}>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} className="dashboard-menu-btn danger">
                     <span>🚪</span>
                     <span>{t('header.logout')}</span>
                   </button>
@@ -1007,11 +959,11 @@ function Dashboard() {
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
           <h2>{headerTitle}</h2>
-          <span className="version-badge" style={{ background: 'rgba(255, 215, 0, 0.15)', color: '#ffd700', border: '1px solid rgba(255, 215, 0, 0.3)' }}>v{config.app.version}</span>
+          <span className="version-badge">v{config.app.version}</span>
         </div>
         <div className="dashboard-header-right">
-          {role === 'admin' && <DojoSwitcher />}
-          {role === 'admin' && <StandortSwitcher />}
+          {(role === 'admin' || role === 'super_admin') && <DojoSwitcher />}
+          {(role === 'admin' || role === 'super_admin') && <StandortSwitcher />}
           {/* Zurück-Button - nutzt Browser History */}
           {!isMainDashboard && window.history.length > 1 && (
             <button
@@ -1030,96 +982,46 @@ function Dashboard() {
               ← Dashboard
             </button>
           )}
+          {/* 💬 Chat-Icon */}
+          <button
+            onClick={() => navigate('/dashboard/chat')}
+            className="logout-button chat-header-badge-wrap dashboard-chat-wrap"
+            title="Chat"
+          >
+            <MessageCircle size={18} />
+            {chatUnread > 0 && (
+              <span className="chat-header-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>
+            )}
+          </button>
           {/* 👤 User-Dropdown mit Theme, Sprache, Logout */}
-          <div ref={userMenuRef} style={{ position: 'relative' }}>
+          <div ref={userMenuRef} className="dashboard-user-wrap">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="logout-button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
+              className="logout-button dashboard-user-btn"
             >
               <span>👤</span>
               <span>{userDisplayName || 'User'}</span>
-              <span style={{ fontSize: '0.7rem' }}>▼</span>
+              <span className="dashboard-user-btn-arrow">▼</span>
             </button>
 
             {showUserMenu && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '8px',
-                background: '#1f2937',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                minWidth: '200px',
-                zIndex: 10000
-              }}>
+              <div className="dashboard-user-dropdown">
                 {/* Theme Toggle */}
-                <button
-                  onClick={() => {
-                    toggleDarkMode();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    fontSize: '0.9rem',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                >
+                <button onClick={toggleDarkMode} className="dashboard-menu-btn">
                   {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                   <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
                 </button>
 
                 {/* Sprache */}
-                <div style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '0.9rem',
-                  color: 'rgba(255, 255, 255, 0.9)'
-                }}>
+                <div className="dashboard-menu-row">
                   <span>🌐</span>
                   <LanguageSwitcher compact={true} showLabel={false} />
                 </div>
 
                 {/* Logout */}
                 <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    handleLogout();
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#ef4444',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    fontSize: '0.9rem',
-                    textAlign: 'left'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
-                  onMouseLeave={(e) => e.target.style.background = 'transparent'}
+                  onClick={() => { setShowUserMenu(false); handleLogout(); }}
+                  className="dashboard-menu-btn danger"
                 >
                   <span>🚪</span>
                   <span>{t('header.logout')}</span>
@@ -1140,7 +1042,7 @@ function Dashboard() {
                   <button
                     onClick={fetchDashboardStatsOptimized}
                     className="btn btn-neutral btn-small"
-                    style={{ marginLeft: '10px' }}
+                    className="u-ml-1"
                   >
                     🔄 Erneut versuchen
                   </button>
@@ -1159,7 +1061,7 @@ function Dashboard() {
                       <button
                         key={tab.id}
                         className={`dashboard-tab ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => { setActiveTab(tab.id); setHilfeSupportView(null); setEinstellungenView(null); }}
                       >
                         <span className="tab-icon">{tab.icon}</span>
                         <span className="tab-label">{tab.label}</span>
@@ -1186,7 +1088,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">📱</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   Mitglieder Check-in
                                   <span className="nav-count">({formatNumber(stats.checkins_heute)})</span>
                                 </h3>
@@ -1203,7 +1105,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">✅</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   Anwesenheit
                                   <span className="nav-count">({formatNumber(stats.anwesenheit)})</span>
                                 </h3>
@@ -1221,7 +1123,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">👥</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   Personal Check-in
                                   <span className="nav-count">({formatNumber(stats.personal_checkins_heute || 0)})</span>
                                 </h3>
@@ -1239,7 +1141,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">🖥️</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   Check-in Anzeige
                                   <span className="nav-count">(LIVE)</span>
                                 </h3>
@@ -1257,7 +1159,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">📚</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   Stundenplan Anzeige
                                   <span className="nav-count">(AUTO)</span>
                                 </h3>
@@ -1275,7 +1177,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">💰</span>
-                                <h3 style={headingStyle}>Barverkauf</h3>
+                                <h3>Barverkauf</h3>
                               </div>
                               <p>Touch-Kasse für Verkäufe und Barzahlungen</p>
                             </div>
@@ -1290,7 +1192,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">🏪</span>
-                                <h3 style={headingStyle}>Tresen-Übersicht</h3>
+                                <h3>Tresen-Übersicht</h3>
                               </div>
                               <p>Empfang, Checkin & Tagesübersicht</p>
                             </div>
@@ -1316,7 +1218,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1348,7 +1250,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1380,7 +1282,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>{card.title}</h3>
+                                <h3>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>
@@ -1407,39 +1309,12 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
                                   )}
                                 </h3>
-                              </div>
-                              <p>{card.description}</p>
-                            </div>
-                            <div className="nav-arrow">→</div>
-                          </div>
-                        ))}
-                        </div>
-                      )}
-
-                      {/* ✨ Artikelverwaltung Tab ✨ */}
-                      {activeTab === 'artikelverwaltung' && (
-                        <div className="nav-cards">
-                        {artikelverwaltungCards.map((card, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleNavigation(card.path)}
-                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
-                          >
-                            {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
-                                {card.badge}
-                              </div>
-                            )}
-                            <div className="nav-content">
-                              <div className="nav-card-header">
-                                <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>
@@ -1466,39 +1341,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>
-                                  {card.title}
-                                  {card.count !== undefined && (
-                                    <span className="nav-count">({formatNumber(card.count)})</span>
-                                  )}
-                                </h3>
-                              </div>
-                              <p>{card.description}</p>
-                            </div>
-                            <div className="nav-arrow">→</div>
-                          </div>
-                        ))}
-                        </div>
-                      )}
-
-                      {/* ✨ Personal Tab ✨ */}
-                      {activeTab === 'personal' && (
-                        <div className="nav-cards">
-                        {personalCards.map((card, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleNavigation(card.path)}
-                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
-                          >
-                            {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : 'live'}`}>
-                                {card.badge}
-                              </div>
-                            )}
-                            <div className="nav-content">
-                              <div className="nav-card-header">
-                                <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1530,7 +1373,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>
+                                <h3>
                                   {card.title}
                                   {card.count !== undefined && (
                                     <span className="nav-count">({formatNumber(card.count)})</span>
@@ -1547,65 +1390,102 @@ function Dashboard() {
 
                       {/* ✨ Einstellungen Tab ✨ */}
                       {activeTab === 'einstellungen' && (
-                        <div className="nav-cards">
-                        {einstellungenCards.map((card, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleNavigation(card.path)}
-                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
-                          >
-                            {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
-                                {card.badge}
+                        <div className="nav-section">
+                          {einstellungenView === 'info' ? (
+                            <>
+                              <button
+                                onClick={() => setEinstellungenView(null)}
+                                className="quick-action-btn info"
+                                className="u-mb-1"
+                              >
+                                ← Zurück
+                              </button>
+                              <h2 className="section-header">ℹ️ {t('info.title')}</h2>
+                              <div className="dashboard-info-grid">
+                                <div className="dashboard-info-box no-padding">
+                                  <AgbStatusWidget />
+                                </div>
+                                <div className="dashboard-info-box">
+                                  <h3>📊 {t('info.dojoStats')}</h3>
+                                  <div className="dashboard-stat-grid">
+                                    <div className="dashboard-stat-box primary">
+                                      <div className="dashboard-stat-value">{formatNumber(stats.mitglieder)}</div>
+                                      <div className="dashboard-stat-label">{t('info.members')}</div>
+                                    </div>
+                                    <div className="dashboard-stat-box indigo">
+                                      <div className="dashboard-stat-value">{formatNumber(stats.kurse)}</div>
+                                      <div className="dashboard-stat-label">{t('info.courses')}</div>
+                                    </div>
+                                    <div className="dashboard-stat-box success">
+                                      <div className="dashboard-stat-value">{formatNumber(stats.trainer)}</div>
+                                      <div className="dashboard-stat-label">{t('info.trainers')}</div>
+                                    </div>
+                                    <div className="dashboard-stat-box pink">
+                                      <div className="dashboard-stat-value">{formatNumber(stats.checkins_heute)}</div>
+                                      <div className="dashboard-stat-label">{t('info.checkinsToday')}</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="dashboard-info-box">
+                                  <h3>⚙️ {t('info.system')}</h3>
+                                  <div className="dashboard-info-rows">
+                                    <div className="dashboard-info-row">
+                                      <span className="dashboard-info-row-label">{t('info.version')}</span>
+                                      <span className="dashboard-info-row-value">v{config.app.version}</span>
+                                    </div>
+                                    <div className="dashboard-info-row">
+                                      <span className="dashboard-info-row-label">{t('info.build')}</span>
+                                      <span>{config.app.buildDate}</span>
+                                    </div>
+                                    <div className="dashboard-info-row">
+                                      <span className="dashboard-info-row-label">{t('info.developer')}</span>
+                                      <span>{config.app.author}</span>
+                                    </div>
+                                    <div className="dashboard-info-row">
+                                      <span className="dashboard-info-row-label">{t('info.support')}</span>
+                                      <a href={`mailto:${config.app.contactEmail}`} className="u-text-accent">{config.app.contactEmail}</a>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="dashboard-info-box full-width transparent">
+                                  <SystemChangelog maxItems={3} />
+                                </div>
                               </div>
-                            )}
-                            <div className="nav-content">
-                              <div className="nav-card-header">
-                                <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>{card.title}</h3>
-                              </div>
-                              <p>{card.description}</p>
+                            </>
+                          ) : (
+                            <div className="nav-cards">
+                              {einstellungenCards.map((card, index) => (
+                                <div
+                                  key={index}
+                                  onClick={() => card.action ? setEinstellungenView(card.action) : handleNavigation(card.path)}
+                                  className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                                >
+                                  {card.badge && (
+                                    <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
+                                      {card.badge}
+                                    </div>
+                                  )}
+                                  <div className="nav-content">
+                                    <div className="nav-card-header">
+                                      <span className="nav-icon">{card.icon}</span>
+                                      <h3>{card.title}</h3>
+                                    </div>
+                                    <p>{card.description}</p>
+                                  </div>
+                                  <div className="nav-arrow">→</div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="nav-arrow">→</div>
-                          </div>
-                        ))}
+                          )}
                         </div>
                       )}
 
                       {/* ✨ Schnellaktionen Tab ✨ */}
                       {activeTab === 'schnellaktionen' && (
                         <div className="nav-section">
-                          <h2 className="section-header quick-actions-header" style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            gap: '0.5rem',
-                            backgroundImage: 'none',
-                            WebkitBackgroundClip: 'unset',
-                            WebkitTextFillColor: '#FFD700',
-                            backgroundClip: 'unset',
-                            color: '#FFD700',
-                            textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                            marginBottom: '2rem'
-                          }}>
-                            <span style={{ 
-                              fontSize: '1.5rem',
-                              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-                              position: 'relative',
-                              zIndex: 10,
-                              lineHeight: 1,
-                              display: 'inline-block',
-                              flexShrink: 0
-                            }}>⚡</span>
-                            <span style={{
-                              WebkitFontSmoothing: 'antialiased',
-                              MozOsxFontSmoothing: 'grayscale',
-                              color: '#FFD700 !important',
-                              WebkitTextFillColor: '#FFD700 !important',
-                              backgroundImage: 'none !important',
-                              WebkitBackgroundClip: 'unset !important',
-                              backgroundClip: 'unset !important'
-                            }}>{t('quickActions.title')}</span>
+                          <h2 className="section-header quick-actions-header">
+                            <span className="quick-actions-icon">⚡</span>
+                            <span>{t('quickActions.title')}</span>
                           </h2>
                           {role === 'admin' ? (
                             <div className="quick-actions">
@@ -1633,7 +1513,7 @@ function Dashboard() {
                             </div>
                           )}
                           {/* Aktualisieren Button */}
-                          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                          <div className="dashboard-refresh-wrap">
                             <button
                               onClick={fetchDashboardStatsOptimized}
                               className="quick-action-btn info"
@@ -1645,259 +1525,42 @@ function Dashboard() {
                         </div>
                       )}
 
-                      {/* 🎫 Support Tab 🎫 */}
-                      {activeTab === 'support' && (
+                      {/* ❓ Hilfe & Support Tab ❓ */}
+                      {activeTab === 'hilfe-support' && (
                         <div className="nav-section">
-                          <SupportTickets bereich="dojo" />
-                        </div>
-                      )}
-
-                      {/* 💡 Wunschliste Tab 💡 */}
-                      {activeTab === 'wunschliste' && (
-                        <div className="nav-section">
-                          <FeatureBoard />
-                        </div>
-                      )}
-
-                      {/* ℹ️ Info Tab ℹ️ */}
-                      {activeTab === 'info' && (
-                        <div className="nav-section">
-                          <h2 className="section-header">ℹ️ {t('info.title')}</h2>
-
-                          {/* Grid Layout für Info-Karten */}
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                            gap: '1.5rem',
-                            maxWidth: '1200px',
-                            margin: '0 auto'
-                          }}>
-
-                            {/* AGB/DSGVO Status - Wichtig, daher prominent */}
-                            <div style={{
-                              gridColumn: 'span 1',
-                              background: 'var(--glass-bg)',
-                              borderRadius: '16px',
-                              border: '1px solid var(--border-accent)',
-                              overflow: 'hidden'
-                            }}>
-                              <AgbStatusWidget />
-                            </div>
-
-                            {/* Dojo Statistiken */}
-                            <div style={{
-                              background: 'var(--glass-bg)',
-                              borderRadius: '16px',
-                              padding: '1.5rem',
-                              border: '1px solid var(--border-accent)'
-                            }}>
-                              <h3 style={{
-                                color: 'var(--primary)',
-                                marginBottom: '1rem',
-                                fontSize: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                              }}>
-                                📊 {t('info.dojoStats')}
-                              </h3>
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                <div style={{
-                                  background: 'rgba(255,215,0,0.1)',
-                                  padding: '1rem',
-                                  borderRadius: '8px',
-                                  textAlign: 'center'
-                                }}>
-                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: 'var(--primary)' }}>
-                                    {formatNumber(stats.mitglieder)}
-                                  </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.members')}</div>
-                                </div>
-                                <div style={{
-                                  background: 'rgba(96,165,250,0.1)',
-                                  padding: '1rem',
-                                  borderRadius: '8px',
-                                  textAlign: 'center'
-                                }}>
-                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#60A5FA' }}>
-                                    {formatNumber(stats.kurse)}
-                                  </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.courses')}</div>
-                                </div>
-                                <div style={{
-                                  background: 'rgba(52,211,153,0.1)',
-                                  padding: '1rem',
-                                  borderRadius: '8px',
-                                  textAlign: 'center'
-                                }}>
-                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#34D399' }}>
-                                    {formatNumber(stats.trainer)}
-                                  </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.trainers')}</div>
-                                </div>
-                                <div style={{
-                                  background: 'rgba(244,114,182,0.1)',
-                                  padding: '1rem',
-                                  borderRadius: '8px',
-                                  textAlign: 'center'
-                                }}>
-                                  <div style={{ fontSize: '1.8rem', fontWeight: '700', color: '#F472B6' }}>
-                                    {formatNumber(stats.checkins_heute)}
-                                  </div>
-                                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{t('info.checkinsToday')}</div>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* System Info */}
-                            <div style={{
-                              background: 'var(--glass-bg)',
-                              borderRadius: '16px',
-                              padding: '1.5rem',
-                              border: '1px solid var(--border-accent)'
-                            }}>
-                              <h3 style={{
-                                color: 'var(--primary)',
-                                marginBottom: '1rem',
-                                fontSize: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                              }}>
-                                ⚙️ {t('info.system')}
-                              </h3>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  padding: '0.5rem 0',
-                                  borderBottom: '1px solid var(--border-accent)'
-                                }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.version')}</span>
-                                  <span style={{ color: 'var(--text-primary)', fontWeight: '600' }}>v{config.app.version}</span>
-                                </div>
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  padding: '0.5rem 0',
-                                  borderBottom: '1px solid var(--border-accent)'
-                                }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.build')}</span>
-                                  <span style={{ color: 'var(--text-primary)' }}>{config.app.buildDate}</span>
-                                </div>
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  padding: '0.5rem 0',
-                                  borderBottom: '1px solid var(--border-accent)'
-                                }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.developer')}</span>
-                                  <span style={{ color: 'var(--text-primary)' }}>{config.app.author}</span>
-                                </div>
-                                <div style={{
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  padding: '0.5rem 0'
-                                }}>
-                                  <span style={{ color: 'var(--text-secondary)' }}>{t('info.support')}</span>
-                                  <a href={`mailto:${config.app.contactEmail}`} style={{ color: 'var(--primary)' }}>
-                                    {config.app.contactEmail}
-                                  </a>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Schnellzugriff */}
-                            <div style={{
-                              background: 'var(--glass-bg)',
-                              borderRadius: '16px',
-                              padding: '1.5rem',
-                              border: '1px solid var(--border-accent)'
-                            }}>
-                              <h3 style={{
-                                color: 'var(--primary)',
-                                marginBottom: '1rem',
-                                fontSize: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                              }}>
-                                🔗 {t('info.quickAccess')}
-                              </h3>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <button
-                                  onClick={() => handleNavigation('/dashboard/einstellungen')}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem 1rem',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid var(--border-accent)',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-primary)',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    width: '100%'
-                                  }}
+                          {!hilfeSupportView ? (
+                            <div className="nav-cards">
+                              {hilfeSupportCards.map((card, index) => (
+                                <div
+                                  key={index}
+                                  onClick={() => setHilfeSupportView(card.action)}
+                                  className="nav-card clickable featured"
                                 >
-                                  <span>🏯</span>
-                                  <span>{t('info.dojoSettings')}</span>
-                                </button>
-                                <button
-                                  onClick={() => handleNavigation('/dashboard/audit-log')}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem 1rem',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid var(--border-accent)',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-primary)',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    width: '100%'
-                                  }}
-                                >
-                                  <span>📋</span>
-                                  <span>{t('einstellungen.auditLog')}</span>
-                                </button>
-                                <button
-                                  onClick={() => handleNavigation('/dashboard/vertragsdokumente')}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.75rem',
-                                    padding: '0.75rem 1rem',
-                                    background: 'rgba(255,255,255,0.05)',
-                                    border: '1px solid var(--border-accent)',
-                                    borderRadius: '8px',
-                                    color: 'var(--text-primary)',
-                                    cursor: 'pointer',
-                                    textAlign: 'left',
-                                    width: '100%'
-                                  }}
-                                >
-                                  <span>📄</span>
-                                  <span>{t('info.editAgb')}</span>
-                                </button>
-                              </div>
+                                  <div className="nav-content">
+                                    <div className="nav-card-header">
+                                      <span className="nav-icon">{card.icon}</span>
+                                      <h3>{card.title}</h3>
+                                    </div>
+                                    <p>{card.description}</p>
+                                  </div>
+                                  <div className="nav-arrow">→</div>
+                                </div>
+                              ))}
                             </div>
-
-                            {/* System Changelog - Neuigkeiten & Updates */}
-                            <div style={{ gridColumn: '1 / -1' }}>
-                              <SystemChangelog maxItems={3} />
-                            </div>
-
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 📚 Hilfe Tab 📚 */}
-                      {activeTab === 'hilfe' && (
-                        <div className="nav-section">
-                          <HilfeCenter />
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setHilfeSupportView(null)}
+                                className="quick-action-btn info"
+                                className="u-mb-1"
+                              >
+                                ← Zurück
+                              </button>
+                              {hilfeSupportView === 'hilfe' && <HilfeCenter />}
+                              {hilfeSupportView === 'support' && <SupportTickets bereich="dojo" />}
+                              {hilfeSupportView === 'wunschliste' && <FeatureBoard />}
+                            </>
+                          )}
                         </div>
                       )}
 
@@ -1919,7 +1582,7 @@ function Dashboard() {
                             <div className="nav-content">
                               <div className="nav-card-header">
                                 <span className="nav-icon">{card.icon}</span>
-                                <h3 style={headingStyle}>{card.title}</h3>
+                                <h3>{card.title}</h3>
                               </div>
                               <p>{card.description}</p>
                             </div>

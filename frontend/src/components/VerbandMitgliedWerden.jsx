@@ -13,6 +13,7 @@ import {
 import axios from 'axios';
 import config from '../config/config.js';
 import SumUpCheckout from './SumUpCheckout';
+import '../styles/VerbandMitgliedWerden.css';
 
 const VerbandMitgliedWerden = () => {
   const navigate = useNavigate();
@@ -356,7 +357,7 @@ const VerbandMitgliedWerden = () => {
                 <Percent size={24} color="#ffd700" />
                 <span>{v.titel}</span>
                 {v.rabatt_wert > 0 && (
-                  <strong style={{ color: '#ffd700' }}>
+                  <strong className="u-text-accent">
                     {v.rabatt_typ === 'prozent' ? `-${v.rabatt_wert}%` : `-${v.rabatt_wert}€`}
                   </strong>
                 )}
@@ -582,34 +583,28 @@ const VerbandMitgliedWerden = () => {
       <p style={styles.stepSubtitle}>Wählen Sie Ihre bevorzugte Zahlungsart</p>
 
       <div style={styles.zahlungsarten}>
-        <label style={{
-          ...styles.zahlungsartCard,
-          borderColor: formData.zahlungsart === 'rechnung' ? '#ffd700' : 'rgba(255,255,255,0.1)'
-        }}>
+        <label className="vmw-zahlungsart-label" style={{ ...styles.zahlungsartCard, '--vmw-card-border': formData.zahlungsart === 'rechnung' ? '#ffd700' : 'rgba(255,255,255,0.1)' }}>
           <input
             type="radio"
             name="zahlungsart"
             value="rechnung"
             checked={formData.zahlungsart === 'rechnung'}
             onChange={handleChange}
-            style={{ display: 'none' }}
+            className="u-hidden"
           />
           <FileText size={32} color={formData.zahlungsart === 'rechnung' ? '#ffd700' : '#888'} />
           <span style={styles.zahlungsartTitle}>Rechnung</span>
           <span style={styles.zahlungsartDesc}>Zahlung per Überweisung</span>
         </label>
 
-        <label style={{
-          ...styles.zahlungsartCard,
-          borderColor: formData.zahlungsart === 'lastschrift' ? '#ffd700' : 'rgba(255,255,255,0.1)'
-        }}>
+        <label className="vmw-zahlungsart-label" style={{ ...styles.zahlungsartCard, '--vmw-card-border': formData.zahlungsart === 'lastschrift' ? '#ffd700' : 'rgba(255,255,255,0.1)' }}>
           <input
             type="radio"
             name="zahlungsart"
             value="lastschrift"
             checked={formData.zahlungsart === 'lastschrift'}
             onChange={handleChange}
-            style={{ display: 'none' }}
+            className="u-hidden"
           />
           <CreditCard size={32} color={formData.zahlungsart === 'lastschrift' ? '#ffd700' : '#888'} />
           <span style={styles.zahlungsartTitle}>SEPA-Lastschrift</span>
@@ -617,17 +612,14 @@ const VerbandMitgliedWerden = () => {
         </label>
 
         {sumupAvailable && (
-          <label style={{
-            ...styles.zahlungsartCard,
-            borderColor: formData.zahlungsart === 'sumup' ? '#ffd700' : 'rgba(255,255,255,0.1)'
-          }}>
+          <label className="vmw-zahlungsart-label" style={{ ...styles.zahlungsartCard, '--vmw-card-border': formData.zahlungsart === 'sumup' ? '#ffd700' : 'rgba(255,255,255,0.1)' }}>
             <input
               type="radio"
               name="zahlungsart"
               value="sumup"
               checked={formData.zahlungsart === 'sumup'}
               onChange={handleChange}
-              style={{ display: 'none' }}
+              className="u-hidden"
             />
             <Smartphone size={32} color={formData.zahlungsart === 'sumup' ? '#ffd700' : '#888'} />
             <span style={styles.zahlungsartTitle}>Kartenzahlung</span>
@@ -691,7 +683,7 @@ const VerbandMitgliedWerden = () => {
       {formData.zahlungsart === 'sumup' && !sumupPaid && (
         <div style={styles.sumupSection}>
           <h3 style={styles.sectionTitle}><Smartphone size={20} /> Kartenzahlung mit SumUp</h3>
-          <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
+          <p className="vmw-sumup-desc">
             Bezahlen Sie den Jahresbeitrag direkt mit Ihrer Kredit- oder Debitkarte.
           </p>
           <SumUpCheckout
@@ -714,10 +706,10 @@ const VerbandMitgliedWerden = () => {
       {formData.zahlungsart === 'sumup' && sumupPaid && (
         <div style={styles.sumupPaidBox}>
           <CheckCircle size={48} color="#10b981" />
-          <span style={{ fontSize: '1.2rem', fontWeight: '600', color: '#10b981' }}>
+          <span className="vmw-sumup-paid-label">
             Zahlung erfolgreich!
           </span>
-          <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+          <span className="u-text-secondary">
             Bitte fahren Sie mit der Anmeldung fort.
           </span>
         </div>
@@ -822,7 +814,7 @@ const VerbandMitgliedWerden = () => {
         </div>
         <div style={{ ...styles.summaryRow, ...styles.summaryTotal }}>
           <span>Jahresbeitrag:</span>
-          <strong style={{ color: '#ffd700', fontSize: '1.2rem' }}>
+          <strong className="vmw-summary-total-amount">
             {formData.typ === 'dojo' ? (einstellungen.preis_dojo || 99) : (einstellungen.preis_einzel || 49)} €
           </strong>
         </div>
@@ -871,10 +863,7 @@ const VerbandMitgliedWerden = () => {
       {currentStep < 5 && (
         <div style={styles.progressBar}>
           {[1, 2, 3, 4].map(step => (
-            <div key={step} style={{
-              ...styles.progressStep,
-              ...(currentStep >= step ? styles.progressStepActive : {})
-            }}>
+            <div key={step} className={`vmw-progress-step${currentStep >= step ? ' vmw-progress-step--active' : ''}`} style={styles.progressStep}>
               {currentStep > step ? <Check size={16} /> : step}
             </div>
           ))}
@@ -929,7 +918,7 @@ const styles = {
   container: {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 50%, #1a0a0a 100%)',
-    color: '#fff',
+    color: 'var(--text-primary)',
     padding: '2rem',
     fontFamily: 'system-ui, -apple-system, sans-serif'
   },
@@ -949,12 +938,12 @@ const styles = {
   title: {
     fontSize: '1.8rem',
     fontWeight: '700',
-    color: '#ffd700',
+    color: 'var(--primary)',
     margin: '0 0 0.5rem 0'
   },
   subtitle: {
     fontSize: '1.1rem',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'var(--text-secondary)',
     margin: 0
   },
   progressBar: {
@@ -967,12 +956,10 @@ const styles = {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    background: 'rgba(255,255,255,0.1)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: '600',
-    color: '#888',
     transition: 'all 0.3s'
   },
   progressStepActive: {
@@ -994,10 +981,10 @@ const styles = {
     fontSize: '1.5rem',
     fontWeight: '600',
     marginBottom: '0.5rem',
-    color: '#fff'
+    color: 'var(--text-primary)'
   },
   stepSubtitle: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'var(--text-secondary)',
     marginBottom: '2rem'
   },
   typCards: {
@@ -1016,7 +1003,7 @@ const styles = {
     textAlign: 'center'
   },
   typIcon: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     marginBottom: '1rem'
   },
   typTitle: {
@@ -1027,11 +1014,11 @@ const styles = {
   typPrice: {
     fontSize: '1.5rem',
     fontWeight: '700',
-    color: '#ffd700',
+    color: 'var(--primary)',
     marginBottom: '0.5rem'
   },
   typDesc: {
-    color: 'rgba(255,255,255,0.6)',
+    color: 'var(--text-secondary)',
     marginBottom: '1rem'
   },
   typFeatures: {
@@ -1076,7 +1063,7 @@ const styles = {
   label: {
     display: 'block',
     fontSize: '0.9rem',
-    color: 'rgba(255,255,255,0.8)',
+    color: 'var(--text-secondary)',
     marginBottom: '0.5rem'
   },
   input: {
@@ -1085,7 +1072,7 @@ const styles = {
     background: 'rgba(0,0,0,0.3)',
     border: '1px solid rgba(255,255,255,0.1)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '1rem',
     transition: 'border-color 0.3s'
   },
@@ -1102,7 +1089,6 @@ const styles = {
     gap: '0.5rem',
     padding: '1.5rem',
     background: 'rgba(0,0,0,0.3)',
-    border: '2px solid rgba(255,255,255,0.1)',
     borderRadius: '12px',
     cursor: 'pointer',
     transition: 'all 0.3s'
@@ -1113,7 +1099,7 @@ const styles = {
   },
   zahlungsartDesc: {
     fontSize: '0.85rem',
-    color: 'rgba(255,255,255,0.6)'
+    color: 'var(--text-secondary)'
   },
   sepaSection: {
     background: 'rgba(0,0,0,0.2)',
@@ -1146,7 +1132,7 @@ const styles = {
     fontSize: '1.1rem',
     fontWeight: '600',
     marginBottom: '1rem',
-    color: '#ffd700'
+    color: 'var(--primary)'
   },
   preisSummary: {
     background: 'rgba(255,215,0,0.1)',
@@ -1176,7 +1162,7 @@ const styles = {
     marginTop: '2px'
   },
   link: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     textDecoration: 'underline'
   },
   signatureSection: {
@@ -1184,7 +1170,7 @@ const styles = {
   },
   signatureHint: {
     fontSize: '0.9rem',
-    color: 'rgba(255,255,255,0.6)',
+    color: 'var(--text-secondary)',
     marginBottom: '1rem'
   },
   canvasWrapper: {
@@ -1213,7 +1199,7 @@ const styles = {
     background: 'transparent',
     border: '1px solid rgba(255,255,255,0.3)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   },
   summaryBox: {
@@ -1267,7 +1253,7 @@ const styles = {
     background: 'transparent',
     border: '1px solid rgba(255,255,255,0.3)',
     borderRadius: '10px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontWeight: '600',
     fontSize: '1rem',
     cursor: 'pointer'
@@ -1282,12 +1268,12 @@ const styles = {
   successTitle: {
     fontSize: '2rem',
     fontWeight: '700',
-    color: '#10b981',
+    color: 'var(--success)',
     marginBottom: '1rem'
   },
   successText: {
     fontSize: '1.1rem',
-    color: 'rgba(255,255,255,0.8)',
+    color: 'var(--text-secondary)',
     marginBottom: '1rem'
   },
   successActions: {
@@ -1319,7 +1305,7 @@ const styles = {
     fontSize: '1.1rem',
     fontWeight: '600',
     marginBottom: '1rem',
-    color: '#ffd700'
+    color: 'var(--primary)'
   },
   vorteileGrid: {
     display: 'grid',
@@ -1337,7 +1323,7 @@ const styles = {
   undVielesMehr: {
     textAlign: 'center',
     marginTop: '1rem',
-    color: 'rgba(255, 215, 0, 0.8)',
+    color: 'var(--primary)',
     fontStyle: 'italic',
     fontSize: '1.1rem'
   },
@@ -1345,7 +1331,7 @@ const styles = {
     textAlign: 'center',
     marginTop: '3rem',
     padding: '1.5rem',
-    color: 'rgba(255,255,255,0.5)',
+    color: 'var(--text-muted)',
     fontSize: '0.9rem'
   }
 };

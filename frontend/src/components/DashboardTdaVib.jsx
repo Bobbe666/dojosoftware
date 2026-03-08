@@ -254,7 +254,7 @@ function DashboardTdaVib() {
 
   return (
     // ✨ TDA-VIB THEME CLASS ✨
-    <div className="dashboard-container dashboard-tda-vib">
+    <div className="dashboard-container dashboard-tda-vib" data-theme="tda-vib">
       <header className="dashboard-header">
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
@@ -287,7 +287,7 @@ function DashboardTdaVib() {
               {error && (
                 <div className="error-message">
                   ⚠️ {error}
-                  <button onClick={fetchDashboardStatsOptimized} className="btn btn-neutral btn-small" style={{ marginLeft: '10px' }}>
+                  <button onClick={fetchDashboardStatsOptimized} className="btn btn-neutral btn-small" className="u-ml-1">
                     🔄 Erneut versuchen
                   </button>
                 </div>
@@ -464,7 +464,7 @@ function DashboardTdaVib() {
                             </button>
                           ))}
                         </div>
-                        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                        <div className="u-mt-2 u-text-center">
                           <button onClick={fetchDashboardStatsOptimized} className="quick-action-btn info" disabled={loading}>
                             🔄 {loading ? 'Lädt...' : 'Statistiken aktualisieren'}
                           </button>

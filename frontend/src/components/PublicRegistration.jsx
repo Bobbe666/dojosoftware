@@ -488,7 +488,7 @@ const PublicRegistration = ({ onClose }) => {
       {/* Promo-Code / Empfehlungscode */}
       <div className="form-group promo-code-group">
         <label>Empfehlungscode (optional)</label>
-        <div className="promo-code-input-wrapper" style={{ position: 'relative' }}>
+        <div className="promo-code-input-wrapper">
           <input
             type="text"
             value={formData.promo_code}
@@ -505,13 +505,7 @@ const PublicRegistration = ({ onClose }) => {
             }}
           />
           {promoCodeStatus && (
-            <span style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '1.2rem'
-            }}>
+            <span className="pr-promo-status-icon">
               {promoCodeStatus === 'checking' && '...'}
               {promoCodeStatus === 'valid' && '✅'}
               {promoCodeStatus === 'invalid' && '❌'}
@@ -519,34 +513,19 @@ const PublicRegistration = ({ onClose }) => {
           )}
         </div>
         {promoCodeStatus === 'valid' && promoCodeInfo && (
-          <div className="promo-code-valid-info" style={{
-            marginTop: '0.5rem',
-            padding: '0.75rem',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid #10b981',
-            borderRadius: '6px',
-            color: '#10b981'
-          }}>
+          <div className="promo-code-valid-info pr-promo-valid-info">
             <strong>Code gültig!</strong>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem' }}>
+            <p className="pr-promo-valid-text">
               Empfohlen von: {promoCodeInfo.werber_name}
             </p>
           </div>
         )}
         {promoCodeStatus === 'invalid' && formData.promo_code.length >= 6 && (
-          <div className="promo-code-invalid-info" style={{
-            marginTop: '0.5rem',
-            padding: '0.5rem',
-            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-            border: '1px solid #ef4444',
-            borderRadius: '6px',
-            color: '#ef4444',
-            fontSize: '0.9rem'
-          }}>
+          <div className="promo-code-invalid-info pr-promo-invalid-info">
             Dieser Code ist ungültig oder abgelaufen.
           </div>
         )}
-        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+        <p className="pr-promo-hint">
           Wurden Sie von einem Mitglied empfohlen? Geben Sie hier den Empfehlungscode ein.
         </p>
       </div>
@@ -1052,16 +1031,16 @@ const PublicRegistration = ({ onClose }) => {
         {/* Initiale Frage */}
         {!familyMode && familyMembers.length === 0 && (
           <div className="family-question">
-            <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+            <p className="pr-family-question-text">
               Möchten Sie weitere Familienmitglieder anmelden?
             </p>
-            <div className="info-box" style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px' }}>
-              <p style={{ margin: 0 }}>
+            <div className="info-box pr-info-box">
+              <p className="pr-margin-0">
                 <strong>Familienmitglieder teilen Adresse und Bankverbindung</strong>, erhalten aber jeweils ein eigenes Konto und einen eigenen Vertrag.
                 Ab dem 2. Familienmitglied gilt ein Familien-Rabatt.
               </p>
             </div>
-            <div className="family-choice-buttons" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="family-choice-buttons">
               <button
                 type="button"
                 className="btn btn-primary"
@@ -1084,31 +1063,30 @@ const PublicRegistration = ({ onClose }) => {
         {(familyMode || familyMembers.length > 0) && (
           <div className="family-overview">
             {/* Hauptmitglied anzeigen */}
-            <div className="family-member-card hauptmitglied" style={{ padding: '1rem', marginBottom: '1rem', border: '2px solid var(--color-primary)', borderRadius: '8px', backgroundColor: 'var(--bg-secondary)' }}>
-              <span style={{ display: 'inline-block', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-primary)', color: 'white', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+            <div className="family-member-card hauptmitglied">
+              <span className="pr-member-badge pr-member-badge--primary">
                 Hauptmitglied (voller Beitrag)
               </span>
-              <h4 style={{ margin: '0.5rem 0' }}>{formData.vorname} {formData.nachname}</h4>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{formData.email}</p>
+              <h4 className="pr-margin-half">{formData.vorname} {formData.nachname}</h4>
+              <p className="pr-meta-text">{formData.email}</p>
             </div>
 
             {/* Weitere Familienmitglieder */}
             {familyMembers.map((member, index) => (
-              <div key={index} className="family-member-card" style={{ padding: '1rem', marginBottom: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px', position: 'relative' }}>
-                <span style={{ display: 'inline-block', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-success)', color: 'white', borderRadius: '4px', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+              <div key={index} className="family-member-card">
+                <span className="pr-member-badge pr-member-badge--success">
                   {index + 2}. Familienmitglied (mit Rabatt)
                 </span>
                 {isMinor(member.geburtsdatum) && (
-                  <span style={{ display: 'inline-block', marginLeft: '0.5rem', padding: '0.25rem 0.5rem', backgroundColor: 'var(--color-warning)', color: 'white', borderRadius: '4px', fontSize: '0.75rem' }}>
+                  <span className="pr-member-badge pr-member-badge--warning">
                     Minderjährig
                   </span>
                 )}
-                <h4 style={{ margin: '0.5rem 0' }}>{member.vorname} {member.nachname}</h4>
-                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem' }}>{member.email}</p>
+                <h4 className="pr-margin-half">{member.vorname} {member.nachname}</h4>
+                <p className="pr-meta-text">{member.email}</p>
                 <button
                   type="button"
-                  className="btn btn-danger"
-                  style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', padding: '0.25rem 0.5rem', fontSize: '0.8rem' }}
+                  className="btn btn-danger pr-remove-member-btn"
                   onClick={() => removeFamilyMember(index)}
                 >
                   Entfernen
@@ -1118,8 +1096,8 @@ const PublicRegistration = ({ onClose }) => {
 
             {/* Neues Familienmitglied Formular */}
             {addingFamilyMember && (
-              <div className="family-member-form" style={{ padding: '1.5rem', border: '2px dashed var(--border-color)', borderRadius: '8px', marginBottom: '1rem' }}>
-                <h4 style={{ marginTop: 0 }}>Neues Familienmitglied ({familyMembers.length + 2}. Mitglied)</h4>
+              <div className="family-member-form">
+                <h4 className="pr-form-h4">Neues Familienmitglied ({familyMembers.length + 2}. Mitglied)</h4>
 
                 <div className="form-row">
                   <div className="form-group">
@@ -1200,22 +1178,22 @@ const PublicRegistration = ({ onClose }) => {
                 </div>
 
                 {/* Hinweis für geteilte Daten */}
-                <div className="info-box" style={{ marginTop: '1rem', padding: '0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', fontSize: '0.9rem' }}>
-                  <p style={{ margin: 0 }}>
+                <div className="info-box pr-note-box">
+                  <p className="pr-margin-0">
                     <strong>Hinweis:</strong> Adresse und Bankverbindung werden vom Hauptmitglied übernommen.
                   </p>
                 </div>
 
                 {/* Hinweis für Minderjährige */}
                 {isMinor(newFamilyMember.geburtsdatum) && (
-                  <div className="info-box" style={{ marginTop: '0.75rem', padding: '0.75rem', backgroundColor: '#fff3cd', borderRadius: '6px', fontSize: '0.9rem' }}>
-                    <p style={{ margin: 0 }}>
+                  <div className="info-box pr-minor-box">
+                    <p className="pr-margin-0">
                       Da dieses Mitglied minderjährig ist, wird <strong>{formData.vorname} {formData.nachname}</strong> als Erziehungsberechtigte/r hinterlegt.
                     </p>
                   </div>
                 )}
 
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div className="pr-form-actions">
                   <button
                     type="button"
                     className="btn btn-primary"
@@ -1242,7 +1220,7 @@ const PublicRegistration = ({ onClose }) => {
 
             {/* Aktionen */}
             {!addingFamilyMember && (
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+              <div className="pr-family-actions">
                 <button
                   type="button"
                   className="btn btn-secondary"

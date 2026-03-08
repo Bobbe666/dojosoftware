@@ -177,9 +177,9 @@ const DojosVerwaltung = () => {
         ) : (
           <div className="dojos-grid">
             {dojos.map(dojo => (
-              <div key={dojo.id} className="dojo-card" style={{ borderLeftColor: dojo.farbe }}>
+              <div key={dojo.id} className="dojo-card" style={{ '--dojo-color': dojo.farbe }}>
                 <div className="dojo-header">
-                  <div className="dojo-icon" style={{ backgroundColor: dojo.farbe }}>
+                  <div className="dojo-icon">
                     🏢
                   </div>
                   <div className="dojo-info">

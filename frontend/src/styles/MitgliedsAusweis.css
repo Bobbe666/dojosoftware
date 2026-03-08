@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
 }
 
 .ausweis-modal {
@@ -28,7 +28,7 @@
   right: 0;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--text-1);
   cursor: pointer;
   padding: 0.5rem;
   opacity: 0.7;
@@ -42,14 +42,14 @@
 .mitglieds-ausweis-container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .mitglieds-ausweis {
   background: linear-gradient(135deg, #1a1a2e 0%, #2d2d44 100%);
-  border: 3px solid #c9a227;
-  border-radius: 20px;
-  padding: 1.5rem;
+  border: 3px solid var(--primary);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-section-gap-sm);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
@@ -57,50 +57,50 @@
 .ausweis-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+  gap: var(--ui-form-gap);
+  margin-bottom: var(--ui-section-gap-sm);
+  padding-bottom: var(--ui-form-gap);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 .ausweis-header .dojo-logo,
 .ausweis-header .dojo-logo-placeholder {
   width: 50px;
   height: 50px;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   object-fit: contain;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.75rem;
-  background: rgba(201, 162, 39, 0.1);
+  background: rgba(255, 215, 0, 0.1);
 }
 
 .ausweis-title h3 {
-  color: #c9a227;
+  color: var(--primary);
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--ui-card-title);
   font-weight: 600;
 }
 
 .ausweis-title p {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--ui-card-label);
 }
 
 /* Foto */
 .ausweis-foto {
   width: 100px;
   height: 100px;
-  margin: 0 auto 1rem;
+  margin: 0 auto var(--ui-form-gap);
   border-radius: 50%;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid rgba(201, 162, 39, 0.5);
+  border: 3px solid rgba(255, 215, 0, 0.5);
 }
 
 .ausweis-foto img {
@@ -116,8 +116,8 @@
 /* Name */
 .ausweis-name {
   text-align: center;
-  color: #fff;
-  font-size: 1.4rem;
+  color: var(--text-1);
+  font-size: var(--ui-page-title);
   font-weight: 600;
   margin-bottom: 0.25rem;
 }
@@ -125,9 +125,9 @@
 /* Graduierung */
 .ausweis-graduierung {
   text-align: center;
-  color: #c9a227;
+  color: var(--primary);
   font-size: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
 }
 
 /* Details */
@@ -135,19 +135,19 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: var(--ui-section-gap-sm);
 }
 
 .ausweis-detail {
   text-align: center;
   padding: 0.5rem;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
 }
 
 .ausweis-detail label {
   display: block;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-4);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -155,7 +155,7 @@
 }
 
 .ausweis-detail span {
-  color: #fff;
+  color: var(--text-1);
   font-weight: 500;
   font-size: 0.9rem;
 }
@@ -164,10 +164,10 @@
 .ausweis-qr {
   display: flex;
   justify-content: center;
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
   background: #fff;
-  border-radius: 12px;
-  margin-bottom: 1rem;
+  border-radius: var(--comp-radius-xl);
+  margin-bottom: var(--ui-form-gap);
 }
 
 .ausweis-qr img {
@@ -182,19 +182,19 @@
   border-radius: 8px;
   font-weight: 500;
   font-size: 0.9rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
 }
 
 .ausweis-status.valid {
-  background: rgba(34, 197, 94, 0.2);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #22c55e;
+  background: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+  color: var(--status-success);
 }
 
 .ausweis-status.invalid {
-  background: rgba(239, 68, 68, 0.2);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+  color: var(--status-error);
 }
 
 /* Footer */
@@ -204,15 +204,15 @@
   gap: 1.5rem;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.8rem;
+  color: var(--text-3);
+  font-size: var(--ui-card-label);
 }
 
 /* Aktionen */
 .ausweis-actions {
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .btn-ausweis {
@@ -220,17 +220,17 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.25rem;
-  background: rgba(201, 162, 39, 0.2);
-  border: 1px solid #c9a227;
-  border-radius: 8px;
-  color: #c9a227;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary);
+  border-radius: var(--comp-radius-md);
+  color: var(--primary);
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s;
 }
 
 .btn-ausweis:hover {
-  background: rgba(201, 162, 39, 0.3);
+  background: rgba(255, 215, 0, 0.3);
 }
 
 /* Print Styles */

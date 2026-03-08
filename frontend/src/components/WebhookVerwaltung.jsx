@@ -10,6 +10,7 @@ import {
   Webhook, Plus, Trash2, Edit2, Play, Eye, EyeOff, Copy, Check,
   AlertCircle, CheckCircle, Clock, RefreshCw, X, Zap
 } from 'lucide-react';
+import './WebhookVerwaltung.css';
 import { useDojoContext } from '../context/DojoContext';
 
 const WebhookVerwaltung = () => {
@@ -190,8 +191,8 @@ const WebhookVerwaltung = () => {
       <div style={styles.zapierCard}>
         <Zap size={24} color="#ff4a00" />
         <div>
-          <strong style={{ color: '#ff4a00' }}>Zapier Integration</strong>
-          <p style={{ margin: '4px 0 0 0', color: '#aaa', fontSize: '14px' }}>
+          <strong className="wv-zapier-color">Zapier Integration</strong>
+          <p className="wv-zapier-desc">
             Verbinde dein Dojo mit über 5.000 Apps wie Slack, Google Sheets, Mailchimp und mehr.
             Erstelle einen Webhook und nutze die URL in deinem Zapier Zap.
           </p>
@@ -214,10 +215,7 @@ const WebhookVerwaltung = () => {
               <div style={styles.webhookHeader}>
                 <div style={styles.webhookInfo}>
                   <div style={styles.webhookStatus}>
-                    <span style={{
-                      ...styles.statusDot,
-                      background: webhook.active ? '#22c55e' : '#ef4444'
-                    }} />
+                    <span className={webhook.active ? 'wv-status-dot--active' : 'wv-status-dot--inactive'} style={styles.statusDot} />
                     <h3 style={styles.webhookName}>{webhook.name}</h3>
                     {webhook.is_zapier && (
                       <span style={styles.zapierBadge}>
@@ -258,11 +256,7 @@ const WebhookVerwaltung = () => {
 
               {/* Test Result */}
               {testResult?.id === webhook.id && !testResult.loading && (
-                <div style={{
-                  ...styles.testResult,
-                  background: testResult.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                  borderColor: testResult.success ? '#22c55e' : '#ef4444'
-                }}>
+                <div className={testResult.success ? 'wv-test-result--ok' : 'wv-test-result--error'} style={styles.testResult}>
                   {testResult.success ? (
                     <><CheckCircle size={16} /> Test erfolgreich (Status: {testResult.status})</>
                   ) : (
@@ -306,7 +300,7 @@ const WebhookVerwaltung = () => {
 
               {/* Secret */}
               <div style={styles.secretBox}>
-                <span style={{ color: '#888' }}>Secret:</span>
+                <span className="u-text-muted">Secret:</span>
                 <code style={styles.secretCode}>
                   {showSecret[webhook.id] ? webhook.secret : '••••••••'}
                 </code>
@@ -420,7 +414,7 @@ const WebhookVerwaltung = () => {
 
             <div style={styles.deliveryList}>
               {deliveries.length === 0 ? (
-                <p style={{ textAlign: 'center', color: '#888' }}>Noch keine Zustellungen</p>
+                <p className="wv-empty-msg">Noch keine Zustellungen</p>
               ) : (
                 deliveries.map((d, i) => (
                   <div key={i} style={styles.deliveryItem}>
@@ -433,7 +427,7 @@ const WebhookVerwaltung = () => {
                     </div>
                     <div style={styles.deliveryInfo}>
                       <strong>{d.event_type}</strong>
-                      <span style={{ color: '#888', fontSize: '12px' }}>
+                      <span className="wv-meta-text">
                         {new Date(d.created_at).toLocaleString('de-DE')}
                       </span>
                     </div>
@@ -469,12 +463,12 @@ const styles = {
     gap: '16px'
   },
   title: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     margin: 0,
     fontSize: '24px'
   },
   subtitle: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     margin: '4px 0 0 0',
     fontSize: '14px'
   },
@@ -486,7 +480,7 @@ const styles = {
     background: '#ffd700',
     border: 'none',
     borderRadius: '8px',
-    color: '#1a1a2e',
+    color: 'var(--bg-secondary)',
     fontWeight: 'bold',
     cursor: 'pointer'
   },
@@ -503,7 +497,7 @@ const styles = {
   emptyState: {
     textAlign: 'center',
     padding: '60px 20px',
-    color: '#666'
+    color: 'var(--text-muted)'
   },
   webhookList: {
     display: 'flex',
@@ -535,7 +529,7 @@ const styles = {
     borderRadius: '50%'
   },
   webhookName: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: 0,
     fontSize: '16px'
   },
@@ -550,7 +544,7 @@ const styles = {
     fontSize: '11px'
   },
   webhookUrl: {
-    color: '#888',
+    color: 'var(--text-muted)',
     margin: '4px 0 0 0',
     fontSize: '13px',
     fontFamily: 'monospace'
@@ -564,7 +558,7 @@ const styles = {
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '6px',
     padding: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   },
   testResult: {
@@ -585,7 +579,7 @@ const styles = {
   },
   eventTag: {
     background: 'rgba(59, 130, 246, 0.2)',
-    color: '#3b82f6',
+    color: 'var(--info)',
     padding: '4px 8px',
     borderRadius: '4px',
     fontSize: '12px'
@@ -602,14 +596,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '13px'
   },
   linkButton: {
     marginLeft: 'auto',
     background: 'none',
     border: 'none',
-    color: '#ffd700',
+    color: 'var(--primary)',
     cursor: 'pointer',
     fontSize: '13px',
     textDecoration: 'underline'
@@ -625,13 +619,13 @@ const styles = {
     fontSize: '12px'
   },
   secretCode: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     fontFamily: 'monospace'
   },
   tinyButton: {
     background: 'none',
     border: 'none',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     padding: '4px'
   },
@@ -666,7 +660,7 @@ const styles = {
   closeButton: {
     background: 'none',
     border: 'none',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   },
   formGroup: {
@@ -675,7 +669,7 @@ const styles = {
   },
   label: {
     display: 'block',
-    color: '#ffd700',
+    color: 'var(--primary)',
     marginBottom: '8px',
     fontSize: '14px'
   },
@@ -685,7 +679,7 @@ const styles = {
     background: 'rgba(0, 0, 0, 0.3)',
     border: '1px solid rgba(255, 215, 0, 0.3)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '14px',
     boxSizing: 'border-box'
   },
@@ -709,13 +703,13 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     fontSize: '12px',
-    color: '#fff'
+    color: 'var(--text-primary)'
   },
   checkboxLabel: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   },
   modalFooter: {
@@ -730,7 +724,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.1)',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   },
   submitButton: {
@@ -738,7 +732,7 @@ const styles = {
     background: '#ffd700',
     border: 'none',
     borderRadius: '8px',
-    color: '#1a1a2e',
+    color: 'var(--bg-secondary)',
     fontWeight: 'bold',
     cursor: 'pointer'
   },
@@ -766,14 +760,14 @@ const styles = {
     gap: '2px'
   },
   deliveryHttp: {
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '12px',
     fontFamily: 'monospace'
   },
   loading: {
     textAlign: 'center',
     padding: '60px',
-    color: '#888'
+    color: 'var(--text-muted)'
   }
 };
 

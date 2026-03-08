@@ -98,7 +98,17 @@ const MarketingAktionen = () => {
     try {
       const response = await axios.get(`/marketing-aktionen/accounts/connect?dojo_id=${activeDojo}`);
       if (response.data.authUrl) {
-        window.location.href = response.data.authUrl;
+        const allowedDomains = ['facebook.com', 'instagram.com', 'graph.instagram.com', 'www.facebook.com', 'api.instagram.com'];
+        try {
+          const urlObj = new URL(response.data.authUrl);
+          if (allowedDomains.some(d => urlObj.hostname === d || urlObj.hostname.endsWith('.' + d))) {
+            window.location.href = response.data.authUrl;
+          } else {
+            console.error('Ungültige Redirect-URL:', response.data.authUrl);
+          }
+        } catch {
+          console.error('Ungültige URL:', response.data.authUrl);
+        }
       }
     } catch (error) {
       console.error('Fehler beim Verbinden:', error);
@@ -420,7 +430,7 @@ const MarketingAktionen = () => {
                   onChange={handleMediaSelect}
                   accept="image/jpeg,image/png,image/gif,image/webp,video/mp4"
                   multiple
-                  style={{ display: 'none' }}
+                  className="u-hidden"
                 />
                 <button
                   type="button"

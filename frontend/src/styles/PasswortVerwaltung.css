@@ -3,31 +3,31 @@
    =================================================================== */
 
 .passwort-verwaltung {
-  padding: 24px;
+  padding: var(--ui-page-padding);
   max-width: 1400px;
   margin: 0 auto;
 }
 
 /* Page Header */
 .passwort-verwaltung .page-header {
-  margin-bottom: 24px;
-  padding-bottom: 20px;
+  margin-bottom: var(--ui-header-margin-b);
+  padding-bottom: var(--ui-header-padding-b);
   border-bottom: 2px solid rgba(var(--gold-rgb), 0.2);
 }
 
 .passwort-verwaltung .page-header h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: var(--ui-page-title);
   color: var(--gold);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ui-header-gap);
 }
 
 .passwort-verwaltung .page-header p {
   margin: 8px 0 0 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 14px;
+  color: var(--text-3);
+  font-size: var(--ui-page-subtitle);
 }
 
 /* Message */
@@ -36,7 +36,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px 18px;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 20px;
   font-weight: 500;
   animation: slideDown 0.3s ease;
@@ -45,13 +45,13 @@
 .passwort-verwaltung .message.success {
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .passwort-verwaltung .message.error {
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* Tabs Container */
@@ -61,7 +61,7 @@
   margin-bottom: 8px;
   padding: 4px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   overflow-x: auto;
 }
 
@@ -72,8 +72,8 @@
   padding: 12px 20px;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-3);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -82,7 +82,7 @@
 }
 
 .tab-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -98,7 +98,7 @@
 .tab-btn .tab-count {
   padding: 2px 8px;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 12px;
   min-width: 24px;
   text-align: center;
@@ -113,9 +113,9 @@
   padding: 12px 16px;
   background: rgba(var(--gold-rgb), 0.05);
   border: 1px solid rgba(var(--gold-rgb), 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 20px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-size: 14px;
   display: flex;
   align-items: center;
@@ -131,7 +131,7 @@
   padding: 8px 16px;
   background: rgba(234, 179, 8, 0.15);
   border: 1px solid rgba(234, 179, 8, 0.3);
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   color: #fbbf24;
   font-size: 13px;
   font-weight: 500;
@@ -153,7 +153,7 @@
 .without-login-section {
   background: rgba(234, 179, 8, 0.05);
   border: 1px solid rgba(234, 179, 8, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 20px;
   margin-bottom: 24px;
 }
@@ -169,7 +169,7 @@
 
 .without-login-section .users-table {
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
 }
 
 /* Create Button */
@@ -180,8 +180,8 @@
   padding: 8px 14px;
   background: linear-gradient(135deg, #10b981, #059669);
   border: none;
-  border-radius: 6px;
-  color: white;
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-1);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -200,27 +200,27 @@
 }
 
 .account-created-success .success-icon {
-  color: #10b981;
+  color: var(--status-success);
   margin-bottom: 16px;
 }
 
 .account-created-success h3 {
   margin: 0 0 24px 0;
-  color: #10b981;
+  color: var(--status-success);
   font-size: 18px;
 }
 
 .credentials-box {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(var(--gold-rgb), 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 16px;
   margin-bottom: 16px;
 }
 
 .credentials-box p {
   margin: 0 0 8px 0;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-size: 13px;
 }
 
@@ -237,7 +237,7 @@
   padding: 6px 14px;
   background: rgba(var(--gold-rgb), 0.2);
   border: 1px solid rgba(var(--gold-rgb), 0.3);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   color: var(--gold);
   font-size: 12px;
   cursor: pointer;
@@ -252,7 +252,7 @@
   padding: 12px 24px;
   background: linear-gradient(135deg, var(--gold), #b8860b);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: var(--dark-bg);
   font-size: 14px;
   font-weight: 600;
@@ -288,16 +288,16 @@
   align-items: center;
   gap: 10px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(var(--gold-rgb), 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   flex: 1;
   min-width: 250px;
   max-width: 400px;
 }
 
 .search-box svg {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   flex-shrink: 0;
 }
 
@@ -305,13 +305,13 @@
   flex: 1;
   background: none;
   border: none;
-  color: white;
+  color: var(--text-1);
   font-size: 14px;
   outline: none;
 }
 
 .search-box input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-4);
 }
 
 .btn-refresh {
@@ -321,8 +321,8 @@
   padding: 10px 18px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(var(--gold-rgb), 0.2);
-  border-radius: 8px;
-  color: white;
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 14px;
@@ -351,7 +351,7 @@
 .users-table-container {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(var(--gold-rgb), 0.15);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
 
@@ -363,7 +363,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
 }
 
 .loading-state svg,
@@ -403,7 +403,7 @@
   padding: 14px 16px;
   border-bottom: 1px solid rgba(var(--gold-rgb), 0.08);
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-1);
 }
 
 .users-table tbody tr {
@@ -426,19 +426,19 @@
 }
 
 .user-name strong {
-  color: white;
+  color: var(--text-1);
 }
 
 .user-realname {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
 }
 
 /* Badges */
 .badge {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -448,7 +448,7 @@
 
 .badge-danger {
   background: rgba(220, 38, 38, 0.2);
-  color: #f87171;
+  color: var(--status-error);
   border: 1px solid rgba(220, 38, 38, 0.3);
 }
 
@@ -478,7 +478,7 @@
 
 .badge-success {
   background: rgba(16, 185, 129, 0.2);
-  color: #34d399;
+  color: var(--status-success);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -490,7 +490,7 @@
   padding: 8px 14px;
   background: linear-gradient(135deg, var(--gold), #b8860b);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: var(--dark-bg);
   font-size: 13px;
   font-weight: 600;
@@ -551,7 +551,7 @@
 .modal-close {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   font-size: 28px;
   cursor: pointer;
   padding: 0;
@@ -560,7 +560,7 @@
 }
 
 .modal-close:hover {
-  color: white;
+  color: var(--text-1);
 }
 
 .modal-body {
@@ -579,7 +579,7 @@
 
 .reset-email {
   margin: 0 0 20px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   font-size: 13px;
 }
 
@@ -606,10 +606,10 @@
   width: 100%;
   padding: 12px;
   padding-right: 44px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(var(--gold-rgb), 0.2);
-  border-radius: 8px;
-  color: white;
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
   font-size: 14px;
   transition: all 0.2s ease;
 }
@@ -621,7 +621,7 @@
 }
 
 .password-input-wrapper input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-4);
 }
 
 .toggle-password {
@@ -629,7 +629,7 @@
   right: 10px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -647,8 +647,8 @@
   padding: 10px 16px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(var(--gold-rgb), 0.2);
-  border-radius: 6px;
-  color: white;
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-1);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -667,7 +667,7 @@
   padding: 12px 16px;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-top: 16px;
 }
 
@@ -675,7 +675,7 @@
   flex: 1;
   font-family: 'Monaco', 'Consolas', monospace;
   font-size: 15px;
-  color: #34d399;
+  color: var(--status-success);
   letter-spacing: 0.5px;
 }
 
@@ -683,8 +683,8 @@
   padding: 6px 12px;
   background: rgba(16, 185, 129, 0.2);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 4px;
-  color: #34d399;
+  border-radius: var(--comp-radius-xs);
+  color: var(--status-success);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -709,8 +709,8 @@
   padding: 10px 20px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  color: white;
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -724,7 +724,7 @@
   padding: 10px 20px;
   background: linear-gradient(135deg, var(--gold), #b8860b);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: var(--dark-bg);
   font-size: 14px;
   font-weight: 600;
@@ -773,7 +773,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .passwort-verwaltung {
-    padding: 16px;
+    padding: var(--ui-page-padding-sm);
   }
 
   .tabs-container {
@@ -810,4 +810,152 @@
   .modal {
     width: 95%;
   }
+}
+
+/* ── Stats-Leiste ─────────────────────────────────────────────── */
+.pw-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--comp-radius-lg);
+  flex-wrap: wrap;
+}
+
+.pw-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--comp-radius-md);
+  background: var(--surface-2);
+}
+
+.pw-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.pw-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  text-align: center;
+  margin-top: 2px;
+}
+
+.pw-stat-warn .pw-stat-value { color: var(--status-warning); }
+.pw-stat-info .pw-stat-value { color: #60a5fa; }
+.pw-stat-success .pw-stat-value { color: var(--status-success); }
+
+.btn-bulk-create {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  background: linear-gradient(135deg, #7c3aed, #5b21b6);
+  color: var(--text-1);
+  border: none;
+  border-radius: var(--comp-radius-md);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.btn-bulk-create:hover:not(:disabled) { opacity: 0.85; }
+.btn-bulk-create:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Auf Standard zurücksetzen Button ────────────────────────── */
+.btn-reset-default {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.65rem 1rem;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--status-warning);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--comp-radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 0.5rem;
+}
+
+.btn-reset-default:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.22);
+}
+
+/* ── Rollen-Badges (Software-Tab) ────────────────────────────── */
+.badge-rolle {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--comp-radius-xl);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-rolle-super-admin {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.badge-rolle-admin {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-rolle-trainer {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--status-success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.badge-rolle-dojo-admin {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Rollen-Stats in der Statsleiste */
+.pw-stat-role {
+  opacity: 0.75;
+}
+
+.pw-stat-role .pw-stat-value {
+  color: #94a3b8;
+}
+
+/* Inline-style migration */
+.pv-date-never {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.pv-last-login {
+  color: var(--date-color, var(--text-primary));
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pv-tracking-note {
+  font-size: 0.7rem;
+  color: var(--text-disabled);
+  margin-left: auto;
+  align-self: flex-end;
+}
+
+.pv-dash-cell {
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }

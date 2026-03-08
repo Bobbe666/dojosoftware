@@ -257,7 +257,7 @@ const TarifePreise = () => {
       try {
         const dojoId = getDojoId();
         const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
-        const response = await axios.patch(`/tarife/${tarifId}/archivieren${dojoParam}`, {
+        const response = await axios.put(`/api/tarife/${tarifId}/archivieren${dojoParam}`, {
           ist_archiviert: newStatus
         });
 
@@ -270,6 +270,94 @@ const TarifePreise = () => {
         console.error('Fehler beim Archivieren des Tarifs:', error);
         alert('Fehler beim Archivieren des Tarifs');
       }
+    }
+  };
+
+  const handleSetNachfolger = async (tarifId) => {
+    const tarif = tarife.find(t => t.id === tarifId);
+    if (!tarif) return;
+
+    // Zeige Auswahldialog mit aktiven Tarifen
+    const aktiveTarife = tarife.filter(t => !t.ist_archiviert && t.id !== tarifId);
+    if (aktiveTarife.length === 0) {
+      alert('Keine aktiven Tarife verfügbar. Bitte erstellen Sie zuerst einen neuen Tarif.');
+      return;
+    }
+
+    const options = aktiveTarife.map(t => `${t.id}: ${t.name} (€${t.price_euros}/Monat)`).join('\n');
+    const nachfolgerId = prompt(`Nachfolger-Tarif für "${tarif.name}" festlegen:\n\n${options}\n\nBitte Tarif-ID eingeben (oder leer lassen zum Entfernen):`);
+
+    if (nachfolgerId === null) return; // Abgebrochen
+
+    const nachfolgerTarifId = nachfolgerId.trim() === '' ? null : parseInt(nachfolgerId, 10);
+
+    try {
+      const dojoId = getDojoId();
+      const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+      const response = await axios.put(`/api/tarife/${tarifId}/nachfolger${dojoParam}`, {
+        nachfolger_tarif_id: nachfolgerTarifId
+      });
+
+      if (response.data.success) {
+        alert(nachfolgerTarifId ? 'Nachfolger-Tarif erfolgreich zugewiesen!' : 'Nachfolger-Tarif entfernt');
+        await loadTarifeUndRabatte();
+      } else {
+        alert('Fehler beim Zuweisen: ' + response.data.error);
+      }
+    } catch (error) {
+      console.error('Fehler beim Zuweisen des Nachfolger-Tarifs:', error);
+      alert('Fehler beim Zuweisen des Nachfolger-Tarifs');
+    }
+  };
+
+  const handleMigrateContracts = async (tarifId) => {
+    const tarif = tarife.find(t => t.id === tarifId);
+    if (!tarif) return;
+
+    // Wenn Nachfolger gesetzt ist, diesen vorschlagen
+    const nachfolger = tarif.nachfolger_tarif_id
+      ? tarife.find(t => t.id === tarif.nachfolger_tarif_id)
+      : null;
+
+    let zielTarifId;
+    if (nachfolger) {
+      const useNachfolger = window.confirm(
+        `Alle aktiven Verträge von "${tarif.name}" auf den Nachfolger-Tarif "${nachfolger.name}" (€${nachfolger.price_euros}/Monat) umstellen?\n\nDies betrifft ALLE Mitglieder mit diesem Tarif!`
+      );
+      if (!useNachfolger) return;
+      zielTarifId = nachfolger.id;
+    } else {
+      // Zeige Auswahldialog mit aktiven Tarifen
+      const aktiveTarife = tarife.filter(t => !t.ist_archiviert && t.id !== tarifId);
+      if (aktiveTarife.length === 0) {
+        alert('Keine aktiven Tarife verfügbar. Bitte erstellen Sie zuerst einen neuen Tarif.');
+        return;
+      }
+
+      const options = aktiveTarife.map(t => `${t.id}: ${t.name} (€${t.price_euros}/Monat)`).join('\n');
+      const inputId = prompt(`ALLE aktiven Verträge von "${tarif.name}" umstellen auf:\n\n${options}\n\nBitte Ziel-Tarif-ID eingeben:`);
+
+      if (!inputId) return; // Abgebrochen
+      zielTarifId = parseInt(inputId, 10);
+    }
+
+    try {
+      const dojoId = getDojoId();
+      const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+      const response = await axios.post(`/api/tarife/${tarifId}/migrate-contracts${dojoParam}`, {
+        ziel_tarif_id: zielTarifId
+      });
+
+      if (response.data.success) {
+        alert(`✅ ${response.data.message}\n\nAnzahl migriert: ${response.data.anzahl_migriert}\nNeuer Monatsbeitrag: €${response.data.neuer_monatsbeitrag}`);
+        await loadTarifeUndRabatte();
+      } else {
+        alert('Fehler bei der Migration: ' + response.data.error);
+      }
+    } catch (error) {
+      console.error('Fehler bei der Vertrags-Migration:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Unbekannter Fehler';
+      alert(`Fehler bei der Vertrags-Migration: ${errorMsg}`);
     }
   };
 
@@ -286,9 +374,12 @@ const TarifePreise = () => {
 
   return (
     <div className="tarife-container">
-      <div className="tarife-header">
-        <h1>💰 Tarife & Preise</h1>
-        <p>Verwalte alle Mitgliedstarife, Zahlungszyklen und Preisstrukturen</p>
+      <div className="tarife-page-header">
+        <div className="tarife-page-header-icon"><DollarSign size={18} /></div>
+        <div>
+          <h1>Tarife & Preise</h1>
+          <p>Mitgliedstarife, Zahlungszyklen und Preisstrukturen verwalten</p>
+        </div>
       </div>
 
       {/* Statistik-Übersicht */}
@@ -403,15 +494,11 @@ const TarifePreise = () => {
                       <Trash2 size={16} />
                     </button>
                     <button
-                      className="action-btn archive"
+                      className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
                       onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
                       title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                      style={{
-                        backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
-                        color: 'white'
-                      }}
                     >
-                      {tarif.ist_archiviert ? '↺' : '📦'}
+                      {tarif.ist_archiviert ? '↺' : '▣'}
                     </button>
                   </div>
                 </div>
@@ -519,15 +606,11 @@ const TarifePreise = () => {
                       <Trash2 size={16} />
                     </button>
                     <button
-                      className="action-btn archive"
+                      className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
                       onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
                       title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                      style={{
-                        backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
-                        color: 'white'
-                      }}
                     >
-                      {tarif.ist_archiviert ? '↺' : '📦'}
+                      {tarif.ist_archiviert ? '↺' : '▣'}
                     </button>
                   </div>
                 </div>
@@ -635,15 +718,11 @@ const TarifePreise = () => {
                       <Trash2 size={16} />
                     </button>
                     <button
-                      className="action-btn archive"
+                      className={`action-btn archive${tarif.ist_archiviert ? ' is-archived' : ''}`}
                       onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
                       title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                      style={{
-                        backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
-                        color: 'white'
-                      }}
                     >
-                      {tarif.ist_archiviert ? '↺' : '📦'}
+                      {tarif.ist_archiviert ? '↺' : '▣'}
                     </button>
                   </div>
                 </div>
@@ -702,14 +781,10 @@ const TarifePreise = () => {
       {/* Alte Tarife Sektion */}
       <div className="section">
         <div
-          className="section-header collapsible"
+          className="section-header collapsible tp-archived-header"
           onClick={() => setAlteTarifeCollapsed(!alteTarifeCollapsed)}
-          style={{
-            background: 'rgba(107, 114, 128, 0.1)',
-            borderLeft: '4px solid #6b7280'
-          }}
         >
-          <h2 style={{ color: '#6b7280' }}>
+          <h2 className="u-text-muted">
             <Package size={24} /> Alte Tarife (Archiviert)
             <span className="tarif-count">({tarife.filter(t => t.ist_archiviert).length})</span>
           </h2>
@@ -721,19 +796,19 @@ const TarifePreise = () => {
         {!alteTarifeCollapsed && (
           <>
             {tarife.filter(t => t.ist_archiviert).length === 0 ? (
-              <div className="info-box" style={{ background: 'rgba(107, 114, 128, 0.05)' }}>
-                <p style={{ color: '#6b7280' }}>
+              <div className="info-box tp-info-box-gray">
+                <p className="u-text-muted">
                   Keine archivierten Tarife vorhanden. Tarife können über den 📦-Button archiviert werden.
                 </p>
               </div>
             ) : (
               <div className="tarife-grid">
                 {tarife.filter(tarif => tarif.ist_archiviert).map(tarif => (
-                  <div key={tarif.id} className="tarif-card" style={{ opacity: 0.7, border: '2px solid #6b7280' }}>
+                  <div key={tarif.id} className="tarif-card tp-tarif-card--archived">
                     <div className="tarif-header">
                       <div className="tarif-title">
                         <h3>{tarif.name}</h3>
-                        <span className="status-badge" style={{ background: '#6b7280' }}>
+                        <span className="status-badge tp-badge-archived">
                           Archiviert
                         </span>
                       </div>
@@ -756,10 +831,7 @@ const TarifePreise = () => {
                           className="action-btn archive"
                           onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
                           title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                          style={{
-                            backgroundColor: tarif.ist_archiviert ? '#10b981' : '#f59e0b',
-                            color: 'white'
-                          }}
+                          className={tarif.ist_archiviert ? 'tp-btn-archive--active' : 'tp-btn-archive--inactive'}
                         >
                           {tarif.ist_archiviert ? '↺' : '📦'}
                         </button>
@@ -810,6 +882,34 @@ const TarifePreise = () => {
                         </span>
                         <div className="value">{tarif.currency}</div>
                       </div>
+
+                      {/* Nachfolger-Tarif Info */}
+                      {tarif.nachfolger_tarif_id && (
+                        <div className="detail-item tp-nachfolger-item">
+                          <span className="label u-text-success">
+                            ➜ Nachfolger-Tarif
+                          </span>
+                          <div className="value tp-nachfolger-value">
+                            {tarife.find(t => t.id === tarif.nachfolger_tarif_id)?.name || `ID ${tarif.nachfolger_tarif_id}`}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Verwaltungs-Buttons für archivierte Tarife */}
+                      <div className="tp-admin-btn-row">
+                        <button
+                          onClick={() => handleSetNachfolger(tarif.id)}
+                          className="tp-btn-nachfolger"
+                        >
+                          {tarif.nachfolger_tarif_id ? '✏️ Nachfolger ändern' : '➕ Nachfolger festlegen'}
+                        </button>
+                        <button
+                          onClick={() => handleMigrateContracts(tarif.id)}
+                          className="tp-btn-migrate"
+                        >
+                          🔄 Verträge migrieren
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -856,17 +956,17 @@ const TarifePreise = () => {
 
       {/* Modal für individuellen Vertrag */}
       {showNewIndividuell && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <div className="modal-header">
-              <h3>Neuer individueller Vertrag</h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowNewIndividuell(false)}
-              >
-                <X size={20} />
+        <div className="ds-modal-overlay" onClick={() => setShowNewIndividuell(false)}>
+          <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
+            <div className="ds-modal-header">
+              <div>
+                <h3 className="ds-modal-title">Neuer individueller Vertrag</h3>
+              </div>
+              <button className="ds-modal-close" onClick={() => setShowNewIndividuell(false)}>
+                <X size={18} />
               </button>
             </div>
+            <div className="ds-modal-body">
 
             <div className="form-grid">
               <div className="form-group">
@@ -937,7 +1037,8 @@ const TarifePreise = () => {
               </div>
             </div>
 
-            <div className="modal-footer">
+            </div>{/* ds-modal-body */}
+            <div className="ds-modal-footer">
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowNewIndividuell(false)}
@@ -979,32 +1080,31 @@ const TarifePreise = () => {
                   }
                 }}
               >
-                <Save size={20} />
+                <Save size={18} />
                 Vertrag erstellen
               </button>
-            </div>
+            </div>{/* ds-modal-footer */}
           </div>
         </div>
       )}
 
       {/* Neuer Tarif Modal */}
       {showNewTarif && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Neuer Tarif</h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowNewTarif(false)}
-              >
-                <X size={20} />
+        <div className="ds-modal-overlay" onClick={() => setShowNewTarif(false)}>
+          <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
+            <div className="ds-modal-header">
+              <div>
+                <h3 className="ds-modal-title">Neuer Tarif</h3>
+              </div>
+              <button className="ds-modal-close" onClick={() => setShowNewTarif(false)}>
+                <X size={18} />
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
+            <div className="ds-modal-body">
               {/* Name - volle Breite */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <div className="tp-field-mb">
+                <label className="u-form-label">
                   Name *
                 </label>
                 <input
@@ -1012,14 +1112,14 @@ const TarifePreise = () => {
                   value={newTarif.name}
                   onChange={(e) => setNewTarif({...newTarif, name: e.target.value})}
                   placeholder="Tarif-Bezeichnung"
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  className="u-input-sm"
                 />
               </div>
 
               {/* Preis & Aufnahmegebühr - 2 Spalten */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Preis (€) *
                   </label>
                   <input
@@ -1028,12 +1128,12 @@ const TarifePreise = () => {
                     value={newTarif.price_cents ? (newTarif.price_cents / 100).toFixed(2) : ''}
                     onChange={(e) => setNewTarif({...newTarif, price_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
                     placeholder="0.00"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Aufnahmegebühr (€)
                   </label>
                   <input
@@ -1043,15 +1143,15 @@ const TarifePreise = () => {
                     value={newTarif.aufnahmegebuehr_cents ? (newTarif.aufnahmegebuehr_cents / 100).toFixed(2) : ''}
                     onChange={(e) => setNewTarif({...newTarif, aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)})}
                     placeholder="49.99"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
               </div>
 
               {/* Laufzeit & Zahlungsintervall - 2 Spalten */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Laufzeit (Monate) *
                   </label>
                   <input
@@ -1060,18 +1160,18 @@ const TarifePreise = () => {
                     value={newTarif.duration_months}
                     onChange={(e) => setNewTarif({...newTarif, duration_months: parseInt(e.target.value) || ''})}
                     placeholder="12"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Zahlungsintervall *
                   </label>
                   <select
                     value={newTarif.billing_cycle}
                     onChange={(e) => setNewTarif({...newTarif, billing_cycle: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   >
                     <option value="">Bitte wählen...</option>
                     {zahlungszyklen.length > 0 ? (
@@ -1097,15 +1197,15 @@ const TarifePreise = () => {
               </div>
 
               {/* Zahlungsmethode & Währung - 2 Spalten */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Zahlungsmethode *
                   </label>
                   <select
                     value={newTarif.payment_method}
                     onChange={(e) => setNewTarif({...newTarif, payment_method: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   >
                     <option value="bank_transfer">Banküberweisung</option>
                     <option value="direct_debit">Lastschrift</option>
@@ -1115,13 +1215,13 @@ const TarifePreise = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Währung
                   </label>
                   <select
                     value={newTarif.currency}
                     onChange={(e) => setNewTarif({...newTarif, currency: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   >
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
@@ -1131,8 +1231,8 @@ const TarifePreise = () => {
               </div>
 
               {/* Status */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <div className="tp-status-row">
+                <label className="tp-status-label">
                   <input
                     type="checkbox"
                     checked={newTarif.active}
@@ -1142,12 +1242,11 @@ const TarifePreise = () => {
                 </label>
               </div>
 
-              {/* Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+            </div>{/* ds-modal-body */}
+            <div className="ds-modal-footer">
                 <button
                   className="btn btn-secondary"
                   onClick={() => setShowNewTarif(false)}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Abbrechen
                 </button>
@@ -1155,35 +1254,33 @@ const TarifePreise = () => {
                   className="btn btn-primary"
                   onClick={() => handleSaveTarif(newTarif)}
                   disabled={!newTarif.name || !newTarif.price_cents || !newTarif.duration_months}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
                   Speichern
                 </button>
-              </div>
-            </div>
+            </div>{/* ds-modal-footer */}
           </div>
         </div>
       )}
 
       {/* Tarif bearbeiten Modal */}
       {editingTarif && (
-        <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: '600px' }}>
-            <div className="modal-header">
-              <h3>Tarif bearbeiten</h3>
-              <button
-                className="close-btn"
-                onClick={() => setEditingTarif(null)}
-              >
-                <X size={20} />
+        <div className="ds-modal-overlay" onClick={() => setEditingTarif(null)}>
+          <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
+            <div className="ds-modal-header">
+              <div>
+                <h3 className="ds-modal-title">Tarif bearbeiten</h3>
+                <p className="ds-modal-subtitle">{editingTarif.name}</p>
+              </div>
+              <button className="ds-modal-close" onClick={() => setEditingTarif(null)}>
+                <X size={18} />
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
+            <div className="ds-modal-body">
               {/* Name - volle Breite */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <div className="tp-field-mb">
+                <label className="u-form-label">
                   Name *
                 </label>
                 <input
@@ -1191,14 +1288,14 @@ const TarifePreise = () => {
                   value={editingTarif.name}
                   onChange={(e) => setEditingTarif({...editingTarif, name: e.target.value})}
                   placeholder="Tarif-Bezeichnung"
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  className="u-input-sm"
                 />
               </div>
 
               {/* Preis & Aufnahmegebühr - 2 Spalten */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Preis (€) *
                   </label>
                   <input
@@ -1211,12 +1308,12 @@ const TarifePreise = () => {
                       price_cents: Math.round(parseFloat(e.target.value || 0) * 100)
                     })}
                     placeholder="0.00"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Aufnahmegebühr (€)
                   </label>
                   <input
@@ -1230,15 +1327,15 @@ const TarifePreise = () => {
                       aufnahmegebuehr_cents: Math.round(parseFloat(e.target.value || 0) * 100)
                     })}
                     placeholder="49.99"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
               </div>
 
               {/* Laufzeit & Zahlungsintervall - 2 Spalten */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Laufzeit (Monate) *
                   </label>
                   <input
@@ -1247,18 +1344,18 @@ const TarifePreise = () => {
                     value={editingTarif.duration_months}
                     onChange={(e) => setEditingTarif({...editingTarif, duration_months: parseInt(e.target.value) || ''})}
                     placeholder="12"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Zahlungsintervall *
                   </label>
                   <select
                     value={editingTarif.billing_cycle?.toUpperCase() || ''}
                     onChange={(e) => setEditingTarif({...editingTarif, billing_cycle: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   >
                     <option value="">Bitte wählen...</option>
                     <option value="MONTHLY">Monatlich</option>
@@ -1269,15 +1366,15 @@ const TarifePreise = () => {
               </div>
 
               {/* Zahlungsmethode & Währung - 2 Spalten */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Zahlungsmethode *
                   </label>
                   <select
                     value={editingTarif.payment_method?.toUpperCase() || ''}
                     onChange={(e) => setEditingTarif({...editingTarif, payment_method: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   >
                     <option value="SEPA">SEPA</option>
                     <option value="CARD">Kreditkarte</option>
@@ -1287,13 +1384,13 @@ const TarifePreise = () => {
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Währung
                   </label>
                   <select
                     value={editingTarif.currency}
                     onChange={(e) => setEditingTarif({...editingTarif, currency: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   >
                     <option value="EUR">EUR (€)</option>
                     <option value="USD">USD ($)</option>
@@ -1303,8 +1400,8 @@ const TarifePreise = () => {
               </div>
 
               {/* Status */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <div className="tp-status-row">
+                <label className="tp-status-label">
                   <input
                     type="checkbox"
                     checked={editingTarif.active}
@@ -1314,12 +1411,11 @@ const TarifePreise = () => {
                 </label>
               </div>
 
-              {/* Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+            </div>{/* ds-modal-body */}
+            <div className="ds-modal-footer">
                 <button
                   className="btn btn-secondary"
                   onClick={() => setEditingTarif(null)}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Abbrechen
                 </button>
@@ -1327,13 +1423,11 @@ const TarifePreise = () => {
                   className="btn btn-primary"
                   onClick={() => handleSaveTarif(editingTarif)}
                   disabled={!editingTarif.name || !editingTarif.price_cents || !editingTarif.duration_months}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
                   Speichern
                 </button>
-              </div>
-            </div>
+            </div>{/* ds-modal-footer */}
           </div>
         </div>
       )}

@@ -257,20 +257,20 @@ const BestellungenTab = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      entwurf: { label: 'Entwurf', color: '#6b7280' },
-      gesendet: { label: 'Gesendet', color: '#f59e0b' },
-      bestaetigt: { label: 'Bestaetigt', color: '#3b82f6' },
+      entwurf: { label: 'Entwurf', color: 'var(--text-muted)' },
+      gesendet: { label: 'Gesendet', color: 'var(--warning)' },
+      bestaetigt: { label: 'Bestaetigt', color: 'var(--info)' },
       versendet: { label: 'Versendet', color: '#8b5cf6' },
-      geliefert: { label: 'Geliefert', color: '#10b981' },
-      storniert: { label: 'Storniert', color: '#ef4444' }
+      geliefert: { label: 'Geliefert', color: 'var(--success)' },
+      storniert: { label: 'Storniert', color: 'var(--error)' }
     };
 
-    const config = statusConfig[status] || { label: status, color: '#6b7280' };
+    const config = statusConfig[status] || { label: status, color: 'var(--text-muted)' };
 
     return (
       <span
         className="status-badge"
-        style={{ backgroundColor: config.color }}
+        style={{ '--badge-color': config.color }}
       >
         {config.label}
       </span>
@@ -315,27 +315,17 @@ const BestellungenTab = () => {
             {lowStockItems.slice(0, 6).map(item => (
               <div key={item.artikel_id} className="low-stock-item">
                 <div className="item-info">
-                  <span className="item-name" style={{
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    color: '#fff',
-                    display: 'block',
-                    marginBottom: '0.25rem'
-                  }}>
+                  <span className="item-name bt-item-name">
                     {item.artikel_name || 'Unbenannter Artikel'}
                   </span>
                   {item.artikel_nummer && (
-                    <span className="item-number" style={{
-                      fontSize: '0.75rem',
-                      color: 'rgba(255,255,255,0.5)',
-                      display: 'block'
-                    }}>
+                    <span className="item-number bt-item-number">
                       #{item.artikel_nummer}
                     </span>
                   )}
                 </div>
 
-                <div className="item-stock" style={{ marginTop: '0.5rem' }}>
+                <div className="item-stock u-mt-05">
                   {item.hat_varianten && item.low_sizes ? (
                     <div className="size-stock">
                       {item.low_sizes.slice(0, 3).map(({ size, qty }) => (
@@ -348,10 +338,7 @@ const BestellungenTab = () => {
                       )}
                     </div>
                   ) : (
-                    <span className="stock-count critical" style={{
-                      color: '#ef4444',
-                      fontWeight: 600
-                    }}>
+                    <span className="stock-count critical bt-stock-critical">
                       Bestand: {item.lagerbestand}
                     </span>
                   )}

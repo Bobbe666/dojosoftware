@@ -1,6 +1,7 @@
 // Frontend/src/App.jsx - OPTIMIERTE VERSION mit aggressivem Lazy Loading
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import "./styles/App.css";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
 // Authentifizierung & Context
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
@@ -10,12 +11,32 @@ import { StandortProvider } from "./context/StandortContext.jsx";
 import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx";
 import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { ChatProvider } from "./context/ChatContext.jsx";
 
 // AGB-Bestaetigung Wrapper
 import AgbConfirmationWrapper from "./components/AgbConfirmationWrapper";
 
 // API Health Check - Zeigt Wartungsmeldung wenn Backend nicht erreichbar
 import ApiHealthCheck from "./components/ApiHealthCheck";
+
+// Auto-reload on stale chunk 404 (happens after deployments with cached index.html)
+const lazyWithReload = (importFn) => {
+  return lazy(() =>
+    importFn().catch((err) => {
+      const isChunkError =
+        err?.message?.includes('Failed to fetch') ||
+        err?.message?.includes('Importing a module script failed') ||
+        err?.message?.includes('Loading chunk') ||
+        err?.name === 'ChunkLoadError';
+      if (isChunkError && !sessionStorage.getItem('chunk_reload_attempted')) {
+        sessionStorage.setItem('chunk_reload_attempted', '1');
+        window.location.reload();
+        return new Promise(() => {}); // prevent further error propagation
+      }
+      throw err;
+    })
+  );
+};
 
 // ============================================================================
 // SOFORT GELADEN - Kritisch für Initial Load
@@ -29,179 +50,181 @@ import LandingPage from "./pages/LandingPage";
 // ============================================================================
 // LAZY LOADED - Dashboard & Hauptbereiche
 // ============================================================================
-const Dashboard = lazy(() => import(/* webpackChunkName: "dashboard" */ "./components/Dashboard"));
-const DashboardTdaVib = lazy(() => import(/* webpackChunkName: "dashboard-tda" */ "./components/DashboardTdaVib"));
-const DashboardStart = lazy(() => import(/* webpackChunkName: "dashboard-start" */ "./components/DashboardStart"));
+const Dashboard = lazyWithReload(() => import(/* webpackChunkName: "dashboard" */ "./components/Dashboard"));
+const DashboardTdaVib = lazyWithReload(() => import(/* webpackChunkName: "dashboard-tda" */ "./components/DashboardTdaVib"));
+const DashboardStart = lazyWithReload(() => import(/* webpackChunkName: "dashboard-start" */ "./components/DashboardStart"));
 
 // ============================================================================
 // LAZY LOADED - Mitglieder-Management
 // ============================================================================
-const MitgliederListe = lazy(() => import(/* webpackChunkName: "members" */ "./components/MitgliederListe"));
-const MitgliedDetail = lazy(() => import(/* webpackChunkName: "member-detail" */ "./components/MitgliedDetail"));
-const MitgliedDetailShared = lazy(() => import(/* webpackChunkName: "member-detail-shared" */ "./components/MitgliedDetailShared"));
-const EhemaligenListe = lazy(() => import(/* webpackChunkName: "members" */ "./components/EhemaligenListe"));
-const InteressentenListe = lazy(() => import(/* webpackChunkName: "members" */ "./components/InteressentenListe"));
-const MitgliederFilter = lazy(() => import(/* webpackChunkName: "members" */ "./components/MitgliederFilter"));
+const MitgliederListe = lazyWithReload(() => import(/* webpackChunkName: "members" */ "./components/MitgliederListe"));
+const MitgliedDetail = lazyWithReload(() => import(/* webpackChunkName: "member-detail" */ "./components/MitgliedDetail"));
+const MitgliedDetailShared = lazyWithReload(() => import(/* webpackChunkName: "member-detail-shared" */ "./components/MitgliedDetailShared"));
+const EhemaligenListe = lazyWithReload(() => import(/* webpackChunkName: "members" */ "./components/EhemaligenListe"));
+const InteressentenListe = lazyWithReload(() => import(/* webpackChunkName: "members" */ "./components/InteressentenListe"));
+const MitgliederFilter = lazyWithReload(() => import(/* webpackChunkName: "members" */ "./components/MitgliederFilter"));
 
 // ============================================================================
 // LAZY LOADED - Anwesenheit & Check-In
 // ============================================================================
-const Anwesenheit = lazy(() => import(/* webpackChunkName: "attendance" */ "./components/Anwesenheit"));
-const AnwesenheitDashboard = lazy(() => import(/* webpackChunkName: "attendance" */ "./components/AnwesenheitDashboard"));
-const CheckinSystem = lazy(() => import(/* webpackChunkName: "checkin" */ "./components/CheckinSystem"));
-const PersonalCheckin = lazy(() => import(/* webpackChunkName: "checkin" */ "./components/PersonalCheckin"));
-const PublicCheckinDisplay = lazy(() => import(/* webpackChunkName: "public" */ "./components/PublicCheckinDisplay"));
+const Anwesenheit = lazyWithReload(() => import(/* webpackChunkName: "attendance" */ "./components/Anwesenheit"));
+const AnwesenheitDashboard = lazyWithReload(() => import(/* webpackChunkName: "attendance" */ "./components/AnwesenheitDashboard"));
+const CheckinSystem = lazyWithReload(() => import(/* webpackChunkName: "checkin" */ "./components/CheckinSystem"));
+const PersonalCheckin = lazyWithReload(() => import(/* webpackChunkName: "checkin" */ "./components/PersonalCheckin"));
+const PublicCheckinDisplay = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicCheckinDisplay"));
 
 // ============================================================================
 // LAZY LOADED - Kurse & Stundenplan
 // ============================================================================
-const Stundenplan = lazy(() => import(/* webpackChunkName: "courses" */ "./components/Stundenplan"));
-const Kurse = lazy(() => import(/* webpackChunkName: "courses" */ "./components/Kurse"));
-const Trainer = lazy(() => import(/* webpackChunkName: "courses" */ "./components/Trainer"));
-const GruppenStilverwaltung = lazy(() => import(/* webpackChunkName: "courses" */ "./components/GruppenStilverwaltung"));
-const Stilverwaltung = lazy(() => import(/* webpackChunkName: "styles" */ "./components/Stilverwaltung"));
-const StandortVerwaltung = lazy(() => import(/* webpackChunkName: "settings" */ "./components/StandortVerwaltung"));
-const PublicTimetableDisplay = lazy(() => import(/* webpackChunkName: "public" */ "./components/PublicTimetableDisplay"));
+const Stundenplan = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/Stundenplan"));
+const Kurse = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/Kurse"));
+const Trainer = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/Trainer"));
+const GruppenStilverwaltung = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/GruppenStilverwaltung"));
+const Stilverwaltung = lazyWithReload(() => import(/* webpackChunkName: "styles" */ "./components/Stilverwaltung"));
+const StandortVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "settings" */ "./components/StandortVerwaltung"));
+const PublicTimetableDisplay = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicTimetableDisplay"));
 
 // ============================================================================
 // LAZY LOADED - Finanzen & Beiträge
 // ============================================================================
-const Finanzcockpit = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Finanzcockpit"));
-const EuerUebersicht = lazy(() => import(/* webpackChunkName: "finance" */ "./components/EuerUebersicht"));
-const AusgabenVerwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/AusgabenVerwaltung"));
-const Beitraege = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Beitraege"));
-const Mahnwesen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Mahnwesen"));
-const OffeneZahlungen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/OffeneZahlungen"));
-const MahnstufenEinstellungen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/MahnstufenEinstellungen"));
-const Rechnungsverwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Rechnungsverwaltung"));
-const RechnungErstellen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/RechnungErstellen"));
-const SepaMandateVerwaltung = lazy(() => import(/* webpackChunkName: "finance" */ "./components/SepaMandateVerwaltung"));
-const LastschriftManagement = lazy(() => import(/* webpackChunkName: "finance" */ "./components/LastschriftManagement"));
-const Lastschriftlauf = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Lastschriftlauf"));
-const TarifePreise = lazy(() => import(/* webpackChunkName: "finance" */ "./components/TarifePreise"));
-const Rabattsystem = lazy(() => import(/* webpackChunkName: "finance" */ "./components/Rabattsystem"));
-const ZahlungszyklenSeite = lazy(() => import(/* webpackChunkName: "finance" */ "./components/ZahlungszyklenSeite"));
-const ZahlungsEinstellungen = lazy(() => import(/* webpackChunkName: "finance" */ "./components/ZahlungsEinstellungen"));
+const Finanzcockpit = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Finanzcockpit"));
+const EuerUebersicht = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/EuerUebersicht"));
+const AusgabenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/AusgabenVerwaltung"));
+const KontoauszugImport = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/KontoauszugImport"));
+const Jahresuebersicht = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Jahresuebersicht"));
+const RuecklastschriftVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/RuecklastschriftVerwaltung"));
+const VorlagenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "vorlagen" */ "./components/VorlagenVerwaltung"));
+const Beitraege = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Beitraege"));
+const Mahnwesen = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Mahnwesen"));
+const OffeneZahlungen = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/OffeneZahlungen"));
+const MahnstufenEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/MahnstufenEinstellungen"));
+const Rechnungsverwaltung = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Rechnungsverwaltung"));
+const RechnungErstellen = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/RechnungErstellen"));
+const SepaMandateVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/SepaMandateVerwaltung"));
+const LastschriftManagement = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/LastschriftManagement"));
+const Lastschriftlauf = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Lastschriftlauf"));
+const TarifePreise = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/TarifePreise"));
+const Rabattsystem = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Rabattsystem"));
+const ZahlungszyklenSeite = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/ZahlungszyklenSeite"));
+const ZahlungsEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/ZahlungsEinstellungen"));
 
 // ============================================================================
 // LAZY LOADED - Verkauf & Artikel
 // ============================================================================
-const TresenUebersicht = lazy(() => import(/* webpackChunkName: "sales" */ "./components/TresenUebersicht"));
-const ArtikelVerwaltung = lazy(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelVerwaltung"));
-const ArtikelFormular = lazy(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelFormular"));
-const VerkaufKasse = lazy(() => import(/* webpackChunkName: "sales" */ "./components/VerkaufKasse"));
-const ArtikelgruppenVerwaltung = lazy(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelgruppenVerwaltung"));
+const TresenUebersicht = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/TresenUebersicht"));
+const ArtikelVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelVerwaltung"));
+const ArtikelFormular = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelFormular"));
+const VerkaufKasse = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/VerkaufKasse"));
+const ArtikelgruppenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelgruppenVerwaltung"));
 
 // ============================================================================
 // LAZY LOADED - Member-Bereich
 // ============================================================================
-const MemberDashboard = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberDashboard"));
-const MemberHeader = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberHeader"));
-const MemberSchedule = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberSchedule"));
-const MemberEvents = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberEvents"));
-const MemberPayments = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberPayments"));
-const MemberStats = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberStats"));
-const MemberStyles = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/MemberStyles"));
-const CourseRating = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/CourseRating"));
-const EquipmentChecklist = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/EquipmentChecklist"));
-const AppInstallPage = lazy(() => import(/* webpackChunkName: "member-area" */ "./pages/AppInstallPage"));
+const MemberDashboard = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberDashboard"));
+const ChatPage = lazyWithReload(() => import(/* webpackChunkName: "member-chat" */ "./components/chat/ChatPage"));
+const AdminChatPage = lazyWithReload(() => import(/* webpackChunkName: "admin-chat" */ "./components/chat/AdminChatPage"));
+const MemberHeader = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberHeader"));
+const MemberProfilePage = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberProfilePage"));
+const MemberSchedule = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberSchedule"));
+const MemberEvents = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberEvents"));
+const MemberPayments = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberPayments"));
+const MemberStats = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberStats"));
+const MemberStyles = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberStyles"));
+const CourseRating = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/CourseRating"));
+const EquipmentChecklist = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/EquipmentChecklist"));
+const AppInstallPage = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./pages/AppInstallPage"));
 
 // ============================================================================
 // LAZY LOADED - Trainer-Bereich
 // ============================================================================
-const TrainerDashboard = lazy(() => import(/* webpackChunkName: "trainer" */ "./components/TrainerDashboard"));
-const TrainerOnlyRoute = lazy(() => import(/* webpackChunkName: "trainer" */ "./components/TrainerOnlyRoute"));
-const CourseRatingAdmin = lazy(() => import(/* webpackChunkName: "trainer" */ "./components/CourseRatingAdmin"));
+const TrainerDashboard = lazyWithReload(() => import(/* webpackChunkName: "trainer" */ "./components/TrainerDashboard"));
+const TrainerOnlyRoute = lazyWithReload(() => import(/* webpackChunkName: "trainer" */ "./components/TrainerOnlyRoute"));
+const CourseRatingAdmin = lazyWithReload(() => import(/* webpackChunkName: "trainer" */ "./components/CourseRatingAdmin"));
 
 // ============================================================================
 // LAZY LOADED - Admin-Verwaltung
 // ============================================================================
-const Personal = lazy(() => import(/* webpackChunkName: "admin" */ "./components/Personal"));
-const EinstellungenDojo = lazy(() => import(/* webpackChunkName: "admin" */ "./components/EinstellungenDojo"));
-const AuditLog = lazy(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
-const SecurityDashboard = lazy(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
-const BuddyVerwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/BuddyVerwaltung"));
-const Auswertungen = lazy(() => import(/* webpackChunkName: "admin" */ "./components/Auswertungen"));
-const BerichteDokumente = lazy(() => import(/* webpackChunkName: "admin" */ "./components/BerichteDokumente"));
-const DojosVerwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/DojosVerwaltung"));
-const DojoEdit = lazy(() => import(/* webpackChunkName: "admin" */ "./components/DojoEdit"));
-const DokumenteVerwaltung = lazy(() => import(/* webpackChunkName: "documents" */ "./components/DokumenteVerwaltung"));
-const NotificationSystem = lazy(() => import(/* webpackChunkName: "notifications" */ "./components/NotificationSystem"));
-const PruefungsVerwaltung = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungsVerwaltung"));
-const PruefungDurchfuehren = lazy(() => import(/* webpackChunkName: "exams" */ "./components/PruefungDurchfuehren"));
-const BadgeAdminOverview = lazy(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
-const PasswortVerwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/PasswortVerwaltung"));
-const DojoLizenzverwaltung = lazy(() => import(/* webpackChunkName: "admin" */ "./components/DojoLizenzverwaltung"));
+const Personal = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/Personal"));
+const EinstellungenDojo = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/EinstellungenDojo"));
+const AuditLog = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
+const SecurityDashboard = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
+const BuddyVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/BuddyVerwaltung"));
+const Auswertungen = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/Auswertungen"));
+const BerichteDokumente = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/BerichteDokumente"));
+const DojosVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/DojosVerwaltung"));
+const DojoEdit = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/DojoEdit"));
+const DokumenteVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "documents" */ "./components/DokumenteVerwaltung"));
+const DokumentenZentrale = lazyWithReload(() => import(/* webpackChunkName: "documents" */ "./components/DokumentenZentrale"));
+const NotificationSystem = lazyWithReload(() => import(/* webpackChunkName: "notifications" */ "./components/NotificationSystem"));
+const PruefungsVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "exams" */ "./components/PruefungsVerwaltung"));
+const PruefungDurchfuehren = lazyWithReload(() => import(/* webpackChunkName: "exams" */ "./components/PruefungDurchfuehren"));
+const BadgeAdminOverview = lazyWithReload(() => import(/* webpackChunkName: "badges" */ "./components/BadgeAdminOverview"));
+const PasswortVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/PasswortVerwaltung"));
+const DojoLizenzverwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/DojoLizenzverwaltung"));
 
 // ============================================================================
 // LAZY LOADED - Support-Ticketsystem & Feature Board
 // ============================================================================
-const SupportTickets = lazy(() => import(/* webpackChunkName: "support" */ "./components/SupportTickets"));
-const FeatureBoard = lazy(() => import(/* webpackChunkName: "support" */ "./components/FeatureBoard"));
+const SupportTickets = lazyWithReload(() => import(/* webpackChunkName: "support" */ "./components/SupportTickets"));
+const FeatureBoard = lazyWithReload(() => import(/* webpackChunkName: "support" */ "./components/FeatureBoard"));
 
 // ============================================================================
 // LAZY LOADED - Verband Dashboard
 // ============================================================================
-const VerbandDashboard = lazy(() => import(/* webpackChunkName: "verband" */ "./components/VerbandDashboard"));
+const VerbandDashboard = lazyWithReload(() => import(/* webpackChunkName: "verband" */ "./components/VerbandDashboard"));
 
 // ============================================================================
 // LAZY LOADED - Integrations (Webhooks, PayPal, LexOffice, DATEV)
 // ============================================================================
-const WebhookVerwaltung = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/WebhookVerwaltung"));
-const IntegrationsEinstellungen = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/IntegrationsEinstellungen"));
-const DatevExport = lazy(() => import(/* webpackChunkName: "integrations" */ "./components/DatevExport"));
-const KalenderAbo = lazy(() => import(/* webpackChunkName: "member-area" */ "./components/KalenderAbo"));
+const WebhookVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/WebhookVerwaltung"));
+const IntegrationsEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/IntegrationsEinstellungen"));
+const DatevExport = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/DatevExport"));
+const KalenderAbo = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/KalenderAbo"));
 
 // ============================================================================
 // LAZY LOADED - Payment Checkout
 // ============================================================================
-const PaymentCheckout = lazy(() => import(/* webpackChunkName: "payment" */ "./components/PaymentCheckout"));
-const EventPaymentCheckout = lazy(() => import(/* webpackChunkName: "payment" */ "./components/EventPaymentCheckout"));
-const EventsDashboard = lazy(() => import(/* webpackChunkName: "events" */ "./components/EventsDashboard"));
+const PaymentCheckout = lazyWithReload(() => import(/* webpackChunkName: "payment" */ "./components/PaymentCheckout"));
+const EventPaymentCheckout = lazyWithReload(() => import(/* webpackChunkName: "payment" */ "./components/EventPaymentCheckout"));
+const EventsDashboard = lazyWithReload(() => import(/* webpackChunkName: "events" */ "./components/EventsDashboard"));
 
 // ============================================================================
 // LAZY LOADED - Events & News
 // ============================================================================
-const Events = lazy(() => import(/* webpackChunkName: "events" */ "./components/Events"));
-const MeineEvents = lazy(() => import(/* webpackChunkName: "events" */ "./components/MeineEvents"));
-const NewsVerwaltung = lazy(() => import(/* webpackChunkName: "news" */ "./components/NewsVerwaltung"));
-const NewsFormular = lazy(() => import(/* webpackChunkName: "news" */ "./components/NewsFormular"));
+const Events = lazyWithReload(() => import(/* webpackChunkName: "events" */ "./components/Events"));
+const MeineEvents = lazyWithReload(() => import(/* webpackChunkName: "events" */ "./components/MeineEvents"));
+const NewsVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "news" */ "./components/NewsVerwaltung"));
+const NewsFormular = lazyWithReload(() => import(/* webpackChunkName: "news" */ "./components/NewsFormular"));
 
 // ============================================================================
 // LAZY LOADED - Public & Registration
 // ============================================================================
-const Homepage = lazy(() => import(/* webpackChunkName: "public" */ "./components/Homepage"));
-const PublicRegistration = lazy(() => import(/* webpackChunkName: "public" */ "./components/PublicRegistration"));
-const BuddyInviteRegistration = lazy(() => import(/* webpackChunkName: "public" */ "./components/BuddyInviteRegistration"));
-const VerbandMitgliedWerden = lazy(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
-const ProbetrainingBuchung = lazy(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
-const MagicLineImport = lazy(() => import(/* webpackChunkName: "import" */ "./pages/MagicLineImport"));
-const CSVImport = lazy(() => import(/* webpackChunkName: "import" */ "./pages/CSVImport"));
+const Homepage = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/Homepage"));
+const PublicRegistration = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicRegistration"));
+const BuddyInviteRegistration = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/BuddyInviteRegistration"));
+const VerbandMitgliedWerden = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
+const ProbetrainingBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
+const EventGastAnmeldung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/EventGastAnmeldung"));
+const MagicLineImport = lazyWithReload(() => import(/* webpackChunkName: "import" */ "./pages/MagicLineImport"));
+const CSVImport = lazyWithReload(() => import(/* webpackChunkName: "import" */ "./pages/CSVImport"));
 
 // ============================================================================
 // LAZY LOADED - Marketing Pages
 // ============================================================================
-const PricingPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/PricingPage"));
-const RegisterPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/RegisterPage"));
-const ContactPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/ContactPage"));
-const ImpressumPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/ImpressumPage"));
-const AboutPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/AboutPage"));
-const DatenschutzPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/DatenschutzPage"));
-const AGBPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/AGBPage"));
-const HelpPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/HelpPage"));
-const GaleriePage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/GaleriePage"));
-const DemoPage = lazy(() => import(/* webpackChunkName: "marketing" */ "./pages/DemoPage"));
+const PricingPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/PricingPage"));
+const RegisterPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/RegisterPage"));
+const ContactPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/ContactPage"));
+const ImpressumPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/ImpressumPage"));
+const AboutPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/AboutPage"));
+const DatenschutzPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/DatenschutzPage"));
+const AGBPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/AGBPage"));
+const HelpPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/HelpPage"));
+const GaleriePage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/GaleriePage"));
+const DemoPage = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./pages/DemoPage"));
 
 // Loading Fallback für Lazy-Loaded Komponenten
 const LazyLoadFallback = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '200px',
-    fontSize: '1rem',
-    color: '#666'
-  }}>
+  <div className="app-lazy-fallback">
     <div className="loading-spinner"></div>
   </div>
 );
@@ -219,15 +242,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '1.2rem',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
+      <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>
         <div>Authentifizierung wird gepr�ft...</div>
       </div>
@@ -242,21 +257,62 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Dashboard 404 - redirects members back, shows styled error for admins
+const DashboardNotFound = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const role = user?.role || user?.rolle || 'member';
+
+  if (role !== 'admin') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <div className="app-not-found-container">
+      <h2>Seite nicht gefunden</h2>
+      <p>Die angeforderte Dashboard-Seite existiert nicht.</p>
+      <button
+        onClick={() => navigate('/dashboard')}
+        className="app-not-found-btn"
+      >
+        Zum Dashboard
+      </button>
+    </div>
+  );
+};
+
+// Admin-Only Route - Redirects members to their member area
+const AdminOnlyRoute = ({ children }) => {
+  const { token, user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="app-loading-screen">
+        <div className="loading-spinner-large"></div>
+        <div>Authentifizierung wird geprüft...</div>
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Redirect members to their member area
+  if (user?.role === 'member' || user?.role === 'mitglied') {
+    return <Navigate to="/member/dashboard" replace />;
+  }
+
+  return children;
+};
+
 // Member-Only Route - Only allows users with 'member' role
 const MemberOnlyRoute = ({ children }) => {
   const { token, user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        fontSize: '1.2rem',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
+      <div className="app-loading-screen">
         <div className="loading-spinner-large"></div>
         <div>Authentifizierung wird gepr�ft...</div>
       </div>
@@ -283,11 +339,31 @@ const LoginRouteHandler = () => {
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
 
-  // Wenn Subdomain (z.B. dojo-3.dojo.tda-intl.org) → ClubMemberLogin
-  // Sonst (dojo.tda-intl.org) → Login
-  const hasDojoSubdomain = parts.length >= 3 && parts[1] === 'dojo' && parts[0].startsWith('dojo-');
+  // Prüfe ob es eine Dojo-Subdomain ist
+  const isDojoSubdomain = () => {
+    // Bei localhost: subdomain.localhost
+    if (hostname.includes('localhost')) {
+      return parts.length > 1 && parts[0] !== 'localhost';
+    }
 
-  return hasDojoSubdomain ? <ClubMemberLogin /> : <Login />;
+    // Bei Production: subdomain.dojo.tda-intl.org
+    // parts[0] = subdomain, parts[1] = dojo, parts[2] = tda-intl, parts[3] = org
+    if (parts.length === 4 && parts[1] === 'dojo') {
+      // Ignoriere www als Subdomain
+      return parts[0] !== 'www';
+    }
+
+    return false;
+  };
+
+  // Member-App (app.tda-vib.de) → ClubMemberLogin (schlichter Mitglieder-Login)
+  if (hostname === 'app.tda-vib.de') {
+    return <ClubMemberLogin />;
+  }
+
+  // Wenn Dojo-Subdomain (z.B. demo1.dojo.tda-intl.org, dojo-3.dojo.tda-intl.org) → ClubMemberLogin
+  // Sonst (dojo.tda-intl.org) → normales Login
+  return isDojoSubdomain() ? <ClubMemberLogin /> : <Login />;
 };
 
 const RootRedirect = () => {
@@ -297,8 +373,32 @@ const RootRedirect = () => {
     return <div>Lade...</div>;
   }
 
-  // Wenn nicht eingeloggt, zeige Landing Page
+  const hostname = window.location.hostname;
+
+  // Member-App (app.tda-vib.de) → immer Member-Bereich
+  if (hostname === 'app.tda-vib.de') {
+    if (!token) return <Navigate to="/login" replace />;
+    return <Navigate to="/member/dashboard" replace />;
+  }
+
+  // Prüfe ob es eine Subdomain ist (nicht die Haupt-Domain)
+  const isSubdomain = () => {
+    // Subdomain wenn: xxx.dojo.tda-intl.org oder xxx.localhost
+    const parts = hostname.split('.');
+    if (hostname.includes('localhost')) {
+      return parts.length > 1; // z.B. demo1.localhost
+    }
+    // Bei dojo.tda-intl.org: Subdomain wenn mehr als 3 Teile (xxx.dojo.tda-intl.org)
+    return parts.length > 3;
+  };
+
+  // Wenn nicht eingeloggt
   if (!token) {
+    // Bei Subdomain → direkt zur Login-Seite
+    if (isSubdomain()) {
+      return <Navigate to="/login" replace />;
+    }
+    // Bei Haupt-Domain → Landing Page
     return <LandingPage />;
   }
 
@@ -312,6 +412,7 @@ const App = () => {
     <ThemeProvider>
       <ApiHealthCheck>
         <AuthProvider>
+          <ChatProvider>
           <SubscriptionProvider>
             <DojoProvider>
               <StandortProvider>
@@ -354,6 +455,9 @@ const App = () => {
             {/* Probetraining-Buchung - Öffentlich zugänglich */}
             <Route path="/probetraining" element={<Suspense fallback={<LazyLoadFallback />}><ProbetrainingBuchung /></Suspense>} />
 
+            {/* Event Gast-Anmeldung - Öffentlich zugänglich (kein Login erforderlich) */}
+            <Route path="/event/:eventId/gast" element={<Suspense fallback={<LazyLoadFallback />}><EventGastAnmeldung /></Suspense>} />
+
             {/* Neumitglied-Registrierung - Öffentlich zugänglich */}
             <Route path="/mitglied-werden" element={<Suspense fallback={<LazyLoadFallback />}><PublicRegistration /></Suspense>} />
 
@@ -367,14 +471,19 @@ const App = () => {
               }
             />
             <Route
+              path="/member/dashboard"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}><MemberDashboard /></Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
               path="/member/profile"
               element={
                 <MemberOnlyRoute>
                   <Suspense fallback={<LazyLoadFallback />}>
-                    <div className="member-profile-wrapper">
-                      <MemberHeader />
-                      <MitgliedDetailShared isAdmin={false} />
-                    </div>
+                    <MemberProfilePage />
                   </Suspense>
                 </MemberOnlyRoute>
               }
@@ -468,7 +577,7 @@ const App = () => {
                   <Suspense fallback={<LazyLoadFallback />}>
                     <div className="member-support-wrapper">
                       <MemberHeader />
-                      <div style={{ padding: '1rem' }}>
+                      <div className="app-member-content">
                         <SupportTickets />
                       </div>
                     </div>
@@ -483,10 +592,21 @@ const App = () => {
                   <Suspense fallback={<LazyLoadFallback />}>
                     <div className="member-support-wrapper">
                       <MemberHeader />
-                      <div style={{ padding: '1rem' }}>
+                      <div className="app-member-content">
                         <FeatureBoard />
                       </div>
                     </div>
+                  </Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+
+            <Route
+              path="/member/chat"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}>
+                    <ChatPage />
                   </Suspense>
                 </MemberOnlyRoute>
               }
@@ -519,9 +639,9 @@ const App = () => {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute>
+                <AdminOnlyRoute>
                   <Suspense fallback={<LazyLoadFallback />}><Dashboard /></Suspense>
-                </ProtectedRoute>
+                </AdminOnlyRoute>
               }
             >
               {/* Dashboard Startseite */}
@@ -613,6 +733,10 @@ const App = () => {
               <Route path="euer" element={<Suspense fallback={<LazyLoadFallback />}><EuerUebersicht /></Suspense>} />
               <Route path="euer-tda" element={<Suspense fallback={<LazyLoadFallback />}><EuerUebersicht isTDA={true} /></Suspense>} />
               <Route path="ausgaben" element={<Suspense fallback={<LazyLoadFallback />}><AusgabenVerwaltung /></Suspense>} />
+              <Route path="kontoauszug-import" element={<Suspense fallback={<LazyLoadFallback />}><KontoauszugImport /></Suspense>} />
+              <Route path="jahresuebersicht" element={<Suspense fallback={<LazyLoadFallback />}><Jahresuebersicht /></Suspense>} />
+              <Route path="ruecklastschriften" element={<Suspense fallback={<LazyLoadFallback />}><RuecklastschriftVerwaltung /></Suspense>} />
+              <Route path="vorlagen" element={<Suspense fallback={<LazyLoadFallback />}><VorlagenVerwaltung /></Suspense>} />
               <Route path="mitglieder-filter/:filterType" element={<Suspense fallback={<LazyLoadFallback />}><MitgliederFilter /></Suspense>} />
               <Route path="beitraege" element={<Suspense fallback={<LazyLoadFallback />}><Beitraege /></Suspense>} />
               <Route path="mahnwesen" element={<Suspense fallback={<LazyLoadFallback />}><Mahnwesen /></Suspense>} />
@@ -655,6 +779,9 @@ const App = () => {
               {/* Vertrags-Dokumentenverwaltung (AGB, Datenschutz, etc.) */}
               <Route path="vertragsdokumente" element={<Suspense fallback={<LazyLoadFallback />}><DokumenteVerwaltung /></Suspense>} />
 
+              {/* DokumentenZentrale — Zentraler Hub */}
+              <Route path="dokumentenzentrale" element={<Suspense fallback={<LazyLoadFallback />}><DokumentenZentrale /></Suspense>} />
+
               {/* Multi-Dojo-Verwaltung & Steuer-Tracking */}
               <Route path="dojos" element={<Suspense fallback={<LazyLoadFallback />}><DojosVerwaltung /></Suspense>} />
               <Route path="dojos/edit/:id" element={<Suspense fallback={<LazyLoadFallback />}><DojoEdit /></Suspense>} />
@@ -685,32 +812,13 @@ const App = () => {
               <Route path="passwoerter" element={<Suspense fallback={<LazyLoadFallback />}><PasswortVerwaltung dojoOnly={true} /></Suspense>} />
               <Route path="lizenzen" element={<Suspense fallback={<LazyLoadFallback />}><DojoLizenzverwaltung /></Suspense>} />
 
-              {/* Fehlerseite f�r ung�ltige Dashboard-Unterrouten */}
-              <Route 
-                path="*" 
-                element={
-                  <div style={{ 
-                    textAlign: 'center', 
-                    padding: '2rem',
-                    color: '#666'
-                  }}>
-                    <h2>Seite nicht gefunden</h2>
-                    <p>Die angeforderte Dashboard-Seite existiert nicht.</p>
-                    <button 
-                      onClick={() => window.history.back()}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Zur�ck
-                    </button>
-                  </div>
-                } 
+              {/* Chat für Admins / Trainer */}
+              <Route path="chat" element={<Suspense fallback={<LazyLoadFallback />}><AdminChatPage /></Suspense>} />
+
+              {/* Fehlerseite für ungültige Dashboard-Unterrouten */}
+              <Route
+                path="*"
+                element={<DashboardNotFound />}
               />
             </Route>
             
@@ -718,31 +826,15 @@ const App = () => {
             <Route 
               path="*" 
               element={
-                <div style={{ 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100vh',
-                  textAlign: 'center',
-                  backgroundColor: '#f8f9fa'
-                }}>
-                  <h1 style={{ fontSize: '3rem', marginBottom: '1rem' }}>404</h1>
-                  <h2 style={{ marginBottom: '1rem' }}>Seite nicht gefunden</h2>
-                  <p style={{ marginBottom: '2rem', color: '#666' }}>
+                <div className="app-404-container">
+                  <h1 className="u-emoji-xl">404</h1>
+                  <h2 className="app-404-h2">Seite nicht gefunden</h2>
+                  <p className="app-404-p">
                     Die angeforderte URL existiert nicht.
                   </p>
                   <button
                     onClick={() => window.location.href = '/dashboard'}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      backgroundColor: '#007bff',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      fontSize: '1rem'
-                    }}
+                    className="app-404-btn"
                   >
                     Zum Dashboard
                   </button>
@@ -757,6 +849,7 @@ const App = () => {
             </StandortProvider>
           </DojoProvider>
         </SubscriptionProvider>
+          </ChatProvider>
       </AuthProvider>
     </ApiHealthCheck>
   </ThemeProvider>

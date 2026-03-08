@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../styles/FinanceTab.css';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell
@@ -24,18 +25,10 @@ const formatNumber = (value, decimals = 0) => {
 
 // Leerer Zustand Komponente
 const EmptyState = ({ icon: Icon, title, subtitle }) => (
-  <div className="empty-state" style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center'
-  }}>
-    <Icon size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-    <div style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: '8px' }}>{title}</div>
-    <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>{subtitle}</div>
+  <div className="ft-empty-state">
+    <Icon size={48} className="ft-empty-icon" />
+    <div className="ft-empty-title">{title}</div>
+    <div className="ft-empty-subtitle">{subtitle}</div>
   </div>
 );
 
@@ -103,7 +96,7 @@ const FinanceTab = ({ token }) => {
   const paymentBehaviorData = [
     { name: 'Pünktlich', value: finance.paymentBehavior.onTimeCount, color: '#4ECDC4' },
     { name: 'Verspätet', value: finance.paymentBehavior.lateCount, color: '#FFA500' },
-    { name: 'Offen', value: finance.paymentBehavior.overdueCount, color: '#FF6B35' }
+    { name: 'Offen', value: finance.paymentBehavior.overdueCount, color: 'var(--secondary)' }
   ];
 
   return (
@@ -187,7 +180,7 @@ const FinanceTab = ({ token }) => {
                 <YAxis stroke="#fff" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                  labelStyle={{ color: '#FFD700' }}
+                  labelStyle={{ color: 'var(--primary)' }}
                 />
                 <Legend />
                 <Area type="monotone" dataKey="bezahlt" stackId="1" stroke="#4ECDC4" fill="url(#colorBezahlt)" name="Bezahlt" />
@@ -217,7 +210,7 @@ const FinanceTab = ({ token }) => {
                 <YAxis stroke="#fff" />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                  labelStyle={{ color: '#FFD700' }}
+                  labelStyle={{ color: 'var(--primary)' }}
                 />
                 <Legend />
                 <Bar dataKey="bezahlt" stackId="a" fill="#4ECDC4" name="Bezahlt" />

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useDojoContext } from '../context/DojoContext.jsx';
 import VerkaufKasse from './VerkaufKasse';
 import QRScanner from './QRScanner';
 import config from '../config/config.js';
@@ -78,6 +79,12 @@ const CheckinSystem = () => {
   const navigate = useNavigate();
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
   const { token } = useAuth(); // 🔐 Authentication token for API calls
+  const { activeDojo } = useDojoContext(); // 🏠 Aktives Dojo für Dojo-Filterung
+
+  // 🔒 Dojo-ID für API-Calls (Super-Admin: activeDojo.id, normale User: Backend filtert selbst)
+  const activeDojoId = activeDojo && activeDojo !== 'super-admin' && activeDojo !== 'verband'
+    ? activeDojo.id
+    : null;
 
   // 🔍 BARCODE SCANNER SUPPORT
   const lastInputTimeRef = useRef(0);
@@ -85,6 +92,12 @@ const CheckinSystem = () => {
   const scannerTimeoutRef = useRef(null);
   const SCANNER_THRESHOLD_MS = 50; // Scanner tippt schneller als 50ms pro Zeichen
   const SCANNER_COMPLETE_DELAY = 100; // Warte 100ms nach letzter Eingabe um Scan als komplett zu erkennen
+
+  // 🔍 GLOBAL SCANNER: Neutscan USB/Bluetooth - funktioniert auch ohne Fokus auf Suchfeld
+  const globalScanBufferRef = useRef('');
+  const globalScanLastTimeRef = useRef(0);
+  const globalScanTimeoutRef = useRef(null);
+  const processScannerInputRef = useRef(null); // Ref auf aktuellen processScannerInput (vermeidet stale closure)
 
   // State Management
   const [members, setMembers] = useState([]);
@@ -139,8 +152,8 @@ const CheckinSystem = () => {
   // Initialize data
   useEffect(() => {
     loadInitialData();
-    // 🔄 AUTOMATISCHES UPDATE: Lädt neu wenn sich Mitglieder ändern
-  }, [updateTrigger]);
+    // 🔄 AUTOMATISCHES UPDATE: Lädt neu wenn sich Mitglieder oder aktives Dojo ändern
+  }, [updateTrigger, activeDojoId]); // activeDojoId: bei Dojo-Wechsel neu laden
 
   // Automatische Fokussierung des Suchfeldes beim Laden der Komponente
   useEffect(() => {
@@ -214,6 +227,7 @@ const CheckinSystem = () => {
 
     if (member) {
       // Mitglied gefunden - Check-in starten
+      playBeep(true); // 🔊 Erfolgs-Beep
       setSuccess(`✅ Scanner: ${member.vorname} ${member.nachname} erkannt`);
       setSearchTerm('');
 
@@ -223,6 +237,7 @@ const CheckinSystem = () => {
       }, 300);
     } else {
       // Nicht gefunden - zeige Fehlermeldung
+      playBeep(false); // 🔊 Fehler-Beep
       setError(`❌ Kein Mitglied gefunden für: "${scannedValue}"`);
       setSearchTerm('');
       setTimeout(() => setError(''), 3000);
@@ -235,6 +250,88 @@ const CheckinSystem = () => {
       }
     }, 100);
   };
+
+  // Ref aktuell halten (für globalen Listener ohne stale closure)
+  processScannerInputRef.current = processScannerInput;
+
+  // 🔊 Audio-Feedback: kurzer Beep bei Scan
+  const playBeep = (success = true) => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = ctx.createOscillator();
+      const gain = ctx.createGain();
+      oscillator.connect(gain);
+      gain.connect(ctx.destination);
+      oscillator.frequency.value = success ? 1047 : 330; // C6 = Erfolg, E4 = Fehler
+      oscillator.type = 'sine';
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.15);
+    } catch (e) {
+      // Web Audio nicht verfügbar - ignorieren
+    }
+  };
+
+  // 🔍 GLOBAL SCANNER LISTENER: Neutscan USB/Bluetooth
+  // Fängt Scanner-Eingaben auch wenn kein Feld fokussiert ist
+  useEffect(() => {
+    const GLOBAL_THRESHOLD_MS = 80;   // Neutscan tippt schneller als 80ms/Zeichen
+    const GLOBAL_COMPLETE_DELAY = 150; // 150ms nach letztem Zeichen = Scan komplett
+
+    const handleGlobalKeydown = (e) => {
+      const activeEl = document.activeElement;
+
+      // Wenn Search-Input fokussiert → bestehender Handler übernimmt
+      if (activeEl === searchInputRef.current) return;
+
+      // Wenn anderes Input-Feld fokussiert (z.B. Gast-Modal) → ignorieren
+      if (activeEl && ['INPUT', 'TEXTAREA', 'SELECT'].includes(activeEl.tagName)) return;
+
+      const now = Date.now();
+      const timeDiff = now - globalScanLastTimeRef.current;
+      globalScanLastTimeRef.current = now;
+
+      if (e.key === 'Enter') {
+        const buffer = globalScanBufferRef.current.trim();
+        globalScanBufferRef.current = '';
+        if (globalScanTimeoutRef.current) {
+          clearTimeout(globalScanTimeoutRef.current);
+          globalScanTimeoutRef.current = null;
+        }
+        if (buffer.length >= 3) {
+          e.preventDefault();
+          processScannerInputRef.current?.(buffer);
+        }
+        return;
+      }
+
+      // Nur druckbare Zeichen verarbeiten
+      if (e.key.length !== 1) return;
+
+      // Schnelle Eingabe (Scanner) oder Buffer bereits aktiv
+      if (timeDiff < GLOBAL_THRESHOLD_MS || globalScanBufferRef.current.length > 0) {
+        e.preventDefault(); // Verhindert Zeichen im gerade fokussierten Element
+        globalScanBufferRef.current += e.key;
+
+        if (globalScanTimeoutRef.current) clearTimeout(globalScanTimeoutRef.current);
+        globalScanTimeoutRef.current = setTimeout(() => {
+          const buffer = globalScanBufferRef.current.trim();
+          globalScanBufferRef.current = '';
+          globalScanTimeoutRef.current = null;
+          if (buffer.length >= 3) {
+            processScannerInputRef.current?.(buffer);
+          }
+        }, GLOBAL_COMPLETE_DELAY);
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeydown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeydown);
+      if (globalScanTimeoutRef.current) clearTimeout(globalScanTimeoutRef.current);
+    };
+  }, []); // Stabil - verwendet ref für processScannerInput
 
   // 🔍 BARCODE SCANNER: Input-Handler mit Scanner-Erkennung
   const handleSearchInput = (e) => {
@@ -320,7 +417,8 @@ const CheckinSystem = () => {
 
   const loadMembers = async () => {
     try {
-      const response = await fetch(`${API_BASE}/mitglieder`, {
+      const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
+      const response = await fetch(`${API_BASE}/mitglieder${dojoParam}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -346,7 +444,8 @@ const CheckinSystem = () => {
 
   const loadCoursesToday = async () => {
     try {
-      const response = await fetch(`${API_BASE}/checkin/courses-today`, {
+      const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
+      const response = await fetch(`${API_BASE}/checkin/courses-today${dojoParam}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -368,7 +467,8 @@ const CheckinSystem = () => {
 
   const loadTodayCheckins = async () => {
     try {
-      const response = await fetch(`${API_BASE}/checkin/today`, {
+      const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
+      const response = await fetch(`${API_BASE}/checkin/today${dojoParam}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -383,7 +483,8 @@ const CheckinSystem = () => {
       setTodayCheckins(checkinsList);
     } catch (err) {
       console.error('Fehler beim Laden der Check-ins:', err);
-      setTodayCheckins([]);
+      // Bestehende Check-ins NICHT löschen bei Fehler – vermeidet den "sofort ausgecheckt"-Effekt
+      // wenn ein kurzzeitiger Server/Netzwerk-Fehler auftritt
     }
   };
 
@@ -759,6 +860,16 @@ const CheckinSystem = () => {
       }
       
       const result = await response.json();
+
+      // Prüfe ob alle Check-ins fehlgeschlagen sind (stille Fehler durch Unique-Key-Verletzung etc.)
+      const results = result.data?.results || [];
+      const hasErfolg = results.some(r => r.status === 'erfolg');
+      const allFehler = results.length > 0 && results.every(r => r.status === 'fehler');
+      if (allFehler) {
+        const firstError = results[0]?.error || 'Unbekannter Fehler';
+        throw new Error(`Check-in fehlgeschlagen: ${firstError}`);
+      }
+
       const successMessage = result.message || `Check-in erfolgreich für ${selectedMember.vorname} ${selectedMember.nachname}!`;
       setSuccess(`✅ ${successMessage}`);
 
@@ -954,6 +1065,13 @@ const CheckinSystem = () => {
 
           {/* Header Actions rechts */}
           <div className="header-actions">
+            {/* Neutscan Status Indikator */}
+            <div className="scanner-status-badge" title="Neutscan Scanner bereit - scanne jederzeit einen QR-Code">
+              <div className="scanner-status-dot"></div>
+              <QrCode size={14} />
+              <span className="scanner-status-text">Scanner</span>
+            </div>
+
             {/* Gast Check-in Button */}
             <button
               onClick={() => setShowGuestModal(true)}
@@ -964,14 +1082,14 @@ const CheckinSystem = () => {
               <span className="btn-text-desktop">Gast</span>
             </button>
 
-            {/* QR Scanner Button */}
+            {/* QR Scanner Button (Kamera) */}
             <button
               onClick={() => setShowQRScanner(true)}
               className="btn btn-primary qr-scan-btn"
-              title="QR-Code scannen"
+              title="QR-Code mit Kamera scannen"
             >
               <QrCode size={20} />
-              <span className="btn-text-desktop">QR-Scan</span>
+              <span className="btn-text-desktop">Kamera</span>
             </button>
 
             {/* Reset Button */}
@@ -1265,7 +1383,7 @@ const CheckinSystem = () => {
                     </div>
                   )}
 
-                  <div className="action-buttons" style={{marginTop: '1rem'}}>
+                  <div className="action-buttons" className="u-mt-1">
                     <button onClick={closeCheckinModal} className="btn btn-secondary">
                       Abbrechen
                     </button>
@@ -1289,7 +1407,7 @@ const CheckinSystem = () => {
 
                   {selectedCourses.length === 0 ? (
                     <div className="course-summary">
-                      <div className="course-summary-item" style={{justifyContent: 'center', fontStyle: 'italic', color: '#888'}}>
+                      <div className="course-summary-item course-summary-item-empty">
                         <span>Check-in ohne Kurs - Freies Training</span>
                       </div>
                     </div>

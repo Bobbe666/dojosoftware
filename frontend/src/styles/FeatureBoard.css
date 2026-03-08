@@ -1,0 +1,561 @@
+/* ============================================================
+   FeatureBoard.css — Styles for FeatureBoard.jsx
+   All classes prefixed with "fb-"
+   ============================================================ */
+
+/* ── Compact card wrapper ────────────────────────────────── */
+.fb-compact-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ── Compact header row ──────────────────────────────────── */
+.fb-compact-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* ── Compact header title ────────────────────────────────── */
+.fb-compact-title {
+  color: var(--primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Small add-button (compact view) ─────────────────────── */
+.fb-btn-add-compact {
+  padding: 0.5rem 1rem;
+  background: #ffd700;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+/* ── Compact request row ─────────────────────────────────── */
+.fb-compact-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+/* ── Vote button compact (+ voted modifier) ──────────────── */
+.fb-vote-btn-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  min-width: 50px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+}
+.fb-vote-btn-compact--voted {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+/* ── Vote count compact ──────────────────────────────────── */
+.fb-vote-count-sm {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ── Request title text (compact) ────────────────────────── */
+.fb-item-title {
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Status badge compact (per-status modifiers) ─────────── */
+.fb-status-badge-sm {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+}
+.fb-status-badge-sm--neu      { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.fb-status-badge-sm--geprueft { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+.fb-status-badge-sm--geplant  { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.fb-status-badge-sm--in_arbeit { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.fb-status-badge-sm--umgesetzt { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.fb-status-badge-sm--abgelehnt { background: rgba(107, 114, 128, 0.15); color: var(--text-muted); }
+
+/* ── Modal overlay ───────────────────────────────────────── */
+.fb-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* ── Modal box ───────────────────────────────────────────── */
+.fb-modal-box {
+  background: #1a1a2e;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 500px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* ── Modal title (plain) ─────────────────────────────────── */
+.fb-modal-title {
+  color: var(--primary);
+  margin-top: 0;
+}
+
+/* ── Modal title with flex/icon ──────────────────────────── */
+.fb-modal-title-flex {
+  color: var(--primary);
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Form input (text/select in modal) ───────────────────── */
+.fb-form-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+/* ── Form textarea ───────────────────────────────────────── */
+.fb-form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+/* ── Cancel button (modal) ───────────────────────────────── */
+.fb-btn-cancel {
+  flex: 1;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* ── Submit button */
+.fb-btn-submit {
+  flex: 1;
+  padding: 0.75rem;
+  background: #ffd700;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
+.fb-btn-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* ── Full-view wrapper ───────────────────────────────────── */
+.fb-page-wrapper {
+  padding: 1rem;
+}
+
+/* ── Page header row ─────────────────────────────────────── */
+.fb-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ── Page main title */
+.fb-page-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ffd700;
+}
+.fb-page-title--admin {
+  color: #a5b4fc;
+}
+
+/* ── Admin-mode badge pill ───────────────────────────────── */
+.fb-admin-badge {
+  padding: 0.25rem 0.75rem;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: var(--color-midnight-300);
+  font-weight: 500;
+}
+
+/* ── Subtitle below page header ──────────────────────────── */
+.fb-page-subtitle {
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0;
+}
+
+/* ── Primary add button (full view) ─────────────────────── */
+.fb-btn-add-primary {
+  padding: 0.75rem 1.5rem;
+  background: #ffd700;
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Stats grid ──────────────────────────────────────────── */
+.fb-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Single stat card ────────────────────────────────────── */
+.fb-stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ── Stat value (color from CSS var on parent fb-stat-card) ─ */
+.fb-stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--stat-color, var(--text-primary));
+}
+
+/* ── Filter bar ──────────────────────────────────────────── */
+.fb-filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+}
+
+/* ── Filter select ───────────────────────────────────────── */
+.fb-filter-select {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+/* ── Loading state (full view) ───────────────────────────── */
+.fb-loading-full {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+/* ── Empty state card ────────────────────────────────────── */
+.fb-empty-card {
+  text-align: center;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Request list ────────────────────────────────────────── */
+.fb-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Single request card ─────────────────────────────────── */
+.fb-request-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ── Vote button full (+ voted modifier) ─────────────────── */
+.fb-vote-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
+  min-width: 70px;
+  transition: all 0.2s;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+}
+.fb-vote-btn--voted {
+  background: rgba(255, 215, 0, 0.2);
+  border: 2px solid #ffd700;
+  color: #ffd700;
+}
+
+/* ── Vote count full ─────────────────────────────────────── */
+.fb-vote-count {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+
+/* ── Title row ───────────────────────────────────────────── */
+.fb-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Request title h4 ────────────────────────────────────── */
+.fb-request-title {
+  color: var(--text-primary);
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* ── Status badge full (per-status modifiers) ────────────── */
+.fb-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+.fb-status-badge--neu      { background: rgba(245, 158, 11, 0.15); color: var(--warning); }
+.fb-status-badge--geprueft { background: rgba(59, 130, 246, 0.15); color: var(--info); }
+.fb-status-badge--geplant  { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+.fb-status-badge--in_arbeit { background: rgba(236, 72, 153, 0.15); color: #ec4899; }
+.fb-status-badge--umgesetzt { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+.fb-status-badge--abgelehnt { background: rgba(107, 114, 128, 0.15); color: var(--text-muted); }
+
+/* ── Category badge ──────────────────────────────────────── */
+.fb-category-badge {
+  padding: 0.2rem 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ── Description paragraph ───────────────────────────────── */
+.fb-description {
+  color: var(--text-secondary);
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* ── Admin comment box ───────────────────────────────────── */
+.fb-admin-comment-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+/* ── Admin comment label ─────────────────────────────────── */
+.fb-admin-comment-label {
+  font-size: 0.8rem;
+  color: var(--color-info-400);
+  margin-bottom: 0.25rem;
+}
+
+/* ── Admin comment text ──────────────────────────────────── */
+.fb-admin-comment-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ── Admin edit panel ────────────────────────────────────── */
+.fb-admin-edit-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* ── Admin edit panel row ────────────────────────────────── */
+.fb-admin-edit-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+/* ── Admin edit field wrapper ────────────────────────────── */
+.fb-admin-edit-field {
+  flex: 1;
+  min-width: 150px;
+}
+
+/* ── Admin select ────────────────────────────────────────── */
+.fb-admin-input {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: var(--text-primary);
+}
+
+/* ── Admin textarea ──────────────────────────────────────── */
+.fb-admin-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+/* ── Save button */
+.fb-btn-save {
+  padding: 0.5rem 1rem;
+  background: #6366f1;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.fb-btn-save:disabled {
+  cursor: not-allowed;
+}
+
+/* ── Small cancel button (admin edit) ────────────────────── */
+.fb-btn-cancel-sm {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+/* ── Footer row ──────────────────────────────────────────── */
+.fb-footer-row {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* ── Meta text ───────────────────────────────────────────── */
+.fb-meta-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Edit button ─────────────────────────────────────────── */
+.fb-btn-edit {
+  padding: 0.4rem 0.75rem;
+  background: rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+  color: var(--color-midnight-300);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+/* ── Delete button ───────────────────────────────────────── */
+.fb-btn-delete {
+  padding: 0.4rem 0.75rem;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 6px;
+  color: var(--error);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+}
+
+/* ── Spacing helpers ─────────────────────────────────────── */
+.fb-mb-1  { margin-bottom: 1rem; }
+.fb-mb-15 { margin-bottom: 1.5rem; }
+.fb-flex-gap { display: flex; gap: 1rem; }
+
+/* ── Field label ─────────────────────────────────────────── */
+.fb-field-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+/* ── Error message ───────────────────────────────────────── */
+.fb-error-msg {
+  color: var(--error, #ef4444);
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}

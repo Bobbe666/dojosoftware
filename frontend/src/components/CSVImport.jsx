@@ -382,7 +382,7 @@ const CSVImport = () => {
           id="csv-input"
           accept=".csv"
           onChange={handleFileUpload}
-          style={{ display: "none" }}
+          className="u-hidden"
         />
         {csvFile ? (
           <div className="file-info">

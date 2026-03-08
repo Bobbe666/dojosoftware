@@ -240,24 +240,24 @@ const StripeCheckout = ({ amount, currency = 'eur', rechnungId, onSuccess, onErr
         '.Input': {
           backgroundColor: '#334155',
           border: '1px solid #475569',
-          color: '#ffffff'
+          color: 'var(--text-primary)'
         },
         '.Input:focus': {
           borderColor: '#FFD700',
           boxShadow: '0 0 0 2px rgba(255, 215, 0, 0.2)'
         },
         '.Label': {
-          color: '#94a3b8'
+          color: 'var(--text-muted)'
         },
         '.Tab': {
           backgroundColor: '#1e293b',
           border: '1px solid #334155',
-          color: '#94a3b8'
+          color: 'var(--text-muted)'
         },
         '.Tab--selected': {
           backgroundColor: '#334155',
           borderColor: '#FFD700',
-          color: '#ffffff'
+          color: 'var(--text-primary)'
         },
         '.Tab:hover': {
           backgroundColor: '#334155'

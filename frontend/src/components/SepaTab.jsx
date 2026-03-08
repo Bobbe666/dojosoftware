@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { CreditCard, Plus, Download, CheckCircle, XCircle, Clock, FileText, Users, Euro } from 'lucide-react';
+import '../styles/SepaTab.css';
 
 const SepaTab = ({ token }) => {
   const [mandate, setMandate] = useState([]);
@@ -102,69 +103,69 @@ const SepaTab = ({ token }) => {
 
   const getStatusBadge = (status) => {
     const styles = {
-      aktiv: { bg: 'rgba(16,185,129,0.2)', color: '#10b981' },
-      pausiert: { bg: 'rgba(251,191,36,0.2)', color: '#fbbf24' },
-      widerrufen: { bg: 'rgba(239,68,68,0.2)', color: '#ef4444' },
-      erstellt: { bg: 'rgba(59,130,246,0.2)', color: '#3b82f6' },
-      exportiert: { bg: 'rgba(16,185,129,0.2)', color: '#10b981' },
+      aktiv: { bg: 'rgba(16,185,129,0.2)', color: 'var(--success)' },
+      pausiert: { bg: 'rgba(251,191,36,0.2)', color: 'var(--color-gold-400)' },
+      widerrufen: { bg: 'rgba(239,68,68,0.2)', color: 'var(--error)' },
+      erstellt: { bg: 'rgba(59,130,246,0.2)', color: 'var(--info)' },
+      exportiert: { bg: 'rgba(16,185,129,0.2)', color: 'var(--success)' },
       eingereicht: { bg: 'rgba(139,92,246,0.2)', color: '#8b5cf6' },
-      ausgefuehrt: { bg: 'rgba(16,185,129,0.3)', color: '#10b981' }
+      ausgefuehrt: { bg: 'rgba(16,185,129,0.3)', color: 'var(--success)' }
     };
-    const s = styles[status] || { bg: 'rgba(156,163,175,0.2)', color: '#9ca3af' };
+    const s = styles[status] || { bg: 'rgba(156,163,175,0.2)', color: 'var(--text-muted)' };
     return (
-      <span style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', background: s.bg, color: s.color }}>
+      <span className="st-status-badge" style={{ '--badge-bg': s.bg, '--badge-color': s.color }}>
         {status}
       </span>
     );
   };
 
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Lade SEPA-Daten...</div>;
+  if (loading) return <div className="st-td-empty-wide">Lade SEPA-Daten...</div>;
 
   return (
     <div className="sepa-tab">
       {/* Header mit Statistiken */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(16,185,129,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+      <div className="st-stats-grid">
+        <div className="st-card">
+          <div className="u-flex-row-md">
+            <div className="st-badge-success">
               <Users size={20} color="#10b981" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Aktive Mandate</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)' }}>{mandate.filter(m => m.status === 'aktiv').length}</div>
+              <div className="u-text-secondary-sm">Aktive Mandate</div>
+              <div className="st-stat-large">{mandate.filter(m => m.status === 'aktiv').length}</div>
             </div>
           </div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(251,191,36,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+        <div className="st-card">
+          <div className="u-flex-row-md">
+            <div className="st-badge-warning">
               <Clock size={20} color="#fbbf24" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Ohne Mandat</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fbbf24' }}>{dojosOhneMandat.length}</div>
+              <div className="u-text-secondary-sm">Ohne Mandat</div>
+              <div className="st-stat-gold">{dojosOhneMandat.length}</div>
             </div>
           </div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(59,130,246,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+        <div className="st-card">
+          <div className="u-flex-row-md">
+            <div className="st-badge-info">
               <FileText size={20} color="#3b82f6" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Batches</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>{batches.length}</div>
+              <div className="u-text-secondary-sm">Batches</div>
+              <div className="st-stat-info">{batches.length}</div>
             </div>
           </div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(16,185,129,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+        <div className="st-card">
+          <div className="u-flex-row-md">
+            <div className="st-badge-success">
               <Euro size={20} color="#10b981" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>MRR (SEPA)</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)' }}>
+              <div className="u-text-secondary-sm">MRR (SEPA)</div>
+              <div className="st-stat-large">
                 {mandate.filter(m => m.status === 'aktiv').reduce((sum, m) => sum + parseFloat(m.monthly_price || 0), 0).toFixed(0)} EUR
               </div>
             </div>
@@ -173,59 +174,51 @@ const SepaTab = ({ token }) => {
       </div>
 
       {/* Aktionen */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
-        <button onClick={() => setShowNewMandatModal(true)} style={{
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          padding: '0.75rem 1.25rem', background: 'var(--primary)', color: '#000',
-          border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer'
-        }}>
+      <div className="st-actions-bar">
+        <button onClick={() => setShowNewMandatModal(true)} className="st-btn-primary">
           <Plus size={18} /> Neues Mandat
         </button>
-        <button onClick={() => setShowNewBatchModal(true)} style={{
-          display: 'flex', alignItems: 'center', gap: '0.5rem',
-          padding: '0.75rem 1.25rem', background: 'rgba(59,130,246,0.2)', color: '#3b82f6',
-          border: '1px solid #3b82f6', borderRadius: '8px', fontWeight: '600', cursor: 'pointer'
-        }}>
+        <button onClick={() => setShowNewBatchModal(true)} className="st-btn-blue">
           <FileText size={18} /> Lastschrift-Batch erstellen
         </button>
       </div>
 
       {/* Mandate Liste */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h3 style={{ marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="st-section-mb">
+        <h3 className="st-section-heading">
           <CreditCard size={20} /> SEPA-Mandate
         </h3>
-        <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-default)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="st-card-flush">
+          <table className="st-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Dojo</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Kontoinhaber</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>IBAN</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Plan</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Betrag</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Status</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Aktion</th>
+              <tr className="st-border-bottom">
+                <th className="u-td-secondary">Dojo</th>
+                <th className="u-td-secondary">Kontoinhaber</th>
+                <th className="u-td-secondary">IBAN</th>
+                <th className="u-td-secondary">Plan</th>
+                <th className="st-td-right-muted">Betrag</th>
+                <th className="st-td-center-muted">Status</th>
+                <th className="st-td-center-muted">Aktion</th>
               </tr>
             </thead>
             <tbody>
               {mandate.length === 0 ? (
-                <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Keine Mandate vorhanden</td></tr>
+                <tr><td colSpan="7" className="st-td-empty">Keine Mandate vorhanden</td></tr>
               ) : mandate.map(m => (
-                <tr key={m.id} style={{ borderBottom: '1px solid var(--border-default)' }}>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-primary)' }}>{m.dojoname}</td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-primary)' }}>{m.kontoinhaber}</td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '0.85rem' }}>{m.iban}</td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{m.plan_type}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--primary)', fontWeight: '600' }}>{parseFloat(m.monthly_price || 0).toFixed(2)} EUR</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>{getStatusBadge(m.status)}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                <tr key={m.id} className="st-border-bottom">
+                  <td className="st-td-primary">{m.dojoname}</td>
+                  <td className="st-td-primary">{m.kontoinhaber}</td>
+                  <td className="st-td-mono-secondary">{m.iban}</td>
+                  <td className="st-td-secondary">{m.plan_type}</td>
+                  <td className="st-td-right-primary">{parseFloat(m.monthly_price || 0).toFixed(2)} EUR</td>
+                  <td className="st-td-center">{getStatusBadge(m.status)}</td>
+                  <td className="st-td-center">
                     {m.status === 'aktiv' ? (
-                      <button onClick={() => handleUpdateMandatStatus(m.id, 'pausiert')} style={{ background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>
+                      <button onClick={() => handleUpdateMandatStatus(m.id, 'pausiert')} className="st-btn-pause">
                         Pausieren
                       </button>
                     ) : m.status === 'pausiert' ? (
-                      <button onClick={() => handleUpdateMandatStatus(m.id, 'aktiv')} style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>
+                      <button onClick={() => handleUpdateMandatStatus(m.id, 'aktiv')} className="st-btn-activate">
                         Aktivieren
                       </button>
                     ) : null}
@@ -239,35 +232,35 @@ const SepaTab = ({ token }) => {
 
       {/* Batches Liste */}
       <div>
-        <h3 style={{ marginBottom: '1rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <h3 className="st-section-heading">
           <FileText size={20} /> Lastschrift-Batches
         </h3>
-        <div style={{ background: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-default)', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="st-card-flush">
+          <table className="st-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Referenz</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Erstellt</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Ausfuehrung</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Transaktionen</th>
-                <th style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Betrag</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Status</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>XML</th>
+              <tr className="st-border-bottom">
+                <th className="u-td-secondary">Referenz</th>
+                <th className="u-td-secondary">Erstellt</th>
+                <th className="u-td-secondary">Ausfuehrung</th>
+                <th className="st-td-center-muted">Transaktionen</th>
+                <th className="st-td-right-muted">Betrag</th>
+                <th className="st-td-center-muted">Status</th>
+                <th className="st-td-center-muted">XML</th>
               </tr>
             </thead>
             <tbody>
               {batches.length === 0 ? (
-                <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Keine Batches vorhanden</td></tr>
+                <tr><td colSpan="7" className="st-td-empty">Keine Batches vorhanden</td></tr>
               ) : batches.map(b => (
-                <tr key={b.id} style={{ borderBottom: '1px solid var(--border-default)' }}>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.85rem' }}>{b.batch_referenz}</td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{new Date(b.erstelldatum).toLocaleDateString('de-DE')}</td>
-                  <td style={{ padding: '0.75rem', color: 'var(--text-primary)' }}>{new Date(b.ausfuehrungsdatum).toLocaleDateString('de-DE')}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-primary)' }}>{b.anzahl_transaktionen}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--primary)', fontWeight: '600' }}>{parseFloat(b.gesamtbetrag).toFixed(2)} EUR</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>{getStatusBadge(b.status)}</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                    <button onClick={() => handleDownloadXml(b.id)} style={{ background: 'rgba(16,185,129,0.2)', color: '#10b981', border: 'none', padding: '0.4rem 0.75rem', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', margin: '0 auto' }}>
+                <tr key={b.id} className="st-border-bottom">
+                  <td className="st-td-mono-primary">{b.batch_referenz}</td>
+                  <td className="st-td-secondary">{new Date(b.erstelldatum).toLocaleDateString('de-DE')}</td>
+                  <td className="st-td-primary">{new Date(b.ausfuehrungsdatum).toLocaleDateString('de-DE')}</td>
+                  <td className="st-td-center-primary">{b.anzahl_transaktionen}</td>
+                  <td className="st-td-right-primary">{parseFloat(b.gesamtbetrag).toFixed(2)} EUR</td>
+                  <td className="st-td-center">{getStatusBadge(b.status)}</td>
+                  <td className="st-td-center">
+                    <button onClick={() => handleDownloadXml(b.id)} className="st-btn-download">
                       <Download size={14} /> XML
                     </button>
                   </td>
@@ -280,42 +273,42 @@ const SepaTab = ({ token }) => {
 
       {/* Modal: Neues Mandat */}
       {showNewMandatModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowNewMandatModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-primary)', borderRadius: '16px', width: '90%', maxWidth: '500px', border: '1px solid var(--border-default)' }}>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)' }}>Neues SEPA-Mandat</h3>
-              <button onClick={() => setShowNewMandatModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '1.5rem', cursor: 'pointer' }}>x</button>
+        <div className="st-modal-overlay" onClick={() => setShowNewMandatModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="st-modal-box">
+            <div className="st-modal-header">
+              <h3 className="st-heading-primary">Neues SEPA-Mandat</h3>
+              <button onClick={() => setShowNewMandatModal(false)} className="st-btn-icon">x</button>
             </div>
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Dojo auswaehlen *</label>
-                <select value={selectedDojo?.id || ''} onChange={e => setSelectedDojo(dojosOhneMandat.find(d => d.id === parseInt(e.target.value)))} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)' }}>
+            <div className="st-inner">
+              <div className="st-mb-1">
+                <label className="u-form-label-secondary">Dojo auswaehlen *</label>
+                <select value={selectedDojo?.id || ''} onChange={e => setSelectedDojo(dojosOhneMandat.find(d => d.id === parseInt(e.target.value)))} className="st-input">
                   <option value="">-- Dojo waehlen --</option>
                   {dojosOhneMandat.map(d => (
                     <option key={d.id} value={d.id}>{d.dojoname} ({d.plan_type} - {d.monthly_price} EUR)</option>
                   ))}
                 </select>
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Kontoinhaber *</label>
-                <input type="text" value={newMandat.kontoinhaber} onChange={e => setNewMandat({...newMandat, kontoinhaber: e.target.value})} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+              <div className="st-mb-1">
+                <label className="u-form-label-secondary">Kontoinhaber *</label>
+                <input type="text" value={newMandat.kontoinhaber} onChange={e => setNewMandat({...newMandat, kontoinhaber: e.target.value})} className="st-input" />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>IBAN *</label>
-                <input type="text" value={newMandat.iban} onChange={e => setNewMandat({...newMandat, iban: e.target.value})} placeholder="DE89 3704 0044 0532 0130 00" style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', fontFamily: 'monospace' }} />
+              <div className="st-mb-1">
+                <label className="u-form-label-secondary">IBAN *</label>
+                <input type="text" value={newMandat.iban} onChange={e => setNewMandat({...newMandat, iban: e.target.value})} placeholder="DE89 3704 0044 0532 0130 00" className="st-input-mono" />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>BIC</label>
-                <input type="text" value={newMandat.bic} onChange={e => setNewMandat({...newMandat, bic: e.target.value})} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+              <div className="st-mb-1">
+                <label className="u-form-label-secondary">BIC</label>
+                <input type="text" value={newMandat.bic} onChange={e => setNewMandat({...newMandat, bic: e.target.value})} className="st-input" />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Mandatsdatum</label>
-                <input type="date" value={newMandat.mandats_datum} onChange={e => setNewMandat({...newMandat, mandats_datum: e.target.value})} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)' }} />
+              <div className="st-mb-1">
+                <label className="u-form-label-secondary">Mandatsdatum</label>
+                <input type="date" value={newMandat.mandats_datum} onChange={e => setNewMandat({...newMandat, mandats_datum: e.target.value})} className="st-input" />
               </div>
             </div>
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-              <button onClick={() => setShowNewMandatModal(false)} style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={handleCreateMandat} style={{ padding: '0.75rem 1.5rem', background: 'var(--primary)', border: 'none', borderRadius: '8px', color: '#000', fontWeight: '600', cursor: 'pointer' }}>Mandat erstellen</button>
+            <div className="st-modal-footer">
+              <button onClick={() => setShowNewMandatModal(false)} className="st-btn-secondary">Abbrechen</button>
+              <button onClick={handleCreateMandat} className="st-btn-confirm-primary">Mandat erstellen</button>
             </div>
           </div>
         </div>
@@ -323,28 +316,28 @@ const SepaTab = ({ token }) => {
 
       {/* Modal: Neuer Batch */}
       {showNewBatchModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }} onClick={() => setShowNewBatchModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--bg-primary)', borderRadius: '16px', width: '90%', maxWidth: '450px', border: '1px solid var(--border-default)' }}>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-default)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)' }}>Lastschrift-Batch erstellen</h3>
-              <button onClick={() => setShowNewBatchModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '1.5rem', cursor: 'pointer' }}>x</button>
+        <div className="st-modal-overlay" onClick={() => setShowNewBatchModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="st-modal-box-sm">
+            <div className="st-modal-header">
+              <h3 className="st-heading-primary">Lastschrift-Batch erstellen</h3>
+              <button onClick={() => setShowNewBatchModal(false)} className="st-btn-icon">x</button>
             </div>
-            <div style={{ padding: '1.5rem' }}>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+            <div className="st-inner">
+              <p className="st-modal-intro">
                 Es werden alle aktiven Mandate mit laufenden Subscriptions einbezogen.
               </p>
-              <p style={{ color: 'var(--text-primary)', marginBottom: '1.5rem' }}>
+              <p className="st-modal-count">
                 <strong>{mandate.filter(m => m.status === 'aktiv').length}</strong> Mandate aktiv
               </p>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Gewuenschtes Einzugsdatum *</label>
-                <input type="date" value={batchDate} onChange={e => setBatchDate(e.target.value)} min={new Date(Date.now() + 5*24*60*60*1000).toISOString().split('T')[0]} style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)' }} />
-                <small style={{ color: 'var(--text-secondary)' }}>Mind. 5 Werktage in der Zukunft</small>
+                <label className="u-form-label-secondary">Gewuenschtes Einzugsdatum *</label>
+                <input type="date" value={batchDate} onChange={e => setBatchDate(e.target.value)} min={new Date(Date.now() + 5*24*60*60*1000).toISOString().split('T')[0]} className="st-input" />
+                <small className="u-text-secondary">Mind. 5 Werktage in der Zukunft</small>
               </div>
             </div>
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border-default)', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-              <button onClick={() => setShowNewBatchModal(false)} style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-default)', borderRadius: '8px', color: 'var(--text-primary)', cursor: 'pointer' }}>Abbrechen</button>
-              <button onClick={handleCreateBatch} style={{ padding: '0.75rem 1.5rem', background: '#3b82f6', border: 'none', borderRadius: '8px', color: '#fff', fontWeight: '600', cursor: 'pointer' }}>Batch erstellen</button>
+            <div className="st-modal-footer">
+              <button onClick={() => setShowNewBatchModal(false)} className="st-btn-secondary">Abbrechen</button>
+              <button onClick={handleCreateBatch} className="st-btn-confirm-blue">Batch erstellen</button>
             </div>
           </div>
         </div>

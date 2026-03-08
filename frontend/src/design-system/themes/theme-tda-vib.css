@@ -52,11 +52,11 @@
 
   /* ===== TEXT ===== */
   --text-primary: var(--color-sumi);
-  --text-secondary: rgba(26, 26, 26, 0.7);
-  --text-muted: rgba(26, 26, 26, 0.5);
-  --text-disabled: rgba(26, 26, 26, 0.3);
+  --text-secondary: rgba(26, 26, 26, 0.75);   /* ~6.5:1 Kontrast auf Washi */
+  --text-muted: rgba(26, 26, 26, 0.6);        /* ~4.0:1 (war 0.5 = 3.2:1 — zu wenig) */
+  --text-disabled: rgba(26, 26, 26, 0.4);     /* Disabled darf niedriger sein */
   --text-inverse: var(--color-white);
-  --text-accent: var(--color-gold-dark);
+  --text-accent: #7a6a00;                      /* Dunkles Gold: 4.7:1 auf Washi (war #ccac00 = 1.9:1) */
   --text-accent-secondary: var(--color-vermillion);
 
   /* ===== BORDERS ===== */
@@ -216,6 +216,50 @@
 
   /* Gold Accent Line */
   --accent-line: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+
+  /* ===== SURFACE HIERARCHY (Light Mode — Sumi Ink Stufen) ===== */
+  --surface-1: rgba(26, 26, 26, 0.02);    /* subtilste Fläche auf Washi */
+  --surface-2: rgba(26, 26, 26, 0.04);
+  --surface-3: rgba(26, 26, 26, 0.07);
+  --surface-4: rgba(26, 26, 26, 0.10);
+  --surface-hover: rgba(26, 26, 26, 0.12);
+  --surface-active: rgba(26, 26, 26, 0.15);
+
+  /* ===== TEXT HIERARCHY (Light Mode) ===== */
+  --text-1: rgba(26, 26, 26, 0.90);
+  --text-2: rgba(26, 26, 26, 0.75);
+  --text-3: rgba(26, 26, 26, 0.55);
+  --text-4: rgba(26, 26, 26, 0.40);
+  --text-5: rgba(26, 26, 26, 0.35);
+
+  /* ===== MODAL-SPEZIFISCH (Light Mode) ===== */
+  --modal-bg-dark: var(--color-white);        /* Im Light-Mode: weißes Modal */
+  --modal-bg-secondary: var(--color-washi-light);
+  --modal-overlay: rgba(26, 26, 26, 0.55);
+  --modal-border-subtle: 1px solid rgba(26, 26, 26, 0.08);
+
+  /* ===== STATUS — LIGHT MODE ALPHA-VARIANTEN ===== */
+  --status-success: #16a34a;                  /* Dunkleres Grün für Light-Mode Kontrast */
+  --status-success-bg: rgba(22, 163, 74, 0.08);
+  --status-success-bg-hover: rgba(22, 163, 74, 0.14);
+  --status-success-border: rgba(22, 163, 74, 0.3);
+
+  --status-warning: #b45309;                  /* Dunkleres Orange für Kontrast */
+  --status-warning-text: #92400e;
+  --status-warning-bg: rgba(180, 83, 9, 0.08);
+  --status-warning-bg-hover: rgba(180, 83, 9, 0.14);
+  --status-warning-border: rgba(180, 83, 9, 0.3);
+
+  --status-error: var(--color-vermillion);
+  --status-error-bg: rgba(199, 62, 58, 0.08);
+  --status-error-bg-hover: rgba(199, 62, 58, 0.14);
+  --status-error-border: rgba(199, 62, 58, 0.3);
+
+  --status-indigo: var(--color-indigo);
+  --status-indigo-bg: rgba(38, 70, 83, 0.08);
+  --status-indigo-bg-hover: rgba(38, 70, 83, 0.14);
+  --status-indigo-border: rgba(38, 70, 83, 0.3);
+  --status-indigo-border-strong: rgba(38, 70, 83, 0.5);
 }
 
 /* ========== BODY STYLES ========== */
@@ -227,13 +271,20 @@
 }
 
 /* ========== HEADINGS ========== */
+/* Überschreibt globales designsystem.css h1-h6 { color: #ffd700 !important }
+   — gelb auf hellem Hintergrund wäre unlesbar */
 
 [data-theme="tda-vib"] h1,
 [data-theme="tda-vib"] h2,
-[data-theme="tda-vib"] h3 {
-  color: var(--text-primary);
-  text-shadow: none;
-  font-weight: var(--font-weight-semibold);
+[data-theme="tda-vib"] h3,
+[data-theme="tda-vib"] h4,
+[data-theme="tda-vib"] h5,
+[data-theme="tda-vib"] h6 {
+  color: var(--color-sumi, #1a1a1a) !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: 600;
 }
 
 /* ========== GOLD ACCENT LINE ========== */

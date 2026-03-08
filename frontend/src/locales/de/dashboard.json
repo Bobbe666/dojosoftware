@@ -15,15 +15,11 @@
     "pruefungswesen": "Prüfungswesen",
     "events": "Events",
     "finanzen": "Finanzen",
-    "artikelverwaltung": "Artikelverwaltung",
-    "verwaltung": "Dojo-Verwaltung",
-    "personal": "Personal",
-    "berichte": "Berichte",
+    "verwaltung": "Dojo Verwaltung",
+    "berichte": "Dokumente & Berichte",
     "einstellungen": "Einstellungen",
     "schnellaktionen": "Schnellaktionen",
-    "support": "Support",
-    "wunschliste": "Wunschliste",
-    "info": "Info"
+    "hilfeSupport": "Hilfe & Support"
   },
   "checkin": {
     "memberCheckin": "Mitglieder Check-in",
@@ -112,6 +108,8 @@
     "articlesDesc": "Sortiment und Lagerbestände verwalten"
   },
   "berichte": {
+    "dokumentenzentrale": "DokumentenZentrale",
+    "dokumentenzentraleDesc": "Alle Dokumente, Vorlagen & Verträge zentral verwalten",
     "evaluations": "Auswertungen",
     "evaluationsDesc": "Statistiken und Berichte erstellen",
     "reportsAndDocs": "Berichte & Dokumente",

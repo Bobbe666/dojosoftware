@@ -3,6 +3,7 @@ import { AlertTriangle, CheckCircle, FileText, Shield, Users, ChevronDown, Chevr
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import { useDojoContext } from '../context/DojoContext';
+import '../styles/AgbStatusWidget.css';
 
 /**
  * AgbStatusWidget
@@ -58,9 +59,7 @@ const AgbStatusWidget = () => {
           <FileText size={20} />
           <span>AGB/DSGVO Status</span>
         </div>
-        <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
-          Lade...
-        </div>
+        <div className="agb-loading-msg">Lade...</div>
       </div>
     );
   }
@@ -72,7 +71,7 @@ const AgbStatusWidget = () => {
           <FileText size={20} />
           <span>AGB/DSGVO Status</span>
         </div>
-        <div style={{ padding: '1rem', color: '#FCA5A5' }}>
+        <div className="agb-error-msg">
           {error}
         </div>
       </div>
@@ -92,9 +91,9 @@ const AgbStatusWidget = () => {
     <div style={widgetStyle}>
       <div style={headerStyle}>
         {allGood ? (
-          <CheckCircle size={20} style={{ color: '#86EFAC' }} />
+          <CheckCircle size={20} className="agb-icon-ok" />
         ) : (
-          <AlertTriangle size={20} style={{ color: '#FBBF24' }} />
+          <AlertTriangle size={20} className="agb-icon-warn" />
         )}
         <span>AGB/DSGVO Status</span>
         {count > 0 && (
@@ -104,31 +103,31 @@ const AgbStatusWidget = () => {
 
       <div style={contentStyle}>
         {allGood ? (
-          <div style={{ color: '#86EFAC', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="agb-all-good">
             <CheckCircle size={16} />
             Alle Mitglieder haben die aktuellen Versionen akzeptiert
           </div>
         ) : (
           <>
-            <div style={{ marginBottom: '0.75rem', color: 'rgba(255,255,255,0.9)' }}>
+            <div className="agb-pending-header">
               <strong>{count} Mitglied{count !== 1 ? 'er' : ''}</strong> {count !== 1 ? 'haben' : 'hat'} noch nicht die aktuelle Version akzeptiert:
             </div>
 
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+            <div className="agb-stat-row">
               <div style={statBoxStyle}>
-                <FileText size={14} style={{ color: '#FFD700' }} />
+                <FileText size={14} className="u-text-accent" />
                 <span>{members.filter(m => m.agb_akzeptanz_fehlt).length} AGB</span>
               </div>
               <div style={statBoxStyle}>
-                <Shield size={14} style={{ color: '#60A5FA' }} />
+                <Shield size={14} className="agb-icon-dsgvo" />
                 <span>{members.filter(m => m.dsgvo_akzeptanz_fehlt).length} DSGVO</span>
               </div>
               <div style={statBoxStyle}>
-                <Scroll size={14} style={{ color: '#34D399' }} />
+                <Scroll size={14} className="agb-icon-regeln" />
                 <span>{members.filter(m => m.dojo_regeln_akzeptanz_fehlt).length} Regeln</span>
               </div>
               <div style={statBoxStyle}>
-                <Home size={14} style={{ color: '#F472B6' }} />
+                <Home size={14} className="agb-icon-haus" />
                 <span>{members.filter(m => m.hausordnung_akzeptanz_fehlt).length} Hausordnung</span>
               </div>
             </div>
@@ -149,28 +148,28 @@ const AgbStatusWidget = () => {
                   <div key={member.mitglied_id} style={memberRowStyle}>
                     <a
                       href={`/dashboard/mitglieder/${member.mitglied_id}`}
-                      style={{ color: '#FFD700', textDecoration: 'none' }}
+                      className="agb-member-link"
                     >
                       {member.vorname} {member.nachname}
                     </a>
-                    <div style={{ display: 'flex', gap: '0.25rem', fontSize: '0.7rem', flexWrap: 'wrap' }}>
+                    <div className="agb-badge-row">
                       {member.agb_akzeptanz_fehlt === 1 && (
-                        <span style={{ color: '#FBBF24', padding: '0 0.25rem', background: 'rgba(251,191,36,0.1)', borderRadius: '3px' }}>AGB</span>
+                        <span className="agb-badge-agb">AGB</span>
                       )}
                       {member.dsgvo_akzeptanz_fehlt === 1 && (
-                        <span style={{ color: '#60A5FA', padding: '0 0.25rem', background: 'rgba(96,165,250,0.1)', borderRadius: '3px' }}>DSGVO</span>
+                        <span className="agb-badge-dsgvo">DSGVO</span>
                       )}
                       {member.dojo_regeln_akzeptanz_fehlt === 1 && (
-                        <span style={{ color: '#34D399', padding: '0 0.25rem', background: 'rgba(52,211,153,0.1)', borderRadius: '3px' }}>Regeln</span>
+                        <span className="agb-badge-regeln">Regeln</span>
                       )}
                       {member.hausordnung_akzeptanz_fehlt === 1 && (
-                        <span style={{ color: '#F472B6', padding: '0 0.25rem', background: 'rgba(244,114,182,0.1)', borderRadius: '3px' }}>Haus</span>
+                        <span className="agb-badge-haus">Haus</span>
                       )}
                     </div>
                   </div>
                 ))}
                 {members.length > 10 && (
-                  <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
+                  <div className="agb-more-hint">
                     ...und {members.length - 10} weitere
                   </div>
                 )}
@@ -235,7 +234,7 @@ const expandButtonStyle = {
   background: 'transparent',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: '6px',
-  color: 'rgba(255, 255, 255, 0.8)',
+  color: 'var(--text-secondary)',
   cursor: 'pointer',
   fontSize: '0.85rem',
   width: '100%',

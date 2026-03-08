@@ -1,0 +1,2699 @@
+/* =====================================================================================
+   ARTIKEL-FORMULAR STYLES — Extracted static inline styles (prefix: af3-)
+   Third-pass migration from ArtikelFormular.jsx
+   ===================================================================================== */
+
+/* -------------------------------------------------- */
+/* af3-basis-input  (shared basis-input style)         */
+/* -------------------------------------------------- */
+.af3-basis-input {
+  padding: 0.75rem 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.af3-basis-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+/* -------------------------------------------------- */
+/* af3-select  (basis-input + cursor pointer + flex 1)  */
+/* -------------------------------------------------- */
+.af3-select {
+  padding: 0.75rem 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  flex: 1;
+}
+
+/* -------------------------------------------------- */
+/* artikel-formular-page container                     */
+/* -------------------------------------------------- */
+.af3-page {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* -------------------------------------------------- */
+/* Page header bar                                     */
+/* -------------------------------------------------- */
+.af3-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+}
+
+.af3-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.af3-page-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.af3-header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* -------------------------------------------------- */
+/* Header buttons                                      */
+/* -------------------------------------------------- */
+.af3-btn-back {
+  padding: 0.75rem 1.5rem;
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.af3-btn-save {
+  padding: 0.75rem 2rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* -------------------------------------------------- */
+/* Error banner                                        */
+/* -------------------------------------------------- */
+.af3-error-banner {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: var(--error);
+  margin-bottom: 1rem;
+}
+
+/* -------------------------------------------------- */
+/* Tab navigation wrapper                              */
+/* -------------------------------------------------- */
+.af3-tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background: var(--glass-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  flex-wrap: wrap;
+}
+
+/* Tab content wrapper */
+.af3-tab-content {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-radius: 12px;
+  padding: 2rem;
+  min-height: 600px;
+}
+
+/* -------------------------------------------------- */
+/* Basis grid: 2-column                                */
+/* -------------------------------------------------- */
+.af3-basis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* -------------------------------------------------- */
+/* Small autogen note                                  */
+/* -------------------------------------------------- */
+.af3-autogen-note {
+  color: #16a34a;
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+}
+
+/* -------------------------------------------------- */
+/* + Button (add Hauptkategorie/Unterkategorie)        */
+/* -------------------------------------------------- */
+.af3-add-btn {
+  padding: 0.5rem 0.75rem;
+  background: var(--primary);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* -------------------------------------------------- */
+/* Checkbox container (Lager / Einstellungen)          */
+/* -------------------------------------------------- */
+.af3-checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.af3-checkbox {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  appearance: auto;
+  -webkit-appearance: checkbox;
+  -moz-appearance: checkbox;
+  opacity: 1;
+  position: relative;
+}
+
+.af3-checkbox-label-text {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* -------------------------------------------------- */
+/* Einstellungen column                                */
+/* -------------------------------------------------- */
+.af3-einstellungen-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 500px;
+}
+
+/* -------------------------------------------------- */
+/* Lager: simple 3-col grid                            */
+/* -------------------------------------------------- */
+.af3-lager-simple-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  max-width: 800px;
+}
+
+/* -------------------------------------------------- */
+/* Color picker input                                  */
+/* -------------------------------------------------- */
+.af3-color-picker {
+  width: 60px;
+  height: 46px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+}
+
+/* -------------------------------------------------- */
+/* Varianten section header                            */
+/* -------------------------------------------------- */
+.af3-varianten-aktivieren {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(107, 68, 35, 0.05);
+  border-radius: 12px;
+  border: 2px solid rgba(107, 68, 35, 0.2);
+}
+
+.af3-varianten-aktivieren-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.af3-varianten-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+}
+
+.af3-varianten-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+/* -------------------------------------------------- */
+/* "Alle auswählen" green button                       */
+/* -------------------------------------------------- */
+.af3-btn-alle {
+  padding: 0.4rem 0.8rem;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* "Alle" subset button (smaller, neutral) */
+.af3-btn-alle-sm {
+  padding: 0.25rem 0.5rem;
+  background: var(--glass-bg);
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* -------------------------------------------------- */
+/* + Hinzufügen button (primary)                       */
+/* -------------------------------------------------- */
+.af3-btn-add-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* -------------------------------------------------- */
+/* Remove-badge button (×)                             */
+/* -------------------------------------------------- */
+.af3-badge-remove-btn {
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* -------------------------------------------------- */
+/* Badge: primary (material / laufzeit selected)       */
+/* -------------------------------------------------- */
+.af3-badge-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Badge: neutral (farben selected)  */
+.af3-badge-neutral {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  font-size: 0.85rem;
+}
+
+/* -------------------------------------------------- */
+/* Farben: color dot (20 px)                           */
+/* -------------------------------------------------- */
+.af3-color-dot-sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Color dot in badge (14 px) */
+.af3-color-dot-xs {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+/* -------------------------------------------------- */
+/* Farben: custom farbe row                            */
+/* -------------------------------------------------- */
+.af3-farbe-custom-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.af3-farbe-color-input {
+  width: 50px;
+  height: 42px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+}
+
+/* -------------------------------------------------- */
+/* Farben: Standard-Farben flex wrapper                */
+/* -------------------------------------------------- */
+.af3-farben-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* -------------------------------------------------- */
+/* Material: flex wrap                                 */
+/* -------------------------------------------------- */
+.af3-material-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* -------------------------------------------------- */
+/* Laufzeit section                                    */
+/* -------------------------------------------------- */
+.af3-laufzeit-section {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.af3-laufzeit-heading {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-laufzeit-select-btn {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.af3-laufzeit-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* -------------------------------------------------- */
+/* Varianten Zusammenfassung                           */
+/* -------------------------------------------------- */
+.af3-varianten-summary {
+  background: rgba(107, 68, 35, 0.05);
+  border: 2px solid rgba(107, 68, 35, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.af3-varianten-summary-title {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.af3-varianten-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* -------------------------------------------------- */
+/* Preis-Tab: sub-tab selector bar                     */
+/* -------------------------------------------------- */
+.af3-preis-tab-bar {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  background: #e5e7eb;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+/* -------------------------------------------------- */
+/* Preis übernehmen: result box                        */
+/* -------------------------------------------------- */
+.af3-preis-uebernehmen-box {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(107, 68, 35, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(107, 68, 35, 0.3);
+}
+
+.af3-preis-uebernehmen-label {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+/* -------------------------------------------------- */
+/* Preis übernehmen button                             */
+/* -------------------------------------------------- */
+.af3-preis-uebernehmen-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* -------------------------------------------------- */
+/* Größenabhängige Preise section                      */
+/* -------------------------------------------------- */
+.af3-groessen-section {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+}
+
+.af3-groessen-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-groessen-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.af3-groessen-ek-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Kids EK input */
+.af3-ek-kids-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-success-400);
+  margin-bottom: 0.5rem;
+}
+
+.af3-ek-kids-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid rgba(74, 222, 128, 0.5);
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: rgba(74, 222, 128, 0.08);
+  color: var(--text-primary);
+}
+
+/* Erwachsene EK input */
+.af3-ek-erw-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-info-400);
+  margin-bottom: 0.5rem;
+}
+
+.af3-ek-erw-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid rgba(99, 179, 237, 0.5);
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  background: rgba(99, 179, 237, 0.08);
+  color: var(--text-primary);
+}
+
+/* Bezugskosten Kids */
+.af3-bezug-kids-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-success-400);
+  margin-bottom: 0.3rem;
+}
+
+.af3-bezug-kids-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: rgba(74, 222, 128, 0.06);
+  color: var(--text-primary);
+}
+
+/* Bezugskosten Erwachsene */
+.af3-bezug-erw-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-info-400);
+  margin-bottom: 0.3rem;
+}
+
+.af3-bezug-erw-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid rgba(99, 179, 237, 0.35);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: rgba(99, 179, 237, 0.06);
+  color: var(--text-primary);
+}
+
+/* Kalkulationsparameter box */
+.af3-kalk-params-box {
+  background: rgba(255, 215, 0, 0.06);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(255, 215, 0, 0.25);
+}
+
+.af3-kalk-params-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+/* MwSt select in groessen tab */
+.af3-mwst-select {
+  height: 30px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+/* 3-col grid inside groessen kalk params */
+.af3-grid-3col-05 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+}
+
+/* Größen kalkulation result box (gold) */
+.af3-groessen-result-box {
+  background: rgba(255, 215, 0, 0.08);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.af3-groessen-result-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Zuordnung hint (if no variants) */
+.af3-no-variant-hint {
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--error);
+}
+
+/* Größen-Zuordnung section */
+.af3-groessen-zuordnung {
+  background: var(--glass-bg-hover);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.af3-groessen-zuordnung-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.af3-groessen-kids-label {
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.af3-groessen-erw-label {
+  font-size: 0.8rem;
+  color: var(--color-info-400);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Tag buttons for Größen-Zuordnung – Kids */
+.af3-tag-kids {
+  padding: 0.3rem 0.6rem;
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.4);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--color-success-400);
+}
+
+/* Tag buttons for Größen-Zuordnung – Erwachsene */
+.af3-tag-erw {
+  padding: 0.3rem 0.6rem;
+  background: rgba(99, 179, 237, 0.15);
+  border: 1px solid rgba(99, 179, 237, 0.4);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--color-info-400);
+}
+
+/* -------------------------------------------------- */
+/* Übersicht-Tab                                       */
+/* -------------------------------------------------- */
+.af3-uebersicht-section {
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+}
+
+.af3-uebersicht-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-uebersicht-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Einzelpreis box */
+.af3-einzelpreis-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.06);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+}
+
+.af3-einzelpreis-detail {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.af3-einzelpreis-uebernehmen-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Größenabhängige Preise box (blue) */
+.af3-groessen-preise-box {
+  padding: 1rem;
+  background: rgba(99, 179, 237, 0.07);
+  border: 2px solid rgba(99, 179, 237, 0.35);
+  border-radius: 8px;
+}
+
+.af3-groessen-preise-title {
+  font-weight: 600;
+  color: var(--color-info-400);
+  margin-bottom: 0.75rem;
+}
+
+/* Kids price row */
+.af3-price-row-kids {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(74, 222, 128, 0.1);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+/* Erw price row */
+.af3-price-row-erw {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(99, 179, 237, 0.1);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+/* No-prices hint */
+.af3-no-prices-hint {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--error);
+}
+
+/* -------------------------------------------------- */
+/* Kalkulationsübersicht column (right pane)           */
+/* -------------------------------------------------- */
+.af3-kalk-section {
+  overflow-y: auto;
+  max-height: 100%;
+  padding: 0.85rem;
+  border-radius: 8px;
+}
+
+/* Einzelkalkulation section headers */
+.af3-kalk-section-header {
+  margin-bottom: 0.5rem;
+  padding: 0.3rem;
+  background: rgba(107, 68, 35, 0.1);
+  border-radius: 4px;
+}
+
+.af3-kalk-section-header strong {
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+/* kalkulation-row padding overrides */
+.af3-kalk-row-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.af3-kalk-row-sm-error {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--error);
+}
+
+.af3-kalk-row-sm-primary {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+.af3-kalk-row-total-sm {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  background: rgba(107, 68, 35, 0.05);
+}
+
+.af3-kalk-row-total-md {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  background: rgba(107, 68, 35, 0.1);
+  font-weight: 600;
+}
+
+.af3-kalk-row-final {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
+  background: rgba(107, 68, 35, 0.15);
+  border-radius: 6px;
+  margin-top: 0.5rem;
+}
+
+.af3-kalk-spacer {
+  height: 8px;
+}
+
+.af3-kalk-divider {
+  height: 8px;
+  border-top: 1px solid rgba(107, 68, 35, 0.3);
+  margin: 0.5rem 0;
+}
+
+/* -------------------------------------------------- */
+/* Übersicht: varianten-tabelle header                 */
+/* -------------------------------------------------- */
+.af3-varianten-table-header {
+  display: grid;
+  grid-template-columns: 1fr 80px 70px 80px;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border-radius: 6px 6px 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.af3-varianten-table-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.af3-varianten-table-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 70px 80px;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+}
+
+.af3-varianten-table-footer {
+  padding: 0.75rem;
+  background: var(--glass-bg);
+  border-radius: 0 0 6px 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* -------------------------------------------------- */
+/* Große Kalkulation: KIDS block                       */
+/* -------------------------------------------------- */
+.af3-kids-block {
+  background: rgba(74, 222, 128, 0.07);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(74, 222, 128, 0.35);
+}
+
+.af3-kids-block-title {
+  font-weight: 700;
+  color: var(--color-success-400);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.3);
+  padding-bottom: 0.4rem;
+}
+
+.af3-kids-netto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--color-success-400);
+}
+
+.af3-kids-brutto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  padding: 0.4rem 0.3rem;
+  border-top: 2px solid rgba(74, 222, 128, 0.4);
+  font-weight: 700;
+  margin-top: 0.2rem;
+  background: rgba(74, 222, 128, 0.12);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.af3-kids-gewinn-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 0.3rem 0;
+  border-top: 1px dashed rgba(74, 222, 128, 0.3);
+  margin-top: 0.3rem;
+}
+
+/* -------------------------------------------------- */
+/* Große Kalkulation: ERWACHSENE block                 */
+/* -------------------------------------------------- */
+.af3-erw-block {
+  background: rgba(99, 179, 237, 0.07);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(99, 179, 237, 0.35);
+}
+
+.af3-erw-block-title {
+  font-weight: 700;
+  color: var(--color-info-400);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(99, 179, 237, 0.3);
+  padding-bottom: 0.4rem;
+}
+
+.af3-erw-netto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--color-info-400);
+}
+
+.af3-erw-brutto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  padding: 0.4rem 0.3rem;
+  border-top: 2px solid rgba(99, 179, 237, 0.4);
+  font-weight: 700;
+  margin-top: 0.2rem;
+  background: rgba(99, 179, 237, 0.12);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.af3-erw-gewinn-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 0.3rem 0;
+  border-top: 1px dashed rgba(99, 179, 237, 0.3);
+}
+
+/* Preisdifferenz box */
+.af3-preisdiff-box {
+  background: var(--glass-bg);
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+
+.af3-preisdiff-main {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.af3-preisdiff-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* -------------------------------------------------- */
+/* Lager: Varianten header box                         */
+/* -------------------------------------------------- */
+.af3-lager-varianten-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(107, 68, 35, 0.05);
+  border-radius: 8px;
+}
+
+.af3-lager-varianten-title {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.af3-lager-varianten-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Mindestbestand row */
+.af3-lager-global-mindest-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+}
+
+.af3-lager-global-mindest-label {
+  color: var(--primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.af3-lager-global-mindest-input {
+  width: 120px;
+  text-align: center;
+}
+
+.af3-lager-global-mindest-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Bestandstabelle container */
+.af3-lager-table-container {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Tabellen-Header */
+.af3-lager-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 120px;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--glass-bg-hover);
+  border-bottom: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+/* Bestand-input (center, smaller padding) */
+.af3-lager-input {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+/* Zusammenfassung grid */
+.af3-lager-summary-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.af3-lager-summary-gesamt {
+  padding: 1rem;
+  background: var(--glass-bg-hover);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.af3-lager-summary-verfuegbar {
+  padding: 1rem;
+  background: #ecfdf5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.af3-lager-summary-kritisch {
+  padding: 1rem;
+  background: #fef3c7;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.af3-lager-summary-leer {
+  padding: 1rem;
+  background: #fef2f2;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.af3-lager-summary-label-gesamt {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.af3-lager-summary-label-verfuegbar {
+  color: var(--primary);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.af3-lager-summary-label-kritisch {
+  color: #d97706;
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.af3-lager-summary-label-leer {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.af3-lager-summary-val-kritisch {
+  color: #d97706;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.af3-lager-summary-val-leer {
+  color: var(--error);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* No-tracking placeholder */
+.af3-no-tracking {
+  padding: 2rem;
+  background: var(--glass-bg-hover);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.af3-no-tracking-text {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* -------------------------------------------------- */
+/* Rabatt-Tab                                          */
+/* -------------------------------------------------- */
+.af3-rabatt-info-box {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.af3-rabatt-info-title {
+  margin: 0 0 1rem 0;
+  color: var(--success);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-rabatt-info-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.af3-rabatt-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.af3-rabatt-max-width {
+  max-width: 600px;
+}
+
+.af3-rabatt-typ-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.af3-rabatt-wert-input {
+  padding: 0.75rem 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  width: 200px;
+}
+
+.af3-rabatt-gilt-fuer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+
+.af3-rabatt-vorschau-box {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+}
+
+.af3-rabatt-vorschau-title {
+  margin: 0 0 1rem 0;
+  color: var(--success);
+  font-size: 1rem;
+}
+
+.af3-rabatt-originalpreis {
+  text-decoration: line-through;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.af3-rabatt-neupreis {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.af3-rabatt-ersparnis-badge {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.af3-rabatt-speichern-row {
+  margin-top: 1rem;
+}
+
+.af3-rabatt-speichern-btn {
+  padding: 0.75rem 2rem;
+  background: #22c55e;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* -------------------------------------------------- */
+/* Modal overlay + panel                               */
+/* -------------------------------------------------- */
+.af3-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.af3-modal-panel {
+  background: var(--bg-secondary, #1a1a2e);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 400px;
+  max-width: 500px;
+}
+
+.af3-modal-title {
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.af3-modal-unterkategorie-hint {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.af3-modal-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.af3-modal-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.af3-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.af3-modal-cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.af3-modal-confirm-btn {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* -------------------------------------------------- */
+/* Laufzeit: rabatt badge inside laufzeit button       */
+/* -------------------------------------------------- */
+.af3-laufzeit-kalk-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* -------------------------------------------------- */
+/* Editing-Größe inline inputs                         */
+/* -------------------------------------------------- */
+.af3-inline-edit-input {
+  width: 80px;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  background: rgba(255, 215, 0, 0.1);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.af3-inline-edit-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.af3-inline-confirm-btn {
+  padding: 0.2rem 0.4rem;
+  background: #4ade80;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.af3-inline-cancel-btn {
+  padding: 0.2rem 0.4rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+/* Custom groesse badge (selected) */
+.af3-groesse-badge-custom {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--gold, #ffd700);
+  color: var(--primary);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.af3-groesse-badge-standard {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--primary);
+  border: none;
+  color: var(--bg-primary);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.af3-groesse-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  color: var(--primary);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.af3-groesse-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  color: rgba(255, 100, 100, 0.9);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* -------------------------------------------------- */
+/* Rabatt-Typ radio labels                             */
+/* -------------------------------------------------- */
+.af3-rabatt-typ-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Einzelkalkulation h3 */
+.af3-kalk-h3 {
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Kalkulation sub-section headings */
+.af3-kalk-h4 {
+  color: var(--primary);
+  font-size: 0.75rem;
+  margin-bottom: 0.15rem;
+  font-weight: 600;
+}
+
+/* Kalkulation field-grid (2-col) */
+.af3-kalk-field-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.2rem 0.4rem;
+}
+
+/* Field label inside kalkulation */
+.af3-kalk-field-label {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  display: block;
+}
+
+/* Field input inside kalkulation */
+.af3-kalk-field-input {
+  height: 28px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+/* kalkulation sub-section wrapper spacing */
+.af3-kalk-subsection {
+  margin-bottom: 0.3rem;
+}
+
+/* MwSt select in einzelkalkulation tab */
+.af3-kalk-mwst-select {
+  height: 28px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+/* kalkulation 3-col grid */
+.af3-kalk-field-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.2rem 0.4rem;
+}
+
+/* Textarea resize */
+.af3-textarea-resize {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Preis-Tab root */
+.af3-preis-tab-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Preiskalkulation container */
+.af3-preiskalkulation-container {
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Preis eingabe section */
+.af3-preis-eingabe-section {
+  overflow-y: auto;
+  max-height: 100%;
+  padding: 0.85rem;
+  background: var(--glass-bg, var(--glass-bg-hover));
+  border: 2px solid var(--border-accent, var(--border-secondary, rgba(255, 255, 255, 0.1)));
+  border-radius: 8px;
+}
+
+/* Kalkulation table layout */
+.af3-kalkulation-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Lager simple 3-col grid */
+.af3-lager-simple-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  max-width: 800px;
+}
+
+/* Varianten aktivieren section */
+.af3-varianten-aktivieren {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(107, 68, 35, 0.05);
+  border-radius: 12px;
+  border: 2px solid rgba(107, 68, 35, 0.2);
+}
+
+.af3-varianten-aktivieren-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary, var(--text-primary));
+}
+
+.af3-varianten-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+/* Page structure */
+.af3-page {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.af3-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+}
+
+.af3-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.af3-page-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+.af3-header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Tab layout */
+.af3-tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background: var(--glass-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  flex-wrap: wrap;
+}
+
+.af3-tab-content {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-radius: 12px;
+  padding: 2rem;
+  min-height: 600px;
+}
+
+/* Error banner */
+.af3-error-banner {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  color: var(--error);
+  margin-bottom: 1rem;
+}
+
+/* Modal */
+.af3-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.af3-modal-panel {
+  background: var(--bg-secondary, #1a1a2e);
+  border: 2px solid var(--primary);
+  border-radius: 16px;
+  padding: 2rem;
+  min-width: 400px;
+  max-width: 500px;
+}
+
+.af3-modal-title {
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+}
+
+.af3-modal-unterkategorie-hint {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.af3-modal-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.af3-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+/* Einstellungen */
+.af3-einstellungen-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 500px;
+}
+
+/* Rabatt tab */
+.af3-rabatt-info-box {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.af3-rabatt-info-title {
+  margin: 0 0 1rem 0;
+  color: var(--success);
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-rabatt-info-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.af3-rabatt-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.af3-rabatt-max-width {
+  max-width: 600px;
+}
+
+.af3-rabatt-typ-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.af3-rabatt-vorschau-box {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+}
+
+.af3-rabatt-vorschau-title {
+  margin: 0 0 1rem 0;
+  color: var(--success);
+  font-size: 1rem;
+}
+
+.af3-rabatt-speichern-row {
+  margin-top: 1rem;
+}
+
+/* Laufzeit */
+.af3-laufzeit-section {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.af3-laufzeit-heading {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-laufzeit-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Varianten summary */
+.af3-varianten-summary {
+  background: rgba(107, 68, 35, 0.05);
+  border: 2px solid rgba(107, 68, 35, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.af3-varianten-summary-title {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.af3-varianten-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Farben grid */
+.af3-farben-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Farbe custom row */
+.af3-farbe-custom-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Farbe color input small */
+.af3-farbe-color-input {
+  width: 50px;
+  height: 42px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+}
+
+/* Material grid */
+.af3-material-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Lager varianten header */
+.af3-lager-varianten-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(107, 68, 35, 0.05);
+  border-radius: 8px;
+}
+
+.af3-lager-varianten-title {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+}
+
+.af3-lager-varianten-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Lager global mindestbestand row */
+.af3-lager-global-mindest-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+}
+
+.af3-lager-global-mindest-label {
+  color: var(--primary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Lager table */
+.af3-lager-table-container {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.af3-lager-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 120px;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--glass-bg-hover);
+  border-bottom: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+/* Lager summary */
+.af3-lager-summary-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.af3-lager-summary-gesamt {
+  padding: 1rem;
+  background: var(--glass-bg-hover);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.af3-lager-summary-verfuegbar {
+  padding: 1rem;
+  background: #ecfdf5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* Labels */
+.af3-lager-summary-label-gesamt {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem 0;
+}
+
+.af3-lager-summary-label-verfuegbar {
+  color: var(--primary);
+  font-size: 0.85rem;
+  margin: 0 0 0.25rem 0;
+}
+
+/* No tracking */
+.af3-no-tracking {
+  padding: 2rem;
+  background: var(--glass-bg-hover);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.af3-no-tracking-text {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Preis uebernehmen */
+.af3-preis-uebernehmen-box {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(107, 68, 35, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(107, 68, 35, 0.3);
+}
+
+.af3-preis-uebernehmen-label {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--primary);
+}
+
+/* Groessen section */
+.af3-groessen-section {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+}
+
+.af3-groessen-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-groessen-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.af3-groessen-ek-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Kalk params */
+.af3-kalk-params-box {
+  background: rgba(255, 215, 0, 0.06);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(255, 215, 0, 0.25);
+}
+
+.af3-kalk-params-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+/* Groessen result */
+.af3-groessen-result-box {
+  background: rgba(255, 215, 0, 0.08);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.af3-groessen-result-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Groessen zuordnung */
+.af3-groessen-zuordnung {
+  background: var(--glass-bg-hover);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.af3-groessen-zuordnung-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 0.75rem;
+}
+
+.af3-groessen-kids-label {
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.af3-groessen-erw-label {
+  font-size: 0.8rem;
+  color: var(--color-info-400);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* No variant hint */
+.af3-no-variant-hint {
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--error);
+}
+
+/* Uebersicht */
+.af3-uebersicht-section {
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+}
+
+.af3-uebersicht-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.af3-uebersicht-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Einzelpreis */
+.af3-einzelpreis-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.06);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+}
+
+.af3-einzelpreis-detail {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+/* Groessen preise */
+.af3-groessen-preise-box {
+  padding: 1rem;
+  background: rgba(99, 179, 237, 0.07);
+  border: 2px solid rgba(99, 179, 237, 0.35);
+  border-radius: 8px;
+}
+
+.af3-groessen-preise-title {
+  font-weight: 600;
+  color: var(--color-info-400);
+  margin-bottom: 0.75rem;
+}
+
+.af3-price-row-kids {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(74, 222, 128, 0.1);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.af3-price-row-erw {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(99, 179, 237, 0.1);
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
+/* No prices hint */
+.af3-no-prices-hint {
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 8px;
+  text-align: center;
+  color: var(--error);
+}
+
+/* Kids/Erw kalk blocks */
+.af3-kids-block {
+  background: rgba(74, 222, 128, 0.07);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(74, 222, 128, 0.35);
+}
+
+.af3-kids-block-title {
+  font-weight: 700;
+  color: var(--color-success-400);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.3);
+  padding-bottom: 0.4rem;
+}
+
+.af3-kids-netto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--color-success-400);
+}
+
+.af3-kids-brutto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  padding: 0.4rem 0.3rem;
+  border-top: 2px solid rgba(74, 222, 128, 0.4);
+  font-weight: 700;
+  margin-top: 0.2rem;
+  background: rgba(74, 222, 128, 0.12);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.af3-erw-block {
+  background: rgba(99, 179, 237, 0.07);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 2px solid rgba(99, 179, 237, 0.35);
+}
+
+.af3-erw-block-title {
+  font-weight: 700;
+  color: var(--color-info-400);
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(99, 179, 237, 0.3);
+  padding-bottom: 0.4rem;
+}
+
+.af3-erw-netto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.3rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  color: var(--color-info-400);
+}
+
+.af3-erw-brutto-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  padding: 0.4rem 0.3rem;
+  border-top: 2px solid rgba(99, 179, 237, 0.4);
+  font-weight: 700;
+  margin-top: 0.2rem;
+  background: rgba(99, 179, 237, 0.12);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+/* =====================================================================================
+   PASS-4 MIGRATION — Additional static inline styles
+   ===================================================================================== */
+
+.af3-result-kids-span { color: var(--color-success-400); font-weight: 600; }
+.af3-result-erw-span { color: var(--color-info-400); font-weight: 600; }
+.af3-price-kids-label { color: var(--color-success-400); }
+.af3-price-kids-value { font-weight: 700; color: var(--color-success-400); }
+.af3-price-erw-label { color: var(--color-info-400); }
+.af3-price-erw-value { font-weight: 700; color: var(--color-info-400); }
+.af3-einzel-label { font-weight: 600; color: var(--primary); }
+.af3-einzel-brutto { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+.af3-no-prices-p { margin-bottom: 0.5rem; font-weight: 600; }
+.af3-uebersicht-meta { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; }
+.af3-empty-hint-sub { font-size: 0.9rem; margin-bottom: 0.5rem; }
+.af3-kalk-brutto-kids-span { color: var(--color-success-400); font-size: 1.1rem; }
+.af3-kalk-brutto-erw-span { color: var(--color-info-400); font-size: 1.1rem; }
+.af3-preisdiff-pct { font-weight: 600; }
+.af3-brutto-vk-val { color: var(--primary); }
+.af3-kalkulation-table-wrap { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.af3-lager-no-variant-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  max-width: 800px;
+}
+
+.af3-color-input-small {
+  width: 60px;
+  height: 46px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+}
+
+.af3-color-input-medium {
+  width: 50px;
+  height: 42px;
+  cursor: pointer;
+  border-radius: 8px;
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+}
+
+.af3-varianten-header-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(107, 68, 35, 0.05);
+  border-radius: 8px;
+}
+.af3-varianten-header-h3 { margin: 0; color: var(--primary); font-size: 1.1rem; }
+.af3-varianten-header-p { margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem; }
+
+.af3-global-mindest-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+}
+.af3-global-mindest-label { color: var(--primary); font-weight: 600; white-space: nowrap; }
+
+.af3-btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.af3-bestand-table-container {
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.af3-bestand-table-header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 120px;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--glass-bg-hover);
+  border-bottom: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.af3-bestand-scroll { max-height: 400px; overflow-y: auto; }
+
+.af3-bestand-summary-grid {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.af3-summary-card { padding: 1rem; border-radius: 8px; text-align: center; }
+.af3-summary-card-neutral { background: var(--glass-bg-hover); }
+.af3-summary-card-ok { background: #ecfdf5; }
+.af3-summary-card-warn { background: #fef3c7; }
+.af3-summary-card-error { background: #fef2f2; }
+.af3-summary-label { font-size: 0.85rem; margin: 0 0 0.25rem 0; }
+.af3-summary-label-neutral { color: var(--text-secondary); }
+.af3-summary-label-ok { color: var(--primary); }
+.af3-summary-label-warn { color: #d97706; }
+.af3-summary-label-error { color: var(--error); }
+.af3-summary-value-warn { color: #d97706; font-size: 1.5rem; font-weight: 700; margin: 0; }
+.af3-summary-value-error { color: var(--error); font-size: 1.5rem; font-weight: 700; margin: 0; }
+
+.af3-no-tracking-box { padding: 2rem; background: var(--glass-bg-hover); border-radius: 12px; text-align: center; color: var(--text-secondary); }
+.af3-no-tracking-p { font-size: 1.1rem; margin: 0; }
+.af3-einstellungen-col { display: flex; flex-direction: column; gap: 1rem; max-width: 500px; }
+
+.af3-rabatt-intro-box {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+  border: 2px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.af3-rabatt-intro-h3 { margin: 0 0 1rem 0; color: var(--success); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem; }
+.af3-rabatt-intro-p { margin: 0; color: var(--text-secondary); font-size: 0.95rem; }
+.af3-rabatt-loading { text-align: center; padding: 2rem; color: var(--text-muted); }
+.af3-rabatt-maxwidth { max-width: 600px; }
+.af3-rabatt-typ-row { display: flex; gap: 1rem; }
+.af3-rabatt-wert-input { padding: 0.75rem 1rem; background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); border-radius: 8px; color: var(--text-primary); font-size: 1.1rem; width: 200px; }
+.af3-gilt-fuer-label { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; cursor: pointer; }
+.af3-rabatt-vorschau-box { margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(16, 185, 129, 0.08) 100%); border: 2px solid rgba(34, 197, 94, 0.3); border-radius: 12px; }
+.af3-rabatt-vorschau-h4 { margin: 0 0 1rem 0; color: var(--success); font-size: 1rem; }
+.af3-rabatt-altpreis { text-decoration: line-through; color: var(--text-muted); font-size: 1.1rem; }
+.af3-rabatt-neupreis { color: var(--success); font-weight: 700; font-size: 1.3rem; }
+.af3-rabatt-ersparnis { background: rgba(34, 197, 94, 0.2); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600; }
+.af3-rabatt-speichern-row { margin-top: 1rem; }
+.af3-rabatt-check { width: 22px; height: 22px; accent-color: #22c55e; }
+.af3-rabatt-save-btn { padding: 0.75rem 2rem; background: #22c55e; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; }
+
+.af3-varianten-aktivieren-box { margin-bottom: 2rem; padding: 1rem; background: rgba(107, 68, 35, 0.05); border-radius: 12px; border: 2px solid rgba(107, 68, 35, 0.2); }
+.af3-varianten-aktivieren-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
+.af3-varianten-check { width: 20px; height: 20px; accent-color: var(--primary); }
+.af3-varianten-grid { display: grid; gap: 2rem; }
+
+.af3-btn-select-all { padding: 0.4rem 0.8rem; background: #dcfce7; border: 1px solid #86efac; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--primary); }
+.af3-btn-select-all-transparent { padding: 0.4rem 0.75rem; background: transparent; border: 1px solid var(--primary); border-radius: 6px; color: var(--primary); cursor: pointer; font-size: 0.8rem; }
+.af3-btn-select-sub { padding: 0.25rem 0.5rem; background: var(--glass-bg); border: 1px solid #d1d5db; border-radius: 4px; cursor: pointer; font-size: 0.75rem; color: var(--text-secondary); }
+
+.af3-farben-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+.af3-material-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.af3-laufzeit-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.af3-custom-farbe-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.af3-farbe-tag { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: var(--glass-bg); border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); border-radius: 20px; font-size: 0.85rem; }
+.af3-farbe-dot-sm { width: 14px; height: 14px; border-radius: 50%; }
+.af3-tag-primary { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: var(--primary); color: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+.af3-tag-remove-btn { background: rgba(255,255,255,0.3); border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; color: var(--text-primary); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
+
+.af3-laufzeit-section { background: var(--glass-bg); border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2)); border-radius: 12px; padding: 1.5rem; }
+.af3-laufzeit-h3 { margin: 0; color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+.af3-varianten-zusammenfassung { background: rgba(107, 68, 35, 0.05); border: 2px solid rgba(107, 68, 35, 0.2); border-radius: 12px; padding: 1.5rem; }
+.af3-varianten-zusammenfassung-h3 { margin: 0 0 1rem 0; color: var(--primary); font-size: 1.2rem; }
+.af3-varianten-zusammenfassung-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+
+.af3-groesse-editing-span { display: flex; align-items: center; gap: 0.25rem; }
+.af3-groesse-edit-input { width: 80px; padding: 0.2rem 0.4rem; border-radius: 6px; border: 1px solid var(--primary); background: rgba(255,215,0,0.1); color: var(--text-primary); font-size: 0.85rem; }
+.af3-groesse-confirm-btn { padding: 0.2rem 0.4rem; background: #4ade80; color: #000; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
+.af3-groesse-cancel-btn { padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.15); color: var(--text-primary); border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
+.af3-groesse-tag-custom { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: rgba(255,215,0,0.15); border: 1px solid var(--gold, #ffd700); color: var(--primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+.af3-groesse-tag-standard { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: var(--primary); color: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+.af3-groesse-edit-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: var(--primary); font-size: 0.75rem; line-height: 1; }
+.af3-groesse-delete-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: rgba(255,100,100,0.9); font-size: 0.85rem; font-weight: 700; line-height: 1; }
+
+.af3-page-root { padding: 2rem; max-width: 1600px; margin: 0 auto; }
+.af3-page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2)); }
+.af3-page-h1 { font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; }
+.af3-page-subtitle { font-size: 1.1rem; color: var(--text-secondary); }
+.af3-header-actions { display: flex; gap: 1rem; }
+.af3-btn-back { padding: 0.75rem 1.5rem; background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2)); border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; }
+.af3-error-banner { padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; color: var(--error); margin-bottom: 1rem; }
+.af3-tab-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.25rem; background: var(--glass-bg); border-radius: 12px; border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2)); flex-wrap: wrap; }
+.af3-tab-content-wrapper { background: var(--glass-bg); border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2)); border-radius: 12px; padding: 2rem; min-height: 600px; }
+
+.af3-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+.af3-modal-panel { background: var(--bg-secondary, #1a1a2e); border: 2px solid var(--primary); border-radius: 16px; padding: 2rem; min-width: 400px; max-width: 500px; }
+.af3-modal-h3 { color: var(--primary); margin-bottom: 1.5rem; font-size: 1.25rem; }
+.af3-modal-hint { margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+.af3-modal-label { display: block; margin-bottom: 0.5rem; color: var(--primary); font-weight: 600; }
+.af3-modal-input { width: 100%; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; }
+.af3-modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
+.af3-modal-btn-cancel { padding: 0.75rem 1.5rem; background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: var(--text-primary); cursor: pointer; font-size: 0.95rem; }
+
+/* Lager table row inputs (basis-input base + centered/compact override) */
+.af3-lager-bestand-input {
+  padding: 0.5rem 0.75rem;
+  background: var(--glass-bg);
+  border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+/* Rabatt column flex layout */
+.u-flex-col-md {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Kalkulation h3 static base (color is dynamic via inline) */
+.af3-kalk-h3-base { margin-bottom: 1rem; font-size: 1.1rem; font-weight: 600; }
+
+/* Farbe/Groesse/Material selection button base (borderColor/background dynamic) */
+.af3-varianten-btn-base {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Farbe color dot span base (background/border dynamic) */
+.af3-farbe-dot-lg {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Preistab buttons base (background/color/border dynamic) */
+.af3-preis-tab-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Simple flex-1 utility */
+.af3-flex-1 { flex: 1; }
+.af3-flex-1-minw { flex: 1; min-width: 150px; }
+
+/* Gewinn/Varianten spans with dynamic color - static fontWeight */
+.af3-gewinn-span { font-weight: 600; }
+
+/* Main tab navigation buttons (background/color/border dynamic) */
+.af3-tab-nav-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+/* Lager-tracking checkbox has a narrower max-width */
+.af3-checkbox-container--lager {
+  max-width: 400px;
+}
+
+/* === INLINE STYLE MIGRATIONS === */
+
+/* Neue Gruppe button */
+.af3-btn-neue-gruppe {
+  padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3);
+  border: none; border-radius: 6px; cursor: not-allowed;
+  font-weight: 600; font-size: 1rem; white-space: nowrap;
+}
+.af3-btn-neue-gruppe:not(:disabled) { background: var(--primary); color: #000; cursor: pointer; }
+
+/* Preis tab buttons */
+.af3-preis-tab-btn { background: transparent; color: var(--text-secondary); }
+.af3-preis-tab-btn--active { background: var(--primary); color: #ffffff; }
+
+/* Kalkulation section */
+.af3-kalk-section--uebersicht { background: rgba(4, 120, 87, 0.05); border: 2px solid rgba(4, 120, 87, 0.3); }
+.af3-kalk-section--kalk { background: rgba(107, 68, 35, 0.05); border: 2px solid rgba(107, 68, 35, 0.3); }
+.af3-kalk-h3-base--uebersicht { color: var(--primary); }
+
+/* Varianten overview table row */
+.af3-varianten-table-row--kids { background: rgba(74,222,128,0.08); }
+.af3-varianten-table-row--erw { background: rgba(99,179,237,0.08); }
+.af3-varianten-table-row--other { background: rgba(255,215,0,0.06); }
+.af3-gewinn-span--kids { color: #4ade80; }
+.af3-gewinn-span--erw { color: #63b3ed; }
+.af3-gewinn-span--other { color: #ffd700; }
+
+/* Gewinn row colors */
+.af3-gewinn--positive { color: #4ade80; }
+.af3-gewinn--positive-blue { color: #63b3ed; }
+.af3-gewinn--primary { color: var(--primary); }
+.af3-gewinn--negative { color: #ef4444; }
+
+/* Checkbox container active state */
+.af3-checkbox-container--active {
+  border-color: var(--primary);
+  background: rgba(107, 68, 35, 0.05);
+}
+
+/* Lager input rows */
+.af3-lager-input--bordered { border-bottom: 1px solid #e9ecef; }
+.af3-lager-input--leer { background: rgba(239, 68, 68, 0.05); }
+.af3-lager-input--kritisch { background: rgba(234, 179, 8, 0.1); }
+
+/* White color dot border */
+.af3-color-dot--white { border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+
+/* Lager status badge */
+.af3-lager-status {
+  padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem;
+  font-weight: 600; text-align: center;
+}
+.af3-lager-status--leer { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.af3-lager-status--kritisch { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; }
+.af3-lager-status--ok { background: #ecfdf5; color: var(--primary); border: 1px solid #6ee7b7; }
+
+/* Rabatt aktivieren */
+.af3-varianten-aktivieren { background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-varianten-aktivieren--active { background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.5); }
+
+/* Rabatt typ labels */
+.af3-rabatt-typ-label { background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-rabatt-typ-label--active { background: rgba(34, 197, 94, 0.15); border-color: #22c55e; }
+
+/* Loading/disabled buttons via :disabled */
+.af3-rabatt-speichern-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+.af3-btn-save:disabled { cursor: not-allowed; opacity: 0.5; }
+.af3-modal-confirm-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Generic toggle button (size/material) */
+.af3-toggle-btn {
+  padding: 0.5rem 1rem; border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+  border-radius: 8px; background: rgba(255, 255, 255, 0.08); color: var(--text-primary);
+  cursor: pointer; font-weight: 600; transition: all 0.2s ease;
+}
+.af3-toggle-btn--sm { padding: 0.5rem 0.75rem; font-size: 0.9rem; }
+.af3-toggle-btn--selected { border-color: var(--primary); background: var(--primary); color: #ffffff; }
+
+/* Farbe button */
+.af3-varianten-btn-base { background: rgba(255, 255, 255, 0.08); border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-varianten-btn-base--selected { border-color: var(--primary); background: rgba(255, 215, 0, 0.2); }
+
+/* Laufzeit button */
+.af3-laufzeit-select-btn {
+  background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
+  border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)); box-shadow: none;
+}
+.af3-laufzeit-select-btn--selected {
+  background: var(--primary); color: #000;
+  border-color: var(--primary); box-shadow: 0 4px 12px rgba(107, 68, 35, 0.15);
+}
+
+/* Laufzeit rabatt badge */
+.af3-laufzeit-rabatt-badge {
+  font-size: 0.75rem; font-weight: 700; color: #10B981;
+  background: rgba(16, 185, 129, 0.15); padding: 0.15rem 0.5rem; border-radius: 4px;
+}
+.af3-laufzeit-rabatt-badge--selected { color: #16A34A; background: rgba(0,0,0,0.1); }
+
+/* Tab nav active state (replaces inline styles) */
+.af3-tab-nav-btn { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
+.af3-tab-nav-btn.active { background: var(--primary); color: var(--bg-primary); border-color: var(--primary); }

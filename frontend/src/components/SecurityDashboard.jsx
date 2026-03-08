@@ -274,7 +274,7 @@ const SecurityDashboard = () => {
               <div className="alert-list">
                 {stats.unresolvedCritical.slice(0, 5).map(alert => (
                   <div key={alert.id} className={`alert-item severity-${alert.severity}`}>
-                    <div className="alert-badge" style={{ background: getSeverityColor(alert.severity) }}>
+                    <div className="alert-badge" style={{ '--severity-color': getSeverityColor(alert.severity) }}>
                       {getSeverityLabel(alert.severity)}
                     </div>
                     <div className="alert-content">
@@ -314,7 +314,7 @@ const SecurityDashboard = () => {
                     <span className="type-count">{item.count}</span>
                     <span
                       className="type-severity"
-                      style={{ color: getSeverityColor(item.severity) }}
+                      style={{ '--severity-color': getSeverityColor(item.severity) }}
                     >
                       {getSeverityLabel(item.severity)}
                     </span>
@@ -379,7 +379,7 @@ const SecurityDashboard = () => {
             ) : (
               alerts.map(alert => (
                 <div key={alert.id} className={`alert-item severity-${alert.severity} ${alert.resolved ? 'resolved' : ''}`}>
-                  <div className="alert-badge" style={{ background: getSeverityColor(alert.severity) }}>
+                  <div className="alert-badge" style={{ '--severity-color': getSeverityColor(alert.severity) }}>
                     {getSeverityLabel(alert.severity)}
                   </div>
                   <div className="alert-content">

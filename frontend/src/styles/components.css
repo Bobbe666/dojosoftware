@@ -54,7 +54,6 @@ Glassmorphism-Design mit Theme-Variablen.
   background: var(--bg-primary);
   min-height: 100vh;
   padding: var(--spacing-lg);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-primary);
   animation: fadeIn var(--transition-base);
 }
@@ -86,9 +85,9 @@ Glassmorphism-Design mit Theme-Variablen.
 .standard-card,
 .glass-card,
 .nav-card {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   border: var(--glass-border);
   box-shadow: var(--shadow-lg);
   padding: 2rem;
@@ -119,8 +118,8 @@ Glassmorphism-Design mit Theme-Variablen.
 .glass-card:hover,
 .nav-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px var(--primary-alpha-20);
-  border-color: var(--primary-alpha-50);
+  box-shadow: 0 20px 40px rgba(255,215,0,0.2);
+  border-color: rgba(255,215,0,0.5);
 }
 
 /* Rotating Border Effekt - wie Dashboard */
@@ -136,7 +135,7 @@ Glassmorphism-Design mit Theme-Variablen.
   background: conic-gradient(
     from 0deg,
     transparent,
-    var(--primary-alpha-10),
+    rgba(255,215,0,0.1),
     transparent,
     var(--secondary-alpha-10),
     transparent
@@ -180,7 +179,7 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .standard-card-description,
 .nav-card-description {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-size: 1rem;
   line-height: 1.6;
   margin-bottom: 1.5rem;
@@ -205,7 +204,7 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .nav-content p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-size: 1rem;
   line-height: 1.6;
   margin: 0;
@@ -247,15 +246,15 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .nav-badge {
-  background: var(--primary-alpha-25);
+  background: rgba(255,215,0,0.25);
   color: var(--color-gold);
   padding: 0.5rem 1rem;
   border-radius: 25px;
   font-size: 0.8rem;
   font-weight: 600;
-  border: 1px solid var(--primary-alpha-50);
+  border: 1px solid rgba(255,215,0,0.5);
   white-space: nowrap;
-  box-shadow: 0 0 15px var(--primary-alpha-40);
+  box-shadow: 0 0 15px rgba(255,215,0,0.4);
   text-shadow: var(--glow-gold);
   position: relative;
   z-index: 2;
@@ -269,11 +268,11 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .nav-badge.live {
-  background: var(--primary-alpha-35);
+  background: rgba(255,215,0,0.35);
   color: var(--color-gold);
-  border-color: var(--primary-alpha-60);
-  text-shadow: 0 0 15px var(--primary-alpha-50);
-  box-shadow: 0 0 20px var(--primary-alpha-40);
+  border-color: rgba(255,215,0,0.6);
+  text-shadow: 0 0 15px rgba(255,215,0,0.5);
+  box-shadow: 0 0 20px rgba(255,215,0,0.4);
 }
 
 /* ===== STANDARDIZED STAT CARDS - Based on Dashboard stats ===== */
@@ -281,10 +280,9 @@ Glassmorphism-Design mit Theme-Variablen.
 /* Standard Stat Card Grid */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  padding: 0;
-  margin-bottom: 3rem;
+  grid-template-columns: var(--ui-stats-cols);
+  gap: var(--ui-stats-gap);
+  margin-bottom: var(--ui-stats-margin-b);
 }
 
 /* Responsive Stat Card Grid - 4 Karten gleichbreit */
@@ -307,109 +305,118 @@ Glassmorphism-Design mit Theme-Variablen.
   }
 }
 
-/* Standard Stat Card - wie Personal Check-in Karte Hintergrund */
 /* ===== STATISTIK-KARTEN - Zentrale Standard-Styles ===== */
-/* Diese Styles werden von allen Komponenten verwendet und können bei Bedarf überschrieben werden */
+/* Hohe Spezifizität (3 Klassen) damit andere Komponenten-CSS nicht überschreibt */
 .stat-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-radius: 10px;
-  border: 1px solid var(--primary-alpha-20);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  padding: 0.6rem;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-xl);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: var(--ui-stat-card-padding);
+  transition: background 0.2s;
+  cursor: default;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--ui-stat-card-gap);
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px var(--primary-alpha-20);
-  border-color: var(--primary-alpha-40);
+  background: var(--surface-2);
+  transform: none;
+  box-shadow: none;
 }
 
-/* Varianten-Klassen für Border-Farbe */
-.stat-card.success,
-.stat-card.info,
-.stat-card.warning,
-.stat-card.positive,
-.stat-card.primary {
-  border-left: 3px solid var(--primary);
-}
-
-.stat-icon {
-  background: var(--primary-alpha-15);
-  color: var(--primary);
-  padding: 0;
-  border-radius: 50%;
+/* Spezifizität 0-2-0 — überbietet alle einfachen .stat-icon Regeln */
+.stat-card .stat-icon {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-3);
+  border-radius: var(--comp-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  width: 32px;
-  height: 32px;
-  max-width: 32px;
-  max-height: 32px;
-  font-size: 1rem;
-  position: relative;
-  z-index: 2;
-  flex-shrink: 0;
-  /* Sicherstellen, dass Icon immer rund ist */
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-}
-
-.stat-icon svg {
-  width: 16px;
-  height: 16px;
+  width: var(--ui-stat-icon-size);
+  height: var(--ui-stat-icon-size);
+  min-width: var(--ui-stat-icon-size);
+  max-width: unset;
+  max-height: unset;
+  aspect-ratio: unset;
   flex-shrink: 0;
 }
 
-.stat-info {
-  position: relative;
-  z-index: 2;
+.stat-card .stat-icon svg {
+  width: var(--ui-stat-icon-svg);
+  height: var(--ui-stat-icon-svg);
+  flex-shrink: 0;
+}
+
+.stat-card .stat-info {
   flex: 1;
   min-width: 0;
 }
 
-.stat-info h3 {
-  color: var(--text-secondary);
-  font-size: 0.55rem;
-  font-weight: 500;
-  margin: 0 0 0.15rem 0;
+/* Spezifizität 0-2-1 — überbietet .stat-info h3 */
+.stat-card .stat-info h3 {
+  color: var(--text-4);
+  font-size: var(--ui-stat-label);
+  font-weight: 600;
+  margin: 0 0 0.4rem 0;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
-  text-shadow: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.05em;
   line-height: 1.2;
-  word-wrap: break-word;
+  text-shadow: none;
 }
 
-.stat-value {
-  color: var(--primary);
-  font-size: 0.7rem;
+/* Spezifizität 0-3-0 — überbietet alle .stat-value Regeln aus anderen Komponenten */
+.stat-card .stat-info .stat-value {
+  color: var(--text-1);
+  font-size: var(--ui-stat-value);
   font-weight: 700;
-  margin: 0 0 0.15rem 0;
-  line-height: 1.2;
+  margin: 0 0 0.25rem 0;
+  line-height: 1;
   text-shadow: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-.stat-trend {
-  color: var(--text-muted);
-  font-size: 0.75rem;
+/* Spezifizität 0-2-0 */
+.stat-card .stat-trend {
+  color: var(--text-4);
+  font-size: var(--ui-stat-trend);
   margin: 0;
-  text-shadow: none;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   line-height: 1.2;
+  text-shadow: none;
 }
+
+/* ── Washi (TDA-VIB Light) Theme Overrides ── */
+[data-theme="tda-vib"] .stat-card,
+.dashboard-tda-vib .stat-card {
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(26,26,26,0.08);
+}
+
+[data-theme="tda-vib"] .stat-card:hover,
+.dashboard-tda-vib .stat-card:hover {
+  background: rgba(255,255,255,0.85);
+}
+
+[data-theme="tda-vib"] .stat-card .stat-info h3,
+.dashboard-tda-vib .stat-card .stat-info h3 {
+  color: rgba(26,26,26,0.55);
+}
+
+[data-theme="tda-vib"] .stat-card .stat-info .stat-value,
+.dashboard-tda-vib .stat-card .stat-info .stat-value {
+  color: #1a1a1a;
+}
+
+[data-theme="tda-vib"] .stat-card .stat-trend,
+.dashboard-tda-vib .stat-card .stat-trend {
+  color: rgba(26,26,26,0.5);
+}
+
+[data-theme="tda-vib"] .stat-card .stat-icon,
+.dashboard-tda-vib .stat-card .stat-icon {
+  background: rgba(26,26,26,0.05);
+  color: rgba(26,26,26,0.6);
+}
+
 
 /* ===== STANDARDIZED BUTTONS - Based on Dashboard logout-button ===== */
 
@@ -420,7 +427,7 @@ Glassmorphism-Design mit Theme-Variablen.
   border: 1px solid var(--border-accent);
   color: var(--text-secondary);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
@@ -442,7 +449,7 @@ Glassmorphism-Design mit Theme-Variablen.
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
   transition: left 0.5s;
 }
 
@@ -453,16 +460,16 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .logout-button:hover,
 .dashboard-button:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-4);
   border-color: var(--border-accent-hover);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   transform: translateY(-1px);
 }
 
 .logout-button:active,
 .dashboard-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px var(--primary-alpha-20);
+  box-shadow: 0 2px 6px rgba(255,215,0,0.2);
 }
 
 .logout-icon,
@@ -741,7 +748,7 @@ Glassmorphism-Design mit Theme-Variablen.
   color: var(--text-secondary);
   padding: 12px 16px;
   text-align: left;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   cursor: pointer;
   font-weight: 600;
   font-size: 0.95rem;
@@ -761,7 +768,7 @@ Glassmorphism-Design mit Theme-Variablen.
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
   transition: left 0.5s;
 }
 
@@ -772,16 +779,16 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .tab-vertical-btn:hover,
 .tab:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-4);
   border-color: var(--border-accent-hover);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   transform: translateY(-1px);
 }
 
 .tab-vertical-btn:active,
 .tab:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px var(--primary-alpha-20);
+  box-shadow: 0 2px 6px rgba(255,215,0,0.2);
 }
 
 .tab-icon {
@@ -802,10 +809,10 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .tab.active {
-  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
-  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(135deg, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.1) 50%, transparent 100%);
+  color: var(--text-1);
   font-weight: 700;
-  box-shadow: 0 2px 8px var(--primary-alpha-20);
+  box-shadow: 0 2px 8px rgba(255,215,0,0.2);
   border: 1px solid var(--border-accent-hover);
 }
 
@@ -816,8 +823,8 @@ Glassmorphism-Design mit Theme-Variablen.
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
 }
@@ -828,7 +835,7 @@ Glassmorphism-Design mit Theme-Variablen.
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
@@ -841,9 +848,9 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .sub-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  border-color: var(--primary-alpha-30);
+  background: var(--surface-4);
+  color: var(--text-1);
+  border-color: rgba(255,215,0,0.3);
 }
 
 .sub-tab-btn.active {
@@ -861,8 +868,8 @@ Glassmorphism-Design mit Theme-Variablen.
   gap: 0.25rem;
   margin-bottom: 1rem;
   padding: 0.25rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-md);
   border: 1px solid rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
 }
@@ -873,7 +880,7 @@ Glassmorphism-Design mit Theme-Variablen.
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
@@ -887,28 +894,27 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .style-sub-tab-btn:hover,
 .exam-sub-tab-btn:hover {
-  background: var(--glass-bg);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--surface-3);
+  color: var(--text-1);
   border-color: var(--border-accent);
 }
 
 .style-sub-tab-btn.active,
 .exam-sub-tab-btn.active {
-  background: linear-gradient(135deg, var(--primary-alpha-25), var(--primary-alpha-15));
+  background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,215,0,0.15));
   color: var(--color-gold);
   border-color: var(--border-accent-hover);
-  box-shadow: 0 2px 8px var(--primary-alpha-20);
+  box-shadow: 0 2px 8px rgba(255,215,0,0.2);
 }
 
 /* ===== LOADING STATES ===== */
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border-secondary);
-  border-top: 4px solid var(--primary-500);
+  width: 30px;
+  height: 30px;
+  border: 2px solid var(--surface-3);
+  border-top-color: var(--primary);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
+  animation: spin 0.9s linear infinite;
 }
 
 @keyframes spin {
@@ -921,8 +927,28 @@ Glassmorphism-Design mit Theme-Variablen.
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl);
-  color: var(--text-muted);
+  height: 50vh;
+  gap: 0.9rem;
+  color: var(--text-3);
+  font-size: var(--ui-page-subtitle);
+}
+
+/* ===== SECTION HEADER ===== */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-header h2 {
+  font-size: var(--ui-section-title);
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 
 /* ===== ALERTS ===== */
@@ -1014,7 +1040,7 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .preview-header {
   height: 25%;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -1028,7 +1054,7 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .preview-card {
   flex: 1;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-4);
   border-radius: 2px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -1199,3 +1225,113 @@ Glassmorphism-Design mit Theme-Variablen.
     gap: 0.5rem;
   }
 }
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
+
+
+/* ===== Page-Header Washi ===== */
+[data-theme="tda-vib"] .beitraege-header,
+[data-theme="tda-vib"] .tarife-page-header,
+.dashboard-tda-vib .beitraege-header,
+.dashboard-tda-vib .tarife-page-header {
+  border-bottom-color: rgba(26,26,26,0.1);
+}
+
+[data-theme="tda-vib"] .beitraege-header-icon,
+[data-theme="tda-vib"] .tarife-page-header-icon,
+.dashboard-tda-vib .beitraege-header-icon,
+.dashboard-tda-vib .tarife-page-header-icon {
+  background: rgba(201,162,39,0.1);
+}
+
+/* =============================================
+   GLOBAL UTILITY CLASSES — Inline-Style Migration
+   ============================================= */
+
+/* Flex Layouts */
+.u-flex-row-sm { display: flex; align-items: center; gap: 0.5rem; }
+.u-flex-row-md { display: flex; align-items: center; gap: 0.75rem; }
+.u-flex-row-lg { display: flex; align-items: center; gap: 1rem; }
+.u-flex-gap-sm { display: flex; gap: 0.5rem; }
+.u-flex-col-sm { display: flex; flex-direction: column; gap: 0.5rem; }
+.u-flex-col-md { display: flex; flex-direction: column; gap: 0.75rem; }
+.u-flex-1 { flex: 1; }
+.u-flex-1-min0 { flex: 1; min-width: 0; }
+.u-flex-between { display: flex; justify-content: space-between; }
+.u-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+/* Form Elements */
+.u-form-label { display: block; margin-bottom: 0.4rem; font-size: 0.875rem; font-weight: 500; }
+.u-form-label-secondary { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
+.u-input-sm { width: 100%; padding: 0.5rem; font-size: 0.875rem; }
+
+/* Text Colors */
+.u-text-primary { color: var(--text-primary); }
+.u-text-secondary { color: var(--text-secondary); }
+.u-text-muted { color: var(--text-muted); }
+.u-text-accent { color: var(--primary); }
+.u-text-success { color: var(--success); }
+.u-text-error { color: var(--error); }
+.u-text-warning { color: var(--warning); }
+.u-text-secondary-sm { font-size: 0.85rem; color: var(--text-secondary); }
+
+/* Table Cells */
+.u-td-right { text-align: right; padding: 0.75rem 0.5rem; }
+.u-td-secondary { padding: 0.75rem; text-align: left; color: var(--text-secondary); font-size: 0.85rem; }
+
+/* Additional utilities */
+.u-label-xs-secondary { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+.u-label-xs-meta { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+.u-label-xs-bottom { font-size: 0.65rem; color: var(--text-secondary); margin-top: 0.25rem; }
+.u-heading-primary { font-size: 1rem; font-weight: bold; color: var(--primary); }
+.u-gold-glow-lg { color: var(--text-primary); font-size: 1.5rem; font-weight: 700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+.u-emoji-xl { font-size: 3rem; margin-bottom: 1rem; }
+.u-flex-wrap-gap { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.u-hidden { display: none; }
+.u-relative { position: relative; }
+.u-pointer { cursor: pointer; }
+.u-flex-shrink-accent { color: var(--primary); flex-shrink: 0; }
+
+/* Spacing */
+.u-mt-05 { margin-top: 0.5rem; }
+.u-mt-075 { margin-top: 0.75rem; }
+.u-mt-1 { margin-top: 1rem; }
+.u-mt-15 { margin-top: 1.5rem; }
+.u-mt-2 { margin-top: 2rem; }
+.u-mb-05 { margin-bottom: 0.5rem; }
+.u-mb-075 { margin-bottom: 0.75rem; }
+.u-mb-1 { margin-bottom: 1rem; }
+.u-mb-15 { margin-bottom: 1.5rem; }
+.u-mb-2 { margin-bottom: 2rem; }
+.u-ml-05 { margin-left: 0.5rem; }
+.u-ml-1 { margin-left: 1rem; }
+.u-mr-05 { margin-right: 0.5rem; }
+.u-mr-1 { margin-right: 1rem; }
+.u-p-1 { padding: 1rem; }
+.u-p-2 { padding: 2rem; }
+.u-p-3 { padding: 3rem; }
+.u-pt-1 { padding-top: 1rem; }
+
+/* Layout */
+.u-page-container { padding: 2rem; max-width: 800px; margin: 0 auto; }
+.u-block { display: block; }
+.u-text-center { text-align: center; }
+.u-w-full { width: 100%; }
+.u-cursor-pointer { cursor: pointer; }
+.u-cursor-default { cursor: default; }
+.u-va-middle { vertical-align: middle; }
+.u-fs-2rem { font-size: 2rem; }
+.u-fs-1rem { font-size: 1rem; }
+.u-fs-09rem { font-size: 0.9rem; }
+.u-fs-085rem { font-size: 0.85rem; }
+.u-fs-08rem { font-size: 0.8rem; }
+.u-fs-075rem { font-size: 0.75rem; }
+.u-fs-07rem { font-size: 0.7rem; }
+.u-fw-500 { font-weight: 500; }
+.u-fw-600 { font-weight: 600; }
+.u-fw-700 { font-weight: 700; }
+.u-fw-bold { font-weight: bold; }
+.u-opacity-07 { opacity: 0.7; }
+.u-opacity-05 { opacity: 0.5; }

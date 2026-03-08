@@ -229,16 +229,11 @@ const TrainingReminders = () => {
             <span className="reminders-badge">{activeReminders.length}</span>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="u-flex-gap-sm">
           <button
-            className="settings-button"
+            className={showAllCourses ? 'settings-button settings-button--active' : 'settings-button'}
             onClick={() => setShowAllCourses(!showAllCourses)}
             title={showAllCourses ? 'Nur meine Kurse' : 'Alle Kurse anzeigen'}
-            style={{
-              background: showAllCourses ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)',
-              border: showAllCourses ? '1px solid rgba(255, 215, 0, 0.5)' : '1px solid rgba(255, 255, 255, 0.2)',
-              color: showAllCourses ? '#ffd700' : 'rgba(255, 255, 255, 0.7)'
-            }}
           >
             <List size={16} />
           </button>
@@ -342,18 +337,12 @@ const TrainingReminders = () => {
       {/* Kommende Kurse */}
       <div className="upcoming-courses">
         <h4>Kommende Kurse</h4>
-        {reminders.filter(r => !r.dismissed && r.reminderTime > new Date()).map(course => (
+        {reminders.filter(r => !r.dismissed && r.reminderTime > new Date() && r.datum <= new Date(Date.now() + 4 * 60 * 60 * 1000)).map(course => (
           <div key={course.id} className="course-preview">
             <div className="course-info">
-              <span className="course-name" style={{ fontWeight: "bold", fontSize: "0.95rem", color: "rgba(255, 255, 255, 0.95)" }}>{course.kurs_name}</span>
+              <span className="course-name tr-course-name">{course.kurs_name}</span>
               <span className="course-time">{formatDate(course.datum)} - {formatTime(course.datum)}</span>
-              <div className="course-details" style={{
-                display: 'flex',
-                gap: '0.75rem',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.6)',
-                marginTop: '0.25rem'
-              }}>
+              <div className="course-details tr-course-details">
                 {course.trainer_name && (
                   <span>👨‍🏫 {course.trainer_name}</span>
                 )}

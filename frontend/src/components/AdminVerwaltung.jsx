@@ -26,10 +26,10 @@ const AdminVerwaltung = () => {
 
   // Rollen-Definitionen
   const rollen = [
-    { key: 'admin', label: 'Admin', icon: '👨‍💼', color: '#3b82f6' },
+    { key: 'admin', label: 'Admin', icon: '👨‍💼', color: 'var(--info)' },
     { key: 'supervisor', label: 'Supervisor', icon: '👔', color: '#8b5cf6' },
-    { key: 'trainer', label: 'Trainer', icon: '🥋', color: '#10b981' },
-    { key: 'verkauf', label: 'Verkauf', icon: '💰', color: '#f59e0b' }
+    { key: 'trainer', label: 'Trainer', icon: '🥋', color: 'var(--success)' },
+    { key: 'verkauf', label: 'Verkauf', icon: '💰', color: 'var(--warning)' }
   ];
 
   // Berechtigungsbereiche
@@ -295,7 +295,7 @@ const AdminVerwaltung = () => {
         <div key={rolle.key} className="rolle-section">
           <div
             className="rolle-header clickable"
-            style={{ borderLeftColor: rolle.color }}
+            style={{ '--rolle-color': rolle.color }}
             onClick={() => toggleRole(rolle.key)}
           >
             <span className="rolle-icon">{rolle.icon}</span>
@@ -348,10 +348,10 @@ const AdminVerwaltung = () => {
     const roleInfo = rollen.find(r => r.key === rolle);
 
     return (
-      <div className="users-container">
+      <div className="users-container" style={{ '--rolle-color': roleInfo.color }}>
         <div className="users-header">
           <div>
-            <h2 style={{ color: roleInfo.color }}>
+            <h2>
               {roleInfo.icon} {roleInfo.label}
             </h2>
             <p>{roleUsers.length} Benutzer mit dieser Rolle</p>
@@ -371,7 +371,7 @@ const AdminVerwaltung = () => {
           <div className="users-grid">
             {roleUsers.map(user => (
               <div key={user.id} className="user-card">
-                <div className="user-avatar" style={{ background: roleInfo.color }}>
+                <div className="user-avatar">
                   {(user.vorname?.[0] || user.username?.[0] || 'U').toUpperCase()}
                 </div>
                 <div className="user-info">
@@ -423,7 +423,7 @@ const AdminVerwaltung = () => {
             key={rolle.key}
             className={`tab-button ${activeTab === rolle.key ? 'active' : ''}`}
             onClick={() => setActiveTab(rolle.key)}
-            style={activeTab === rolle.key ? { borderBottomColor: rolle.color } : {}}
+            style={activeTab === rolle.key ? { '--rolle-color': rolle.color } : {}}
           >
             <span className="tab-icon">{rolle.icon}</span>
             {rolle.label}

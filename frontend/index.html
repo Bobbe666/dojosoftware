@@ -194,44 +194,6 @@
 
     <script type="module" src="/src/main.jsx"></script>
 
-    <script>
-      // TDA Intro Animation - NUR auf Startseite "/"
-      const currentPath = window.location.pathname;
-      const intro = document.getElementById('introOverlay');
-      const cornerBadge = document.getElementById('cornerBadge');
-      
-      // Nur auf der Startseite (/) anzeigen
-      if (currentPath === '/' || currentPath === '/index.html') {
-        // Corner Badge anzeigen
-        cornerBadge.style.display = 'block';
-        
-        // Intro Animation
-        const introShown = sessionStorage.getItem('tdaIntroShown');
-        
-        if (!introShown) {
-          intro.style.display = 'flex';
-          
-          // Nach 1.5s Einblendung - kurz zeigen
-          setTimeout(() => {
-            intro.classList.add('exiting');
-          }, 2500);
-
-          // Nach Animation komplett ausblenden
-          setTimeout(() => {
-            intro.classList.add('hidden');
-            intro.style.display = 'none';
-          }, 3500);
-          
-          // Markieren dass Intro gezeigt wurde (nur für diese Session)
-          sessionStorage.setItem('tdaIntroShown', 'true');
-        } else {
-          intro.style.display = 'none';
-        }
-      } else {
-        // Auf allen anderen Seiten (/dashboard, /login, etc.) verstecken
-        intro.style.display = 'none';
-        cornerBadge.style.display = 'none';
-      }
-    </script>
+    <script src="/intro.js" defer></script>
   </body>
 </html>

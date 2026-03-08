@@ -1,0 +1,228 @@
+/* ============================================================
+   MemberFamilyTab — scoped styles (prefix: mft-)
+   ============================================================ */
+
+/* Root container */
+.mft-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Familie-ID badge */
+.mft-familie-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 215, 0, 0.15);
+  border-radius: 4px;
+  color: var(--primary);
+}
+
+/* Loading state */
+.mft-loading {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-muted);
+}
+
+/* Family member row */
+.mft-member-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mft-member-row--current {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  cursor: default;
+}
+
+.mft-member-row--other {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+}
+
+.mft-member-row--other:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Avatar */
+.mft-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.mft-avatar--minor {
+  background: rgba(100, 149, 237, 0.2);
+}
+
+.mft-avatar--adult {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+/* Member name row */
+.mft-member-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* "aktuell" badge */
+.mft-current-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  background: rgba(255, 215, 0, 0.2);
+  border-radius: 3px;
+  color: var(--primary);
+}
+
+/* Member meta row */
+.mft-member-meta {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Rabatt badge */
+.mft-rabatt-badge {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: rgba(76, 175, 80, 0.2);
+  color: var(--success);
+  font-weight: 500;
+}
+
+/* Vertrag status badge */
+.mft-vertrag-aktiv {
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.mft-vertrag-inaktiv {
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
+}
+
+/* Link arrow */
+.mft-link-arrow {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+}
+
+/* Empty state */
+.mft-empty {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Edit form container */
+.mft-edit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Table overflow wrapper */
+.mft-table-wrap {
+  overflow-x: auto;
+}
+
+/* Read-only table */
+.mft-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  min-width: 600px;
+}
+
+.mft-thead-row {
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.05);
+}
+
+.mft-th {
+  padding: 1rem;
+  text-align: left;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 200px;
+}
+
+.mft-th--telefon {
+  min-width: 180px;
+}
+
+.mft-th--email {
+  min-width: 250px;
+}
+
+.mft-tbody-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mft-td {
+  padding: 1rem;
+  color: var(--text-primary);
+}
+
+/* Empty-row cell */
+.mft-td-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Info box margin */
+.mft-infobox-mt {
+  margin-top: 1rem;
+}
+
+/* Section heading margin */
+.mft-section-heading {
+  margin-bottom: 1.5rem;
+}
+
+/* Vertreter section heading */
+.mft-h3-vertreter {
+  margin-bottom: 1.5rem;
+}
+
+/* Familie section heading */
+.mft-h3-familie {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Inline-style migration */
+.mft-tarif-name {
+  color: var(--primary-alpha-60);
+}

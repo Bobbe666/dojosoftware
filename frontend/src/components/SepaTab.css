@@ -1,0 +1,194 @@
+/* SepaTab component styles */
+
+/* Form input / select */
+.st-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+
+/* Form input monospace variant */
+.st-input-mono {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+/* Table cell: centered muted small */
+.st-td-center-muted {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Generic margin-bottom spacer */
+.st-mb-1 {
+  margin-bottom: 1rem;
+}
+
+/* Table cell: centered */
+.st-td-center {
+  padding: 0.75rem;
+  text-align: center;
+}
+
+/* Table row bottom border */
+.st-border-bottom {
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Card / panel */
+.st-card {
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+}
+
+/* Table cell: left-aligned primary text */
+.st-td-primary {
+  padding: 0.75rem;
+  color: var(--text-primary);
+}
+
+/* Full-width collapsed table */
+.st-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Modal overlay */
+.st-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Empty-state / loading cell */
+.st-td-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Modal footer */
+.st-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border-default);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* Inner content padding */
+.st-inner {
+  padding: 1.5rem;
+}
+
+/* Modal header */
+.st-modal-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--border-default);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Table cell: right-aligned muted small */
+.st-td-right-muted {
+  padding: 0.75rem;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Table cell: right-aligned primary amount */
+.st-td-right-primary {
+  padding: 0.75rem;
+  text-align: right;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Table cell: left-aligned secondary text */
+.st-td-secondary {
+  padding: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Secondary button */
+.st-btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* Section heading with icon */
+.st-section-heading {
+  margin-bottom: 1rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Inline heading (no margin) */
+.st-heading-primary {
+  margin: 0;
+  color: var(--primary);
+}
+
+/* Large bold primary stat */
+.st-stat-large {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* Card without padding (overflow hidden) */
+.st-card-flush {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+/* Success badge background */
+.st-badge-success {
+  background: rgba(16, 185, 129, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* Icon-only close button */
+.st-btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Wide centered empty cell */
+.st-td-empty-wide {
+  padding: 2rem;
+  text-align: center;
+}

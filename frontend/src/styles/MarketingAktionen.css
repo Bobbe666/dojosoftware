@@ -6,7 +6,7 @@
 .marketing-aktionen {
   padding: 1.5rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   min-height: 400px;
 }
 
@@ -32,7 +32,7 @@
 .marketing-loading .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--primary-alpha-20);
+  border: 3px solid rgba(255,215,0,0.2);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -48,7 +48,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1rem;
   animation: slideIn 0.3s ease;
 }
@@ -56,13 +56,13 @@
 .marketing-message.success {
   background: rgba(16, 185, 129, 0.15);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .marketing-message.error {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 @keyframes slideIn {
@@ -83,20 +83,20 @@
   padding: 1.25rem;
   background: rgba(251, 191, 36, 0.15);
   border: 1px solid rgba(251, 191, 36, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1.5rem;
   color: var(--text-primary);
 }
 
 .marketing-warning svg {
   flex-shrink: 0;
-  color: #fbbf24;
+  color: var(--status-warning);
 }
 
 .marketing-warning strong {
   display: block;
   margin-bottom: 0.5rem;
-  color: #fbbf24;
+  color: var(--status-warning);
 }
 
 .marketing-warning p {
@@ -120,9 +120,9 @@
 
 /* Section */
 .marketing-section {
-  background: var(--glass-bg);
-  border: 1px solid var(--primary-alpha-10);
-  border-radius: 8px;
+  background: var(--surface-3);
+  border: 1px solid rgba(255,215,0,0.1);
+  border-radius: var(--comp-radius-md);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -133,7 +133,7 @@
   align-items: center;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--primary-alpha-10);
+  border-bottom: 1px solid rgba(255,215,0,0.1);
 }
 
 .section-header h3 {
@@ -166,13 +166,13 @@
   gap: 1rem;
   padding: 1rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--primary-alpha-10);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,215,0,0.1);
   transition: all 0.2s ease;
 }
 
 .account-card:hover {
-  border-color: var(--primary-alpha-30);
+  border-color: rgba(255,215,0,0.3);
 }
 
 .account-card.facebook .account-icon {
@@ -188,7 +188,7 @@
 .account-icon {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -213,24 +213,24 @@
 .token-status {
   font-size: 0.75rem;
   padding: 0.125rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   width: fit-content;
 }
 
 .token-status.valid {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .token-status.expired {
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* Post Form */
 .post-form {
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 1.5rem;
 }
 
@@ -251,8 +251,8 @@
   width: 100%;
   padding: 0.75rem;
   background: var(--bg-primary);
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 6px;
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: var(--comp-radius-sm);
   color: var(--text-primary);
   font-size: 0.95rem;
   transition: border-color 0.2s ease;
@@ -291,10 +291,10 @@
   position: relative;
   width: 100px;
   height: 100px;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   overflow: hidden;
   background: var(--bg-primary);
-  border: 1px solid var(--primary-alpha-20);
+  border: 1px solid rgba(255,215,0,0.2);
 }
 
 .media-item img {
@@ -353,7 +353,7 @@
   gap: 0.75rem;
   justify-content: flex-end;
   padding-top: 1rem;
-  border-top: 1px solid var(--primary-alpha-10);
+  border-top: 1px solid rgba(255,215,0,0.1);
   flex-wrap: wrap;
 }
 
@@ -366,14 +366,14 @@
 
 .post-card {
   background: var(--bg-secondary);
-  border: 1px solid var(--primary-alpha-10);
-  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.1);
+  border-radius: var(--comp-radius-md);
   padding: 1rem;
   transition: all 0.2s ease;
 }
 
 .post-card:hover {
-  border-color: var(--primary-alpha-30);
+  border-color: rgba(255,215,0,0.3);
 }
 
 .post-card.failed {
@@ -401,7 +401,7 @@
 .post-status-badge {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-weight: 500;
 }
 
@@ -417,12 +417,12 @@
 
 .post-status-badge.status-published {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .post-status-badge.status-failed {
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .post-content {
@@ -451,9 +451,9 @@
   gap: 0.5rem;
   padding: 0.5rem;
   background: rgba(239, 68, 68, 0.1);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-size: 0.8rem;
-  color: #ef4444;
+  color: var(--status-error);
   margin-bottom: 0.75rem;
 }
 
@@ -462,7 +462,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--primary-alpha-10);
+  border-top: 1px solid rgba(255,215,0,0.1);
   flex-wrap: wrap;
   gap: 0.5rem;
 }
@@ -484,7 +484,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -504,12 +504,12 @@
 
 .btn-secondary {
   background: var(--bg-secondary);
-  border: 1px solid var(--primary-alpha-20);
+  border: 1px solid rgba(255,215,0,0.2);
   color: var(--text-primary);
 }
 
 .btn-secondary:hover {
-  border-color: var(--primary-alpha-40);
+  border-color: rgba(255,215,0,0.4);
 }
 
 .btn-outline {
@@ -519,12 +519,12 @@
 }
 
 .btn-outline:hover {
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
 }
 
 .btn-danger {
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .btn-danger:hover {
@@ -679,7 +679,7 @@
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid var(--primary-alpha-10);
+  border-bottom: 1px solid rgba(255,215,0,0.1);
   overflow-x: auto;
 }
 
@@ -689,8 +689,8 @@
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
   background: transparent;
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: var(--comp-radius-md);
   color: var(--text-secondary);
   font-size: 0.9rem;
   font-weight: 500;
@@ -700,8 +700,8 @@
 }
 
 .marketing-tab:hover {
-  background: var(--primary-alpha-10);
-  border-color: var(--primary-alpha-30);
+  background: rgba(255,215,0,0.1);
+  border-color: rgba(255,215,0,0.3);
   color: var(--text-primary);
 }
 
@@ -734,37 +734,9 @@
   grid-template-columns: repeat(4, 1fr);
 }
 
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.25rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--primary-alpha-10);
-  border-radius: 8px;
-}
-
-.stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--primary-alpha-10);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-}
-
 .stat-content {
   display: flex;
   flex-direction: column;
-}
-
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
 }
 
 .stat-label {
@@ -780,15 +752,15 @@
   display: flex;
   gap: 1.5rem;
   padding: 1.5rem;
-  background: var(--primary-alpha-05);
-  border-radius: 12px;
-  border: 1px solid var(--primary-alpha-10);
+  background: rgba(255,215,0,0.05);
+  border-radius: var(--comp-radius-xl);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 .referral-icon {
   width: 64px;
   height: 64px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   background: var(--primary);
   display: flex;
   align-items: center;
@@ -831,15 +803,15 @@
   gap: 1rem;
   padding: 1rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--primary-alpha-10);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 .referrer-rank {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -864,7 +836,7 @@
 }
 
 .referrer-badge .gold {
-  color: #fbbf24;
+  color: var(--status-warning);
 }
 
 .referrer-badge .silver {
@@ -885,8 +857,8 @@
   align-items: center;
   padding: 1.25rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--primary-alpha-10);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 .buddy-info-card p {
@@ -943,13 +915,13 @@
 .campaign-card {
   padding: 1.25rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--primary-alpha-10);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,215,0,0.1);
   transition: border-color 0.2s ease;
 }
 
 .campaign-card:hover {
-  border-color: var(--primary-alpha-30);
+  border-color: rgba(255,215,0,0.3);
 }
 
 .campaign-header {
@@ -967,7 +939,7 @@
 .campaign-status {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-weight: 500;
 }
 
@@ -983,7 +955,7 @@
 
 .campaign-status.status-sent {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .campaign-subject {
@@ -1022,8 +994,8 @@
   text-align: center;
   padding: 1.5rem 1rem;
   background: var(--bg-secondary);
-  border: 1px solid var(--primary-alpha-10);
-  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.1);
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1036,8 +1008,8 @@
 .template-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
-  background: var(--primary-alpha-10);
+  border-radius: var(--comp-radius-xl);
+  background: rgba(255,215,0,0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1101,15 +1073,15 @@
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
-  border: 1px solid var(--primary-alpha-10);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,215,0,0.1);
 }
 
 .activity-icon {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
-  background: var(--primary-alpha-10);
+  border-radius: var(--comp-radius-md);
+  background: rgba(255,215,0,0.1);
   display: flex;
   align-items: center;
   justify-content: center;

@@ -3,7 +3,6 @@
 .register-page {
   min-height: 100vh;
   background: var(--bg-primary, linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-primary, #ffffff);
   padding: 2rem 0;
 }
@@ -95,7 +94,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
@@ -170,7 +169,7 @@
   backdrop-filter: blur(10px);
   border: 2px solid rgba(255, 215, 0, 0.2);
   padding: 0.75rem 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -199,7 +198,7 @@
   background: linear-gradient(135deg, #ffd700, #ff6b35);
   color: #1a1a2e;
   padding: 0.2rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -231,7 +230,7 @@
   border: 1px solid rgba(239, 68, 68, 0.4);
   color: #ff8a8a;
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1.5rem;
   font-weight: 500;
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
@@ -293,7 +292,7 @@
   padding: 0.875rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 1rem;
   transition: all 0.3s;
   font-family: inherit;
@@ -452,7 +451,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1.25rem 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -547,7 +546,7 @@
 .success-container {
   background: var(--bg-glass, rgba(255, 255, 255, 0.08));
   backdrop-filter: blur(20px);
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   padding: 3rem;
   max-width: 1000px;
   margin: 2rem auto;
@@ -654,7 +653,7 @@
   display: inline-block;
   background: rgba(255, 255, 255, 0.1);
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-weight: 700;
   font-size: 1rem;
   background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
@@ -734,7 +733,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1rem 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -772,7 +771,7 @@
   background: rgba(255, 215, 0, 0.1);
   backdrop-filter: blur(10px);
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.3);
   color: white;
 }
@@ -788,7 +787,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1rem 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -904,13 +903,13 @@
   }
 
   .subdomain-input-group input {
-    border-radius: 8px;
+    border-radius: var(--comp-radius-md);
     border-right: 2px solid rgba(255, 255, 255, 0.2);
     margin-bottom: 0.5rem;
   }
 
   .subdomain-suffix {
-    border-radius: 8px;
+    border-radius: var(--comp-radius-md);
     border-left: 2px solid rgba(255, 255, 255, 0.2);
     text-align: center;
   }
@@ -991,7 +990,7 @@
   flex-direction: column;
   align-items: center;
   background: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem 1.5rem;
   border: 1px solid rgba(255, 215, 0, 0.3);
 }

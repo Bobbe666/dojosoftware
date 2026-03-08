@@ -1,0 +1,12 @@
+/* MarketingJahresplan.css */
+
+.mj-empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.mj-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}

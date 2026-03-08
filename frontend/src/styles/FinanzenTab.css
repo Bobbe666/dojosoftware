@@ -1,0 +1,645 @@
+/* FinanzenTab.css — generated utility classes for FinanzenTab.jsx */
+
+/* Card: bg-secondary with padding, radius, border */
+.ft-card {
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+}
+
+/* Table cell: centered, secondary text, small font */
+.ft-td-center-muted-sm {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Table cell: centered */
+.ft-td-center {
+  padding: 0.75rem;
+  text-align: center;
+}
+
+/* Form input base */
+.ft-input {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
+}
+
+/* Table cell: left-aligned, secondary text */
+.ft-td-muted {
+  padding: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Table cell: plain padding */
+.ft-td {
+  padding: 0.75rem;
+}
+
+/* Section spacing */
+.ft-mb {
+  margin-bottom: 1.5rem;
+}
+
+/* Form label */
+.ft-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Row divider */
+.ft-border-bottom {
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Full-width collapsing table */
+.ft-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Small muted text */
+.ft-text-muted-sm {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   Additional utility classes (auto-generated 2026-03-06)
+   ============================================================ */
+
+/* 2x: loading spinner centered */
+.ft-loading-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+}
+
+/* 2x: loading spinner label */
+.ft-loading-label {
+  margin-left: 1rem;
+  color: var(--text-secondary);
+}
+
+/* 2x: stats grid 3 columns */
+.ft-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 2x: stat value big primary */
+.ft-stat-value-primary {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* 2x: stat value big gold */
+.ft-stat-value-gold {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gold-400);
+}
+
+/* 2x: sub-heading label 0.85rem text-secondary mb-0.25rem */
+.ft-sub-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+/* 2x: table header th right-aligned */
+.ft-th-right {
+  padding: 0.75rem;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* 2x: amount column primary bold */
+.ft-td-amount {
+  padding: 0.75rem;
+  text-align: right;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* card section with border */
+.ft-card-section {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+/* card section (no overflow hidden) */
+.ft-card-section-pad {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* table header row */
+.ft-table-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* empty table state */
+.ft-table-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+/* IBAN monospace cell */
+.ft-td-iban {
+  padding: 0.75rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* flex actions row */
+.ft-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+/* category cards grid 2-col */
+.ft-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+/* relative z-1 wrapper */
+.ft-relative-z1 {
+  position: relative;
+  z-index: 1;
+}
+
+/* month selection panel */
+.ft-month-panel {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  align-items: center;
+}
+
+/* card icon inner area with heading */
+.ft-card-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* h3 plain 1.1rem text-primary m-0 */
+.ft-h3-plain {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+}
+
+/* p plain 0.85rem text-secondary m-0 */
+.ft-p-plain {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* dismiss close button */
+.ft-btn-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+/* margin-bottom 0.5rem on icon */
+.ft-icon-mb {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* h2 gold color flex */
+.ft-h2-gold {
+  margin: 0;
+  color: var(--color-gold-400);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* h2 primary flex */
+.ft-h2-primary {
+  margin: 0;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* subtitle under heading */
+.ft-subtitle {
+  margin: 0.5rem 0 0;
+  color: var(--text-secondary);
+}
+
+/* mb-2rem section */
+.ft-section-mb2 {
+  margin-bottom: 2rem;
+}
+
+/* success h3 heading */
+.ft-h3-success {
+  margin-bottom: 1rem;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* info h3 heading */
+.ft-h3-info {
+  margin-bottom: 1rem;
+  color: var(--info);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* text-right block */
+.ft-text-right {
+  text-align: right;
+}
+
+/* stat value success */
+.ft-stat-value-success {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+/* stat value info */
+.ft-stat-value-info {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--info);
+}
+
+/* actions section h3 */
+.ft-actions-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+/* small subtitle with indent */
+.ft-subtitle-small {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+}
+
+/* wider select input */
+.ft-input-wide {
+  min-width: 180px;
+}
+
+/* success all-good text */
+.ft-success-text {
+  color: var(--success);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* icon plain no opacity */
+.ft-icon-plain {
+  margin-bottom: 1rem;
+}
+
+/* ============================================================
+   Migrated inline styles – batch 2 (2026-03-07)
+   ============================================================ */
+
+/* sub-tab navigation bar */
+.fzt-subnav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-default);
+  padding-bottom: 1rem;
+}
+
+/* icon wrapper – gold/yellow tint */
+.fzt-icon-gold {
+  background: rgba(251, 191, 36, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* icon wrapper – green tint */
+.fzt-icon-green {
+  background: rgba(16, 185, 129, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* icon wrapper – blue tint */
+.fzt-icon-blue {
+  background: rgba(59, 130, 246, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* generic refresh button */
+.fzt-btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* refresh button pushed right */
+.fzt-btn-refresh-auto {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin-left: auto;
+}
+
+/* all-good success box */
+.fzt-all-good-box {
+  text-align: center;
+  padding: 3rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+}
+
+/* table wrapper (bg-secondary, radius 12, overflow hidden) */
+.fzt-table-wrapper {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+/* gold badge (contract count) */
+.fzt-badge-gold {
+  padding: 0.25rem 0.5rem;
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--color-gold-400);
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* secondary badge (zahlungsart) */
+.fzt-badge-secondary {
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* primary link button (gold background, black text) */
+.fzt-link-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--primary);
+  color: #000;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* info link button (blue background) */
+.fzt-link-btn-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.75rem;
+  background: #3b82f6;
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* category card */
+.fzt-cat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* category card background accent */
+.fzt-cat-accent {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 0 0 0 100%;
+  opacity: 0.5;
+  background: var(--cat-bgcolor, rgba(255,255,255,0.1));
+}
+
+/* category card bottom row */
+.fzt-cat-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+/* back button in detail view */
+.fzt-btn-back {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+/* export button (blue outline) */
+.fzt-btn-export {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  color: var(--info);
+  cursor: pointer;
+}
+
+/* h3 with no margin */
+.fzt-h3-no-margin {
+  margin: 0;
+}
+
+/* ── MIGRATED INLINE STYLES (2026-03-07) ─────────────────── */
+
+/* Sub-tab navigation buttons */
+.fzt-subtab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.fzt-subtab-btn--active {
+  background: var(--primary);
+  color: #000;
+  border: none;
+  font-weight: 600;
+}
+
+/* Category icon box */
+.fzt-cat-icon-box {
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: var(--cat-bgcolor, rgba(255,255,255,0.1));
+}
+
+/* Category count big number */
+.fzt-cat-count {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cat-color, var(--text-primary));
+}
+
+/* Category overview: "Einziehen" button */
+.fzt-cat-action-btn {
+  width: 100%;
+  margin-top: 1.25rem;
+  padding: 0.75rem;
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--cat-color, var(--primary));
+}
+
+/* Category detail view: title heading */
+.fzt-cat-detail-title {
+  margin: 0;
+  color: var(--cat-color, var(--text-primary));
+}
+
+/* Category detail view: count number */
+.fzt-cat-detail-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--cat-color, var(--text-primary));
+}
+
+/* Action button (Stripe/SEPA) */
+.fzt-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--cat-color, var(--primary));
+}
+.fzt-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Result message box */
+.fzt-result-box {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+.fzt-result-box--success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.fzt-result-box--error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Category badge (gesamt view) */
+.fzt-category-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.fzt-category-badge--dojo    { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.fzt-category-badge--software { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+.fzt-category-badge--verband  { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+
+/* Mandate/status badge */
+.fzt-mandate-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.fzt-mandate-badge--ok    { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.fzt-mandate-badge--error { background: rgba(239, 68, 68, 0.2);  color: #ef4444; }

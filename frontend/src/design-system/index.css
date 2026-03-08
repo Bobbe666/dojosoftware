@@ -18,13 +18,13 @@
 @import './themes/theme-tda-vib.css';
 
 /* ========== COMPONENT STYLES ========== */
-/* Diese werden nach Erstellung hinzugefügt */
-/* @import './components/Button.css'; */
-/* @import './components/Modal.css'; */
-/* @import './components/Card.css'; */
-/* @import './components/Input.css'; */
+@import './components/Button.css';
+@import './components/Modal.css';
+@import './components/Card.css';
+@import './components/Input.css';
+@import './components/Badge.css';
+/* Geplant für spätere Migration: */
 /* @import './components/Tabs.css'; */
-/* @import './components/Badge.css'; */
 /* @import './components/Alert.css'; */
 /* @import './components/Spinner.css'; */
 /* @import './components/Table.css'; */

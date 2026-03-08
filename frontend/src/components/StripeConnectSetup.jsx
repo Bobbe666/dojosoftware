@@ -3,6 +3,7 @@ import { useDojoContext } from '../context/DojoContext';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import config from '../config';
 import { CreditCard, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react';
+import '../styles/StripeConnectSetup.css';
 
 const StripeConnectSetup = () => {
   const { activeDojo } = useDojoContext();
@@ -188,7 +189,7 @@ const StripeConnectSetup = () => {
         // Nicht verbunden
         <div>
           <div style={styles.infoBox}>
-            <p style={{ margin: 0 }}>
+            <p className="stripe-info-box-text">
               Verbinde dein Dojo mit Stripe Connect um Mitgliedsbeiträge automatisch per SEPA-Lastschrift einzuziehen.
               Jedes Dojo kann sein eigenes Bankkonto für Auszahlungen hinterlegen.
             </p>
@@ -210,13 +211,10 @@ const StripeConnectSetup = () => {
           </div>
 
           <button
+            className="scs-connect-btn"
             onClick={handleConnect}
             disabled={connecting}
-            style={{
-              ...styles.connectButton,
-              opacity: connecting ? 0.6 : 1,
-              cursor: connecting ? 'not-allowed' : 'pointer'
-            }}
+            style={styles.connectButton}
           >
             {connecting ? 'Verbinde...' : 'Mit Stripe verbinden'}
           </button>
@@ -228,19 +226,13 @@ const StripeConnectSetup = () => {
           <div style={styles.statusGrid}>
             <div style={styles.statusCard}>
               <span style={styles.statusLabel}>Zahlungen</span>
-              <span style={{
-                ...styles.statusValue,
-                color: status.charges_enabled ? '#22c55e' : '#eab308'
-              }}>
+              <span className={status.charges_enabled ? 'scs-status-value--ok' : 'scs-status-value--pending'} style={styles.statusValue}>
                 {status.charges_enabled ? 'Aktiviert' : 'Ausstehend'}
               </span>
             </div>
             <div style={styles.statusCard}>
               <span style={styles.statusLabel}>Auszahlungen</span>
-              <span style={{
-                ...styles.statusValue,
-                color: status.payouts_enabled ? '#22c55e' : '#eab308'
-              }}>
+              <span className={status.payouts_enabled ? 'scs-status-value--ok' : 'scs-status-value--pending'} style={styles.statusValue}>
                 {status.payouts_enabled ? 'Aktiviert' : 'Ausstehend'}
               </span>
             </div>
@@ -259,7 +251,7 @@ const StripeConnectSetup = () => {
                 ))}
                 {balance.pending?.map((b, i) => (
                   <div key={i}>
-                    <span style={{ ...styles.balanceAmount, color: '#888' }}>{formatAmount(b.amount, b.currency)}</span>
+                    <span style={{ ...styles.balanceAmount, color: 'var(--text-muted)' }}>{formatAmount(b.amount, b.currency)}</span>
                     <span style={styles.balanceType}>Ausstehend</span>
                   </div>
                 ))}
@@ -273,7 +265,7 @@ const StripeConnectSetup = () => {
               <AlertCircle size={16} color="#eab308" />
               <div>
                 <strong>Aktion erforderlich</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13px' }}>
+                <p className="stripe-requirements-text">
                   Bitte vervollständige dein Stripe-Konto um alle Funktionen nutzen zu können.
                 </p>
               </div>
@@ -320,7 +312,7 @@ const styles = {
     marginBottom: '16px'
   },
   sectionTitle: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: 0,
     fontSize: '18px',
     flex: 1
@@ -333,7 +325,7 @@ const styles = {
     background: 'rgba(34, 197, 94, 0.2)',
     border: '1px solid rgba(34, 197, 94, 0.5)',
     borderRadius: '20px',
-    color: '#22c55e',
+    color: 'var(--success)',
     fontSize: '13px',
     fontWeight: '500'
   },
@@ -343,7 +335,7 @@ const styles = {
     borderRadius: '8px',
     padding: '12px 16px',
     marginBottom: '16px',
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '14px'
   },
   errorBox: {
@@ -355,7 +347,7 @@ const styles = {
     borderRadius: '8px',
     padding: '12px 16px',
     marginBottom: '16px',
-    color: '#ef4444',
+    color: 'var(--error)',
     fontSize: '14px'
   },
   benefitsList: {
@@ -368,7 +360,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    color: '#ccc',
+    color: 'var(--text-secondary)',
     fontSize: '14px'
   },
   connectButton: {
@@ -381,7 +373,7 @@ const styles = {
     background: '#635bff',
     border: 'none',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '15px',
     fontWeight: '600',
     cursor: 'pointer'
@@ -401,7 +393,7 @@ const styles = {
     borderRadius: '8px'
   },
   statusLabel: {
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '12px'
   },
   statusValue: {
@@ -433,7 +425,7 @@ const styles = {
   balanceType: {
     display: 'block',
     fontSize: '11px',
-    color: '#888'
+    color: 'var(--text-muted)'
   },
   warningBox: {
     display: 'flex',
@@ -444,14 +436,14 @@ const styles = {
     borderRadius: '8px',
     padding: '12px 16px',
     marginBottom: '16px',
-    color: '#eab308',
+    color: 'var(--warning)',
     fontSize: '14px'
   },
   accountInfo: {
     display: 'flex',
     flexDirection: 'column',
     gap: '4px',
-    color: '#666',
+    color: 'var(--text-muted)',
     fontSize: '12px',
     marginBottom: '16px'
   },
@@ -471,7 +463,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.1)',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '14px',
     cursor: 'pointer'
   },
@@ -480,14 +472,14 @@ const styles = {
     background: 'transparent',
     border: '1px solid rgba(239, 68, 68, 0.3)',
     borderRadius: '8px',
-    color: '#ef4444',
+    color: 'var(--error)',
     fontSize: '14px',
     cursor: 'pointer'
   },
   loading: {
     textAlign: 'center',
     padding: '40px',
-    color: '#888'
+    color: 'var(--text-muted)'
   }
 };
 

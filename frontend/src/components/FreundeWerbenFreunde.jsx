@@ -6,7 +6,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useDojoContext } from '../context/DojoContext';
 import config from '../config/config.js';
+import '../styles/FreundeWerbenFreunde.css';
 import {
     Users,
     Gift,
@@ -27,11 +29,13 @@ import {
     Clock,
     CreditCard,
     Banknote,
-    RefreshCw
+    RefreshCw,
+    Search
 } from 'lucide-react';
 
 const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
     const { token } = useAuth();
+    const { activeDojo } = useDojoContext();
 
     // Tabs
     const [activeTab, setActiveTab] = useState('uebersicht');
@@ -45,6 +49,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
     const [statistiken, setStatistiken] = useState(null);
     const [codes, setCodes] = useState([]);
     const [message, setMessage] = useState({ type: '', text: '' });
+    const [codeSearch, setCodeSearch] = useState('');
 
     // Modals
     const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -72,10 +77,14 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
     // ==========================================================================
 
     useEffect(() => {
+        if (activeDojo === 'super-admin' || !activeDojo?.id) return;
         loadData();
-    }, [activeTab]);
+    }, [activeTab, activeDojo]);
+
+    const withDojo = (url) => activeDojo?.id ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}` : url;
 
     const loadData = async () => {
+        if (activeDojo === 'super-admin' || !activeDojo?.id) return;
         try {
             setLoading(true);
 
@@ -103,7 +112,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const loadSettings = async () => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/settings`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/settings`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -125,7 +134,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const loadStaffel = async () => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/staffel`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/staffel`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -139,7 +148,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const loadStatistiken = async () => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/statistiken`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/statistiken`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -153,7 +162,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const loadWerbungen = async () => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/werbungen`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/werbungen`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -167,7 +176,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const loadPraemien = async () => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/praemien`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/praemien`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -185,7 +194,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
             if (marketingAktionId) {
                 url += `?marketing_aktion_id=${marketingAktionId}`;
             }
-            const response = await fetch(url, {
+            const response = await fetch(withDojo(url), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
@@ -203,7 +212,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const saveSettings = async () => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/settings`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/settings`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -227,9 +236,9 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const saveStaffel = async () => {
         try {
-            const url = editingStaffel
+            const url = withDojo(editingStaffel
                 ? `${config.apiBaseUrl}/referral/staffel/${editingStaffel.id}`
-                : `${config.apiBaseUrl}/referral/staffel`;
+                : `${config.apiBaseUrl}/referral/staffel`);
 
             const response = await fetch(url, {
                 method: editingStaffel ? 'PUT' : 'POST',
@@ -259,7 +268,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
         if (!confirm('Staffelung wirklich löschen?')) return;
 
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/staffel/${id}`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/staffel/${id}`), {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -274,19 +283,14 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
     };
 
     const generateBulkCodes = async () => {
-        if (!marketingAktionId) {
-            showMessage('error', 'Bitte zuerst eine Marketing-Aktion auswählen');
-            return;
-        }
-
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/codes/generate-bulk`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/codes/generate-bulk`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ marketing_aktion_id: marketingAktionId })
+                body: JSON.stringify({ marketing_aktion_id: marketingAktionId || null })
             });
 
             if (response.ok) {
@@ -302,7 +306,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
     const auszahlenPraemie = async (id, typ) => {
         try {
-            const response = await fetch(`${config.apiBaseUrl}/referral/praemien/${id}/auszahlen`, {
+            const response = await fetch(withDojo(`${config.apiBaseUrl}/referral/praemien/${id}/auszahlen`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -371,6 +375,15 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
     // ==========================================================================
     // RENDER
     // ==========================================================================
+
+    if (activeDojo === 'super-admin' || !activeDojo?.id) {
+        return (
+            <div className="fwf-no-dojo-placeholder">
+                <div className="fwf-no-dojo-icon">🏢</div>
+                <p>Bitte wähle ein Dojo aus, um das Referral-System zu sehen.</p>
+            </div>
+        );
+    }
 
     if (loading && !settings) {
         return (
@@ -595,14 +608,43 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
                             </button>
                         </div>
 
+                        {/* Suchfeld */}
+                        <div className="fwf-code-search-wrapper">
+                            <Search size={16} className="fwf-code-search-icon" />
+                            <input
+                                type="text"
+                                placeholder="Name suchen..."
+                                value={codeSearch}
+                                onChange={e => setCodeSearch(e.target.value)}
+                                className="fwf-code-search-input"
+                            />
+                            {codeSearch && (
+                                <button
+                                    onClick={() => setCodeSearch('')}
+                                    className="fwf-code-search-clear"
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+
                         {codes.length === 0 ? (
                             <div className="empty-state">
                                 <Award size={48} />
                                 <p>Noch keine Codes</p>
                             </div>
-                        ) : (
+                        ) : (() => {
+                            const filtered = codeSearch.trim()
+                                ? codes.filter(c => c.mitglied_name?.toLowerCase().includes(codeSearch.toLowerCase()))
+                                : codes;
+                            return filtered.length === 0 ? (
+                                <div className="empty-state">
+                                    <Search size={36} />
+                                    <p>Kein Mitglied mit „{codeSearch}" gefunden</p>
+                                </div>
+                            ) : (
                             <div className="codes-grid">
-                                {codes.map(c => (
+                                {filtered.map(c => (
                                     <div key={c.id} className={`code-card ${!c.aktiv ? 'inactive' : ''}`}>
                                         <div className="code-header">
                                             <span className="mitglied-name">{c.mitglied_name}</span>
@@ -626,7 +668,8 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
                                     </div>
                                 ))}
                             </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 )}
 
@@ -636,7 +679,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
                         {/* Haupt-Konfiguration */}
                         <div className="einstellungen-section">
                             <div className="section-header">
-                                <h3 style={{ color: '#FFD700', textShadow: '0 2px 4px rgba(0,0,0,0.8)', WebkitTextStroke: '0', textTransform: 'none', letterSpacing: 'normal', background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: '#FFD700' }}><Settings size={20} /> Grundeinstellungen</h3>
+                                <h3 className="fwf-section-h3-gold"><Settings size={20} /> Grundeinstellungen</h3>
                                 <button
                                     className="btn btn-primary btn-sm"
                                     onClick={() => setShowSettingsModal(true)}
@@ -714,7 +757,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
                         {/* Prämien-Staffelung nach Vertragslaufzeit */}
                         <div className="einstellungen-section">
                             <div className="section-header">
-                                <h3 style={{ color: '#FFD700', textShadow: '0 2px 4px rgba(0,0,0,0.8)', WebkitTextStroke: '0', textTransform: 'none', letterSpacing: 'normal', background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: '#FFD700' }}><TrendingUp size={20} /> Prämien-Staffelung nach Vertragslaufzeit</h3>
+                                <h3 className="fwf-section-h3-gold"><TrendingUp size={20} /> Prämien-Staffelung nach Vertragslaufzeit</h3>
                                 <button
                                     className="btn btn-primary btn-sm"
                                     onClick={() => {
@@ -778,7 +821,7 @@ const FreundeWerbenFreunde = ({ marketingAktionId = null }) => {
 
                         {/* Info-Box: Ablauf */}
                         <div className="einstellungen-section info-section">
-                            <h3 style={{ color: '#60a5fa', textShadow: '0 2px 4px rgba(0,0,0,0.8)', WebkitTextStroke: '0', textTransform: 'none', letterSpacing: 'normal', background: 'none', WebkitBackgroundClip: 'unset', WebkitTextFillColor: '#60a5fa' }}><AlertCircle size={20} /> So funktioniert die Auszahlung</h3>
+                            <h3 className="fwf-section-h3-blue"><AlertCircle size={20} /> So funktioniert die Auszahlung</h3>
                             <div className="process-steps">
                                 <div className="process-step">
                                     <span className="step-number">1</span>

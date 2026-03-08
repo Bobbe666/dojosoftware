@@ -1,0 +1,427 @@
+/* VorlagenEditor — inline style replacements (prefix: ve-) */
+
+.ve-toolbar-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.ve-toolbar-btn.active {
+  background: var(--bg-tertiary, #222);
+}
+
+.ve-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ve-toolbar-wrap {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.ve-toolbar-separator {
+  width: 1px;
+  background: var(--border-default, #333);
+  margin: 0 4px;
+}
+
+.ve-heading-label {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ve-platzhalter-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ve-platzhalter-title {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #888);
+  margin-right: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ve-platzhalter-group {
+  position: relative;
+}
+
+.ve-platzhalter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-secondary, #bbb);
+}
+
+.ve-platzhalter-btn.readonly {
+  cursor: default;
+}
+
+.ve-platzhalter-key {
+  color: var(--text-secondary, #888);
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+.ve-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.ve-modal {
+  background: var(--bg-secondary, #141420);
+  border-radius: 12px;
+  width: 700px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ve-modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-default, #333);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ve-modal-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.ve-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.ve-warn-bar {
+  padding: 0.75rem 1.5rem;
+  background: #2a2a1a;
+  border-bottom: 1px solid #555520;
+  font-size: 0.85rem;
+  color: #ccaa44;
+}
+
+.ve-error-bar {
+  padding: 0.75rem 1.5rem;
+  background: #3a1a1a;
+  border-bottom: 1px solid #c0392b;
+  font-size: 0.85rem;
+  color: var(--error);
+}
+
+.ve-modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.ve-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.ve-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ve-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ve-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-secondary, #bbb);
+}
+
+.ve-checkbox-label.readonly {
+  cursor: default;
+}
+
+.ve-tab-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.ve-editor-border {
+  border: 1px solid var(--border-default, #333);
+  border-radius: 0 6px 6px 6px;
+}
+
+.ve-editor-content {
+  min-height: 220px;
+  padding: 0.75rem 1rem;
+  cursor: text;
+}
+
+.ve-modal-footer {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ve-footer-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* === Additional inline-style replacements === */
+
+/* Toolbar container */
+.ve-toolbar-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 10px;
+  background: var(--bg-secondary, #141420);
+  border-bottom: 1px solid var(--border, #333);
+  border-radius: 6px 6px 0 0;
+}
+
+/* Platzhalter-Leiste container */
+.ve-platzhalter-bar-container {
+  padding: 6px 10px;
+  background: var(--bg-secondary, #141420);
+  border-bottom: 1px solid var(--border, #333);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+/* Platzhalter dropdown */
+.ve-platzhalter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 10;
+  background: var(--bg-card, #1e1e2e);
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+  padding: 6px;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Platzhalter dropdown item button */
+.ve-platzhalter-item-btn {
+  text-align: left;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary, #eee);
+  font-size: 0.82rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Modal overlay */
+.ve-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* Modal dialog container */
+.ve-dialog {
+  background: var(--bg-card, #1e1e2e);
+  border-radius: 12px;
+  border: 1px solid var(--pc44, rgba(139,0,0,0.27));
+  width: 100%;
+  max-width: 860px;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+/* Modal header — background from CSS var (set via inline on ve-dialog) */
+.ve-modal-header-bar {
+  border-radius: 12px 12px 0 0;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-primary);
+  background: var(--pc, #8B0000);
+}
+
+/* Label style */
+.ve-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Input / select base */
+.ve-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, #333);
+  background: var(--bg-secondary, #141420);
+  color: var(--text-primary, #eee);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.ve-input:disabled {
+  opacity: 0.6;
+}
+
+/* Footer bar */
+.ve-modal-footer-bar {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border, #333);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Cancel button */
+.ve-cancel-btn {
+  padding: 0.55rem 1.2rem;
+  background: none;
+  border: 1px solid var(--border, #444);
+  color: var(--text-secondary, #aaa);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Tab button base */
+.ve-tab-btn {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--text-secondary, #aaa);
+  transition: all 0.15s;
+}
+.ve-tab-btn--active {
+  border-bottom-color: var(--pc, #8B0000);
+  color: var(--pc, #8B0000);
+  font-weight: 600;
+}
+
+/* Toolbar dynamic button */
+.ve-toolbar-dyn-btn {
+  padding: 4px 7px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: var(--text-secondary, #aaa);
+  font-weight: 400;
+}
+.ve-toolbar-dyn-btn--active {
+  background: var(--pc33, rgba(139,0,0,0.2));
+  color: var(--pc, #8B0000);
+  font-weight: 700;
+}
+
+/* Platzhalter group trigger */
+.ve-platzhalter-group-btn {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  border: 1px solid var(--border, #333);
+  color: var(--text-secondary, #bbb);
+  cursor: pointer;
+  background: transparent;
+}
+.ve-platzhalter-group-btn--open {
+  background: var(--border, #333);
+}
+
+/* Preview button — border/color from CSS var --pc */
+.ve-preview-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  background: none;
+  cursor: pointer;
+  font-size: 0.88rem;
+  border: 1px solid var(--pc, #8B0000);
+  color: var(--pc, #8B0000);
+}
+
+/* Save button — background from CSS var --pc */
+.ve-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.5rem;
+  border: none;
+  color: var(--text-primary);
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--pc, #8B0000);
+  cursor: pointer;
+}
+.ve-save-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+}

@@ -5,13 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
 import { CURRENT_VERSION } from './SystemChangelog';
 import config from '../config/config.js';
-import kampfkunstschuleLogo from '../assets/logo-kampfkunstschule-schreiner.png';
+import dojoLogo from '../assets/dojo-logo.png';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
 import '../styles/Buttons.css';
 
-const defaultLogo = kampfkunstschuleLogo;
+const defaultLogo = dojoLogo;
 
 const ClubMemberLogin = () => {
   const [formData, setFormData] = useState({
@@ -26,9 +26,18 @@ const ClubMemberLogin = () => {
   const [dojoData, setDojoData] = useState(null);
   const [loadingDojo, setLoadingDojo] = useState(false);
 
-  const { login, isAuthenticated, loading: authLoading, user } = useAuth();
+  const { login, logout, isAuthenticated, loading: authLoading, user } = useAuth();
   const { refreshDojos } = useDojoContext();
   const navigate = useNavigate();
+
+  // Bei wrong_dojo-Fehler: stale Token sofort löschen (bricht Redirect-Schleife)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'wrong_dojo') {
+      logout(true); // silent logout - löscht localStorage ohne API-Call
+      setError('Ihr Konto ist einem anderen Dojo zugeordnet. Bitte melden Sie sich mit Ihrem Dojo-Konto an.');
+    }
+  }, []);
 
   // Subdomain aus Hostname extrahieren
   const getSubdomain = () => {
@@ -66,11 +75,12 @@ const ClubMemberLogin = () => {
     loadDojoData();
   }, [subdomain]);
 
-  // Redirect wenn bereits eingeloggt
-  if (isAuthenticated && !authLoading) {
+  // Redirect wenn bereits eingeloggt (aber NICHT wenn wrong_dojo-Fehler – würde Endlosschleife auslösen!)
+  const hasWrongDojoError = new URLSearchParams(window.location.search).get('error') === 'wrong_dojo';
+  if (isAuthenticated && !authLoading && !hasWrongDojoError) {
     const userRole = user?.rolle || user?.role;
-    if (userRole === 'mitglied') {
-      return <Navigate to="/member/profile" replace />;
+    if (userRole === 'mitglied' || userRole === 'member') {
+      return <Navigate to="/member/dashboard" replace />;
     }
     if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && user?.username === 'TrainerloginTDA') {
       return <Navigate to="/trainer" replace />;
@@ -141,8 +151,8 @@ const ClubMemberLogin = () => {
       await refreshDojos();
 
       const userRole = userData.rolle || userData.role;
-      if (userRole === 'mitglied') {
-        navigate('/member/profile', { replace: true });
+      if (userRole === 'mitglied' || userRole === 'member') {
+        navigate('/member/dashboard', { replace: true });
       } else if ((userRole === 'eingeschraenkt' || userRole === 'trainer') && userData.username === 'TrainerloginTDA') {
         navigate('/trainer', { replace: true });
       } else if (userRole === 'super_admin' && !userData.dojo_id) {

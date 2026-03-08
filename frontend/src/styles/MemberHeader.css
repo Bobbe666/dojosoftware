@@ -1,0 +1,11 @@
+/* ===== MEMBER HEADER CSS ===== */
+
+/* Shared margin for header buttons */
+.header-btn-mr {
+  margin-right: 0.5rem;
+}
+
+/* Shared margin for icon spans inside header buttons */
+.header-icon-mr {
+  margin-right: 0.25rem;
+}

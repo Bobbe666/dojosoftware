@@ -1,0 +1,522 @@
+/* ============================================================================
+   VERBANDSMITGLIEDER - CSS Classes
+   vm-* prefix for all component-specific classes
+   ============================================================================ */
+
+/* Status Badge (dynamic bg/color set inline) */
+.vm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Vorteile Tab Header */
+.vm-vorteile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.vm-vorteile-section-title {
+  color: var(--primary);
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Vorteil Card Footer */
+.vm-vorteil-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+}
+
+/* Badge: INAKTIV red */
+.vm-badge-inaktiv {
+  background: #ef4444;
+  color: var(--text-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* Badge: STANDARD yellow */
+.vm-badge-standard {
+  background: #fbbf24;
+  color: #000;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+/* Typen Section */
+.vm-typen-section {
+  margin-top: 20px;
+}
+
+.vm-typen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.vm-typen-title {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+/* Typen List Container */
+.vm-typen-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Typ Item Card */
+.vm-typ-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.vm-typ-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.vm-typ-name {
+  color: var(--text-primary);
+  font-size: 16px;
+}
+
+.vm-typ-code {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.vm-typ-beschreibung {
+  color: var(--text-secondary);
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+
+.vm-typ-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.vm-typ-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Toggle Knob (transform set dynamically inline) */
+.vm-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+/* Checkbox Input */
+.vm-checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* New-Dojo card inside new-membership modal */
+.vm-neues-dojo-card {
+  background: rgba(255, 215, 0, 0.1);
+  margin-bottom: 1rem;
+}
+
+.vm-neues-dojo-card h4 {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+}
+
+/* Input variants */
+.vm-input-textarea {
+  min-height: 80px;
+}
+
+.vm-input-monospace {
+  min-height: 80px;
+  font-family: monospace;
+}
+
+.vm-input-120 {
+  max-width: 120px;
+}
+
+/* Modal width variants */
+.vm-modal-800 {
+  max-width: 800px;
+}
+
+.vm-modal-700 {
+  max-width: 700px;
+}
+
+.vm-modal-600 {
+  max-width: 600px;
+}
+
+.vm-modal-550 {
+  max-width: 550px;
+}
+
+/* Vertrag signed/unsigned */
+.vm-vertrag-signed {
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vm-vertrag-unsigned {
+  color: var(--warning);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Beitragsfrei toggle row */
+.vm-beitragsfrei-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Beitragsfrei note text */
+.vm-beitragsfrei-note {
+  margin: 8px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Link: info color, no underline */
+.vm-link-info {
+  color: var(--info);
+  text-decoration: none;
+}
+
+/* Zahlung actions row */
+.vm-zahlung-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Small Button color overrides */
+.vm-small-btn-danger {
+  background-color: #ef4444 !important;
+  color: var(--text-primary) !important;
+}
+
+.vm-small-btn-blue {
+  background-color: #3b82f6 !important;
+  color: var(--text-primary) !important;
+}
+
+/* Danger Button color overrides */
+.vm-danger-btn-deep {
+  background-color: #450a0a !important;
+  border-color: #7f1d1d !important;
+}
+
+.vm-danger-btn-dark {
+  background-color: #7f1d1d !important;
+}
+
+/* Bruttopreis info box */
+.vm-bruttopreis-box {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.vm-bruttopreis-value {
+  color: var(--primary);
+  font-size: 18px;
+}
+
+.vm-bruttopreis-mwst {
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+/* Vorteil label checkbox row */
+.vm-checkbox-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+/* Form group with extra top margin */
+.vm-form-group-mt {
+  margin-top: 0.5rem;
+}
+
+/* Previously existing classes */
+.vm-icon-btn-danger {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #ef4444 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.vm-mr4 {
+  margin-right: 4px;
+}
+
+.vm-empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.vm-empty-state-span {
+  grid-column: 1 / -1;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.vm-flex-center-gap10 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vm-flex-center-gap8-pointer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.vm-padding-15 {
+  padding: 15px;
+}
+
+.vm-padding-15-scroll {
+  padding: 15px;
+  overflow-y: auto;
+  max-height: 60vh;
+}
+
+.vm-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vm-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.vm-grid-3col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.vm-grid-3col-mt {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  padding: 0 1.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Badge inaktiv with contextual margin */
+.vm-badge-inaktiv-ml {
+  background: #ef4444;
+  color: var(--text-primary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+/* Icon button with flex:1 */
+.vm-icon-btn-flex1 {
+  flex: 1;
+}
+
+/* Action button primary override */
+.vm-action-btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ffaa00) !important;
+  border: none !important;
+  color: #000 !important;
+  font-weight: 600 !important;
+}
+
+/* "Neues Dojo wird angelegt" indicator span */
+.vm-neues-dojo-indicator {
+  padding: 10px 15px;
+  background: rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  color: var(--primary);
+  font-weight: 600;
+  flex: 1;
+}
+
+/* Cancel button inside dojo-mode selector */
+.vm-neues-dojo-cancel-btn {
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* === INLINE STYLE MIGRATIONS === */
+
+/* Status badge with CSS custom properties */
+.vm-status-badge { background: var(--vm-badge-bg); color: var(--vm-badge-color); }
+
+/* Main tab buttons */
+.vm-tab-btn {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  background: transparent; border: none; border-radius: 8px;
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+}
+.vm-tab-btn--active { background: rgba(255, 215, 0, 0.15); color: var(--primary); }
+
+/* Einstellungen sub-tab buttons */
+.vm-einst-tab-btn {
+  display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+  background: transparent; border: none; border-radius: 6px;
+  color: var(--text-muted); cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+}
+.vm-einst-tab-btn--active { background: rgba(255, 215, 0, 0.15); color: var(--primary); }
+
+/* Detail modal tab buttons */
+.vm-detail-tab-btn {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+  background: transparent; border: none; border-radius: 6px;
+  color: var(--text-muted); cursor: pointer; transition: all 0.2s;
+}
+.vm-detail-tab-btn--active { background: rgba(255, 215, 0, 0.15); color: var(--primary); }
+
+/* Vorteil card */
+.vm-vorteil-card { opacity: 1; }
+.vm-vorteil-card--inactive { opacity: 0.5; }
+
+/* Gilt-fuer badge */
+.vm-vorteil-gilt { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; }
+.vm-vorteil-gilt--dojo { background: rgba(59, 130, 246, 0.2); }
+.vm-vorteil-gilt--einzelperson { background: rgba(16, 185, 129, 0.2); }
+.vm-vorteil-gilt--beide { background: rgba(255, 215, 0, 0.2); }
+
+/* Activate/deactivate buttons */
+.vm-btn-activate { background: rgba(16,185,129,0.2); color: #10b981; }
+.vm-btn-deactivate { background: rgba(239,68,68,0.2); color: #ef4444; }
+
+/* Typ item inactive */
+.vm-typ-item--inactive { opacity: 0.6; }
+
+/* Kategorie badge */
+.vm-kategorie-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase; }
+.vm-kategorie-badge--dojo { background: rgba(59,130,246,0.2); color: #60a5fa; }
+.vm-kategorie-badge--einzelperson { background: rgba(16,185,129,0.2); color: #34d399; }
+
+/* Toggle switch */
+.vm-toggle-switch { display: inline-block; width: 48px; height: 24px; border-radius: 12px; position: relative; flex-shrink: 0; cursor: pointer; }
+.vm-toggle-switch--on { background: #10b981; }
+.vm-toggle-switch--off { background: #ef4444; }
+.vm-toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.vm-toggle-knob--on { transform: translateX(24px); }
+.vm-toggle-text { font-weight: 600; }
+.vm-toggle-text--on { color: #10b981; }
+.vm-toggle-text--off { color: #ef4444; }
+
+/* Typ selector buttons (modal) */
+.vm-typ-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 24px; border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-primary);
+  cursor: pointer; transition: all 0.2s; flex: 1;
+}
+.vm-typ-btn--dojo { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); color: #ffd700; }
+.vm-typ-btn--einzelperson { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+
+/* Beitragsfrei label */
+.vm-beitragsfrei-label {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 10px 15px; background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.vm-beitragsfrei-label--active { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); }
+.vm-beitragsfrei-text { color: rgba(255, 255, 255, 0.8); }
+.vm-beitragsfrei-text--active { color: #22c55e; }
+
+/* Beitragsfrei detail box */
+.vm-beitragsfrei-box {
+  padding: 12px 16px; background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 1rem;
+}
+.vm-beitragsfrei-box--active { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); }
+
+/* Beitragsfrei toggle button */
+.vm-beitragsfrei-toggle-btn { padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; border: none; }
+
+/* Status select */
+.vm-status-select { padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; }
+.vm-status-select--aktiv { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.vm-status-select--ausstehend { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.vm-status-select--vertragsfrei { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
+.vm-status-select--gekuendigt, .vm-status-select--abgelaufen { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+/* Zahlung status */
+.vm-zahlung-status--bezahlt { color: #10b981; }
+.vm-zahlung-status--offen { color: #f59e0b; }
+
+/* SEPA status */
+.vm-sepa-status { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
+.vm-sepa-status--aktiv { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+.vm-sepa-status--inaktiv { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+/* Icon button base (was styles.iconButton) */
+.vm-icon-btn {
+  display: flex; align-items: center; gap: 6px; padding: 6px 10px;
+  border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+}
+.vm-icon-btn--flex1 { flex: 1; }

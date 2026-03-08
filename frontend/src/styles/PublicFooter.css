@@ -1,9 +1,9 @@
-/* Public Footer Styles - DojoSoftware Dark Theme */
+/* Public Footer Styles */
 
 .public-footer {
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(20px);
-  color: white;
+  color: var(--text-1);
   padding: 4rem 0 2rem;
   border-top: 1px solid rgba(255, 215, 0, 0.2);
   margin-top: auto;
@@ -12,7 +12,7 @@
 .public-footer .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 var(--ui-page-padding);
 }
 
 .footer-grid {
@@ -25,7 +25,7 @@
 }
 
 .footer-col h4 {
-  font-size: 1.1rem;
+  font-size: var(--ui-section-title);
   margin-bottom: 1rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -37,7 +37,7 @@
 
 .footer-col a {
   display: block;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   text-decoration: none;
   margin-bottom: 0.75rem;
   transition: all 0.2s;
@@ -55,7 +55,7 @@
 .footer-bottom {
   text-align: center;
   padding-top: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   font-size: 0.9rem;
 }
 
@@ -71,7 +71,7 @@
   }
 
   .public-footer .container {
-    padding: 0 1rem;
+    padding: 0 var(--ui-page-padding-sm);
   }
 }
 
@@ -85,4 +85,3 @@
     padding: 3rem 0 1.5rem;
   }
 }
-

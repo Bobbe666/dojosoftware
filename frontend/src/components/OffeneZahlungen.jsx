@@ -98,16 +98,16 @@ const OffeneZahlungen = () => {
 
   const getTypBadge = (typ) => {
     const types = {
-      'ruecklastschrift': { label: 'Rücklastschrift', color: '#ef4444', icon: Building2 },
-      'chargeback': { label: 'Chargeback', color: '#f59e0b', icon: CreditCard },
-      'fehlgeschlagen': { label: 'Fehlgeschlagen', color: '#6366f1', icon: XCircle },
+      'ruecklastschrift': { label: 'Rücklastschrift', color: 'var(--error)', icon: Building2 },
+      'chargeback': { label: 'Chargeback', color: 'var(--warning)', icon: CreditCard },
+      'fehlgeschlagen': { label: 'Fehlgeschlagen', color: 'var(--color-midnight-500)', icon: XCircle },
       'mahnung': { label: 'Mahnung', color: '#8b5cf6', icon: Mail },
-      'sonstig': { label: 'Sonstig', color: '#64748b', icon: AlertCircle }
+      'sonstig': { label: 'Sonstig', color: 'var(--text-muted)', icon: AlertCircle }
     };
     const t = types[typ] || types.sonstig;
     const Icon = t.icon;
     return (
-      <span className="typ-badge" style={{ backgroundColor: `${t.color}20`, color: t.color, borderColor: t.color }}>
+      <span className="typ-badge" style={{ '--typ-color': t.color }}>
         <Icon size={12} />
         {t.label}
       </span>
@@ -116,14 +116,14 @@ const OffeneZahlungen = () => {
 
   const getStatusBadge = (status) => {
     const statuses = {
-      'offen': { label: 'Offen', color: '#ef4444' },
-      'in_bearbeitung': { label: 'In Bearbeitung', color: '#f59e0b' },
-      'erledigt': { label: 'Erledigt', color: '#22c55e' },
-      'storniert': { label: 'Storniert', color: '#64748b' }
+      'offen': { label: 'Offen', color: 'var(--error)' },
+      'in_bearbeitung': { label: 'In Bearbeitung', color: 'var(--warning)' },
+      'erledigt': { label: 'Erledigt', color: 'var(--success)' },
+      'storniert': { label: 'Storniert', color: 'var(--text-muted)' }
     };
     const s = statuses[status] || statuses.offen;
     return (
-      <span className="status-badge" style={{ backgroundColor: `${s.color}20`, color: s.color }}>
+      <span className="status-badge" style={{ '--status-color': s.color }}>
         {s.label}
       </span>
     );

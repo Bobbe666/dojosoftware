@@ -1,5 +1,10 @@
-// Service Worker temporarily disabled to fix cache issues
 export const registerServiceWorker = () => {
-  console.log('Service Worker registration disabled');
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(err => {
+        console.error('Service Worker Fehler:', err);
+      });
+    });
+  }
   return () => {};
 };

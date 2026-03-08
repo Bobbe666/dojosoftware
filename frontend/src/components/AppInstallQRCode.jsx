@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { X, Download, Printer, Smartphone, QrCode } from 'lucide-react';
+import '../styles/AppInstallQRCode.css';
 
 const AppInstallQRCode = ({ onClose }) => {
   const qrRef = useRef(null);
@@ -139,113 +140,47 @@ const AppInstallQRCode = ({ onClose }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 100000,
-    }}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{
-        backgroundColor: '#1a1a2e',
-        padding: '2rem',
-        borderRadius: '16px',
-        maxWidth: '500px',
-        width: '90%',
-        position: 'relative',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-      }}>
+    <div className="aiqr-overlay modal-overlay" onClick={onClose}>
+      <div className="aiqr-modal modal-content" onClick={(e) => e.stopPropagation()}>
         {/* Close Button */}
         <button
           onClick={onClose}
-          style={{
-            position: 'absolute',
-            top: '1rem',
-            right: '1rem',
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: 'none',
-            color: '#e0e0e0',
-            cursor: 'pointer',
-            padding: '0.5rem',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.2s',
-          }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+          className="aiqr-close-btn"
         >
           <X size={24} />
         </button>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.75rem',
-            marginBottom: '1rem'
-          }}>
-            <QrCode size={32} style={{ color: '#ffd700' }} />
-            <h2 style={{ color: '#ffd700', margin: 0, fontSize: '1.75rem' }}>
+        <div className="aiqr-header">
+          <div className="aiqr-header-row">
+            <QrCode size={32} className="u-text-accent" />
+            <h2 className="aiqr-title">
               App QR-Code
             </h2>
           </div>
-          <p style={{ color: '#a0a0a0', margin: 0, fontSize: '0.95rem' }}>
+          <p className="aiqr-subtitle">
             Scanne mit deinem Smartphone
           </p>
         </div>
 
         {/* QR Code */}
-        <div ref={qrRef} style={{
-          background: 'white',
-          padding: '2rem',
-          borderRadius: '12px',
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '1.5rem',
-          border: '3px solid #ffd700',
-        }}>
+        <div ref={qrRef} className="aiqr-qr-wrap">
           <QRCodeCanvas
             value={appUrl}
             size={250}
             level="H"
             includeMargin={true}
-            style={{ display: 'block' }}
+            className="u-block"
           />
         </div>
 
         {/* Instructions */}
-        <div style={{
-          backgroundColor: 'rgba(255, 215, 0, 0.1)',
-          padding: '1.25rem',
-          borderRadius: '12px',
-          border: '1px solid rgba(255, 215, 0, 0.3)',
-          marginBottom: '1.5rem',
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.75rem',
-          }}>
-            <Smartphone size={20} style={{ color: '#ffd700' }} />
-            <strong style={{ color: '#ffd700', fontSize: '1rem' }}>So geht's:</strong>
+        <div className="aiqr-instructions">
+          <div className="aiqr-instructions-header">
+            <Smartphone size={20} className="u-text-accent" />
+            <strong className="aiqr-instructions-title">So geht's:</strong>
           </div>
-          <ol style={{
-            paddingLeft: '1.5rem',
-            margin: 0,
-            color: '#e0e0e0',
-            fontSize: '0.9rem',
-            lineHeight: '1.7',
-          }}>
+          <ol className="aiqr-instructions-list">
             <li>Öffne die <strong>Kamera-App</strong> auf deinem Smartphone</li>
             <li>Scanne den <strong>QR-Code</strong> oben</li>
             <li>Tippe auf die <strong>Benachrichtigung</strong> zum Öffnen</li>
@@ -254,64 +189,25 @@ const AppInstallQRCode = ({ onClose }) => {
         </div>
 
         {/* URL Display */}
-        <div style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          padding: '1rem',
-          borderRadius: '8px',
-          marginBottom: '1.5rem',
-          textAlign: 'center',
-        }}>
-          <div style={{ color: '#a0a0a0', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+        <div className="aiqr-url-box">
+          <div className="aiqr-url-label">
             Oder direkt öffnen:
           </div>
           <a
             href={appUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{
-              color: '#ffd700',
-              textDecoration: 'none',
-              fontSize: '0.95rem',
-              fontWeight: '600',
-              wordBreak: 'break-all',
-            }}
+            className="aiqr-url-link"
           >
             {appUrl}
           </a>
         </div>
 
         {/* Action Buttons */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1rem',
-        }}>
+        <div className="aiqr-btn-grid">
           <button
             onClick={handleDownload}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.875rem',
-              background: 'linear-gradient(135deg, #ffd700, #ffed4e)',
-              color: '#0f0f23',
-              border: 'none',
-              borderRadius: '10px',
-              fontWeight: '600',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 215, 0, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-            }}
+            className="aiqr-btn-download"
           >
             <Download size={20} />
             <span>Download</span>
@@ -319,29 +215,7 @@ const AppInstallQRCode = ({ onClose }) => {
 
           <button
             onClick={handlePrint}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.875rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: '#e0e0e0',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '10px',
-              fontWeight: '600',
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              transition: 'background 0.2s, border-color 0.2s',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
-            }}
+            className="aiqr-btn-print"
           >
             <Printer size={20} />
             <span>Drucken</span>

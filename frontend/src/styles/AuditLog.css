@@ -35,7 +35,7 @@
   padding: 8px 16px;
   background: var(--bg-secondary, #f3f4f6);
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -51,7 +51,7 @@
   padding: 8px;
   background: var(--bg-secondary, #f3f4f6);
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -83,34 +83,6 @@
   padding-bottom: 5px;
 }
 
-.stat-card {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 12px;
-  padding: 15px 20px;
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.stat-card.mini {
-  min-width: 100px;
-  padding: 12px 15px;
-}
-
-.stat-icon {
-  font-size: 1.5rem;
-  margin-bottom: 5px;
-}
-
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--primary-color, #3b82f6);
-}
-
 .stat-label {
   font-size: 0.75rem;
   color: var(--text-secondary, #6b7280);
@@ -127,7 +99,7 @@
 .filter-panel {
   background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -158,7 +130,7 @@
 .filter-group select {
   padding: 8px 12px;
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.9rem;
 }
 
@@ -168,7 +140,7 @@
   gap: 8px;
   padding: 8px 12px;
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   background: var(--bg-card, rgba(255, 255, 255, 0.05));
 }
 
@@ -183,7 +155,7 @@
   padding: 8px 16px;
   background: var(--bg-secondary, #f3f4f6);
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   cursor: pointer;
   white-space: nowrap;
 }
@@ -196,7 +168,7 @@
 .audit-table-container {
   background: var(--bg-card, rgba(255, 255, 255, 0.05));
   border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -204,6 +176,7 @@
 .audit-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .audit-table th {
@@ -216,13 +189,25 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid var(--border-color, #e5e7eb);
+  border-right: 1px solid var(--border-color, #e5e7eb);
+}
+
+.audit-table th:last-child {
+  border-right: none;
 }
 
 .audit-table td {
   padding: 12px 15px;
   border-bottom: 1px solid var(--border-color, #e5e7eb);
+  border-right: 1px solid var(--border-color, #e5e7eb);
   font-size: 0.9rem;
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audit-table td:last-child {
+  border-right: none;
 }
 
 .audit-table tbody tr {
@@ -235,12 +220,16 @@
 }
 
 .time-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   color: var(--text-secondary, #6b7280);
   font-size: 0.85rem;
   white-space: nowrap;
+}
+
+.time-cell svg,
+.user-cell svg {
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
 }
 
 .kategorie-badge {
@@ -248,16 +237,15 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   font-size: 0.75rem;
   font-weight: 500;
+  background-color: var(--badge-bg, #6b7280);
   color: white;
 }
 
 .user-cell {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  white-space: nowrap;
 }
 
 .aktion-cell {
@@ -269,11 +257,8 @@
 }
 
 .beschreibung-cell {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   color: var(--text-secondary, #6b7280);
+  white-space: nowrap;
 }
 
 .view-btn {
@@ -282,7 +267,7 @@
   border: none;
   cursor: pointer;
   color: var(--text-secondary, #6b7280);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   transition: all 0.2s;
 }
 
@@ -342,7 +327,7 @@
 
 .modal-content {
   background: var(--bg-card, rgba(255, 255, 255, 0.05));
-  border-radius: 16px;
+  border-radius: var(--comp-radius-xl);
   max-width: 700px;
   width: 100%;
   max-height: 90vh;
@@ -420,7 +405,7 @@
 .json-display {
   background: var(--bg-secondary, #f9fafb);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.8rem;
   overflow-x: auto;
   margin: 0;
@@ -453,6 +438,11 @@
 [data-theme="dark"] .audit-table th,
 .dark .audit-table th {
   background: var(--bg-secondary, #111827);
+}
+
+[data-theme="dark"] .audit-table th,
+.dark .audit-table th {
+  border-color: var(--border-default, #374151);
 }
 
 [data-theme="dark"] .audit-table td,
@@ -504,6 +494,7 @@
     background: #111827;
   }
 
+  .audit-table th,
   .audit-table td {
     border-color: #374151;
   }
@@ -556,4 +547,402 @@
   .audit-stats {
     flex-wrap: wrap;
   }
+}
+
+/* ============================================================
+   Lösch-Funktionen
+   ============================================================ */
+
+.checkbox-col {
+  width: 40px;
+  text-align: center;
+}
+
+/* Feste Spaltenbreiten für table-layout: fixed */
+.audit-table th:nth-child(1),
+.audit-table td:nth-child(1) { width: 40px; }    /* Checkbox */
+.audit-table th:nth-child(2),
+.audit-table td:nth-child(2) { width: 155px; }   /* Zeitpunkt */
+.audit-table th:nth-child(3),
+.audit-table td:nth-child(3) { width: 110px; }   /* Kategorie */
+.audit-table th:nth-child(8),
+.audit-table td:nth-child(8) { width: 65px; }    /* Actions */
+
+.actions-col {
+  white-space: nowrap;
+  text-align: center;
+}
+
+.actions-col button {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.delete-row-btn {
+  background: transparent;
+  border: none;
+  color: var(--status-error);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--comp-radius-xs);
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.audit-table tbody tr:hover .delete-row-btn {
+  opacity: 1;
+}
+
+.delete-row-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.row-selected {
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.delete-selection-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--comp-radius-md);
+  color: var(--status-error);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.delete-selection-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.bereinigen-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--comp-radius-md);
+  color: var(--status-error);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.bereinigen-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Bereinigen Modal */
+.bereinigen-modal {
+  max-width: 480px;
+}
+
+.bereinigen-warning {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--comp-radius-md);
+  padding: 12px 16px;
+  color: var(--status-error);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+.bereinigen-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.bereinigen-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--comp-radius-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-primary, #fff);
+  transition: background 0.2s;
+}
+
+.bereinigen-option.selected {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.bereinigen-option input[type="radio"] {
+  accent-color: var(--status-error);
+}
+
+.bereinigen-date {
+  margin-left: 36px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-primary, #fff);
+  font-size: 0.9rem;
+}
+
+.bereinigen-confirm {
+  margin-bottom: 20px;
+}
+
+.bereinigen-confirm label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 8px;
+}
+
+.confirm-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-primary, #fff);
+  font-size: 1rem;
+  letter-spacing: 2px;
+  box-sizing: border-box;
+}
+
+.modal-footer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.cancel-btn {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.delete-confirm-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: var(--status-error);
+  border: none;
+  border-radius: var(--comp-radius-md);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.delete-confirm-btn:disabled {
+  background: rgba(239, 68, 68, 0.3);
+  cursor: not-allowed;
+}
+
+.delete-confirm-btn:not(:disabled):hover {
+  background: #dc2626;
+}
+
+/* Bereinigen Modal — erweiterte Optionen */
+.bereinigen-section {
+  margin-bottom: 18px;
+}
+
+.bereinigen-section-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary, #888);
+  margin-bottom: 8px;
+}
+
+.bereinigen-modus-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.modus-btn {
+  padding: 8px 16px;
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-primary, #fff);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.modus-btn:hover { background: rgba(255,255,255,0.12); }
+
+.modus-btn.active {
+  background: rgba(59,130,246,0.2);
+  border-color: rgba(59,130,246,0.5);
+  color: #93c5fd;
+}
+
+.modus-btn.danger.active {
+  background: rgba(239,68,68,0.2);
+  border-color: rgba(239,68,68,0.5);
+  color: var(--status-error);
+}
+
+/* Filter-Grid */
+.bereinigen-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.bf-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bf-group label {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #aaa);
+  font-weight: 500;
+}
+
+.bf-group input,
+.bf-group select {
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-primary, #fff);
+  font-size: 0.85rem;
+}
+
+.bf-group select option { background: var(--modal-bg-dark); }
+
+.alter-tage-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.alter-shortcuts {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.shortcut-btn {
+  padding: 3px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--comp-radius-xs);
+  color: var(--text-secondary, #aaa);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.shortcut-btn:hover {
+  background: rgba(255,215,0,0.12);
+  border-color: rgba(255,215,0,0.3);
+  color: var(--primary);
+}
+
+/* Vorschau */
+.vorschau-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vorschau-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-primary, #fff);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.vorschau-btn:hover { background: rgba(255,255,255,0.12); }
+.vorschau-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.vorschau-result {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+}
+
+.vorschau-result.has-entries { color: var(--status-error); }
+
+@media (max-width: 600px) {
+  .bereinigen-filter-grid { grid-template-columns: 1fr; }
+}
+
+.bereinigen-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: var(--comp-radius-md);
+  padding: 10px 14px;
+  color: var(--status-error);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+/* ============================================================
+   Migrated inline styles
+   ============================================================ */
+
+/* Aktion secondary label (raw aktion text, smaller + monospace) */
+.aktion-raw {
+  opacity: 0.4;
+  font-size: 0.72em;
+  font-family: monospace;
+  font-weight: normal;
+}
+
+/* Entity ID suffix (e.g. #42) */
+.entity-id-suffix {
+  opacity: 0.45;
+  font-size: 0.78em;
+}
+
+/* Error state within empty-state */
+.empty-state--error {
+  color: var(--color-status-error, #ef4444);
+}
+
+.empty-state--error .error-heading {
+  font-weight: 600;
+}
+
+.empty-state--error .error-detail {
+  font-size: 0.85em;
+  opacity: 0.8;
+}
+
+.empty-state--error .refresh-btn {
+  margin-top: 1rem;
 }

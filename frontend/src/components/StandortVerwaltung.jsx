@@ -256,7 +256,7 @@ const StandortVerwaltung = () => {
       {/* Statistiken Overview */}
       <div className="stats-grid">
         <div className="stat-card-large">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}>
+          <div className="stat-icon stat-icon-green">
             <Building2 size={24} />
           </div>
           <div className="stat-content">
@@ -265,7 +265,7 @@ const StandortVerwaltung = () => {
           </div>
         </div>
         <div className="stat-card-large">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)' }}>
+          <div className="stat-icon stat-icon-blue">
             <MapPin size={24} />
           </div>
           <div className="stat-content">
@@ -274,7 +274,7 @@ const StandortVerwaltung = () => {
           </div>
         </div>
         <div className="stat-card-large">
-          <div className="stat-icon" style={{ background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)' }}>
+          <div className="stat-icon stat-icon-amber">
             <Users size={24} />
           </div>
           <div className="stat-content">
@@ -306,7 +306,7 @@ const StandortVerwaltung = () => {
                 <div className="header-left-section">
                   <div
                     className="color-indicator"
-                    style={{ background: standort.farbe || '#4F46E5' }}
+                    style={{ '--indicator-color': standort.farbe || '#4F46E5' }}
                   />
                   <div className="standort-info">
                     <h3>{standort.name}</h3>
@@ -571,7 +571,7 @@ const StandortVerwaltung = () => {
                       onChange={(e) => setFormData({ ...formData, strasse: e.target.value })}
                     />
                   </div>
-                  <div className="form-group" style={{ maxWidth: '150px' }}>
+                  <div className="form-group form-group-narrow">
                     <label>Hausnummer</label>
                     <input
                       type="text"
@@ -579,7 +579,7 @@ const StandortVerwaltung = () => {
                       onChange={(e) => setFormData({ ...formData, hausnummer: e.target.value })}
                     />
                   </div>
-                  <div className="form-group" style={{ maxWidth: '150px' }}>
+                  <div className="form-group form-group-narrow">
                     <label>PLZ</label>
                     <input
                       type="text"

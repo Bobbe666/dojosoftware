@@ -14,7 +14,7 @@ const WeatherWidget = ({ compact = false }) => {
       description: 'Regen',
       motivation: 'Perfekt für Indoor-Training! 💪',
       icon: CloudRain,
-      color: '#3B82F6'
+      color: 'var(--info)'
     },
     {
       condition: 'sunny',
@@ -22,7 +22,7 @@ const WeatherWidget = ({ compact = false }) => {
       description: 'Sonnig',
       motivation: 'Ideal für Training im Freien! ☀️',
       icon: Sun,
-      color: '#F59E0B'
+      color: 'var(--warning)'
     },
     {
       condition: 'cloudy',
@@ -176,7 +176,7 @@ const WeatherWidget = ({ compact = false }) => {
     <div className={`weather-widget ${compact ? 'compact' : ''}`}>
       <div className="weather-header">
         <div className="weather-main">
-          <div className="weather-icon" style={{ color: weather.color }}>
+          <div className="weather-icon" style={{ '--weather-color': weather.color }}>
             <WeatherIcon size={compact ? 20 : 24} />
           </div>
           <div className="weather-temp">

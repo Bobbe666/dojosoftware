@@ -1,0 +1,35 @@
+/* ===== VERBAND MITGLIED WERDEN CSS ===== */
+
+/* Zahlungsart card border (dynamic selection highlight) */
+.vmw-zahlungsart-label {
+  border: 2px solid var(--vmw-card-border, rgba(255,255,255,0.1));
+}
+
+/* Progress step (base + active state) */
+.vmw-progress-step {
+  background: rgba(255,255,255,0.1);
+  color: var(--text-muted);
+}
+.vmw-progress-step--active {
+  background: linear-gradient(135deg, #ffd700, #ff8c00);
+  color: #000;
+}
+
+/* SumUp payment description text */
+.vmw-sumup-desc {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Payment success label */
+.vmw-sumup-paid-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* Summary total amount */
+.vmw-summary-total-amount {
+  color: var(--primary);
+  font-size: 1.2rem;
+}

@@ -100,7 +100,7 @@ const SSOLogin = () => {
             <button
               className="btn-primary"
               onClick={() => navigate('/login')}
-              style={{ marginTop: '1rem' }}
+              className="u-mt-1"
             >
               Zum normalen Login
             </button>

@@ -216,7 +216,7 @@ const PasswordReset = () => {
             {loading ? 'Zurücksetzen…' : 'Passwort zurücksetzen'}
           </button>
 
-          <button type="button" className="link-button btn btn-link" onClick={() => navigate('/login')} disabled={loading} style={{ marginTop: '0.75rem' }}>
+          <button type="button" className="link-button btn btn-link" onClick={() => navigate('/login')} disabled={loading} className="u-mt-075">
             Zurück zum Login
           </button>
         </form>

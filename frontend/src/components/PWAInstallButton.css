@@ -1,0 +1,182 @@
+/* ============================================================
+   PWAInstallButton — scoped styles (prefix: pwa-)
+   ============================================================ */
+
+/* Install tile */
+.pwa-install-tile {
+  cursor: pointer;
+  padding: 0.8rem;
+  min-height: 60px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15));
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.pwa-install-tile:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 237, 78, 0.25));
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+/* Tile labels */
+.pwa-install-label {
+  font-size: 0.85rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.pwa-install-sublabel {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Modal overlay (shared by iOS + desktop modals) */
+.pwa-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  padding: 1rem;
+}
+
+/* Modal card */
+.pwa-modal {
+  background-color: #1a1a2e;
+  padding: 2rem;
+  border-radius: 16px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.pwa-modal--ios {
+  max-width: 500px;
+}
+
+.pwa-modal--desktop {
+  max-width: 600px;
+}
+
+/* Close button */
+.pwa-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Header */
+.pwa-modal-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.pwa-modal-header-icon-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pwa-modal-title {
+  color: var(--primary);
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.pwa-modal-subtitle {
+  color: var(--text-muted);
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Instruction box */
+.pwa-instruction-box {
+  background-color: rgba(255, 215, 0, 0.1);
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.pwa-instruction-box--mb {
+  margin-bottom: 1rem;
+}
+
+.pwa-instruction-box-title {
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.pwa-instruction-list {
+  padding-left: 1.5rem;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.pwa-instruction-list li {
+  margin-bottom: 1rem;
+}
+
+.pwa-instruction-list li:last-child {
+  margin-bottom: 0;
+}
+
+.pwa-instruction-list--half-gap li {
+  margin-bottom: 0.5rem;
+}
+
+/* Tip box */
+.pwa-tip-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.pwa-tip-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Chrome tip box */
+.pwa-chrome-tip {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: rgba(100, 149, 237, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(100, 149, 237, 0.3);
+  text-align: center;
+}
+
+.pwa-chrome-tip-text {
+  color: #6495ed;
+  font-size: 0.8rem;
+  margin: 0;
+}

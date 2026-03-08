@@ -1,0 +1,218 @@
+/*
+ * MemberProfile.css
+ * Mobile-first responsive overrides for the "Meine Daten" page.
+ * Targets .member-profile-wrapper — does NOT modify MitgliedDetailShared or MitgliedDetail.css.
+ */
+
+/* ── Wrapper ──────────────────────────────────────────── */
+.member-profile-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--modal-bg-dark);
+}
+
+/* ── Scrollable body below header ─────────────────────── */
+.member-profile-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Header: tighter on mobile ───────────────────────── */
+@media (max-width: 767px) {
+  .member-profile-wrapper .dashboard-header {
+    padding: 0.5rem 0.75rem;
+    min-height: 52px;
+    gap: 0.4rem;
+  }
+
+  /* Hide text labels, keep icons only for secondary buttons */
+  .member-profile-wrapper .dashboard-header .logout-text {
+    display: none;
+  }
+
+  /* Smaller logo */
+  .member-profile-wrapper .dashboard-header .dashboard-logo {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Title smaller */
+  .member-profile-wrapper .dashboard-header h2 {
+    font-size: var(--ui-page-subtitle);
+  }
+
+  /* User display: hide name, keep icon */
+  .member-profile-wrapper .dashboard-header .user-name {
+    display: none;
+  }
+}
+
+/* ── Main layout: sidebar → horizontal tab bar on mobile ─ */
+@media (max-width: 767px) {
+  /* Remove content scroll lock from detail container */
+  .member-profile-wrapper .mitglied-detail-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Stack sidebar above content */
+  .member-profile-wrapper .mitglied-layout {
+    flex-direction: column;
+    min-height: unset;
+  }
+
+  /* Sidebar becomes a compact top bar */
+  .member-profile-wrapper .mitglied-sidebar {
+    width: 100% !important;
+    position: static !important;
+    top: auto !important;
+    min-height: unset !important;
+    border-right: none !important;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    padding: 0 !important;
+    overflow: visible;
+  }
+
+  /* Hide the collapse/expand toggle on mobile (not needed) */
+  .member-profile-wrapper .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  /* Compact avatar + name row */
+  .member-profile-wrapper .mitglied-header {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    margin: 0 !important;
+    padding: 0.6rem 1rem !important;
+    border-bottom: none !important;
+    gap: 0.75rem;
+  }
+
+  .member-profile-wrapper .mitglied-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+  }
+
+  .member-profile-wrapper .mitglied-name {
+    font-size: 0.9rem !important;
+    font-weight: 700;
+  }
+
+  /* Horizontal scrollable tab bar */
+  .member-profile-wrapper .tabs-vertical {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    gap: 0.3rem !important;
+    padding: 0 0.75rem 0.6rem !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex-wrap: nowrap;
+  }
+
+  .member-profile-wrapper .tabs-vertical::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Tab buttons: compact chips */
+  .member-profile-wrapper .tab-vertical-btn {
+    flex-direction: row !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    padding: 0.45rem 0.85rem !important;
+    font-size: var(--ui-card-label) !important;
+    border-radius: 20px !important;
+    width: auto !important;
+    min-width: unset !important;
+    gap: var(--ui-form-group-gap) !important;
+    /* Remove the shimmer animation on mobile for performance */
+    overflow: hidden;
+  }
+
+  /* Show labels again (they were hidden for collapsed sidebar) */
+  .member-profile-wrapper .tab-vertical-btn .tab-label {
+    display: inline !important;
+    font-size: 0.78rem;
+  }
+
+  .member-profile-wrapper .tab-vertical-btn .tab-icon {
+    font-size: 0.85rem !important;
+    width: auto !important;
+  }
+
+  /* Content area: remove the large header offset, normal padding */
+  .member-profile-wrapper .mitglied-content {
+    padding: var(--ui-page-padding-sm) !important;
+    padding-top: var(--ui-page-padding-sm) !important;
+    min-height: unset !important;
+    min-height: 0 !important;
+  }
+
+  /* Status badges: 2 per row on mobile instead of 4 */
+  .member-profile-wrapper .status-badges-horizontal {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  .member-profile-wrapper .status-badge-pill {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 140px;
+  }
+
+  /* Grid containers: single column on mobile */
+  .member-profile-wrapper .mitglied-content .grid-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Field groups: full width */
+  .member-profile-wrapper .mitglied-content .field-group {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* ── Tablet (768px – 1023px): collapsed sidebar ────────── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .member-profile-wrapper .mitglied-sidebar {
+    width: 72px !important;
+    padding: 1.5rem 0.4rem 0.75rem !important;
+  }
+
+  .member-profile-wrapper .mitglied-sidebar .mitglied-header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .member-profile-wrapper .mitglied-avatar {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .member-profile-wrapper .mitglied-name {
+    display: none;
+  }
+
+  .member-profile-wrapper .tab-vertical-btn {
+    justify-content: center !important;
+    padding: 10px 6px !important;
+  }
+
+  .member-profile-wrapper .tab-vertical-btn .tab-label {
+    display: none;
+  }
+
+  .member-profile-wrapper .mitglied-content {
+    padding: var(--ui-section-gap-sm) 1.5rem var(--ui-section-gap-sm) var(--ui-section-gap-sm) !important;
+    padding-top: calc(var(--ui-section-gap-sm) + 60px) !important;
+  }
+}

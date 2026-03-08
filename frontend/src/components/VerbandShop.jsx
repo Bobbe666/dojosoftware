@@ -428,7 +428,7 @@ const VerbandShop = () => {
     const kat = kategorien.find(k => k.id === kategorie);
     if (!kat) return <Package size={size} />;
     const Icon = kat.icon;
-    return <Icon size={size} style={{ color: kat.color }} />;
+    return <Icon size={size} color={kat.color} />;
   };
 
   // ============================================================================

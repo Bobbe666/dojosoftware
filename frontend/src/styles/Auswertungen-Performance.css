@@ -1,0 +1,269 @@
+/* ===== PERFORMANCE TAB – PROFESSIONAL REDESIGN ===== */
+
+.perf-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-section-gap);
+}
+
+/* ── KPI Header ── */
+.perf-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ui-stats-gap);
+}
+
+.perf-kpi {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-stat-card-padding);
+  transition: border-color 0.2s;
+}
+
+.perf-kpi:hover { border-color: rgba(255, 215, 0, 0.2); }
+
+.perf-kpi-label {
+  font-size: var(--ui-stat-label);
+  font-weight: 600;
+  color: var(--text-4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+.perf-kpi-value {
+  font-size: var(--ui-kpi-value);
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 16px rgba(16,185,129,0.3); }
+.perf-kpi-value--red    { color: var(--status-error); }
+.perf-kpi-value--gold   { color: var(--primary); text-shadow: 0 0 16px rgba(255,215,0,0.25); }
+
+.perf-kpi-sub {
+  font-size: var(--ui-card-label);
+  color: rgba(255, 255, 255, 0.38);
+  margin-top: 0.4rem;
+}
+
+.perf-kpi-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.perf-kpi-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+
+/* ── 2-Spalten ── */
+.perf-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ui-section-gap-sm);
+  align-items: start;
+}
+
+/* ── Card ── */
+.perf-card {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.perf-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.perf-card-title {
+  font-size: var(--ui-card-label);
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.perf-card-meta {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Wochentag-Bars ── */
+.perf-week-list {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.perf-week-row {
+  display: grid;
+  grid-template-columns: 72px 1fr 40px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.perf-week-tag {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.perf-week-bar-bg {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.perf-week-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--gradient-gold, linear-gradient(90deg, #ffd700, #f59e0b));
+  transition: width 0.7s ease;
+}
+
+.perf-week-bar-fill--top {
+  background: linear-gradient(90deg, #ffd700, #ffaa00);
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.perf-week-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Spitzenzeiten ── */
+.perf-peak-list {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.perf-peak-row {
+  display: grid;
+  grid-template-columns: 24px 120px 1fr 36px;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.perf-peak-rank {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+}
+
+.perf-peak-rank--1 { color: var(--primary); }
+.perf-peak-rank--2 { color: #c0c0c0; }
+.perf-peak-rank--3 { color: #cd7f32; }
+
+.perf-peak-time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.perf-peak-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.perf-peak-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: rgba(99, 179, 237, 0.7);
+  transition: width 0.7s ease;
+}
+
+.perf-peak-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Mitgliedschaftsdauer ── */
+.perf-duration-list {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.perf-duration-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 48px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.perf-duration-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.perf-duration-bar-bg {
+  height: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.perf-duration-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.7s ease;
+}
+
+.perf-duration-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Empty ── */
+.perf-empty {
+  padding: var(--ui-section-gap);
+  text-align: center;
+  color: var(--text-4);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .perf-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .perf-columns  { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 500px) {
+  .perf-kpi-row { grid-template-columns: 1fr 1fr; }
+  .perf-week-row { grid-template-columns: 60px 1fr 36px; }
+  .perf-peak-row { grid-template-columns: 20px 90px 1fr 32px; }
+  .perf-duration-row { grid-template-columns: 120px 1fr 40px; }
+}

@@ -20,11 +20,13 @@ import { createSafeHtml } from '../utils/sanitizer';
 import '../styles/Buttons.css';
 // import "../styles/DojoEdit.css";
 import "../styles/MitgliedDetail.css";
+import "../styles/MitgliedDetailShared.css";
 import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 
 // Extrahierte Tab-Komponenten
 import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab } from './mitglied-detail';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
+import VorlagenSendenModal from './VorlagenSendenModal';
 
 // Hilfsfunktion: Wandelt einen ISO-Datumsstring in "yyyy-MM-dd" um.
 function toMySqlDate(dateString) {
@@ -136,15 +138,15 @@ const BeltPreview = ({ primaer, sekundaer, size = 'normal', className = '' }) =>
   return (
     <div className={`${sizeClass} ${className}`}>
       {/* Basis-Gürtel mit Primärfarbe */}
-      <div 
-        className="belt-base" 
-        style={{ backgroundColor: primaer || '#CCCCCC' }}
+      <div
+        className="belt-base"
+        style={{ '--belt-primaer': primaer || '#CCCCCC' }}
       >
         {/* Sekundärer Streifen wenn vorhanden */}
         {sekundaer && (
-          <div 
-            className="belt-stripe" 
-            style={{ backgroundColor: sekundaer }}
+          <div
+            className="belt-stripe"
+            style={{ '--belt-sekundaer': sekundaer }}
           />
         )}
       </div>
@@ -236,6 +238,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [avatarLoaded, setAvatarLoaded] = useState(false);
   const [buddyGroups, setBuddyGroups] = useState([]);
   const [buddyGroupsLoading, setBuddyGroupsLoading] = useState(false);
+  const [referralInfo, setReferralInfo] = useState(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   const [activeTab, setActiveTab] = useState("allgemein");
   const [styleSubTab, setStyleSubTab] = useState("stile");
@@ -295,6 +299,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showMitgliedsausweis, setShowMitgliedsausweis] = useState(false);
+  const [showVorlagenSenden, setShowVorlagenSenden] = useState(false);
   const [archiveReason, setArchiveReason] = useState('');
   const [newVertrag, setNewVertrag] = useState(() => {
     const heute = new Date();
@@ -775,6 +780,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // 🥋 Stilspezifische Daten laden
   const loadStyleSpecificData = async (stilId) => {
+    if (!id) return;
     try {
       const response = await axios.get(`/mitglieder/${id}/stil/${stilId}/data`);
       const result = response.data;
@@ -789,14 +795,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // 🥋 Stilspezifische Daten speichern (Auto-Save)
   const saveStyleSpecificData = async (stilId, data) => {
-    if (autoSaving) return; // Verhindere mehrfache gleichzeitige Speicherungen
+    const parsedId = parseInt(id, 10);
+    const parsedStilId = parseInt(stilId, 10);
+    if (!id || isNaN(parsedId) || isNaN(parsedStilId) || autoSaving) {
+      console.warn(`⚠️ saveStyleSpecificData: Ungültige ID(s) - id="${id}", stilId="${stilId}"`);
+      return;
+    }
+
+    // Debug: Zeige was genau gesendet wird
+    const payload = {
+      current_graduierung_id: data.current_graduierung_id || null,
+      letzte_pruefung: data.letzte_pruefung || null,
+      naechste_pruefung: data.naechste_pruefung || null,
+      anmerkungen: data.anmerkungen || null
+    };
+    console.log(`📤 POST /mitglieder/${parsedId}/stil/${parsedStilId}/data`, payload);
 
     setAutoSaving(true);
     try {
-      const response = await axios.post(`/mitglieder/${id}/stil/${stilId}/data`, data);
-      console.log(`✅ Stilspezifische Daten für Stil ${stilId} gespeichert:`, response.data);
+      const response = await axios.post(`/mitglieder/${parsedId}/stil/${parsedStilId}/data`, payload);
+      console.log(`✅ Stilspezifische Daten für Stil ${parsedStilId} gespeichert:`, response.data);
     } catch (error) {
-      console.error(`❌ Fehler beim Speichern stilspezifischer Daten für Stil ${stilId}:`, error.message);
+      console.error(`❌ Fehler beim Speichern stilspezifischer Daten (id=${parsedId}, stil=${parsedStilId}):`, error.message);
+      console.error(`❌ Response Body:`, error.response?.data);
       setError('Fehler beim Speichern der stilspezifischen Daten');
     } finally {
       setAutoSaving(false);
@@ -1390,13 +1411,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       console.log('💾 Speichere auch in Mitglieder-Tabelle...');
       await axios.put(`/mitglieder/${id}`, {
         gurtfarbe: newGraduation.name,
-        letzte_pruefung: new Date().toISOString().split('T')[0]
+        graduierung_datum: new Date().toISOString().split('T')[0]
       });
 
       setMitglied(prev => ({
         ...prev,
         gurtfarbe: newGraduation.name,
-        letzte_pruefung: new Date().toISOString()
+        graduierung_datum: new Date().toISOString().split('T')[0]
       }));
       setLastExamDate(new Date().toISOString().split('T')[0]);
       console.log('✅ Gurt-Graduierung in Mitglied aktualisiert');
@@ -2069,6 +2090,23 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
       loadBuddyGroups();
 
+      // Referral-Daten laden
+      const loadReferral = async () => {
+        try {
+          const [sRes, cRes] = await Promise.all([
+            fetch(`${config.apiBaseUrl}/referral/settings`, { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch(`${config.apiBaseUrl}/referral/codes?mitglied_id=${mitglied.mitglied_id}`, { headers: { 'Authorization': `Bearer ${token}` } })
+          ]);
+          let settings = {};
+          if (sRes.ok) settings = await sRes.json();
+          if (!cRes.ok) return;
+          const codes = await cRes.json();
+          const activeCode = Array.isArray(codes) ? codes.find(c => c.aktiv) : null;
+          if (activeCode) setReferralInfo({ ...settings, code: activeCode.code });
+        } catch (e) { /* optional */ }
+      };
+      loadReferral();
+
       return () => {
         controller.abort();
       };
@@ -2385,7 +2423,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   };
 
   if (loading) return (
-    <div className="mitglied-detail-container" style={{ padding: '2rem' }}>
+    <div className="mitglied-detail-container mds2-p-2">
       <SkeletonProfile />
     </div>
   );
@@ -2478,16 +2516,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {/* Foto und Name oben */}
           <div className="mitglied-header">
-            <div className={`mitglied-avatar ${!avatarLoaded ? 'avatar-loading' : ''}`} style={{ position: 'relative' }}>
+            <div className={`mitglied-avatar mds-avatar-wrapper ${!avatarLoaded ? 'avatar-loading' : ''}`}>
               <img
                 key={mitglied?.mitglied_id}
                 src={mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                 alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
-                className="avatar-image"
-                style={{
-                  opacity: avatarLoaded ? 1 : 0,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}
+                className={`avatar-image ${avatarLoaded ? 'mds-avatar-img--loaded' : 'mds-avatar-img--loading'}`}
                 onLoad={() => {
                   console.log('🖼️ Avatar onLoad gefeuert für:', mitglied?.foto_pfad);
                   setAvatarLoaded(true);
@@ -2503,7 +2537,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               <div className="mitglied-name">
                 {mitglied?.vorname} {mitglied?.nachname}
                 {isAdmin && mitglied?.dojo_id && (
-                  <div className="mitglied-dojo-name" style={{ fontSize: '0.85rem', marginTop: '4px', fontWeight: 'normal' }}>
+                  <div className="mitglied-dojo-name mds-dojo-name-sub">
                     {getDojoName(mitglied.dojo_id)}
                   </div>
                 )}
@@ -2529,23 +2563,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
         <div className={`mitglied-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
           {/* Header mit Drei-Punkte-Menü */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: '1rem',
-            gap: '1rem',
-            paddingRight: '1rem',
-            paddingTop: '0.5rem'
-          }}>
+          <div className="mds-content-header">
             {/* Linke Seite: Zurück-Button und Status-Badges */}
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              flex: 1,
-              alignItems: 'center',
-              flexWrap: 'wrap'
-            }}>
+            <div className="mds-content-header-left">
               {/* Zurück-Button - nur für Admin */}
               {isAdmin && (
                 <button
@@ -2578,7 +2598,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
             {/* Drei-Punkte-Menü */}
             {isAdmin && (
-              <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div className="mds-actions-menu-wrapper">
                 <button
                   className="mitglied-detail-actions-btn"
                   onClick={() => setShowActionsMenu(!showActionsMenu)}
@@ -2593,14 +2613,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     {/* Overlay zum Schließen */}
                     <div
                       onClick={() => setShowActionsMenu(false)}
-                      style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: 998
-                      }}
+                      className="mds-click-overlay"
                     />
 
                     <div className="mitglied-detail-actions-menu">
@@ -2648,6 +2661,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       >
                         <span className="menu-item-icon">🪪</span>
                         <span>Mitgliedsausweis</span>
+                      </button>
+
+                      <button
+                        className="mitglied-detail-menu-item"
+                        onClick={() => {
+                          setShowVorlagenSenden(true);
+                          setShowActionsMenu(false);
+                        }}
+                      >
+                        <span className="menu-item-icon">📧</span>
+                        <span>Dokument senden</span>
                       </button>
 
                       <div className="mitglied-detail-menu-divider" />
@@ -2819,7 +2843,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         <img
                           src={photoPreview || (mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : '/src/assets/default-avatar.png')}
                           alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
-                          className="mitglied-foto-small"
+                          className="mitglied-foto-small mds-cursor-pointer"
                           onClick={() => {
                             const newWindow = window.open();
                             newWindow.document.write(`
@@ -2832,7 +2856,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               </html>
                             `);
                           }}
-                          style={{ cursor: 'pointer' }}
                         />
                         <div className="foto-actions">
                           <input
@@ -2840,24 +2863,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             id="photo-upload"
                             accept="image/*"
                             onChange={handlePhotoUpload}
-                            style={{ display: 'none' }}
+                            className="mds2-hidden"
                             disabled={uploadingPhoto}
                           />
                           <button
                             onClick={() => document.getElementById('photo-upload').click()}
                             disabled={uploadingPhoto}
-                            style={{
-                              background: 'rgba(42, 42, 78, 0.6)',
-                              border: '1px solid rgba(255, 215, 0, 0.3)',
-                              color: '#ffd700',
-                              padding: '8px 16px',
-                              fontSize: '0.85rem',
-                              fontWeight: 600,
-                              borderRadius: '8px',
-                              cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
-                              opacity: uploadingPhoto ? 0.5 : 1,
-                              transition: 'all 0.3s ease'
-                            }}
+                            className="mds-foto-change-btn"
                             onMouseEnter={(e) => {
                               if (!uploadingPhoto) {
                                 e.target.style.background = 'rgba(255, 215, 0, 0.15)';
@@ -2875,24 +2887,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           </button>
                           <button
                             onClick={handlePhotoDelete}
-                            className="btn btn-sm"
+                            className="mds-foto-delete-btn"
                             disabled={uploadingPhoto}
-                            style={{
-                              background: 'transparent',
-                              border: '1px solid rgba(239, 68, 68, 0.5)',
-                              color: '#ef4444',
-                              padding: '8px 16px',
-                              fontSize: '0.85rem',
-                              borderRadius: '8px',
-                              cursor: uploadingPhoto ? 'not-allowed' : 'pointer',
-                              transition: 'all 0.3s ease',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              fontWeight: 600,
-                              textTransform: 'none',
-                              opacity: uploadingPhoto ? 0.5 : 1
-                            }}
                             onMouseEnter={(e) => {
                               if (!uploadingPhoto) {
                                 e.target.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -2918,24 +2914,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             id="photo-upload"
                             accept="image/*"
                             onChange={handlePhotoUpload}
-                            style={{ display: 'none' }}
+                            className="mds2-hidden"
                             disabled={uploadingPhoto}
                           />
-                          <label htmlFor="photo-upload" className="btn" style={{
-                            cursor: 'pointer',
-                            background: 'transparent',
-                            border: '1px solid rgba(255, 215, 0, 0.2)',
-                            color: 'rgba(255, 255, 255, 0.7)',
-                            padding: '12px 20px',
-                            fontSize: '0.9rem',
-                            borderRadius: '8px',
-                            transition: 'all 0.3s ease',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.5rem',
-                            fontWeight: 600
-                          }}
+                          <label htmlFor="photo-upload" className="mds-foto-upload-label"
                           onMouseEnter={(e) => {
                             e.target.style.background = 'rgba(255, 255, 255, 0.1)';
                             e.target.style.borderColor = 'rgba(255, 215, 0, 0.4)';
@@ -2947,12 +2929,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             e.target.style.color = 'rgba(255, 255, 255, 0.7)';
                           }}>
                             {uploadingPhoto ? (
-                              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                              <div className="mds-foto-spinner-row">
                                 <div className="spinner"></div>
                                 <span>Hochladen...</span>
                               </div>
                             ) : (
-                              <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+                              <div className="mds-foto-spinner-row">
                                 <span>📷</span>
                                 <span>Foto hochladen</span>
                               </div>
@@ -3042,7 +3024,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       onChange={(e) => handleChange(e, "gurtfarbe")}
                       placeholder="Legacy-Feld (wird nicht mehr verwendet)"
                       disabled
-                      style={{ opacity: 0.5, cursor: 'not-allowed' }}
+                      className="mds-disabled-input"
                     />
                   ) : (
                     <span>{mitglied.aktuelle_graduierungen || mitglied.gurtfarbe || "Keine Graduierung zugeordnet"}</span>
@@ -3269,36 +3251,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       />
                     </div>
                   ) : (
-                    <div className="kontostand-details" style={{
-                      display: 'grid',
-                      gap: '1rem',
-                      marginTop: '1rem'
-                    }}>
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255, 215, 0, 0.2)'
-                      }}>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          marginBottom: '0.5rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
+                    <div className="kontostand-details mds-kontostand-grid">
+                      <div className="mds-kontostand-box">
+                        <div className="mds-kontostand-label">
                           Aktueller offener Betrag
                         </div>
-                        <div style={{
-                          color: (() => {
-                            // Berechne Kontostand aus finanzDaten - nur unbezahlte Beiträge
+                        <div className="mds-kontostand-value-primary" style={{
+                          '--val-color': (() => {
                             const kontostand = finanzDaten
                               .filter(item => !item.bezahlt)
                               .reduce((sum, item) => sum + (parseFloat(item.betrag) || 0), 0);
                             return kontostand > 0 ? '#ef4444' : '#10b981';
-                          })(),
-                          fontSize: '1.2rem',
-                          fontWeight: '600'
+                          })()
                         }}>
                           {(() => {
                             // Berechne offenen Betrag aus unbezahlten Beiträgen
@@ -3308,11 +3272,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             return `${kontostand.toFixed(2)} €`;
                           })()}
                         </div>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: 'rgba(255, 255, 255, 0.4)',
-                          marginTop: '0.5rem'
-                        }}>
+                        <div className="mds-kontostand-sublabel">
                           {(() => {
                             const unbezahlt = finanzDaten.filter(item => !item.bezahlt).length;
                             const bezahlt = finanzDaten.filter(item => item.bezahlt).length;
@@ -3321,26 +3281,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         </div>
                       </div>
 
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255, 215, 0, 0.2)'
-                      }}>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          marginBottom: '0.5rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
+                      <div className="mds-kontostand-box">
+                        <div className="mds-kontostand-label">
                           Letzter bezahlter Betrag
                         </div>
-                        <div style={{
-                          color: '#ffffff',
-                          fontSize: '1.1rem',
-                          fontWeight: '600'
-                        }}>
+                        <div className="mds-kontostand-value-secondary">
                           {(() => {
                             const letzteZahlung = finanzDaten
                               .filter(z => z.bezahlt && z.zahlungsdatum)
@@ -3349,40 +3294,25 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             if (letzteZahlung) {
                               return (
                                 <>
-                                  <div style={{fontSize: '1.2rem', marginBottom: '0.25rem'}}>
+                                  <div className="mds-last-payment-amount">
                                     {parseFloat(letzteZahlung.betrag).toFixed(2)} €
                                   </div>
-                                  <div style={{fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)'}}>
+                                  <div className="mds-last-payment-date">
                                     am {new Date(letzteZahlung.zahlungsdatum).toLocaleDateString('de-DE')}
                                   </div>
                                 </>
                               );
                             }
-                            return <div style={{color: 'rgba(255, 255, 255, 0.5)'}}>Keine Zahlungen vorhanden</div>;
+                            return <div className="mds-no-data-muted">Keine Zahlungen vorhanden</div>;
                           })()}
                         </div>
                       </div>
 
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        padding: '1rem',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255, 215, 0, 0.2)'
-                      }}>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          marginBottom: '0.5rem',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px'
-                        }}>
+                      <div className="mds-kontostand-box">
+                        <div className="mds-kontostand-label">
                           Kommender Betrag
                         </div>
-                        <div style={{
-                          color: '#ffffff',
-                          fontSize: '1.1rem',
-                          fontWeight: '600'
-                        }}>
+                        <div className="mds-kontostand-value-secondary">
                           {(() => {
                             const aktiveVertraege = verträge.filter(v => v.status === 'aktiv');
                             if (aktiveVertraege.length > 0) {
@@ -3391,16 +3321,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               }, 0);
                               return (
                                 <>
-                                  <div style={{fontSize: '1.2rem', marginBottom: '0.25rem'}}>
+                                  <div className="mds-last-payment-amount">
                                     {gesamtBeitrag.toFixed(2)} €
                                   </div>
-                                  <div style={{fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.5)'}}>
+                                  <div className="mds-last-payment-date">
                                     monatlich ({aktiveVertraege.length} {aktiveVertraege.length === 1 ? 'Vertrag' : 'Verträge'})
                                   </div>
                                 </>
                               );
                             }
-                            return <div style={{color: 'rgba(255, 255, 255, 0.5)'}}>Kein aktiver Vertrag</div>;
+                            return <div className="mds-no-data-muted">Kein aktiver Vertrag</div>;
                           })()}
                         </div>
                       </div>
@@ -3434,9 +3364,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "dokumente" && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="mds2-flex-col-15">
               <div className="field-group card">
-                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>Dokumente & Einverständnisse</h3>
+                <h3 className="mds2-mb-15-heading">Dokumente & Einverständnisse</h3>
                 {(() => {
                   // 🔍 Hole Daten aus dem aktiven Vertrag (falls vorhanden), sonst aus mitglied
                   const activeContract = verträge.find(v => v.status === 'aktiv') || verträge[0];
@@ -3462,218 +3392,155 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   const gesundheitserklaerung_datum = docSource.gesundheitserklaerung_datum || mitglied.gesundheitserklaerung_datum;
 
                   return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="mds-flex-col">
                   {activeContract && (
-                    <div style={{
-                      padding: '0.75rem',
-                      background: 'rgba(33, 150, 243, 0.1)',
-                      borderRadius: '6px',
-                      border: '1px solid rgba(33, 150, 243, 0.3)',
-                      fontSize: '0.8rem',
-                      color: 'rgba(255, 255, 255, 0.7)'
-                    }}>
+                    <div className="mds-contract-info-hint">
                       ℹ️ Daten werden aus dem aktiven Vertrag #{activeContract.personenVertragNr || activeContract.id} geladen
                     </div>
                   )}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>Hausordnung akzeptiert:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">Hausordnung akzeptiert:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="checkbox"
                         checked={updatedData.hausordnung_akzeptiert || false}
                         onChange={(e) => handleChange(e, "hausordnung_akzeptiert")}
-                        style={{ width: '18px', height: '18px' }}
+                        className="mds2-icon-18"
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`status-badge ${hausordnung_akzeptiert ? 'accepted' : 'missing'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textTransform: 'uppercase' }}>
+                      <div className="mds-flex-row">
+                        <span className={`status-badge mds2-badge-uppercase-xs `}>
                           {hausordnung_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
                         </span>
                         {hausordnung_akzeptiert_am && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap' }}>
+                          <span className="mds-nowrap-sm">
                             am {new Date(hausordnung_akzeptiert_am).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>Datenschutz akzeptiert:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">Datenschutz akzeptiert:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="checkbox"
                         checked={updatedData.datenschutz_akzeptiert || false}
                         onChange={(e) => handleChange(e, "datenschutz_akzeptiert")}
-                        style={{ width: '18px', height: '18px' }}
+                        className="mds2-icon-18"
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`status-badge ${datenschutz_akzeptiert ? 'accepted' : 'missing'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textTransform: 'uppercase' }}>
+                      <div className="mds-flex-row">
+                        <span className={`status-badge mds2-badge-uppercase-xs `}>
                           {datenschutz_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
                         </span>
                         {datenschutz_akzeptiert_am && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap' }}>
+                          <span className="mds-nowrap-sm">
                             am {new Date(datenschutz_akzeptiert_am).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>Foto-Einverständnis:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">Foto-Einverständnis:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="checkbox"
                         checked={updatedData.foto_einverstaendnis || false}
                         onChange={(e) => handleChange(e, "foto_einverstaendnis")}
-                        style={{ width: '18px', height: '18px' }}
+                        className="mds2-icon-18"
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`status-badge ${foto_einverstaendnis ? 'accepted' : 'missing'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textTransform: 'uppercase' }}>
+                      <div className="mds-flex-row">
+                        <span className={`status-badge mds2-badge-uppercase-xs `}>
                           {foto_einverstaendnis ? "✅ Erteilt" : "❌ Fehlt"}
                         </span>
                         {foto_einverstaendnis_datum && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap' }}>
+                          <span className="mds-nowrap-sm">
                             am {new Date(foto_einverstaendnis_datum).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>AGB akzeptiert:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">AGB akzeptiert:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="checkbox"
                         checked={updatedData.agb_akzeptiert || false}
                         onChange={(e) => handleChange(e, "agb_akzeptiert")}
-                        style={{ width: '18px', height: '18px' }}
+                        className="mds2-icon-18"
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`status-badge ${agb_akzeptiert ? 'accepted' : 'missing'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textTransform: 'uppercase' }}>
+                      <div className="mds-flex-row">
+                        <span className={`status-badge mds2-badge-uppercase-xs `}>
                           {agb_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
                         </span>
                         {agb_akzeptiert_am && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap' }}>
+                          <span className="mds-nowrap-sm">
                             am {new Date(agb_akzeptiert_am).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>Haftungsausschluss:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">Haftungsausschluss:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="checkbox"
                         checked={updatedData.haftungsausschluss_akzeptiert || false}
                         onChange={(e) => handleChange(e, "haftungsausschluss_akzeptiert")}
-                        style={{ width: '18px', height: '18px' }}
+                        className="mds2-icon-18"
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`status-badge ${haftungsausschluss_akzeptiert ? 'accepted' : 'missing'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textTransform: 'uppercase' }}>
+                      <div className="mds-flex-row">
+                        <span className={`status-badge mds2-badge-uppercase-xs `}>
                           {haftungsausschluss_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
                         </span>
                         {haftungsausschluss_datum && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap' }}>
+                          <span className="mds-nowrap-sm">
                             am {new Date(haftungsausschluss_datum).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>Gesundheitserklärung:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">Gesundheitserklärung:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="checkbox"
                         checked={updatedData.gesundheitserklaerung || false}
                         onChange={(e) => handleChange(e, "gesundheitserklaerung")}
-                        style={{ width: '18px', height: '18px' }}
+                        className="mds2-icon-18"
                       />
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span className={`status-badge ${gesundheitserklaerung ? 'accepted' : 'missing'}`} style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', textTransform: 'uppercase' }}>
+                      <div className="mds-flex-row">
+                        <span className={`status-badge mds2-badge-uppercase-xs `}>
                           {gesundheitserklaerung ? "✅ Abgegeben" : "❌ Fehlt"}
                         </span>
                         {gesundheitserklaerung_datum && (
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', whiteSpace: 'nowrap' }}>
+                          <span className="mds-nowrap-sm">
                             am {new Date(gesundheitserklaerung_datum).toLocaleDateString('de-DE')}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '0.5rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <label style={{ fontWeight: 500, fontSize: '0.75rem', margin: 0, textTransform: 'uppercase' }}>Vereinsordnung Datum:</label>
+                  <div className="mds-doc-row">
+                    <label className="mds-uppercase-label">Vereinsordnung Datum:</label>
                     {editMode && isAdmin ? (
                       <input
                         type="date"
                         value={toInputDate(updatedData.vereinsordnung_datum)}
                         onChange={(e) => handleChange(e, "vereinsordnung_datum")}
-                        style={{ padding: '0.35rem', fontSize: '0.75rem' }}
+                        className="mds-date-input-sm"
                       />
                     ) : (
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#FFD700' }}>
+                      <span className="mds-vereinsordnung-value">
                         {mitglied.vereinsordnung_datum
                           ? new Date(mitglied.vereinsordnung_datum).toLocaleDateString("de-DE")
                           : "15.1.2023"
@@ -3689,51 +3556,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* Bestätigte Dokumenten-Benachrichtigungen */}
               {confirmedNotifications.length > 0 && (
                 <div className="field-group card">
-                  <h3 style={{ marginBottom: '1.5rem', fontSize: '1.1rem' }}>✅ Bestätigte Dokumente</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <h3 className="mds2-mb-15-heading">✅ Bestätigte Dokumente</h3>
+                  <div className="mds-flex-col">
                     {confirmedNotifications.map((notification) => {
                       const metadata = notification.metadata || {};
                       return (
                         <div
                           key={notification.id}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '0.75rem',
-                            background: 'rgba(34, 197, 94, 0.1)',
-                            borderRadius: '6px',
-                            border: '1px solid rgba(34, 197, 94, 0.3)'
-                          }}
+                          className="mds-confirmed-doc-row"
                         >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                          <div className="u-flex-1">
+                            <div className="mds-confirmed-doc-detail">
                               {notification.subject}
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                            <div className="mds-confirmed-doc-version">
                               {metadata.document_title && `${metadata.document_title} `}
                               {metadata.document_version && `(Version ${metadata.document_version})`}
                             </div>
                           </div>
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-end',
-                            gap: '0.25rem'
-                          }}>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: 'rgba(34, 197, 94, 0.9)',
-                              fontWeight: 600,
-                              textTransform: 'uppercase'
-                            }}>
+                          <div className="mds-confirmed-doc-meta">
+                            <span className="mds-confirmed-badge">
                               ✓ Bestätigt
                             </span>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: 'rgba(255, 255, 255, 0.5)',
-                              whiteSpace: 'nowrap'
-                            }}>
+                            <span className="mds-confirmed-doc-timestamp">
                               {new Date(notification.confirmed_at).toLocaleString('de-DE', {
                                 day: '2-digit',
                                 month: '2-digit',
@@ -3747,7 +3592,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       );
                     })}
                   </div>
-                  <div className="info-box" style={{ marginTop: '1rem' }}>
+                  <div className="info-box mds2-mt-1">
                     <p>ℹ️ <strong>Hinweis:</strong> Hier werden alle vom Mitglied bestätigten Dokumente mit Datum und Uhrzeit der Bestätigung angezeigt.</p>
                   </div>
                 </div>
@@ -3756,64 +3601,28 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* 🔒 ADMIN-ONLY: SEPA-Lastschriftmandat (Banking Information) */}
               {isAdmin && sepaMandate && (
                 <div className="field-group card bank-sub-tab-content">
-                  <h3 style={{ 
-                    fontSize: '0.8rem', 
-                    color: '#FFD700', 
-                    marginBottom: '1rem',
-                    textTransform: 'uppercase',
-                    fontWeight: '700',
-                    letterSpacing: '0.5px',
-                    borderBottom: '1px solid rgba(255, 215, 0, 0.3)',
-                    paddingBottom: '0.75rem'
-                  }}>
+                  <h3 className="mds-sepa-heading">
                     Aktuelles SEPA-Lastschriftmandat
                   </h3>
-                  
-                  <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr auto',
-                  gap: '1.5rem',
-                  padding: '1.25rem',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  marginBottom: '1rem'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+                  <div className="mds-sepa-grid-card">
+                  <div className="mds2-flex-col-1">
                     {/* Header mit Referenz und Status */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '0.75rem'
-                    }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <span style={{ 
-                          fontSize: '0.8rem', 
-                          color: '#e74c3c',
-                          fontWeight: '600'
-                        }}>
+                    <div className="mds-sepa-header-row">
+                      <div className="mds-sepa-ref-col">
+                        <span className="mds-sepa-ref">
                           {sepaMandate.mandatsreferenz}
                         </span>
-                        <span style={{ 
-                          fontSize: '0.8rem', 
-                          color: 'rgba(255, 255, 255, 0.7)'
-                        }}>
+                        <span className="mds-sepa-status-text">
                           STATUS: AKTIV
                         </span>
                       </div>
                     </div>
 
                     {/* Mandat Details */}
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'auto 1fr',
-                      gap: '0.75rem 1rem',
-                      fontSize: '0.8rem'
-                    }}>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>Erstellt:</span>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <div className="mds-sepa-details-grid">
+                      <span className="mds-secondary-bold">Erstellt:</span>
+                      <span className="mds-info-value">
                         {new Date(sepaMandate.erstellungsdatum).toLocaleDateString('de-DE', {
                           day: '2-digit',
                           month: '2-digit',
@@ -3821,48 +3630,34 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         })}
                       </span>
 
-                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>Gläubiger-ID:</span>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.9)', wordBreak: 'break-word' }}>
+                      <span className="mds-secondary-bold">Gläubiger-ID:</span>
+                      <span className="mds-sepa-gid-value">
                         {sepaMandate.glaeubiger_id || 'N/A'}
                       </span>
 
-                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>IBAN:</span>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'monospace' }}>
+                      <span className="mds-secondary-bold">IBAN:</span>
+                      <span className="mds2-mono-primary">
                         {sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)} **** ${sepaMandate.iban.slice(-4)}` : 'N/A'}
                       </span>
 
-                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>Kontoinhaber:</span>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                      <span className="mds-secondary-bold">Kontoinhaber:</span>
+                      <span className="mds-info-value">
                         {sepaMandate.kontoinhaber || 'N/A'}
                       </span>
 
-                      <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>BIC:</span>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontFamily: 'monospace' }}>
+                      <span className="mds-secondary-bold">BIC:</span>
+                      <span className="mds2-mono-primary">
                         {sepaMandate.bic || 'N/A'}
                       </span>
                     </div>
                   </div>
 
                   {/* Actions */}
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                    gap: '0.5rem'
-                  }}>
-                    <button 
-                      className="btn btn-primary btn-sm"
+                  <div className="mds-sepa-actions-col">
+                    <button
+                      className="mds-sepa-pdf-btn"
                       onClick={() => downloadSepaMandate()}
                       title="PDF herunterladen"
-                      style={{
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
-                        whiteSpace: 'nowrap',
-                        background: 'transparent',
-                        border: '1px solid rgba(255, 215, 0, 0.2)',
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        transition: 'all 0.3s ease'
-                      }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                         e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
@@ -3879,8 +3674,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   </div>
                 </div>
 
-                  <div className="info-box" style={{ marginTop: '1rem' }}>
-                    <p style={{ fontSize: '0.8rem', margin: 0 }}>
+                  <div className="info-box mds2-mt-1">
+                    <p className="mds-sepa-note">
                       <strong>Hinweis:</strong> Dieses Mandat ist derzeit aktiv und wird für SEPA-Lastschriften verwendet.
                     </p>
                   </div>
@@ -3946,31 +3741,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {/* Dokumente aus Vorlagen generieren - NUR FÜR ADMINS */}
               {isAdmin && (
                 <div className="field-group card">
-                  <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Dokumente aus Vorlagen generieren</h3>
+                  <h3 className="mds2-section-heading">Dokumente aus Vorlagen generieren</h3>
                   {verfügbareVorlagen.length === 0 ? (
                     <div className="info-box">
                       <p>ℹ️ Keine Vorlagen verfügbar. Erstellen Sie zuerst Vorlagen im Bereich "Vertragsdokumente".</p>
                     </div>
                   ) : (
                     <div>
-                      <div className="info-box" style={{ marginBottom: '1rem' }}>
+                      <div className="info-box mds2-mb-1">
                         <p>ℹ️ Wählen Sie eine Vorlage aus, um ein PDF mit den aktuellen Daten dieses Mitglieds zu erstellen.</p>
                       </div>
-                      <div style={{
-                        display: 'grid',
-                        gap: '1rem',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))'
-                      }}>
+                      <div className="mds-vorlagen-grid">
                         {verfügbareVorlagen.map((vorlage) => (
                           <div
                             key={vorlage.id}
-                            style={{
-                              padding: '1rem',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              borderRadius: '8px',
-                              background: 'rgba(255, 255, 255, 0.02)',
-                              transition: 'all 0.3s ease'
-                            }}
+                            className="mds-vorlage-card"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                               e.currentTarget.style.transform = 'translateY(-2px)';
@@ -3980,67 +3765,33 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               e.currentTarget.style.transform = 'translateY(0)';
                             }}
                           >
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'flex-start',
-                              marginBottom: '0.75rem'
-                            }}>
-                              <div style={{ flex: 1 }}>
-                                <h4 style={{
-                                  margin: '0 0 0.5rem 0',
-                                  fontSize: '1.1rem',
-                                  color: '#FFD700'
-                                }}>
+                            <div className="mds-vorlage-card-header">
+                              <div className="u-flex-1">
+                                <h4 className="mds-vorlage-title">
                                   {vorlage.name}
                                 </h4>
                                 {vorlage.beschreibung && (
-                                  <p style={{
-                                    margin: 0,
-                                    fontSize: '0.85rem',
-                                    color: 'rgba(255, 255, 255, 0.6)'
-                                  }}>
+                                  <p className="mds-vorlage-description">
                                     {vorlage.beschreibung}
                                   </p>
                                 )}
-                                <div style={{
-                                  marginTop: '0.5rem',
-                                  fontSize: '0.8rem',
-                                  color: 'rgba(255, 255, 255, 0.5)'
-                                }}>
-                                  <span style={{
-                                    padding: '0.2rem 0.5rem',
-                                    background: 'rgba(255, 215, 0, 0.1)',
-                                    borderRadius: '4px',
-                                    marginRight: '0.5rem'
-                                  }}>
+                                <div className="mds-vorlage-badges">
+                                  <span className="mds-vorlage-badge-type">
                                     {vorlage.template_type || 'vertrag'}
                                   </span>
                                   {vorlage.is_default && (
-                                    <span style={{
-                                      padding: '0.2rem 0.5rem',
-                                      background: 'rgba(34, 197, 94, 0.1)',
-                                      borderRadius: '4px',
-                                      color: '#22c55e'
-                                    }}>
+                                    <span className="mds-vorlage-badge-default">
                                       ⭐ Standard
                                     </span>
                                   )}
                                 </div>
                               </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                            <div className="mds-vorlage-actions">
                               <button
-                                className="btn btn-primary btn-sm"
+                                className="btn btn-primary btn-sm mds-vorlage-pdf-btn"
                                 onClick={() => generateDocumentFromTemplate(vorlage.id, vorlage.name)}
                                 disabled={generatingDocument}
-                                style={{ 
-                                  flex: 1,
-                                  background: 'transparent',
-                                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                                  color: 'rgba(255, 255, 255, 0.7)',
-                                  transition: 'all 0.3s ease'
-                                }}
                                 onMouseEnter={(e) => {
                                   if (!e.currentTarget.disabled) {
                                     e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
@@ -4059,15 +3810,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                 {generatingDocument ? 'Generiere...' : 'PDF erstellen'}
                               </button>
                               <button
-                                className="btn btn-secondary btn-sm"
+                                className="btn btn-secondary btn-sm mds-vorlage-pdf-btn"
                                 onClick={() => downloadTemplateAsPDF(vorlage.id, vorlage.name)}
-                                style={{ 
-                                  flex: 1,
-                                  background: 'transparent',
-                                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                                  color: 'rgba(255, 255, 255, 0.7)',
-                                  transition: 'all 0.3s ease'
-                                }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
                                   e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
@@ -4093,31 +3837,23 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Liste der gespeicherten Dokumente */}
               <div className="field-group card">
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Gespeicherte Dokumente</h3>
+                <h3 className="mds2-section-heading">Gespeicherte Dokumente</h3>
                 {mitgliedDokumente.length === 0 ? (
                   <div className="info-box">
                     <p>ℹ️ Keine Dokumente vorhanden. {isAdmin ? 'Generieren Sie Dokumente aus den Vorlagen oben.' : 'Es wurden noch keine Dokumente für Sie erstellt.'}</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="mds-flex-col">
                     {mitgliedDokumente.filter(dok => !dok.dokumentname.startsWith('Rechnung')).map((dok) => (
                       <div
                         key={dok.id}
-                        style={{
-                          padding: '1rem',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          background: '#f9fafb',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}
+                        className="mds-saved-doc-row"
                       >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                        <div className="u-flex-1">
+                          <div className="mds2-fw600-mb025">
                             {dok.dokumentname}
                           </div>
-                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                          <div className="mds-saved-doc-meta">
                             Erstellt: {new Date(dok.erstellt_am).toLocaleDateString('de-DE', {
                               year: 'numeric',
                               month: '2-digit',
@@ -4128,7 +3864,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             {dok.erstellt_von_name && ` von ${dok.erstellt_von_name}`}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="u-flex-gap-sm">
                           <button
                             className="dashboard-button"
                             onClick={() => downloadMitgliedDokument(dok.id, dok.dokumentname)}
@@ -4154,37 +3890,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Rechnungen */}
               <div className="field-group card">
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Rechnungen</h3>
+                <h3 className="mds2-section-heading">Rechnungen</h3>
                 {rechnungen.length === 0 ? (
                   <div className="info-box">
                     <p>ℹ️ Keine Rechnungen vorhanden.</p>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="mds-flex-col">
                     {rechnungen.map((rechnung) => (
                       <div
                         key={rechnung.rechnung_id}
-                        style={{
-                          padding: '1rem',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          background: '#f9fafb',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}
+                        className="mds-saved-doc-row"
                       >
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                        <div className="u-flex-1">
+                          <div className="mds2-fw600-mb025">
                             {rechnung.rechnungsnummer}
                           </div>
-                          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                          <div className="mds-saved-doc-meta">
                             Datum: {new Date(rechnung.datum).toLocaleDateString('de-DE')} | 
                             Betrag: {Number(rechnung.betrag).toFixed(2)} € | 
                             Status: {rechnung.status_text || rechnung.status}
                           </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <div className="u-flex-gap-sm">
                           <button
                             className="dashboard-button"
                             onClick={() => window.open(`/api/rechnungen/${rechnung.rechnung_id}/pdf`, '_blank')}
@@ -4213,112 +3941,85 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {/* Modal für SEPA-Mandat-Details */}
           {showMandateModal && selectedMandate && (
-            <div style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(0, 0, 0, 0.75)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 9999
-            }} onClick={() => setShowMandateModal(false)}>
-              <div style={{
-                background: '#1a1a1a',
-                borderRadius: '12px',
-                padding: '2rem',
-                maxWidth: '600px',
-                width: '90%',
-                maxHeight: '80vh',
-                overflow: 'auto',
-                border: '1px solid rgba(255, 215, 0, 0.3)'
-              }} onClick={(e) => e.stopPropagation()}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                  <h2 style={{ margin: 0, fontSize: '1.3rem', color: '#FFD700' }}>
+            <div className="mds-modal-fullscreen-overlay" onClick={() => setShowMandateModal(false)}>
+              <div className="mds-sepa-modal-box" onClick={(e) => e.stopPropagation()}>
+                <div className="mds-modal-header-row">
+                  <h2 className="mds-modal-title">
                     🏦 SEPA-Mandat Details
                   </h2>
                   <button
                     onClick={() => setShowMandateModal(false)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      fontSize: '1.5rem',
-                      cursor: 'pointer',
-                      color: '#fff',
-                      padding: '0.25rem 0.5rem'
-                    }}
+                    className="mds-modal-close-btn"
                   >
                     →
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="mds2-flex-col-1">
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                    <div className="mds-info-label-secondary">
                       MANDATSREFERENZ
                     </div>
-                    <div style={{ fontSize: '1rem', fontWeight: 600, color: '#FFD700' }}>
+                    <div className="mds-sepa-mandate-ref">
                       {selectedMandate.mandatsreferenz}
                     </div>
                   </div>
 
                   {selectedMandate.status && (
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      <div className="mds-info-label-secondary">
                         STATUS
                       </div>
-                      <div style={{ fontSize: '0.9rem', color: selectedMandate.status === 'aktiv' ? '#28a745' : '#6c757d' }}>
+                      <div className={selectedMandate.status === 'aktiv' ? 'mds-mandate-status--aktiv' : 'mds-mandate-status--inaktiv'}>
                         {selectedMandate.status === 'aktiv' ? '✅ Aktiv' : selectedMandate.status === 'widerrufen' ? '🚫 Widerrufen' : '📦 Archiviert'}
                       </div>
                     </div>
                   )}
 
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                    <div className="mds-info-label-secondary">
                       ERSTELLT AM
                     </div>
-                    <div style={{ fontSize: '0.9rem' }}>
+                    <div className="mds2-fs-09">
                       {new Date(selectedMandate.erstellungsdatum).toLocaleDateString('de-DE')}
                     </div>
                   </div>
 
                   {selectedMandate.glaeubiger_id && (
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      <div className="mds-info-label-secondary">
                         GLÄUBIGER-ID
                       </div>
-                      <div style={{ fontSize: '0.9rem', fontFamily: 'monospace' }}>
+                      <div className="mds2-mono-09">
                         {selectedMandate.glaeubiger_id}
                       </div>
                     </div>
                   )}
 
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                    <div className="mds-info-label-secondary">
                       KONTOINHABER
                     </div>
-                    <div style={{ fontSize: '0.9rem' }}>
+                    <div className="mds2-fs-09">
                       {selectedMandate.kontoinhaber || 'N/A'}
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                    <div className="mds-info-label-secondary">
                       IBAN
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontFamily: 'monospace' }}>
+                    <div className="mds2-mono-09">
                       {selectedMandate.iban || 'N/A'}
                     </div>
                   </div>
 
                   {selectedMandate.bic && (
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      <div className="mds-info-label-secondary">
                         BIC
                       </div>
-                      <div style={{ fontSize: '0.9rem', fontFamily: 'monospace' }}>
+                      <div className="mds2-mono-09">
                         {selectedMandate.bic}
                       </div>
                     </div>
@@ -4326,10 +4027,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {selectedMandate.archiviert_am && (
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      <div className="mds-info-label-secondary">
                         ARCHIVIERT AM
                       </div>
-                      <div style={{ fontSize: '0.9rem' }}>
+                      <div className="mds2-fs-09">
                         {new Date(selectedMandate.archiviert_am).toLocaleDateString('de-DE')}
                       </div>
                     </div>
@@ -4337,10 +4038,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {selectedMandate.widerruf_datum && (
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      <div className="mds-info-label-secondary">
                         WIDERRUFEN AM
                       </div>
-                      <div style={{ fontSize: '0.9rem' }}>
+                      <div className="mds2-fs-09">
                         {new Date(selectedMandate.widerruf_datum).toLocaleDateString('de-DE')}
                       </div>
                     </div>
@@ -4348,21 +4049,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {selectedMandate.archiviert_grund && (
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.25rem' }}>
+                      <div className="mds-info-label-secondary">
                         GRUND
                       </div>
-                      <div style={{ fontSize: '0.9rem' }}>
+                      <div className="mds2-fs-09">
                         {selectedMandate.archiviert_grund}
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <div className="mds-modal-footer-end">
                   <button
                     className="btn btn-secondary"
                     onClick={() => setShowMandateModal(false)}
-                    style={{ fontSize: '0.9rem' }}
+                    className="mds2-fs-09"
                   >
                     Schließen
                   </button>
@@ -4375,36 +4076,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             <>
               {/* Familienmitglied hinzufügen Button - nur für Admin */}
               {isAdmin && (
-                <div style={{
-                  marginBottom: '1.5rem',
-                  padding: '1rem',
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(139, 92, 246, 0.2)'
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="mds-family-add-banner">
+                  <div className="mds-family-add-row">
                     <div>
-                      <h4 style={{ margin: 0, color: '#fff', fontSize: '1rem' }}>Familienmitglied hinzufügen</h4>
-                      <p style={{ margin: '0.25rem 0 0', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
+                      <h4 className="mds-family-add-title">Familienmitglied hinzufügen</h4>
+                      <p className="mds-family-add-subtitle">
                         Fügen Sie ein neues Familienmitglied mit Familienrabatt hinzu
                       </p>
                     </div>
                     <button
                       onClick={() => setShowFamilyMemberModal(true)}
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.9rem',
-                        transition: 'all 0.2s ease'
-                      }}
+                      className="mds-family-add-btn"
                     >
                       <span>👨‍👩‍👧</span>
                       Familienmitglied hinzufügen
@@ -4433,38 +4115,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
 
           {activeTab === "vertrag" && (
-            <div style={{
-              width: '100%',
-              maxWidth: '1400px',
-              margin: '0 auto',
-              padding: '1rem'
-            }}>
+            <div className="mds-vertrag-tab-wrapper">
               {/* CONTRACT SECTION - COMPLETELY NEW DESIGN */}
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-                borderRadius: '16px',
-                padding: '2rem',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255, 255, 255, 0.05)'
-              }}>
+              <div className="mds-vertrag-section">
                 {/* HEADER WITH NEW CONTRACT BUTTON */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '2rem',
-                  paddingBottom: '1rem',
-                  borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
-                }}>
-                  <h3 style={{
-                    margin: 0,
-                    fontSize: '1.8rem',
-                    fontWeight: '700',
-                    background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}>
+                <div className="mds-vertrag-section-header">
+                  <h3 className="mds-vertrag-section-title">
                     Vertragsverwaltung
                   </h3>
 
@@ -4521,25 +4177,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 {/* VERTRAGSFREI GRUND */}
                 {isAdmin && mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
-                  <div style={{
-                    marginBottom: '1.5rem',
-                    padding: '1rem 1.5rem',
-                    background: 'rgba(52, 152, 219, 0.1)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(52, 152, 219, 0.3)'
-                  }}>
-                    <div style={{
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      color: '#5dade2',
-                      marginBottom: '0.5rem'
-                    }}>
+                  <div className="mds-vertragsfrei-hinweis">
+                    <div className="mds-vertragsfrei-title">
                       Mitglied ist aus folgendem Grund Beitrags- bzw. Vertragsfrei
                     </div>
-                    <div style={{
-                      fontSize: '0.9rem',
-                      color: '#5dade2'
-                    }}>
+                    <div className="mds-vertragsfrei-grund">
                       <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
                     </div>
                   </div>
@@ -4547,23 +4189,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 {/* CONTRACTS GRID */}
                 {verträge.length > 0 ? (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))',
-                    gap: '1.5rem'
-                  }}>
+                  <div className="mds-vertraege-grid">
                     {verträge.map(vertrag => (
                       <div
                         key={vertrag.id}
-                        className="vertrag-card"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(40, 40, 50, 0.6) 0%, rgba(30, 30, 40, 0.8) 100%)',
-                          borderRadius: '12px',
-                          padding: '1.5rem',
-                          border: '1px solid rgba(255, 255, 255, 0.08)',
-                          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
-                          transition: 'all 0.3s ease'
-                        }}
+                        className="vertrag-card mds-vertrag-card-inner"
                         onMouseEnter={(e) => {
                           e.currentTarget.style.transform = 'translateY(-4px)';
                           e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)';
@@ -4576,53 +4206,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         }}
                       >
                         {/* CONTRACT HEADER */}
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          marginBottom: '1rem',
-                          paddingBottom: '0.75rem',
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}>
+                        <div className="mds-vertrag-card-header">
                           <div>
-                            <h4 style={{
-                              margin: '0 0 0.25rem 0',
-                              fontSize: '1.2rem',
-                              fontWeight: '600',
-                              color: '#FFD700'
-                            }}>
+                            <h4 className="mds-vertrag-card-title">
                               📄 Vertrag #{vertrag.personenVertragNr}
                             </h4>
-                            <span style={{
-                              fontSize: '0.8rem',
-                              color: 'rgba(255, 255, 255, 0.5)'
-                            }}>
+                            <span className="mds-vertrag-card-created">
                               Erstellt: {new Date(vertrag.created_at || vertrag.vertragsbeginn).toLocaleDateString('de-DE')}
                             </span>
                           </div>
 
-                          <span style={{
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '20px',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            whiteSpace: 'nowrap',
-                            background: vertrag.geloescht ? 'rgba(128, 128, 128, 0.15)' :
-                                       vertrag.status === 'aktiv' ? 'rgba(46, 213, 115, 0.15)' :
-                                       vertrag.status === 'gekuendigt' ? 'rgba(255, 193, 7, 0.15)' :
-                                       vertrag.status === 'ruhepause' ? 'rgba(52, 152, 219, 0.15)' :
-                                       'rgba(231, 76, 60, 0.15)',
-                            color: vertrag.geloescht ? '#808080' :
-                                   vertrag.status === 'aktiv' ? '#2ed573' :
-                                   vertrag.status === 'gekuendigt' ? '#ffc107' :
-                                   vertrag.status === 'ruhepause' ? '#3498db' :
-                                   '#e74c3c',
-                            border: `1px solid ${vertrag.geloescht ? 'rgba(128, 128, 128, 0.3)' :
-                                                 vertrag.status === 'aktiv' ? 'rgba(46, 213, 115, 0.3)' :
-                                                 vertrag.status === 'gekuendigt' ? 'rgba(255, 193, 7, 0.3)' :
-                                                 vertrag.status === 'ruhepause' ? 'rgba(52, 152, 219, 0.3)' :
-                                                 'rgba(231, 76, 60, 0.3)'}`
-                          }}>
+                          <span className={`mds-vertrag-status-badge mds-vertrag-status-badge--${vertrag.geloescht ? 'geloescht' : vertrag.status}`}>
                             {vertrag.geloescht ? '🗑️ GELÖSCHT' :
                              vertrag.status === 'aktiv' ? '✅ AKTIV' :
                              vertrag.status === 'gekuendigt' ? '❌ GEKÜNDIGT' :
@@ -4631,61 +4225,36 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         </div>
 
                         {/* CONTRACT INFO */}
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.6rem',
-                          marginBottom: '1.25rem'
-                        }}>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.9rem'
-                          }}>
-                            <span style={{ fontSize: '1.1rem' }}>📄</span>
-                            <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>TARIF:</span>
-                            <strong style={{ color: '#fff' }}>
+                        <div className="mds-vertrag-info-rows">
+                          <div className="mds-vertrag-info-row">
+                            <span className="mds2-fs-11">📄</span>
+                            <span className="mds-secondary-label">TARIF:</span>
+                            <strong className="mds-info-value">
                               {vertrag.tarif_name || 'Keine Angabe'}
                               {vertrag.monatsbeitrag && ` - €${parseFloat(vertrag.monatsbeitrag).toFixed(2)}/Monat`}
                             </strong>
                           </div>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.9rem'
-                          }}>
-                            <span style={{ fontSize: '1.1rem' }}>📄</span>
-                            <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>LAUFZEIT:</span>
-                            <strong style={{ color: '#fff' }}>
+                          <div className="mds-vertrag-info-row">
+                            <span className="mds2-fs-11">📄</span>
+                            <span className="mds-secondary-label">LAUFZEIT:</span>
+                            <strong className="mds-info-value">
                               {vertrag.vertragsbeginn && vertrag.vertragsende
                                 ? `${new Date(vertrag.vertragsbeginn).toLocaleDateString('de-DE')} bis ${new Date(vertrag.vertragsende).toLocaleDateString('de-DE')}`
                                 : 'Keine Angabe'}
                             </strong>
                           </div>
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.9rem'
-                          }}>
-                            <span style={{ fontSize: '1.1rem' }}>📄</span>
-                            <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>ZAHLUNG:</span>
-                            <strong style={{ color: '#fff' }}>
+                          <div className="mds-vertrag-info-row">
+                            <span className="mds2-fs-11">📄</span>
+                            <span className="mds-secondary-label">ZAHLUNG:</span>
+                            <strong className="mds-info-value">
                               {vertrag.billing_cycle ? translateBillingCycle(vertrag.billing_cycle) : 'Keine Angabe'}
                             </strong>
                           </div>
                           {/* Zahlungsart */}
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.9rem'
-                          }}>
-                            <span style={{ fontSize: '1.1rem' }}>💳</span>
-                            <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>ZAHLART:</span>
-                            <strong style={{ color: '#fff' }}>
+                          <div className="mds-vertrag-info-row">
+                            <span className="mds2-fs-11">💳</span>
+                            <span className="mds-secondary-label">ZAHLART:</span>
+                            <strong className="mds-info-value">
                               {vertrag.payment_method === 'direct_debit' ? '🏦 Lastschrift' :
                                vertrag.payment_method === 'bank_transfer' ? '💳 Überweisung' :
                                vertrag.payment_method === 'cash' ? '💵 Bar' :
@@ -4694,81 +4263,48 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           </div>
                           {/* Aufnahmegebühr */}
                           {vertrag.aufnahmegebuehr_cents && vertrag.aufnahmegebuehr_cents > 0 && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              fontSize: '0.9rem'
-                            }}>
-                              <span style={{ fontSize: '1.1rem' }}>💵</span>
-                              <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>AUFNAHME:</span>
-                              <strong style={{ color: '#ff9800' }}>
+                            <div className="mds-vertrag-info-row">
+                              <span className="mds2-fs-11">💵</span>
+                              <span className="mds-secondary-label">AUFNAHME:</span>
+                              <strong className="mds-aufnahme-value">
                                 €{(vertrag.aufnahmegebuehr_cents / 100).toFixed(2)}
                               </strong>
                             </div>
                           )}
                           {/* Kündigungsfrist */}
                           {vertrag.kuendigungsfrist_monate && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              fontSize: '0.9rem'
-                            }}>
-                              <span style={{ fontSize: '1.1rem' }}>⏰</span>
-                              <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>KÜNDIGUNG:</span>
-                              <strong style={{ color: '#fff' }}>
+                            <div className="mds-vertrag-info-row">
+                              <span className="mds2-fs-11">⏰</span>
+                              <span className="mds-secondary-label">KÜNDIGUNG:</span>
+                              <strong className="mds-info-value">
                                 {vertrag.kuendigungsfrist_monate} {vertrag.kuendigungsfrist_monate === 1 ? 'Monat' : 'Monate'} Frist
                               </strong>
                             </div>
                           )}
                           {/* Mindestlaufzeit */}
                           {vertrag.mindestlaufzeit_monate && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              fontSize: '0.9rem'
-                            }}>
-                              <span style={{ fontSize: '1.1rem' }}>⏱️</span>
-                              <span style={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: '80px' }}>MIN.LAUFZEIT:</span>
-                              <strong style={{ color: '#fff' }}>
+                            <div className="mds-vertrag-info-row">
+                              <span className="mds2-fs-11">⏱️</span>
+                              <span className="mds-secondary-label">MIN.LAUFZEIT:</span>
+                              <strong className="mds-info-value">
                                 {vertrag.mindestlaufzeit_monate} {vertrag.mindestlaufzeit_monate === 1 ? 'Monat' : 'Monate'}
                               </strong>
                             </div>
                           )}
                           {vertrag.kuendigung_eingegangen && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              fontSize: '0.9rem',
-                              padding: '0.5rem',
-                              background: 'rgba(255, 193, 7, 0.1)',
-                              borderRadius: '6px',
-                              border: '1px solid rgba(255, 193, 7, 0.3)'
-                            }}>
-                              <span style={{ fontSize: '1.1rem' }}>📄</span>
-                              <span style={{ color: '#ffc107' }}>Kündigung eingegangen:</span>
-                              <strong style={{ color: '#ffc107' }}>
+                            <div className="mds-vertrag-kuendigung-row">
+                              <span className="mds2-fs-11">📄</span>
+                              <span className="u-text-warning">Kündigung eingegangen:</span>
+                              <strong className="u-text-warning">
                                 {new Date(vertrag.kuendigung_eingegangen).toLocaleDateString('de-DE')}
                               </strong>
                             </div>
                           )}
                           {vertrag.status === 'ruhepause' && vertrag.ruhepause_von && vertrag.ruhepause_bis && (
-                            <div style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.5rem',
-                              fontSize: '0.9rem',
-                              padding: '0.5rem',
-                              background: 'rgba(52, 152, 219, 0.15)',
-                              borderRadius: '6px',
-                              border: '1px solid rgba(52, 152, 219, 0.4)'
-                            }}>
-                              <span style={{ fontSize: '1.1rem' }}>⏸️</span>
-                              <span style={{ color: '#3498db' }}>Ruhepause:</span>
-                              <strong style={{ color: '#3498db' }}>
+                            <div className="mds-vertrag-ruhepause-row">
+                              <span className="mds2-fs-11">⏸️</span>
+                              <span className="mds-ruhepause-label">Ruhepause:</span>
+                              <strong className="mds-ruhepause-label">
                                 {new Date(vertrag.ruhepause_von).toLocaleDateString('de-DE')} bis {new Date(vertrag.ruhepause_bis).toLocaleDateString('de-DE')}
                               </strong>
                             </div>
@@ -4776,13 +4312,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         </div>
 
                         {/* CONTRACT ACTIONS */}
-                        <div style={{
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '0.5rem'
-                        }}>
+                        <div className="mds-vertrag-actions-row">
                           {/* PDF BUTTON (Dokument-ähnliche Ansicht) */}
                           <button
+                            className="mds-contract-action-btn mds-contract-btn-pdf"
                             onClick={() => {
                               setSelectedVertrag(vertrag);
                               setShowVertragDetails(true);
@@ -4790,26 +4323,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = 'rgba(244, 67, 54, 0.3)';
                               e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(244, 67, 54, 0.3)';
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = 'rgba(244, 67, 54, 0.15)';
                               e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                            style={{
-                              background: 'rgba(244, 67, 54, 0.15)',
-                              color: '#f44336',
-                              border: '1px solid rgba(244, 67, 54, 0.4)',
-                              borderRadius: '8px',
-                              padding: '0.6rem 1rem',
-                              fontSize: '0.85rem',
-                              fontWeight: '600',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.4rem'
                             }}
                           >
                             📄 PDF
@@ -4817,6 +4334,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                           {/* DETAILS BUTTON (Strukturierte Datenansicht) */}
                           <button
+                            className="mds-contract-action-btn mds-contract-btn-details"
                             onClick={() => {
                               setSelectedVertrag(vertrag);
                               setShowStructuredDetails(true);
@@ -4824,26 +4342,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             onMouseEnter={(e) => {
                               e.currentTarget.style.background = 'rgba(33, 150, 243, 0.3)';
                               e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.background = 'rgba(33, 150, 243, 0.15)';
                               e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}
-                            style={{
-                              background: 'rgba(33, 150, 243, 0.15)',
-                              color: '#2196F3',
-                              border: '1px solid rgba(33, 150, 243, 0.4)',
-                              borderRadius: '8px',
-                              padding: '0.6rem 1rem',
-                              fontSize: '0.85rem',
-                              fontWeight: '600',
-                              cursor: 'pointer',
-                              transition: 'all 0.2s ease',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.4rem'
                             }}
                           >
                             🔍 Details
@@ -4854,30 +4356,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             <>
                               {/* EDIT BUTTON */}
                               <button
+                                className="mds-contract-action-btn mds-contract-btn-edit"
                                 onClick={() => setEditingVertrag(vertrag)}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)';
                                   e.currentTarget.style.transform = 'translateY(-2px)';
-                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
                                   e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = 'none';
-                                }}
-                                style={{
-                                  background: 'rgba(255, 215, 0, 0.15)',
-                                  color: '#FFD700',
-                                  border: '1px solid rgba(255, 215, 0, 0.4)',
-                                  borderRadius: '8px',
-                                  padding: '0.6rem 1rem',
-                                  fontSize: '0.85rem',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.2s ease',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.4rem'
                                 }}
                               >
                                 ✏️ Bearbeiten
@@ -4887,59 +4374,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               {vertrag.status === 'aktiv' && (
                                 <>
                                   <button
+                                    className="mds-contract-action-btn mds-contract-btn-pause"
                                     onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.background = 'rgba(255, 193, 7, 0.3)';
                                       e.currentTarget.style.transform = 'translateY(-2px)';
-                                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 193, 7, 0.3)';
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.background = 'rgba(255, 193, 7, 0.15)';
                                       e.currentTarget.style.transform = 'translateY(0)';
-                                      e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                    style={{
-                                      background: 'rgba(255, 193, 7, 0.15)',
-                                      color: '#ffc107',
-                                      border: '1px solid rgba(255, 193, 7, 0.4)',
-                                      borderRadius: '8px',
-                                      padding: '0.6rem 1rem',
-                                      fontSize: '0.85rem',
-                                      fontWeight: '600',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s ease',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.4rem'
                                     }}
                                   >
                                     ⏸️ Ruhepause
                                   </button>
                                   <button
+                                    className="mds-contract-action-btn mds-contract-btn-cancel"
                                     onClick={() => handleVertragAction(vertrag.id, 'kündigen')}
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.background = 'rgba(231, 76, 60, 0.3)';
                                       e.currentTarget.style.transform = 'translateY(-2px)';
-                                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.3)';
                                     }}
                                     onMouseLeave={(e) => {
                                       e.currentTarget.style.background = 'rgba(231, 76, 60, 0.15)';
                                       e.currentTarget.style.transform = 'translateY(0)';
-                                      e.currentTarget.style.boxShadow = 'none';
-                                    }}
-                                    style={{
-                                      background: 'rgba(231, 76, 60, 0.15)',
-                                      color: '#e74c3c',
-                                      border: '1px solid rgba(231, 76, 60, 0.4)',
-                                      borderRadius: '8px',
-                                      padding: '0.6rem 1rem',
-                                      fontSize: '0.85rem',
-                                      fontWeight: '600',
-                                      cursor: 'pointer',
-                                      transition: 'all 0.2s ease',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.4rem'
                                     }}
                                   >
                                     ❌ Kündigen
@@ -4948,30 +4405,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               )}
                               {vertrag.status === 'ruhepause' && (
                                 <button
+                                  className="mds-contract-action-btn mds-contract-btn-reactivate"
                                   onClick={() => handleVertragAction(vertrag.id, 'reaktivieren')}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'rgba(46, 213, 115, 0.3)';
                                     e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(46, 213, 115, 0.3)';
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = 'rgba(46, 213, 115, 0.15)';
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                  }}
-                                  style={{
-                                    background: 'rgba(46, 213, 115, 0.15)',
-                                    color: '#2ed573',
-                                    border: '1px solid rgba(46, 213, 115, 0.4)',
-                                    borderRadius: '8px',
-                                    padding: '0.6rem 1rem',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
                                   }}
                                 >
                                   ▶️ Reaktivieren
@@ -4979,30 +4421,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               )}
                               {vertrag.status === 'gekuendigt' && !vertrag.geloescht && (
                                 <button
+                                  className="mds-contract-action-btn mds-contract-btn-reactivate"
                                   onClick={() => handleKündigungAufheben(vertrag)}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'rgba(46, 213, 115, 0.3)';
                                     e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(46, 213, 115, 0.3)';
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = 'rgba(46, 213, 115, 0.15)';
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                  }}
-                                  style={{
-                                    background: 'rgba(46, 213, 115, 0.15)',
-                                    color: '#2ed573',
-                                    border: '1px solid rgba(46, 213, 115, 0.4)',
-                                    borderRadius: '8px',
-                                    padding: '0.6rem 1rem',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
                                   }}
                                 >
                                   🔄 Kündigung aufheben
@@ -5010,30 +4437,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               )}
                               {isAdmin && !vertrag.geloescht && (
                                 <button
+                                  className="mds-contract-action-btn mds-contract-btn-delete"
                                   onClick={() => handleVertragLöschen(vertrag)}
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'rgba(231, 76, 60, 0.3)';
                                     e.currentTarget.style.transform = 'translateY(-2px)';
-                                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.3)';
                                   }}
                                   onMouseLeave={(e) => {
                                     e.currentTarget.style.background = 'rgba(231, 76, 60, 0.15)';
                                     e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = 'none';
-                                  }}
-                                  style={{
-                                    background: 'rgba(231, 76, 60, 0.15)',
-                                    color: '#e74c3c',
-                                    border: '1px solid rgba(231, 76, 60, 0.4)',
-                                    borderRadius: '8px',
-                                    padding: '0.6rem 1rem',
-                                    fontSize: '0.85rem',
-                                    fontWeight: '600',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '0.4rem'
                                   }}
                                 >
                                   🗑️ Löschen
@@ -5045,30 +4457,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           {/* MEMBER-ONLY: Ruhepause Button */}
                           {!isAdmin && vertrag.status === 'aktiv' && (
                             <button
+                              className="mds-contract-action-btn mds-contract-btn-pause"
                               onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = 'rgba(255, 193, 7, 0.3)';
                                 e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 193, 7, 0.3)';
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = 'rgba(255, 193, 7, 0.15)';
                                 e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                              style={{
-                                background: 'rgba(255, 193, 7, 0.15)',
-                                color: '#ffc107',
-                                border: '1px solid rgba(255, 193, 7, 0.4)',
-                                borderRadius: '8px',
-                                padding: '0.6rem 1rem',
-                                fontSize: '0.85rem',
-                                fontWeight: '600',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.4rem'
                               }}
                             >
                               ⏸️ Ruhepause beantragen
@@ -5080,18 +4477,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   </div>
                 ) : (
                   /* NO CONTRACTS MESSAGE */
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '3rem 1rem',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    borderRadius: '12px',
-                    border: '2px dashed rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <p style={{
-                      fontSize: '1.1rem',
-                      color: 'rgba(255, 255, 255, 0.5)',
-                      marginBottom: '1.5rem'
-                    }}>
+                  <div className="mds-no-vertraege">
+                    <p className="mds-no-vertraege-text">
                       Keine Verträge vorhanden
                     </p>
                     {isAdmin && (
@@ -5243,12 +4630,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           {activeTab === "finanzen" && (
             <div className="finance-management-container">
               {/* Sub-Tabs für Finanzen - Horizontal mit Sidebar-Design */}
-              <div className="finance-sub-tabs" style={{
-                display: 'flex',
-                gap: '0.5rem',
-                marginBottom: '1.5rem',
-                flexWrap: 'wrap'
-              }}>
+              <div className="finance-sub-tabs mds-finance-sub-tabs-row">
                 <button
                   className={`finance-sub-tab-btn ${financeSubTab === "finanzübersicht" ? "active" : ""}`}
                   onClick={() => setFinanceSubTab("finanzübersicht")}
@@ -5326,128 +4708,89 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       : 0;
                     
                     return (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      <div className="mds2-flex-col-15">
                         {/* KPI-Karten */}
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-                          gap: '1.25rem' 
-                        }}>
-                          <div className="finance-kpi-card" style={{
-                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: '12px',
-                            padding: '1.5rem',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                              <span style={{ fontSize: '2rem' }}>⚠️</span>
-                              <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+                        <div className="mds-kpi-grid">
+                          <div className="finance-kpi-card mds-kpi-card-danger">
+                            <div className="mds-flex-row-mb">
+                              <span className="mds2-fs-2">⚠️</span>
+                              <h4 className="mds2-label-bold">
                                 Offene Beträge
                               </h4>
                             </div>
-                            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ef4444', marginBottom: '0.25rem' }}>
+                            <div className="mds-kpi-value-danger">
                               {gesamtOffen.toFixed(2)} €
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                            <div className="mds-text-secondary-sm">
                               {offeneZahlungen.length} ausstehende Beiträge
                             </div>
                           </div>
-                          
-                          <div className="finance-kpi-card" style={{
-                            background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%)',
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            borderRadius: '12px',
-                            padding: '1.5rem',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                              <span style={{ fontSize: '2rem' }}>📊</span>
-                              <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+
+                          <div className="finance-kpi-card mds-kpi-card-primary">
+                            <div className="mds-flex-row-mb">
+                              <span className="mds2-fs-2">📊</span>
+                              <h4 className="mds2-label-bold">
                                 Ø Beitrag
                               </h4>
                             </div>
-                            <div style={{ fontSize: '2rem', fontWeight: '700', color: '#ffd700', marginBottom: '0.25rem' }}>
+                            <div className="mds-kpi-value-primary">
                               {durchschnittBeitrag.toFixed(2)} €
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                            <div className="mds-text-secondary-sm">
                               Pro Zahlung
                             </div>
                           </div>
-                          
+
                           {letzteZahlung && (
-                            <div className="finance-kpi-card" style={{
-                              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%)',
-                              border: '1px solid rgba(34, 197, 94, 0.3)',
-                              borderRadius: '12px',
-                              padding: '1.5rem',
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                            }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                                <span style={{ fontSize: '2rem' }}>✅</span>
-                                <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+                            <div className="finance-kpi-card mds-kpi-card-success">
+                              <div className="mds-flex-row-mb">
+                                <span className="mds2-fs-2">✅</span>
+                                <h4 className="mds2-label-bold">
                                   Letzte Zahlung
                                 </h4>
                               </div>
-                              <div style={{ fontSize: '2rem', fontWeight: '700', color: '#22c55e', marginBottom: '0.25rem' }}>
+                              <div className="mds-kpi-value-success">
                                 {parseFloat(letzteZahlung.betrag || 0).toFixed(2)} €
                               </div>
-                              <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                              <div className="mds-text-secondary-sm">
                                 {new Date(letzteZahlung.zahlungsdatum || letzteZahlung.datum).toLocaleDateString("de-DE")}
                               </div>
                             </div>
                           )}
-                          
-                          <div className="finance-kpi-card" style={{
-                            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%)',
-                            border: '1px solid rgba(59, 130, 246, 0.3)',
-                            borderRadius: '12px',
-                            padding: '1.5rem',
-                            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                              <span style={{ fontSize: '2rem' }}>📅</span>
-                              <h4 style={{ margin: 0, color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', fontWeight: '600' }}>
+
+                          <div className="finance-kpi-card mds-kpi-card-info">
+                            <div className="mds-flex-row-mb">
+                              <span className="mds2-fs-2">📅</span>
+                              <h4 className="mds2-label-bold">
                                 Nächste Zahlung
                               </h4>
                             </div>
                             {kommendeZahlung ? (
                               <>
-                                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#3b82f6', marginBottom: '0.25rem' }}>
+                                <div className="mds2-stat-value">
                                   {parseFloat(kommendeZahlung.betrag || 0).toFixed(2)} €
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                                <div className="mds-text-secondary-sm">
                                   {new Date(kommendeZahlung.datum || kommendeZahlung.zahlungsdatum).toLocaleDateString("de-DE")}
                                 </div>
                               </>
                             ) : (
                               <>
-                                <div style={{ fontSize: '2rem', fontWeight: '700', color: '#3b82f6', marginBottom: '0.25rem' }}>
+                                <div className="mds2-stat-value">
                                   -
                                 </div>
-                                <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                                <div className="mds-text-secondary-sm">
                                   Keine ausstehenden Zahlungen
                                 </div>
                               </>
                             )}
                           </div>
                         </div>
-                        
+
                         {/* Detaillierte Statistiken */}
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                          gap: '1.25rem' 
-                        }}>
+                        <div className="mds-finance-stats-grid">
                           <div className="field-group card">
-                            <h3 style={{ 
-                              marginTop: 0, 
-                              marginBottom: '1rem',
-                              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                              WebkitBackgroundClip: 'text',
-                              WebkitTextFillColor: 'transparent',
-                              backgroundClip: 'text'
-                            }}>
+                            <h3 className="mds-finance-section-title">
                               Zahlungsinformationen
                             </h3>
                             <div className="finance-stats">
@@ -5476,7 +4819,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               {aufnahmegebuehren > 0 && (
                                 <div className="stat-item">
                                   <label>Aufnahmegebühren:</label>
-                                  <span className="stat-value" style={{ color: '#ff9800' }}>
+                                  <span className="stat-value mds-secondary-color">
                                     {aufnahmegebuehren.toFixed(2)} €
                                   </span>
                                 </div>
@@ -5492,7 +4835,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {financeSubTab === "zahlungshistorie" && (
                 <div className="zahlungshistorie-sub-tab-content">
-                  <div className="field-group card" style={{ width: '100%' }}>
+                  <div className="field-group card mds2-w-full">
                     <h3>Zahlungshistorie</h3>
                     {finanzDaten.length > 0 ? (
                       <div className="zahlungshistorie-table-wrapper">
@@ -5816,7 +5159,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         return (
                           <>
                             {/* Ansichtsfilter für Beiträge - außerhalb der Card */}
-                            <div className="beitraege-view-filter" style={{ marginBottom: '1rem' }}>
+                            <div className="beitraege-view-filter mds2-mb-1">
                               <button
                                 className={`view-filter-btn ${beitraegeViewMode === "monat" ? "active" : ""}`}
                                 onClick={() => setBeiträgeViewMode("monat")}
@@ -5836,14 +5179,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                 📆 Jahr
                               </button>
                               <button
-                                className="view-filter-btn"
+                                className="view-filter-btn mds-nowrap"
                                 onClick={() => {
                                   // Berechne periodKeys neu für den Button
                                   const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
                                   const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
                                   const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
                                   const periodKeys = Object.keys(grouped).sort().reverse();
-                                  
+
                                   const allCollapsed = periodKeys.length > 0 && periodKeys.every(key => collapsedPeriods[key] === true);
                                   const newState = {};
                                   periodKeys.forEach(key => {
@@ -5851,7 +5194,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                   });
                                   setCollapsedPeriods(newState);
                                 }}
-                                style={{ whiteSpace: 'nowrap' }}
                               >
                                 {(() => {
                                   const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
@@ -5864,7 +5206,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               </button>
                             </div>
 
-                            <div className="field-group card" style={{ width: '100%' }}>
+                            <div className="field-group card mds2-w-full">
                               <h3>Beiträge & Zahlungen</h3>
 
                               {/* Gruppierte Beiträge-Ansicht */}
@@ -5920,7 +5262,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                       <table className="beitraege-table">
                                         <thead>
                                           <tr>
-                                            <th style={{width: '1px', padding: '0.5rem 0'}}></th>
+                                            <th className="mds-beitrag-th-narrow"></th>
                                             <th>Datum</th>
                                             <th>Betrag</th>
                                             <th>Zahlungsart</th>
@@ -5933,29 +5275,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                             const isExpanded = expandedBeitraege[beitrag.beitrag_id];
                                             return (
                                               <React.Fragment key={beitrag.beitrag_id}>
-                                            <tr className={beitrag.bezahlt ? 'paid' : 'unpaid'} style={{
-                                              opacity: beitrag.generiert ? 0.8 : 1
-                                            }}>
-                                              <td style={{textAlign: 'center', padding: '0.5rem 0.1rem', whiteSpace: 'nowrap', width: '1px'}}>
+                                            <tr className={`${beitrag.bezahlt ? 'paid' : 'unpaid'}${beitrag.generiert ? ' mds-beitrag-row--generiert' : ''}`}>
+                                              <td className="mds-beitrag-td-narrow">
                                                 {!beitrag.generiert && beitrag.beitrag_id && (
                                                   <button
                                                     onClick={() => setExpandedBeitraege(prev => ({
                                                       ...prev,
                                                       [beitrag.beitrag_id]: !prev[beitrag.beitrag_id]
                                                     }))}
-                                                    style={{
-                                                      background: 'none',
-                                                      border: 'none',
-                                                      cursor: 'pointer',
-                                                      fontSize: '0.65rem',
-                                                      color: 'rgba(255, 215, 0, 0.8)',
-                                                      transition: 'transform 0.2s',
-                                                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                                                      padding: 0,
-                                                      lineHeight: 1,
-                                                      display: 'inline-block',
-                                                      width: 'auto'
-                                                    }}
+                                                    className={`mds-beitrag-expand-btn${isExpanded ? ' mds-beitrag-expand-btn--expanded' : ''}`}
                                                     title="Details anzeigen"
                                                   >
                                                     ▶
@@ -5965,11 +5293,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                               <td>
                                                 {new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString("de-DE")}
                                                 {beitrag.generiert && (
-                                                  <span style={{ 
-                                                    fontSize: '0.75rem', 
-                                                    color: 'rgba(255, 215, 0, 0.7)',
-                                                    marginLeft: '0.5rem'
-                                                  }} title="Automatisch generiert basierend auf Vertragsdaten">
+                                                  <span className="mds-beitrag-generated-icon" title="Automatisch generiert basierend auf Vertragsdaten">
                                                     🔮
                                                   </span>
                                                 )}
@@ -5977,12 +5301,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                               <td className="betrag">
                                                 {parseFloat(beitrag.betrag).toFixed(2)} €
                                                 {beitrag.anteilig && (
-                                                  <span style={{ 
-                                                    fontSize: '0.75rem', 
-                                                    color: 'rgba(255, 215, 0, 0.7)',
-                                                    marginLeft: '0.5rem',
-                                                    fontStyle: 'italic'
-                                                  }} title="Anteiliger Beitrag für letzten Monat bei Kündigung">
+                                                  <span className="mds-beitrag-anteilig-note" title="Anteiliger Beitrag für letzten Monat bei Kündigung">
                                                     (anteilig)
                                                   </span>
                                                 )}
@@ -6049,57 +5368,47 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                             </tr>
                                             {isExpanded && !beitrag.generiert && (
                                               <tr className="beitrag-details-row">
-                                                <td colSpan="6" style={{
-                                                  padding: '1rem 1.5rem',
-                                                  background: 'rgba(255, 215, 0, 0.05)',
-                                                  borderLeft: '3px solid rgba(255, 215, 0, 0.5)'
-                                                }}>
-                                                  <div style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                                                    gap: '0.75rem',
-                                                    fontSize: '0.85rem',
-                                                    color: 'rgba(255, 255, 255, 0.9)'
-                                                  }}>
+                                                <td colSpan="6" className="mds-beitrag-detail-td">
+                                                  <div className="mds-beitrag-detail-grid">
                                                     <div>
-                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Beitrags-ID:</strong>
+                                                      <strong className="mds-beitrag-detail-label">Beitrags-ID:</strong>
                                                       <span>#{beitrag.beitrag_id}</span>
                                                     </div>
                                                     {beitrag.magicline_description && (
-                                                      <div style={{gridColumn: '1 / -1'}}>
-                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Beschreibung:</strong>
+                                                      <div className="mds-beitrag-detail-full-col">
+                                                        <strong className="mds-beitrag-detail-label">Beschreibung:</strong>
                                                         <span>{beitrag.magicline_description}</span>
                                                       </div>
                                                     )}
                                                     {(beitrag.datum || beitrag.zahlungsdatum) && (
                                                       <div>
-                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Datum:</strong>
+                                                        <strong className="mds-beitrag-detail-label">Datum:</strong>
                                                         <span>{new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</span>
                                                       </div>
                                                     )}
                                                     {beitrag.zahlungsdatum && (
                                                       <div>
-                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Zahlungsdatum:</strong>
+                                                        <strong className="mds-beitrag-detail-label">Zahlungsdatum:</strong>
                                                         <span>{new Date(beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</span>
                                                       </div>
                                                     )}
                                                     <div>
-                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Betrag (brutto):</strong>
+                                                      <strong className="mds-beitrag-detail-label">Betrag (brutto):</strong>
                                                       <span>{parseFloat(beitrag.betrag).toFixed(2)} €</span>
                                                     </div>
                                                     <div>
-                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Zahlungsart:</strong>
+                                                      <strong className="mds-beitrag-detail-label">Zahlungsart:</strong>
                                                       <span>{beitrag.zahlungsart || 'Nicht angegeben'}</span>
                                                     </div>
                                                     <div>
-                                                      <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Status:</strong>
-                                                      <span style={{color: beitrag.bezahlt ? '#4caf50' : '#ff9800'}}>
+                                                      <strong className="mds-beitrag-detail-label">Status:</strong>
+                                                      <span className={beitrag.bezahlt ? 'mds-beitrag-status--paid' : 'mds-beitrag-status--unpaid'}>
                                                         {beitrag.bezahlt ? 'Bezahlt' : 'Ausstehend'}
                                                       </span>
                                                     </div>
                                                     {beitrag.dojo_id && (
                                                       <div>
-                                                        <strong style={{color: '#ffd700', display: 'block', marginBottom: '0.25rem'}}>Dojo-ID:</strong>
+                                                        <strong className="mds-beitrag-detail-label">Dojo-ID:</strong>
                                                         <span>#{beitrag.dojo_id}</span>
                                                       </div>
                                                     )}
@@ -6280,63 +5589,40 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "buddy_gruppen" && (
-            <div className="buddy-gruppen-content" style={{padding: '1.5rem', background: 'transparent'}}>
-              <div style={{marginBottom: '1.5rem'}}>
-                <h3 style={{color: '#ffd700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <div className="buddy-gruppen-content mds-buddy-content">
+              <div className="mds-buddy-header">
+                <h3 className="mds-buddy-title">
                   👥 Buddy-Gruppen
                 </h3>
-                <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem'}}>
+                <p className="mds-buddy-subtitle">
                   Gruppen, in denen {mitglied?.vorname} {mitglied?.nachname} Mitglied ist
                 </p>
               </div>
 
               {/* Buddy-Gruppen Liste */}
               {buddyGroupsLoading ? (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{fontSize: '2rem', marginBottom: '1rem'}}>⏳</div>
-                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem'}}>
+                <div className="mds-buddy-placeholder">
+                  <div className="mds-buddy-placeholder-icon">⏳</div>
+                  <p className="mds-buddy-placeholder-text">
                     Buddy-Gruppen werden geladen...
                   </p>
                 </div>
               ) : buddyGroups.length === 0 ? (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  borderRadius: '12px',
-                  padding: '2rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{fontSize: '2.5rem', marginBottom: '1rem'}}>👥</div>
-                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem', marginBottom: '0.5rem'}}>
+                <div className="mds-buddy-placeholder">
+                  <div className="mds-buddy-placeholder-icon-lg">👥</div>
+                  <p className="mds-buddy-placeholder-sub">
                     Keine Buddy-Gruppen gefunden
                   </p>
-                  <p style={{color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem'}}>
+                  <p className="mds-buddy-placeholder-hint">
                     {mitglied?.vorname} ist noch in keiner Buddy-Gruppe.
                   </p>
                 </div>
               ) : (
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '1rem',
-                  marginBottom: '2rem'
-                }}>
+                <div className="mds-buddy-groups-list">
                   {buddyGroups.map((group) => (
                     <div
                       key={group.id}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 215, 0, 0.2)',
-                        borderRadius: '12px',
-                        padding: '1.5rem',
-                        transition: 'all 0.2s'
-                      }}
+                      className="mds-buddy-group-card"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)';
                         e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
@@ -6348,31 +5634,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         e.currentTarget.style.transform = 'translateY(0)';
                       }}
                     >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: '1rem'
-                      }}>
+                      <div className="mds-buddy-group-header">
                         <div>
-                          <h4 style={{
-                            color: '#ffd700',
-                            fontSize: '1.2rem',
-                            margin: '0 0 0.5rem 0',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                          }}>
+                          <h4 className="mds-buddy-group-title">
                             <span>👥</span>
                             {group.gruppe_name || `Gruppe #${group.id}`}
                           </h4>
-                          <div style={{
-                            display: 'flex',
-                            gap: '1rem',
-                            flexWrap: 'wrap',
-                            fontSize: '0.9rem',
-                            color: 'rgba(255, 255, 255, 0.7)'
-                          }}>
+                          <div className="mds-buddy-group-meta">
                             <span>📅 Erstellt: {new Date(group.erstellt_am).toLocaleDateString('de-DE')}</span>
                             <span>👥 Mitglieder: {group.aktive_mitglieder || 0}/{group.max_mitglieder || '∞'}</span>
                             {group.gesamt_einladungen > 0 && (
@@ -6380,17 +5648,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             )}
                           </div>
                         </div>
-                        <span style={{
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '8px',
-                          fontSize: '0.8rem',
-                          fontWeight: '600',
-                          background: group.status === 'aktiv' 
-                            ? 'rgba(34, 197, 94, 0.2)' 
-                            : 'rgba(107, 114, 128, 0.2)',
-                          color: group.status === 'aktiv' ? '#22c55e' : '#6b7280',
-                          border: `1px solid ${group.status === 'aktiv' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(107, 114, 128, 0.3)'}`
-                        }}>
+                        <span className={`mds-group-status-badge mds-group-status-badge--${group.status === 'aktiv' ? 'aktiv' : 'inaktiv'}`}>
                           {group.status === 'aktiv' ? 'Aktiv' : group.status}
                         </span>
                       </div>
@@ -6401,11 +5659,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Referral-Code Verwaltung */}
               {mitglied?.mitglied_id && (
-                <div style={{
-                  marginTop: '2rem',
-                  paddingTop: '2rem',
-                  borderTop: '1px solid rgba(255, 215, 0, 0.2)'
-                }}>
+                <div className="mds-referral-section">
                   <ReferralCodeVerwaltung
                     mitgliedId={mitglied.mitglied_id}
                     buddyGruppeId={buddyGroups[0]?.id || null}
@@ -6414,141 +5668,150 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
               )}
 
-              {/* Platzhalter für Marketing-Aktionen */}
-              <div style={{
-                marginTop: '2rem',
-                paddingTop: '2rem',
-                borderTop: '1px solid rgba(255, 215, 0, 0.2)'
-              }}>
-                <h4 style={{color: '#ffd700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
-                  📅 Marketing-Aktionen
+              {/* Marketing-Aktionen: Freunde werben Freunde */}
+              <div className="mds-marketing-section">
+                <h4 className="mds-marketing-title">
+                  🎁 Marketing-Aktionen
                 </h4>
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px dashed rgba(255, 215, 0, 0.3)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{fontSize: '2rem', marginBottom: '0.75rem'}}>📅</div>
-                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.95rem'}}>
-                    Teilnahme an Marketing-Aktionen wird hier angezeigt
-                  </p>
-                  <p style={{color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem', marginTop: '0.5rem'}}>
-                    Diese Funktion wird in Kürze verfügbar sein.
-                  </p>
-                </div>
+
+                {referralInfo ? (
+                  <div className="mds-referral-card">
+                    {/* Header */}
+                    <div className="mds-referral-header-row">
+                      <span className="mds2-fs-2">🤝</span>
+                      <div>
+                        <div className="mds-referral-title-text">
+                          Freunde werben Freunde
+                        </div>
+                        <div className="mds-referral-desc">
+                          {mitglied?.vorname} nimmt an unserer Empfehlungs-Aktion teil. Für jedes geworbene Mitglied,
+                          das sich mit dem persönlichen Empfehlungscode anmeldet
+                          {referralInfo.standard_praemie ? `, erhält ${mitglied?.vorname} eine Prämie von ${referralInfo.standard_praemie} €` : ' gibt es eine attraktive Prämie'}.
+                          {referralInfo.max_kostenlos_monate > 0
+                            ? ` Es winken bis zu ${referralInfo.max_kostenlos_monate} Gratismonate.`
+                            : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Code */}
+                    <div>
+                      <div className="mds-referral-code-label">
+                        Persönlicher Empfehlungscode
+                      </div>
+                      <div className="mds-referral-code-box">
+                        <span className="mds-referral-code-text">
+                          {referralInfo.code}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(referralInfo.code);
+                            setReferralCopied(true);
+                            setTimeout(() => setReferralCopied(false), 2000);
+                          }}
+                          className={referralCopied ? 'mds-referral-copy-btn--copied' : 'mds-referral-copy-btn'}
+                        >
+                          {referralCopied ? '✓ Kopiert!' : '📋 Kopieren'}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* So funktioniert's */}
+                    <div className="mds-referral-howto-box">
+                      <div className="mds-referral-howto-title">
+                        So funktioniert's:
+                      </div>
+                      <div className="mds-referral-steps">
+                        {[
+                          `${mitglied?.vorname} teilt den Code mit Freunden oder Familie`,
+                          `Der Freund besucht ${window.location.origin}/mitglied-werden`,
+                          'Bei der Anmeldung wird der Code im Feld "Empfehlungscode" eingetragen',
+                          referralInfo.standard_praemie
+                            ? `${mitglied?.vorname} erhält ${referralInfo.standard_praemie} € Prämie nach Vertragsabschluss`
+                            : `${mitglied?.vorname} erhält eine Prämie nach Vertragsabschluss`
+                        ].map((step, i) => (
+                          <div key={i} className="mds-referral-step-row">
+                            <span className="mds-referral-step-num">{i + 1}.</span>
+                            <span>{step}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Link */}
+                    <div className="mds-referral-link-row">
+                      Anmeldelink:{' '}
+                      <span className="mds-referral-link-mono">
+                        {window.location.origin}/mitglied-werden
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mds-referral-empty">
+                    <div className="mds-referral-empty-icon">🎁</div>
+                    <p className="mds-referral-empty-text">
+                      Kein aktiver Empfehlungscode vorhanden.<br/>
+                      Code kann im Admin-Bereich unter "Freunde werben Freunde" generiert werden.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {activeTab === "nachrichten" && (
-            <div className="nachrichten-content" style={{padding: '1.5rem', background: 'transparent'}}>
+            <div className="nachrichten-content mds-nachrichten-content">
 
               {/* News-Artikel Sektion */}
-              <div style={{marginBottom: '2.5rem'}}>
-                <h3 style={{color: '#ffd700', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+              <div className="mds-news-section">
+                <h3 className="mds-news-title">
                   📰 Aktuelle News
                 </h3>
 
                 {newsLoading ? (
-                  <div style={{textAlign: 'center', padding: '1.5rem', color: 'rgba(255, 255, 255, 0.7)'}}>
+                  <div className="mds-news-loading">
                     Lade News...
                   </div>
                 ) : newsArticles.length === 0 ? (
-                  <div style={{
-                    textAlign: 'center',
-                    padding: '1.5rem',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: '10px',
-                    border: '1px solid rgba(255, 215, 0, 0.1)'
-                  }}>
-                    <p style={{color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.9rem', margin: 0}}>
+                  <div className="mds-news-empty">
+                    <p className="mds-news-empty-text">
                       Keine aktuellen News vorhanden
                     </p>
                   </div>
                 ) : (
-                  <div style={{display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+                  <div className="mds-news-list">
                     {newsArticles.map((news) => (
                       <div
                         key={news.id}
-                        style={{
-                          background: 'rgba(30, 30, 45, 0.8)',
-                          border: '1px solid rgba(255, 215, 0, 0.2)',
-                          borderRadius: '10px',
-                          padding: '1rem',
-                          backdropFilter: 'blur(10px)',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
+                        className="mds-news-card"
                         onClick={() => setExpandedNews(expandedNews === news.id ? null : news.id)}
                       >
-                        <div style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          gap: '1rem'
-                        }}>
-                          <div style={{flex: 1}}>
-                            <h4 style={{
-                              color: '#ffd700',
-                              margin: '0 0 0.5rem 0',
-                              fontSize: '1rem',
-                              fontWeight: '600'
-                            }}>
+                        <div className="mds-news-card-header">
+                          <div className="mds-news-card-body">
+                            <h4 className="mds-news-card-title">
                               {news.titel}
                             </h4>
                             {news.kurzbeschreibung && expandedNews !== news.id && (
-                              <p style={{
-                                color: 'rgba(255, 255, 255, 0.7)',
-                                margin: 0,
-                                fontSize: '0.9rem',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden'
-                              }}>
+                              <p className="mds-news-card-preview">
                                 {news.kurzbeschreibung}
                               </p>
                             )}
                           </div>
-                          <div style={{
-                            color: '#808090',
-                            fontSize: '0.8rem',
-                            whiteSpace: 'nowrap'
-                          }}>
+                          <div className="mds-news-card-date">
                             {new Date(news.veroeffentlicht_am || news.created_at).toLocaleDateString('de-DE')}
                           </div>
                         </div>
 
                         {expandedNews === news.id && (
-                          <div style={{
-                            marginTop: '1rem',
-                            paddingTop: '1rem',
-                            borderTop: '1px solid rgba(255, 215, 0, 0.1)'
-                          }}>
-                            <div style={{
-                              color: '#e0e0e0',
-                              fontSize: '0.9rem',
-                              lineHeight: '1.6',
-                              whiteSpace: 'pre-wrap'
-                            }}>
+                          <div className="mds-news-card-expanded">
+                            <div className="mds-news-expanded-content">
                               {news.inhalt}
                             </div>
                           </div>
                         )}
 
-                        <div style={{
-                          marginTop: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
-                          <span style={{
-                            color: '#ffd700',
-                            fontSize: '0.8rem',
-                            cursor: 'pointer'
-                          }}>
+                        <div className="mds-news-card-toggle-row">
+                          <span className="mds-news-toggle-btn-text">
                             {expandedNews === news.id ? '▲ Weniger anzeigen' : '▼ Mehr lesen'}
                           </span>
                         </div>
@@ -6559,80 +5822,47 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Benachrichtigungen Sektion */}
-              <div style={{marginBottom: '1.5rem'}}>
-                <h3 style={{color: '#ffd700', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+              <div className="mds-nachrichten-section">
+                <h3 className="mds-nachrichten-title">
                   📬 Nachrichtenarchiv
                 </h3>
-                <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem'}}>
+                <p className="mds-nachrichten-subtitle">
                   Alle Benachrichtigungen die an {mitglied?.vorname} {mitglied?.nachname} ({mitglied?.email}) gesendet wurden
                 </p>
               </div>
 
               {notificationsLoading ? (
-                <div style={{textAlign: 'center', padding: '2rem', color: 'rgba(255, 255, 255, 0.7)'}}>
+                <div className="mds-notifications-loading">
                   Lade Benachrichtigungen...
                 </div>
               ) : memberNotifications.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: '3rem',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)'
-                }}>
-                  <div style={{fontSize: '3rem', marginBottom: '1rem'}}>📭</div>
-                  <p style={{color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.1rem'}}>
+                <div className="mds-notifications-empty">
+                  <div className="mds-notifications-empty-icon">📭</div>
+                  <p className="mds-notifications-empty-text">
                     Noch keine Benachrichtigungen erhalten
                   </p>
                 </div>
               ) : (
-                <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+                <div className="mds-notifications-list">
                   {memberNotifications.map((notification, index) => (
                     <div
                       key={index}
-                      style={{
-                        background: 'rgba(30, 30, 45, 0.8)',
-                        border: '1px solid rgba(255, 215, 0, 0.2)',
-                        borderRadius: '10px',
-                        padding: '1rem',
-                        backdropFilter: 'blur(10px)'
-                      }}
+                      className="mds-notification-card"
                     >
                       {/* Header */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.8rem',
-                        marginBottom: '0.8rem'
-                      }}>
-                        <div style={{fontSize: '1.5rem'}}>
+                      <div className="mds-notification-header">
+                        <div className="mds-notification-icon">
                           {notification.type === 'email' ? '📧' : '📱'}
                         </div>
-                        <div style={{flex: 1}}>
-                          <h4 style={{
-                            color: '#ffd700',
-                            margin: 0,
-                            fontSize: '1rem',
-                            fontWeight: '600'
-                          }}>
+                        <div className="mds-notification-body">
+                          <h4 className="mds-notification-subject">
                             {notification.subject}
                           </h4>
-                          <div style={{
-                            color: '#808090',
-                            fontSize: '0.85rem',
-                            marginTop: '0.2rem'
-                          }}>
+                          <div className="mds-notification-date">
                             {new Date(notification.created_at).toLocaleString('de-DE')}
                           </div>
                         </div>
-                        <div style={{
-                          background: notification.status === 'sent' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                          color: notification.status === 'sent' ? '#22c55e' : '#ef4444',
-                          padding: '0.3rem 0.8rem',
-                          borderRadius: '20px',
-                          fontSize: '0.85rem',
-                          fontWeight: '600'
-                        }}>
+                        <div className={`mds-notif-status mds-notif-status--${notification.status}`}>
                           {notification.status === 'sent' ? '✅ Gesendet' :
                            notification.status === 'failed' ? '❌ Fehlgeschlagen' : '⏳ Ausstehend'}
                         </div>
@@ -6640,31 +5870,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                       {/* Nachrichteninhalt */}
                       {notification.message && (
-                        <div style={{
-                          padding: '0.8rem',
-                          background: 'rgba(20, 20, 30, 0.5)',
-                          borderRadius: '8px',
-                          borderLeft: '3px solid #ffd700',
-                          marginTop: '0.8rem'
-                        }}>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#a0a0b0',
-                            marginBottom: '0.4rem',
-                            fontWeight: '600',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em'
-                          }}>
+                        <div className="mds-notification-message-box">
+                          <div className="mds-notification-message-label">
                             Nachricht
                           </div>
                           <div
-                            style={{
-                              color: '#e0e0e0',
-                              fontSize: '0.9rem',
-                              lineHeight: '1.5',
-                              maxHeight: '150px',
-                              overflowY: 'auto'
-                            }}
+                            className="mds-notification-message-content"
                             dangerouslySetInnerHTML={createSafeHtml(notification.message)}
                           />
                         </div>
@@ -6717,14 +5928,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {styleSubTab === "stile" && (
                 <div className="stile-sub-tab-content">
                   {/* Stil-Tabs und Stil hinzufügen Button in einer Zeile */}
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '1.5rem',
-                    gap: '1rem',
-                    flexWrap: 'wrap'
-                  }}>
+                  <div className="mds-stil-add-row">
                     {/* Stil-Tabs Links - Sidebar Style */}
                     {memberStile.length > 0 ? (
                       <div className="stil-tabs-row">
@@ -6740,40 +5944,24 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         ))}
                       </div>
                     ) : (
-                      <div style={{ flex: 1 }}></div>
+                      <div className="u-flex-1"></div>
                     )}
 
                     {/* Stil hinzufügen Rechts - Sichtbar für Admins */}
                     {isAdmin && (
-                      <div style={{
-                        display: 'flex',
-                        gap: '0.5rem',
-                        alignItems: 'center',
-                        visibility: 'visible !important',
-                        opacity: '1 !important'
-                      }}>
+                      <div className="mds-stil-add-controls">
                         <select
                           value={selectedStilId}
                           onChange={(e) => handleStyleChange(e.target.value)}
                           disabled={!editMode}
-                          style={{
-                            padding: '0.6rem 1rem',
-                            background: '#1a1a1a',
-                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            fontSize: '0.9rem',
-                            minWidth: '180px',
-                            opacity: editMode ? '1' : '0.5',
-                            cursor: editMode ? 'pointer' : 'not-allowed'
-                          }}
+                          className="mds-stil-select"
                         >
-                          <option value="" style={{ background: '#1a1a1a', color: '#fff' }}>➕ Stil wählen...</option>
+                          <option value="" className="mds2-dark-input">➕ Stil wählen...</option>
                           {stile
                             .filter(s => s.aktiv === 1 || s.aktiv === true) // Nur aktive Stile
                             .filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id)) // Nicht bereits zugewiesen
                             .map(stil => (
-                              <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#1a1a1a', color: '#fff' }}>
+                              <option key={stil.stil_id} value={stil.stil_id} className="mds2-dark-input">
                                 {stil.stil_name || stil.name}
                               </option>
                             ))}
@@ -6781,19 +5969,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         <button
                           onClick={handleAddStyle}
                           disabled={!selectedStilId || !editMode}
-                          style={{
-                            padding: '0.6rem 1.2rem',
-                            background: (selectedStilId && editMode) ? 'linear-gradient(135deg, #FFD700, #FFA500)' : 'rgba(255, 255, 255, 0.1)',
-                            border: (selectedStilId && editMode) ? 'none' : '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '6px',
-                            color: (selectedStilId && editMode) ? '#000' : '#999',
-                            fontWeight: '600',
-                            cursor: (selectedStilId && editMode) ? 'pointer' : 'not-allowed',
-                            fontSize: '0.9rem',
-                            whiteSpace: 'nowrap',
-                            visibility: 'visible !important',
-                            opacity: editMode ? '1' : '0.5'
-                          }}
+                          className={(selectedStilId && editMode) ? 'mds-stil-add-btn-active' : 'mds-stil-add-btn-inactive'}
                         >
                           Hinzufügen
                         </button>
@@ -6822,30 +5998,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       return (
                         <div key={memberStil.stil_id}>
                           {/* Stil-Überschrift mit Badge */}
-                          <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '1.5rem',
-                            paddingBottom: '1rem',
-                            borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
-                          }}>
-                            <h2 style={{ margin: 0, color: '#FFD700', fontSize: '1.5rem', fontWeight: '700' }}>
+                          <div className="mds-stil-header">
+                            <h2 className="mds-stil-title">
                               🥋 {memberStil.stil_name}
                             </h2>
                             {editMode && (
                               <button
                                 onClick={() => handleRemoveStyle(memberStil.stil_id)}
-                                style={{
-                                  padding: '0.5rem 1rem',
-                                  background: 'rgba(239, 68, 68, 0.2)',
-                                  border: '1px solid #ef4444',
-                                  borderRadius: '6px',
-                                  color: '#ef4444',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                  fontSize: '0.9rem'
-                                }}
+                                className="mds-stil-remove-btn"
                               >
                                 🗑️ Stil entfernen
                               </button>
@@ -6858,21 +6018,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             <div className="field-group card">
                               <h3>Aktuelle Graduierung</h3>
                               <div>
-                                <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Gurtfarbe:</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', marginBottom: '1rem' }}>
+                                <label className="mds2-btn-lowercase-sm">Gurtfarbe:</label>
+                                <div className="mds-gurt-row">
                                   <BeltPreview
                                     primaer={(isActiveStyle && currentGraduation?.farbe_hex) || '#666'}
                                     sekundaer={isActiveStyle && currentGraduation?.farbe_sekundaer}
                                     size="normal"
                                   />
-                                  <span style={{ fontSize: '1rem', fontWeight: '600', color: '#fff' }}>
+                                  <span className="mds-gurt-name">
                                     {(isActiveStyle && currentGraduation?.name) || "Keine Graduierung"}
                                   </span>
                                 </div>
 
                                 {/* Buttons immer sichtbar, aber nur im Edit-Modus aktiv */}
                                 {isActiveStyle && isAdmin && (
-                                  <div className="graduierung-buttons" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                                  <div className="graduierung-buttons mds-grad-buttons-row">
                                     <button
                                       className="grad-btn grad-btn-down"
                                       onClick={() => {
@@ -6880,22 +6040,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                         handleGraduationArrowChange(currentGraduation?.graduierung_id, 'up');
                                       }}
                                       disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0}
-                                      style={{
-                                        flex: 1,
-                                        padding: '0.5rem',
-                                        background: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) > 0)
-                                          ? 'rgba(239, 68, 68, 0.2)'
-                                          : 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid #ef4444',
-                                        borderRadius: '6px',
-                                        color: '#ef4444',
-                                        fontWeight: '600',
-                                        cursor: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) > 0)
-                                          ? 'pointer'
-                                          : 'not-allowed',
-                                        fontSize: '0.9rem',
-                                        opacity: (!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0) ? 0.3 : 1
-                                      }}
                                     >
                                       ⬇️ Niedriger
                                     </button>
@@ -6906,22 +6050,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                         handleGraduationArrowChange(currentGraduation?.graduierung_id, 'down');
                                       }}
                                       disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1}
-                                      style={{
-                                        flex: 1,
-                                        padding: '0.5rem',
-                                        background: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) < selectedStil.graduierungen.length - 1)
-                                          ? 'rgba(34, 197, 94, 0.2)'
-                                          : 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid #22c55e',
-                                        borderRadius: '6px',
-                                        color: '#22c55e',
-                                        fontWeight: '600',
-                                        cursor: (currentGraduation && selectedStil.graduierungen && selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) < selectedStil.graduierungen.length - 1)
-                                          ? 'pointer'
-                                          : 'not-allowed',
-                                        fontSize: '0.9rem',
-                                        opacity: (!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1) ? 0.3 : 1
-                                      }}
                                     >
                                       ⬆️ Höher
                                     </button>
@@ -6932,26 +6060,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               {isActiveStyle && currentGraduation && (
                                 <>
                                   <div>
-                                    <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Mindest-Trainingsstunden:</label>
+                                    <label className="mds2-btn-lowercase-sm">Mindest-Trainingsstunden:</label>
                                     <span>{currentGraduation.trainingsstunden_min || 0} Stunden</span>
                                   </div>
                                   <div>
-                                    <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Mindestzeit:</label>
+                                    <label className="mds2-btn-lowercase-sm">Mindestzeit:</label>
                                     <span>{currentGraduation.mindestzeit_monate || 0} Monate</span>
                                   </div>
                                   {currentGraduation.kategorie && (
                                     <div>
-                                      <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Kategorie:</label>
-                                      <span style={{
-                                        display: 'inline-block',
-                                        padding: '0.25rem 0.75rem',
-                                        background: 'rgba(255, 215, 0, 0.2)',
-                                        border: '1px solid #FFD700',
-                                        borderRadius: '12px',
-                                        color: '#FFD700',
-                                        fontSize: '0.85rem',
-                                        fontWeight: '600'
-                                      }}>
+                                      <label className="mds2-btn-lowercase-sm">Kategorie:</label>
+                                      <span className="mds-kategorie-badge">
                                         {currentGraduation.kategorie}
                                       </span>
                                     </div>
@@ -6960,7 +6079,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               )}
 
                               <div>
-                                <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Letzte Prüfung:</label>
+                                <label className="mds2-btn-lowercase-sm">Letzte Prüfung:</label>
                                 {editMode && isActiveStyle ? (
                                   <input
                                     type="date"
@@ -6981,8 +6100,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                             <div className="field-group card">
                               <h3>Beschreibung</h3>
                               <div>
-                                <label style={{ textTransform: 'none', fontSize: '0.9rem' }}>Über diesen Stil:</label>
-                                <p style={{ color: '#ccc', fontSize: '0.95rem', lineHeight: '1.6', marginTop: '0.5rem' }}>
+                                <label className="mds2-btn-lowercase-sm">Über diesen Stil:</label>
+                                <p className="mds-stil-desc-text">
                                   {memberStil.beschreibung || fullStilData?.beschreibung || "Keine Beschreibung verfügbar"}
                                 </p>
                               </div>
@@ -6990,22 +6109,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           </div>
 
                           {/* Karte 3: Alle Graduierungen - Volle Breite - Einklappbar */}
-                          <div className="grid-container" style={{ marginTop: '1.5rem' }}>
+                          <div className="grid-container mds2-mt-15">
                             <div className="field-group card">
                               <div
                                 onClick={() => {
                                   setGraduationListCollapsed(!graduationListCollapsed);
                                 }}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  cursor: 'pointer',
-                                  padding: '0.5rem',
-                                  margin: '-0.5rem -0.5rem 0.5rem -0.5rem',
-                                  borderRadius: '6px',
-                                  transition: 'background 0.2s ease'
-                                }}
+                                className="mds-collapse-header"
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.background = 'rgba(255, 215, 0, 0.05)';
                                 }}
@@ -7013,67 +6123,46 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                   e.currentTarget.style.background = 'transparent';
                                 }}
                               >
-                                <h3 style={{ margin: 0 }}>📊 Alle Graduierungen - {memberStil.stil_name}</h3>
-                                <span style={{
-                                  fontSize: '1.5rem',
-                                  color: '#FFD700',
-                                  transform: graduationListCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
-                                  transition: 'transform 0.3s ease',
-                                  display: 'inline-block'
-                                }}>
+                                <h3 className="mds-collapse-h3">📊 Alle Graduierungen - {memberStil.stil_name}</h3>
+                                <span
+                                  className={`mds-collapse-icon${graduationListCollapsed ? '' : ' mds-collapse-icon--expanded'}`}
+                                >
                                   ▼
                                 </span>
                               </div>
 
                               {!graduationListCollapsed && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                                <div className="mds-graduation-list">
                                   {fullStilData && fullStilData.graduierungen && fullStilData.graduierungen.length > 0 ? (
                                     fullStilData.graduierungen
                                       .sort((a, b) => a.reihenfolge - b.reihenfolge)
                                       .map((graduation, index) => (
                                         <div
                                           key={graduation.graduierung_id}
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '1rem',
-                                            padding: '0.75rem',
-                                            background: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id)
-                                              ? 'rgba(255, 215, 0, 0.15)'
-                                              : 'rgba(255, 255, 255, 0.03)',
-                                            border: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id)
-                                              ? '2px solid #FFD700'
-                                              : '1px solid rgba(255, 255, 255, 0.1)',
-                                            borderRadius: '8px',
-                                            transition: 'all 0.2s ease'
-                                          }}
+                                          className={`mds-graduation-row ${(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? 'mds-graduation-row-active' : 'mds-graduation-row-inactive'}`}
                                         >
                                           <BeltPreview
                                             primaer={graduation.farbe_hex}
                                             sekundaer={graduation.farbe_sekundaer}
                                             size="small"
                                           />
-                                          <div style={{ flex: 1 }}>
-                                            <div style={{
-                                              fontWeight: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? '700' : '600',
-                                              color: (isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? '#FFD700' : '#fff',
-                                              fontSize: '0.95rem'
-                                            }}>
+                                          <div className="u-flex-1">
+                                            <div className={(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? 'mds-graduation-name-active' : 'mds-graduation-name-inactive'}>
                                               {graduation.name}
                                               {(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) && (
-                                                <span style={{ marginLeft: '0.5rem', color: '#FFD700', fontSize: '0.85rem' }}>
+                                                <span className="mds-graduation-aktuell-badge">
                                                   ⭐ Aktuell
                                                 </span>
                                               )}
                                             </div>
-                                            <div style={{ color: '#999', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+                                            <div className="mds-graduation-sub">
                                               {graduation.reihenfolge || index + 1}. Kyu · {graduation.trainingsstunden_min}h · {graduation.mindestzeit_monate} Monate
                                             </div>
                                           </div>
                                         </div>
                                       ))
                                   ) : (
-                                    <p style={{ textAlign: 'center', color: '#999', padding: '1rem' }}>
+                                    <p className="mds-no-stile-text">
                                       Keine Graduierungen verfügbar
                                     </p>
                                   )}
@@ -7088,10 +6177,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     <div className="grid-container">
                       <div className="field-group card">
                         <h3>Stil-Verwaltung</h3>
-                        <p style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>
+                        <p className="mds-no-stile-text">
                           Keine Stile zugeordnet
                         </p>
-                        <p style={{ textAlign: 'center', color: '#999', fontSize: '0.9rem' }}>
+                        <p className="mds-no-stile-hint">
                           Verwenden Sie das Auswahlfeld oben, um einen Stil hinzuzufügen.
                         </p>
                       </div>
@@ -7123,13 +6212,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       {showNewVertrag && (
         <div className="modal-overlay" onClick={() => setShowNewVertrag(false)} data-version="2.0-vertragformular">
           <div
-            className="modal-content vertrag-modal-custom"
+            className="modal-content vertrag-modal-custom mds-new-vertrag-modal"
             onClick={e => e.stopPropagation()}
-            style={{
-              width: '750px',
-              maxWidth: '90vw',
-              minWidth: 'auto'
-            }}
           >
             <div className="modal-header">
               <h3>Neuer Vertrag</h3>
@@ -7188,7 +6272,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               mitgliedId={id}
             />
 
-            <div className="form-actions" style={{ marginTop: '1.5rem' }}>
+            <div className="form-actions mds2-mt-15">
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -7213,13 +6297,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       {editingVertrag && (
         <div className="modal-overlay" onClick={() => setEditingVertrag(null)}>
           <div
-            className="modal-content vertrag-modal-custom"
+            className="modal-content vertrag-modal-custom mds-edit-vertrag-modal"
             onClick={e => e.stopPropagation()}
-            style={{
-              width: '800px',
-              maxWidth: '90vw',
-              minWidth: 'auto'
-            }}
           >
             <div className="modal-header">
               <h3>Vertrag bearbeiten</h3>
@@ -7504,29 +6583,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       {/* Details-Modal - Dokument-ähnliche VertragsÜbersicht */}
       {showVertragDetails && selectedVertrag && (
         <div
-          className="modal-overlay"
+          className="modal-overlay mds-vertrag-detail-overlay"
           onClick={() => setShowVertragDetails(false)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2rem'
-          }}
         >
           <div
-            className="vertrag-dokument"
+            className="vertrag-dokument mds-vertrag-dokument-box"
             onClick={e => e.stopPropagation()}
-            style={{
-              maxWidth: '800px',
-              width: '100%',
-              maxHeight: '95vh',
-              overflowY: 'auto',
-              background: 'white',
-              borderRadius: '8px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-              position: 'relative',
-              color: '#333'
-            }}
           >
             <style>{`
               .vertrag-dokument .detail-item {
@@ -7543,75 +6605,26 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             {/* Close Button */}
             <button
               onClick={() => setShowVertragDetails(false)}
-              style={{
-                position: 'absolute',
-                top: '-12px',
-                right: '-12px',
-                width: '36px',
-                height: '36px',
-                borderRadius: '50%',
-                background: '#d32f2f',
-                color: 'white',
-                border: 'none',
-                fontSize: '20px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                zIndex: 1000
-              }}
+              className="mds-vertrag-close-btn"
             >
               ?
             </button>
 
             {/* Dokument-Inhalt */}
-            <div style={{ padding: '3rem 2.5rem' }}>
+            <div className="mds-vertrag-doc-inner">
               {/* Header */}
-              <div style={{
-                borderBottom: '3px solid #1976d2',
-                paddingBottom: '1.5rem',
-                marginBottom: '2rem',
-                textAlign: 'center'
-              }}>
-                <h1 style={{
-                  fontSize: '1.8rem',
-                  fontWeight: '600',
-                  color: '#1976d2',
-                  margin: '0 0 0.5rem 0',
-                  letterSpacing: '0.5px'
-                }}>
+              <div className="mds-vertrag-doc-header">
+                <h1 className="mds-vertrag-doc-title">
                   VERTRAGSDETAILS
                 </h1>
-                <div style={{
-                  fontSize: '1rem',
-                  color: '#666',
-                  fontWeight: '500'
-                }}>
+                <div className="mds-vertrag-doc-number">
                   Vertragsnummer: {selectedVertrag.vertragsnummer || `VTR-${selectedVertrag.id}`}
                 </div>
               </div>
 
               {/* Status Badge */}
-              <div style={{
-                marginBottom: '2rem',
-                textAlign: 'center',
-                padding: '1rem',
-                background: selectedVertrag.status === 'aktiv' ? '#e8f5e9' :
-                           selectedVertrag.status === 'gekuendigt' ? '#fff3e0' :
-                           selectedVertrag.status === 'ruhepause' ? '#e3f2fd' : '#ffebee',
-                borderRadius: '6px',
-                border: '2px solid ' + (
-                  selectedVertrag.status === 'aktiv' ? '#4caf50' :
-                  selectedVertrag.status === 'gekuendigt' ? '#ff9800' :
-                  selectedVertrag.status === 'ruhepause' ? '#2196f3' : '#f44336'
-                )
-              }}>
-                <span style={{
-                  fontSize: '1.2rem',
-                  fontWeight: '600',
-                  color: selectedVertrag.status === 'aktiv' ? '#2e7d32' :
-                         selectedVertrag.status === 'gekuendigt' ? '#e65100' :
-                         selectedVertrag.status === 'ruhepause' ? '#1565c0' : '#c62828'
-                }}>
+              <div className={`mds-vertrag-doc-status-box mds-vertrag-doc-status-box--${selectedVertrag.status || 'beendet'}`}>
+                <span className={`mds-vertrag-doc-status-span mds-vertrag-doc-status-span--${selectedVertrag.status || 'beendet'}`}>
                   {selectedVertrag.status === 'aktiv' ? '? VERTRAG AKTIV' :
                    selectedVertrag.status === 'gekuendigt' ? '? VERTRAG GEKÜNDIGT' :
                    selectedVertrag.status === 'ruhepause' ? '? VERTRAG IN RUHEPAUSE' : '? VERTRAG BEENDET'}
@@ -7619,31 +6632,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Grunddaten */}
-              <div style={{
-                marginBottom: '2rem',
-                padding: '1.5rem',
-                background: '#f8f9fa',
-                borderRadius: '6px',
-                border: '1px solid #dee2e6'
-              }}>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  color: '#1976d2',
-                  marginTop: '0',
-                  marginBottom: '1.5rem',
-                  paddingBottom: '0.75rem',
-                  borderBottom: '2px solid #1976d2'
-                }}>📋 Grunddaten</h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '1rem',
-                  fontSize: '0.95rem',
-                  color: '#333'
-                }}>
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <strong style={{ color: '#555' }}>Vertrags-ID:</strong> #{selectedVertrag.id}
+              <div className="mds-vertrag-doc-section">
+                <h3 className="mds-vertrag-doc-section-title">📋 Grunddaten</h3>
+                <div className="mds-vertrag-doc-grid-2">
+                  <div className="mds-vertrag-doc-mb05">
+                    <strong className="mds-vertrag-doc-strong">Vertrags-ID:</strong> #{selectedVertrag.id}
                   </div>
                   {selectedVertrag.vertragsnummer && (
                     <div className="detail-item">
@@ -7704,13 +6697,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <div className="detail-item">
                     <strong>📄 Vertrags-PDF:</strong>{' '}
                     <button
-                      className="btn btn-sm btn-primary"
+                      className="btn btn-sm btn-primary mds-pdf-inline-btn"
                       onClick={() => downloadVertragPDF(selectedVertrag.id)}
-                      style={{
-                        padding: '0.25rem 0.75rem',
-                        fontSize: '0.875rem',
-                        marginLeft: '0.5rem'
-                      }}
                     >
                       📄 PDF
                     </button>
@@ -7720,28 +6708,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Laufzeit */}
               {(selectedVertrag.vertragsbeginn || selectedVertrag.vertragsende) && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: '#f8f9fa',
-                  borderRadius: '6px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    color: '#1976d2',
-                    marginTop: '0',
-                    marginBottom: '1.5rem',
-                    paddingBottom: '0.75rem',
-                    borderBottom: '2px solid #1976d2'
-                  }}>📅 Laufzeit</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '1rem',
-                    fontSize: '0.95rem'
-                  }}>
+                <div className="mds-vertrag-doc-section">
+                  <h3 className="mds-vertrag-doc-section-title">📅 Laufzeit</h3>
+                  <div className="mds-vertrag-doc-grid-2">
                     {selectedVertrag.vertragsbeginn && (
                       <div className="detail-item">
                         <strong>Vertragsbeginn:</strong> {new Date(selectedVertrag.vertragsbeginn).toLocaleDateString('de-DE')}
@@ -7766,28 +6735,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               )}
 
               {/* Zahlung */}
-              <div style={{
-                marginBottom: '2rem',
-                padding: '1.5rem',
-                background: '#f8f9fa',
-                borderRadius: '6px',
-                border: '1px solid #dee2e6'
-              }}>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  color: '#1976d2',
-                  marginTop: '0',
-                  marginBottom: '1.5rem',
-                  paddingBottom: '0.75rem',
-                  borderBottom: '2px solid #1976d2'
-                }}>💳 Zahlungsinformationen</h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '1rem',
-                  fontSize: '0.95rem'
-                }}>
+              <div className="mds-vertrag-doc-section">
+                <h3 className="mds-vertrag-doc-section-title">💳 Zahlungsinformationen</h3>
+                <div className="mds-vertrag-doc-grid-2">
                   {selectedVertrag.billing_cycle && (
                     <div className="detail-item">
                       <strong>Zahlungsintervall:</strong> {translateBillingCycle(selectedVertrag.billing_cycle)}
@@ -7832,28 +6782,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Rechtliche Akzeptanzen */}
-              <div style={{
-                marginBottom: '2rem',
-                padding: '1.5rem',
-                background: '#f8f9fa',
-                borderRadius: '6px',
-                border: '1px solid #dee2e6'
-              }}>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: '600',
-                  color: '#1976d2',
-                  marginTop: '0',
-                  marginBottom: '1.5rem',
-                  paddingBottom: '0.75rem',
-                  borderBottom: '2px solid #1976d2'
-                }}>? Rechtliche Akzeptanzen</h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '1rem',
-                  fontSize: '0.95rem'
-                }}>
+              <div className="mds-vertrag-doc-section">
+                <h3 className="mds-vertrag-doc-section-title">? Rechtliche Akzeptanzen</h3>
+                <div className="mds-vertrag-doc-grid-2">
                   {selectedVertrag.agb_akzeptiert_am && (
                     <div className="detail-item">
                       <strong>AGB:</strong> ✅ Akzeptiert am {new Date(selectedVertrag.agb_akzeptiert_am).toLocaleString('de-DE')}
@@ -7905,28 +6836,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Unterschrift */}
               {selectedVertrag.unterschrift_datum && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: '#f8f9fa',
-                  borderRadius: '6px',
-                  border: '1px solid #dee2e6'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    color: '#1976d2',
-                    marginTop: '0',
-                    marginBottom: '1.5rem',
-                    paddingBottom: '0.75rem',
-                    borderBottom: '2px solid #1976d2'
-                  }}>✍️ Unterschrift</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '1rem',
-                    fontSize: '0.95rem'
-                  }}>
+                <div className="mds-vertrag-doc-section">
+                  <h3 className="mds-vertrag-doc-section-title">✍️ Unterschrift</h3>
+                  <div className="mds-vertrag-doc-grid-2">
                     <div className="detail-item">
                       <strong>Unterschrieben am:</strong> {new Date(selectedVertrag.unterschrift_datum).toLocaleString('de-DE')}
                     </div>
@@ -7937,20 +6849,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     )}
                   </div>
                   {selectedVertrag.unterschrift_digital && (
-                    <div style={{ marginTop: '1rem' }}>
+                    <div className="mds2-mt-1">
                       <strong>Digitale Unterschrift:</strong>
-                      <div style={{
-                        marginTop: '0.5rem',
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '4px',
-                        padding: '1rem',
-                        background: 'white',
-                        display: 'inline-block'
-                      }}>
+                      <div className="mds-vertrag-unterschrift-box">
                         <img
                           src={selectedVertrag.unterschrift_digital}
                           alt="Digitale Unterschrift"
-                          style={{ maxWidth: '400px', maxHeight: '200px', display: 'block' }}
+                          className="mds-vertrag-unterschrift-img"
                         />
                       </div>
                     </div>
@@ -7960,28 +6865,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Status-Informationen */}
               {selectedVertrag.kuendigung_eingegangen && (
-                <div style={{
-                  marginBottom: '2rem',
-                  padding: '1.5rem',
-                  background: '#fff3e0',
-                  borderRadius: '6px',
-                  border: '2px solid #ff9800'
-                }}>
-                  <h3 style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    color: '#e65100',
-                    marginTop: '0',
-                    marginBottom: '1.5rem',
-                    paddingBottom: '0.75rem',
-                    borderBottom: '2px solid #ff9800'
-                  }}>ℹ️ Kündigungsinformationen</h3>
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(2, 1fr)',
-                    gap: '1rem',
-                    fontSize: '0.95rem'
-                  }}>
+                <div className="mds-vertrag-kuendigung-section">
+                  <h3 className="mds-vertrag-kuendigung-title">ℹ️ Kündigungsinformationen</h3>
+                  <div className="mds-vertrag-doc-grid-2">
                     <div className="detail-item">
                       <strong>Kündigung eingegangen:</strong> {new Date(selectedVertrag.kuendigung_eingegangen).toLocaleString('de-DE')}
                     </div>
@@ -7994,43 +6880,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
               )}
               {/* Drucken/Schließen Buttons */}
-              <div style={{
-                marginTop: '2rem',
-                paddingTop: '2rem',
-                borderTop: '2px solid #1976d2',
-                display: 'flex',
-                gap: '1rem',
-                justifyContent: 'center'
-              }}>
+              <div className="mds-vertrag-print-row">
                 <button
                   onClick={() => window.print()}
-                  style={{
-                    padding: '0.75rem 2rem',
-                    background: '#1976d2',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
+                  className="mds-vertrag-print-btn"
                 >
                   🖨️ Drucken
                 </button>
                 <button
                   onClick={() => setShowVertragDetails(false)}
-                  style={{
-                    padding: '0.75rem 2rem',
-                    background: '#757575',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontSize: '1rem',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
+                  className="mds-vertrag-close-doc-btn"
                 >
                   Schließen
                 </button>
@@ -8043,54 +6902,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       {/* Strukturiertes Details-Modal - Alle Vertragsdaten übersichtlich */}
       {showStructuredDetails && selectedVertrag && (
         <div
-          className="modal-overlay"
+          className="modal-overlay mds-structured-detail-overlay"
           onClick={() => setShowStructuredDetails(false)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem',
-            zIndex: 1000
-          }}
         >
           <div
+            className="mds-structured-detail-box"
             onClick={e => e.stopPropagation()}
-            style={{
-              maxWidth: '900px',
-              width: '100%',
-              maxHeight: '95vh',
-              overflowY: 'auto',
-              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-              borderRadius: '16px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-              position: 'relative',
-              color: '#fff',
-              border: '1px solid rgba(255, 215, 0, 0.3)'
-            }}
           >
             {/* Close Button */}
             <button
               onClick={() => setShowStructuredDetails(false)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                background: 'rgba(244, 67, 54, 0.9)',
-                color: 'white',
-                border: 'none',
-                fontSize: '24px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(244, 67, 54, 0.4)',
-                transition: 'all 0.2s ease',
-                zIndex: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
+              className="mds-structured-close-btn"
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#d32f2f';
                 e.currentTarget.style.transform = 'scale(1.1)';
@@ -8104,53 +6926,19 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </button>
 
             {/* Header */}
-            <div style={{
-              padding: '2rem',
-              borderBottom: '2px solid rgba(255, 215, 0, 0.3)',
-              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.05) 100%)'
-            }}>
-              <h2 style={{
-                margin: '0 0 0.5rem 0',
-                fontSize: '1.8rem',
-                fontWeight: '700',
-                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}>
+            <div className="mds-structured-header">
+              <h2 className="mds-structured-title">
                 🔍 Vertragsdetails
               </h2>
-              <p style={{
-                margin: 0,
-                fontSize: '1rem',
-                color: 'rgba(255, 255, 255, 0.7)'
-              }}>
+              <p className="mds-structured-subtitle">
                 Vertrag #{selectedVertrag.personenVertragNr} • {mitglied?.vorname} {mitglied?.nachname}
               </p>
             </div>
 
             {/* Content */}
-            <div style={{ padding: '2rem' }}>
+            <div className="mds2-p-2">
               {/* Status Badge */}
-              <div style={{
-                display: 'inline-flex',
-                padding: '0.5rem 1.5rem',
-                borderRadius: '24px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                marginBottom: '2rem',
-                background: selectedVertrag.status === 'aktiv' ? 'rgba(76, 175, 80, 0.2)' :
-                           selectedVertrag.status === 'gekuendigt' ? 'rgba(255, 152, 0, 0.2)' :
-                           selectedVertrag.status === 'ruhepause' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(244, 67, 54, 0.2)',
-                border: '2px solid ' + (
-                  selectedVertrag.status === 'aktiv' ? '#4caf50' :
-                  selectedVertrag.status === 'gekuendigt' ? '#ff9800' :
-                  selectedVertrag.status === 'ruhepause' ? '#2196F3' : '#f44336'
-                ),
-                color: selectedVertrag.status === 'aktiv' ? '#4caf50' :
-                       selectedVertrag.status === 'gekuendigt' ? '#ff9800' :
-                       selectedVertrag.status === 'ruhepause' ? '#2196F3' : '#f44336'
-              }}>
+              <div className={`mds-vertrag-badge mds-vertrag-badge--${selectedVertrag.status || 'beendet'}`}>
                 {selectedVertrag.status === 'aktiv' ? '✅ AKTIV' :
                  selectedVertrag.status === 'gekuendigt' ? '⚠️ GEKÜNDIGT' :
                  selectedVertrag.status === 'ruhepause' ? '⏸️ RUHEPAUSE' :
@@ -8158,92 +6946,63 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Grid Layout für Daten */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2rem'
-              }}>
+              <div className="mds-structured-data-grid">
                 {/* Grunddaten */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  <h3 style={{
-                    margin: '0 0 1rem 0',
-                    fontSize: '1.1rem',
-                    color: '#FFD700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
+                <div className="mds-structured-card">
+                  <h3 className="mds-structured-card-title">
                     📋 Grunddaten
                   </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="mds-flex-col">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertragsnummer</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.vertragsnummer || `VTR-${selectedVertrag.id}`}</div>
+                      <div className="mds-info-label">Vertragsnummer</div>
+                      <div className="mds-info-value">{selectedVertrag.vertragsnummer || `VTR-${selectedVertrag.id}`}</div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Mitglieds-ID</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.mitglied_id}</div>
+                      <div className="mds-info-label">Mitglieds-ID</div>
+                      <div className="mds-info-value">{selectedVertrag.mitglied_id}</div>
                     </div>
                     {selectedVertrag.dojo_id && (
                       <div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Dojo</div>
-                        <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{getDojoName(selectedVertrag.dojo_id)}</div>
+                        <div className="mds-info-label">Dojo</div>
+                        <div className="mds-info-value">{getDojoName(selectedVertrag.dojo_id)}</div>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Laufzeit */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  <h3 style={{
-                    margin: '0 0 1rem 0',
-                    fontSize: '1.1rem',
-                    color: '#FFD700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
+                <div className="mds-structured-card">
+                  <h3 className="mds-structured-card-title">
                     📅 Laufzeit
                   </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="mds-flex-col">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertragsbeginn</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Vertragsbeginn</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.vertragsbeginn ? new Date(selectedVertrag.vertragsbeginn).toLocaleDateString('de-DE') : 'Nicht angegeben'}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertragsende</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Vertragsende</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.vertragsende ? new Date(selectedVertrag.vertragsende).toLocaleDateString('de-DE') : 'Unbefristet'}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Mindestlaufzeit</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Mindestlaufzeit</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.mindestlaufzeit_monate ? `${selectedVertrag.mindestlaufzeit_monate} Monate` : 'Keine Mindestlaufzeit'}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Kündigungsfrist</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Kündigungsfrist</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.kuendigungsfrist_monate ? `${selectedVertrag.kuendigungsfrist_monate} Monate` : 'Keine Angabe'}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Automatische Verlängerung</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Automatische Verlängerung</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.automatische_verlaengerung ? '✅ Ja' : '❌ Nein'}
                       </div>
                     </div>
@@ -8251,52 +7010,40 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
 
                 {/* Zahlungsinformationen */}
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  <h3 style={{
-                    margin: '0 0 1rem 0',
-                    fontSize: '1.1rem',
-                    color: '#FFD700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
+                <div className="mds-structured-card">
+                  <h3 className="mds-structured-card-title">
                     💰 Zahlung
                   </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="mds-flex-col">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Tarif</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Tarif</div>
+                      <div className="mds-info-value">
                         {tarife.find(t => t.id === selectedVertrag.tarif_id)?.name || 'Kein Tarif'}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Beitrag</div>
-                      <div style={{ fontSize: '0.95rem', color: '#4caf50', fontWeight: '600' }}>
+                      <div className="mds-info-label">Beitrag</div>
+                      <div className="mds2-success-value">
                         {selectedVertrag.monatsbeitrag ? `${parseFloat(selectedVertrag.monatsbeitrag).toFixed(2)} €` : 'Nicht festgelegt'}
                       </div>
                     </div>
                     {selectedVertrag.aufnahmegebuehr_cents && (
                       <div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Aufnahmegebühr</div>
-                        <div style={{ fontSize: '0.95rem', color: '#ff9800', fontWeight: '600' }}>
+                        <div className="mds-info-label">Aufnahmegebühr</div>
+                        <div className="mds-aufnahme-value">
                           {(selectedVertrag.aufnahmegebuehr_cents / 100).toFixed(2)} €
                         </div>
                       </div>
                     )}
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Zahlungsrhythmus</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Zahlungsrhythmus</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.billing_cycle ? translateBillingCycle(selectedVertrag.billing_cycle) : 'Nicht angegeben'}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Zahlungsart</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Zahlungsart</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.payment_method === 'direct_debit' ? '🏦 Lastschrift' :
                          selectedVertrag.payment_method === 'bank_transfer' ? '💳 Überweisung' :
                          selectedVertrag.payment_method === 'cash' ? '💵 Bar' :
@@ -8304,8 +7051,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Lastschrift-Status</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds-info-label">Lastschrift-Status</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.lastschrift_status === 'aktiv' ? '✅ Aktiv' :
                          selectedVertrag.lastschrift_status === 'ausstehend' ? '⏳ Ausstehend' :
                          selectedVertrag.lastschrift_status === 'fehlgeschlagen' ? '❌ Fehlgeschlagen' :
@@ -8318,33 +7065,20 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Ruhepause Info (falls vorhanden) */}
               {selectedVertrag.status === 'ruhepause' && selectedVertrag.ruhepause_von && (
-                <div style={{
-                  background: 'rgba(33, 150, 243, 0.1)',
-                  border: '1px solid rgba(33, 150, 243, 0.3)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginBottom: '2rem'
-                }}>
-                  <h3 style={{
-                    margin: '0 0 1rem 0',
-                    fontSize: '1.1rem',
-                    color: '#2196F3',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
+                <div className="mds-structured-ruhepause-card">
+                  <h3 className="mds-structured-ruhepause-title">
                     ⏸️ Ruhepause
                   </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  <div className="mds2-grid-auto-200">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.2rem' }}>Von</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds2-secondary-sublabel">Von</div>
+                      <div className="mds-info-value">
                         {new Date(selectedVertrag.ruhepause_von).toLocaleDateString('de-DE')}
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.2rem' }}>Bis</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds2-secondary-sublabel">Bis</div>
+                      <div className="mds-info-value">
                         {selectedVertrag.ruhepause_bis ? new Date(selectedVertrag.ruhepause_bis).toLocaleDateString('de-DE') : 'Nicht festgelegt'}
                       </div>
                     </div>
@@ -8354,59 +7088,33 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {/* Kündigungsinfo (falls vorhanden) */}
               {selectedVertrag.status === 'gekuendigt' && selectedVertrag.kuendigung_eingegangen && (
-                <div style={{
-                  background: 'rgba(255, 152, 0, 0.1)',
-                  border: '1px solid rgba(255, 152, 0, 0.3)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginBottom: '2rem'
-                }}>
-                  <h3 style={{
-                    margin: '0 0 1rem 0',
-                    fontSize: '1.1rem',
-                    color: '#ff9800',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
+                <div className="mds-structured-kuendigung-card">
+                  <h3 className="mds-structured-kuendigung-title">
                     ⚠️ Kündigung
                   </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                  <div className="mds2-grid-auto-200">
                     <div>
-                      <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.2rem' }}>Kündigung eingegangen</div>
-                      <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                      <div className="mds2-secondary-sublabel">Kündigung eingegangen</div>
+                      <div className="mds-info-value">
                         {new Date(selectedVertrag.kuendigung_eingegangen).toLocaleDateString('de-DE')}
                       </div>
                     </div>
                     {selectedVertrag.kuendigungsgrund && (
                       <div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.2rem' }}>Kündigungsgrund</div>
-                        <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                        <div className="mds2-secondary-sublabel">Kündigungsgrund</div>
+                        <div className="mds-info-value">
                           {selectedVertrag.kuendigungsgrund}
                         </div>
                       </div>
                     )}
                   </div>
                   {/* Button für Kündigungsbestätigung PDF */}
-                  <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
+                  <div className="mds-structured-kuendigung-btn-row">
                     <button
                       onClick={() => {
                         window.open(`${config.apiBaseUrl}/vertraege/${selectedVertrag.id}/kuendigungsbestaetigung`, '_blank');
                       }}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: 'rgba(255, 152, 0, 0.2)',
-                        border: '1px solid rgba(255, 152, 0, 0.4)',
-                        borderRadius: '6px',
-                        color: '#ff9800',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        fontSize: '0.85rem',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease'
-                      }}
+                      className="mds-kuendigung-pdf-btn"
                       onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 152, 0, 0.3)'}
                       onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 152, 0, 0.2)'}
                     >
@@ -8417,52 +7125,39 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               )}
 
               {/* Rechtliche Akzeptanzen */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                marginBottom: '2rem'
-              }}>
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  fontSize: '1.1rem',
-                  color: '#FFD700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
+              <div className="mds-structured-card mds-structured-mb2">
+                <h3 className="mds-structured-card-title">
                   📝 Rechtliche Dokumente
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{selectedVertrag.agb_akzeptiert_am ? '✅' : '❌'}</span>
+                <div className="mds-legal-docs-grid">
+                  <div className="u-flex-row-sm">
+                    <span className="mds2-fs-12">{selectedVertrag.agb_akzeptiert_am ? '✅' : '❌'}</span>
                     <div>
-                      <div style={{ fontSize: '0.9rem', color: '#fff' }}>AGB</div>
+                      <div className="mds2-text-primary-09">AGB</div>
                       {selectedVertrag.agb_akzeptiert_am && (
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                        <div className="mds2-muted-xs">
                           {new Date(selectedVertrag.agb_akzeptiert_am).toLocaleDateString('de-DE')}
                         </div>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{selectedVertrag.datenschutz_akzeptiert_am ? '✅' : '❌'}</span>
+                  <div className="u-flex-row-sm">
+                    <span className="mds2-fs-12">{selectedVertrag.datenschutz_akzeptiert_am ? '✅' : '❌'}</span>
                     <div>
-                      <div style={{ fontSize: '0.9rem', color: '#fff' }}>Datenschutz</div>
+                      <div className="mds2-text-primary-09">Datenschutz</div>
                       {selectedVertrag.datenschutz_akzeptiert_am && (
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                        <div className="mds2-muted-xs">
                           {new Date(selectedVertrag.datenschutz_akzeptiert_am).toLocaleDateString('de-DE')}
                         </div>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>{selectedVertrag.hausordnung_akzeptiert_am ? '✅' : '❌'}</span>
+                  <div className="u-flex-row-sm">
+                    <span className="mds2-fs-12">{selectedVertrag.hausordnung_akzeptiert_am ? '✅' : '❌'}</span>
                     <div>
-                      <div style={{ fontSize: '0.9rem', color: '#fff' }}>Hausordnung</div>
+                      <div className="mds2-text-primary-09">Hausordnung</div>
                       {selectedVertrag.hausordnung_akzeptiert_am && (
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+                        <div className="mds2-muted-xs">
                           {new Date(selectedVertrag.hausordnung_akzeptiert_am).toLocaleDateString('de-DE')}
                         </div>
                       )}
@@ -8472,59 +7167,35 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Zusätzliche Vertragsdaten - Strukturiert */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{
-                  margin: '0 0 1.5rem 0',
-                  fontSize: '1.3rem',
-                  fontWeight: '700',
-                  color: '#FFD700',
-                  textAlign: 'center',
-                  borderBottom: '2px solid rgba(255, 215, 0, 0.3)',
-                  paddingBottom: '1rem'
-                }}>
+              <div className="mds-structured-mb2">
+                <h2 className="mds-structured-more-title">
                   📊 Weitere Vertragsdetails
                 </h2>
 
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                  gap: '1.5rem'
-                }}>
+                <div className="mds-structured-extra-grid">
                   {/* Zusätzliche Laufzeit-Details */}
                   {(selectedVertrag.vertragsdauer_monate || selectedVertrag.verlaengerung_monate || selectedVertrag.probezeit_tage) && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         ⏱️ Erweiterte Laufzeit
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         {selectedVertrag.vertragsdauer_monate && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertragsdauer</div>
-                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.vertragsdauer_monate} Monate</div>
+                            <div className="mds-info-label">Vertragsdauer</div>
+                            <div className="mds-info-value">{selectedVertrag.vertragsdauer_monate} Monate</div>
                           </div>
                         )}
                         {selectedVertrag.verlaengerung_monate && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Verlängerung um</div>
-                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.verlaengerung_monate} Monate</div>
+                            <div className="mds-info-label">Verlängerung um</div>
+                            <div className="mds-info-value">{selectedVertrag.verlaengerung_monate} Monate</div>
                           </div>
                         )}
                         {selectedVertrag.probezeit_tage && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Probezeit</div>
-                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.probezeit_tage} Tage</div>
+                            <div className="mds-info-label">Probezeit</div>
+                            <div className="mds-info-value">{selectedVertrag.probezeit_tage} Tage</div>
                           </div>
                         )}
                       </div>
@@ -8533,33 +7204,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {/* Rabatte & Sonderkonditionen */}
                   {(selectedVertrag.rabatt_prozent || selectedVertrag.rabatt_betrag) && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         🎁 Rabatte
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         {selectedVertrag.rabatt_prozent && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Rabatt (%)</div>
-                            <div style={{ fontSize: '0.95rem', color: '#4caf50', fontWeight: '600' }}>{selectedVertrag.rabatt_prozent}%</div>
+                            <div className="mds-info-label">Rabatt (%)</div>
+                            <div className="mds2-success-value">{selectedVertrag.rabatt_prozent}%</div>
                           </div>
                         )}
                         {selectedVertrag.rabatt_betrag && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Rabatt (Betrag)</div>
-                            <div style={{ fontSize: '0.95rem', color: '#4caf50', fontWeight: '600' }}>{selectedVertrag.rabatt_betrag} €</div>
+                            <div className="mds-info-label">Rabatt (Betrag)</div>
+                            <div className="mds2-success-value">{selectedVertrag.rabatt_betrag} €</div>
                           </div>
                         )}
                       </div>
@@ -8568,26 +7227,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {/* SEPA & Banking */}
                   {selectedVertrag.sepa_mandats_id && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         🏦 SEPA-Mandat
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Mandatsreferenz</div>
-                          <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500', wordBreak: 'break-all' }}>{selectedVertrag.sepa_mandats_id}</div>
+                          <div className="mds-info-label">Mandatsreferenz</div>
+                          <div className="mds-mandatsreferenz-value">{selectedVertrag.sepa_mandats_id}</div>
                         </div>
                       </div>
                     </div>
@@ -8595,26 +7242,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {/* Kündigungsdetails */}
                   {selectedVertrag.gekuendigt_von && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         📝 Kündigungsinfo
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Gekündigt von</div>
-                          <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.gekuendigt_von}</div>
+                          <div className="mds-info-label">Gekündigt von</div>
+                          <div className="mds-info-value">{selectedVertrag.gekuendigt_von}</div>
                         </div>
                       </div>
                     </div>
@@ -8622,26 +7257,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {/* Ruhepause-Grund */}
                   {selectedVertrag.ruhepause_grund && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         ⏸️ Ruhepause-Details
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Grund</div>
-                          <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.ruhepause_grund}</div>
+                          <div className="mds-info-label">Grund</div>
+                          <div className="mds-info-value">{selectedVertrag.ruhepause_grund}</div>
                         </div>
                       </div>
                     </div>
@@ -8649,35 +7272,23 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {/* Dokumente & Unterschriften */}
                   {(selectedVertrag.unterschrift_datum || selectedVertrag.dokument_pfad) && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         📄 Dokumente
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         {selectedVertrag.unterschrift_datum && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Unterschriftsdatum</div>
-                            <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>
+                            <div className="mds-info-label">Unterschriftsdatum</div>
+                            <div className="mds-info-value">
                               {new Date(selectedVertrag.unterschrift_datum).toLocaleDateString('de-DE')}
                             </div>
                           </div>
                         )}
                         {selectedVertrag.dokument_pfad && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Dokument-Pfad</div>
-                            <div style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: '500', wordBreak: 'break-all' }}>{selectedVertrag.dokument_pfad}</div>
+                            <div className="mds-info-label">Dokument-Pfad</div>
+                            <div className="mds-dokument-pfad-value">{selectedVertrag.dokument_pfad}</div>
                           </div>
                         )}
                       </div>
@@ -8686,33 +7297,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                   {/* Notizen & Bemerkungen */}
                   {(selectedVertrag.notizen || selectedVertrag.bemerkung) && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '12px',
-                      padding: '1.5rem',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <h3 style={{
-                        margin: '0 0 1rem 0',
-                        fontSize: '1.1rem',
-                        color: '#FFD700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
+                    <div className="mds-structured-card">
+                      <h3 className="mds-structured-card-title">
                         📝 Notizen
                       </h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div className="mds-flex-col">
                         {selectedVertrag.notizen && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Notizen</div>
-                            <div style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '400', lineHeight: '1.5' }}>{selectedVertrag.notizen}</div>
+                            <div className="mds-info-label">Notizen</div>
+                            <div className="mds2-text-primary-lh">{selectedVertrag.notizen}</div>
                           </div>
                         )}
                         {selectedVertrag.bemerkung && (
                           <div>
-                            <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Bemerkung</div>
-                            <div style={{ fontSize: '0.9rem', color: '#fff', fontWeight: '400', lineHeight: '1.5' }}>{selectedVertrag.bemerkung}</div>
+                            <div className="mds-info-label">Bemerkung</div>
+                            <div className="mds2-text-primary-lh">{selectedVertrag.bemerkung}</div>
                           </div>
                         )}
                       </div>
@@ -8720,41 +7319,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   )}
 
                   {/* Technische Daten */}
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '12px',
-                    padding: '1.5rem',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <h3 style={{
-                      margin: '0 0 1rem 0',
-                      fontSize: '1.1rem',
-                      color: '#FFD700',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
+                  <div className="mds-structured-card">
+                    <h3 className="mds-structured-card-title">
                       🔧 Technische Daten
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div className="mds-flex-col">
                       <div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Vertrags-ID</div>
-                        <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>{selectedVertrag.id}</div>
+                        <div className="mds-info-label">Vertrags-ID</div>
+                        <div className="mds-info-value">{selectedVertrag.id}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Persönliche Vertragsnummer</div>
-                        <div style={{ fontSize: '0.95rem', color: '#fff', fontWeight: '500' }}>#{selectedVertrag.personenVertragNr}</div>
+                        <div className="mds-info-label">Persönliche Vertragsnummer</div>
+                        <div className="mds-info-value">#{selectedVertrag.personenVertragNr}</div>
                       </div>
                       {selectedVertrag.magicline_contract_id && (
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Magicline Vertrags-ID</div>
-                          <div style={{ fontSize: '0.95rem', color: '#9ca3af', fontWeight: '500' }}>{selectedVertrag.magicline_contract_id}</div>
+                          <div className="mds-info-label">Magicline Vertrags-ID</div>
+                          <div className="mds-mandatsreferenz-value">{selectedVertrag.magicline_contract_id}</div>
                         </div>
                       )}
                       {selectedVertrag.geloescht !== undefined && (
                         <div>
-                          <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginBottom: '0.2rem' }}>Status</div>
-                          <div style={{ fontSize: '0.95rem', color: selectedVertrag.geloescht ? '#ef4444' : '#4caf50', fontWeight: '600' }}>
+                          <div className="mds-info-label">Status</div>
+                          <div className={selectedVertrag.geloescht ? 'mds-status-geloescht' : 'mds-status-aktiv'}>
                             {selectedVertrag.geloescht ? '🗑️ Gelöscht' : '✅ Aktiv'}
                           </div>
                         </div>
@@ -8765,17 +7352,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Timestamps */}
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '8px',
-                padding: '1rem',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.5)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.5rem'
-              }}>
+              <div className="mds-structured-timestamps">
                 <div>Erstellt: {selectedVertrag.erstellt_am ? new Date(selectedVertrag.erstellt_am).toLocaleString('de-DE') : 'Unbekannt'}</div>
                 {selectedVertrag.aktualisiert_am && (
                   <div>Aktualisiert: {new Date(selectedVertrag.aktualisiert_am).toLocaleString('de-DE')}</div>
@@ -8783,25 +7360,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               </div>
 
               {/* Close Button */}
-              <div style={{
-                marginTop: '2rem',
-                display: 'flex',
-                justifyContent: 'center'
-              }}>
+              <div className="mds-structured-close-row">
                 <button
                   onClick={() => setShowStructuredDetails(false)}
-                  style={{
-                    padding: '0.75rem 2rem',
-                    background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                    color: '#1a1a2e',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(255, 215, 0, 0.3)',
-                    transition: 'all 0.2s ease'
-                  }}
+                  className="mds-structured-close-btn-gold"
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
                     e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 215, 0, 0.4)';
@@ -8823,48 +7385,28 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       {showArchiveModal && (
         <div
           onClick={() => setShowArchiveModal(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.7)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999,
-            padding: '20px'
-          }}
+          className="mds-archive-overlay"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
-              borderRadius: '16px',
-              padding: '2rem',
-              maxWidth: '500px',
-              width: '100%',
-              border: '1px solid rgba(231, 76, 60, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-            }}
+            className="mds-archive-modal-box"
           >
-            <h2 style={{ color: '#e74c3c', marginBottom: '1.5rem', fontSize: '1.5rem' }}>
+            <h2 className="mds-archive-title">
               🗑️ Mitglied archivieren
             </h2>
 
-            <div style={{ marginBottom: '1.5rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div className="mds2-mb-15-primary">
               <p>
-                Möchten Sie <strong style={{ color: '#FFD700' }}>{mitglied.vorname} {mitglied.nachname}</strong> wirklich archivieren?
+                Möchten Sie <strong className="mds-primary-accent">{mitglied.vorname} {mitglied.nachname}</strong> wirklich archivieren?
               </p>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', marginTop: '1rem' }}>
+              <p className="mds-archive-secondary-text">
                 Das Mitglied wird aus der aktiven Liste entfernt und mit allen Daten ins Archiv verschoben.
                 Diese Aktion kann nicht rückgängig gemacht werden.
               </p>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div className="mds-archive-reason-row">
+              <label className="mds-archive-reason-label">
                 Grund (optional):
               </label>
               <textarea
@@ -8872,37 +7414,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 onChange={(e) => setArchiveReason(e.target.value)}
                 placeholder="z.B. Austritt, Umzug, Kündigung..."
                 rows={3}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  color: '#fff',
-                  fontSize: '0.95rem',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
+                className="mds-archive-textarea"
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <div className="mds2-flex-end-row">
               <button
                 onClick={() => {
                   setShowArchiveModal(false);
                   setArchiveReason('');
                 }}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease'
-                }}
+                className="mds-archive-cancel-btn"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
                 }}
@@ -8915,18 +7437,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               <button
                 onClick={handleArchiveMitglied}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  boxShadow: '0 4px 12px rgba(231, 76, 60, 0.3)',
-                  transition: 'all 0.3s ease'
-                }}
+                className="mds-archive-confirm-btn"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = '0 6px 16px rgba(231, 76, 60, 0.4)';
@@ -8946,92 +7457,48 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       {/* Kündigungsbestätigung Modal */}
       {showKündigungBestätigungModal && vertragZumKündigen && (
         <div
-          className="modal-overlay"
+          className="modal-overlay mds-kuendigung-confirm-overlay"
           onClick={() => {
             setShowKündigungBestätigungModal(false);
             setVertragZumKündigen(null);
           }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '2rem'
-          }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{
-              background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%)',
-              borderRadius: '16px',
-              padding: '2rem',
-              maxWidth: '500px',
-              width: '100%',
-              border: '1px solid rgba(255, 193, 7, 0.3)',
-              boxShadow: 'none'
-            }}
+            className="mds-kuendigung-confirm-box"
           >
             {/* Warnsymbol oben */}
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'center', 
-              marginBottom: '1.5rem',
-              fontSize: '4rem'
-            }}>
+            <div className="mds-kuendigung-warning-icon-row">
               ⚠️
             </div>
 
             {/* Zentrierte Überschrift */}
-            <h2 style={{ 
-              color: '#ffc107', 
-              marginBottom: '1.5rem', 
-              fontSize: '1.3rem',
-              textAlign: 'center',
-              fontWeight: '700',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <h2 className="mds-kuendigung-confirm-title">
               ACHTUNG: VERTRAG IST NOCH AKTIV!
             </h2>
 
-            <div style={{ marginBottom: '1.5rem', color: 'rgba(255, 255, 255, 0.9)' }}>
-              <p style={{ textAlign: 'left' }}>
-                Vertrag <strong style={{ color: '#FFD700' }}>#{vertragZumKündigen.personenVertragNr}</strong> ist noch aktiv!
+            <div className="mds2-mb-15-primary">
+              <p>
+                Vertrag <strong className="mds-primary-accent">#{vertragZumKündigen.personenVertragNr}</strong> ist noch aktiv!
               </p>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '1rem', textAlign: 'left' }}>
+              <p className="mds-kuendigung-confirm-secondary-text">
                 Möchten Sie den Vertrag trotzdem kündigen?
               </p>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.5rem', textAlign: 'left' }}>
-                Bei <strong style={{ color: '#FFD700' }}>"Ja"</strong> wird der Vertrag gekündigt und in die Archivierten/Ehemaligen verschoben.
+              <p className="mds2-text-primary-09-mt">
+                Bei <strong className="mds-primary-accent">"Ja"</strong> wird der Vertrag gekündigt und in die Archivierten/Ehemaligen verschoben.
               </p>
-              <p style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.5rem', textAlign: 'left' }}>
-                Bei <strong style={{ color: '#FFD700' }}>"Nein"</strong> wird die Aktion abgebrochen.
+              <p className="mds2-text-primary-09-mt">
+                Bei <strong className="mds-primary-accent">"Nein"</strong> wird die Aktion abgebrochen.
               </p>
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <div className="mds2-flex-end-row">
               <button
                 onClick={() => {
                   setShowKündigungBestätigungModal(false);
                   setVertragZumKündigen(null);
                 }}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease'
-                }}
+                className="mds-kuendigung-abort-btn"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)';
                 }}
@@ -9044,18 +7511,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               <button
                 onClick={handleKündigungBestätigen}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 12px rgba(255, 193, 7, 0.3)'
-                }}
+                className="mds-kuendigung-confirm-btn"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'linear-gradient(135deg, #ff9800 0%, #ffc107 100%)';
                   e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 193, 7, 0.4)';
@@ -9079,6 +7535,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           dojo={currentDojo}
           onClose={() => setShowMitgliedsausweis(false)}
           isModal={true}
+        />
+      )}
+
+      {/* Vorlagen Senden Modal */}
+      {showVorlagenSenden && member && (
+        <VorlagenSendenModal
+          vorlagenId={null}
+          mitgliedId={member.id}
+          onClose={() => setShowVorlagenSenden(false)}
         />
       )}
 

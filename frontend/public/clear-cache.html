@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cache löschen - Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Cache löschen</h1>
+    <p>Klicken Sie auf die Schaltfläche, um den Service Worker zu deaktivieren und den Cache zu löschen:</p>
+    
+    <button onclick="clearAll()">Cache & Service Worker löschen</button>
+    <button onclick="location.href='/dashboard'">Zum Dashboard</button>
+    
+    <div id="status"></div>
+    
+    <script>
+        async function clearAll() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '';
+            
+            try {
+                // Unregister service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        statusDiv.innerHTML += '<div class="status success">✓ Service Worker deaktiviert</div>';
+                    }
+                }
+                
+                // Clear all caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    for (let cacheName of cacheNames) {
+                        await caches.delete(cacheName);
+                        statusDiv.innerHTML += '<div class="status success">✓ Cache gelöscht: ' + cacheName + '</div>';
+                    }
+                }
+                
+                // Clear localStorage and sessionStorage
+                localStorage.clear();
+                sessionStorage.clear();
+                statusDiv.innerHTML += '<div class="status success">✓ LocalStorage gelöscht</div>';
+                
+                statusDiv.innerHTML += '<div class="status info">✓ Fertig! Bitte laden Sie die Seite neu.</div>';
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+                
+            } catch (error) {
+                statusDiv.innerHTML += '<div class="status" style="background:#f8d7da;color:#721c24;">✗ Fehler: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

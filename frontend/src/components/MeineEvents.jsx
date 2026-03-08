@@ -6,6 +6,7 @@ import { jwtDecode } from 'jwt-decode';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Events.css';
+import '../styles/MeineEvents.css';
 
 const MeineEvents = () => {
   const { token } = useAuth();
@@ -218,29 +219,19 @@ const MeineEvents = () => {
 
       <div className="events-content">
         {error && (
-          <div className="error-message" style={{ marginBottom: '1rem' }}>
+          <div className="error-message meine-events-message-wrapper">
             ⚠️ {error}
           </div>
         )}
 
         {success && (
-          <div className="success-message" style={{
-            marginBottom: '1rem',
-            background: 'rgba(25, 135, 84, 0.1)',
-            border: '1px solid rgba(25, 135, 84, 0.3)',
-            borderRadius: '8px',
-            padding: '1rem',
-            color: '#75d175',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}>
+          <div className="meine-events-success">
             ✅ {success}
           </div>
         )}
 
         {/* Meine angemeldeten Events */}
-        <div className="glass-card" style={{ marginBottom: '2rem' }}>
+        <div className="glass-card glass-card--mb">
           <div className="card-header">
             <h2>Meine Anmeldungen</h2>
           </div>
@@ -310,7 +301,7 @@ const MeineEvents = () => {
                       </div>
                     </div>
 
-                    <div className="event-card-footer" style={{ justifyContent: 'space-between' }}>
+                    <div className="event-card-footer event-card-footer--spread">
                       <button
                         className="btn btn-secondary"
                         onClick={() => handleShowDetails(event)}
@@ -319,13 +310,8 @@ const MeineEvents = () => {
                       </button>
                       {['angemeldet', 'bestaetigt'].includes(event.anmeldung_status) && (
                         <button
-                          className="btn btn-secondary"
+                          className="btn btn-secondary btn-danger-soft"
                           onClick={() => handleAbmelden(event.event_id)}
-                          style={{
-                            background: 'rgba(220, 53, 69, 0.2)',
-                            borderColor: 'rgba(220, 53, 69, 0.3)',
-                            color: '#ea868f'
-                          }}
                         >
                           Abmelden
                         </button>
@@ -435,7 +421,7 @@ const MeineEvents = () => {
                         )}
                       </div>
 
-                      <div className="event-card-footer" style={{ justifyContent: 'space-between' }}>
+                      <div className="event-card-footer event-card-footer--spread">
                         <button
                           className="btn btn-secondary"
                           onClick={() => handleShowDetails(event)}
@@ -471,8 +457,8 @@ const MeineEvents = () => {
               </button>
             </div>
             <div className="modal-body">
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{ color: 'var(--farbe-hauptfarbe)', marginBottom: '1rem' }}>
+              <div className="meine-events-modal-event-info">
+                <h3 className="meine-events-modal-event-title">
                   {selectedEvent.titel}
                 </h3>
                 <div className="event-info-row">
@@ -503,16 +489,7 @@ const MeineEvents = () => {
                   onChange={(e) => setBemerkung(e.target.value)}
                   rows="3"
                   placeholder="z.B. Besondere Anforderungen, Ernährungshinweise, etc."
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.3)',
-                    border: '1px solid rgba(255, 215, 0, 0.2)',
-                    borderRadius: '8px',
-                    padding: '0.75rem',
-                    color: 'var(--farbe-text)',
-                    width: '100%',
-                    resize: 'vertical',
-                    fontFamily: 'inherit'
-                  }}
+                  className="meine-events-textarea"
                 />
               </div>
             </div>

@@ -3,10 +3,10 @@
 /* Container */
 .personal-container-modern {
   min-height: 100vh;
-  background: var(--bg-body);
+  background: var(--modal-bg-dark);
   padding: 2rem;
-  color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-1);
+
 }
 
 /* Header Section */
@@ -24,11 +24,11 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 0.5rem;
-  text-shadow: 0 0 20px var(--primary-alpha-30);
+  text-shadow: 0 0 20px rgba(255,215,0,0.3);
 }
 
 .personal-subtitle {
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: 1.1rem;
   font-weight: 400;
   margin: 0;
@@ -59,7 +59,7 @@
 
 .filter-group label {
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   margin-bottom: 0.5rem;
@@ -68,36 +68,36 @@
 
 .filter-select {
   padding: 12px 16px;
-  background: var(--glass-bg-hover);
-  border: 2px solid var(--primary-alpha-40);
-  border-radius: 12px;
-  color: var(--text-primary);
+  background: var(--surface-hover);
+  border: 2px solid rgba(255,215,0,0.4);
+  border-radius: var(--comp-radius-xl);
+  color: var(--text-1);
   font-size: 1rem;
   font-weight: 600;
   min-width: 200px;
   transition: all 0.3s ease;
-  backdrop-filter: var(--glass-blur);
+  backdrop-filter: blur(10px);
 }
 
 .filter-select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
-  background: var(--bg-card-hover);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  background: var(--surface-3);
 }
 
 .filter-select option {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
   border: none;
   padding: 8px 12px;
 }
 
 .export-button-modern {
   background: linear-gradient(135deg, var(--secondary), var(--color-orange));
-  color: white;
+  color: var(--text-1);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 12px 24px;
   font-weight: 600;
   font-size: 1rem;
@@ -124,33 +124,21 @@
 }
 
 .personal-container-modern .stat-card {
-  background: var(--bg-surface) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  border-radius: 16px;
+  background: var(--surface-2) !important;
+  border: 1px solid rgba(255,215,0,0.2) !important;
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   display: flex;
   align-items: center;
   gap: 1rem;
   transition: all 0.3s ease;
-  backdrop-filter: var(--glass-blur);
+  backdrop-filter: blur(10px);
   animation: fadeInUp 0.6s ease-out both;
 }
 
 .personal-container-modern .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-}
-
-.stat-icon {
-  font-size: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60px;
-  height: 60px;
-  background: transparent;
-  color: var(--text-primary);
-  border-radius: 12px;
 }
 
 .stat-content {
@@ -160,14 +148,14 @@
 .stat-number {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
   line-height: 1;
   margin-bottom: 0.25rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   font-size: 0.9rem;
   font-weight: 500;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
@@ -183,12 +171,12 @@
 
 /* Personal Cards */
 .personal-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   transition: all 0.3s ease;
-  backdrop-filter: var(--glass-blur);
+  backdrop-filter: blur(10px);
   animation: fadeInUp 0.6s ease-out both;
 }
 
@@ -208,10 +196,10 @@
 .personal-status-badge {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text-inverse);
+  color: #000;
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   background: rgba(255, 255, 255, 0.2);
   min-width: 80px;
   text-align: center;
@@ -219,17 +207,17 @@
 
 .personal-status-badge[data-status="aktiv"] {
   background: rgba(34, 197, 94, 0.3);
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .personal-status-badge[data-status="inaktiv"] {
   background: rgba(107, 114, 128, 0.3);
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .personal-status-badge[data-status="beurlaubt"] {
   background: rgba(251, 191, 36, 0.3);
-  color: var(--text-inverse);
+  color: #000;
 }
 
 .personal-actions {
@@ -241,9 +229,9 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   background: rgba(255, 255, 255, 0.2);
-  color: white;
+  color: var(--text-1);
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
@@ -259,7 +247,7 @@
 
 .save-btn:hover { background: rgba(0, 255, 0, 0.3); }
 .cancel-btn:hover { background: rgba(255, 0, 0, 0.3); }
-.edit-btn:hover { background: var(--primary-alpha-30); }
+.edit-btn:hover { background: rgba(255,215,0,0.3); }
 .delete-btn:hover { background: rgba(255, 0, 0, 0.3); }
 
 .personal-card-content {
@@ -284,7 +272,7 @@
 
 .personal-field label {
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
@@ -293,7 +281,7 @@
 
 .personal-value {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   font-size: 1rem;
   text-align: right;
@@ -301,10 +289,10 @@
 }
 
 .position-tag {
-  background: var(--success);
-  color: white;
+  background: var(--status-success);
+  color: var(--text-1);
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 0.85rem;
   font-weight: 700;
 }
@@ -312,16 +300,16 @@
 .contact-info {
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
 }
 
 .edit-select,
 .edit-input {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.2);
-  border: 2px solid var(--primary-alpha-50);
-  border-radius: 8px;
-  color: var(--text-primary);
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -332,22 +320,22 @@
 .edit-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
-  background: var(--bg-card-hover);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  background: var(--surface-3);
 }
 
 .edit-select option {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
   border: none;
   padding: 8px 12px;
 }
 
 /* Neuer Mitarbeiter Form */
 .neuer-mitarbeiter-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out both;
 }
@@ -355,7 +343,7 @@
 /* BEM: personal__card-header */
 .personal__card-header,
 .card-header {
-  background: linear-gradient(135deg, var(--success), var(--secondary));
+  background: linear-gradient(135deg, var(--status-success), var(--secondary));
   padding: 1.5rem;
 }
 
@@ -368,7 +356,7 @@
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  text-shadow: 0 0 10px var(--primary-alpha-30);
+  text-shadow: 0 0 10px rgba(255,215,0,0.3);
 }
 
 .mitarbeiter-form-modern {
@@ -390,7 +378,7 @@
 .personal__form-group label,
 .neuer-mitarbeiter-card .form-group label {
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: 1.1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
@@ -402,10 +390,10 @@
 .neuer-mitarbeiter-card .form-input,
 .neuer-mitarbeiter-card .form-select {
   padding: 12px 16px;
-  background: var(--glass-bg-hover);
-  border: 2px solid var(--primary-alpha-40);
-  border-radius: 12px;
-  color: var(--text-primary);
+  background: var(--surface-hover);
+  border: 2px solid rgba(255,215,0,0.4);
+  border-radius: var(--comp-radius-xl);
+  color: var(--text-1);
   font-size: 1rem;
   font-weight: 600;
   transition: all 0.3s ease;
@@ -417,28 +405,28 @@
 .neuer-mitarbeiter-card .form-select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
   background: rgba(255, 255, 255, 0.2);
 }
 
 .personal__form-input::placeholder,
 .neuer-mitarbeiter-card .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
 }
 
 .personal__form-select option,
 .neuer-mitarbeiter-card .form-select option {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
   border: none;
   padding: 8px 12px;
 }
 
 .add-button-modern {
-  background: linear-gradient(135deg, var(--success), var(--secondary));
-  color: white;
+  background: linear-gradient(135deg, var(--status-success), var(--secondary));
+  color: var(--text-1);
   border: none;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 14px 28px;
   font-weight: 700;
   font-size: 1rem;
@@ -473,9 +461,9 @@
 
 .empty-state {
   text-align: center;
-  background: var(--bg-surface);
-  border: 2px dashed var(--border-default);
-  border-radius: 16px;
+  background: var(--surface-2);
+  border: 2px dashed rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
   padding: 3rem;
   max-width: 400px;
 }
@@ -487,12 +475,12 @@
 }
 
 .empty-state h3 {
-  color: var(--text-primary);
+  color: var(--text-1);
   margin-bottom: 0.5rem;
 }
 
 .empty-state p {
-  color: var(--text-secondary);
+  color: var(--text-2);
   margin: 0;
 }
 
@@ -513,7 +501,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--error);
+  color: var(--status-error);
   font-size: 1.2rem;
 }
 
@@ -594,4 +582,20 @@
   .stat-number {
     font-size: 1.5rem;
   }
+}
+
+/* Inline style migrations */
+.personal-name-edit-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.personal-name-input {
+  flex: 1;
+}
+
+.personal-contact-edit-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }

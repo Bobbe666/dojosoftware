@@ -572,7 +572,7 @@ const SuperAdminFinanzen = () => {
                   backgroundColor: 'rgba(15, 23, 42, 0.95)',
                   border: '1px solid rgba(255,215,0,0.3)',
                   borderRadius: '8px',
-                  color: '#fff'
+                  color: 'var(--text-primary)'
                 }}
                 formatter={(value) => formatCurrency(value)}
               />
@@ -641,7 +641,7 @@ const SuperAdminFinanzen = () => {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     border: '1px solid rgba(255,215,0,0.3)',
                     borderRadius: '8px',
-                    color: '#fff'
+                    color: 'var(--text-primary)'
                   }}
                 formatter={(value) => formatCurrency(value)}
               />
@@ -649,8 +649,8 @@ const SuperAdminFinanzen = () => {
           </ResponsiveContainer>
           <div className="saf__pie-legend">
             {verteilungData.map(item => (
-              <div key={item.name} className="saf__pie-legend-item">
-                <span className="saf__pie-dot" style={{ backgroundColor: item.color }} />
+              <div key={item.name} className="saf__pie-legend-item" style={{ '--dot-bg': item.color }}>
+                <span className="saf__pie-dot" />
                 <span>{item.name}</span>
                 <span className="saf__pie-value">{formatCurrency(item.value)}</span>
               </div>
@@ -698,7 +698,7 @@ const SuperAdminFinanzen = () => {
         {(selectedBereich === 'alle' || selectedBereich === 'verband') && (
           <div className="saf-card saf__detail-card">
             <div className="saf__detail-header">
-              <Users size={20} style={{ color: COLORS.verband }} />
+              <Users size={20} className="saf__detail-icon--verband" />
               <div>
                 <h3>Verband</h3>
                 <p>TDA International</p>
@@ -721,11 +721,11 @@ const SuperAdminFinanzen = () => {
               </div>
               <div className="saf__detail-row">
                 <span>Bezahlt</span>
-                <span style={{ color: COLORS.positiv }}>{formatCurrency(financeData?.verband?.einnahmen?.bezahlt || 0)}</span>
+                <span className="saf--color-positiv">{formatCurrency(financeData?.verband?.einnahmen?.bezahlt || 0)}</span>
               </div>
               <div className="saf__detail-row">
                 <span>Offen</span>
-                <span style={{ color: (financeData?.verband?.einnahmen?.offen || 0) > 0 ? COLORS.warnung : COLORS.positiv }}>
+                <span className={(financeData?.verband?.einnahmen?.offen || 0) > 0 ? 'saf--color-warnung' : 'saf--color-positiv'}>
                   {formatCurrency(financeData?.verband?.einnahmen?.offen || 0)}
                 </span>
               </div>
@@ -741,7 +741,7 @@ const SuperAdminFinanzen = () => {
         {(selectedBereich === 'alle' || selectedBereich === 'software') && (
           <div className="saf-card saf__detail-card">
             <div className="saf__detail-header">
-              <Monitor size={20} style={{ color: COLORS.software }} />
+              <Monitor size={20} className="saf__detail-icon--software" />
               <div>
                 <h3>Software</h3>
                 <p>SaaS Subscriptions</p>
@@ -774,7 +774,7 @@ const SuperAdminFinanzen = () => {
         {(selectedBereich === 'alle' || selectedBereich === 'schulen') && (
           <div className="saf-card saf__detail-card">
             <div className="saf__detail-header">
-              <GraduationCap size={20} style={{ color: COLORS.schulen }} />
+              <GraduationCap size={20} className="saf__detail-icon--schulen" />
               <div>
                 <h3>Kampfsportschulen</h3>
                 <p>KSS & TDA</p>
@@ -795,7 +795,7 @@ const SuperAdminFinanzen = () => {
               </div>
               <div className="saf__detail-row">
                 <span>Ausgaben</span>
-                <span style={{ color: COLORS.negativ }}>{formatCurrency(schulenData?.gesamteAusgaben || 0)}</span>
+                <span className="saf--color-negativ">{formatCurrency(schulenData?.gesamteAusgaben || 0)}</span>
               </div>
               <div className="saf__detail-row saf__detail-row--total">
                 <span>Gesamt</span>

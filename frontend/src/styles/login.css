@@ -49,16 +49,15 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  padding: 2rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: var(--ui-page-padding);
   animation: fadeIn 0.6s ease-out;
 }
 
 .login-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   padding: 2rem;
   width: 100%;
@@ -128,7 +127,7 @@
 /* Header */
 .login-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-header-margin-b);
   position: relative;
   z-index: 2;
   animation: fadeInUp 0.6s ease-out 0.1s both;
@@ -223,10 +222,10 @@
 .logo-icon {
   width: 48px;
   height: 48px;
-  color: #ffd700;
+  color: var(--primary);
   background: rgba(255, 215, 0, 0.1);
   padding: 10px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
@@ -245,7 +244,7 @@
 
 .subtitle {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   margin: 0.5rem 0 1rem 0;
   font-weight: 400;
 }
@@ -257,7 +256,7 @@
   background: rgba(255, 215, 0, 0.1);
   color: rgba(255, 215, 0, 0.9);
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   font-size: 0.85rem;
   border: 1px solid rgba(255, 215, 0, 0.2);
   font-weight: 500;
@@ -266,7 +265,7 @@
 .login-title {
   font-size: 2rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6);
@@ -274,7 +273,7 @@
 
 .login-subtitle {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   margin: 0;
 }
 
@@ -309,7 +308,7 @@
 }
 
 .form-label {
-  color: #ffffff;
+  color: var(--text-1);
   font-weight: 600;
   margin-bottom: 0.5rem;
   font-size: 0.95rem;
@@ -326,7 +325,7 @@
 }
 
 .label-icon {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .input-wrapper {
@@ -337,9 +336,9 @@
   width: 100%;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 14px 16px;
-  color: #ffffff;
+  color: var(--text-1);
   font-size: 1rem;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -356,8 +355,14 @@
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-weight: 400;
+}
+
+.form-hint {
+  margin: 4px 0 0 0;
+  font-size: 0.78rem;
+  color: var(--text-3);
 }
 
 .password-wrapper {
@@ -376,7 +381,7 @@
   gap: 0.4rem;
   margin-top: 0.5rem;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   font-style: italic;
 }
 
@@ -387,12 +392,12 @@
   transform: translateY(-50%);
   width: 18px;
   height: 18px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   transition: color 0.3s ease;
 }
 
 .form-input:focus + .input-icon {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .password-toggle {
@@ -403,14 +408,14 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   transition: color 0.3s ease;
   padding: 8px;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
 }
 
 .password-toggle:hover {
-  color: #ffd700;
+  color: var(--primary);
   background: rgba(255, 215, 0, 0.1);
 }
 
@@ -418,7 +423,7 @@
 .login-type-toggle {
   display: flex;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 4px;
   margin-bottom: 1rem;
 }
@@ -428,8 +433,8 @@
   padding: 10px 16px;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9rem;
@@ -450,7 +455,7 @@
   background: linear-gradient(135deg, #ffd700, #ff6b35);
   color: #1a1a2e;
   border: none;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 14px 24px;
   font-weight: 600;
   font-size: 1rem;
@@ -495,7 +500,7 @@
 /* Messages */
 .message, .error-message, .success-message {
   padding: 14px 16px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -509,35 +514,35 @@
 .error-message {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #ff8a8a;
+  color: var(--status-error);
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
 }
 
 .success-message {
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.4);
-  color: #4ade80;
+  color: var(--status-success);
   box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
 }
 
 .message.error {
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  border: 1px solid var(--status-error);
+  color: var(--status-error);
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
 }
 
 .message.success {
   background: rgba(34, 197, 94, 0.1);
-  border: 1px solid #ffd700;
-  color: #ffd700;
+  border: 1px solid var(--primary);
+  color: var(--primary);
   box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
 }
 
 .message.info {
   background: rgba(59, 130, 246, 0.1);
-  border: 1px solid #ffd700;
-  color: #ffd700;
+  border: 1px solid var(--primary);
+  color: var(--primary);
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
 }
 
@@ -546,7 +551,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top: 2px solid #ffd700;
+  border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
@@ -554,7 +559,7 @@
 
 /* Registration Section */
 .registration-section {
-  margin-top: 2rem;
+  margin-top: var(--ui-section-gap);
   text-align: center;
 }
 
@@ -581,7 +586,7 @@
 .registration-divider {
   position: relative;
   margin: 1.5rem 0;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   font-size: 0.9rem;
 }
 
@@ -596,9 +601,9 @@
 }
 
 .registration-divider span {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -608,7 +613,7 @@
   color: #000;
   border: none;
   padding: 1rem 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -638,7 +643,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-size: 0.85rem;
   margin: 0;
   font-style: italic;
@@ -646,7 +651,7 @@
 
 /* Test Accounts */
 .test-accounts {
-  margin-top: 2rem;
+  margin-top: var(--ui-section-gap);
   animation: fadeInUp 0.6s ease-out 0.7s both;
 }
 
@@ -657,7 +662,7 @@
   cursor: pointer;
   font-size: 0.9rem;
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
@@ -669,7 +674,7 @@
 }
 
 .test-accounts-toggle:hover {
-  color: #ffd700;
+  color: var(--primary);
   border-color: rgba(255, 215, 0, 0.6);
   background: rgba(255, 215, 0, 0.1);
   transform: translateY(-2px);
@@ -678,7 +683,7 @@
 .test-accounts-button {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   cursor: pointer;
   font-size: 0.8rem;
   text-decoration: underline;
@@ -686,14 +691,14 @@
 }
 
 .test-accounts-button:hover {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .test-accounts-list {
   margin-top: 1rem;
   padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.2);
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.4s ease-out;
@@ -712,8 +717,8 @@
 }
 
 .account-card {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-lg);
   padding: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
@@ -736,7 +741,7 @@
 }
 
 .account-desc {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   font-size: 0.75rem;
   margin-top: 2px;
 }
@@ -752,23 +757,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-size: 0.8rem;
 }
 
 .account-field code {
   background: rgba(0, 0, 0, 0.2);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-family: 'Monaco', 'Consolas', monospace;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
 }
 
 .account-fill-button {
   background: rgba(255, 215, 0, 0.2);
   color: rgba(255, 215, 0, 0.9);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 6px 12px;
   font-size: 0.8rem;
   cursor: pointer;
@@ -785,7 +790,7 @@
   margin-top: 1rem;
   padding: 0.75rem;
   background: rgba(59, 130, 246, 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   border-left: 3px solid rgba(59, 130, 246, 0.5);
   display: flex;
   align-items: flex-start;
@@ -797,7 +802,7 @@
 
 .test-accounts h4 {
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   margin: 0 0 0.5rem 0;
 }
 
@@ -821,20 +826,20 @@
 
 .test-account-role {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
 }
 
 .test-account-credentials {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-3);
   font-family: 'Monaco', 'Consolas', monospace;
 }
 
 .test-account-use {
   background: rgba(255, 215, 0, 0.2);
-  color: #ffd700;
+  color: var(--primary);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 4px 12px;
   font-size: 0.75rem;
   cursor: pointer;
@@ -850,7 +855,7 @@
 /* Responsive */
 @media (max-width: 480px) {
   .login-container {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
   
   .login-card {
@@ -873,14 +878,14 @@
 
 /* Focus Management */
 .form-input:focus-visible {
-  outline: 2px solid #ffd700;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .login-button:focus-visible,
 .test-accounts-button:focus-visible,
 .password-toggle:focus-visible {
-  outline: 2px solid #ffd700;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 /* ============================================
@@ -889,24 +894,24 @@
 
 /* Club Logo - Runder Kreis mit dunkelrotem Rand */
 .club-member-login .branding-logo {
-  width: 250px;
-  height: 250px;
+  width: 400px;
+  height: 400px;
   object-fit: contain;
   border-radius: 50%;
-  border: 4px solid #8B0000;
-  padding: 20px;
+  border: 5px solid #8B0000;
+  padding: 2px;
   background: transparent;
   box-shadow: 0 8px 32px rgba(139, 0, 0, 0.3);
   margin-bottom: 2rem;
 }
 
 .club-member-login .club-logo-large {
-  width: 250px;
-  height: 250px;
+  width: 400px;
+  height: 400px;
   object-fit: contain;
   border-radius: 50%;
-  border: 4px solid #8B0000;
-  padding: 20px;
+  border: 5px solid #8B0000;
+  padding: 2px;
   background: transparent;
   box-shadow: 0 8px 32px rgba(139, 0, 0, 0.3);
 }
@@ -923,9 +928,9 @@
 @media (max-width: 768px) {
   .club-member-login .branding-logo,
   .club-member-login .club-logo-large {
-    width: 180px;
-    height: 180px;
-    padding: 15px;
+    width: 220px;
+    height: 220px;
+    padding: 8px;
   }
 }
 
@@ -957,14 +962,14 @@
 .branding-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 1rem;
   text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
 }
 
 .branding-subtitle {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   margin-bottom: 2rem;
 }
 
@@ -994,7 +999,7 @@
   .login-forms-area {
     flex: none;
     min-height: 50vh;
-    padding: 2rem;
+    padding: var(--ui-page-padding);
   }
 }
 
@@ -1005,12 +1010,12 @@
   gap: 0.5rem;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .login-card-title svg {
-  color: #ffd700;
+  color: var(--primary);
 }

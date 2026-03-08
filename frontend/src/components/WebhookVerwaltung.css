@@ -1,0 +1,27 @@
+/* WebhookVerwaltung.css — extracted utility classes */
+
+.wv-zapier-color {
+  color: #ff4a00;
+}
+
+.wv-zapier-desc {
+  margin: 4px 0 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.wv-empty-msg {
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.wv-meta-text {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.wv-status-dot--active { background: #22c55e; }
+.wv-status-dot--inactive { background: #ef4444; }
+
+.wv-test-result--ok { background: rgba(34, 197, 94, 0.1); border-color: #22c55e; }
+.wv-test-result--error { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }

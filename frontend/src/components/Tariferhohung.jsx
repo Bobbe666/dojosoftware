@@ -15,6 +15,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
+import "../styles/Tariferhohung.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const Tariferhohung = () => {
@@ -205,57 +206,31 @@ const Tariferhohung = () => {
 
   if (loading) {
     return (
-      <div className="page-container" style={{ padding: '2rem' }}>
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '300px'
-        }}>
-          <div className="spinner" style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid var(--border-default, rgba(255,255,255,0.1))',
-            borderTop: '3px solid var(--color-gold, #f59e0b)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <p style={{ marginTop: '1rem', color: 'var(--text-secondary)' }}>Lade Daten...</p>
+      <div className="page-container te-page-pad">
+        <div className="te-loading-center">
+          <div className="te-spinner" />
+          <p className="te-loading-text">Lade Daten...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container" style={{ padding: '2rem' }}>
+    <div className="page-container te-page-pad">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        marginBottom: '2rem'
-      }}>
+      <div className="te-header-row">
         <button
           onClick={() => navigate('/dashboard/finanzcockpit')}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-secondary)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0.5rem'
-          }}
+          className="te-back-btn"
         >
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-primary)' }}>
-            <TrendingUp size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem', color: 'var(--color-gold, #f59e0b)' }} />
+          <h1 className="te-page-title">
+            <TrendingUp size={28} className="te-title-icon" />
             Tariferhöhung
           </h1>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-muted)' }}>
+          <p className="te-page-subtitle">
             Mitglieder, die unter dem aktuellen Tarifpreis zahlen
           </p>
         </div>
@@ -263,54 +238,31 @@ const Tariferhohung = () => {
 
       {/* Summary Cards */}
       {data && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '1rem',
-          marginBottom: '2rem'
-        }}>
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '12px',
-            padding: '1.5rem',
-            border: '1px solid var(--border-default, var(--border-primary))',
-            boxShadow: 'var(--shadow-sm, none)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <Users size={18} style={{ color: 'var(--color-gold, #f59e0b)' }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Betroffene Mitglieder</span>
+        <div className="te-summary-grid">
+          <div className="te-summary-card">
+            <div className="te-flex-row-mb">
+              <Users size={18} className="te-icon-gold" />
+              <span className="te-muted-sm">Betroffene Mitglieder</span>
             </div>
-            <span style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--text-primary)' }}>{data.anzahl}</span>
+            <span className="te-stat-primary">{data.anzahl}</span>
           </div>
 
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '12px',
-            padding: '1.5rem',
-            border: '1px solid var(--border-default, var(--border-primary))',
-            boxShadow: 'var(--shadow-sm, none)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <DollarSign size={18} style={{ color: 'var(--color-bamboo, #10b981)' }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Monatliches Potential</span>
+          <div className="te-summary-card">
+            <div className="te-flex-row-mb">
+              <DollarSign size={18} className="te-icon-bamboo" />
+              <span className="te-muted-sm">Monatliches Potential</span>
             </div>
-            <span style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--color-bamboo, #10b981)' }}>
+            <span className="te-stat-bamboo">
               {formatCurrency(data.monatlichesPotential)}
             </span>
           </div>
 
-          <div style={{
-            background: 'var(--bg-card)',
-            borderRadius: '12px',
-            padding: '1.5rem',
-            border: '1px solid var(--border-default, var(--border-primary))',
-            boxShadow: 'var(--shadow-sm, none)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <Calendar size={18} style={{ color: 'var(--color-indigo, #8b5cf6)' }} />
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Jährliches Potential</span>
+          <div className="te-summary-card">
+            <div className="te-flex-row-mb">
+              <Calendar size={18} className="te-icon-indigo" />
+              <span className="te-muted-sm">Jährliches Potential</span>
             </div>
-            <span style={{ fontSize: '2rem', fontWeight: '700', color: 'var(--color-indigo, #8b5cf6)' }}>
+            <span className="te-stat-indigo">
               {formatCurrency(data.jaehrlichesPotential)}
             </span>
           </div>
@@ -319,30 +271,18 @@ const Tariferhohung = () => {
 
       {/* Schnelle Erhöhungsoptionen */}
       {data && data.anzahl > 0 && (
-        <div style={{
-          background: 'var(--bg-card)',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          marginBottom: '1.5rem',
-          border: '1px solid var(--border-default, var(--border-primary))',
-          boxShadow: 'var(--shadow-sm, none)'
-        }}>
-          <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', color: 'var(--text-primary)' }}>
+        <div className="te-quick-card">
+          <h3 className="te-quick-title">
             Schnelle Erhöhung für alle Mitglieder
           </h3>
 
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '1.5rem',
-            alignItems: 'flex-end'
-          }}>
+          <div className="te-quick-row">
             {/* Prozentuale Erhöhung */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <div className="u-flex-col-sm">
+              <label className="te-text-muted-sm">
                 Prozentuale Erhöhung
               </label>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div className="te-flex-gap-sm">
                 <input
                   type="number"
                   step="0.5"
@@ -350,31 +290,13 @@ const Tariferhohung = () => {
                   max="100"
                   value={percentageIncrease}
                   onChange={(e) => setPercentageIncrease(parseFloat(e.target.value) || 0)}
-                  style={{
-                    width: '80px',
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-default, var(--border-primary))',
-                    background: 'var(--input-bg, var(--bg-input))',
-                    color: 'var(--text-primary)',
-                    textAlign: 'right',
-                    fontFamily: 'monospace'
-                  }}
+                  className="te-input-number"
                 />
-                <span style={{ color: 'var(--text-secondary)' }}>%</span>
+                <span className="u-text-secondary">%</span>
                 <button
                   onClick={applyPercentageToAll}
                   disabled={saving}
-                  style={{
-                    background: 'var(--color-indigo, #3b82f6)',
-                    border: 'none',
-                    color: '#fff',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '500',
-                    whiteSpace: 'nowrap'
-                  }}
+                  className="te-btn-indigo"
                 >
                   Alle +{percentageIncrease}%
                 </button>
@@ -382,42 +304,24 @@ const Tariferhohung = () => {
             </div>
 
             {/* Fester Betrag */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <div className="u-flex-col-sm">
+              <label className="te-text-muted-sm">
                 Fester Betrag
               </label>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div className="te-flex-gap-sm">
                 <input
                   type="number"
                   step="0.50"
                   min="0"
                   value={fixedIncrease}
                   onChange={(e) => setFixedIncrease(parseFloat(e.target.value) || 0)}
-                  style={{
-                    width: '80px',
-                    padding: '0.5rem',
-                    borderRadius: '6px',
-                    border: '1px solid var(--border-default, var(--border-primary))',
-                    background: 'var(--input-bg, var(--bg-input))',
-                    color: 'var(--text-primary)',
-                    textAlign: 'right',
-                    fontFamily: 'monospace'
-                  }}
+                  className="te-input-number"
                 />
-                <span style={{ color: 'var(--text-secondary)' }}>EUR</span>
+                <span className="u-text-secondary">EUR</span>
                 <button
                   onClick={applyFixedToAll}
                   disabled={saving}
-                  style={{
-                    background: 'var(--color-vermillion, #8b5cf6)',
-                    border: 'none',
-                    color: '#fff',
-                    padding: '0.5rem 1rem',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '500',
-                    whiteSpace: 'nowrap'
-                  }}
+                  className="te-btn-vermillion"
                 >
                   Alle +{formatCurrency(fixedIncrease)}
                 </button>
@@ -425,35 +329,21 @@ const Tariferhohung = () => {
             </div>
 
             {/* Auf Tarifpreis */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+            <div className="u-flex-col-sm">
+              <label className="te-text-muted-sm">
                 Tarifpreis
               </label>
               <button
                 onClick={setAllToTarifPrice}
                 disabled={saving}
-                style={{
-                  background: 'var(--color-bamboo, #10b981)',
-                  border: 'none',
-                  color: '#fff',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                  whiteSpace: 'nowrap'
-                }}
+                className="te-btn-bamboo"
               >
                 Alle auf Tarifpreis
               </button>
             </div>
           </div>
 
-          <p style={{
-            margin: '1rem 0 0',
-            fontSize: '0.8rem',
-            color: 'var(--text-muted)',
-            fontStyle: 'italic'
-          }}>
+          <p className="te-quick-hint">
             Die Beträge werden in der Spalte "Neuer Beitrag" vorausgefüllt.
             Klicken Sie dann auf "Alle erhöhen" um die Änderungen zu speichern.
           </p>
@@ -462,34 +352,14 @@ const Tariferhohung = () => {
 
       {/* Messages */}
       {successMessage && (
-        <div style={{
-          background: 'var(--alert-success-bg, rgba(16, 185, 129, 0.15))',
-          border: 'var(--alert-success-border, 1px solid rgba(16, 185, 129, 0.3))',
-          borderRadius: '8px',
-          padding: '1rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'var(--color-bamboo, #10b981)'
-        }}>
+        <div className="te-alert-success">
           <CheckCircle2 size={20} />
           {successMessage}
         </div>
       )}
 
       {errorMessage && (
-        <div style={{
-          background: 'var(--alert-error-bg, rgba(239, 68, 68, 0.15))',
-          border: 'var(--alert-error-border, 1px solid rgba(239, 68, 68, 0.3))',
-          borderRadius: '8px',
-          padding: '1rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          color: 'var(--color-vermillion, #ef4444)'
-        }}>
+        <div className="te-alert-error">
           <AlertCircle size={20} />
           {errorMessage}
         </div>
@@ -497,41 +367,21 @@ const Tariferhohung = () => {
 
       {/* Action Buttons */}
       {data && data.anzahl > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: '1rem',
-          marginBottom: '1.5rem',
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
+        <div className="te-action-row">
           <button
             onClick={selectAll}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--border-default, var(--border-primary))',
-              color: 'var(--text-primary)',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
+            className="te-btn-outline"
           >
             Alle auswählen
           </button>
           <button
             onClick={deselectAll}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--border-default, var(--border-primary))',
-              color: 'var(--text-primary)',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
+            className="te-btn-outline"
           >
             Auswahl aufheben
           </button>
 
-          <div style={{ flex: 1 }} />
+          <div className="u-flex-1" />
 
           <button
             onClick={increaseSelected}
@@ -539,7 +389,7 @@ const Tariferhohung = () => {
             style={{
               background: selectedIds.size === 0 ? 'var(--primary-alpha-30, rgba(139, 92, 246, 0.3))' : 'var(--color-vermillion, #8b5cf6)',
               border: 'none',
-              color: '#fff',
+              color: 'var(--text-primary)',
               padding: '0.75rem 1.5rem',
               borderRadius: '8px',
               cursor: selectedIds.size === 0 ? 'not-allowed' : 'pointer',
@@ -556,18 +406,7 @@ const Tariferhohung = () => {
           <button
             onClick={increaseAll}
             disabled={saving}
-            style={{
-              background: 'var(--color-gold, #f59e0b)',
-              border: 'none',
-              color: 'var(--color-sumi, #000)',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
+            className="te-btn-gold"
           >
             <TrendingUp size={18} />
             Alle erhöhen
@@ -577,32 +416,26 @@ const Tariferhohung = () => {
 
       {/* Table */}
       {data && data.anzahl > 0 ? (
-        <div style={{
-          background: 'var(--bg-card)',
-          borderRadius: '12px',
-          border: '1px solid var(--border-default, var(--border-primary))',
-          overflow: 'hidden',
-          boxShadow: 'var(--shadow-sm, none)'
-        }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="te-table-card">
+          <div className="te-table-scroll">
+            <table className="te-table">
               <thead>
-                <tr style={{ background: 'var(--table-header-bg, rgba(255,255,255,0.05))' }}>
-                  <th style={{ padding: '1rem', textAlign: 'center', width: '50px' }}>
+                <tr className="te-thead-row">
+                  <th className="te-th-check">
                     <input
                       type="checkbox"
                       checked={selectedIds.size === data.mitglieder.length && data.mitglieder.length > 0}
                       onChange={(e) => e.target.checked ? selectAll() : deselectAll()}
-                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      className="te-icon-input"
                     />
                   </th>
-                  <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Name</th>
-                  <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tarif</th>
-                  <th style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Aktuell</th>
-                  <th style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tarifpreis</th>
-                  <th style={{ padding: '1rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Differenz</th>
-                  <th style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', width: '140px' }}>Neuer Beitrag</th>
-                  <th style={{ padding: '1rem', textAlign: 'center', width: '100px' }}>Aktion</th>
+                  <th className="te-th-left">Name</th>
+                  <th className="te-th-left">Tarif</th>
+                  <th className="te-th-right">Aktuell</th>
+                  <th className="te-th-right">Tarifpreis</th>
+                  <th className="te-th-right">Differenz</th>
+                  <th className="te-th-neuer-beitrag">Neuer Beitrag</th>
+                  <th className="te-th-aktion">Aktion</th>
                 </tr>
               </thead>
               <tbody>
@@ -614,76 +447,49 @@ const Tariferhohung = () => {
                       background: selectedIds.has(member.vertragId) ? 'var(--primary-alpha-10, rgba(139, 92, 246, 0.1))' : 'transparent'
                     }}
                   >
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <td className="te-td-center">
                       <input
                         type="checkbox"
                         checked={selectedIds.has(member.vertragId)}
                         onChange={() => toggleSelect(member.vertragId)}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        className="te-icon-input"
                       />
                     </td>
-                    <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{member.vorname} {member.nachname}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    <td className="te-td-pad">
+                      <div className="te-member-name">{member.vorname} {member.nachname}</div>
+                      <div className="te-member-email">
                         {member.email}
                       </div>
                     </td>
-                    <td style={{ padding: '1rem' }}>
-                      <span style={{
-                        background: 'var(--badge-primary-bg, rgba(139, 92, 246, 0.2))',
-                        color: 'var(--badge-primary-text, #a78bfa)',
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '999px',
-                        fontSize: '0.8rem',
-                        fontWeight: '500'
-                      }}>
+                    <td className="te-td-pad">
+                      <span className="te-tarif-badge">
                         {member.tarifName}
                       </span>
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'monospace', color: 'var(--text-primary)' }}>
+                    <td className="te-td-mono-primary">
                       {formatCurrency(member.aktuellerBeitrag)}
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-bamboo, #10b981)' }}>
+                    <td className="te-td-mono-bamboo">
                       {formatCurrency(member.tarifPreis)}
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-vermillion, #ef4444)' }}>
+                    <td className="te-td-mono-vermillion">
                       +{formatCurrency(member.differenz)}
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <td className="te-td-center">
                       <input
                         type="number"
                         step="0.01"
                         min="0"
                         value={customAmounts[member.vertragId] || ''}
                         onChange={(e) => handleAmountChange(member.vertragId, e.target.value)}
-                        style={{
-                          width: '100px',
-                          padding: '0.5rem',
-                          borderRadius: '6px',
-                          border: '1px solid var(--border-default, var(--border-primary))',
-                          background: 'var(--input-bg, var(--bg-input))',
-                          color: 'var(--text-primary)',
-                          textAlign: 'right',
-                          fontFamily: 'monospace'
-                        }}
+                        className="te-input-amount"
                       />
                     </td>
-                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                    <td className="te-td-center">
                       <button
                         onClick={() => increaseSingle(member.vertragId)}
                         disabled={saving}
-                        style={{
-                          background: 'var(--color-bamboo, #10b981)',
-                          border: 'none',
-                          color: '#fff',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '6px',
-                          cursor: 'pointer',
-                          fontWeight: '500',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.25rem'
-                        }}
+                        className="te-btn-row-bamboo"
                       >
                         <Check size={16} />
                         Erhöhen
@@ -696,17 +502,10 @@ const Tariferhohung = () => {
           </div>
         </div>
       ) : (
-        <div style={{
-          background: 'var(--bg-card)',
-          borderRadius: '12px',
-          padding: '3rem',
-          textAlign: 'center',
-          border: '1px solid var(--border-default, var(--border-primary))',
-          boxShadow: 'var(--shadow-sm, none)'
-        }}>
-          <CheckCircle2 size={48} style={{ color: 'var(--color-bamboo, #10b981)', marginBottom: '1rem' }} />
-          <h3 style={{ margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>Keine Abweichungen</h3>
-          <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+        <div className="te-empty-card">
+          <CheckCircle2 size={48} className="te-empty-icon" />
+          <h3 className="te-empty-title">Keine Abweichungen</h3>
+          <p className="te-empty-text">
             Alle Mitglieder zahlen bereits den aktuellen Tarifpreis oder mehr.
           </p>
         </div>

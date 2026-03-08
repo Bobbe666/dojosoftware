@@ -40,6 +40,7 @@ const ArtikelVerwaltung = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKategorie, setSelectedKategorie] = useState('');
   const [showOnlyActive, setShowOnlyActive] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   // Tab Navigation States (ersetzt Steps)
   const [activeTab, setActiveTab] = useState('basis'); // 'basis', 'preise', 'lager', 'einstellungen'
@@ -274,11 +275,43 @@ const ArtikelVerwaltung = () => {
     const matchesSearch = artikel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          artikel.artikel_nummer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          artikel.ean_code?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesKategorie = !selectedKategorie || artikel.kategorie_id == selectedKategorie;
-    
+
     return matchesSearch && matchesKategorie;
   });
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const sortedArtikel = [...filteredArtikel].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    let aVal, bVal;
+    switch (sortConfig.key) {
+      case 'name':        aVal = (a.name || '').toLowerCase();              bVal = (b.name || '').toLowerCase();              break;
+      case 'gruppe':      aVal = (a.artikelgruppe_name || '').toLowerCase(); bVal = (b.artikelgruppe_name || '').toLowerCase(); break;
+      case 'kategorie':   aVal = (a.kategorie_name || '').toLowerCase();    bVal = (b.kategorie_name || '').toLowerCase();    break;
+      case 'ek':          aVal = Number(a.einkaufspreis_euro) || 0;          bVal = Number(b.einkaufspreis_euro) || 0;          break;
+      case 'vk':          aVal = Number(a.verkaufspreis_euro) || 0;          bVal = Number(b.verkaufspreis_euro) || 0;          break;
+      case 'mwst':        aVal = Number(a.mwst_prozent) || 19;              bVal = Number(b.mwst_prozent) || 19;              break;
+      case 'lager':       aVal = a.lager_tracking ? Number(a.lagerbestand) || 0 : -Infinity;
+                          bVal = b.lager_tracking ? Number(b.lagerbestand) || 0 : -Infinity; break;
+      case 'status':      aVal = a.aktiv ? 1 : 0;                           bVal = b.aktiv ? 1 : 0;                           break;
+      default: return 0;
+    }
+    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const SortIcon = ({ col }) => {
+    if (sortConfig.key !== col) return <span className="sort-icon sort-icon--idle">↕</span>;
+    return <span className="sort-icon sort-icon--active">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+  };
   
   // =====================================================================================
   // EFFECTS
@@ -472,11 +505,11 @@ const ArtikelVerwaltung = () => {
     };
 
     return (
-      <div className="tab-content-section" style={{flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden'}}>
-        <div className="preiskalkulation-container" style={{height: '100%', overflow: 'hidden', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
+      <div className="tab-content-section av-tab-flex">
+        <div className="preiskalkulation-container av-kalk-container">
           {/* Eingabebereich */}
-          <div className="preis-eingabe-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(0, 0, 0, 0.3)', border: '2px solid rgba(255, 215, 0, 0.2)', borderRadius: '8px'}}>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
+          <div className="preis-eingabe-section av-eingabe-section">
+            <h3 className="av-section-h3">
               📝 Eingabe
             </h3>
 
@@ -493,7 +526,7 @@ const ArtikelVerwaltung = () => {
                   className="form-input"
                   placeholder="0.00"
                 />
-                <small style={{color: '#888', fontSize: '0.85rem'}}>Herstellpreis/Einkaufspreis netto</small>
+                <small className="av-small-muted">Herstellpreis/Einkaufspreis netto</small>
               </div>
 
               <div className="form-group">
@@ -508,7 +541,7 @@ const ArtikelVerwaltung = () => {
                   className="form-input"
                   placeholder="0.00"
                 />
-                <small style={{color: '#888', fontSize: '0.85rem'}}>Versand, Verpackung, etc.</small>
+                <small className="av-small-muted">Versand, Verpackung, etc.</small>
               </div>
 
               <div className="form-group">
@@ -523,7 +556,7 @@ const ArtikelVerwaltung = () => {
                   className="form-input"
                   placeholder="0.00"
                 />
-                <small style={{color: '#888', fontSize: '0.85rem'}}>Gewinnaufschlag in %</small>
+                <small className="av-small-muted">Gewinnaufschlag in %</small>
               </div>
 
               <div className="form-group">
@@ -539,7 +572,7 @@ const ArtikelVerwaltung = () => {
                   className="form-input"
                   placeholder="0.00"
                 />
-                <small style={{color: '#888', fontSize: '0.85rem'}}>Netto-Verkaufspreis</small>
+                <small className="av-small-muted">Netto-Verkaufspreis</small>
               </div>
 
               <div className="form-group">
@@ -558,66 +591,66 @@ const ArtikelVerwaltung = () => {
           </div>
 
           {/* Kalkulationsübersicht */}
-          <div className="preis-kalkulation-section" style={{overflowY: 'auto', maxHeight: '100%', padding: '0.85rem', background: 'rgba(255, 215, 0, 0.05)', border: '2px solid rgba(255, 215, 0, 0.3)', borderRadius: '8px'}}>
-            <h3 style={{marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600}}>
+          <div className="preis-kalkulation-section av-result-section">
+            <h3 className="av-section-h3">
               📊 Kalkulation
             </h3>
 
-            <div className="kalkulation-table" style={{display: 'flex', flexDirection: 'column', gap: '0.35rem'}}>
-              <div className="kalkulation-row" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+            <div className="kalkulation-table av-kalk-col">
+              <div className="kalkulation-row av-kalk-row-sm">
                 <span className="kalkulation-label">Einkaufspreis (Netto)</span>
                 <span className="kalkulation-value">{einkaufspreis.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row av-kalk-row-sm">
                 <span className="kalkulation-label">+ Zusatzkosten</span>
                 <span className="kalkulation-value">{zusatzkosten.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row total" style={{padding: '0.5rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row total av-kalk-row-total">
                 <span className="kalkulation-label"><strong>= Zwischensumme</strong></span>
                 <span className="kalkulation-value"><strong>{zwischensumme.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row highlight" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row highlight av-kalk-row-sm">
                 <span className="kalkulation-label">+ Marge ({marge_prozent.toFixed(1)}%)</span>
                 <span className="kalkulation-value">{marge_euro.toFixed(2)} €</span>
               </div>
 
               {marge_prozent > 0 && (
-                <div className="kalkulation-row info" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+                <div className="kalkulation-row info av-kalk-row-sm">
                   <span className="kalkulation-label">→ Kalkulierter VK (Netto)</span>
                   <span className="kalkulation-value">{kalkulierter_vk.toFixed(2)} €</span>
                 </div>
               )}
 
-              <div className="kalkulation-row total" style={{padding: '0.5rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row total av-kalk-row-total">
                 <span className="kalkulation-label"><strong>= Verkaufspreis (Netto)</strong></span>
                 <span className="kalkulation-value"><strong>{verkaufspreis_netto.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-row" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row av-kalk-row-sm">
                 <span className="kalkulation-label">+ MwSt. ({mwst_prozent}%)</span>
                 <span className="kalkulation-value">{mwst_betrag.toFixed(2)} €</span>
               </div>
 
-              <div className="kalkulation-row final" style={{padding: '0.6rem 0.7rem', fontSize: '0.9rem'}}>
+              <div className="kalkulation-row final av-kalk-row-final">
                 <span className="kalkulation-label"><strong>= VERKAUFSPREIS (BRUTTO)</strong></span>
                 <span className="kalkulation-value final-price"><strong>{verkaufspreis_brutto.toFixed(2)} €</strong></span>
               </div>
 
-              <div className="kalkulation-divider" style={{margin: '0.5rem 0', height: '1px'}}></div>
+              <div className="kalkulation-divider av-kalk-divider"></div>
 
-              <div className="kalkulation-row profit" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row profit av-kalk-row-sm">
                 <span className="kalkulation-label">💰 Gewinn pro Stück</span>
-                <span className="kalkulation-value" style={{color: gewinn >= 0 ? '#10b981' : '#ef4444'}}>
+                <span className={`kalkulation-value${gewinn >= 0 ? ' kalkulation-value--positive' : ' kalkulation-value--negative'}`}>
                   {gewinn.toFixed(2)} €
                 </span>
               </div>
 
-              <div className="kalkulation-row profit" style={{padding: '0.4rem 0.7rem', fontSize: '0.85rem'}}>
+              <div className="kalkulation-row profit av-kalk-row-sm">
                 <span className="kalkulation-label">📈 Gewinnspanne</span>
-                <span className="kalkulation-value" style={{color: gewinnspanne_prozent >= 0 ? '#10b981' : '#ef4444'}}>
+                <span className={`kalkulation-value${gewinnspanne_prozent >= 0 ? ' kalkulation-value--positive' : ' kalkulation-value--negative'}`}>
                   {gewinnspanne_prozent.toFixed(1)} %
                 </span>
               </div>
@@ -661,13 +694,13 @@ const ArtikelVerwaltung = () => {
 
         <div className="form-group">
           <label>Farbe</label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <div className="u-flex-gap-sm">
             <input
               type="color"
               name="farbe_hex"
               value={formData.farbe_hex}
               onChange={handleInputChange}
-              style={{ width: '60px', height: '42px', cursor: 'pointer' }}
+              className="av-color-picker"
             />
             <input
               type="text"
@@ -851,7 +884,7 @@ const ArtikelVerwaltung = () => {
         fontSize: '13px',
         background: isDark ? '#d4a017' : '#007bff',
         border: 'none',
-        color: '#ffffff',
+        color: 'var(--text-primary)',
         cursor: 'pointer',
         fontWeight: '500'
       };
@@ -910,22 +943,22 @@ const ArtikelVerwaltung = () => {
             <div style={bodyStyle}>
               <div style={infoCardStyle}>
                 <h4 style={infoTitleStyle}>{selectedArtikel?.name}</h4>
-                <div style={{display: 'flex', gap: '12px'}}>
+                <div className="av-stock-info-row">
                   <div style={infoBoxStyle}>
-                    <div style={{fontSize: '11px', color: isDark ? '#a0a0a0' : '#666', marginBottom: '4px'}}>Aktueller Bestand</div>
-                    <div style={{fontSize: '18px', fontWeight: '600', color: isDark ? '#fff' : '#2c3e50'}}>{selectedArtikel?.lagerbestand}</div>
+                    <div className="av-stock-label">Aktueller Bestand</div>
+                    <div className="av-stock-value">{selectedArtikel?.lagerbestand}</div>
                   </div>
                   <div style={infoBoxStyle}>
-                    <div style={{fontSize: '11px', color: isDark ? '#a0a0a0' : '#666', marginBottom: '4px'}}>Mindestbestand</div>
-                    <div style={{fontSize: '18px', fontWeight: '600', color: isDark ? '#fff' : '#2c3e50'}}>{selectedArtikel?.mindestbestand}</div>
+                    <div className="av-stock-label">Mindestbestand</div>
+                    <div className="av-stock-value">{selectedArtikel?.mindestbestand}</div>
                   </div>
                 </div>
               </div>
 
-              <div style={{display: 'flex', flexDirection: 'column', gap: '14px'}}>
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px'}}>
-                  <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
-                    <label style={{fontSize: '11px', fontWeight: '500', color: isDark ? '#a0a0a0' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Bewegungsart</label>
+              <div className="av-form-col">
+                <div className="av-form-grid-2">
+                  <div className="av-form-field">
+                    <label className="av-form-field-label">Bewegungsart</label>
                     <select
                       name="bewegungsart"
                       value={lagerBewegung.bewegungsart}
@@ -937,8 +970,8 @@ const ArtikelVerwaltung = () => {
                     </select>
                   </div>
 
-                  <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
-                    <label style={{fontSize: '11px', fontWeight: '500', color: isDark ? '#a0a0a0' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Menge</label>
+                  <div className="av-form-field">
+                    <label className="av-form-field-label">Menge</label>
                     <input
                       type="number"
                       name="menge"
@@ -952,8 +985,8 @@ const ArtikelVerwaltung = () => {
                   </div>
                 </div>
 
-                <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
-                  <label style={{fontSize: '11px', fontWeight: '500', color: isDark ? '#a0a0a0' : '#666', textTransform: 'uppercase', letterSpacing: '0.5px'}}>Grund</label>
+                <div className="av-form-field">
+                  <label className="av-form-field-label">Grund</label>
                   <input
                     type="text"
                     name="grund"
@@ -981,8 +1014,8 @@ const ArtikelVerwaltung = () => {
 
     // Neues Tab-basiertes Modal für Create/Edit
     return (
-      <div className="modal-overlay fullscreen-modal" onClick={() => setShowModal(false)} style={{position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-        <div className="modal-content artikel-modal" onClick={e => e.stopPropagation()} style={{maxWidth: '100%', maxHeight: '100vh', height: '100vh', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#1a1a2e'}}>
+      <div className="modal-overlay fullscreen-modal" onClick={() => setShowModal(false)} className="av-fullscreen-overlay">
+        <div className="modal-content artikel-modal" onClick={e => e.stopPropagation()} className="av-fullscreen-modal">
           <div className="modal-header artikel-modal-header">
             <div className="modal-header-content">
               <h2 className="modal-title">
@@ -1011,7 +1044,7 @@ const ArtikelVerwaltung = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="modal-body" style={{flex: 1, overflowY: 'hidden', overflowX: 'hidden', padding: '1rem', display: 'flex', flexDirection: 'column'}}>
+          <div className="modal-body av-modal-body-scroll">
             {renderTabContent()}
           </div>
 
@@ -1141,20 +1174,20 @@ const ArtikelVerwaltung = () => {
         <table className="artikel-table">
           <thead>
             <tr>
-              <th>Artikel</th>
-              <th>Artikelgruppe</th>
-              <th>Kategorie</th>
-              <th>EK</th>
-              <th>VK Netto</th>
+              <th className="sortable-th" onClick={() => handleSort('name')}>Artikel <SortIcon col="name" /></th>
+              <th className="sortable-th" onClick={() => handleSort('gruppe')}>Artikelgruppe <SortIcon col="gruppe" /></th>
+              <th className="sortable-th" onClick={() => handleSort('kategorie')}>Kategorie <SortIcon col="kategorie" /></th>
+              <th className="sortable-th" onClick={() => handleSort('ek')}>EK <SortIcon col="ek" /></th>
+              <th className="sortable-th" onClick={() => handleSort('vk')}>VK Netto <SortIcon col="vk" /></th>
               <th>VK Brutto</th>
-              <th>MwSt</th>
-              <th>Lager</th>
-              <th>Status</th>
+              <th className="sortable-th" onClick={() => handleSort('mwst')}>MwSt <SortIcon col="mwst" /></th>
+              <th className="sortable-th" onClick={() => handleSort('lager')}>Lager <SortIcon col="lager" /></th>
+              <th className="sortable-th" onClick={() => handleSort('status')}>Status <SortIcon col="status" /></th>
               <th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
-            {filteredArtikel.map(item => (
+            {sortedArtikel.map(item => (
               <tr key={item.artikel_id} className={!item.aktiv ? 'artikel-archiviert' : ''}>
                 <td className="artikel-info">
                   <div className="artikel-name">{item.name}</div>
@@ -1235,7 +1268,7 @@ const ArtikelVerwaltung = () => {
                     className="sub-tab-btn"
                     onClick={() => handleEdit(item)}
                     title="Bearbeiten"
-                    style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
+                    className="av-btn-sm"
                   >
                     ✏️
                   </button>
@@ -1245,7 +1278,7 @@ const ArtikelVerwaltung = () => {
                       className="sub-tab-btn"
                       onClick={() => handleLager(item)}
                       title="Lagerbestand ändern"
-                      style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
+                      className="av-btn-sm"
                     >
                       📦
                     </button>
@@ -1255,7 +1288,7 @@ const ArtikelVerwaltung = () => {
                     className="sub-tab-btn"
                     onClick={() => deleteArtikel(item.artikel_id)}
                     title="Deaktivieren"
-                    style={{fontSize: '0.85rem', padding: '0.5rem 1rem'}}
+                    className="av-btn-sm"
                   >
                     🗑️
                   </button>
@@ -1265,7 +1298,7 @@ const ArtikelVerwaltung = () => {
           </tbody>
         </table>
         
-        {filteredArtikel.length === 0 && (
+        {sortedArtikel.length === 0 && (
           <div className="empty-state">
             <p>Keine Artikel gefunden</p>
             <button className="sub-tab-btn" onClick={handleCreate}>

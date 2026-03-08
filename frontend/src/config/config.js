@@ -241,7 +241,7 @@ const axiosConfig = {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest',
   },
-  withCredentials: false,
+  withCredentials: true, // WICHTIG: Ermöglicht Session-Cookies (CORS credentials)
 };
 
 // API-Endpunkte (Pfade relativ zur apiBaseUrl)

@@ -130,24 +130,15 @@ const VerbandDashboard = () => {
   // Status-Badge Component
   const StatusBadge = ({ status }) => {
     const statusConfig = {
-      aktiv: { color: '#22c55e', bg: 'rgba(34, 197, 94, 0.2)', label: 'Aktiv' },
-      pending: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)', label: 'Ausstehend' },
-      inaktiv: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.2)', label: 'Inaktiv' },
-      gekuendigt: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.2)', label: 'Gekündigt' }
+      aktiv: { color: 'var(--success)', bg: 'rgba(34, 197, 94, 0.2)', label: 'Aktiv' },
+      pending: { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.2)', label: 'Ausstehend' },
+      inaktiv: { color: 'var(--text-muted)', bg: 'rgba(107, 114, 128, 0.2)', label: 'Inaktiv' },
+      gekuendigt: { color: 'var(--error)', bg: 'rgba(239, 68, 68, 0.2)', label: 'Gekündigt' }
     };
     const config = statusConfig[status] || statusConfig.pending;
 
     return (
-      <span style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '4px 10px',
-        borderRadius: '12px',
-        fontSize: '0.75rem',
-        fontWeight: 600,
-        color: config.color,
-        background: config.bg
-      }}>
+      <span className="vd-status-badge" style={{ '--badge-color': config.color, '--badge-bg': config.bg }}>
         {config.label}
       </span>
     );
@@ -374,7 +365,7 @@ const VerbandDashboard = () => {
       </div>
 
       {/* Hier könnten Turnier-Statistiken angezeigt werden */}
-      <div className="verband-stats-grid" style={{ marginTop: '2rem' }}>
+      <div className="verband-stats-grid" className="u-mt-2">
         <div className="verband-stat-card gold">
           <div className="stat-icon"><Trophy size={24} /></div>
           <div className="stat-content">
@@ -456,7 +447,7 @@ const VerbandDashboard = () => {
         </div>
       </div>
 
-      <div className="info-banner" style={{ marginTop: '2rem' }}>
+      <div className="info-banner" className="u-mt-2">
         <PieChart size={24} />
         <div>
           <h4>Beitragsstruktur</h4>
@@ -476,7 +467,7 @@ const VerbandDashboard = () => {
   const LastschriftContent = () => (
     <div className="verband-lastschrift">
       {/* Sub-Tab Navigation */}
-      <div className="sub-tabs-horizontal" style={{ marginBottom: '1.5rem' }}>
+      <div className="sub-tabs-horizontal" className="u-mb-15">
         <button
           className={`sub-tab-btn ${lastschriftSubTab === 'lastschriftlauf' ? 'active' : ''}`}
           onClick={() => setLastschriftSubTab('lastschriftlauf')}

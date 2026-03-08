@@ -10,10 +10,14 @@ import './locales/i18n';
 // Design System - Neue zentrale Styles
 import './design-system/index.css';
 
-// Legacy Styles (werden schrittweise migriert)
+// Legacy Styles (schrittweise Migration zu design-system/components/*.css)
+// TODO: designsystem.css → nach vollständiger Token-Migration entfernen
 import './styles/designsystem.css';
+// TODO: themes.css → theme-midnight.css + theme-tda-vib.css (bereits in design-system)
 import './styles/themes.css';
+// TODO: Buttons.css → ds-btn Klassen aus design-system/components/Button.css verwenden
 import './styles/Buttons.css';
+// TODO: components.css → schrittweise in design-system/components/ auslagern
 import './styles/components.css';
 import './styles/utility-classes.css'; // BEM-konforme Utility-Klassen (ds- Präfix)
 
@@ -87,64 +91,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Service Worker Registration (PWA) - MIT AUTO-UPDATE
-// WICHTIG: NUR im Browser registrieren, NICHT in installierter App (verhindert Flacker-Loop)
-const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                     window.navigator.standalone === true;
-
-if ('serviceWorker' in navigator && !isStandalone) {
-  console.log('📱 PWA läuft im Browser - Service Worker wird registriert');
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .then((registration) => {
-        console.log('✅ Service Worker registriert:', registration.scope);
-
-        // SOFORT nach neuen Updates suchen
-        registration.update();
-
-        // Bei neuem Service Worker: SOFORT aktivieren (skipWaiting)
-        registration.addEventListener('updatefound', () => {
-          const newWorker = registration.installing;
-          console.log('🔄 Neuer Service Worker gefunden, warte auf Installation...');
-
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Neuer SW installiert - SOFORT aktivieren ohne Nachfrage
-              console.log('✅ Neuer Service Worker installiert - Aktiviere sofort...');
-              newWorker.postMessage({ type: 'SKIP_WAITING' });
-            }
-          });
-        });
-
-        // Bei Controller-Wechsel: Seite neu laden für neuen SW
-        let refreshing = false;
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (!refreshing) {
-            refreshing = true;
-            console.log('🔄 Service Worker aktualisiert - Lade Seite neu...');
-            window.location.reload();
-          }
-        });
-
-        // Update-Check alle 5 Minuten (statt 1 Stunde)
-        setInterval(() => {
-          registration.update();
-        }, 5 * 60 * 1000);
-      })
-      .catch((error) => {
-        console.warn('⚠️ Service Worker Registrierung fehlgeschlagen:', error);
-      });
-  });
-} else if (isStandalone) {
-  console.log('🚀 PWA läuft als installierte App - Service Worker DEAKTIVIERT (verhindert Flackern)');
-
-  // Cleanup: Unregister existing service workers in standalone mode
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      registrations.forEach((registration) => {
-        console.log('🧹 Deregistriere Service Worker in standalone mode:', registration.scope);
-        registration.unregister();
-      });
-    });
-  }
-}
+// Service Worker DEAKTIVIERT - Verhindert Blink-Loop
+// Service Worker komplett entfernt um Reload-Probleme zu verhindern
+console.log('🚫 Service Worker ist deaktiviert');

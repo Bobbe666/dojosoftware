@@ -39,6 +39,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import config from '../config/config';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import '../styles/themes.css';
+import '../styles/EuerUebersicht.css';
 import '../styles/components.css';
 
 const EuerUebersicht = ({ isTDA = false }) => {
@@ -186,16 +187,10 @@ const EuerUebersicht = ({ isTDA = false }) => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="chart-tooltip" style={{
-          backgroundColor: 'var(--bg-modal)',
-          border: '1px solid var(--border-primary)',
-          borderRadius: '8px',
-          padding: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
-        }}>
-          <p style={{ fontWeight: '600', marginBottom: '8px' }}>{label}</p>
+        <div className="eu-chart-tooltip">
+          <p className="eu-fw600-mb">{label}</p>
           {payload.map((entry, index) => (
-            <p key={index} style={{ color: entry.color, margin: '4px 0' }}>
+            <p key={index} className="eu-tooltip-entry" style={{ '--entry-color': entry.color }}>
               {entry.name}: {formatCurrency(entry.value)}
             </p>
           ))}
@@ -207,7 +202,7 @@ const EuerUebersicht = ({ isTDA = false }) => {
 
   if (loading) {
     return (
-      <div className="loading-container" style={{ padding: '2rem', textAlign: 'center' }}>
+      <div className="loading-container eu-loading">
         <div className="loading-spinner"></div>
         <p>Lade EÜR-Daten...</p>
       </div>
@@ -216,9 +211,9 @@ const EuerUebersicht = ({ isTDA = false }) => {
 
   if (error) {
     return (
-      <div className="error-container" style={{ padding: '2rem', textAlign: 'center', color: 'var(--error)' }}>
+      <div className="error-container eu-error">
         <p>Fehler: {error}</p>
-        <button onClick={loadEuerData} className="btn btn-primary" style={{ marginTop: '1rem' }}>
+        <button onClick={loadEuerData} className="btn btn-primary eu-mt1">
           Erneut versuchen
         </button>
       </div>
@@ -228,35 +223,21 @@ const EuerUebersicht = ({ isTDA = false }) => {
   return (
     <div className="euer-uebersicht">
       {/* Header */}
-      <div className="euer-header" style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem',
-        flexWrap: 'wrap',
-        gap: '1rem'
-      }}>
+      <div className="euer-header eu-header-flex">
         <div>
-          <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h2 className="eu-h2-flex">
             <FileSpreadsheet size={24} />
             EÜR - Einnahmen-Überschuss-Rechnung
-            {isTDA && <span style={{
-              backgroundColor: 'var(--primary)',
-              color: 'white',
-              padding: '2px 8px',
-              borderRadius: '4px',
-              fontSize: '0.7rem',
-              marginLeft: '0.5rem'
-            }}>TDA</span>}
+            {isTDA && <span className="eu-tda-badge">TDA</span>}
           </h2>
-          <p style={{ margin: '0.5rem 0 0 0', color: 'var(--text-secondary)' }}>
+          <p className="eu-header-note">
             {isTDA ? 'Tiger & Dragon Association International' : activeDojo?.dojoname || 'Dojo'}
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="u-flex-row-lg">
           {/* Jahr-Auswahl */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="u-flex-row-sm">
             <button
               onClick={() => setJahr(j => j - 1)}
               className="btn btn-icon"
@@ -264,12 +245,7 @@ const EuerUebersicht = ({ isTDA = false }) => {
             >
               <ChevronLeft size={20} />
             </button>
-            <span style={{
-              fontWeight: '600',
-              fontSize: '1.1rem',
-              minWidth: '60px',
-              textAlign: 'center'
-            }}>
+            <span className="eu-year-display">
               {jahr}
             </span>
             <button
@@ -283,12 +259,12 @@ const EuerUebersicht = ({ isTDA = false }) => {
           </div>
 
           {/* Export Buttons */}
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button onClick={handleExportCSV} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="u-flex-gap-sm">
+            <button onClick={handleExportCSV} className="btn btn-secondary u-flex-row-sm">
               <Download size={16} />
               CSV
             </button>
-            <button onClick={handleExportPDF} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <button onClick={handleExportPDF} className="btn btn-primary u-flex-row-sm">
               <FileText size={16} />
               PDF für Finanzamt
             </button>
@@ -297,81 +273,51 @@ const EuerUebersicht = ({ isTDA = false }) => {
       </div>
 
       {/* Jahresübersicht Cards */}
-      <div className="euer-summary-cards" style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1rem',
-        marginBottom: '2rem'
-      }}>
+      <div className="euer-summary-cards eu-summary-cards-grid">
         {/* Einnahmen */}
-        <div className="stat-card" style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          border: '1px solid var(--border-primary)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div className="stat-card eu-stat-card">
+          <div className="eu-icon-row">
             <TrendingUp size={20} color="var(--success)" />
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Einnahmen {jahr}</span>
+            <span className="eu-sub-label">Einnahmen {jahr}</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--success)' }}>
+          <div className="eu-stat-success">
             {formatCurrency(euerData?.jahresSumme?.einnahmen_gesamt)}
           </div>
         </div>
 
         {/* Ausgaben */}
-        <div className="stat-card" style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          border: '1px solid var(--border-primary)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div className="stat-card eu-stat-card">
+          <div className="eu-icon-row">
             <TrendingDown size={20} color="var(--error)" />
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Ausgaben {jahr}</span>
+            <span className="eu-sub-label">Ausgaben {jahr}</span>
           </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--error)' }}>
+          <div className="eu-stat-error">
             {formatCurrency(euerData?.jahresSumme?.ausgaben_gesamt)}
           </div>
         </div>
 
         {/* Überschuss */}
-        <div className="stat-card" style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          border: '1px solid var(--border-primary)',
-          borderLeft: `4px solid ${(euerData?.jahresSumme?.ueberschuss || 0) >= 0 ? 'var(--success)' : 'var(--error)'}`
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div className={`stat-card eu-stat-card${(euerData?.jahresSumme?.ueberschuss || 0) >= 0 ? ' eu-stat-card--pos' : ' eu-stat-card--neg'}`}>
+          <div className="eu-icon-row">
             <DollarSign size={20} />
-            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Überschuss {jahr}</span>
+            <span className="eu-sub-label">Überschuss {jahr}</span>
           </div>
-          <div style={{
-            fontSize: '1.5rem',
-            fontWeight: '700',
-            color: (euerData?.jahresSumme?.ueberschuss || 0) >= 0 ? 'var(--success)' : 'var(--error)'
-          }}>
+          <div className={`eu-ueberschuss-value${(euerData?.jahresSumme?.ueberschuss || 0) >= 0 ? ' eu-ueberschuss-value--pos' : ' eu-ueberschuss-value--neg'}`}>
             {formatCurrency(euerData?.jahresSumme?.ueberschuss)}
           </div>
         </div>
 
         {/* TDA-spezifisch: Verbandsmitglieder */}
         {isTDA && euerData?.statistiken && (
-          <div className="stat-card" style={{
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            border: '1px solid var(--border-primary)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div className="stat-card eu-stat-card">
+            <div className="eu-icon-row">
               <Building2 size={20} color="var(--primary)" />
-              <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Verbandsmitglieder</span>
+              <span className="eu-sub-label">Verbandsmitglieder</span>
             </div>
-            <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+            <div className="eu-stat-neutral">
               {euerData.statistiken.aktive_verbandsmitglieder.gesamt}
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+            <div className="eu-stat-note">
               {euerData.statistiken.aktive_verbandsmitglieder.dojos} Dojos, {euerData.statistiken.aktive_verbandsmitglieder.einzelpersonen} Einzelpersonen
             </div>
           </div>
@@ -380,48 +326,42 @@ const EuerUebersicht = ({ isTDA = false }) => {
 
       {/* Einnahmen-Aufschlüsselung für TDA */}
       {isTDA && (
-        <div className="euer-einnahmen-breakdown" style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '12px',
-          padding: '1.25rem',
-          border: '1px solid var(--border-primary)',
-          marginBottom: '2rem'
-        }}>
-          <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Einnahmen nach Kategorie</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="euer-einnahmen-breakdown eu-breakdown-card">
+          <h3 className="eu-section-heading">Einnahmen nach Kategorie</h3>
+          <div className="eu-summary-grid">
+            <div className="u-flex-row-sm">
               <Users size={18} color="#10b981" />
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Mitgliedsbeiträge</div>
-                <div style={{ fontWeight: '600' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_mitglieder)}</div>
+                <div className="eu-meta-label">Mitgliedsbeiträge</div>
+                <div className="eu-fw600">{formatCurrency(euerData?.jahresSumme?.einnahmen_mitglieder)}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="u-flex-row-sm">
               <Building2 size={18} color="#3b82f6" />
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Verbandsmitgliedschaften</div>
-                <div style={{ fontWeight: '600' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_verband)}</div>
+                <div className="eu-meta-label">Verbandsmitgliedschaften</div>
+                <div className="eu-fw600">{formatCurrency(euerData?.jahresSumme?.einnahmen_verband)}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="u-flex-row-sm">
               <Laptop size={18} color="#8b5cf6" />
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Software-Lizenzen</div>
-                <div style={{ fontWeight: '600' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_software)}</div>
+                <div className="eu-meta-label">Software-Lizenzen</div>
+                <div className="eu-fw600">{formatCurrency(euerData?.jahresSumme?.einnahmen_software)}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="u-flex-row-sm">
               <CreditCard size={18} color="#f59e0b" />
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Rechnungen</div>
-                <div style={{ fontWeight: '600' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_rechnungen)}</div>
+                <div className="eu-meta-label">Rechnungen</div>
+                <div className="eu-fw600">{formatCurrency(euerData?.jahresSumme?.einnahmen_rechnungen)}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="u-flex-row-sm">
               <ShoppingCart size={18} color="#ef4444" />
               <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Verkäufe/Kasse</div>
-                <div style={{ fontWeight: '600' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_verkaeufe)}</div>
+                <div className="eu-meta-label">Verkäufe/Kasse</div>
+                <div className="eu-fw600">{formatCurrency(euerData?.jahresSumme?.einnahmen_verkaeufe)}</div>
               </div>
             </div>
           </div>
@@ -429,14 +369,8 @@ const EuerUebersicht = ({ isTDA = false }) => {
       )}
 
       {/* Haupt-Chart: Einnahmen vs Ausgaben */}
-      <div className="euer-chart" style={{
-        backgroundColor: 'var(--bg-card)',
-        borderRadius: '12px',
-        padding: '1.25rem',
-        border: '1px solid var(--border-primary)',
-        marginBottom: '2rem'
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Monatlicher Verlauf</h3>
+      <div className="euer-chart eu-chart-card">
+        <h3 className="eu-section-heading">Monatlicher Verlauf</h3>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-secondary)" />
@@ -452,108 +386,85 @@ const EuerUebersicht = ({ isTDA = false }) => {
       </div>
 
       {/* Monatliche Detailtabelle */}
-      <div className="euer-table" style={{
-        backgroundColor: 'var(--bg-card)',
-        borderRadius: '12px',
-        padding: '1.25rem',
-        border: '1px solid var(--border-primary)',
-        overflowX: 'auto'
-      }}>
-        <h3 style={{ margin: '0 0 1rem 0', fontSize: '1rem' }}>Monatliche Übersicht</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+      <div className="euer-table eu-table-card">
+        <h3 className="eu-section-heading">Monatliche Übersicht</h3>
+        <table className="eu-table-full">
           <thead>
-            <tr style={{ borderBottom: '2px solid var(--border-primary)' }}>
-              <th style={{ textAlign: 'left', padding: '0.75rem 0.5rem' }}>Monat</th>
+            <tr className="eu-thead-row">
+              <th className="eu-th-left">Monat</th>
               {isTDA ? (
                 <>
-                  <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>Mitglieder</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>Verband</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>Software</th>
+                  <th className="u-td-right">Mitglieder</th>
+                  <th className="u-td-right">Verband</th>
+                  <th className="u-td-right">Software</th>
                 </>
               ) : (
                 <>
-                  <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>Beiträge</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>Rechnungen</th>
-                  <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>Verkäufe</th>
+                  <th className="u-td-right">Beiträge</th>
+                  <th className="u-td-right">Rechnungen</th>
+                  <th className="u-td-right">Verkäufe</th>
                 </>
               )}
-              <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem', color: 'var(--success)' }}>Einnahmen</th>
-              <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem', color: 'var(--error)' }}>Ausgaben</th>
-              <th style={{ textAlign: 'right', padding: '0.75rem 0.5rem', fontWeight: '700' }}>Überschuss</th>
+              <th className="eu-td-success">Einnahmen</th>
+              <th className="eu-td-error">Ausgaben</th>
+              <th className="eu-td-right-bold">Überschuss</th>
             </tr>
           </thead>
           <tbody>
             {euerData?.monate?.map(m => (
               <tr
                 key={m.monat}
-                style={{
-                  borderBottom: '1px solid var(--border-secondary)',
-                  backgroundColor: selectedMonat === m.monat ? 'var(--bg-hover)' : 'transparent',
-                  cursor: 'pointer'
-                }}
+                className={`eu-tbody-row${selectedMonat === m.monat ? ' eu-tbody-row--selected' : ''}`}
                 onClick={() => setSelectedMonat(selectedMonat === m.monat ? null : m.monat)}
               >
-                <td style={{ padding: '0.75rem 0.5rem', fontWeight: '500' }}>{m.monat_name}</td>
+                <td className="eu-td-left">{m.monat_name}</td>
                 {isTDA ? (
                   <>
-                    <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(m.einnahmen.mitglieder)}</td>
-                    <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(m.einnahmen.verbandsmitgliedschaften)}</td>
-                    <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(m.einnahmen.software_lizenzen)}</td>
+                    <td className="u-td-right">{formatCurrency(m.einnahmen.mitglieder)}</td>
+                    <td className="u-td-right">{formatCurrency(m.einnahmen.verbandsmitgliedschaften)}</td>
+                    <td className="u-td-right">{formatCurrency(m.einnahmen.software_lizenzen)}</td>
                   </>
                 ) : (
                   <>
-                    <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(m.einnahmen.beitraege)}</td>
-                    <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(m.einnahmen.rechnungen)}</td>
-                    <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(m.einnahmen.verkaeufe)}</td>
+                    <td className="u-td-right">{formatCurrency(m.einnahmen.beitraege)}</td>
+                    <td className="u-td-right">{formatCurrency(m.einnahmen.rechnungen)}</td>
+                    <td className="u-td-right">{formatCurrency(m.einnahmen.verkaeufe)}</td>
                   </>
                 )}
-                <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem', color: 'var(--success)', fontWeight: '500' }}>
+                <td className="eu-td-success-muted">
                   {formatCurrency(m.einnahmen.gesamt)}
                 </td>
-                <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem', color: 'var(--error)' }}>
+                <td className="eu-td-error">
                   {formatCurrency(m.ausgaben.gesamt)}
                 </td>
-                <td style={{
-                  textAlign: 'right',
-                  padding: '0.75rem 0.5rem',
-                  fontWeight: '700',
-                  color: m.ueberschuss >= 0 ? 'var(--success)' : 'var(--error)'
-                }}>
+                <td className={`eu-td-right-bold${m.ueberschuss >= 0 ? ' eu-td-right-bold--pos' : ' eu-td-right-bold--neg'}`}>
                   {formatCurrency(m.ueberschuss)}
                 </td>
               </tr>
             ))}
             {/* Jahressumme */}
-            <tr style={{
-              borderTop: '2px solid var(--border-primary)',
-              backgroundColor: 'var(--bg-secondary)',
-              fontWeight: '700'
-            }}>
-              <td style={{ padding: '0.75rem 0.5rem' }}>GESAMT {jahr}</td>
+            <tr className="eu-total-row">
+              <td className="eu-total-first-cell">GESAMT {jahr}</td>
               {isTDA ? (
                 <>
-                  <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_mitglieder)}</td>
-                  <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_verband)}</td>
-                  <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_software)}</td>
+                  <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_mitglieder)}</td>
+                  <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_verband)}</td>
+                  <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_software)}</td>
                 </>
               ) : (
                 <>
-                  <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_beitraege)}</td>
-                  <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_rechnungen)}</td>
-                  <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem' }}>{formatCurrency(euerData?.jahresSumme?.einnahmen_verkaeufe)}</td>
+                  <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_beitraege)}</td>
+                  <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_rechnungen)}</td>
+                  <td className="u-td-right">{formatCurrency(euerData?.jahresSumme?.einnahmen_verkaeufe)}</td>
                 </>
               )}
-              <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem', color: 'var(--success)' }}>
+              <td className="eu-td-success">
                 {formatCurrency(euerData?.jahresSumme?.einnahmen_gesamt)}
               </td>
-              <td style={{ textAlign: 'right', padding: '0.75rem 0.5rem', color: 'var(--error)' }}>
+              <td className="eu-td-error">
                 {formatCurrency(euerData?.jahresSumme?.ausgaben_gesamt)}
               </td>
-              <td style={{
-                textAlign: 'right',
-                padding: '0.75rem 0.5rem',
-                color: (euerData?.jahresSumme?.ueberschuss || 0) >= 0 ? 'var(--success)' : 'var(--error)'
-              }}>
+              <td className={`eu-total-ueberschuss${(euerData?.jahresSumme?.ueberschuss || 0) >= 0 ? ' eu-total-ueberschuss--pos' : ' eu-total-ueberschuss--neg'}`}>
                 {formatCurrency(euerData?.jahresSumme?.ueberschuss)}
               </td>
             </tr>

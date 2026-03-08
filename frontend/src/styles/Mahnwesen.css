@@ -2,15 +2,15 @@
 
 .mahnwesen-container {
   min-height: 100vh;
-  background: var(--bg-secondary);
-  color: #ffffff;
-  padding: 2rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
+  padding: var(--ui-page-padding);
+  font-family: inherit;
 }
 
 /* ===== STATISTIK CARDS ===== */
 .mahnwesen-container .stat-icon {
-  background: var(--primary-alpha-20);
+  background: rgba(255, 215, 0, 0.2);
   color: var(--primary);
   padding: 0.65rem;
   border-radius: 50%;
@@ -33,7 +33,7 @@
 }
 
 .mahnwesen-container .stat-info h3 {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-size: 0.7rem;
   font-weight: 600;
   margin: 0 0 0.3rem 0;
@@ -44,7 +44,7 @@
 }
 
 .mahnwesen-container .stat-value {
-  color: #ffffff;
+  color: var(--text-1);
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 0.2rem 0;
@@ -53,7 +53,7 @@
 }
 
 .mahnwesen-container .stat-trend {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   font-size: 0.7rem;
   margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -65,12 +65,12 @@
   display: flex;
   gap: 1.5rem;
   align-items: flex-start;
-  margin-bottom: 2rem;
-  padding: 2rem;
-  background: var(--glass-bg);
+  margin-bottom: var(--ui-header-margin-b);
+  padding: var(--ui-page-padding);
+  background: var(--surface-2);
   backdrop-filter: blur(20px);
-  border-radius: 20px;
-  border: 1px solid var(--primary-alpha-20);
+  border-radius: var(--comp-radius-xl);
+  border: 1px solid rgba(255, 215, 0, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -83,8 +83,8 @@
 }
 
 .mahnwesen-header p {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-size: var(--ui-section-title);
+  color: var(--text-1);
   margin: 0;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -92,8 +92,8 @@
 /* ===== VIEW TOGGLE ===== */
 .view-toggle {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: var(--ui-form-gap);
+  margin-bottom: var(--ui-stats-margin-b);
   justify-content: center;
 }
 
@@ -109,25 +109,25 @@
 }
 
 .data-table thead {
-  background: var(--primary-alpha-10);
+  background: rgba(255, 215, 0, 0.1);
 }
 
 .data-table th {
   padding: 1rem;
   text-align: left;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid var(--primary-alpha-20);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
 }
 
 .data-table td {
   padding: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.95rem;
+  color: var(--text-1);
+  font-size: var(--ui-form-input);
 }
 
 .data-table tbody tr {
@@ -135,7 +135,7 @@
 }
 
 .data-table tbody tr:hover {
-  background: var(--primary-alpha-10);
+  background: rgba(255, 215, 0, 0.1);
 }
 
 .data-table td.amount {
@@ -144,12 +144,12 @@
 }
 
 .data-table td.critical {
-  color: #ef4444;
+  color: var(--status-error);
   font-weight: 600;
 }
 
 .data-table td.warning {
-  color: #f59e0b;
+  color: var(--status-warning);
   font-weight: 600;
 }
 
@@ -174,18 +174,18 @@
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: var(--text-secondary);
+  color: var(--text-3);
 }
 
 .empty-state svg {
-  color: var(--primary-alpha-20);
+  color: rgba(255, 215, 0, 0.2);
   margin-bottom: 1rem;
 }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .mahnwesen-container {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .mahnwesen-header {
@@ -210,3 +210,55 @@
     flex-direction: column;
   }
 }
+
+/* ===== HEADER ACTIONS ===== */
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ===== MAHNLAUF ERGEBNIS ===== */
+.mahnlauf-ergebnis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.mahnlauf-close-btn {
+  padding: 0.25rem 0.5rem;
+}
+
+.mahnlauf-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.mahnlauf-ergebnis-details {
+  margin-top: 1rem;
+}
+
+.mahnlauf-ergebnis-list {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+/* ===== MAHNLAUF ERGEBNIS BLOCK ===== */
+.mahnlauf-ergebnis {
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.mahnlauf-ergebnis--simulation {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid #f59e0b;
+}
+.mahnlauf-ergebnis--real {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid #22c55e;
+}
+.mahnlauf-ergebnis--simulation .mahnlauf-ergebnis-title { margin: 0; color: #f59e0b; }
+.mahnlauf-ergebnis--real .mahnlauf-ergebnis-title { margin: 0; color: #22c55e; }

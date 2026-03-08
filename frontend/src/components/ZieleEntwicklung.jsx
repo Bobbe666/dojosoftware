@@ -26,7 +26,7 @@ const ZieleEntwicklung = ({
 }) => {
   const { token, user } = useAuth();
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'super_admin';
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,6 +44,7 @@ const ZieleEntwicklung = ({
   const [expandedSections, setExpandedSections] = useState({
     vergleich: true,
     ziele: true,
+    umsatzplanung: true,
     rechner: false
   });
 
@@ -52,6 +53,8 @@ const ZieleEntwicklung = ({
     mitgliederPlanung: {}, // { 2026: 100, 2027: 120, ... }
     beitragsverteilung: []
   });
+
+  // Umsatzziel-Planung: verwendet direkt ziele['umsatz'] (in DB gespeichert)
 
   // Jahre für die Planung (aktuelles Jahr + 4)
   const currentYear = new Date().getFullYear();
@@ -64,7 +67,7 @@ const ZieleEntwicklung = ({
       subtitel: 'Alle Bereiche: Verband, Dojos & Software',
       kontextTyp: 'global',
       icon: Globe,
-      color: '#6366f1'
+      color: 'var(--color-midnight-500)'
     },
     verband: {
       titel: 'Verbandsmitgliedschaften',
@@ -78,7 +81,7 @@ const ZieleEntwicklung = ({
       subtitel: 'Entwicklung der Dojo-Mitgliedschaften',
       kontextTyp: 'dojo',
       icon: Home,
-      color: '#10b981'
+      color: 'var(--success)'
     }
   };
 
@@ -89,22 +92,22 @@ const ZieleEntwicklung = ({
     switch (bereich) {
       case 'verband':
         return [
-          { key: 'verband_mitglieder', label: 'Verbandsmitglieder', icon: Users, color: '#6366f1', einheit: '' },
-          { key: 'umsatz', label: 'Verbandsbeiträge', icon: Euro, color: '#f59e0b', einheit: 'EUR' }
+          { key: 'verband_mitglieder', label: 'Verbandsmitglieder', icon: Users, color: 'var(--color-midnight-500)', einheit: '' },
+          { key: 'umsatz', label: 'Verbandsbeiträge', icon: Euro, color: 'var(--warning)', einheit: 'EUR' }
         ];
       case 'dojo':
         return [
-          { key: 'dojo_mitglieder', label: 'Dojo-Mitglieder', icon: Users, color: '#10b981', einheit: '' },
-          { key: 'umsatz', label: 'Mitgliedsbeiträge', icon: Euro, color: '#f59e0b', einheit: 'EUR' }
+          { key: 'dojo_mitglieder', label: 'Dojo-Mitglieder', icon: Users, color: 'var(--success)', einheit: '' },
+          { key: 'umsatz', label: 'Mitgliedsbeiträge', icon: Euro, color: 'var(--warning)', einheit: 'EUR' }
         ];
       case 'org':
       default:
         return [
-          { key: 'verband_mitglieder', label: 'Verbandsmitglieder', icon: Users, color: '#6366f1', einheit: '' },
-          { key: 'dojos', label: 'Mitgliedsschulen', icon: Building2, color: '#8b5cf6', einheit: '' },
-          { key: 'software_nutzer', label: 'Software-Nutzer', icon: Monitor, color: '#06b6d4', einheit: '' },
-          { key: 'dojo_mitglieder', label: 'Dojo-Mitglieder', icon: Users, color: '#10b981', einheit: '' },
-          { key: 'umsatz', label: 'Gesamtumsatz', icon: Euro, color: '#f59e0b', einheit: 'EUR' }
+          { key: 'verband_mitglieder', label: 'Verbandsmitglieder', icon: Users, color: 'var(--color-midnight-500)', einheit: '' },
+          { key: 'dojos', label: 'Aktive Dojos', icon: Building2, color: '#8b5cf6', einheit: '' },
+          { key: 'dojo_mitglieder', label: 'Mitglieder (aktiv)', icon: Users, color: 'var(--success)', einheit: '' },
+          { key: 'software_nutzer', label: 'SaaS-Lizenzen', icon: Monitor, color: '#06b6d4', einheit: '' },
+          { key: 'umsatz', label: 'Gesamtumsatz', icon: Euro, color: 'var(--warning)', einheit: 'EUR' }
         ];
     }
   };
@@ -207,17 +210,14 @@ const ZieleEntwicklung = ({
       const hauptTyp = bereich === 'verband' ? 'verband_mitglieder' : 'dojo_mitglieder';
       const istWert = statsRes.data?.[hauptTyp] || 0;
 
-      planungsJahre.forEach((jahr, idx) => {
-        // Aus gespeicherten Zielen oder mit 10% Wachstum pro Jahr
+      planungsJahre.forEach((jahr) => {
         const gespeichertesZiel = zieleMap[hauptTyp]?.[jahr];
-        mitgliederPlanung[jahr] = gespeichertesZiel > 0
-          ? gespeichertesZiel
-          : Math.round(istWert * Math.pow(1.1, idx));
+        mitgliederPlanung[jahr] = gespeichertesZiel > 0 ? gespeichertesZiel : 0;
       });
 
       setRechnerDaten({
         mitgliederPlanung,
-        beitragsverteilung: beitragsverteilung.length > 0 ? beitragsverteilung : getDefaultBeitraege()
+        beitragsverteilung
       });
 
     } catch (err) {
@@ -226,21 +226,6 @@ const ZieleEntwicklung = ({
     } finally {
       setLoading(false);
     }
-  };
-
-  // Default Beiträge je nach Bereich
-  const getDefaultBeitraege = () => {
-    if (bereich === 'verband') {
-      return [
-        { id: 1, name: 'Mitgliedsschulen', monatsbeitrag: 8.25, jahresbeitrag: 99, anteil: 40 },
-        { id: 2, name: 'Einzelmitglieder', monatsbeitrag: 4.08, jahresbeitrag: 49, anteil: 60 }
-      ];
-    }
-    return [
-      { id: 1, name: 'Erwachsene', monatsbeitrag: 69, jahresbeitrag: 828, anteil: 45 },
-      { id: 2, name: 'Studenten & Schüler', monatsbeitrag: 49, jahresbeitrag: 588, anteil: 20 },
-      { id: 3, name: 'Kinder & Jugendliche', monatsbeitrag: 49, jahresbeitrag: 588, anteil: 35 }
-    ];
   };
 
   // Ziele speichern
@@ -278,7 +263,9 @@ const ZieleEntwicklung = ({
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Fehler beim Speichern:', err);
-      setError('Fehler beim Speichern der Ziele');
+      const status = err.response?.status;
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      setError(`Fehler beim Speichern (${status || 'Netzwerk'}): ${msg}`);
     } finally {
       setSaving(false);
     }
@@ -331,6 +318,16 @@ const ZieleEntwicklung = ({
     };
   };
 
+  // Durchschnittlicher Jahresbeitrag (gewichtet nach Anteil)
+  const getDurchschnittsbeitrag = () => {
+    const { beitragsverteilung } = rechnerDaten;
+    if (!beitragsverteilung || beitragsverteilung.length === 0) return 0;
+    return beitragsverteilung.reduce((sum, g) => {
+      const jb = g.jahresbeitrag > 0 ? g.jahresbeitrag : g.monatsbeitrag * 12;
+      return sum + (jb * (g.anteil / 100));
+    }, 0);
+  };
+
   // Toggle Section
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -376,8 +373,8 @@ const ZieleEntwicklung = ({
     <div className="ziele-entwicklung">
       {/* Header */}
       <div className="ziele-header">
-        <div className="ziele-title">
-          <BereichIcon size={24} style={{ color: config.color }} />
+        <div className="ziele-title" style={{ '--config-color': config.color }}>
+          <BereichIcon size={24} className="ze-bereich-icon" />
           <div>
             <h2>Ziele & Entwicklung</h2>
             <span className="bereich-subtitel">{config.subtitel}</span>
@@ -470,9 +467,9 @@ const ZieleEntwicklung = ({
               const Icon = typ.icon;
 
               return (
-                <div key={typ.key} className={`vergleich-card ${progress.trend}`}>
+                <div key={typ.key} className={`vergleich-card ${progress.trend}`} style={{ '--typ-color': typ.color }}>
                   <div className="vergleich-header">
-                    <Icon size={20} style={{ color: typ.color }} />
+                    <Icon size={20} className="ze-typ-icon" />
                     <span>{typ.label}</span>
                   </div>
 
@@ -534,10 +531,10 @@ const ZieleEntwicklung = ({
               <thead>
                 <tr>
                   <th className="kennzahl-col">Kennzahl</th>
-                  <th className="ist-col">IST</th>
+                  <th className="ist-col">IST {currentYear}</th>
                   {planungsJahre.map(jahr => (
                     <th key={jahr} className={jahr === currentYear ? 'current-year' : ''}>
-                      {jahr}
+                      {jahr === currentYear ? `${jahr} (Ziel)` : jahr}
                     </th>
                   ))}
                 </tr>
@@ -548,10 +545,10 @@ const ZieleEntwicklung = ({
                   const Icon = typ.icon;
 
                   return (
-                    <tr key={typ.key}>
+                    <tr key={typ.key} style={{ '--typ-color': typ.color }}>
                       <td className="kennzahl-col">
                         <div className="kennzahl-label">
-                          <Icon size={16} style={{ color: typ.color }} />
+                          <Icon size={16} className="ze-typ-icon" />
                           <span>{typ.label}</span>
                         </div>
                       </td>
@@ -598,6 +595,275 @@ const ZieleEntwicklung = ({
         )}
       </div>
 
+      {/* Umsatzziel-Planung Section */}
+      {showFinanzrechner && (() => {
+        // Ø Jahresbeitrag: erst aus beitragsstrukturen (Rechner), Fallback aus Tarif-Statistik
+        const avgBeitrag = getDurchschnittsbeitrag() || (statistiken.avg_jahresbeitrag || 0);
+        const hauptTyp = bereich === 'verband' ? 'verband_mitglieder' : 'dojo_mitglieder';
+        const istMitglieder = statistiken[hauptTyp] || 0;
+        const istUmsatz = statistiken.umsatz || 0;
+
+        return (
+          <div className="ziele-section">
+            <div
+              className="section-header clickable"
+              onClick={() => toggleSection('umsatzplanung')}
+            >
+              <div className="section-title">
+                <Euro size={20} />
+                <span>Umsatzziel-Planung</span>
+              </div>
+              {expandedSections.umsatzplanung ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </div>
+
+            {expandedSections.umsatzplanung && (
+              <div className="umsatzplanung-container">
+                {/* Durchschnittsbeitrag Info */}
+                <div className="umsatz-info-bar">
+                  <div className="umsatz-info-item">
+                    <span className="umsatz-info-label">Ø Jahresbeitrag</span>
+                    <span className="umsatz-info-wert highlight">
+                      {avgBeitrag > 0
+                        ? avgBeitrag.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR'
+                        : '—'}
+                    </span>
+                  </div>
+                  <div className="umsatz-info-item">
+                    <span className="umsatz-info-label">IST Mitglieder</span>
+                    <span className="umsatz-info-wert">{istMitglieder.toLocaleString('de-DE')}</span>
+                  </div>
+                  <div className="umsatz-info-item">
+                    <span className="umsatz-info-label">IST Umsatz</span>
+                    <span className="umsatz-info-wert">
+                      {istUmsatz > 0
+                        ? istUmsatz.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR'
+                        : 'nicht erfasst'}
+                    </span>
+                  </div>
+                  <div className="umsatz-info-item">
+                    <span className="umsatz-info-label">Beitragsstruktur</span>
+                    <span className="umsatz-info-wert ze-umsatz-info-wert--dim">
+                      {rechnerDaten.beitragsverteilung.map(g => `${g.name} ${g.anteil}%`).join(' · ')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Haupt-Tabelle */}
+                <div className="umsatz-tabelle-wrap">
+                  <table className="umsatz-tabelle">
+                    <thead>
+                      <tr>
+                        <th className="row-label-col">Kennzahl</th>
+                        <th className="ist-col-up">IST {currentYear}</th>
+                        {planungsJahre.map(jahr => (
+                          <th key={jahr} className={jahr === currentYear ? 'current-year' : ''}>
+                            {jahr === currentYear ? `${jahr} (Ziel)` : jahr}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Zeile 1: Zielumsatz (editierbar) */}
+                      <tr className="row-zielumsatz">
+                        <td className="row-label">
+                          <div className="kennzahl-label">
+                            <Euro size={14} className="u-text-warning" />
+                            <span>Zielumsatz</span>
+                          </div>
+                          <div className="row-hint">{editMode ? 'Zielumsatz eingeben' : 'aus 5-Jahres-Planung'}</div>
+                        </td>
+                        <td className="ist-col-val">
+                          <span className="ist-wert dim">
+                            {istUmsatz > 0
+                              ? (istUmsatz / 1000).toFixed(0) + 'k EUR'
+                              : '—'}
+                          </span>
+                        </td>
+                        {planungsJahre.map(jahr => {
+                          const zielUmsatz = ziele['umsatz']?.[jahr] || 0;
+                          return (
+                            <td key={jahr} className={`editable-cell ${jahr === currentYear ? 'current-year' : ''}`}>
+                              {editMode ? (
+                                <>
+                                  <div className="umsatz-input-wrap">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="1000"
+                                      value={zielUmsatz || ''}
+                                      onChange={(e) => updateZiel('umsatz', jahr, e.target.value)}
+                                      placeholder="0"
+                                      className="umsatz-input"
+                                    />
+                                    <span className="input-unit">EUR</span>
+                                  </div>
+                                  {zielUmsatz > 0 && (
+                                    <div className="input-kilo">
+                                      = {(zielUmsatz / 1000).toFixed(1)}k
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="ziel-wert">
+                                  {zielUmsatz > 0
+                                    ? zielUmsatz.toLocaleString('de-DE', { maximumFractionDigits: 0 }) + ' EUR'
+                                    : '—'}
+                                </span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Zeile 2: Benötigte Mitglieder (berechnet) */}
+                      <tr className="row-benoetigt">
+                        <td className="row-label">
+                          <div className="kennzahl-label">
+                            <Users size={14} className="ze-icon-info" />
+                            <span>Benötigte Mitglieder</span>
+                          </div>
+                          <div className="row-hint">bei Ø {avgBeitrag > 0 ? avgBeitrag.toFixed(0) + ' EUR/Jahr' : '—'}</div>
+                        </td>
+                        <td className="ist-col-val">
+                          <span className="ist-wert">{istMitglieder.toLocaleString('de-DE')}</span>
+                        </td>
+                        {planungsJahre.map(jahr => {
+                          const wunsch = ziele['umsatz']?.[jahr] || 0;
+                          const benoetigt = avgBeitrag > 0 && wunsch > 0
+                            ? Math.ceil(wunsch / avgBeitrag)
+                            : null;
+                          return (
+                            <td key={jahr} className={`berechnet-cell ${jahr === currentYear ? 'current-year' : ''}`}>
+                              {benoetigt !== null ? (
+                                <span className="berechnet-wert">
+                                  {benoetigt.toLocaleString('de-DE')}
+                                </span>
+                              ) : (
+                                <span className="berechnet-leer">—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Zeile 3: IST Mitglieder (flach, zum Vergleich) */}
+                      <tr className="row-ist">
+                        <td className="row-label">
+                          <div className="kennzahl-label">
+                            <Users size={14} className="u-text-success" />
+                            <span>IST Mitglieder</span>
+                          </div>
+                          <div className="row-hint">aktueller Stand</div>
+                        </td>
+                        <td className="ist-col-val">
+                          <span className="ist-wert highlight-green">{istMitglieder.toLocaleString('de-DE')}</span>
+                        </td>
+                        {planungsJahre.map(jahr => (
+                          <td key={jahr} className={`ist-ref-cell ${jahr === currentYear ? 'current-year' : ''}`}>
+                            <span className="ist-ref">{istMitglieder.toLocaleString('de-DE')}</span>
+                          </td>
+                        ))}
+                      </tr>
+
+                      {/* Zeile 4: Differenz */}
+                      <tr className="row-differenz">
+                        <td className="row-label">
+                          <div className="kennzahl-label">
+                            <TrendingUp size={14} className="ze-icon-purple" />
+                            <span>Differenz Mitglieder</span>
+                          </div>
+                          <div className="row-hint">benötigt − IST</div>
+                        </td>
+                        <td className="ist-col-val">—</td>
+                        {planungsJahre.map(jahr => {
+                          const wunsch = ziele['umsatz']?.[jahr] || 0;
+                          const benoetigt = avgBeitrag > 0 && wunsch > 0
+                            ? Math.ceil(wunsch / avgBeitrag)
+                            : null;
+                          const diff = benoetigt !== null ? benoetigt - istMitglieder : null;
+                          return (
+                            <td key={jahr} className={`diff-cell ${diff !== null ? (diff <= 0 ? 'diff-ok' : 'diff-fehlt') : ''} ${jahr === currentYear ? 'current-year' : ''}`}>
+                              {diff !== null ? (
+                                <div className="diff-content">
+                                  <span className="diff-zahl">
+                                    {diff > 0 ? '+' : ''}{diff.toLocaleString('de-DE')}
+                                  </span>
+                                  {diff !== 0 && (
+                                    <span className="diff-label">
+                                      {diff > 0 ? 'fehlen noch' : 'Ziel erreicht ✓'}
+                                    </span>
+                                  )}
+                                </div>
+                              ) : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Zeile 5: Erreichbarer Umsatz mit IST-Mitgliedern */}
+                      <tr className="row-erreichbar">
+                        <td className="row-label">
+                          <div className="kennzahl-label">
+                            <Euro size={14} className="ze-icon-green" />
+                            <span>Erreichbarer Umsatz</span>
+                          </div>
+                          <div className="row-hint">mit IST-Mitgliedern</div>
+                        </td>
+                        <td className="ist-col-val">
+                          <span className="ist-wert highlight-green">
+                            {avgBeitrag > 0
+                              ? (istMitglieder * avgBeitrag).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' EUR'
+                              : '—'}
+                          </span>
+                        </td>
+                        {planungsJahre.map(jahr => {
+                          const erreichbar = avgBeitrag > 0 ? istMitglieder * avgBeitrag : null;
+                          const wunsch = ziele['umsatz']?.[jahr] || 0;
+                          const pct = wunsch > 0 && erreichbar !== null ? Math.round((erreichbar / wunsch) * 100) : null;
+                          return (
+                            <td key={jahr} className={`erreichbar-cell ${jahr === currentYear ? 'current-year' : ''}`}>
+                              {erreichbar !== null ? (
+                                <div className="erreichbar-content">
+                                  <span className="erreichbar-wert">
+                                    {(erreichbar / 1000).toFixed(1)}k EUR
+                                  </span>
+                                  {pct !== null && (
+                                    <div className={`erreichbar-bar-wrap`}>
+                                      <div className="erreichbar-bar-bg">
+                                        <div
+                                          className={`erreichbar-bar-fill${pct >= 100 ? ' ze-erreichbar-fill--full' : pct >= 75 ? ' ze-erreichbar-fill--mid' : ' ze-erreichbar-fill--low'}`}
+                                          style={{ width: `${Math.min(100, pct)}%` }}
+                                        />
+                                      </div>
+                                      <span className={`erreichbar-pct${pct >= 100 ? ' ze-erreichbar-pct--full' : pct >= 75 ? ' ze-erreichbar-pct--mid' : ' ze-erreichbar-pct--low'}`}>
+                                        {pct}%
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : '—'}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Hinweis */}
+                <div className="umsatz-hinweis">
+                  <AlertTriangle size={13} />
+                  <span>
+                    Berechnung basiert auf dem gewichteten Ø-Jahresbeitrag aus der Beitragsstruktur.
+                    Zielumsatz über „Bearbeiten" setzen und speichern — wird in der Datenbank gespeichert.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Finanzrechner Section */}
       {showFinanzrechner && (
         <div className="ziele-section">
@@ -622,12 +888,18 @@ const ZieleEntwicklung = ({
                     {planungsJahre.map(jahr => (
                       <div key={jahr} className="jahr-input-gruppe">
                         <span className="jahr-label">{jahr}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={rechnerDaten.mitgliederPlanung[jahr] || 0}
-                          onChange={(e) => updateMitgliederPlanung(jahr, e.target.value)}
-                        />
+                        {editMode ? (
+                          <input
+                            type="number"
+                            min="0"
+                            value={rechnerDaten.mitgliederPlanung[jahr] || 0}
+                            onChange={(e) => updateMitgliederPlanung(jahr, e.target.value)}
+                          />
+                        ) : (
+                          <span className="ist-wert ze-ist-wert--planning">
+                            {(rechnerDaten.mitgliederPlanung[jahr] || 0).toLocaleString('de-DE')}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -1,0 +1,17 @@
+/* StripeConnectSetup component styles */
+.stripe-info-box-text {
+  margin: 0;
+}
+
+.stripe-requirements-text {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+}
+
+.scs-connect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.scs-status-value--ok { color: #22c55e; }
+.scs-status-value--pending { color: #eab308; }

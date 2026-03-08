@@ -294,22 +294,20 @@ const Personal = () => {
                 <div className="personal-field">
                   <label>👤 Name:</label>
                   {editingId === person.personal_id ? (
-                    <div style={{display: 'flex', gap: '0.5rem'}}>
+                    <div className="personal-name-edit-row">
                       <input
                         type="text"
-                        className="edit-input"
+                        className="edit-input personal-name-input"
                         value={editingData.vorname}
                         onChange={(e) => setEditingData({ ...editingData, vorname: e.target.value })}
                         placeholder="Vorname"
-                        style={{flex: 1}}
                       />
                       <input
                         type="text"
-                        className="edit-input"
+                        className="edit-input personal-name-input"
                         value={editingData.nachname}
                         onChange={(e) => setEditingData({ ...editingData, nachname: e.target.value })}
                         placeholder="Nachname"
-                        style={{flex: 1}}
                       />
                     </div>
                   ) : (
@@ -359,7 +357,7 @@ const Personal = () => {
                 <div className="personal-field">
                   <label>📧 Kontakt:</label>
                   {editingId === person.personal_id ? (
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
+                    <div className="personal-contact-edit-col">
                       <input
                         type="email"
                         className="edit-input"

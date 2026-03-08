@@ -70,9 +70,15 @@
 
   /* ===== MODALS ===== */
   --modal-bg: rgba(22, 33, 62, 0.98);
+  --modal-bg-dark: #13131f;                              /* Minimalistisches Dark-Modal */
+  --modal-bg-secondary: #1a1a2e;
+  --modal-overlay: rgba(0, 0, 0, 0.75);
   --modal-border: 1px solid rgba(255, 215, 0, 0.2);
+  --modal-border-subtle: 1px solid rgba(255, 255, 255, 0.07);
   --modal-shadow: 0 25px 80px rgba(0, 0, 0, 0.6);
   --modal-header-border: 1px solid rgba(255, 255, 255, 0.1);
+  --modal-radius-outer: 14px;
+  --modal-radius-inner: 8px;
 
   /* ===== TABLES ===== */
   --table-header-bg: rgba(255, 215, 0, 0.1);

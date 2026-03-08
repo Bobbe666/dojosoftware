@@ -6,6 +6,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import '../styles/MarketingJahresplan.css';
+import { useDojoContext } from '../context/DojoContext';
 import config from '../config/config.js';
 import {
     Calendar,
@@ -28,12 +30,13 @@ import {
 
 // Aktionstypen mit Icons und Farben
 const AKTIONS_TYPEN = {
-    'social_media': { label: 'Social Media', icon: Megaphone, color: '#3b82f6' },
+    'social_media': { label: 'Social Media', icon: Megaphone, color: 'var(--info)' },
     'email_kampagne': { label: 'E-Mail Kampagne', icon: Mail, color: '#8b5cf6' },
-    'rabatt_aktion': { label: 'Rabatt-Aktion', icon: Gift, color: '#10b981' },
-    'event': { label: 'Event/Veranstaltung', icon: Calendar, color: '#f59e0b' },
+    'rabatt_aktion': { label: 'Rabatt-Aktion', icon: Gift, color: 'var(--success)' },
+    'event': { label: 'Event/Veranstaltung', icon: Calendar, color: 'var(--warning)' },
     'mitgliederwerbung': { label: 'Mitgliederwerbung', icon: Users, color: '#ec4899' },
-    'sonstiges': { label: 'Sonstiges', icon: Star, color: '#6b7280' }
+    'freunde_werben_freunde': { label: 'Freunde werben Freunde', icon: Users, color: 'var(--secondary)' },
+    'sonstiges': { label: 'Sonstiges', icon: Star, color: 'var(--text-muted)' }
 };
 
 // Vordefinierte Marketing-Ideen für jeden Monat
@@ -54,6 +57,7 @@ const MARKETING_VORSCHLAEGE = {
 
 const MarketingJahresplan = () => {
     const { token } = useAuth();
+    const { activeDojo } = useDojoContext();
 
     // State
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -89,16 +93,20 @@ const MarketingJahresplan = () => {
     // ==========================================================================
 
     useEffect(() => {
+        if (activeDojo === 'super-admin' || !activeDojo?.id) return;
         loadAktionen();
-    }, [selectedYear]);
+    }, [selectedYear, activeDojo]);
+
+    const withDojo = (url) => activeDojo?.id ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}` : url;
 
     const loadAktionen = async () => {
+        if (activeDojo === 'super-admin' || !activeDojo?.id) return;
         try {
             setLoading(true);
             setError('');
 
             const response = await fetch(
-                `${config.apiBaseUrl}/marketing-jahresplan?jahr=${selectedYear}`,
+                withDojo(`${config.apiBaseUrl}/marketing-jahresplan?jahr=${selectedYear}`),
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -141,9 +149,9 @@ const MarketingJahresplan = () => {
         }
 
         try {
-            const url = editingAktion
+            const url = withDojo(editingAktion
                 ? `${config.apiBaseUrl}/marketing-jahresplan/${editingAktion.id}`
-                : `${config.apiBaseUrl}/marketing-jahresplan`;
+                : `${config.apiBaseUrl}/marketing-jahresplan`);
 
             const response = await fetch(url, {
                 method: editingAktion ? 'PUT' : 'POST',
@@ -173,7 +181,7 @@ const MarketingJahresplan = () => {
 
         try {
             const response = await fetch(
-                `${config.apiBaseUrl}/marketing-jahresplan/${id}`,
+                withDojo(`${config.apiBaseUrl}/marketing-jahresplan/${id}`),
                 {
                     method: 'DELETE',
                     headers: {
@@ -198,7 +206,7 @@ const MarketingJahresplan = () => {
     const updateStatus = async (id, newStatus) => {
         try {
             const response = await fetch(
-                `${config.apiBaseUrl}/marketing-jahresplan/${id}/status`,
+                withDojo(`${config.apiBaseUrl}/marketing-jahresplan/${id}/status`),
                 {
                     method: 'PATCH',
                     headers: {
@@ -309,6 +317,15 @@ const MarketingJahresplan = () => {
     // ==========================================================================
     // RENDER
     // ==========================================================================
+
+    if (activeDojo === 'super-admin' || !activeDojo?.id) {
+        return (
+            <div className="mj-empty-state">
+                <div className="mj-empty-icon">🏢</div>
+                <p>Bitte wähle ein Dojo aus, um den Marketing-Jahresplan zu sehen.</p>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -421,9 +438,9 @@ const MarketingJahresplan = () => {
                                                 <div
                                                     key={aktion.id}
                                                     className="aktion-item"
-                                                    style={{ borderLeftColor: typeColor }}
+                                                    style={{ '--typ-color': typeColor }}
                                                 >
-                                                    <div className="aktion-icon" style={{ color: typeColor }}>
+                                                    <div className="aktion-icon">
                                                         <TypeIcon size={16} />
                                                     </div>
                                                     <div className="aktion-info">
@@ -467,7 +484,7 @@ const MarketingJahresplan = () => {
                     {Object.entries(AKTIONS_TYPEN).map(([key, val]) => {
                         const Icon = val.icon;
                         return (
-                            <span key={key} className="legende-item" style={{ color: val.color }}>
+                            <span key={key} className="legende-item" style={{ '--legende-color': val.color }}>
                                 <Icon size={14} /> {val.label}
                             </span>
                         );

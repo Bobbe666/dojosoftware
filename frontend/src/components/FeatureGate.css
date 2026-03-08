@@ -5,7 +5,7 @@
   justify-content: center;
   align-items: center;
   min-height: 60vh;
-  padding: 2rem;
+  padding: var(--ui-page-padding);
 }
 
 .feature-gate-card {
@@ -77,7 +77,7 @@
 .info-label {
   color: #64748b;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--ui-form-input);
 }
 
 .info-value {
@@ -285,7 +285,7 @@
 
 .feature-gate-hint {
   color: #6b7280;
-  font-size: 0.95rem;
+  font-size: var(--ui-form-input);
   font-style: italic;
   margin-bottom: 1.5rem;
 }
@@ -355,7 +355,7 @@
 
 .modal-options {
   display: grid;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
   padding: 1rem 2rem 2rem;
 }
 
@@ -397,7 +397,7 @@
 }
 
 .option-card h3 {
-  font-size: 1.1rem;
+  font-size: var(--ui-card-title);
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 0.5rem;

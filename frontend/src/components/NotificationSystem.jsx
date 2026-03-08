@@ -73,7 +73,8 @@ const NotificationSystem = () => {
     message: '',
     icon: '',
     badge: '',
-    url: ''
+    url: '',
+    send_to_chat: false
   });
   
   // Push Subscriptions State
@@ -616,17 +617,64 @@ const NotificationSystem = () => {
     }
   };
 
+  // Helper: URL-safe Base64 → Uint8Array (für VAPID Key)
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+  }
+
   const requestPushPermission = async () => {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      if (permission === 'granted') {
-        // Hier würde die Push-Subscription registriert werden
-        setSuccess('Push-Benachrichtigungen aktiviert');
-      } else {
-        setError('Push-Benachrichtigungen wurden abgelehnt');
-      }
-    } else {
+    if (!('Notification' in window)) {
       setError('Push-Benachrichtigungen werden von diesem Browser nicht unterstützt');
+      return;
+    }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setError('Push-Benachrichtigungen werden von diesem Browser nicht unterstützt');
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setError('Push-Benachrichtigungen wurden abgelehnt');
+        return;
+      }
+      // Service Worker bereit warten
+      const registration = await navigator.serviceWorker.ready;
+      // VAPID Public Key (muss mit Backend übereinstimmen)
+      const vapidPublicKey = 'BKzKRA_Tojs8YsxKH5yR2oToWDm5uI8QvMjZNLCP6hSMBxyA3pwOIk2rc80a8kyd04T4stIUIrLXMj2O_CMCnfc';
+      const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+      // Bestehende Subscription holen oder neue erstellen
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        });
+      }
+      // Subscription ans Backend senden
+      const subJson = subscription.toJSON();
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/push/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys?.p256dh,
+          auth: subJson.keys?.auth,
+          userAgent: navigator.userAgent
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSuccess('Push-Benachrichtigungen aktiviert ✓');
+        await loadDashboardData();
+      } else {
+        setError(data.message || 'Fehler beim Aktivieren');
+      }
+    } catch (err) {
+      console.error('Push-Subscription Fehler:', err);
+      setError('Fehler beim Aktivieren: ' + err.message);
     }
   };
 
@@ -683,126 +731,76 @@ const NotificationSystem = () => {
   const renderDashboard = () => {
     // Daten für Charts vorbereiten
     const pieData = [
-      { name: 'Emails', value: dashboardData.stats.email_notifications || 0, color: '#60a5fa' },
-      { name: 'Push', value: dashboardData.stats.push_notifications || 0, color: '#22c55e' }
+      { name: 'Emails', value: dashboardData.stats.email_notifications || 0, color: 'var(--color-info-400)' },
+      { name: 'Push', value: dashboardData.stats.push_notifications || 0, color: 'var(--success)' }
     ];
 
     const statusData = [
-      { name: 'Erfolgreich', value: dashboardData.stats.sent_notifications || 0, color: '#22c55e' },
-      { name: 'Fehlgeschlagen', value: dashboardData.stats.failed_notifications || 0, color: '#ef4444' }
+      { name: 'Erfolgreich', value: dashboardData.stats.sent_notifications || 0, color: 'var(--success)' },
+      { name: 'Fehlgeschlagen', value: dashboardData.stats.failed_notifications || 0, color: 'var(--error)' }
     ];
 
     return (
-      <div className="notification-dashboard" style={{
-        background: 'rgba(20, 20, 30, 0.95)',
-        borderRadius: '12px',
-        padding: '1.5rem'
-      }}>
-        <div className="dashboard-header" style={{ marginBottom: '1.5rem' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '1.25rem',
-            marginBottom: '0.5rem'
-          }}>
-            <span style={{ 
-              fontSize: '2.5rem',
-              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-              position: 'relative',
-              zIndex: 10,
-              lineHeight: 1,
-              display: 'inline-block',
-              flexShrink: 0
-            }}>📧</span>
-            <h2 style={{ 
-              fontSize: '2.5rem',
-              fontWeight: '700',
-              color: '#FFD700',
-              margin: 0,
-              textShadow: 'none',
-              WebkitTextFillColor: '#FFD700',
-              background: 'none',
-              WebkitBackgroundClip: 'initial',
-              backgroundClip: 'initial',
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale',
-              letterSpacing: '0.5px',
-              position: 'relative',
-              zIndex: 2
-            }}>Newsletter & Benachrichtigungen</h2>
+      <div className="notification-dashboard ns-dashboard-inner">
+        <div className="dashboard-header">
+          <div className="ns-header-row">
+            <span className="ns-header-icon-lg">📧</span>
+            <h2 className="ns-heading-h2">Newsletter & Benachrichtigungen</h2>
           </div>
-          <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Verwalten Sie Email-Versand, Push-Nachrichten und Server-Einstellungen</p>
+          <p className="ns-subtitle">Verwalten Sie Email-Versand, Push-Nachrichten und Server-Einstellungen</p>
         </div>
 
         {/* Statistiken */}
         <div className="stats-grid">
-          <div className="stat-card" style={{
-            border: '1px solid rgba(96, 165, 250, 0.3)'
-          }}>
+          <div className="stat-card ns-stat-card-email">
             <div className="stat-icon">📧</div>
             <div className="stat-content">
-              <h3 style={{ color: '#60a5fa', margin: 0 }}>{dashboardData.stats.email_notifications || 0}</h3>
+              <h3 className="ns-stat-h3-email">{dashboardData.stats.email_notifications || 0}</h3>
               <p>Emails gesendet (30 Tage)</p>
             </div>
           </div>
-          <div className="stat-card" style={{
-            border: '1px solid rgba(34, 197, 94, 0.3)'
-          }}>
+          <div className="stat-card ns-stat-card-green">
             <div className="stat-icon">📱</div>
             <div className="stat-content">
-              <h3 style={{ color: '#22c55e', margin: 0 }}>{dashboardData.stats.push_notifications || 0}</h3>
+              <h3 className="ns-heading-success">{dashboardData.stats.push_notifications || 0}</h3>
               <p>Push-Nachrichten</p>
             </div>
           </div>
-          <div className="stat-card" style={{
-            border: '1px solid rgba(34, 197, 94, 0.3)'
-          }}>
+          <div className="stat-card ns-stat-card-green">
             <div className="stat-icon">✅</div>
             <div className="stat-content">
-              <h3 style={{ color: '#22c55e', margin: 0 }}>{dashboardData.stats.sent_notifications || 0}</h3>
+              <h3 className="ns-heading-success">{dashboardData.stats.sent_notifications || 0}</h3>
               <p>Erfolgreich gesendet</p>
             </div>
           </div>
-          <div className="stat-card" style={{
-            border: '1px solid rgba(239, 68, 68, 0.3)'
-          }}>
+          <div className="stat-card ns-stat-card-red">
             <div className="stat-icon">❌</div>
             <div className="stat-content">
-              <h3 style={{ color: '#ef4444', margin: 0 }}>{dashboardData.stats.failed_notifications || 0}</h3>
+              <h3 className="ns-stat-h3-error">{dashboardData.stats.failed_notifications || 0}</h3>
               <p>Fehlgeschlagen</p>
             </div>
           </div>
         </div>
 
         {/* Charts Section */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
-          gap: '1.5rem',
-          marginBottom: '2rem'
-        }}>
+        <div className="ns-charts-grid">
           {/* Zeitverlauf Chart */}
-          <div style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '10px',
-            padding: '1.2rem'
-          }}>
-            <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1rem' }}>📈 Wochenverlauf</h4>
+          <div className="ns-chart-card">
+            <h4 className="ns-chart-title">📈 Wochenverlauf</h4>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="tag" stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
-                <YAxis stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
+                <XAxis dataKey="tag" stroke="#a0a0b0" className="ns-text-xs" />
+                <YAxis stroke="#a0a0b0" className="ns-text-xs" />
                 <Tooltip
                   contentStyle={{
                     background: 'rgba(20, 20, 30, 0.95)',
                     border: '1px solid rgba(255, 215, 0, 0.3)',
                     borderRadius: '8px',
-                    color: '#e0e0e0'
+                    color: 'var(--text-primary)'
                   }}
                 />
-                <Legend wrapperStyle={{ color: '#e0e0e0', fontSize: '0.85rem' }} />
+                <Legend wrapperStyle={{ color: 'var(--text-primary)', fontSize: '0.85rem' }} />
                 <Line type="monotone" dataKey="emails" stroke="#60a5fa" strokeWidth={2} name="Emails" />
                 <Line type="monotone" dataKey="push" stroke="#22c55e" strokeWidth={2} name="Push" />
               </LineChart>
@@ -810,13 +808,8 @@ const NotificationSystem = () => {
           </div>
 
           {/* Verteilung Email vs Push */}
-          <div style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '10px',
-            padding: '1.2rem'
-          }}>
-            <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1rem' }}>📊 Verteilung Typen</h4>
+          <div className="ns-chart-card">
+            <h4 className="ns-chart-title">📊 Verteilung Typen</h4>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -838,7 +831,7 @@ const NotificationSystem = () => {
                     background: 'rgba(20, 20, 30, 0.95)',
                     border: '1px solid rgba(255, 215, 0, 0.3)',
                     borderRadius: '8px',
-                    color: '#e0e0e0'
+                    color: 'var(--text-primary)'
                   }}
                 />
               </PieChart>
@@ -846,24 +839,19 @@ const NotificationSystem = () => {
           </div>
 
           {/* Status Chart */}
-          <div style={{
-            background: 'rgba(30, 30, 45, 0.8)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '10px',
-            padding: '1.2rem'
-          }}>
-            <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1rem' }}>✅ Erfolgsrate</h4>
+          <div className="ns-chart-card">
+            <h4 className="ns-chart-title">✅ Erfolgsrate</h4>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={statusData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />
-                <XAxis dataKey="name" stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
-                <YAxis stroke="#a0a0b0" style={{ fontSize: '0.8rem' }} />
+                <XAxis dataKey="name" stroke="#a0a0b0" className="ns-text-xs" />
+                <YAxis stroke="#a0a0b0" className="ns-text-xs" />
                 <Tooltip
                   contentStyle={{
                     background: 'rgba(20, 20, 30, 0.95)',
                     border: '1px solid rgba(255, 215, 0, 0.3)',
                     borderRadius: '8px',
-                    color: '#e0e0e0'
+                    color: 'var(--text-primary)'
                   }}
                 />
                 <Bar dataKey="value" radius={[8, 8, 0, 0]}>
@@ -877,54 +865,24 @@ const NotificationSystem = () => {
         </div>
 
         {/* Letzte Benachrichtigungen */}
-        <div className="recent-notifications" style={{
-          background: 'rgba(30, 30, 45, 0.8)',
-          border: '1px solid rgba(255, 215, 0, 0.2)',
-          borderRadius: '10px',
-          padding: '1.2rem'
-        }}>
-          <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.1rem' }}>🔔 Letzte Benachrichtigungen</h3>
-          <div className="notifications-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+        <div className="recent-notifications ns-recent-inner">
+          <h3 className="ns-chart-title">🔔 Letzte Benachrichtigungen</h3>
+          <div className="notifications-list ns-flex-col">
             {dashboardData.recentNotifications?.map((notification, index) => (
-              <div key={index} className="notification-item" style={{
-                background: 'rgba(20, 20, 30, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                padding: '0.8rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem'
-              }}>
-                <div className="notification-icon" style={{ fontSize: '1.5rem' }}>
+              <div key={index} className="notification-item ns-notification-item-compact">
+                <div className="notification-icon ns-text-xl">
                   {notification.type === 'email' ? '📧' : '📱'}
                 </div>
-                <div className="notification-content" style={{ flex: 1 }}>
-                  <div className="notification-header" style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '0.3rem'
-                  }}>
-                    <span className="notification-recipient" style={{
-                      color: '#e0e0e0',
-                      fontSize: '0.9rem',
-                      fontWeight: '600'
-                    }}>{notification.recipient}</span>
-                    <span className={`notification-status ${notification.status}`} style={{
-                      fontSize: '1rem'
-                    }}>
+                <div className="notification-content u-flex-1">
+                  <div className="notification-header ns-notif-header-row">
+                    <span className="notification-recipient ns-notif-recipient">{notification.recipient}</span>
+                    <span className={`notification-status ${notification.status} ns-notif-status`}>
                       {notification.status === 'sent' ? '✅' :
                        notification.status === 'failed' ? '❌' : '⏳'}
                     </span>
                   </div>
-                  <div className="notification-subject" style={{
-                    color: '#ffd700',
-                    fontSize: '0.85rem',
-                    marginBottom: '0.2rem'
-                  }}>{notification.subject}</div>
-                  <div className="notification-time" style={{
-                    color: '#808090',
-                    fontSize: '0.75rem'
-                  }}>
+                  <div className="notification-subject ns-notif-subject">{notification.subject}</div>
+                  <div className="notification-time ns-notif-time">
                     {new Date(notification.created_at).toLocaleString('de-DE')}
                   </div>
                 </div>
@@ -937,127 +895,46 @@ const NotificationSystem = () => {
   };
 
   const renderSettings = () => (
-    <div className="notification-settings" style={{
-      background: 'rgba(20, 20, 30, 0.95)',
-      borderRadius: '12px',
-      padding: '1.5rem'
-    }}>
-      <div className="settings-header" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '1.25rem',
-          marginBottom: '0.5rem'
-        }}>
-          <span style={{ 
-            fontSize: '2rem',
-            filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-            position: 'relative',
-            zIndex: 10,
-            lineHeight: 1,
-            display: 'inline-block',
-            flexShrink: 0
-          }}>⚙️</span>
-          <h3 style={{ 
-            fontSize: '2rem',
-            fontWeight: '700',
-            color: '#FFD700',
-            margin: 0,
-            textShadow: 'none',
-            WebkitTextFillColor: '#FFD700',
-            background: 'none',
-            WebkitBackgroundClip: 'initial',
-            backgroundClip: 'initial',
-            WebkitFontSmoothing: 'antialiased',
-            MozOsxFontSmoothing: 'grayscale',
-            letterSpacing: '0.5px',
-            position: 'relative',
-            zIndex: 2
-          }}>Server-Einstellungen</h3>
+    <div className="notification-settings ns-settings-inner">
+      <div className="settings-header">
+        <div className="ns-header-row">
+          <span className="ns-header-icon-lg">⚙️</span>
+          <h3 className="ns-heading-h3">Server-Einstellungen</h3>
         </div>
-        <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Konfigurieren Sie Email- und Push-Notification-Einstellungen</p>
+        <p className="ns-subtitle">Konfigurieren Sie Email- und Push-Notification-Einstellungen</p>
       </div>
 
       {/* Email-Einstellungen */}
-      <div className="settings-section" style={{
-        background: 'rgba(30, 30, 45, 0.8)',
-        border: '1px solid rgba(255, 215, 0, 0.2)',
-        borderRadius: '10px',
-        padding: '1.2rem',
-        marginBottom: '1.5rem'
-      }}>
-        <div className="section-header" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ 
-              fontSize: '1.1rem',
-              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-              position: 'relative',
-              zIndex: 10,
-              lineHeight: 1,
-              display: 'inline-block',
-              flexShrink: 0
-            }}>📧</span>
-            <h4 style={{ 
-              color: '#ffd700', 
-              margin: 0, 
-              fontSize: '1.1rem', 
-              fontWeight: '600',
-              textShadow: 'none',
-              WebkitTextFillColor: '#ffd700',
-              background: 'none',
-              WebkitBackgroundClip: 'initial',
-              backgroundClip: 'initial',
-              position: 'relative',
-              zIndex: 2
-            }}>Email-Konfiguration</h4>
+      <div className="settings-section ns-settings-section">
+        <div className="section-header ns-section-header">
+          <div className="u-flex-row-md">
+            <span className="ns-header-icon-sm">📧</span>
+            <h4 className="ns-heading-h4">Email-Konfiguration</h4>
           </div>
-          <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+          <label className="toggle-switch ns-toggle-switch">
             <input
               type="checkbox"
               checked={settings.email_enabled}
               onChange={(e) => setSettings({...settings, email_enabled: e.target.checked})}
-              style={{ opacity: 0, width: 0, height: 0 }}
+              className="ns-toggle-input"
             />
-            <span className="toggle-slider" style={{
-              position: 'absolute',
-              cursor: 'pointer',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: settings.email_enabled ? '#22c55e' : '#606070',
-              transition: '0.4s',
-              borderRadius: '24px'
-            }}></span>
+            <span className={`toggle-slider ns-toggle-slider-base ${settings.email_enabled ? 'ns-toggle-slider--on' : 'ns-toggle-slider--off'}`}></span>
           </label>
         </div>
 
         {settings.email_enabled && (
           <div className="email-config">
             {/* Protokoll-Auswahl */}
-            <div className="form-row" style={{ marginBottom: '1rem' }}>
+            <div className="form-row ns-mb-1">
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>E-Mail Protokoll</label>
+                <label className="ns-form-label">E-Mail Protokoll</label>
                 <select
                   value={settings.email_config.protocol || 'smtp'}
                   onChange={(e) => setSettings({
                     ...settings,
                     email_config: {...settings.email_config, protocol: e.target.value}
                   })}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 >
                   <option value="smtp">SMTP (Postausgang)</option>
                   <option value="pop3">POP3 (Posteingang)</option>
@@ -1067,9 +944,9 @@ const NotificationSystem = () => {
             </div>
 
             {/* Postausgangsserver (SMTP) */}
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="form-row u-grid-2col">
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Postausgangsserver (SMTP)</label>
+                <label className="ns-form-label">Postausgangsserver (SMTP)</label>
                 <input
                   type="text"
                   value={settings.email_config.smtp_host}
@@ -1078,19 +955,11 @@ const NotificationSystem = () => {
                     email_config: {...settings.email_config, smtp_host: e.target.value}
                   })}
                   placeholder="smtp.alfahosting.de"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Postausgangsserver Port</label>
+                <label className="ns-form-label">Postausgangsserver Port</label>
                 <input
                   type="number"
                   value={settings.email_config.smtp_port}
@@ -1099,23 +968,15 @@ const NotificationSystem = () => {
                     email_config: {...settings.email_config, smtp_port: parseInt(e.target.value)}
                   })}
                   placeholder="587"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
             </div>
 
             {/* Posteingangsserver (IMAP/POP3) */}
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="form-row u-grid-2col">
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>
+                <label className="ns-form-label">
                   Posteingangsserver ({settings.email_config.protocol === 'imap' ? 'IMAP' : settings.email_config.protocol === 'pop3' ? 'POP3' : 'IMAP/POP3'})
                 </label>
                 <input
@@ -1131,19 +992,11 @@ const NotificationSystem = () => {
                     }
                   })}
                   placeholder={settings.email_config.protocol === 'imap' ? 'imap.alfahosting.de' : 'pop3.alfahosting.de'}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Posteingangsserver Port</label>
+                <label className="ns-form-label">Posteingangsserver Port</label>
                 <input
                   type="number"
                   value={settings.email_config.protocol === 'imap' ? settings.email_config.imap_port : settings.email_config.pop3_port}
@@ -1157,22 +1010,14 @@ const NotificationSystem = () => {
                     }
                   })}
                   placeholder={settings.email_config.protocol === 'imap' ? '993' : '995'}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="form-row u-grid-2col">
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>SMTP Benutzername</label>
+                <label className="ns-form-label">SMTP Benutzername</label>
                 <input
                   type="text"
                   value={settings.email_config.smtp_user}
@@ -1181,19 +1026,11 @@ const NotificationSystem = () => {
                     email_config: {...settings.email_config, smtp_user: e.target.value}
                   })}
                   placeholder="ihre-email@ihre-domain.de"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>SMTP Passwort</label>
+                <label className="ns-form-label">SMTP Passwort</label>
                 <input
                   type="password"
                   value={settings.email_config.smtp_password}
@@ -1202,81 +1039,39 @@ const NotificationSystem = () => {
                     email_config: {...settings.email_config, smtp_password: e.target.value}
                   })}
                   placeholder="App-Passwort"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="form-row u-grid-2col">
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Standard Absender-Email</label>
+                <label className="ns-form-label">Standard Absender-Email</label>
                 <input
                   type="email"
                   value={settings.default_from_email}
                   onChange={(e) => setSettings({...settings, default_from_email: e.target.value})}
                   placeholder="noreply@ihrdojo.de"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
               <div className="form-group">
-                <label style={{ color: '#e0e0e0', fontSize: '0.9rem', marginBottom: '0.5rem', display: 'block' }}>Standard Absender-Name</label>
+                <label className="ns-form-label">Standard Absender-Name</label>
                 <input
                   type="text"
                   value={settings.default_from_name}
                   onChange={(e) => setSettings({...settings, default_from_name: e.target.value})}
                   placeholder="Dojo Software"
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#e0e0e0',
-                    fontSize: '0.9rem'
-                  }}
+                  className="ns-form-input"
                 />
               </div>
             </div>
 
-            <div className="form-actions" style={{ 
-              marginTop: '1rem', 
-              display: 'flex', 
-              gap: '0.8rem',
-              flexWrap: 'wrap'
-            }}>
+            <div className="form-actions ns-form-actions">
               <button
                 onClick={handleSMTPVerify}
                 disabled={loading || !settings.email_enabled}
-                style={{
-                  padding: '0.7rem 1.5rem',
-                  background: 'rgba(34, 197, 94, 0.2)',
-                  border: '1px solid rgba(34, 197, 94, 0.4)',
-                  borderRadius: '8px',
-                  color: '#22c55e',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  cursor: (loading || !settings.email_enabled) ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  opacity: (!settings.email_enabled) ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(34, 197, 94, 0.3)')}
-                onMouseLeave={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)')}
+                className="ns-btn-verify"
                 title="SMTP-Verbindung testen"
               >
                 🔌 SMTP-Verbindung testen
@@ -1284,20 +1079,7 @@ const NotificationSystem = () => {
               <button
                 onClick={handleEmailTest}
                 disabled={loading || !settings.email_enabled}
-                style={{
-                  padding: '0.7rem 1.5rem',
-                  background: 'rgba(96, 165, 250, 0.2)',
-                  border: '1px solid rgba(96, 165, 250, 0.4)',
-                  borderRadius: '8px',
-                  color: '#60a5fa',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  cursor: (loading || !settings.email_enabled) ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  opacity: (!settings.email_enabled) ? 0.5 : 1
-                }}
-                onMouseEnter={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(96, 165, 250, 0.3)')}
-                onMouseLeave={(e) => !loading && settings.email_enabled && (e.currentTarget.style.background = 'rgba(96, 165, 250, 0.2)')}
+                className="ns-btn-test-email"
                 title="Test-E-Mail versenden"
               >
                 📧 Test-Email senden
@@ -1308,88 +1090,35 @@ const NotificationSystem = () => {
       </div>
 
       {/* Push-Notification-Einstellungen */}
-      <div className="settings-section" style={{
-        background: 'rgba(30, 30, 45, 0.8)',
-        border: '1px solid rgba(255, 215, 0, 0.2)',
-        borderRadius: '10px',
-        padding: '1.2rem',
-        marginBottom: '1.5rem'
-      }}>
-        <div className="section-header" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ 
-              fontSize: '1.1rem',
-              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-              position: 'relative',
-              zIndex: 10,
-              lineHeight: 1,
-              display: 'inline-block',
-              flexShrink: 0
-            }}>📱</span>
-            <h4 style={{ 
-              color: '#ffd700', 
-              margin: 0, 
-              fontSize: '1.1rem', 
-              fontWeight: '600',
-              textShadow: 'none',
-              WebkitTextFillColor: '#ffd700',
-              background: 'none',
-              WebkitBackgroundClip: 'initial',
-              backgroundClip: 'initial',
-              position: 'relative',
-              zIndex: 2
-            }}>Push-Notifications</h4>
+      <div className="settings-section ns-settings-section">
+        <div className="section-header ns-section-header">
+          <div className="u-flex-row-md">
+            <span className="ns-header-icon-sm">📱</span>
+            <h4 className="ns-heading-h4">Push-Notifications</h4>
           </div>
-          <label className="toggle-switch" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '24px' }}>
+          <label className="toggle-switch ns-toggle-switch">
             <input
               type="checkbox"
               checked={settings.push_enabled}
               onChange={(e) => setSettings({...settings, push_enabled: e.target.checked})}
-              style={{ opacity: 0, width: 0, height: 0 }}
+              className="ns-toggle-input"
             />
-            <span className="toggle-slider" style={{
-              position: 'absolute',
-              cursor: 'pointer',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: settings.push_enabled ? '#22c55e' : '#606070',
-              transition: '0.4s',
-              borderRadius: '24px'
-            }}></span>
+            <span className={`toggle-slider ns-toggle-slider-base ${settings.push_enabled ? 'ns-toggle-slider--on' : 'ns-toggle-slider--off'}`}></span>
           </label>
         </div>
 
         {settings.push_enabled && (
           <div className="push-config">
-            <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Push-Notification-Konfiguration wird hier implementiert...</p>
+            <p className="ns-subtitle">Push-Notification-Konfiguration wird hier implementiert...</p>
           </div>
         )}
       </div>
 
-      <div className="settings-actions" style={{ textAlign: 'right' }}>
+      <div className="settings-actions ns-text-right">
         <button
           onClick={handleSettingsSave}
           disabled={loading}
-          style={{
-            padding: '0.8rem 2rem',
-            background: 'rgba(255, 215, 0, 0.2)',
-            border: '1px solid rgba(255, 215, 0, 0.4)',
-            borderRadius: '8px',
-            color: '#ffd700',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => !loading && (e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)')}
-          onMouseLeave={(e) => !loading && (e.currentTarget.style.background = 'rgba(255, 215, 0, 0.2)')}
+          className="ns-btn-save"
         >
           {loading ? 'Speichern...' : '💾 Einstellungen speichern'}
         </button>
@@ -1406,49 +1135,25 @@ const NotificationSystem = () => {
 
       {/* Dojo-Filter Indikator */}
       {activeDojo && (
-        <div style={{
-          background: filter === 'all'
-            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 107, 53, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%)'
-            : `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
-          border: `1px solid ${filter === 'all' ? 'rgba(255, 215, 0, 0.3)' : `${activeDojo.farbe}66`}`,
-          borderRadius: '10px',
-          padding: '1rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.8rem'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '40px',
-            borderRadius: '4px',
-            background: filter === 'all'
-              ? 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
-              : activeDojo.farbe
-          }} />
-          <div style={{ flex: 1 }}>
-            <div style={{
-              fontSize: '0.75rem',
-              color: '#a0a0b0',
-              marginBottom: '0.3rem',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
+        <div
+          className={`ns-dojo-filter-base ${filter === 'all' ? 'ns-dojo-filter--all' : ''}`}
+          style={filter !== 'all' ? {
+            '--ns-filter-bg': `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
+            '--ns-filter-border': `${activeDojo.farbe}66`
+          } : undefined}
+        >
+          <div
+            className={`ns-dojo-filter-accent${filter !== 'all' ? ' ns-dojo-filter-accent--dojo' : ''}`}
+            style={filter !== 'all' ? { '--ns-accent-color': activeDojo.farbe } : undefined}
+          />
+          <div className="u-flex-1">
+            <div className="ns-dojo-filter-label">
               Empfänger-Filter aktiv
             </div>
-            <div style={{
-              fontSize: '1rem',
-              color: '#ffd700',
-              fontWeight: '600'
-            }}>
+            <div className="ns-dojo-filter-name">
               {filter === 'all' ? '🏯 Alle Dojos' : `🏯 ${activeDojo.dojoname}`}
             </div>
-            <div style={{
-              fontSize: '0.85rem',
-              color: '#e0e0e0',
-              marginTop: '0.3rem'
-            }}>
+            <div className="ns-dojo-filter-count">
               Verfügbare Empfänger: {recipients.mitglieder.length} Mitglieder, {recipients.trainer.length} Trainer, {recipients.personal.length} Mitarbeiter
             </div>
           </div>
@@ -1570,49 +1275,25 @@ const NotificationSystem = () => {
 
       {/* Dojo-Filter Indikator */}
       {activeDojo && (
-        <div style={{
-          background: filter === 'all'
-            ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 107, 53, 0.15) 50%, rgba(59, 130, 246, 0.15) 100%)'
-            : `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
-          border: `1px solid ${filter === 'all' ? 'rgba(255, 215, 0, 0.3)' : `${activeDojo.farbe}66`}`,
-          borderRadius: '10px',
-          padding: '1rem',
-          marginBottom: '1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.8rem'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '40px',
-            borderRadius: '4px',
-            background: filter === 'all'
-              ? 'linear-gradient(135deg, #FFD700 0%, #FF6B35 50%, #3B82F6 100%)'
-              : activeDojo.farbe
-          }} />
-          <div style={{ flex: 1 }}>
-            <div style={{
-              fontSize: '0.75rem',
-              color: '#a0a0b0',
-              marginBottom: '0.3rem',
-              fontWeight: '600',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
-            }}>
+        <div
+          className={`ns-dojo-filter-base ${filter === 'all' ? 'ns-dojo-filter--all' : ''}`}
+          style={filter !== 'all' ? {
+            '--ns-filter-bg': `linear-gradient(135deg, ${activeDojo.farbe}33 0%, ${activeDojo.farbe}11 100%)`,
+            '--ns-filter-border': `${activeDojo.farbe}66`
+          } : undefined}
+        >
+          <div
+            className={`ns-dojo-filter-accent${filter !== 'all' ? ' ns-dojo-filter-accent--dojo' : ''}`}
+            style={filter !== 'all' ? { '--ns-accent-color': activeDojo.farbe } : undefined}
+          />
+          <div className="u-flex-1">
+            <div className="ns-dojo-filter-label">
               Empfänger-Filter aktiv
             </div>
-            <div style={{
-              fontSize: '1rem',
-              color: '#ffd700',
-              fontWeight: '600'
-            }}>
+            <div className="ns-dojo-filter-name">
               {filter === 'all' ? '🏯 Alle Dojos' : `🏯 ${activeDojo.dojoname}`}
             </div>
-            <div style={{
-              fontSize: '0.85rem',
-              color: '#e0e0e0',
-              marginTop: '0.3rem'
-            }}>
+            <div className="ns-dojo-filter-count">
               Verfügbare Empfänger: {recipients.mitglieder.length} Mitglieder, {recipients.trainer.length} Trainer, {recipients.personal.length} Mitarbeiter
             </div>
           </div>
@@ -1677,35 +1358,22 @@ const NotificationSystem = () => {
               </button>
             </div>
 
-            <div className="individual-selection" style={{ marginTop: '1.5rem' }}>
-              <label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: '600' }}>
+            <div className="individual-selection ns-mt-lg">
+              <label className="ns-label-bold">
                 🔍 Einzelne Mitglieder auswählen
               </label>
-              <div style={{ position: 'relative' }}>
+              <div className="ns-relative">
                 <input
                   type="text"
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
                   placeholder="Nach Name oder Email suchen..."
                   className="form-input"
-                  style={{ width: '100%', marginBottom: '0.5rem' }}
+                  className="u-w-full ns-mb-sm"
                 />
 
                 {memberSearch.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    backgroundColor: 'white',
-                    border: '2px solid #1976d2',
-                    borderRadius: '6px',
-                    maxHeight: '250px',
-                    overflowY: 'auto',
-                    zIndex: 1000,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                    marginTop: '0.25rem'
-                  }}>
+                  <div className="ns-search-dropdown">
                     {recipients.alle
                       .filter(r =>
                         r.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
@@ -1725,37 +1393,14 @@ const NotificationSystem = () => {
                             }
                             setMemberSearch('');
                           }}
-                          style={{
-                            padding: '0.75rem 1rem',
-                            cursor: 'pointer',
-                            borderBottom: '1px solid #e0e0e0',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#e3f2fd';
-                            e.currentTarget.style.borderLeftWidth = '4px';
-                            e.currentTarget.style.borderLeftColor = '#1976d2';
-                            e.currentTarget.style.borderLeftStyle = 'solid';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'white';
-                            e.currentTarget.style.borderLeftWidth = '0';
-                          }}
+                          className="ns-search-item"
                         >
-                          <div style={{ fontWeight: '600', color: '#1a1a1a', fontSize: '0.95rem', marginBottom: '0.25rem' }}>
+                          <div className="ns-item-title">
                             {member.name}
                           </div>
-                          <div style={{ fontSize: '0.85rem', color: '#444' }}>
+                          <div className="ns-item-subtitle">
                             {member.email}
-                            <span style={{
-                              marginLeft: '0.5rem',
-                              padding: '3px 8px',
-                              backgroundColor: '#1976d2',
-                              color: 'white',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              fontWeight: '600'
-                            }}>
+                            <span className="ns-type-badge">
                               {member.type}
                             </span>
                           </div>
@@ -1766,7 +1411,7 @@ const NotificationSystem = () => {
                       r.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
                       r.email.toLowerCase().includes(memberSearch.toLowerCase())
                     ).length === 0 && (
-                      <div style={{ padding: '1rem', textAlign: 'center', color: '#999' }}>
+                      <div className="ns-empty-text">
                         Keine Ergebnisse gefunden
                       </div>
                     )}
@@ -1775,23 +1420,15 @@ const NotificationSystem = () => {
               </div>
 
               {selectedIndividuals.length > 0 && (
-                <div style={{ marginTop: '1rem' }}>
-                  <strong style={{ marginBottom: '0.5rem', display: 'block' }}>
+                <div className="ns-mt-1">
+                  <strong className="ns-label">
                     Ausgewählte einzelne Empfänger ({selectedIndividuals.length}):
                   </strong>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div className="u-flex-wrap-sm">
                     {selectedIndividuals.map((member, index) => (
                       <span
                         key={index}
-                        style={{
-                          backgroundColor: '#e3f2fd',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '20px',
-                          fontSize: '0.85rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
+                        className="ns-selected-chip"
                       >
                         {member.name} ({member.email})
                         <button
@@ -1802,15 +1439,7 @@ const NotificationSystem = () => {
                               recipients: pushData.recipients.filter(e => e !== member.email)
                             });
                           }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#666',
-                            cursor: 'pointer',
-                            fontSize: '1rem',
-                            padding: 0,
-                            lineHeight: 1
-                          }}
+                          className="ns-chip-remove-btn"
                         >
                           ×
                         </button>
@@ -1821,7 +1450,7 @@ const NotificationSystem = () => {
               )}
             </div>
 
-            <div className="selected-recipients" style={{ marginTop: '1.5rem' }}>
+            <div className="selected-recipients ns-mt-lg">
               <strong>Gesamt ausgewählte Empfänger: {pushData.recipients.length}</strong>
               {pushData.recipients.length > 0 && (
                 <div className="recipient-list">
@@ -1882,8 +1511,26 @@ const NotificationSystem = () => {
           </div>
         </div>
 
+        {/* Im Chat anzeigen Option */}
+        <div className="form-group ns-mt-sm">
+          <label className="ns-label-row">
+            <input
+              type="checkbox"
+              checked={pushData.send_to_chat}
+              onChange={(e) => setPushData({...pushData, send_to_chat: e.target.checked})}
+              className="ns-checkbox"
+            />
+            <span>📣 Im Ankündigungs-Chat anzeigen</span>
+          </label>
+          {pushData.send_to_chat && (
+            <div className="ns-help-text">
+              Die Nachricht erscheint auch als Chat-Nachricht im Ankündigungen-Kanal der Mitglieder-App.
+            </div>
+          )}
+        </div>
+
         <div className="form-actions">
-          <button 
+          <button
             onClick={handlePushSend}
             className="btn btn-primary"
             disabled={loading || !pushData.title || !pushData.message}
@@ -1949,17 +1596,13 @@ const NotificationSystem = () => {
     const groups = Object.values(groupedNotifications);
 
     return (
-      <div className="notification-history" style={{
-        background: 'rgba(20, 20, 30, 0.95)',
-        borderRadius: '12px',
-        padding: '1.5rem'
-      }}>
-        <div className="history-header" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>📋 Benachrichtigungs-Verlauf</h3>
-          <p style={{ color: '#a0a0b0', fontSize: '0.9rem' }}>Übersicht über alle gesendeten Benachrichtigungen</p>
+      <div className="notification-history ns-history-inner">
+        <div className="history-header">
+          <h3 className="ns-primary-mb">📋 Benachrichtigungs-Verlauf</h3>
+          <p className="ns-subtitle">Übersicht über alle gesendeten Benachrichtigungen</p>
         </div>
 
-        <div className="history-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="history-list" className="u-flex-col-sm">
           {Array.isArray(groups) && groups.map((group, index) => {
             const key = `${group.subject}_${group.timestamp}`;
             const recipients = expandedNotifications[key];
@@ -1968,141 +1611,50 @@ const NotificationSystem = () => {
             return (
               <div
                 key={index}
-                style={{
-                  background: 'rgba(30, 30, 45, 0.8)',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  transition: 'all 0.3s ease'
-                }}
+                className="ns-history-card"
               >
                 {/* Header mit Subject und Typ */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.8rem',
-                  marginBottom: '0.8rem'
-                }}>
-                  <div style={{ fontSize: '1.5rem' }}>
+                <div className="ns-history-card-header">
+                  <div className="ns-text-xl">
                     {group.type === 'email' ? '📧' : '📱'}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      color: '#ffd700',
-                      margin: 0,
-                      fontSize: '1rem',
-                      fontWeight: '600'
-                    }}>
+                  <div className="u-flex-1">
+                    <h4 className="ns-history-title">
                       {group.subject}
                     </h4>
-                    <div style={{
-                      color: '#808090',
-                      fontSize: '0.85rem',
-                      marginTop: '0.2rem'
-                    }}>
+                    <div className="ns-history-time">
                       {new Date(group.timestamp).toLocaleString('de-DE')}
                     </div>
                   </div>
-                  <div style={{
-                    background: group.status === 'sent' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                    color: group.status === 'sent' ? '#22c55e' : '#ef4444',
-                    padding: '0.3rem 0.8rem',
-                    borderRadius: '20px',
-                    fontSize: '0.85rem',
-                    fontWeight: '600'
-                  }}>
+                  <div className={`ns-status-badge ${group.status === 'sent' ? 'ns-status-badge--sent' : 'ns-status-badge--failed'}`}>
                     {group.status === 'sent' ? '✅ Gesendet' :
                      group.status === 'failed' ? '❌ Fehlgeschlagen' : '⏳ Ausstehend'}
                   </div>
                   <button
                     onClick={() => deleteNotification(group.id)}
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.2)',
-                      color: '#ef4444',
-                      border: '1px solid rgba(239, 68, 68, 0.4)',
-                      padding: '0.4rem 0.6rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '600',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.3rem'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
-                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.6)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-                      e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-                    }}
+                    className="ns-btn-delete-single"
                     title="Nur diesen Empfänger löschen"
                   >
                     🗑️
                   </button>
                   <button
                     onClick={() => deleteBulkNotification(group.id)}
-                    style={{
-                      background: 'rgba(220, 38, 38, 0.3)',
-                      color: '#dc2626',
-                      border: '2px solid rgba(220, 38, 38, 0.5)',
-                      padding: '0.4rem 0.8rem',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      fontWeight: '700',
-                      transition: 'all 0.2s ease',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                      boxShadow: '0 2px 4px rgba(220, 38, 38, 0.2)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.4)';
-                      e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.7)';
-                      e.currentTarget.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(220, 38, 38, 0.3)';
-                      e.currentTarget.style.borderColor = 'rgba(220, 38, 38, 0.5)';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                    className="ns-btn-delete-bulk"
                     title="⚠️ Für ALLE Empfänger löschen"
                   >
                     <span>🗑️🗑️</span>
-                    <span style={{ fontSize: '0.75rem' }}>Alle</span>
+                    <span className="ns-text-2xs">Alle</span>
                   </button>
                 </div>
 
                 {/* Nachrichteninhalt */}
                 {group.message && (
-                  <div style={{
-                    marginBottom: '0.8rem',
-                    padding: '0.8rem',
-                    background: 'rgba(20, 20, 30, 0.5)',
-                    borderRadius: '8px',
-                    borderLeft: '3px solid #ffd700'
-                  }}>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#a0a0b0',
-                      marginBottom: '0.4rem',
-                      fontWeight: '600',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
+                  <div className="ns-message-preview">
+                    <div className="ns-message-label">
                       Nachricht
                     </div>
                     <div
-                      style={{
-                        color: '#e0e0e0',
-                        fontSize: '0.9rem',
-                        lineHeight: '1.5',
-                        maxHeight: '100px',
-                        overflowY: 'auto'
-                      }}
+                      className="ns-message-content"
                       dangerouslySetInnerHTML={createSafeHtml(group.message)}
                     />
                   </div>
@@ -2110,92 +1662,42 @@ const NotificationSystem = () => {
 
                 {/* Empfänger anzeigen */}
                 {group.recipient && (
-                  <div style={{
-                    marginBottom: '0.8rem',
-                    padding: '0.6rem 0.8rem',
-                    background: 'rgba(96, 165, 250, 0.1)',
-                    borderRadius: '6px',
-                    border: '1px solid rgba(96, 165, 250, 0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '1rem' }}>👤</span>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      color: '#a0a0b0',
-                      fontWeight: '600',
-                      textTransform: 'uppercase'
-                    }}>
+                  <div className="ns-recipient-row">
+                    <span className="ns-text-base">👤</span>
+                    <span className="ns-recipient-label">
                       Empfänger:
                     </span>
-                    <span style={{
-                      color: '#60a5fa',
-                      fontSize: '0.9rem',
-                      fontWeight: '500'
-                    }}>
+                    <span className="ns-recipient-value">
                       {group.recipient}
                     </span>
                   </div>
                 )}
 
                 {/* Statistiken */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '0.8rem',
-                  marginBottom: '0.8rem',
-                  padding: '0.8rem',
-                  background: 'rgba(20, 20, 30, 0.5)',
-                  borderRadius: '8px'
-                }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      color: '#60a5fa'
-                    }}>
+                <div className="ns-stats-row">
+                  <div className="ns-text-center">
+                    <div className="ns-stat-num-sent">
                       {group.total_sent}
                     </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#a0a0b0',
-                      marginTop: '0.2rem'
-                    }}>
+                    <div className="ns-stat-caption">
                       Gesendet
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      color: '#22c55e'
-                    }}>
+                  <div className="ns-text-center">
+                    <div className="ns-stat-num-read">
                       {group.total_read}
                     </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#a0a0b0',
-                      marginTop: '0.2rem'
-                    }}>
+                    <div className="ns-stat-caption">
                       Gelesen
                     </div>
                   </div>
 
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      color: readPercentage >= 50 ? '#22c55e' : '#f59e0b'
-                    }}>
+                  <div className="ns-text-center">
+                    <div className={`ns-stat-pct ${readPercentage >= 50 ? 'ns-stat-pct--good' : 'ns-stat-pct--warning'}`}>
                       {readPercentage}%
                     </div>
-                    <div style={{
-                      fontSize: '0.75rem',
-                      color: '#a0a0b0',
-                      marginTop: '0.2rem'
-                    }}>
+                    <div className="ns-stat-caption">
                       Gelesen
                     </div>
                   </div>
@@ -2204,30 +1706,7 @@ const NotificationSystem = () => {
                 {/* Empfänger Button */}
                 <button
                   onClick={() => loadRecipientDetails(group.subject, group.timestamp)}
-                  style={{
-                    width: '100%',
-                    padding: '0.6rem',
-                    background: recipients ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${recipients ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)'}`,
-                    borderRadius: '8px',
-                    color: recipients ? '#ffd700' : '#e0e0e0',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.6)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = recipients ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)';
-                    e.currentTarget.style.borderColor = recipients ? 'rgba(255, 215, 0, 0.4)' : 'rgba(255, 255, 255, 0.1)';
-                  }}
+                  className={`ns-btn-recipients ${recipients ? 'ns-btn-recipients--active' : ''}`}
                 >
                   <span>{recipients ? '▼' : '▶'}</span>
                   <span>Empfänger anzeigen</span>
@@ -2235,53 +1714,22 @@ const NotificationSystem = () => {
 
                 {/* Expanded Recipients List */}
                 {recipients && (
-                  <div style={{
-                    marginTop: '0.8rem',
-                    padding: '0.8rem',
-                    background: 'rgba(20, 20, 30, 0.6)',
-                    borderRadius: '8px',
-                    maxHeight: '300px',
-                    overflowY: 'auto'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.4rem'
-                    }}>
+                  <div className="ns-recipients-expanded">
+                    <div className="ns-recipients-col">
                       {recipients.map((recipient, rIndex) => (
                         <div
                           key={rIndex}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.5rem 0.8rem',
-                            background: recipient.read ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                            border: `1px solid ${recipient.read ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                            borderRadius: '6px',
-                            transition: 'all 0.2s ease'
-                          }}
+                          className={`ns-recipient-expanded-row ${recipient.read ? 'ns-recipient-expanded-row--read' : ''}`}
                         >
-                          <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                          }}>
-                            <span style={{ fontSize: '1rem' }}>
+                          <div className="ns-recipient-name-row">
+                            <span className="ns-text-base">
                               {recipient.read ? '✅' : '📭'}
                             </span>
-                            <span style={{
-                              color: '#e0e0e0',
-                              fontSize: '0.9rem'
-                            }}>
+                            <span className="ns-recipient-name">
                               {recipient.recipient}
                             </span>
                           </div>
-                          <span style={{
-                            fontSize: '0.75rem',
-                            color: recipient.read ? '#22c55e' : '#808090',
-                            fontWeight: '600'
-                          }}>
+                          <span className={recipient.read ? 'ns-recipient-status--read' : 'ns-recipient-status--unread'}>
                             {recipient.read ? 'Gelesen' : 'Ungelesen'}
                           </span>
                         </div>
@@ -2295,52 +1743,21 @@ const NotificationSystem = () => {
         </div>
 
         {history.pagination && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '1rem',
-            marginTop: '1.5rem',
-            padding: '1rem 0'
-          }}>
+          <div className="ns-pagination">
             <button
               onClick={() => loadHistory(history.pagination.page - 1)}
               disabled={history.pagination.page <= 1}
-              style={{
-                padding: '0.6rem 1.2rem',
-                background: history.pagination.page <= 1 ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 215, 0, 0.2)',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                borderRadius: '8px',
-                color: history.pagination.page <= 1 ? '#606070' : '#ffd700',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: history.pagination.page <= 1 ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="ns-btn-page"
             >
               ← Zurück
             </button>
-            <span style={{
-              color: '#e0e0e0',
-              fontSize: '0.9rem',
-              fontWeight: '500'
-            }}>
+            <span className="ns-page-indicator">
               Seite {history.pagination.page} von {history.pagination.pages}
             </span>
             <button
               onClick={() => loadHistory(history.pagination.page + 1)}
               disabled={history.pagination.page >= history.pagination.pages}
-              style={{
-                padding: '0.6rem 1.2rem',
-                background: history.pagination.page >= history.pagination.pages ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 215, 0, 0.2)',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                borderRadius: '8px',
-                color: history.pagination.page >= history.pagination.pages ? '#606070' : '#ffd700',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: history.pagination.page >= history.pagination.pages ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="ns-btn-page"
             >
               Weiter →
             </button>

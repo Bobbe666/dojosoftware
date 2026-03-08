@@ -1,50 +1,52 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  CreditCard, 
-  DollarSign, 
-  Users, 
-  Calendar, 
-  FileText, 
+import {
+  CreditCard,
+  DollarSign,
+  Users,
+  Calendar,
+  FileText,
   AlertCircle,
   TrendingUp,
   PiggyBank,
   Receipt,
   Settings,
   Search,
-  Filter
+  ArrowDownToDot,
+  BarChart3
 } from "lucide-react";
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE: Dojo-Filter
 import config from "../config/config";
-import "../styles/themes.css";       // Centralized theme system
-import "../styles/components.css";   // Universal component styles  
+import "../styles/themes.css";
+import "../styles/components.css";
 import "../styles/Beitraege.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 
 const Beitraege = () => {
   const navigate = useNavigate();
-  const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
-  const { getDojoFilterParam, activeDojo, filter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
+  const { updateTrigger } = useMitgliederUpdate();
+  const { getDojoFilterParam, activeDojo, filter } = useDojoContext(); // 🔒 TAX COMPLIANCE
+
   const [stats, setStats] = useState({
     totalEinnahmen: 0,
-    offeneRechnungen: 0,
+    offeneRechnungen: 0,       // € Summe offener Rechnungen
+    offeneAnzahl: 0,           // Anzahl offener Rechnungen
+    ueberfaelligeAnzahl: 0,    // Anzahl überfälliger Rechnungen
     aktiveMitglieder: 0,
     monatlicheEinnahmen: 0
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [showMonatsreport, setShowMonatsreport] = useState(false);
   const [monatsreportData, setMonatsreportData] = useState(null);
   const [reportLoading, setReportLoading] = useState(false);
-  
+
   useEffect(() => {
     loadBeitraegeStats();
-    // 🔄 AUTOMATISCHES UPDATE: Lädt neu wenn sich Mitglieder ändern
-    // 🔒 TAX COMPLIANCE: Lädt neu wenn Dojo-Filter ändert
   }, [updateTrigger, activeDojo, filter]);
-  
+
   const loadMonatsreport = async () => {
     try {
       setReportLoading(true);
@@ -65,11 +67,11 @@ const Beitraege = () => {
       setReportLoading(false);
     }
   };
-  
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
   };
-  
+
   const formatDate = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toLocaleDateString('de-DE');
@@ -78,14 +80,12 @@ const Beitraege = () => {
   const loadBeitraegeStats = async () => {
     try {
       setLoading(true);
-      
-      // API-Aufrufe für Beitrags-Statistiken
-      const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE: Dojo-Filter
+
+      const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE
       const separator = dojoFilterParam ? '?' : '';
-      const [
-        mitgliederResponse,
-        vertraegeResponse
-      ] = await Promise.all([
+
+      // Basis-Daten: Mitglieder + Verträge
+      const [mitgliederResponse, vertraegeResponse] = await Promise.all([
         fetchWithAuth(`${config.apiBaseUrl}/mitglieder${separator}${dojoFilterParam}`),
         fetchWithAuth(`${config.apiBaseUrl}/vertraege${separator}${dojoFilterParam}`)
       ]);
@@ -97,52 +97,56 @@ const Beitraege = () => {
       const mitgliederData = await mitgliederResponse.json();
       const vertraegeData = await vertraegeResponse.json();
 
-      // Handle both array and object responses
       const mitglieder = Array.isArray(mitgliederData) ? mitgliederData : (mitgliederData.data || []);
       const vertraege = Array.isArray(vertraegeData) ? vertraegeData : (vertraegeData.data || []);
 
-      // Berechne Statistiken basierend auf echten Daten
-      // API liefert bereits nur aktive Mitglieder (WHERE aktiv = 1)
       const aktiveMitglieder = mitglieder.length;
       const aktiveVertraege = vertraege.filter(v => v.status === 'aktiv');
-      
-      // Berechne monatliche Einnahmen
-      const monatlicheEinnahmen = aktiveVertraege.reduce((sum, vertrag) => {
-        return sum + (parseFloat(vertrag.monatsbeitrag) || 0);
-      }, 0);
-
-      // Berechne Gesamteinnahmen (vereinfacht: 12 Monate)
+      const monatlicheEinnahmen = aktiveVertraege.reduce((sum, v) => sum + (parseFloat(v.monatsbeitrag) || 0), 0);
       const totalEinnahmen = monatlicheEinnahmen * 12;
-      
-      // TODO: Echte API für offene Rechnungen implementieren
-      const offeneRechnungen = 0; // Placeholder bis echte Rechnungs-API verfügbar ist
 
-      setStats({
-        totalEinnahmen,
-        offeneRechnungen,
-        aktiveMitglieder,
-        monatlicheEinnahmen
-      });
-      
+      // Rechnungs-Statistiken (Feature: Buchhaltung / Premium)
+      let offeneRechnungen = 0;
+      let offeneAnzahl = 0;
+      let ueberfaelligeAnzahl = 0;
+
+      try {
+        const rechnungsResponse = await fetchWithAuth(
+          `${config.apiBaseUrl}/rechnungen/statistiken${dojoFilterParam ? `?${dojoFilterParam}` : ''}`
+        );
+        if (rechnungsResponse.ok) {
+          const rechnungsData = await rechnungsResponse.json();
+          if (rechnungsData.success && rechnungsData.data) {
+            offeneRechnungen = parseFloat(rechnungsData.data.offene_summe) || 0;
+            offeneAnzahl = parseInt(rechnungsData.data.offene_rechnungen) || 0;
+            ueberfaelligeAnzahl = parseInt(rechnungsData.data.ueberfaellige_rechnungen) || 0;
+          }
+        }
+      } catch (rechnungsError) {
+        // Feature nicht verfügbar — silently fallback to 0
+        console.info('Rechnungs-Statistiken nicht verfügbar:', rechnungsError.message);
+      }
+
+      setStats({ totalEinnahmen, offeneRechnungen, offeneAnzahl, ueberfaelligeAnzahl, aktiveMitglieder, monatlicheEinnahmen });
       setLoading(false);
     } catch (error) {
       console.error('Fehler beim Laden der Beitrags-Statistiken:', error);
-      setStats({
-        totalEinnahmen: 0,
-        offeneRechnungen: 0,
-        aktiveMitglieder: 0,
-        monatlicheEinnahmen: 0
-      });
+      setStats({ totalEinnahmen: 0, offeneRechnungen: 0, offeneAnzahl: 0, ueberfaelligeAnzahl: 0, aktiveMitglieder: 0, monatlicheEinnahmen: 0 });
       setLoading(false);
     }
   };
+
+  // Trend-Text für Offene Rechnungen
+  const offeneTrendText = stats.offeneAnzahl === 0
+    ? 'Keine offenen Rechnungen'
+    : `${stats.offeneAnzahl} offen · ${stats.ueberfaelligeAnzahl > 0 ? `${stats.ueberfaelligeAnzahl} überfällig` : 'alle aktuell'}`;
 
   if (loading) {
     return (
       <div className="beitraege-container">
         <div className="loading-state">
           <div className="loading-spinner"></div>
-          <p>Lade Beitragsdaten...</p>
+          <p>Lade Beitragsdaten…</p>
         </div>
       </div>
     );
@@ -150,39 +154,44 @@ const Beitraege = () => {
 
   return (
     <div className="beitraege-container">
+
+      {/* Header */}
       <div className="beitraege-header">
-        <h1>💰 Beitrags-Verwaltung</h1>
-        <p>Verwalte alle Mitgliedsbeiträge, Rechnungen und Zahlungen zentral</p>
+        <div className="beitraege-header-icon">
+          <Receipt size={20} />
+        </div>
+        <div>
+          <h1>Beitrags-Verwaltung</h1>
+          <p>Mitgliedsbeiträge, Rechnungen und Zahlungen zentral verwalten</p>
+        </div>
       </div>
 
       {/* Statistik-Übersicht */}
       <div className="stats-grid">
         <div className="stat-card positive">
-          <div className="stat-icon">
-            <TrendingUp size={32} />
-          </div>
+          <div className="stat-icon"><TrendingUp size={26} /></div>
           <div className="stat-info">
             <h3>Gesamteinnahmen</h3>
-            <p className="stat-value">€{stats.totalEinnahmen.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</p>
-            <span className="stat-trend">+12% vs. Vormonat</span>
+            <p className="stat-value">
+              {stats.totalEinnahmen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+            </p>
+            <span className="stat-trend">Hochrechnung 12 Monate</span>
           </div>
         </div>
 
         <div className="stat-card warning">
-          <div className="stat-icon">
-            <AlertCircle size={32} />
-          </div>
+          <div className="stat-icon"><AlertCircle size={26} /></div>
           <div className="stat-info">
             <h3>Offene Rechnungen</h3>
-            <p className="stat-value">€{stats.offeneRechnungen.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</p>
-            <span className="stat-trend">7 Rechnungen offen</span>
+            <p className="stat-value">
+              {stats.offeneRechnungen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+            </p>
+            <span className="stat-trend">{offeneTrendText}</span>
           </div>
         </div>
 
         <div className="stat-card info">
-          <div className="stat-icon">
-            <Users size={32} />
-          </div>
+          <div className="stat-icon"><Users size={26} /></div>
           <div className="stat-info">
             <h3>Aktive Mitglieder</h3>
             <p className="stat-value">{stats.aktiveMitglieder}</p>
@@ -191,448 +200,283 @@ const Beitraege = () => {
         </div>
 
         <div className="stat-card success">
-          <div className="stat-icon">
-            <PiggyBank size={32} />
-          </div>
+          <div className="stat-icon"><PiggyBank size={26} /></div>
           <div className="stat-info">
             <h3>Monatliche Einnahmen</h3>
-            <p className="stat-value">€{stats.monatlicheEinnahmen.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</p>
-            <span className="stat-trend">Durchschnitt</span>
+            <p className="stat-value">
+              {stats.monatlicheEinnahmen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+            </p>
+            <span className="stat-trend">Laufende Verträge</span>
           </div>
         </div>
       </div>
 
       {/* Management-Bereiche */}
       <div className="management-grid">
-        {/* LASTSCHRIFTEN CARD - ERSTE POSITION */}
+
+        {/* Lastschriften */}
         <div className="standard-card">
-          <div className="card-icon">
-            <CreditCard size={48} />
-          </div>
+          <div className="card-icon"><CreditCard size={24} /></div>
           <div className="card-content">
             <h3>Lastschriften</h3>
             <p>SEPA-Lastschriftlauf generieren, Mandate verwalten und an Bank übermitteln</p>
             <div className="card-actions">
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate('/dashboard/lastschriftlauf')}
-              >
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/lastschriftlauf')}>
                 Lastschriftlauf
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => navigate('/dashboard/sepa-mandate')}
-              >
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/sepa-mandate')}>
                 SEPA-Mandate
               </button>
             </div>
           </div>
         </div>
 
+        {/* Rechnungen */}
         <div className="standard-card">
-          <div className="card-icon">
-            <Receipt size={48} />
-          </div>
+          <div className="card-icon"><Receipt size={24} /></div>
           <div className="card-content">
-            <h3>Rechnungen erstellen</h3>
-            <p>Neue Rechnungen für Mitgliedsbeiträge, Kurse oder Sonderleistungen erstellen</p>
+            <h3>Rechnungen</h3>
+            <p>Rechnungen erstellen, verwalten, als PDF exportieren und Zahlungen buchen</p>
             <div className="card-actions">
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate('/dashboard/rechnungen')}
-              >
-                Rechnungen verwalten
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/rechnungen')}>
+                Rechnungen
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => alert('Vorlagenverwaltung wird implementiert')}
-              >
-                Vorlagen verwalten
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/berichte')}>
+                Berichte
               </button>
             </div>
           </div>
         </div>
 
+        {/* Zahlungsläufe — neu statt "Zahlungen verwalten" */}
         <div className="standard-card">
-          <div className="card-icon">
-            <CreditCard size={48} />
-          </div>
+          <div className="card-icon"><ArrowDownToDot size={24} /></div>
           <div className="card-content">
-            <h3>Zahlungen verwalten</h3>
-            <p>Eingehende Zahlungen erfassen, Zahlungsarten verwalten und SEPA-Lastschriften</p>
+            <h3>Zahlungsläufe</h3>
+            <p>SEPA- und Stripe-Zahlungsläufe einsehen, Transaktionen verwalten und Zahlungen buchen</p>
             <div className="card-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={() => alert('Zahlungserfassung wird implementiert')}
-              >
-                Zahlung erfassen
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/zahllaeufe')}>
+                Zahlungsläufe
               </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => alert('SEPA-Verwaltung wird implementiert')}
-              >
-                SEPA-Verwaltung
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/rechnungen')}>
+                Zahlung buchen
               </button>
             </div>
           </div>
         </div>
 
+        {/* Mahnwesen */}
         <div className="standard-card">
-          <div className="card-icon">
-            <AlertCircle size={48} />
-          </div>
+          <div className="card-icon"><AlertCircle size={24} /></div>
           <div className="card-content">
             <h3>Mahnwesen</h3>
             <p>Offene Rechnungen überwachen, Mahnungen versenden und Zahlungserinnerungen</p>
             <div className="card-actions">
-              <button
-                className="btn btn-primary"
-                onClick={() => navigate('/dashboard/mahnwesen')}
-              >
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/mahnwesen')}>
                 Offene Posten
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => navigate('/dashboard/mahnstufen-einstellungen')}
-              >
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/mahnstufen-einstellungen')}>
                 Mahnstufen
               </button>
             </div>
           </div>
         </div>
 
+        {/* Tarife & Preise */}
         <div className="standard-card">
-          <div className="card-icon">
-            <DollarSign size={48} />
-          </div>
+          <div className="card-icon"><DollarSign size={24} /></div>
           <div className="card-content">
             <h3>Tarife & Preise</h3>
             <p>Mitgliedstarife definieren, Sonderpreise verwalten und Rabatte konfigurieren</p>
             <div className="card-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={() => navigate('/dashboard/tarife')}
-              >
-                Tarife bearbeiten
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/tarife')}>
+                Tarife
               </button>
-              <button
-                className="btn btn-secondary"
-                onClick={() => navigate('/dashboard/rabattsystem')}
-              >
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/rabattsystem')}>
                 Rabatt-System
               </button>
             </div>
           </div>
         </div>
 
+        {/* Berichte & Export */}
         <div className="standard-card">
-          <div className="card-icon">
-            <FileText size={48} />
-          </div>
+          <div className="card-icon"><BarChart3 size={24} /></div>
           <div className="card-content">
             <h3>Berichte & Export</h3>
             <p>Finanzberichte erstellen, Umsatzstatistiken anzeigen und Daten exportieren</p>
             <div className="card-actions">
-              <button 
-                className="btn btn-info"
-                onClick={loadMonatsreport}
-                disabled={reportLoading}
-              >
-                {reportLoading ? 'Lädt...' : 'Monatsreport'}
+              <button className="btn btn-info" onClick={loadMonatsreport} disabled={reportLoading}>
+                {reportLoading ? 'Lädt…' : 'Monatsreport'}
               </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => alert('Datenexport wird implementiert')}
-              >
-                Daten exportieren
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/berichte')}>
+                Alle Berichte
               </button>
             </div>
           </div>
         </div>
 
+        {/* Zahlungszyklen */}
         <div className="standard-card">
-          <div className="card-icon">
-            <Calendar size={48} />
-          </div>
+          <div className="card-icon"><Calendar size={24} /></div>
           <div className="card-content">
             <h3>Zahlungszyklen</h3>
-            <p>Wiederkehrende Rechnungen automatisieren und Zahlungsintervalle verwalten</p>
+            <p>Wiederkehrende Zahlungsintervalle definieren — monatlich, quartalsweise, jährlich</p>
             <div className="card-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={() => navigate('/dashboard/zahlungszyklen')}
-              >
+              <button className="btn btn-primary" onClick={() => navigate('/dashboard/zahlungszyklen')}>
                 Zyklen verwalten
               </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => alert('Zahlungsplan wird implementiert')}
-              >
-                Zahlungsplan
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/zahllaeufe')}>
+                Zahlungsläufe
               </button>
             </div>
           </div>
         </div>
 
+        {/* Suche & Filter */}
         <div className="standard-card">
-          <div className="card-icon">
-            <Search size={48} />
-          </div>
+          <div className="card-icon"><Search size={24} /></div>
           <div className="card-content">
             <h3>Suche & Filter</h3>
-            <p>Zahlungen durchsuchen, nach Kriterien filtern und Transaktionen analysieren</p>
+            <p>Rechnungen und Zahlungen durchsuchen, filtern und Transaktionen analysieren</p>
             <div className="card-actions">
-              <button className="btn btn-info">
-                Erweiterte Suche
+              <button className="btn btn-info" onClick={() => navigate('/dashboard/rechnungen')}>
+                Rechnungssuche
               </button>
-              <button className="btn btn-secondary">
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/zahllaeufe')}>
                 Transaktionslog
               </button>
             </div>
           </div>
         </div>
 
+        {/* Einstellungen */}
         <div className="standard-card">
-          <div className="card-icon">
-            <Settings size={48} />
-          </div>
+          <div className="card-icon"><Settings size={24} /></div>
           <div className="card-content">
             <h3>Einstellungen</h3>
-            <p>Zahlungsmethoden konfigurieren, Steuereinstellungen und Rechnungsvorlagen</p>
+            <p>Zahlungsmethoden konfigurieren, Tarife verwalten und Rechnungsvorlagen anpassen</p>
             <div className="card-actions">
-              <button className="btn btn-secondary">
-                Konfiguration
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/tarife')}>
+                Tarif-Konfiguration
               </button>
-              <button className="btn btn-secondary">
-                Vorlagen
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/rechnungen')}>
+                Rechnungsvorlagen
               </button>
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Monatsreport Modal */}
       {showMonatsreport && monatsreportData && (
-        <div 
-          className="modal-overlay" 
-          onClick={() => setShowMonatsreport(false)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(5px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2rem'
-          }}
-        >
-          <div 
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'rgba(26, 26, 46, 0.95)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '20px',
-              padding: '2rem',
-              maxWidth: '900px',
-              width: '100%',
-              maxHeight: '90vh',
-              overflow: 'auto',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ 
-                color: '#ffd700', 
-                fontSize: '1.75rem', 
-                margin: 0,
-                textShadow: '0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 215, 0, 0.6)'
-              }}>
-                Monatsreport {new Date(monatsreportData.jahr, monatsreportData.monat - 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
-              </h2>
-              <button
-                onClick={() => setShowMonatsreport(false)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  padding: '0.5rem 1rem',
-                  cursor: 'pointer',
-                  fontSize: '1rem'
-                }}
-              >
-                ✕
-              </button>
+        <div className="ds-modal-overlay" onClick={() => setShowMonatsreport(false)}>
+          <div className="ds-modal ds-modal--md" onClick={(e) => e.stopPropagation()}>
+
+            <div className="ds-modal-header">
+              <div>
+                <h2 className="ds-modal-title">
+                  Monatsreport{' '}
+                  {new Date(monatsreportData.jahr, monatsreportData.monat - 1)
+                    .toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+                </h2>
+                <p className="ds-modal-subtitle">Zusammenfassung der Monatsdaten</p>
+              </div>
+              <button className="ds-modal-close" onClick={() => setShowMonatsreport(false)}>✕</button>
             </div>
+            <div className="ds-modal-body">
 
             {/* Umsätze */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>Umsätze</h3>
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: '1rem',
-                marginBottom: '1rem'
-              }}>
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '1rem', 
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)'
-                }}>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Gesamtumsatz</div>
-                  <div style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {formatCurrency(monatsreportData.umsaetze.gesamt)}
-                  </div>
+            <div className="bericht-section">
+              <h3>Umsätze</h3>
+              <div className="bericht-stat-grid">
+                <div className="bericht-stat-box">
+                  <div className="label">Gesamtumsatz</div>
+                  <div className="value">{formatCurrency(monatsreportData.umsaetze.gesamt)}</div>
                 </div>
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '1rem', 
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)'
-                }}>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Umsatz Verkauf</div>
-                  <div style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {formatCurrency(monatsreportData.umsaetze.verkauf.brutto)}
-                  </div>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                    {monatsreportData.umsaetze.verkauf.anzahl} Verkäufe
-                  </div>
+                <div className="bericht-stat-box">
+                  <div className="label">Umsatz Verkauf</div>
+                  <div className="value">{formatCurrency(monatsreportData.umsaetze.verkauf.brutto)}</div>
+                  <div className="sub">{monatsreportData.umsaetze.verkauf.anzahl} Verkäufe</div>
                 </div>
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '1rem', 
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)'
-                }}>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>Umsatz Beiträge</div>
-                  <div style={{ color: '#ffd700', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {formatCurrency(monatsreportData.umsaetze.beitraege.gesamt)}
-                  </div>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
-                    {monatsreportData.umsaetze.beitraege.anzahl} Rechnungen
-                  </div>
+                <div className="bericht-stat-box">
+                  <div className="label">Umsatz Beiträge</div>
+                  <div className="value">{formatCurrency(monatsreportData.umsaetze.beitraege.gesamt)}</div>
+                  <div className="sub">{monatsreportData.umsaetze.beitraege.anzahl} Rechnungen</div>
                 </div>
               </div>
             </div>
 
             {/* Neue Verträge */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>
-                Neue Verträge ({monatsreportData.neueVertraege.anzahl})
-              </h3>
+            <div className="bericht-section">
+              <h3>Neue Verträge ({monatsreportData.neueVertraege.anzahl})</h3>
               {monatsreportData.neueVertraege.liste.length > 0 ? (
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '1rem', 
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  maxHeight: '200px',
-                  overflow: 'auto'
-                }}>
+                <div className="bericht-list">
                   {monatsreportData.neueVertraege.liste.map((vertrag) => (
-                    <div key={vertrag.vertrag_id} style={{ 
-                      padding: '0.75rem', 
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}>
+                    <div key={vertrag.vertrag_id} className="bericht-list-item">
                       <div>
-                        <div style={{ color: '#fff', fontWeight: '600' }}>{vertrag.mitglied_name}</div>
-                        <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
-                          {vertrag.vertragsnummer} • {formatDate(vertrag.vertragsbeginn)}
-                        </div>
+                        <div className="name">{vertrag.mitglied_name}</div>
+                        <div className="meta">{vertrag.vertragsnummer} · {formatDate(vertrag.vertragsbeginn)}</div>
                       </div>
-                      <div style={{ color: '#ffd700', fontWeight: 'bold' }}>
-                        {formatCurrency(vertrag.monatsbeitrag)}
-                      </div>
+                      <div className="amount">{formatCurrency(vertrag.monatsbeitrag)}</div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>Keine neuen Verträge</div>
+                <div className="bericht-empty">Keine neuen Verträge</div>
               )}
             </div>
 
             {/* Kündigungen */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>
-                Kündigungen ({monatsreportData.kuendigungen.anzahl})
-              </h3>
+            <div className="bericht-section">
+              <h3>Kündigungen ({monatsreportData.kuendigungen.anzahl})</h3>
               {monatsreportData.kuendigungen.liste.length > 0 ? (
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '1rem', 
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  maxHeight: '200px',
-                  overflow: 'auto'
-                }}>
+                <div className="bericht-list">
                   {monatsreportData.kuendigungen.liste.map((kuendigung) => (
-                    <div key={kuendigung.vertrag_id} style={{ 
-                      padding: '0.75rem', 
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <div style={{ color: '#fff', fontWeight: '600' }}>{kuendigung.mitglied_name}</div>
-                      <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
-                        {kuendigung.vertragsnummer} • Kündigungsdatum: {formatDate(kuendigung.kuendigungsdatum)}
-                      </div>
-                      {kuendigung.kuendigungsgrund && (
-                        <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                          Grund: {kuendigung.kuendigungsgrund}
+                    <div key={kuendigung.vertrag_id} className="bericht-list-item">
+                      <div>
+                        <div className="name">{kuendigung.mitglied_name}</div>
+                        <div className="meta">
+                          {kuendigung.vertragsnummer} · Kündigung: {formatDate(kuendigung.kuendigungsdatum)}
                         </div>
-                      )}
+                        {kuendigung.kuendigungsgrund && (
+                          <div className="meta">Grund: {kuendigung.kuendigungsgrund}</div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>Keine Kündigungen</div>
+                <div className="bericht-empty">Keine Kündigungen</div>
               )}
             </div>
 
             {/* Pausen */}
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.25rem' }}>
-                Pausen ({monatsreportData.pausen.anzahl})
-              </h3>
+            <div className="bericht-section">
+              <h3>Pausen ({monatsreportData.pausen.anzahl})</h3>
               {monatsreportData.pausen.liste.length > 0 ? (
-                <div style={{ 
-                  background: 'rgba(255, 255, 255, 0.05)', 
-                  padding: '1rem', 
-                  borderRadius: '12px',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  maxHeight: '200px',
-                  overflow: 'auto'
-                }}>
+                <div className="bericht-list">
                   {monatsreportData.pausen.liste.map((pause) => (
-                    <div key={pause.vertrag_id} style={{ 
-                      padding: '0.75rem', 
-                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                    }}>
-                      <div style={{ color: '#fff', fontWeight: '600' }}>{pause.mitglied_name}</div>
-                      <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.875rem' }}>
-                        {pause.vertragsnummer} • Von: {formatDate(pause.ruhepause_von)} bis: {formatDate(pause.ruhepause_bis)}
-                      </div>
-                      {pause.ruhepause_dauer_monate && (
-                        <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                          Dauer: {pause.ruhepause_dauer_monate} Monate
+                    <div key={pause.vertrag_id} className="bericht-list-item">
+                      <div>
+                        <div className="name">{pause.mitglied_name}</div>
+                        <div className="meta">
+                          {pause.vertragsnummer} · Von: {formatDate(pause.ruhepause_von)} bis: {formatDate(pause.ruhepause_bis)}
                         </div>
-                      )}
+                        {pause.ruhepause_dauer_monate && (
+                          <div className="meta">Dauer: {pause.ruhepause_dauer_monate} Monate</div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div style={{ color: 'rgba(255, 255, 255, 0.5)', fontStyle: 'italic' }}>Keine Pausen</div>
+                <div className="bericht-empty">Keine Pausen</div>
               )}
             </div>
+
+            </div>{/* ds-modal-body */}
           </div>
         </div>
       )}

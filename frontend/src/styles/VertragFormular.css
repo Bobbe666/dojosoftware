@@ -1,0 +1,284 @@
+/* VertragFormular.css — extracted inline styles — vf- prefix */
+
+/* Loading state */
+.vf-loading {
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* Form group spanning full grid width */
+.vf-full-col {
+  grid-column: 1 / -1;
+  margin-bottom: 0.5rem;
+}
+
+/* Full-col with top margin */
+.vf-full-col-top {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Field label */
+.vf-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  display: block;
+}
+
+/* Standard select / input style */
+.vf-select {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  min-height: 44px;
+  height: auto;
+}
+.vf-select--error { border-color: #EF4444; }
+
+/* Form group with bottom margin */
+.vf-form-group-mb {
+  margin-bottom: 0.5rem;
+}
+
+/* Warning text under field */
+.vf-field-warning {
+  font-size: 0.75rem;
+  color: var(--warning);
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+}
+
+/* Price box (tarif payment amount) */
+.vf-price-box {
+  padding: 0.8rem;
+  border-radius: 8px;
+}
+.vf-price-box--discount {
+  background: linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(255,255,255,0.12) 100%);
+  border: 2px solid rgba(16,185,129,0.5);
+}
+.vf-price-box--standard {
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,215,0,0.3);
+}
+
+/* Price box heading */
+.vf-price-heading {
+  margin: 0 0 0.3rem 0;
+  color: #ffd700;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.vf-price-heading--discount { color: #10B981; }
+
+/* Tarif price row */
+.vf-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Tarif price strong */
+.vf-price-strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Strikethrough original price */
+.vf-price-strike {
+  text-decoration: line-through;
+  opacity: 0.7;
+  color: var(--text-secondary);
+}
+
+/* Discount amount */
+.vf-discount-amount {
+  margin-left: 0.4rem;
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* Success note */
+.vf-success-note {
+  font-size: 0.8rem;
+  color: var(--success);
+  margin-bottom: 0.2rem;
+}
+
+/* Small font */
+.vf-small {
+  font-size: 0.8rem;
+}
+
+/* Small text primary */
+.vf-small-primary {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+/* Inline text margin */
+.vf-margin-bottom-08 {
+  margin-bottom: 0.8rem;
+}
+
+/* Inline-docs subheading */
+.vf-doc-heading {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.3rem;
+}
+
+/* Secondary paragraph */
+.vf-secondary-para {
+  margin: 0.5rem 0 0 0;
+  color: var(--text-secondary);
+}
+
+/* Preview doc text */
+.vf-preview-p {
+  margin-bottom: 0.8rem;
+}
+
+/* Gold inline action button */
+.vf-gold-btn {
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 4px;
+  color: var(--primary);
+}
+
+/* Margin-top 1rem */
+.vf-mt-1 {
+  margin-top: 1rem;
+}
+
+/* Gap 1rem on flex/grid */
+.vf-gap-1 {
+  gap: 1rem;
+}
+
+/* Discount badge (green pill) */
+.vf-discount-badge {
+  padding: 0.4rem 0.8rem;
+  background: #10B981;
+  color: white;
+  border-radius: 16px;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* Savings note under price box */
+.vf-savings-note {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--success);
+  font-style: italic;
+}
+
+/* Text-primary with small top margin */
+.vf-text-primary-mt {
+  color: var(--text-primary);
+  margin-top: 0.3rem;
+}
+
+/* Notice boxes: error / warning / success */
+.vf-notice {
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+.vf-notice-error {
+  color: var(--error);
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.vf-notice-warning {
+  color: var(--warning);
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.vf-notice-success {
+  color: var(--success);
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* Info box (blue) */
+.vf-info-box {
+  padding: 0.75rem 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  font-size: 0.85rem;
+  color: var(--color-info-400);
+}
+
+/* Document modal overlay */
+.vf-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 2rem;
+}
+
+/* Document modal container */
+.vf-modal-box {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  border-radius: 12px;
+  max-width: 800px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Document modal header bar */
+.vf-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Document modal close button */
+.vf-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+/* Document modal scrollable body */
+.vf-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: calc(80vh - 100px);
+  color: var(--text-primary);
+  line-height: 1.6;
+}

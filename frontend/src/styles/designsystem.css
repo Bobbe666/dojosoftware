@@ -44,7 +44,7 @@
   color: var(--farbe-text-dunkel);
   border: none;
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
@@ -77,25 +77,12 @@ body {
   color: var(--farbe-text);
 }
 
-/* === GLOBALE Z-INDEX-FIXES === */
-button, .btn, input, select, textarea, a {
-  position: relative !important;
-  z-index: 1000 !important;
-}
-
-button:hover, .btn:hover, input:hover, select:hover, textarea:hover, a:hover {
-  z-index: 1001 !important;
-}
-
-/* Pseudo-Elemente nach hinten */
-*::before,
-*::after {
-  z-index: -1 !important;
-}
+/* z-index wird über das Design System gesteuert (spacing.css --z-* Variablen).
+   Buttons/Inputs brauchen kein z-index — nur Overlays und Modals. */
 
 /* ===== GOLDENE ÜBERSCHRIFTEN MIT EFFEKTEN ===== */
 h1, h2, h3, h4, h5, h6 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
                0 0 4px rgba(255, 215, 0, 0.6) !important;
   text-transform: uppercase !important;

@@ -20,19 +20,19 @@
 /* Container */
 .dashboard-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-  color: #ffffff;
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
   padding: 2rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: inherit;
   animation: fadeIn 0.6s ease-out;
 }
 
 /* Header */
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 20px;
+  border-radius: var(--comp-radius-xl);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   padding: 2rem;
   margin-bottom: 3rem;
@@ -50,7 +50,7 @@
   left: -100%;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   animation: shimmer 3s infinite;
 }
 
@@ -75,68 +75,10 @@
   max-width: 1400px;
   margin: 0 auto;
   background: transparent;
-  color: #ffffff;
+  color: var(--text-1);
 }
 
 /* Statistik Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-}
-
-.stat-card {
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.5);
-}
-
-.stat-card::after {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(from 0deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  z-index: -1;
-}
-
-.stat-card:hover::after {
-  opacity: 0.7;
-}
-
-.stat-card h3 {
-  color: #ffd700;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0 0 1rem 0;
-}
-
-.stat-value {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.5rem;
-}
 
 /* Buttons */
 .btn {
@@ -144,7 +86,7 @@
   color: #1a1a2e;
   border: none;
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -162,14 +104,14 @@
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
-  color: #ffffff;
+  color: var(--text-1);
   border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -177,10 +119,10 @@
 .logout-button,
 .dashboard-button {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--text-1) !important;
   border: none !important;
   padding: 10px 20px !important;
-  border-radius: 12px !important;
+  border-radius: var(--comp-radius-xl) !important;
   font-weight: 700 !important;
   font-size: 0.95rem !important;
   cursor: pointer !important;
@@ -218,7 +160,7 @@
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 .logout-button:active,
@@ -245,10 +187,10 @@
 }
 
 .nav-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 16px;
+  border-radius: var(--comp-radius-xl);
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
@@ -264,14 +206,14 @@
 }
 
 .nav-card h3 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.3rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
 }
 
 .nav-card p {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   font-size: 0.95rem;
   margin: 0;
   line-height: 1.5;
@@ -279,10 +221,10 @@
 
 /* Tables */
 .table-container {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 16px;
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   margin-top: 2rem;
@@ -297,13 +239,13 @@ th, td {
   padding: 1rem;
   text-align: left;
   border-bottom: 1px solid rgba(255, 215, 0, 0.1);
-  color: #ffffff;
+  color: var(--text-1);
 }
 
 th {
   background: rgba(255, 215, 0, 0.1);
   font-weight: 600;
-  color: #ffd700;
+  color: var(--primary);
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.5px;

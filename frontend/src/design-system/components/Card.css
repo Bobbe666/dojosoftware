@@ -1,0 +1,196 @@
+/* ===========================================
+   DESIGN SYSTEM — CARD / PANEL COMPONENT
+   Vielseitige Karten und Panels
+   =========================================== */
+
+/* ========== BASIS-CARD ========== */
+
+.ds-card {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--comp-radius-lg);
+  padding: 1rem 1.25rem;
+}
+
+.ds-card--compact {
+  padding: 0.75rem 1rem;
+}
+
+.ds-card--spacious {
+  padding: 1.5rem 2rem;
+}
+
+/* ========== CARD-VARIANTEN ========== */
+
+.ds-card--elevated {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ds-card--glass {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+/* Status-Varianten */
+.ds-card--success {
+  background: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+}
+
+.ds-card--warning {
+  background: var(--status-warning-bg);
+  border: 1px solid var(--status-warning-border);
+}
+
+.ds-card--error {
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+}
+
+.ds-card--indigo {
+  background: var(--status-indigo-bg);
+  border: 1px solid var(--status-indigo-border);
+}
+
+/* Gold (Highlight) */
+.ds-card--gold {
+  background: rgba(255, 215, 0, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* ========== CARD MIT HOVER ========== */
+
+.ds-card--hoverable {
+  cursor: pointer;
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+.ds-card--hoverable:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+/* ========== CARD HEADER / BODY / FOOTER ========== */
+
+.ds-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ds-card-title {
+  font-size: var(--ui-card-title);
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0;
+}
+
+.ds-card-subtitle {
+  font-size: var(--ui-card-label);
+  color: var(--text-4);
+  margin: 0.1rem 0 0;
+}
+
+.ds-card-body {
+  /* Kein extra Padding — kommt vom .ds-card */
+}
+
+.ds-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ========== STAT CARD (Zahl mit Label) ========== */
+
+.ds-stat-card {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--comp-radius-lg);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ds-stat-card-label {
+  font-size: var(--ui-stat-label);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-4);
+}
+
+.ds-stat-card-value {
+  font-size: var(--ui-stat-value);
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-stat-card-value--success { color: var(--status-success); }
+.ds-stat-card-value--warning { color: var(--status-warning-text); }
+.ds-stat-card-value--error   { color: var(--status-error); }
+.ds-stat-card-value--gold    { color: var(--color-gold); }
+
+.ds-stat-card-change {
+  font-size: var(--ui-stat-trend);
+  color: var(--text-4);
+}
+
+.ds-stat-card-change--up   { color: var(--status-success); }
+.ds-stat-card-change--down { color: var(--status-error); }
+
+/* ========== OPTION CARD (auswählbar) ========== */
+
+.ds-option-card {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--comp-radius-md);
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast);
+  user-select: none;
+}
+
+.ds-option-card:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ds-option-card--selected {
+  background: var(--status-indigo-bg);
+  border-color: var(--status-indigo-border);
+}
+
+.ds-option-card--selected:hover {
+  background: var(--status-indigo-bg-hover);
+}
+
+.ds-option-card-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0 0 0.2rem;
+}
+
+.ds-option-card-desc {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  line-height: 1.4;
+}

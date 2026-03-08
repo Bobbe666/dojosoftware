@@ -31,7 +31,7 @@
 .first-login-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
   padding: 1.5rem;
   border-bottom: 1px solid rgba(59, 130, 246, 0.2);
   background: rgba(59, 130, 246, 0.05);
@@ -62,7 +62,7 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -194,13 +194,13 @@
   padding: 1.5rem;
   border-top: 1px solid rgba(59, 130, 246, 0.2);
   background: rgba(0, 0, 0, 0.2);
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .acceptance-summary {
   display: flex;
-  gap: 1rem;
-  font-size: 0.8rem;
+  gap: var(--ui-form-gap);
+  font-size: var(--ui-card-label);
   color: rgba(255, 255, 255, 0.5);
 }
 

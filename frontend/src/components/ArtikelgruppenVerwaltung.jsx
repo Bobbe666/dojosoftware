@@ -227,7 +227,7 @@ const ArtikelgruppenVerwaltung = () => {
       <div key={group.id} className="group-card">
         <div className="group-header">
           <div className="group-info">
-            <div className="group-icon" style={{ color: group.farbe }}>
+            <div className="group-icon" style={{ '--icon-color': group.farbe }}>
               {group.icon || '📁'}
             </div>
             <div className="group-details">
@@ -381,7 +381,7 @@ const ArtikelgruppenVerwaltung = () => {
           {/* Gruppe Header */}
           <div className="detail-header">
             <div className="detail-header-content">
-              <div className="detail-icon" style={{ color: selectedGroup.farbe }}>
+              <div className="detail-icon" style={{ '--icon-color': selectedGroup.farbe }}>
                 {selectedGroup.icon || '📁'}
               </div>
               <div>
@@ -425,7 +425,7 @@ const ArtikelgruppenVerwaltung = () => {
                 {selectedGroup.unterkategorien.map(untergruppe => (
                   <div key={untergruppe.id} className="unterkategorie-detail-card">
                     <div className="unterkategorie-detail-header">
-                      <div className="unterkategorie-icon" style={{ color: untergruppe.farbe }}>
+                      <div className="unterkategorie-icon" style={{ '--icon-color': untergruppe.farbe }}>
                         {untergruppe.icon || '📂'}
                       </div>
                       <div className="unterkategorie-detail-info">

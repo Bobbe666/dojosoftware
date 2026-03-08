@@ -1,55 +1,54 @@
 .dashboard-start {
   text-align: center;
-  padding: 1rem 1rem; /* Reduziert von 3rem auf 1rem */
+  padding: var(--ui-page-padding-sm);
   animation: fadeIn 0.6s ease-out;
 }
 
 .dojo-logo {
-  width: 120px; /* Reduziert von 160px */
+  width: 120px;
   height: auto;
-  margin-bottom: 0.8rem; /* Reduziert von 1.5rem */
+  margin-bottom: 0.8rem;
   animation: logoPop 0.6s ease;
 }
 
 .dashboard-start h1 {
-  font-size: 1.8rem; /* Reduziert von 2.5rem */
-  color: #ffffff;
+  font-size: var(--ui-page-title);
   background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
-  margin-bottom: 0.3rem; /* Reduziert von 0.5rem */
+  background-clip: text;
+  margin-bottom: 0.3rem;
 }
 
 .slogan {
-  font-size: 1rem; /* Reduziert von 1.2rem */
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 1rem; /* Reduziert von 2.5rem */
+  font-size: 1rem;
+  color: var(--text-2);
+  margin-bottom: 1rem;
 }
 
 .cta-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 1.5rem;
+  gap: var(--ui-section-gap-sm);
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 1rem;
+  padding: 0 var(--ui-page-padding-sm);
 }
 
 .cta-tile {
-  background: var(--glass-bg);
+  background: var(--surface-2);
   backdrop-filter: blur(20px);
-  color: white;
+  color: var(--text-1);
   text-decoration: none;
-  padding: 1.5rem 1rem;
-  border-radius: 12px;
+  padding: var(--ui-card-padding);
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.2);
   font-weight: bold;
   font-size: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--ui-btn-gap);
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
   transition: all 0.4s ease;
   animation: fadeInUp 0.6s ease-out;
@@ -81,9 +80,9 @@
   background: conic-gradient(
     from 0deg,
     transparent,
-    var(--primary-alpha-10),
+    rgba(255, 215, 0, 0.08),
     transparent,
-    rgba(255, 107, 53, 0.1),
+    rgba(255, 107, 53, 0.08),
     transparent
   );
   opacity: 0;

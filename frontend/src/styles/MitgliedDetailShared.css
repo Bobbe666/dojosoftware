@@ -1,0 +1,2412 @@
+/* ============================================================
+   MitgliedDetailShared.css
+   CSS prefix: mds- / mds2-
+   All static inline styles extracted from MitgliedDetailShared.jsx
+   ============================================================ */
+
+/* ── LAYOUT / HEADER ─────────────────────────────────────── */
+.mds-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+  padding-right: 1rem;
+  padding-top: 0.5rem;
+}
+
+.mds-content-header-left {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── AVATAR ──────────────────────────────────────────────── */
+.mds-avatar-wrapper {
+  position: relative;
+}
+
+/* ── DOJO NAME ───────────────────────────────────────────── */
+.mds-dojo-name-sub {
+  font-size: 0.85rem;
+  margin-top: 4px;
+  font-weight: normal;
+}
+
+/* ── DREI-PUNKTE-MENU WRAPPER ────────────────────────────── */
+.mds-actions-menu-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── OVERLAY (Backdrop zum Schließen) ────────────────────── */
+.mds-click-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 998;
+}
+
+/* ── FOTO UPLOAD BUTTONS ─────────────────────────────────── */
+.mds-foto-change-btn {
+  background: rgba(42, 42, 78, 0.6);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: var(--primary);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.mds-foto-change-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mds-foto-delete-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: var(--error);
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  text-transform: none;
+}
+.mds-foto-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mds-foto-upload-label {
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: var(--text-secondary);
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.mds-foto-spinner-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── INPUT DISABLED (LEGACY) ─────────────────────────────── */
+.mds-input-disabled-legacy {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── KONTOSTAND DETAILS ──────────────────────────────────── */
+.mds-kontostand-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.mds-kontostand-box {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.mds-kontostand-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mds-kontostand-sublabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.mds-kontostand-value-primary {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--val-color, #10b981);
+}
+
+.mds-kontostand-value-secondary {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mds-last-payment-amount {
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+}
+
+.mds-last-payment-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.mds-no-data-muted {
+  color: var(--text-muted);
+}
+
+/* ── DOKUMENTE – Document-Row Items ─────────────────────── */
+.mds-contract-info-hint {
+  padding: 0.75rem;
+  background: rgba(33, 150, 243, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.mds-doc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Datum input small */
+.mds-date-input-sm {
+  padding: 0.35rem;
+  font-size: 0.75rem;
+}
+
+/* Vereinsordnung date display */
+.mds-vereinsordnung-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+/* ── BESTÄTIGTE DOKUMENTE ────────────────────────────────── */
+.mds-confirmed-doc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.mds-confirmed-doc-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.mds-confirmed-badge {
+  font-size: 0.7rem;
+  color: rgba(34, 197, 94, 0.9);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.mds-confirmed-doc-detail {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.mds-confirmed-doc-version {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.mds-confirmed-doc-timestamp {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ── SEPA-MANDAT CARD (Dokumente-Tab) ────────────────────── */
+.mds-sepa-heading {
+  font-size: 0.8rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  padding-bottom: 0.75rem;
+}
+
+.mds-sepa-grid-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.mds-sepa-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mds-sepa-ref-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mds-sepa-ref {
+  font-size: 0.8rem;
+  color: var(--error);
+  font-weight: 600;
+}
+
+.mds-sepa-status-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.mds-sepa-details-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem 1rem;
+  font-size: 0.8rem;
+}
+
+.mds-sepa-gid-value {
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.mds-sepa-actions-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.mds-sepa-pdf-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.mds-sepa-note {
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* ── DOKUMENT-VORLAGEN GRID ──────────────────────────────── */
+.mds-vorlagen-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.mds-vorlage-card {
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.3s ease;
+}
+
+.mds-vorlage-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.mds-vorlage-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.mds-vorlage-description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.mds-vorlage-badges {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.mds-vorlage-badge-type {
+  padding: 0.2rem 0.5rem;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 4px;
+  margin-right: 0.5rem;
+}
+
+.mds-vorlage-badge-default {
+  padding: 0.2rem 0.5rem;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 4px;
+  color: var(--success);
+}
+
+.mds-vorlage-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mds-vorlage-pdf-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+/* ── GESPEICHERTE DOKUMENTE / RECHNUNGEN ─────────────────── */
+.mds-saved-doc-row {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mds-saved-doc-meta {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ── SEPA MANDATE MODAL ──────────────────────────────────── */
+.mds-modal-fullscreen-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.mds-sepa-modal-box {
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: auto;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.mds-modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.mds-modal-title {
+  margin: 0;
+  font-size: 1.3rem;
+  color: var(--primary);
+}
+
+.mds-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  padding: 0.25rem 0.5rem;
+}
+
+.mds-sepa-mandate-ref {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.mds-modal-footer-end {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* ── FAMILIE TAB – Familienmitglied hinzufügen ───────────── */
+.mds-family-add-banner {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.mds-family-add-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mds-family-add-title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.mds-family-add-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.mds-family-add-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+/* ── VERTRAG TAB ─────────────────────────────────────────── */
+.mds-vertrag-tab-wrapper {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.mds-vertrag-section {
+  background: linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mds-vertrag-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+.mds-vertrag-section-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mds-vertragsfrei-hinweis {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.mds-vertragsfrei-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #5dade2;
+  margin-bottom: 0.5rem;
+}
+
+.mds-vertragsfrei-grund {
+  font-size: 0.9rem;
+  color: #5dade2;
+}
+
+.mds-vertraege-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 1.5rem;
+}
+
+.mds-vertrag-card-inner {
+  background: linear-gradient(135deg, rgba(40, 40, 50, 0.6) 0%, rgba(30, 30, 40, 0.8) 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.mds-vertrag-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mds-vertrag-card-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.mds-vertrag-card-created {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.mds-vertrag-info-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+
+.mds-vertrag-info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.mds-vertrag-kuendigung-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  background: rgba(255, 193, 7, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.mds-vertrag-ruhepause-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.5rem;
+  background: rgba(52, 152, 219, 0.15);
+  border-radius: 6px;
+  border: 1px solid rgba(52, 152, 219, 0.4);
+}
+
+.mds-ruhepause-label {
+  color: #3498db;
+}
+
+.mds-vertrag-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Shared contract action button base */
+.mds-contract-action-btn {
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.mds-contract-btn-pdf {
+  background: rgba(244, 67, 54, 0.15);
+  color: #f44336;
+  border-color: rgba(244, 67, 54, 0.4);
+}
+
+.mds-contract-btn-details {
+  background: rgba(33, 150, 243, 0.15);
+  color: #2196F3;
+  border-color: rgba(33, 150, 243, 0.4);
+}
+
+.mds-contract-btn-edit {
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--primary);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.mds-contract-btn-pause {
+  background: rgba(255, 193, 7, 0.15);
+  color: var(--warning);
+  border-color: rgba(255, 193, 7, 0.4);
+}
+
+.mds-contract-btn-cancel {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--error);
+  border-color: rgba(231, 76, 60, 0.4);
+}
+
+.mds-contract-btn-reactivate {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border-color: rgba(46, 213, 115, 0.4);
+}
+
+.mds-contract-btn-delete {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--error);
+  border-color: rgba(231, 76, 60, 0.4);
+}
+
+.mds-no-vertraege {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+}
+
+.mds-no-vertraege-text {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* ── FINANZEN SUB-TABS ────────────────────────────────────── */
+.mds-finance-sub-tabs-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── KPI CARDS ───────────────────────────────────────────── */
+.mds-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+}
+
+.mds-kpi-card-danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mds-kpi-card-primary {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mds-kpi-card-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.05) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mds-kpi-card-info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.mds-kpi-value-danger {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--error);
+  margin-bottom: 0.25rem;
+}
+
+.mds-kpi-value-primary {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.mds-kpi-value-success {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: 0.25rem;
+}
+
+.mds-finance-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+
+.mds-finance-section-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── BEITRÄGE TABLE ──────────────────────────────────────── */
+.mds-beitraege-nowrap {
+  white-space: nowrap;
+}
+
+.mds-beitrag-expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.65rem;
+  color: var(--primary);
+  transition: transform 0.2s;
+  padding: 0;
+  line-height: 1;
+  display: inline-block;
+  width: auto;
+}
+
+.mds-beitrag-th-narrow {
+  width: 1px;
+  padding: 0.5rem 0;
+}
+
+.mds-beitrag-td-narrow {
+  text-align: center;
+  padding: 0.5rem 0.1rem;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.mds-beitrag-generated-icon {
+  font-size: 0.75rem;
+  color: var(--primary-alpha-60);
+  margin-left: 0.5rem;
+}
+
+.mds-beitrag-anteilig-note {
+  font-size: 0.75rem;
+  color: var(--primary-alpha-60);
+  margin-left: 0.5rem;
+  font-style: italic;
+}
+
+/* Beitrag detail expansion row */
+.mds-beitrag-detail-td {
+  padding: 1rem 1.5rem;
+  background: rgba(255, 215, 0, 0.05);
+  border-left: 3px solid rgba(255, 215, 0, 0.5);
+}
+
+.mds-beitrag-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.mds-beitrag-detail-label {
+  color: var(--primary);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.mds-beitrag-detail-full-col {
+  grid-column: 1 / -1;
+}
+
+/* ── BUDDY-GRUPPEN TAB ───────────────────────────────────── */
+.mds-buddy-content {
+  padding: 1.5rem;
+  background: transparent;
+}
+
+.mds-buddy-header {
+  margin-bottom: 1.5rem;
+}
+
+.mds-buddy-title {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-buddy-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.mds-buddy-placeholder {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.mds-buddy-placeholder-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.mds-buddy-placeholder-icon-lg {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.mds-buddy-placeholder-text {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.mds-buddy-placeholder-sub {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.mds-buddy-placeholder-hint {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.mds-buddy-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.mds-buddy-group-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.mds-buddy-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.mds-buddy-group-title {
+  color: var(--primary);
+  font-size: 1.2rem;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-buddy-group-meta {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* ── REFERRAL / MARKETING ────────────────────────────────── */
+.mds-referral-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.mds-marketing-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.mds-marketing-title {
+  color: var(--primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-referral-card {
+  background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(255,215,0,0.06));
+  border: 1px solid rgba(249,115,22,0.35);
+  border-radius: 14px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.mds-referral-header-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+}
+
+.mds-referral-title-text {
+  color: var(--secondary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.3rem;
+}
+
+.mds-referral-desc {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.mds-referral-code-label {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.mds-referral-code-box {
+  background: rgba(0,0,0,0.35);
+  border: 1px dashed rgba(249,115,22,0.5);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.mds-referral-code-text {
+  font-family: monospace;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: 5px;
+  color: var(--primary);
+}
+
+.mds-referral-howto-box {
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 1rem;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.mds-referral-howto-title {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.mds-referral-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mds-referral-step-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  color: var(--text-secondary);
+  font-size: 0.83rem;
+}
+
+.mds-referral-step-num {
+  color: var(--secondary);
+  font-weight: 700;
+  flex-shrink: 0;
+  min-width: 18px;
+}
+
+.mds-referral-link-row {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.mds-referral-link-mono {
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.mds-referral-empty {
+  background: rgba(255,255,255,0.04);
+  border: 1px dashed rgba(255,215,0,0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.mds-referral-empty-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.mds-referral-empty-text {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* ── NACHRICHTEN TAB ─────────────────────────────────────── */
+.mds-nachrichten-content {
+  padding: 1.5rem;
+  background: transparent;
+}
+
+.mds-news-section {
+  margin-bottom: 2.5rem;
+}
+
+.mds-news-title {
+  color: var(--primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-news-loading {
+  text-align: center;
+  padding: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.mds-news-empty {
+  text-align: center;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.mds-news-empty-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.mds-news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mds-news-card {
+  background: rgba(30, 30, 45, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 10px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mds-news-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.mds-news-card-body {
+  flex: 1;
+}
+
+.mds-news-card-title {
+  color: var(--primary);
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mds-news-card-preview {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mds-news-card-date {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.mds-news-card-expanded {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.mds-news-expanded-content {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.mds-news-card-toggle-row {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-news-toggle-btn-text {
+  color: var(--primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Notifications section */
+.mds-nachrichten-section {
+  margin-bottom: 1.5rem;
+}
+
+.mds-nachrichten-title {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-nachrichten-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.mds-notifications-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.mds-notifications-empty {
+  text-align: center;
+  padding: 3rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.mds-notifications-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.mds-notifications-empty-text {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.mds-notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mds-notification-card {
+  background: rgba(30, 30, 45, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 10px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.mds-notification-header {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.mds-notification-icon {
+  font-size: 1.5rem;
+}
+
+.mds-notification-body {
+  flex: 1;
+}
+
+.mds-notification-subject {
+  color: var(--primary);
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mds-notification-date {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.2rem;
+}
+
+.mds-notification-message-box {
+  padding: 0.8rem;
+  background: rgba(20, 20, 30, 0.5);
+  border-radius: 8px;
+  border-left: 3px solid #ffd700;
+  margin-top: 0.8rem;
+}
+
+.mds-notification-message-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mds-notification-message-content {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* ── GURT-STIL TAB ───────────────────────────────────────── */
+.mds-stil-add-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mds-stil-add-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mds-stil-select {
+  padding: 0.6rem 1rem;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  min-width: 180px;
+}
+
+.mds-stil-add-btn-active {
+  padding: 0.6rem 1.2rem;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border: none;
+  border-radius: 6px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.mds-stil-add-btn-inactive {
+  padding: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #999;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: not-allowed;
+}
+
+/* Stil section header */
+.mds-stil-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+.mds-stil-title {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.mds-stil-remove-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  color: var(--error);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Gurt preview row */
+.mds-gurt-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.mds-gurt-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Grad buttons row */
+.mds-grad-buttons-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Kategorie badge */
+.mds-kategorie-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid #FFD700;
+  border-radius: 12px;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Stil description */
+.mds-stil-desc-text {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+
+/* Collapse header for graduation list */
+.mds-collapse-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin: -0.5rem -0.5rem 0.5rem -0.5rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+}
+
+.mds-collapse-header h3 {
+  margin: 0;
+}
+
+.mds-collapse-icon {
+  font-size: 1.5rem;
+  color: var(--primary);
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.mds-graduation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.mds-graduation-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.mds-graduation-row-active {
+  background: rgba(255, 215, 0, 0.15);
+  border: 2px solid #FFD700;
+}
+
+.mds-graduation-row-inactive {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mds-graduation-name-active {
+  font-weight: 700;
+  color: #FFD700;
+  font-size: 0.95rem;
+}
+
+.mds-graduation-name-inactive {
+  font-weight: 600;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.mds-graduation-aktuell-badge {
+  margin-left: 0.5rem;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+.mds-graduation-sub {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.mds-no-stile-text {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem;
+}
+
+.mds-no-stile-hint {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── VERTRAG MODAL (New/Edit) ────────────────────────────── */
+.mds-vertrag-modal-wide {
+  width: 750px;
+  max-width: 90vw;
+  min-width: auto;
+}
+
+.mds-vertrag-modal-edit {
+  width: 800px;
+  max-width: 90vw;
+  min-width: auto;
+}
+
+/* ── VERTRAG DOKUMENT (PDF-like view) ────────────────────── */
+.mds-vertrag-detail-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.mds-vertrag-dokument-box {
+  max-width: 800px;
+  width: 100%;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  position: relative;
+  color: #333;
+}
+
+.mds-vertrag-close-btn {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #d32f2f;
+  color: white;
+  border: none;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+
+.mds-vertrag-doc-inner {
+  padding: 3rem 2.5rem;
+}
+
+.mds-vertrag-doc-header {
+  border-bottom: 3px solid #1976d2;
+  padding-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.mds-vertrag-doc-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.5px;
+}
+
+.mds-vertrag-doc-number {
+  font-size: 1rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.mds-vertrag-doc-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.mds-vertrag-doc-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1976d2;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #1976d2;
+}
+
+.mds-vertrag-doc-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.mds-vertrag-doc-mb05 {
+  margin-bottom: 0.5rem;
+}
+
+.mds-vertrag-doc-strong {
+  color: #555;
+}
+
+.mds-vertrag-kuendigung-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #fff3e0;
+  border-radius: 6px;
+  border: 2px solid #ff9800;
+}
+
+.mds-vertrag-kuendigung-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #e65100;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #ff9800;
+}
+
+.mds-vertrag-unterschrift-img {
+  max-width: 400px;
+  max-height: 200px;
+  display: block;
+}
+
+.mds-vertrag-unterschrift-box {
+  margin-top: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  padding: 1rem;
+  background: white;
+  display: inline-block;
+}
+
+.mds-vertrag-print-row {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #1976d2;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.mds-vertrag-print-btn {
+  padding: 0.75rem 2rem;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.mds-vertrag-close-doc-btn {
+  padding: 0.75rem 2rem;
+  background: #757575;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ── STRUKTURIERTES DETAILS-MODAL ────────────────────────── */
+.mds-structured-detail-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.mds-structured-detail-box {
+  max-width: 900px;
+  width: 100%;
+  max-height: 95vh;
+  overflow-y: auto;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  position: relative;
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.mds-structured-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+  border: none;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+  transition: all 0.2s ease;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mds-structured-header {
+  padding: 2rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.05) 100%);
+}
+
+.mds-structured-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mds-structured-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.mds-structured-data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.mds-structured-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mds-structured-card-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-structured-ruhepause-card {
+  background: rgba(33, 150, 243, 0.1);
+  border: 1px solid rgba(33, 150, 243, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.mds-structured-ruhepause-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: #2196F3;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-structured-kuendigung-card {
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.mds-structured-kuendigung-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  color: var(--secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mds-structured-kuendigung-btn-row {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mds-kuendigung-pdf-btn {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 152, 0, 0.2);
+  border: 1px solid rgba(255, 152, 0, 0.4);
+  border-radius: 6px;
+  color: var(--secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.mds-legal-docs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.mds-mandatsreferenz-value {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.mds-dokument-pfad-value {
+  font-size: 0.85rem;
+  color: var(--info);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.mds-magicline-value {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.mds-structured-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.mds-structured-more-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-align: center;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  padding-bottom: 1rem;
+}
+
+.mds-structured-timestamps {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mds-structured-mb2 {
+  margin-bottom: 2rem;
+}
+
+.mds-structured-close-row {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.mds-structured-close-btn-gold {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: var(--bg-secondary);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+/* ── ARCHIVIERUNGS-MODAL ─────────────────────────────────── */
+.mds-archive-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.mds-archive-modal-box {
+  background: linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.mds-archive-title {
+  color: var(--error);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.mds-archive-secondary-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 1rem;
+}
+
+.mds-archive-reason-row {
+  margin-bottom: 1.5rem;
+}
+
+.mds-archive-reason-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.mds-archive-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.mds-archive-cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.mds-archive-confirm-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* ── KÜNDIGUNGSBESTÄTIGUNG-MODAL ─────────────────────────── */
+.mds-kuendigung-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 2rem;
+}
+
+.mds-kuendigung-confirm-box {
+  background: linear-gradient(135deg, rgba(30, 30, 40, 0.98) 0%, rgba(20, 20, 30, 0.98) 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  box-shadow: none;
+}
+
+.mds-kuendigung-warning-icon-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  font-size: 4rem;
+}
+
+.mds-kuendigung-confirm-title {
+  color: var(--warning);
+  margin-bottom: 1.5rem;
+  font-size: 1.3rem;
+  text-align: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mds-kuendigung-confirm-secondary-text {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  margin-top: 1rem;
+  text-align: left;
+}
+
+.mds-kuendigung-abort-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.mds-kuendigung-confirm-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+/* ── STATUS BADGE (Vertrag) ──────────────────────────────── */
+.mds-vertrag-status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── VERTRAG STATUS BADGE (Strukturiert) ─────────────────── */
+.mds-status-badge-inline {
+  display: inline-flex;
+  padding: 0.5rem 1.5rem;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+/* ── AUFNAHMEGEBÜHR VALUE ─────────────────────────────────── */
+.mds-aufnahme-value {
+  color: var(--secondary);
+  font-weight: bold;
+}
+
+/* ── VERTRAG MODALS (width overrides) ───────────────────── */
+.mds-new-vertrag-modal {
+  width: 750px;
+  max-width: 90vw;
+  min-width: auto;
+}
+
+.mds-edit-vertrag-modal {
+  width: 800px;
+  max-width: 90vw;
+  min-width: auto;
+}
+
+/* ── UTILITY OVERRIDES ────────────────────────────────────── */
+.mds-nowrap {
+  white-space: nowrap;
+}
+
+.mds-pdf-inline-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
+.mds-cursor-pointer {
+  cursor: pointer;
+}
+
+.mds-disabled-input:disabled,
+.mds-disabled-input[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mds-secondary-color {
+  color: var(--secondary);
+}
+
+.mds-collapse-h3 {
+  margin: 0;
+}
+
+/* ── REMAINING DYNAMIC INLINE STYLES (justified) ─────────── */
+/* Belt preview colors (primaer/sekundaer): from DB, stay inline — lines 143/149 */
+/* Kontostand amount color: computed from finanzDaten, stay inline — line 3263 */
+/* Graduation row background (active check): dynamic per row, stay inline */
+/* Graduation name color: dynamic per row, stay inline */
+/* News card expanded display: dynamic (expandedNews), stay inline */
+
+/* ── MIGRATED INLINE STYLES (2026-03-07) ─────────────────── */
+
+/* Avatar image fade-in */
+.mds-avatar-img--loading {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+.mds-avatar-img--loaded {
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* SEPA mandate status */
+.mds-mandate-status--aktiv {
+  font-size: 0.9rem;
+  color: #28a745;
+}
+.mds-mandate-status--inaktiv {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* Vertrag status badge (card list) */
+.mds-vertrag-status-badge--aktiv {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+.mds-vertrag-status-badge--gekuendigt {
+  background: rgba(255, 193, 7, 0.15);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+.mds-vertrag-status-badge--ruhepause {
+  background: rgba(52, 152, 219, 0.15);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+.mds-vertrag-status-badge--geloescht {
+  background: rgba(128, 128, 128, 0.15);
+  color: #808080;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}
+.mds-vertrag-status-badge--beendet {
+  background: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+/* Beitrag row (generiert = dimmed) */
+.mds-beitrag-row--generiert {
+  opacity: 0.8;
+}
+
+/* Beitrag expand button rotation */
+.mds-beitrag-expand-btn--expanded {
+  transform: rotate(90deg);
+}
+
+/* Beitrag detail status */
+.mds-beitrag-status--paid {
+  color: #4caf50;
+}
+.mds-beitrag-status--unpaid {
+  color: #ff9800;
+}
+
+/* Group status badge */
+.mds-group-status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.mds-group-status-badge--aktiv {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.mds-group-status-badge--inaktiv {
+  background: rgba(107, 114, 128, 0.2);
+  color: #6b7280;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Referral copy button */
+.mds-referral-copy-btn {
+  background: rgba(249, 115, 22, 0.2);
+  border: 1px solid rgba(249, 115, 22, 0.5);
+  border-radius: 7px;
+  color: #f97316;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.mds-referral-copy-btn--copied {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  border-radius: 7px;
+  color: #10b981;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+/* Notification status badge */
+.mds-notif-status {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.mds-notif-status--sent {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+.mds-notif-status--failed {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+.mds-notif-status--pending {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Stil select/button: disabled state via CSS */
+.mds-stil-select:disabled,
+.mds-stil-add-btn-inactive:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Grad navigation buttons */
+.grad-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.grad-btn:disabled {
+  background: rgba(255, 255, 255, 0.05) !important;
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.grad-btn-down {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: var(--error);
+}
+.grad-btn-up {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid #22c55e;
+  color: var(--success);
+}
+
+/* Graduation list collapse icon */
+.mds-collapse-icon--expanded {
+  transform: rotate(180deg);
+}
+
+/* Vertrag document view: status box */
+.mds-vertrag-doc-status-box {
+  margin-bottom: 2rem;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 6px;
+}
+.mds-vertrag-doc-status-box--aktiv {
+  background: #e8f5e9;
+  border: 2px solid #4caf50;
+}
+.mds-vertrag-doc-status-box--gekuendigt {
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+}
+.mds-vertrag-doc-status-box--ruhepause {
+  background: #e3f2fd;
+  border: 2px solid #2196f3;
+}
+.mds-vertrag-doc-status-box--beendet {
+  background: #ffebee;
+  border: 2px solid #f44336;
+}
+
+/* Vertrag document view: status span */
+.mds-vertrag-doc-status-span {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+.mds-vertrag-doc-status-span--aktiv    { color: #2e7d32; }
+.mds-vertrag-doc-status-span--gekuendigt { color: #e65100; }
+.mds-vertrag-doc-status-span--ruhepause  { color: #1565c0; }
+.mds-vertrag-doc-status-span--beendet    { color: #c62828; }
+
+/* Vertrag structured view: inline badge */
+.mds-vertrag-badge {
+  display: inline-flex;
+  padding: 0.5rem 1.5rem;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+.mds-vertrag-badge--aktiv {
+  background: rgba(76, 175, 80, 0.2);
+  border: 2px solid #4caf50;
+  color: #4caf50;
+}
+.mds-vertrag-badge--gekuendigt {
+  background: rgba(255, 152, 0, 0.2);
+  border: 2px solid #ff9800;
+  color: #ff9800;
+}
+.mds-vertrag-badge--ruhepause {
+  background: rgba(33, 150, 243, 0.2);
+  border: 2px solid #2196F3;
+  color: #2196F3;
+}
+.mds-vertrag-badge--abgelaufen,
+.mds-vertrag-badge--beendet {
+  background: rgba(244, 67, 54, 0.2);
+  border: 2px solid #f44336;
+  color: #f44336;
+}
+
+/* Geloescht / aktiv status indicator */
+.mds-status-geloescht {
+  font-size: 0.95rem;
+  color: #ef4444;
+  font-weight: 600;
+}
+.mds-status-aktiv {
+  font-size: 0.95rem;
+  color: #4caf50;
+  font-weight: 600;
+}

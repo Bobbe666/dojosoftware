@@ -1,0 +1,58 @@
+/* MeineEvents Component Styles */
+
+/* Spacing utilities for messages */
+.meine-events-message-wrapper {
+  margin-bottom: 1rem;
+}
+
+/* Success message */
+.meine-events-success {
+  margin-bottom: 1rem;
+  background: rgba(25, 135, 84, 0.1);
+  border: 1px solid rgba(25, 135, 84, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  color: #75d175;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Card with bottom margin */
+.glass-card--mb {
+  margin-bottom: 2rem;
+}
+
+/* Event card footer spread layout */
+.event-card-footer--spread {
+  justify-content: space-between;
+}
+
+/* Abmelden button */
+.btn-danger-soft {
+  background: rgba(220, 53, 69, 0.2);
+  border-color: rgba(220, 53, 69, 0.3);
+  color: #ea868f;
+}
+
+/* Anmelde-Modal event info section */
+.meine-events-modal-event-info {
+  margin-bottom: 2rem;
+}
+
+.meine-events-modal-event-title {
+  color: var(--farbe-hauptfarbe);
+  margin-bottom: 1rem;
+}
+
+/* Textarea in modal */
+.meine-events-textarea {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  color: var(--farbe-text);
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}

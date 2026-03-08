@@ -900,25 +900,15 @@ const EinstellungenDojo = () => {
         return (
           <div className="tab-content">
             <h3>📋 Vertragsmodell & Verlängerungen</h3>
-            <p className="section-description" style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem' }}>
+            <p className="section-description ed2-section-desc">
               Wählen Sie das Vertragsmodell für Ihr Dojo. Diese Einstellung gilt für alle neuen Verträge.
             </p>
 
             <div className="form-section">
               <h4>🔄 Vertragsmodell auswählen</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="ed2-radio-list">
                 {/* Option 1: Gesetzliche Verlängerung */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: dojo.vertragsmodell === 'gesetzlich' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: dojo.vertragsmodell === 'gesetzlich' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: isEditing ? 'pointer' : 'default',
-                  transition: 'all 0.2s ease'
-                }}>
+                <label className={`ed-radio-label${dojo.vertragsmodell === 'gesetzlich' ? ' ed-radio-label--gesetzlich' : ''}${isEditing ? ' ed-radio-label--editing' : ''}`}>
                   <input
                     type="radio"
                     name="vertragsmodell"
@@ -926,13 +916,13 @@ const EinstellungenDojo = () => {
                     checked={dojo.vertragsmodell === 'gesetzlich'}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    style={{ marginTop: '4px' }}
+                    className="ed-mt-4px"
                   />
                   <div>
-                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                    <div className="ed-label-primary">
                       📜 Gesetzliche Verlängerung (Standard)
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                    <div className="ed-hint-text">
                       Vertrag verlängert sich automatisch. Nach der Verlängerung kann das Mitglied
                       jederzeit mit <strong>1 Monat Frist</strong> kündigen (gemäß Gesetz für faire Verbraucherverträge 2022).
                     </div>
@@ -940,17 +930,7 @@ const EinstellungenDojo = () => {
                 </label>
 
                 {/* Option 2: Beitragsgarantie */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: dojo.vertragsmodell === 'beitragsgarantie' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: dojo.vertragsmodell === 'beitragsgarantie' ? '2px solid #14b8a6' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: isEditing ? 'pointer' : 'default',
-                  transition: 'all 0.2s ease'
-                }}>
+                <label className={`ed-radio-label${dojo.vertragsmodell === 'beitragsgarantie' ? ' ed-radio-label--beitragsgarantie' : ''}${isEditing ? ' ed-radio-label--editing' : ''}`}>
                   <input
                     type="radio"
                     name="vertragsmodell"
@@ -958,13 +938,13 @@ const EinstellungenDojo = () => {
                     checked={dojo.vertragsmodell === 'beitragsgarantie'}
                     onChange={handleChange}
                     disabled={!isEditing}
-                    style={{ marginTop: '4px' }}
+                    className="ed-mt-4px"
                   />
                   <div>
-                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                    <div className="ed-label-primary">
                       💰 Beitragsgarantie-Modell
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                    <div className="ed-hint-text">
                       Mitglied muss <strong>aktiv verlängern</strong>, um seinen aktuellen Beitrag zu behalten.
                       Bei Nicht-Verlängerung gilt automatisch der aktuelle Tarifpreis oder der Vertrag endet.
                     </div>
@@ -975,16 +955,10 @@ const EinstellungenDojo = () => {
 
             {/* Einstellungen für Beitragsgarantie-Modell */}
             {dojo.vertragsmodell === 'beitragsgarantie' && (
-              <div className="form-section" style={{
-                background: 'rgba(20, 184, 166, 0.1)',
-                border: '1px solid rgba(20, 184, 166, 0.3)',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginTop: '1rem'
-              }}>
-                <h4 style={{ color: '#14b8a6' }}>⚙️ Beitragsgarantie-Einstellungen</h4>
+              <div className="form-section ed2-beitragsgarantie-box">
+                <h4 className="ed2-teal-heading">⚙️ Beitragsgarantie-Einstellungen</h4>
 
-                <div className="form-grid" style={{ marginTop: '1rem' }}>
+                <div className="form-grid ed-mt-1rem">
                   <div className="form-group">
                     <label>Bei Nicht-Verlängerung</label>
                     <select
@@ -996,17 +970,17 @@ const EinstellungenDojo = () => {
                       <option value="aktueller_tarif">Automatisch aktueller Tarifpreis</option>
                       <option value="vertrag_endet">Vertrag endet</option>
                     </select>
-                    <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem', display: 'block' }}>
+                    <small className="ed2-small-hint">
                       Was passiert, wenn das Mitglied nicht aktiv verlängert?
                     </small>
                   </div>
                 </div>
 
-                <h5 style={{ marginTop: '1.5rem', marginBottom: '0.75rem', color: '#fff' }}>📧 Erinnerungs-E-Mails</h5>
+                <h5 className="ed2-subheading">📧 Erinnerungs-E-Mails</h5>
                 <div className="form-grid">
                   <div className="form-group short">
                     <label>1. Erinnerung</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="u-flex-row-sm">
                       <input
                         name="verlaengerung_erinnerung_tage"
                         type="number"
@@ -1015,14 +989,14 @@ const EinstellungenDojo = () => {
                         value={dojo.verlaengerung_erinnerung_tage || 60}
                         onChange={handleChange}
                         disabled={!isEditing}
-                        style={{ width: '80px' }}
+                        className="ed-w-80"
                       />
-                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tage vorher</span>
+                      <span className="u-text-secondary">Tage vorher</span>
                     </div>
                   </div>
                   <div className="form-group short">
                     <label>2. Erinnerung</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="u-flex-row-sm">
                       <input
                         name="verlaengerung_erinnerung2_tage"
                         type="number"
@@ -1031,14 +1005,14 @@ const EinstellungenDojo = () => {
                         value={dojo.verlaengerung_erinnerung2_tage || 30}
                         onChange={handleChange}
                         disabled={!isEditing}
-                        style={{ width: '80px' }}
+                        className="ed-w-80"
                       />
-                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tage vorher</span>
+                      <span className="u-text-secondary">Tage vorher</span>
                     </div>
                   </div>
                   <div className="form-group short">
                     <label>Letzte Erinnerung</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="u-flex-row-sm">
                       <input
                         name="verlaengerung_erinnerung3_tage"
                         type="number"
@@ -1047,25 +1021,25 @@ const EinstellungenDojo = () => {
                         value={dojo.verlaengerung_erinnerung3_tage || 14}
                         onChange={handleChange}
                         disabled={!isEditing}
-                        style={{ width: '80px' }}
+                        className="ed-w-80"
                       />
-                      <span style={{ color: 'rgba(255,255,255,0.6)' }}>Tage vorher</span>
+                      <span className="u-text-secondary">Tage vorher</span>
                     </div>
                   </div>
                 </div>
-                <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem', display: 'block' }}>
+                <small className="ed2-small-hint-lg">
                   Setzen Sie einen Wert auf 0, um diese Erinnerung zu deaktivieren.
                 </small>
               </div>
             )}
 
             {/* Allgemeine Vertragseinstellungen */}
-            <div className="form-section" style={{ marginTop: '2rem' }}>
+            <div className="form-section ed2-form-section-mt">
               <h4>📝 Allgemeine Vertragseinstellungen</h4>
               <div className="form-grid">
                 <div className="form-group short">
                   <label>Kündigungsfrist (Erstlaufzeit)</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div className="u-flex-row-sm">
                     <input
                       name="kuendigungsfrist_monate"
                       type="number"
@@ -1074,14 +1048,14 @@ const EinstellungenDojo = () => {
                       value={dojo.kuendigungsfrist_monate || 3}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      style={{ width: '80px' }}
+                      className="ed-w-80"
                     />
-                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Monate</span>
+                    <span className="u-text-secondary">Monate</span>
                   </div>
                 </div>
                 <div className="form-group short">
                   <label>Mindestlaufzeit</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div className="u-flex-row-sm">
                     <input
                       name="mindestlaufzeit_monate"
                       type="number"
@@ -1090,14 +1064,14 @@ const EinstellungenDojo = () => {
                       value={dojo.mindestlaufzeit_monate || 12}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      style={{ width: '80px' }}
+                      className="ed-w-80"
                     />
-                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Monate</span>
+                    <span className="u-text-secondary">Monate</span>
                   </div>
                 </div>
                 <div className="form-group short">
                   <label>Verlängerungszeitraum</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div className="u-flex-row-sm">
                     <input
                       name="verlaengerung_monate"
                       type="number"
@@ -1106,14 +1080,14 @@ const EinstellungenDojo = () => {
                       value={dojo.verlaengerung_monate || 12}
                       onChange={handleChange}
                       disabled={!isEditing}
-                      style={{ width: '80px' }}
+                      className="ed-w-80"
                     />
-                    <span style={{ color: 'rgba(255,255,255,0.6)' }}>Monate</span>
+                    <span className="u-text-secondary">Monate</span>
                   </div>
                 </div>
               </div>
 
-              <div className="checkbox-group" style={{ marginTop: '1rem' }}>
+              <div className="checkbox-group ed-mt-1rem">
                 <label className="checkbox-label">
                   <input
                     type="checkbox"
@@ -1138,16 +1112,10 @@ const EinstellungenDojo = () => {
             </div>
 
             {/* Info-Box */}
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '12px',
-              padding: '1rem',
-              marginTop: '2rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
-                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
+            <div className="ed2-info-box">
+              <div className="ed2-info-box-inner">
+                <span className="ed2-info-icon">ℹ️</span>
+                <div className="ed2-info-text">
                   <strong>Hinweis zum deutschen Verbraucherrecht:</strong><br />
                   Seit März 2022 können Verbraucher nach automatischer Vertragsverlängerung jederzeit mit 1 Monat Frist kündigen.
                   Das Beitragsgarantie-Modell bietet eine faire Alternative: Mitglieder behalten ihren Preis, wenn sie aktiv verlängern.
@@ -1280,21 +1248,9 @@ const EinstellungenDojo = () => {
                     disabled={!isEditing}
                     placeholder={activeRechtlichesContent.placeholder}
                     rows={activeRechtlichesContent.rows}
-                    style={{ 
-                      width: '100%', 
-                      padding: '16px', 
-                      fontFamily: 'inherit', 
-                      fontSize: '14px',
-                      lineHeight: '1.6',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 215, 0, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      color: '#ffffff',
-                      resize: 'vertical',
-                      minHeight: '400px'
-                    }}
+                    className="ed2-legal-textarea"
                   />
-                  <small className="form-help" style={{ marginTop: '12px', display: 'block' }}>
+                  <small className="form-help ed2-form-help-mt">
                     {activeRechtlichesContent.help}
                   </small>
                 </div>
@@ -1322,7 +1278,7 @@ const EinstellungenDojo = () => {
                   <div className="current-theme-card glass-card">
                     <div
                       className="theme-preview-gradient"
-                      style={{ background: currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)' }}
+                      style={{ '--theme-preview': currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)' }}
                     >
                       <div className="preview-overlay">
                         {isDarkMode ? '🌙' : '☀️'}
@@ -1359,7 +1315,7 @@ const EinstellungenDojo = () => {
                       >
                         <div
                           className="theme-preview-gradient small"
-                          style={{ background: t.preview }}
+                          style={{ '--theme-preview': t.preview }}
                         >
                           <div className="preview-overlay">
                             {t.isDark ? '🌙' : '☀️'}

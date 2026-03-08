@@ -17,31 +17,31 @@ import '../styles/SupportTickets.css';
 
 // Konfiguration
 const STATUS_CONFIG = {
-  offen: { label: 'Offen', color: '#f59e0b', bgColor: 'rgba(245,158,11,0.15)', icon: CircleDot },
-  in_bearbeitung: { label: 'In Bearbeitung', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.15)', icon: Clock },
+  offen: { label: 'Offen', color: 'var(--warning)', bgColor: 'rgba(245,158,11,0.15)', icon: CircleDot },
+  in_bearbeitung: { label: 'In Bearbeitung', color: 'var(--info)', bgColor: 'rgba(59,130,246,0.15)', icon: Clock },
   warten_auf_antwort: { label: 'Warten auf Antwort', color: '#8b5cf6', bgColor: 'rgba(139,92,246,0.15)', icon: MessageCircle },
-  erledigt: { label: 'Erledigt', color: '#10b981', bgColor: 'rgba(16,185,129,0.15)', icon: CheckCircle },
-  geschlossen: { label: 'Geschlossen', color: '#6b7280', bgColor: 'rgba(107,114,128,0.15)', icon: XCircle }
+  erledigt: { label: 'Erledigt', color: 'var(--success)', bgColor: 'rgba(16,185,129,0.15)', icon: CheckCircle },
+  geschlossen: { label: 'Geschlossen', color: 'var(--text-muted)', bgColor: 'rgba(107,114,128,0.15)', icon: XCircle }
 };
 
 const KATEGORIE_CONFIG = {
-  vertrag: { label: 'Vertrag', icon: FileText, color: '#6366f1' },
+  vertrag: { label: 'Vertrag', icon: FileText, color: 'var(--color-midnight-500)' },
   hilfe: { label: 'Hilfe zur Software', icon: HelpCircle, color: '#06b6d4' },
-  problem: { label: 'Problem melden', icon: AlertOctagon, color: '#ef4444' },
+  problem: { label: 'Problem melden', icon: AlertOctagon, color: 'var(--error)' },
   sonstiges: { label: 'Sonstiges', icon: Tag, color: '#8b5cf6' }
 };
 
 const BEREICH_CONFIG = {
-  dojo: { label: 'Dojo', color: '#10b981', bgColor: 'rgba(16,185,129,0.1)', icon: Building2 },
+  dojo: { label: 'Dojo', color: 'var(--success)', bgColor: 'rgba(16,185,129,0.1)', icon: Building2 },
   verband: { label: 'Verband', color: '#8b5cf6', bgColor: 'rgba(139,92,246,0.1)', icon: Users },
-  org: { label: 'Organisation', color: '#3b82f6', bgColor: 'rgba(59,130,246,0.1)', icon: Globe }
+  org: { label: 'Organisation', color: 'var(--info)', bgColor: 'rgba(59,130,246,0.1)', icon: Globe }
 };
 
 const PRIORITAET_CONFIG = {
-  niedrig: { label: 'Niedrig', color: '#6b7280' },
-  mittel: { label: 'Mittel', color: '#f59e0b' },
-  hoch: { label: 'Hoch', color: '#ef4444' },
-  kritisch: { label: 'Kritisch', color: '#dc2626', pulse: true }
+  niedrig: { label: 'Niedrig', color: 'var(--text-muted)' },
+  mittel: { label: 'Mittel', color: 'var(--warning)' },
+  hoch: { label: 'Hoch', color: 'var(--error)' },
+  kritisch: { label: 'Kritisch', color: 'var(--error)', pulse: true }
 };
 
 const SupportTickets = ({
@@ -299,7 +299,7 @@ const SupportTickets = ({
     const config = STATUS_CONFIG[status] || STATUS_CONFIG.offen;
     const Icon = config.icon;
     return (
-      <span className="status-badge" style={{ background: config.bgColor, color: config.color }}>
+      <span className="status-badge" style={{ '--spt-bg': config.bgColor, '--spt-color': config.color }}>
         <Icon size={14} />
         {config.label}
       </span>
@@ -310,7 +310,7 @@ const SupportTickets = ({
     const config = BEREICH_CONFIG[bereichKey] || BEREICH_CONFIG.dojo;
     const Icon = config.icon;
     return (
-      <span className="bereich-badge" style={{ background: config.bgColor, color: config.color }}>
+      <span className="bereich-badge" style={{ '--spt-bg': config.bgColor, '--spt-color': config.color }}>
         <Icon size={12} />
         {config.label}
       </span>
@@ -322,7 +322,7 @@ const SupportTickets = ({
     return (
       <span
         className={`prioritaet-badge ${config.pulse ? 'pulse' : ''}`}
-        style={{ color: config.color }}
+        style={{ '--spt-color': config.color }}
       >
         {config.label}
       </span>
@@ -388,8 +388,8 @@ const SupportTickets = ({
     <div className="support-tickets">
       {/* Header */}
       <div className="support-header">
-        <div className="support-title">
-          <Ticket size={24} style={{ color: BEREICH_CONFIG[bereich]?.color }} />
+        <div className="support-title" style={{ '--st-bereich-color': BEREICH_CONFIG[bereich]?.color }}>
+          <Ticket size={24} className="support-title__icon" />
           <div>
             <h2>Support-Tickets</h2>
             <span className="support-subtitle">
@@ -428,21 +428,21 @@ const SupportTickets = ({
       {isAdmin && stats && (
         <div className="support-stats">
           <div className="stat-card" onClick={() => setFilters({...filters, status: 'offen'})}>
-            <CircleDot size={20} style={{ color: '#f59e0b' }} />
+            <CircleDot size={20} className="u-text-warning" />
             <div className="stat-info">
               <span className="stat-value">{stats.offen || 0}</span>
               <span className="stat-label">Offen</span>
             </div>
           </div>
           <div className="stat-card" onClick={() => setFilters({...filters, status: 'in_bearbeitung'})}>
-            <Clock size={20} style={{ color: '#3b82f6' }} />
+            <Clock size={20} className="spt-icon-info" />
             <div className="stat-info">
               <span className="stat-value">{stats.in_bearbeitung || 0}</span>
               <span className="stat-label">In Bearbeitung</span>
             </div>
           </div>
           <div className="stat-card" onClick={() => setFilters({...filters, status: 'warten_auf_antwort'})}>
-            <MessageCircle size={20} style={{ color: '#8b5cf6' }} />
+            <MessageCircle size={20} className="spt-icon-purple" />
             <div className="stat-info">
               <span className="stat-value">{stats.warten_auf_antwort || 0}</span>
               <span className="stat-label">Wartend</span>
@@ -683,7 +683,7 @@ const SupportTickets = ({
                     value={selectedTicket.status}
                     onChange={(e) => handleStatusChange(selectedTicket.id, e.target.value)}
                     className="status-select"
-                    style={{ color: STATUS_CONFIG[selectedTicket.status]?.color }}
+                    style={{ '--spt-color': STATUS_CONFIG[selectedTicket.status]?.color }}
                   >
                     {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                       <option key={key} value={key}>{cfg.label}</option>
@@ -813,7 +813,7 @@ const SupportTickets = ({
                       type="file"
                       multiple
                       accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx"
-                      style={{ display: 'none' }}
+                      className="spt-hidden"
                       onChange={handleFileSelect}
                     />
 

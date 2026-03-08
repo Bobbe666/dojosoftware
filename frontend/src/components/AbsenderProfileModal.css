@@ -1,0 +1,337 @@
+/* AbsenderProfileModal.css — styles for Absender-Profile modal (prefix: apm-) */
+
+.apm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.apm-card {
+  background: var(--bg-card, #1e1e2e);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 680px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--pc44, rgba(139,0,0,0.27));
+}
+
+.apm-header {
+  border-radius: 12px 12px 0 0;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-primary);
+  background: var(--pc, #8B0000);
+}
+
+.apm-header-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.apm-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.apm-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  overflow-y: auto;
+}
+
+.apm-error {
+  padding: 0.75rem 1rem;
+  background: #3a1a1a;
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  color: var(--error, #e74c3c);
+  font-size: 0.85rem;
+}
+
+/* Label */
+.apm-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.apm-label--icon {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Typ radio row */
+.apm-typ-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* Color dot inside typ radio */
+.apm-color-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--typ-farbe, #8B0000);
+}
+
+/* Input */
+.apm-input {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, #333);
+  background: var(--bg-secondary, #141420);
+  color: var(--text-primary, #eee);
+  font-size: 0.88rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.apm-input--mono {
+  font-family: monospace;
+}
+
+.apm-input--flex {
+  flex: 1;
+}
+
+.apm-input--narrow {
+  width: 110px;
+}
+
+/* Grid layouts */
+.apm-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.apm-grid-strasse {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.apm-grid-plz {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px;
+  gap: 0.5rem;
+}
+
+.apm-grid-kontakt {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.apm-grid-bank-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.apm-grid-bank-bottom {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0.5rem;
+}
+
+/* Internet row */
+.apm-internet-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Globe icon (static color) */
+.apm-globe-icon {
+  color: var(--text-secondary, #888);
+  flex-shrink: 0;
+}
+
+/* Color picker input */
+.apm-color-picker {
+  width: 48px;
+  height: 36px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.apm-swatch-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  background: var(--swatch-bg);
+  border: 2px solid transparent;
+}
+.apm-swatch-btn--active {
+  border: 3px solid #fff;
+}
+
+/* Color preview */
+.apm-color-preview {
+  margin-top: 0.5rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border, #333);
+  display: flex;
+  align-items: center;
+}
+
+.apm-color-preview-bar {
+  width: 8px;
+  align-self: stretch;
+  flex-shrink: 0;
+  background: var(--pc, #8B0000);
+}
+
+.apm-color-preview-label {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #aaa);
+}
+
+/* Auto-fill banner */
+.apm-autofill-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--bg-secondary, #141420);
+  border: 1px solid var(--border, #333);
+  flex-wrap: wrap;
+}
+
+.apm-autofill-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+}
+
+.apm-btn-autofill {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--pc, #8B0000);
+  color: var(--pc, #8B0000);
+}
+
+/* Footer */
+.apm-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border, #333);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.apm-btn-cancel {
+  padding: 0.55rem 1.2rem;
+  background: none;
+  border: 1px solid var(--border, #444);
+  color: var(--text-secondary, #aaa);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.apm-btn-save {
+  padding: 0.6rem 1.4rem;
+  color: var(--text-primary, #fff);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--pc, #8B0000);
+}
+.apm-btn-save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Typ option label */
+.apm-typ-opt-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid var(--border, #333);
+  background: transparent;
+  color: var(--text-primary, #eee);
+  font-weight: 400;
+  transition: all 0.15s;
+}
+.apm-typ-opt-label--active {
+  border-color: var(--typ-farbe, #8B0000);
+  background: color-mix(in srgb, var(--typ-farbe, #8B0000) 13%, transparent);
+  font-weight: 600;
+}
+
+/* Shared utility classes used in this file */
+.u-hidden {
+  display: none;
+}
+
+.u-flex-row-lg {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.u-flex-gap-sm {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.u-text-error {
+  color: var(--error, #e74c3c);
+}
+
+.u-flex-col-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

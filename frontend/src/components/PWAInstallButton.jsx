@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone } from 'lucide-react';
+import './PWAInstallButton.css';
 
 const PWAInstallButton = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -93,38 +94,13 @@ const PWAInstallButton = () => {
   return (
     <>
       {/* Install Button Tile */}
-      <div
-        onClick={handleInstallClick}
-        style={{
-          cursor: 'pointer',
-          padding: '0.8rem',
-          minHeight: '60px',
-          position: 'relative',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.3rem',
-          background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))',
-          border: '1px solid rgba(255, 215, 0, 0.3)',
-          borderRadius: '12px',
-          transition: 'all 0.2s'
-        }}
-        onMouseOver={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(255, 237, 78, 0.25))';
-          e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-        }}
-        onMouseOut={(e) => {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))';
-          e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
-        }}
-      >
-        <Download size={20} style={{ color: '#ffd700' }} />
-        <span style={{ fontSize: '0.85rem', color: '#ffd700', fontWeight: '600' }}>
+      <div onClick={handleInstallClick} className="pwa-install-tile">
+        <Download size={20} className="u-text-accent" />
+        <span className="pwa-install-label">
           App installieren
         </span>
         {isIOS && (
-          <span style={{ fontSize: '0.7rem', color: '#a0a0a0' }}>
+          <span className="pwa-install-sublabel">
             Anleitung anzeigen
           </span>
         )}
@@ -132,96 +108,37 @@ const PWAInstallButton = () => {
 
       {/* iOS Instructions Modal */}
       {showIOSInstructions && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100000,
-            padding: '1rem'
-          }}
-          onClick={() => setShowIOSInstructions(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#1a1a2e',
-              padding: '2rem',
-              borderRadius: '16px',
-              maxWidth: '500px',
-              width: '100%',
-              position: 'relative',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-            }}
-          >
+        <div className="pwa-overlay" onClick={() => setShowIOSInstructions(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="pwa-modal pwa-modal--ios">
             {/* Close Button */}
-            <button
-              onClick={() => setShowIOSInstructions(false)}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: 'none',
-                color: '#e0e0e0',
-                cursor: 'pointer',
-                padding: '0.5rem',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
+            <button onClick={() => setShowIOSInstructions(false)} className="pwa-modal-close">
               <X size={24} />
             </button>
 
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                marginBottom: '1rem'
-              }}>
-                <Smartphone size={32} style={{ color: '#ffd700' }} />
-                <h2 style={{ color: '#ffd700', margin: 0, fontSize: '1.75rem' }}>
+            <div className="pwa-modal-header">
+              <div className="pwa-modal-header-icon-row">
+                <Smartphone size={32} className="u-text-accent" />
+                <h2 className="pwa-modal-title">
                   App installieren
                 </h2>
               </div>
-              <p style={{ color: '#a0a0a0', margin: 0, fontSize: '0.95rem' }}>
+              <p className="pwa-modal-subtitle">
                 So installierst du die App auf deinem iPhone
               </p>
             </div>
 
             {/* Instructions */}
-            <div style={{
-              backgroundColor: 'rgba(255, 215, 0, 0.1)',
-              padding: '1.5rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 215, 0, 0.3)'
-            }}>
-              <ol style={{
-                paddingLeft: '1.5rem',
-                margin: 0,
-                color: '#e0e0e0',
-                fontSize: '1rem',
-                lineHeight: '1.8'
-              }}>
-                <li style={{ marginBottom: '1rem' }}>
-                  Tippe auf den <strong style={{ color: '#ffd700' }}>Teilen-Button</strong> (Quadrat mit Pfeil ↑) unten oder oben rechts
+            <div className="pwa-instruction-box">
+              <ol className="pwa-instruction-list">
+                <li>
+                  Tippe auf den <strong className="u-text-accent">Teilen-Button</strong> (Quadrat mit Pfeil ↑) unten oder oben rechts
                 </li>
-                <li style={{ marginBottom: '1rem' }}>
-                  Scrolle nach unten und wähle <strong style={{ color: '#ffd700' }}>"Zum Home-Bildschirm"</strong>
+                <li>
+                  Scrolle nach unten und wähle <strong className="u-text-accent">"Zum Home-Bildschirm"</strong>
                 </li>
-                <li style={{ marginBottom: '1rem' }}>
-                  Tippe oben rechts auf <strong style={{ color: '#ffd700' }}>"Hinzufügen"</strong>
+                <li>
+                  Tippe oben rechts auf <strong className="u-text-accent">"Hinzufügen"</strong>
                 </li>
                 <li>
                   Fertig! Das App-Icon 🥋 erscheint auf deinem Homescreen
@@ -229,14 +146,8 @@ const PWAInstallButton = () => {
               </ol>
             </div>
 
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <p style={{ color: '#a0a0a0', fontSize: '0.85rem', margin: 0 }}>
+            <div className="pwa-tip-box">
+              <p className="pwa-tip-text">
                 💡 Die App funktioniert dann wie eine normale App - ohne Browser-Leiste!
               </p>
             </div>
@@ -246,147 +157,63 @@ const PWAInstallButton = () => {
 
       {/* Desktop/Safari Instructions Modal */}
       {showDesktopInstructions && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 100000,
-            padding: '1rem'
-          }}
-          onClick={() => setShowDesktopInstructions(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#1a1a2e',
-              padding: '2rem',
-              borderRadius: '16px',
-              maxWidth: '600px',
-              width: '100%',
-              position: 'relative',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-            }}
-          >
+        <div className="pwa-overlay" onClick={() => setShowDesktopInstructions(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="pwa-modal pwa-modal--desktop">
             {/* Close Button */}
-            <button
-              onClick={() => setShowDesktopInstructions(false)}
-              style={{
-                position: 'absolute',
-                top: '1rem',
-                right: '1rem',
-                background: 'rgba(255, 255, 255, 0.1)',
-                border: 'none',
-                color: '#e0e0e0',
-                cursor: 'pointer',
-                padding: '0.5rem',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
+            <button onClick={() => setShowDesktopInstructions(false)} className="pwa-modal-close">
               <X size={24} />
             </button>
 
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.75rem',
-                marginBottom: '1rem'
-              }}>
-                <Download size={32} style={{ color: '#ffd700' }} />
-                <h2 style={{ color: '#ffd700', margin: 0, fontSize: '1.75rem' }}>
+            <div className="pwa-modal-header">
+              <div className="pwa-modal-header-icon-row">
+                <Download size={32} className="u-text-accent" />
+                <h2 className="pwa-modal-title">
                   App installieren
                 </h2>
               </div>
-              <p style={{ color: '#a0a0a0', margin: 0, fontSize: '0.95rem' }}>
+              <p className="pwa-modal-subtitle">
                 So installierst du die App auf deinem Mac (Safari)
               </p>
             </div>
 
             {/* Instructions */}
-            <div style={{
-              backgroundColor: 'rgba(255, 215, 0, 0.1)',
-              padding: '1.5rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              marginBottom: '1rem'
-            }}>
-              <h3 style={{ color: '#ffd700', marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>
+            <div className="pwa-instruction-box pwa-instruction-box--mb">
+              <h3 className="pwa-instruction-box-title">
                 Option 1: Über die Adressleiste
               </h3>
-              <ol style={{
-                paddingLeft: '1.5rem',
-                margin: 0,
-                color: '#e0e0e0',
-                fontSize: '1rem',
-                lineHeight: '1.8'
-              }}>
-                <li style={{ marginBottom: '0.5rem' }}>
-                  Suche in der <strong style={{ color: '#ffd700' }}>Adressleiste</strong> (oben) nach einem Icon
+              <ol className="pwa-instruction-list pwa-instruction-list--half-gap">
+                <li>
+                  Suche in der <strong className="u-text-accent">Adressleiste</strong> (oben) nach einem Icon
                 </li>
                 <li>
-                  Klicke darauf und wähle <strong style={{ color: '#ffd700' }}>"Zum Dock hinzufügen"</strong>
+                  Klicke darauf und wähle <strong className="u-text-accent">"Zum Dock hinzufügen"</strong>
                 </li>
               </ol>
             </div>
 
-            <div style={{
-              backgroundColor: 'rgba(255, 215, 0, 0.1)',
-              padding: '1.5rem',
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 215, 0, 0.3)'
-            }}>
-              <h3 style={{ color: '#ffd700', marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>
+            <div className="pwa-instruction-box">
+              <h3 className="pwa-instruction-box-title">
                 Option 2: Über das Menü
               </h3>
-              <ol style={{
-                paddingLeft: '1.5rem',
-                margin: 0,
-                color: '#e0e0e0',
-                fontSize: '1rem',
-                lineHeight: '1.8'
-              }}>
-                <li style={{ marginBottom: '0.5rem' }}>
-                  Klicke oben links auf <strong style={{ color: '#ffd700' }}>"Ablage"</strong> (oder "File")
+              <ol className="pwa-instruction-list pwa-instruction-list--half-gap">
+                <li>
+                  Klicke oben links auf <strong className="u-text-accent">"Ablage"</strong> (oder "File")
                 </li>
                 <li>
-                  Wähle <strong style={{ color: '#ffd700' }}>"Zum Dock hinzufügen"</strong> (oder "Add to Dock")
+                  Wähle <strong className="u-text-accent">"Zum Dock hinzufügen"</strong> (oder "Add to Dock")
                 </li>
               </ol>
             </div>
 
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '8px',
-              textAlign: 'center'
-            }}>
-              <p style={{ color: '#a0a0a0', fontSize: '0.85rem', margin: 0 }}>
+            <div className="pwa-tip-box">
+              <p className="pwa-tip-text">
                 💡 Die App erscheint dann in deinem Dock und Launchpad - wie eine normale Mac-App!
               </p>
             </div>
 
-            <div style={{
-              marginTop: '1rem',
-              padding: '0.75rem',
-              backgroundColor: 'rgba(100, 149, 237, 0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(100, 149, 237, 0.3)',
-              textAlign: 'center'
-            }}>
-              <p style={{ color: '#6495ED', fontSize: '0.8rem', margin: 0 }}>
+            <div className="pwa-chrome-tip">
+              <p className="pwa-chrome-tip-text">
                 🔧 <strong>Tipp für Chrome/Edge Nutzer:</strong> Die Installation funktioniert automatisch mit einem Klick!
               </p>
             </div>

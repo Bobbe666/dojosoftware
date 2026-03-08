@@ -14,6 +14,7 @@ import {
   Globe
 } from 'lucide-react';
 import { createSafeHtml } from '../utils/sanitizer';
+import './VerbandsMitglieder.css';
 
 const VerbandsMitglieder = () => {
   const { token, user } = useAuth();
@@ -791,20 +792,16 @@ const VerbandsMitglieder = () => {
 
   const getStatusBadge = (status) => {
     const config = {
-      aktiv: { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', icon: Check, label: 'Aktiv' },
-      ausstehend: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock, label: 'Ausstehend' },
-      abgelaufen: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', icon: AlertTriangle, label: 'Abgelaufen' },
-      gekuendigt: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)', icon: X, label: 'Gekündigt' },
+      aktiv: { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', icon: Check, label: 'Aktiv' },
+      ausstehend: { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', icon: Clock, label: 'Ausstehend' },
+      abgelaufen: { color: 'var(--error)', bg: 'rgba(239, 68, 68, 0.15)', icon: AlertTriangle, label: 'Abgelaufen' },
+      gekuendigt: { color: 'var(--text-muted)', bg: 'rgba(107, 114, 128, 0.15)', icon: X, label: 'Gekündigt' },
       vertragsfrei: { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', icon: Shield, label: 'Vertragsfrei' }
     };
     const c = config[status] || config.ausstehend;
     const Icon = c.icon;
     return (
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: '4px',
-        padding: '4px 10px', borderRadius: '6px',
-        background: c.bg, color: c.color, fontSize: '0.8rem', fontWeight: '600'
-      }}>
+      <span className="vm-status-badge" style={{ '--vm-badge-bg': c.bg, '--vm-badge-color': c.color }}>
         <Icon size={14} />
         {c.label}
       </span>
@@ -893,28 +890,28 @@ const VerbandsMitglieder = () => {
       {/* Tabs */}
       <div style={styles.tabs}>
         <button
-          style={{ ...styles.tab, ...(activeTab === 'dojos' ? styles.tabActive : {}) }}
+          className={`vm-tab-btn ${activeTab === 'dojos' ? 'vm-tab-btn--active' : ''}`}
           onClick={() => setActiveTab('dojos')}
         >
           <Building2 size={16} />
           Dojos ({mitgliedschaften.filter(m => m.typ === 'dojo').length})
         </button>
         <button
-          style={{ ...styles.tab, ...(activeTab === 'einzelpersonen' ? styles.tabActive : {}) }}
+          className={`vm-tab-btn ${activeTab === 'einzelpersonen' ? 'vm-tab-btn--active' : ''}`}
           onClick={() => setActiveTab('einzelpersonen')}
         >
           <User size={16} />
           Einzelpersonen ({mitgliedschaften.filter(m => m.typ === 'einzelperson').length})
         </button>
         <button
-          style={{ ...styles.tab, ...(activeTab === 'vorteile' ? styles.tabActive : {}) }}
+          className={`vm-tab-btn ${activeTab === 'vorteile' ? 'vm-tab-btn--active' : ''}`}
           onClick={() => setActiveTab('vorteile')}
         >
           <Gift size={16} />
           Vorteile & Rabatte
         </button>
         <button
-          style={{ ...styles.tab, ...(activeTab === 'einstellungen' ? styles.tabActive : {}) }}
+          className={`vm-tab-btn ${activeTab === 'einstellungen' ? 'vm-tab-btn--active' : ''}`}
           onClick={() => setActiveTab('einstellungen')}
         >
           <Settings size={16} />
@@ -925,19 +922,19 @@ const VerbandsMitglieder = () => {
       {/* Vorteile Tab */}
       {activeTab === 'vorteile' && (
         <div style={styles.vorteileContainer}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Mitgliedschaftsvorteile & Rabatte</h3>
+          <div className="vm-vorteile-header">
+            <h3 className="vm-vorteile-section-title">Mitgliedschaftsvorteile & Rabatte</h3>
             <button onClick={() => openVorteilModal()} style={styles.submitButton}>
               <Plus size={16} /> Neuer Vorteil
             </button>
           </div>
           <div style={styles.vorteileGrid}>
             {vorteile.map(v => (
-              <div key={v.id} style={{ ...styles.vorteilCard, opacity: v.aktiv ? 1 : 0.5 }}>
+              <div key={v.id} className={`vm-vorteil-card ${!v.aktiv ? 'vm-vorteil-card--inactive' : ''}`}>
                 <div style={styles.vorteilHeader}>
                   <Percent size={20} color="#ffd700" />
                   <span style={styles.vorteilTitel}>{v.titel}</span>
-                  {!v.aktiv && <span style={{ background: '#ef4444', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', marginLeft: '8px' }}>INAKTIV</span>}
+                  {!v.aktiv && <span className="vm-badge-inaktiv-ml">INAKTIV</span>}
                 </div>
                 <p style={styles.vorteilBeschreibung}>{v.beschreibung}</p>
                 <div style={styles.vorteilMeta}>
@@ -945,38 +942,28 @@ const VerbandsMitglieder = () => {
                     {v.rabatt_typ === 'prozent' ? `${v.rabatt_wert}%` : `${v.rabatt_wert}€`} Rabatt
                   </span>
                   <span style={styles.vorteilKategorie}>{v.kategorie}</span>
-                  <span style={{
-                    ...styles.vorteilGilt,
-                    background: v.gilt_fuer === 'dojo' ? 'rgba(59, 130, 246, 0.2)' :
-                               v.gilt_fuer === 'einzelperson' ? 'rgba(16, 185, 129, 0.2)' :
-                               'rgba(255, 215, 0, 0.2)'
-                  }}>
+                  <span className={`vm-vorteil-gilt vm-vorteil-gilt--${v.gilt_fuer}`}>
                     {v.gilt_fuer === 'beide' ? 'Alle' : v.gilt_fuer === 'dojo' ? 'Dojos' : 'Einzelpersonen'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+                <div className="vm-vorteil-footer">
                   <button
                     onClick={() => toggleVorteilAktiv(v.id)}
-                    style={{
-                      ...styles.iconButton,
-                      background: v.aktiv ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
-                      color: v.aktiv ? '#ef4444' : '#10b981',
-                      flex: 1
-                    }}
+                    className={`vm-icon-btn vm-icon-btn--flex1 ${v.aktiv ? 'vm-btn-deactivate' : 'vm-btn-activate'}`}
                   >
                     {v.aktiv ? <><X size={14} /> Deaktivieren</> : <><Check size={14} /> Aktivieren</>}
                   </button>
-                  <button onClick={() => openVorteilModal(v)} style={{ ...styles.iconButton, flex: 1 }}>
+                  <button onClick={() => openVorteilModal(v)} style={styles.iconButton} className="vm-icon-btn-flex1">
                     <Edit size={14} /> Bearbeiten
                   </button>
-                  <button onClick={() => deleteVorteil(v.id)} style={{ ...styles.iconButton, color: '#ef4444' }}>
+                  <button onClick={() => deleteVorteil(v.id)} style={styles.iconButton} className="vm-icon-btn-danger">
                     <Trash2 size={14} />
                   </button>
                 </div>
               </div>
             ))}
             {vorteile.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#888', gridColumn: '1 / -1' }}>
+              <div className="vm-empty-state-span">
                 Keine Vorteile vorhanden. Erstellen Sie einen neuen Vorteil.
               </div>
             )}
@@ -999,10 +986,7 @@ const VerbandsMitglieder = () => {
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
-                style={{
-                  ...styles.einstellungenTab,
-                  ...(einstellungenKategorie === key ? styles.einstellungenTabActive : {})
-                }}
+                className={`vm-einst-tab-btn ${einstellungenKategorie === key ? 'vm-einst-tab-btn--active' : ''}`}
                 onClick={() => setEinstellungenKategorie(key)}
               >
                 <Icon size={16} />
@@ -1013,9 +997,9 @@ const VerbandsMitglieder = () => {
 
           {/* Mitgliedschaftstypen Tab */}
           {einstellungenKategorie === 'typen' && (
-            <div style={{ marginTop: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ margin: 0, color: '#fff' }}>Mitgliedschaftstypen verwalten</h3>
+            <div className="vm-typen-section">
+              <div className="vm-typen-header">
+                <h3 className="vm-typen-title">Mitgliedschaftstypen verwalten</h3>
                 <button onClick={() => openTypModal()} style={styles.submitButton}>
                   <Plus size={16} /> Neuer Typ
                 </button>
@@ -1027,56 +1011,35 @@ const VerbandsMitglieder = () => {
                   <span>Lade Typen...</span>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="vm-typen-list">
                   {mitgliedschaftstypen.map(typ => (
-                    <div key={typ.id} style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      borderRadius: '8px',
-                      padding: '16px',
-                      display: 'grid',
-                      gridTemplateColumns: '1fr auto',
-                      gap: '16px',
-                      alignItems: 'center',
-                      opacity: typ.aktiv ? 1 : 0.6
-                    }}>
+                    <div key={typ.id} className={`vm-typ-item ${!typ.aktiv ? 'vm-typ-item--inactive' : ''}`}>
                       <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                          <span style={{
-                            background: typ.kategorie === 'dojo' ? 'rgba(59,130,246,0.2)' : 'rgba(16,185,129,0.2)',
-                            color: typ.kategorie === 'dojo' ? '#60a5fa' : '#34d399',
-                            padding: '2px 8px',
-                            borderRadius: '4px',
-                            fontSize: '11px',
-                            textTransform: 'uppercase'
-                          }}>
+                        <div className="vm-typ-name-row">
+                          <span className={`vm-kategorie-badge vm-kategorie-badge--${typ.kategorie}`}>
                             {typ.kategorie}
                           </span>
-                          <strong style={{ color: '#fff', fontSize: '16px' }}>{typ.name}</strong>
-                          <code style={{ color: '#888', fontSize: '12px' }}>({typ.code})</code>
+                          <strong className="vm-typ-name">{typ.name}</strong>
+                          <code className="vm-typ-code">({typ.code})</code>
                           {typ.ist_standard && (
-                            <span style={{ background: '#fbbf24', color: '#000', padding: '2px 6px', borderRadius: '4px', fontSize: '10px' }}>STANDARD</span>
+                            <span className="vm-badge-standard">STANDARD</span>
                           )}
                           {!typ.aktiv && (
-                            <span style={{ background: '#ef4444', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontSize: '10px' }}>INAKTIV</span>
+                            <span className="vm-badge-inaktiv">INAKTIV</span>
                           )}
                         </div>
-                        <p style={{ color: '#aaa', margin: '4px 0 8px', fontSize: '13px' }}>{typ.beschreibung || '-'}</p>
-                        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: '#ccc' }}>
-                          <span><Euro size={14} style={{ marginRight: '4px' }} /><strong>{typ.preis_brutto?.toFixed(2)}€</strong> brutto ({typ.preis_netto}€ netto)</span>
-                          <span><Percent size={14} style={{ marginRight: '4px' }} />{typ.steuersatz}% MwSt</span>
-                          <span><Calendar size={14} style={{ marginRight: '4px' }} />{typ.laufzeit_monate} Monate Laufzeit</span>
+                        <p className="vm-typ-beschreibung">{typ.beschreibung || '-'}</p>
+                        <div className="vm-typ-meta">
+                          <span><Euro size={14} className="vm-mr4" /><strong>{typ.preis_brutto?.toFixed(2)}€</strong> brutto ({typ.preis_netto}€ netto)</span>
+                          <span><Percent size={14} className="vm-mr4" />{typ.steuersatz}% MwSt</span>
+                          <span><Calendar size={14} className="vm-mr4" />{typ.laufzeit_monate} Monate Laufzeit</span>
                           <span>{typ.auto_verlaengerung ? '🔄 Auto-Verlängerung' : '📅 Einmalig'}</span>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className="vm-typ-actions">
                         <button
                           onClick={() => toggleTypAktiv(typ.id)}
-                          style={{
-                            ...styles.iconButton,
-                            background: typ.aktiv ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
-                            color: typ.aktiv ? '#ef4444' : '#10b981'
-                          }}
+                          className={`vm-icon-btn ${typ.aktiv ? 'vm-btn-deactivate' : 'vm-btn-activate'}`}
                           title={typ.aktiv ? 'Deaktivieren' : 'Aktivieren'}
                         >
                           {typ.aktiv ? <X size={16} /> : <Check size={16} />}
@@ -1086,7 +1049,7 @@ const VerbandsMitglieder = () => {
                         </button>
                         <button
                           onClick={() => deleteTyp(typ.id)}
-                          style={{ ...styles.iconButton, color: '#ef4444' }}
+                          style={styles.iconButton} className="vm-icon-btn-danger"
                           title="Löschen"
                         >
                           <Trash2 size={16} />
@@ -1096,7 +1059,7 @@ const VerbandsMitglieder = () => {
                   ))}
 
                   {mitgliedschaftstypen.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
+                    <div className="vm-empty-state">
                       Keine Mitgliedschaftstypen vorhanden. Erstellen Sie einen neuen Typ.
                     </div>
                   )}
@@ -1132,27 +1095,10 @@ const VerbandsMitglieder = () => {
                             onChange={(ev) => handleEinstellungChange(e.einstellung_key, ev.target.checked)}
                             style={styles.toggleInput}
                           />
-                          <span style={{
-                            ...styles.toggleSwitch,
-                            background: getEinstellungValue(e.einstellung_key) ? '#10b981' : '#ef4444'
-                          }}>
-                            <span style={{
-                              position: 'absolute',
-                              top: '2px',
-                              left: '2px',
-                              width: '20px',
-                              height: '20px',
-                              background: '#fff',
-                              borderRadius: '50%',
-                              transition: 'transform 0.2s',
-                              transform: getEinstellungValue(e.einstellung_key) ? 'translateX(24px)' : 'translateX(0)'
-                            }}></span>
+                          <span className={`vm-toggle-switch ${getEinstellungValue(e.einstellung_key) ? 'vm-toggle-switch--on' : 'vm-toggle-switch--off'}`}>
+                            <span className={`vm-toggle-knob ${getEinstellungValue(e.einstellung_key) ? 'vm-toggle-knob--on' : ''}`}></span>
                           </span>
-                          <span style={{
-                            ...styles.toggleText,
-                            color: getEinstellungValue(e.einstellung_key) ? '#10b981' : '#ef4444',
-                            fontWeight: '600'
-                          }}>
+                          <span className={`vm-toggle-text ${getEinstellungValue(e.einstellung_key) ? 'vm-toggle-text--on' : 'vm-toggle-text--off'}`}>
                             {getEinstellungValue(e.einstellung_key) ? 'Aktiv' : 'Inaktiv'}
                           </span>
                         </label>
@@ -1176,7 +1122,7 @@ const VerbandsMitglieder = () => {
                               // Ignorieren wenn kein gültiges JSON
                             }
                           }}
-                          style={{ ...styles.einstellungInput, minHeight: '80px', fontFamily: 'monospace' }}
+                          style={styles.einstellungInput} className="vm-input-monospace" 
                         />
                       ) : (
                         <input
@@ -1314,10 +1260,7 @@ const VerbandsMitglieder = () => {
               <div style={styles.typSelector}>
                 <button
                   type="button"
-                  style={{
-                    ...styles.typButton,
-                    ...(formData.typ === 'dojo' ? styles.typButtonActive : {})
-                  }}
+                  className={`vm-typ-btn ${formData.typ === 'dojo' ? 'vm-typ-btn--dojo' : ''}`}
                   onClick={() => setFormData({ ...formData, typ: 'dojo' })}
                 >
                   <Building2 size={24} />
@@ -1326,10 +1269,7 @@ const VerbandsMitglieder = () => {
                 </button>
                 <button
                   type="button"
-                  style={{
-                    ...styles.typButton,
-                    ...(formData.typ === 'einzelperson' ? styles.typButtonActiveGreen : {})
-                  }}
+                  className={`vm-typ-btn ${formData.typ === 'einzelperson' ? 'vm-typ-btn--einzelperson' : ''}`}
                   onClick={() => setFormData({ ...formData, typ: 'einzelperson' })}
                 >
                   <User size={24} />
@@ -1346,28 +1286,14 @@ const VerbandsMitglieder = () => {
                       {formData.neues_dojo ? 'Modus: Neues Dojo anlegen' : 'Dojo *'}
                     </label>
                     {formData.neues_dojo ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{
-                          padding: '10px 15px',
-                          background: 'rgba(255, 215, 0, 0.2)',
-                          borderRadius: '8px',
-                          color: '#ffd700',
-                          fontWeight: '600',
-                          flex: 1
-                        }}>
+                      <div className="vm-flex-center-gap10">
+                        <span className="vm-neues-dojo-indicator">
                           ➕ Neues Dojo wird angelegt
                         </span>
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, neues_dojo: false, dojo_id: '' })}
-                          style={{
-                            padding: '10px 15px',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            cursor: 'pointer'
-                          }}
+                          className="vm-neues-dojo-cancel-btn"
                         >
                           Abbrechen
                         </button>
@@ -1390,7 +1316,7 @@ const VerbandsMitglieder = () => {
                             {d.name} {d.ort ? `(${d.ort})` : ''}
                           </option>
                         ))}
-                        <option value="neu" style={{ fontWeight: 'bold', borderTop: '1px solid #ccc' }}>
+                        <option value="neu" className="vm-option-new">
                           ➕ Neues Dojo anlegen...
                         </option>
                       </select>
@@ -1399,24 +1325,15 @@ const VerbandsMitglieder = () => {
 
                   {/* Beitragsfrei Option (nur für Admin) */}
                   {isAdmin && (
-                    <div style={{ ...styles.formGroup, marginTop: '0.5rem' }}>
-                      <label style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        cursor: 'pointer',
-                        padding: '10px 15px',
-                        background: formData.beitragsfrei ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                        borderRadius: '8px',
-                        border: formData.beitragsfrei ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)'
-                      }}>
+                    <div style={styles.formGroup} className="vm-form-group-mt">
+                      <label className={`vm-beitragsfrei-label ${formData.beitragsfrei ? 'vm-beitragsfrei-label--active' : ''}`}>
                         <input
                           type="checkbox"
                           checked={formData.beitragsfrei}
                           onChange={(e) => setFormData({ ...formData, beitragsfrei: e.target.checked })}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                          className="vm-checkbox-input"
                         />
-                        <span style={{ color: formData.beitragsfrei ? '#22c55e' : 'rgba(255, 255, 255, 0.8)' }}>
+                        <span className={formData.beitragsfrei ? 'vm-beitragsfrei-text--active' : 'vm-beitragsfrei-text'}>
                           🎁 Beitragsfrei stellen (keine Gebühren)
                         </span>
                       </label>
@@ -1425,8 +1342,8 @@ const VerbandsMitglieder = () => {
 
                   {/* Neues Dojo Formular */}
                   {formData.neues_dojo && (
-                    <div style={{ ...styles.card, background: 'rgba(255, 215, 0, 0.1)', marginBottom: '1rem' }}>
-                      <h4 style={{ margin: '0 0 1rem 0', color: '#ffd700' }}>Neues Dojo anlegen</h4>
+                    <div style={styles.card} className="vm-neues-dojo-card">
+                      <h4>Neues Dojo anlegen</h4>
                       <div style={styles.formRow}>
                         <div style={styles.formGroup}>
                           <label style={styles.label}>Dojo-Name *</label>
@@ -1616,7 +1533,7 @@ const VerbandsMitglieder = () => {
                 <textarea
                   value={formData.notizen}
                   onChange={(e) => setFormData({ ...formData, notizen: e.target.value })}
-                  style={{ ...styles.input, minHeight: '80px' }}
+                  style={styles.input} className="vm-input-textarea" 
                 />
               </div>
 
@@ -1637,7 +1554,7 @@ const VerbandsMitglieder = () => {
       {/* Detail Modal */}
       {showDetailModal && selectedMitgliedschaft && (
         <div style={styles.modalOverlay} onClick={() => setShowDetailModal(false)}>
-          <div style={{ ...styles.modal, maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.modal} className="vm-modal-800" onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 {selectedMitgliedschaft.typ === 'dojo' ? (
@@ -1654,25 +1571,25 @@ const VerbandsMitglieder = () => {
             {/* Detail Tabs */}
             <div style={styles.detailTabs}>
               <button
-                style={{ ...styles.detailTab, ...(detailTab === 'info' ? styles.detailTabActive : {}) }}
+                className={`vm-detail-tab-btn ${detailTab === 'info' ? 'vm-detail-tab-btn--active' : ''}`}
                 onClick={() => setDetailTab('info')}
               >
                 <User size={16} /> Info
               </button>
               <button
-                style={{ ...styles.detailTab, ...(detailTab === 'vertrag' ? styles.detailTabActive : {}) }}
+                className={`vm-detail-tab-btn ${detailTab === 'vertrag' ? 'vm-detail-tab-btn--active' : ''}`}
                 onClick={() => setDetailTab('vertrag')}
               >
                 <FileText size={16} /> Vertrag
               </button>
               <button
-                style={{ ...styles.detailTab, ...(detailTab === 'sepa' ? styles.detailTabActive : {}) }}
+                className={`vm-detail-tab-btn ${detailTab === 'sepa' ? 'vm-detail-tab-btn--active' : ''}`}
                 onClick={() => setDetailTab('sepa')}
               >
                 <Banknote size={16} /> SEPA
               </button>
               <button
-                style={{ ...styles.detailTab, ...(detailTab === 'historie' ? styles.detailTabActive : {}) }}
+                className={`vm-detail-tab-btn ${detailTab === 'historie' ? 'vm-detail-tab-btn--active' : ''}`}
                 onClick={() => setDetailTab('historie')}
               >
                 <History size={16} /> Historie
@@ -1694,20 +1611,7 @@ const VerbandsMitglieder = () => {
                       <select
                         value={selectedMitgliedschaft.status}
                         onChange={(e) => handleStatusChange(selectedMitgliedschaft.id, e.target.value)}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: '6px',
-                          border: '1px solid rgba(255,255,255,0.2)',
-                          background: selectedMitgliedschaft.status === 'aktiv' ? 'rgba(16, 185, 129, 0.2)' :
-                                     selectedMitgliedschaft.status === 'ausstehend' ? 'rgba(245, 158, 11, 0.2)' :
-                                     selectedMitgliedschaft.status === 'vertragsfrei' ? 'rgba(107, 114, 128, 0.2)' :
-                                     'rgba(239, 68, 68, 0.2)',
-                          color: selectedMitgliedschaft.status === 'aktiv' ? '#10b981' :
-                                 selectedMitgliedschaft.status === 'ausstehend' ? '#f59e0b' :
-                                 selectedMitgliedschaft.status === 'vertragsfrei' ? '#6b7280' : '#ef4444',
-                          fontWeight: '600',
-                          cursor: 'pointer'
-                        }}
+                        className={`vm-status-select vm-status-select--${selectedMitgliedschaft.status}`}
                       >
                         <option value="ausstehend">Ausstehend</option>
                         <option value="aktiv">Aktiv</option>
@@ -1719,11 +1623,11 @@ const VerbandsMitglieder = () => {
                     <div style={styles.detailItem}>
                       <span style={styles.detailLabel}>Vertrag</span>
                       {selectedMitgliedschaft.unterschrift_digital ? (
-                        <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="vm-vertrag-signed">
                           <Check size={14} /> Unterschrieben
                         </span>
                       ) : (
-                        <span style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span className="vm-vertrag-unsigned">
                           <AlertTriangle size={14} /> Ausstehend
                         </span>
                       )}
@@ -1748,17 +1652,11 @@ const VerbandsMitglieder = () => {
 
                   {/* Beitragsfrei Toggle (nur für Admin) */}
                   {isAdmin && (
-                    <div style={{
-                      padding: '12px 16px',
-                      background: selectedMitgliedschaft.beitragsfrei ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                      borderRadius: '8px',
-                      border: selectedMitgliedschaft.beitragsfrei ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255, 255, 255, 0.1)',
-                      marginBottom: '1rem'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div className={`vm-beitragsfrei-box ${selectedMitgliedschaft.beitragsfrei ? 'vm-beitragsfrei-box--active' : ''}`}>
+                      <div className="vm-beitragsfrei-toggle-row">
+                        <div className="vm-flex-center-gap10">
                           <Gift size={18} color={selectedMitgliedschaft.beitragsfrei ? '#22c55e' : '#6b7280'} />
-                          <span style={{ color: selectedMitgliedschaft.beitragsfrei ? '#22c55e' : 'rgba(255, 255, 255, 0.8)' }}>
+                          <span className={selectedMitgliedschaft.beitragsfrei ? 'vm-beitragsfrei-text--active' : 'vm-beitragsfrei-text'}>
                             {selectedMitgliedschaft.beitragsfrei ? 'Beitragsfrei' : 'Regulärer Beitrag'}
                           </span>
                         </div>
@@ -1781,22 +1679,13 @@ const VerbandsMitglieder = () => {
                               alert(err.response?.data?.error || 'Fehler beim Umstellen');
                             }
                           }}
-                          style={{
-                            padding: '6px 12px',
-                            background: selectedMitgliedschaft.beitragsfrei ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                            border: selectedMitgliedschaft.beitragsfrei ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(34, 197, 94, 0.3)',
-                            borderRadius: '6px',
-                            color: selectedMitgliedschaft.beitragsfrei ? '#ef4444' : '#22c55e',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem',
-                            fontWeight: '500'
-                          }}
+                          className={`vm-beitragsfrei-toggle-btn ${selectedMitgliedschaft.beitragsfrei ? 'vm-btn-deactivate' : 'vm-btn-activate'}`}
                         >
                           {selectedMitgliedschaft.beitragsfrei ? 'Beitragsfrei aufheben' : 'Beitragsfrei stellen'}
                         </button>
                       </div>
                       {selectedMitgliedschaft.beitragsfrei && (
-                        <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                        <p className="vm-beitragsfrei-note">
                           Diese Mitgliedschaft ist von Beiträgen befreit. Bei Verlängerung werden keine Zahlungen erstellt.
                         </p>
                       )}
@@ -1858,7 +1747,7 @@ const VerbandsMitglieder = () => {
                             <Globe size={14} />
                             <a href={selectedMitgliedschaft.dojo_website.startsWith('http') ? selectedMitgliedschaft.dojo_website : `https://${selectedMitgliedschaft.dojo_website}`}
                                target="_blank" rel="noopener noreferrer"
-                               style={{ color: '#3b82f6', textDecoration: 'none' }}>
+                               className="vm-link-info">
                               {selectedMitgliedschaft.dojo_website}
                             </a>
                           </div>
@@ -1922,10 +1811,7 @@ const VerbandsMitglieder = () => {
                             <div style={styles.zahlungMain}>
                               <span style={styles.zahlungNummer}>{z.rechnungsnummer}</span>
                               <span style={styles.zahlungBetrag}>{formatCurrency(z.betrag_brutto)}</span>
-                              <span style={{
-                                ...styles.zahlungStatus,
-                                color: z.status === 'bezahlt' ? '#10b981' : z.status === 'offen' ? '#f59e0b' : '#ef4444'
-                              }}>
+                              <span className={`vm-zahlung-status vm-zahlung-status--${z.status}`}>
                                 {z.status === 'bezahlt' ? 'Bezahlt' : z.status === 'offen' ? 'Offen' : z.status}
                               </span>
                             </div>
@@ -1933,7 +1819,7 @@ const VerbandsMitglieder = () => {
                               <span>Fällig: {formatDate(z.faellig_am)}</span>
                               {z.bezahlt_am && <span>Bezahlt: {formatDate(z.bezahlt_am)}</span>}
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <div className="vm-zahlung-actions">
                               {z.status === 'offen' && (
                                 <button
                                   style={styles.smallButton}
@@ -1944,14 +1830,14 @@ const VerbandsMitglieder = () => {
                               )}
                               {(z.status === 'offen' || z.status === 'bezahlt') && (
                                 <button
-                                  style={{ ...styles.smallButton, backgroundColor: '#ef4444', color: '#fff' }}
+                                  style={styles.smallButton} className="vm-small-btn-danger" 
                                   onClick={() => handleZahlungStornieren(z.id)}
                                 >
                                   <X size={14} /> Stornieren
                                 </button>
                               )}
                               <button
-                                style={{ ...styles.smallButton, backgroundColor: '#3b82f6', color: '#fff' }}
+                                style={styles.smallButton} className="vm-small-btn-blue" 
                                 onClick={() => handleDownloadRechnungPdf(z.id, z.rechnungsnummer)}
                               >
                                 <Download size={14} /> Rechnung PDF
@@ -1987,7 +1873,7 @@ const VerbandsMitglieder = () => {
                     </button>
                     {!selectedMitgliedschaft.unterschrift_digital && (
                       <button
-                        style={{ ...styles.actionButton, ...styles.actionButtonPrimary }}
+                        style={styles.actionButton} className="vm-action-btn-primary" 
                         onClick={() => setShowSignatureModal(true)}
                       >
                         <PenTool size={18} />
@@ -2069,7 +1955,7 @@ const VerbandsMitglieder = () => {
                 <>
                   <div style={styles.vertragActions}>
                     <button
-                      style={{ ...styles.actionButton, ...styles.actionButtonPrimary }}
+                      style={styles.actionButton} className="vm-action-btn-primary" 
                       onClick={() => setShowSepaModal(true)}
                     >
                       <Plus size={18} />
@@ -2089,11 +1975,7 @@ const VerbandsMitglieder = () => {
                         <div key={m.id} style={styles.sepaItem}>
                           <div style={styles.sepaHeader}>
                             <span style={styles.sepaMandatsref}>{m.mandatsreferenz}</span>
-                            <span style={{
-                              ...styles.sepaStatus,
-                              background: m.status === 'aktiv' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                              color: m.status === 'aktiv' ? '#10b981' : '#ef4444'
-                            }}>
+                            <span className={`vm-sepa-status ${m.status === 'aktiv' ? 'vm-sepa-status--aktiv' : 'vm-sepa-status--inaktiv'}`}>
                               {m.status === 'aktiv' ? 'Aktiv' : 'Inaktiv'}
                             </span>
                           </div>
@@ -2145,7 +2027,7 @@ const VerbandsMitglieder = () => {
             <div style={styles.modalFooter}>
               {isAdmin && (
                 <button
-                  style={{ ...styles.dangerButton, backgroundColor: '#450a0a', borderColor: '#7f1d1d' }}
+                  style={styles.dangerButton} className="vm-danger-btn-deep" 
                   onClick={() => handleLoeschen(selectedMitgliedschaft)}
                   title="Mitgliedschaft dauerhaft löschen"
                 >
@@ -2154,7 +2036,7 @@ const VerbandsMitglieder = () => {
               )}
               {isAdmin && selectedMitgliedschaft.status !== 'vertragsfrei' && (
                 <button
-                  style={{ ...styles.dangerButton, backgroundColor: '#7f1d1d' }}
+                  style={styles.dangerButton} className="vm-danger-btn-dark" 
                   onClick={() => handleVertragsfrei(selectedMitgliedschaft.id)}
                 >
                   <Trash2 size={16} /> Vertragsfrei
@@ -2178,7 +2060,7 @@ const VerbandsMitglieder = () => {
       {/* Mitgliedschaftstyp Modal */}
       {showTypModal && (
         <div style={styles.modalOverlay} onClick={() => setShowTypModal(false)}>
-          <div style={{ ...styles.modal, maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.modal} className="vm-modal-600" onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 <Settings size={24} color="#ffd700" />
@@ -2189,8 +2071,8 @@ const VerbandsMitglieder = () => {
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="vm-padding-15-scroll">
+              <div className="vm-grid-2col">
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Code (technisch) *</label>
                   <input
@@ -2219,12 +2101,12 @@ const VerbandsMitglieder = () => {
                 <textarea
                   value={typFormData.beschreibung}
                   onChange={(e) => setTypFormData({ ...typFormData, beschreibung: e.target.value })}
-                  style={{ ...styles.input, minHeight: '80px' }}
+                  style={styles.input} className="vm-input-textarea" 
                   placeholder="Beschreibung für Kunden..."
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+              <div className="vm-grid-3col">
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Kategorie</label>
                   <select
@@ -2263,24 +2145,17 @@ const VerbandsMitglieder = () => {
               </div>
 
               {/* Bruttopreis-Anzeige */}
-              <div style={{
-                background: 'rgba(255,215,0,0.1)',
-                border: '1px solid rgba(255,215,0,0.3)',
-                borderRadius: '8px',
-                padding: '12px',
-                marginBottom: '16px',
-                textAlign: 'center'
-              }}>
-                <span style={{ color: '#888' }}>Bruttopreis: </span>
-                <strong style={{ color: '#ffd700', fontSize: '18px' }}>
+              <div className="vm-bruttopreis-box">
+                <span className="u-text-muted">Bruttopreis: </span>
+                <strong className="vm-bruttopreis-value">
                   {(typFormData.preis_netto * (1 + typFormData.steuersatz / 100)).toFixed(2)}€
                 </strong>
-                <span style={{ color: '#888', marginLeft: '8px' }}>
+                <span className="vm-bruttopreis-mwst">
                   (inkl. {(typFormData.preis_netto * typFormData.steuersatz / 100).toFixed(2)}€ MwSt)
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="vm-grid-2col">
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Laufzeit (Monate)</label>
                   <input
@@ -2303,30 +2178,30 @@ const VerbandsMitglieder = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginTop: '16px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <div className="vm-grid-3col-mt">
+                <label className="vm-flex-center-gap8-pointer">
                   <input
                     type="checkbox"
                     checked={typFormData.auto_verlaengerung}
                     onChange={(e) => setTypFormData({ ...typFormData, auto_verlaengerung: e.target.checked })}
                   />
-                  <span style={{ color: '#ccc' }}>Auto-Verlängerung</span>
+                  <span className="u-text-secondary">Auto-Verlängerung</span>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label className="vm-flex-center-gap8-pointer">
                   <input
                     type="checkbox"
                     checked={typFormData.ist_standard}
                     onChange={(e) => setTypFormData({ ...typFormData, ist_standard: e.target.checked })}
                   />
-                  <span style={{ color: '#ccc' }}>Standard-Typ</span>
+                  <span className="u-text-secondary">Standard-Typ</span>
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                <label className="vm-flex-center-gap8-pointer">
                   <input
                     type="checkbox"
                     checked={typFormData.aktiv}
                     onChange={(e) => setTypFormData({ ...typFormData, aktiv: e.target.checked })}
                   />
-                  <span style={{ color: '#ccc' }}>Aktiv</span>
+                  <span className="u-text-secondary">Aktiv</span>
                 </label>
               </div>
 
@@ -2336,13 +2211,13 @@ const VerbandsMitglieder = () => {
                   type="number"
                   value={typFormData.sortierung}
                   onChange={(e) => setTypFormData({ ...typFormData, sortierung: parseInt(e.target.value) || 0 })}
-                  style={{ ...styles.input, maxWidth: '120px' }}
+                  style={styles.input} className="vm-input-120" 
                   min="0"
                 />
               </div>
             </div>
 
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="vm-modal-footer">
               <button onClick={() => setShowTypModal(false)} style={styles.cancelButton}>
                 Abbrechen
               </button>
@@ -2357,7 +2232,7 @@ const VerbandsMitglieder = () => {
       {/* Vorteil Modal */}
       {showVorteilModal && (
         <div style={styles.modalOverlay} onClick={() => setShowVorteilModal(false)}>
-          <div style={{ ...styles.modal, maxWidth: '550px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.modal} className="vm-modal-550" onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 <Percent size={24} color="#ffd700" />
@@ -2368,7 +2243,7 @@ const VerbandsMitglieder = () => {
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
+            <div className="vm-padding-15">
               <div style={styles.formGroup}>
                 <label style={styles.label}>Titel *</label>
                 <input
@@ -2385,12 +2260,12 @@ const VerbandsMitglieder = () => {
                 <textarea
                   value={vorteilFormData.beschreibung}
                   onChange={(e) => setVorteilFormData({ ...vorteilFormData, beschreibung: e.target.value })}
-                  style={{ ...styles.input, minHeight: '80px' }}
+                  style={styles.input} className="vm-input-textarea" 
                   placeholder="Beschreibung des Vorteils..."
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="vm-grid-2col">
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Gilt für</label>
                   <select
@@ -2415,7 +2290,7 @@ const VerbandsMitglieder = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div className="vm-grid-2col">
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Rabatt-Typ</label>
                   <select
@@ -2440,17 +2315,17 @@ const VerbandsMitglieder = () => {
                 </div>
               </div>
 
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '16px' }}>
+              <label className="vm-checkbox-label-row">
                 <input
                   type="checkbox"
                   checked={vorteilFormData.aktiv}
                   onChange={(e) => setVorteilFormData({ ...vorteilFormData, aktiv: e.target.checked })}
                 />
-                <span style={{ color: '#ccc' }}>Aktiv</span>
+                <span className="u-text-secondary">Aktiv</span>
               </label>
             </div>
 
-            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <div className="vm-modal-footer">
               <button onClick={() => setShowVorteilModal(false)} style={styles.cancelButton}>
                 Abbrechen
               </button>
@@ -2465,7 +2340,7 @@ const VerbandsMitglieder = () => {
       {/* SEPA Modal */}
       {showSepaModal && selectedMitgliedschaft && (
         <div style={styles.modalOverlay} onClick={() => setShowSepaModal(false)}>
-          <div style={{ ...styles.modal, maxWidth: '550px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.modal} className="vm-modal-550" onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 <Banknote size={24} color="#ffd700" /> SEPA-Mandat erstellen
@@ -2475,7 +2350,7 @@ const VerbandsMitglieder = () => {
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
+            <div className="vm-padding-15">
               <div style={styles.formGroup}>
                 <label style={styles.label}>IBAN *</label>
                 <input
@@ -2548,7 +2423,7 @@ const VerbandsMitglieder = () => {
       {/* AGB/Dokument Modal */}
       {showAgbModal && selectedDokument && (
         <div style={styles.modalOverlay} onClick={() => setShowAgbModal(false)}>
-          <div style={{ ...styles.modal, maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.modal} className="vm-modal-700" onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 <ScrollText size={24} color="#ffd700" /> {selectedDokument.titel}
@@ -2581,7 +2456,7 @@ const VerbandsMitglieder = () => {
       {/* Signature Modal */}
       {showSignatureModal && selectedMitgliedschaft && (
         <div style={styles.modalOverlay} onClick={() => setShowSignatureModal(false)}>
-          <div style={{ ...styles.modal, maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+          <div style={styles.modal} className="vm-modal-600" onClick={e => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <h2 style={styles.modalTitle}>
                 <PenTool size={24} color="#ffd700" /> Vertrag unterschreiben
@@ -2591,7 +2466,7 @@ const VerbandsMitglieder = () => {
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
+            <div className="vm-padding-15">
               <p style={styles.signatureIntro}>
                 Mit Ihrer Unterschrift bestätigen Sie den Mitgliedsvertrag für die TDA Verbandsmitgliedschaft
                 zum Jahresbeitrag von {formatCurrency(selectedMitgliedschaft.jahresbeitrag)}.
@@ -2678,7 +2553,7 @@ const styles = {
     alignItems: 'center',
     gap: '1rem',
     padding: '4rem',
-    color: '#888'
+    color: 'var(--text-muted)'
   },
   header: {
     display: 'flex',
@@ -2692,12 +2567,12 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: 0,
     fontSize: '1.8rem'
   },
   subtitle: {
-    color: '#888',
+    color: 'var(--text-muted)',
     margin: '4px 0 0 40px',
     fontSize: '0.9rem'
   },
@@ -2732,11 +2607,11 @@ const styles = {
   statValue: {
     fontSize: '1.5rem',
     fontWeight: '700',
-    color: '#fff'
+    color: 'var(--text-primary)'
   },
   statLabel: {
     fontSize: '0.85rem',
-    color: '#888'
+    color: 'var(--text-muted)'
   },
   tabs: {
     display: 'flex',
@@ -2753,13 +2628,13 @@ const styles = {
     background: 'transparent',
     border: 'none',
     borderRadius: '8px',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
   tabActive: {
     background: 'rgba(255, 215, 0, 0.15)',
-    color: '#ffd700'
+    color: 'var(--primary)'
   },
   filterBar: {
     display: 'flex',
@@ -2782,7 +2657,7 @@ const styles = {
     background: 'transparent',
     border: 'none',
     outline: 'none',
-    color: '#fff',
+    color: 'var(--text-primary)',
     width: '100%',
     fontSize: '0.9rem'
   },
@@ -2791,7 +2666,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '0.9rem',
     cursor: 'pointer'
   },
@@ -2800,7 +2675,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: '8px',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer'
   },
   list: {
@@ -2838,14 +2713,14 @@ const styles = {
     marginBottom: '6px'
   },
   listItemName: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontWeight: '600',
     fontSize: '1rem'
   },
   listItemMeta: {
     display: 'flex',
     gap: '16px',
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '0.8rem'
   },
   emptyState: {
@@ -2854,13 +2729,13 @@ const styles = {
     alignItems: 'center',
     gap: '16px',
     padding: '4rem',
-    color: '#666'
+    color: 'var(--text-muted)'
   },
   vorteileContainer: {
     marginTop: '1rem'
   },
   sectionTitle: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     marginBottom: '1rem',
     fontSize: '1.1rem'
   },
@@ -2882,11 +2757,11 @@ const styles = {
     marginBottom: '10px'
   },
   vorteilTitel: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontWeight: '600'
   },
   vorteilBeschreibung: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '0.85rem',
     marginBottom: '12px'
   },
@@ -2898,7 +2773,7 @@ const styles = {
   vorteilRabatt: {
     padding: '4px 10px',
     background: 'rgba(255, 215, 0, 0.2)',
-    color: '#ffd700',
+    color: 'var(--primary)',
     borderRadius: '6px',
     fontSize: '0.8rem',
     fontWeight: '600'
@@ -2906,7 +2781,7 @@ const styles = {
   vorteilKategorie: {
     padding: '4px 10px',
     background: 'rgba(255, 255, 255, 0.1)',
-    color: '#888',
+    color: 'var(--text-muted)',
     borderRadius: '6px',
     fontSize: '0.8rem',
     textTransform: 'capitalize'
@@ -2915,7 +2790,7 @@ const styles = {
     padding: '4px 10px',
     borderRadius: '6px',
     fontSize: '0.8rem',
-    color: '#fff'
+    color: 'var(--text-primary)'
   },
 
   // Modal Styles
@@ -2952,14 +2827,14 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: 0,
     fontSize: '1.2rem'
   },
   closeButton: {
     background: 'transparent',
     border: 'none',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     padding: '8px'
   },
@@ -2978,19 +2853,19 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '2px solid transparent',
     borderRadius: '12px',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
   typButtonActive: {
     borderColor: '#3b82f6',
     background: 'rgba(59, 130, 246, 0.15)',
-    color: '#3b82f6'
+    color: 'var(--info)'
   },
   typButtonActiveGreen: {
     borderColor: '#10b981',
     background: 'rgba(16, 185, 129, 0.15)',
-    color: '#10b981'
+    color: 'var(--success)'
   },
   typPrice: {
     fontSize: '0.85rem',
@@ -3009,7 +2884,7 @@ const styles = {
   },
   label: {
     display: 'block',
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '0.85rem',
     marginBottom: '6px'
   },
@@ -3019,12 +2894,12 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '0.9rem',
     outline: 'none'
   },
   hint: {
-    color: '#666',
+    color: 'var(--text-muted)',
     fontSize: '0.8rem',
     marginTop: '6px'
   },
@@ -3040,7 +2915,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.1)',
     border: 'none',
     borderRadius: '8px',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer'
   },
   submitButton: {
@@ -3063,7 +2938,7 @@ const styles = {
     background: 'rgba(239, 68, 68, 0.2)',
     border: '1px solid rgba(239, 68, 68, 0.3)',
     borderRadius: '8px',
-    color: '#ef4444',
+    color: 'var(--error)',
     cursor: 'pointer'
   },
 
@@ -3083,12 +2958,12 @@ const styles = {
     gap: '4px'
   },
   detailLabel: {
-    color: '#666',
+    color: 'var(--text-muted)',
     fontSize: '0.75rem',
     textTransform: 'uppercase'
   },
   detailValue: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '0.95rem'
   },
   detailSection: {
@@ -3097,7 +2972,7 @@ const styles = {
     borderTop: '1px solid rgba(255, 255, 255, 0.1)'
   },
   detailSectionTitle: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     fontSize: '0.9rem',
     marginBottom: '12px'
   },
@@ -3118,11 +2993,11 @@ const styles = {
     marginBottom: '6px'
   },
   zahlungNummer: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontWeight: '500'
   },
   zahlungBetrag: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     fontWeight: '600'
   },
   zahlungStatus: {
@@ -3132,7 +3007,7 @@ const styles = {
   zahlungMeta: {
     display: 'flex',
     gap: '16px',
-    color: '#666',
+    color: 'var(--text-muted)',
     fontSize: '0.8rem'
   },
   smallButton: {
@@ -3144,12 +3019,12 @@ const styles = {
     background: 'rgba(16, 185, 129, 0.2)',
     border: '1px solid rgba(16, 185, 129, 0.3)',
     borderRadius: '6px',
-    color: '#10b981',
+    color: 'var(--success)',
     fontSize: '0.8rem',
     cursor: 'pointer'
   },
   notizen: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '0.9rem',
     whiteSpace: 'pre-wrap'
   },
@@ -3169,12 +3044,12 @@ const styles = {
     background: 'transparent',
     border: 'none',
     borderBottom: '2px solid transparent',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
   detailTabActive: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     borderBottomColor: '#ffd700'
   },
 
@@ -3193,7 +3068,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.1)',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '10px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
@@ -3219,7 +3094,7 @@ const styles = {
     padding: '12px',
     background: 'rgba(255, 255, 255, 0.03)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '0.9rem'
   },
   dokumenteListe: {
@@ -3236,7 +3111,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     borderRadius: '8px',
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
@@ -3260,7 +3135,7 @@ const styles = {
     marginBottom: '12px'
   },
   sepaMandatsref: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontWeight: '600',
     fontFamily: 'monospace'
   },
@@ -3274,7 +3149,7 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '0.9rem'
   },
   sepaSignedBadge: {
@@ -3284,7 +3159,7 @@ const styles = {
     marginTop: '12px',
     padding: '6px 12px',
     background: 'rgba(16, 185, 129, 0.15)',
-    color: '#10b981',
+    color: 'var(--success)',
     borderRadius: '6px',
     fontSize: '0.85rem'
   },
@@ -3316,12 +3191,12 @@ const styles = {
     borderLeft: '3px solid #ffd700'
   },
   historieDatum: {
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '0.8rem',
     minWidth: '100px'
   },
   historieText: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '0.9rem'
   },
 
@@ -3342,12 +3217,12 @@ const styles = {
     background: 'transparent',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '6px',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     fontSize: '0.85rem'
   },
   signatureIntro: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '0.95rem',
     lineHeight: 1.6,
     marginBottom: '1.5rem'
@@ -3362,7 +3237,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer'
   },
 
@@ -3376,11 +3251,11 @@ const styles = {
     display: 'flex',
     gap: '20px',
     marginBottom: '1rem',
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '0.85rem'
   },
   dokumentText: {
-    color: '#ccc',
+    color: 'var(--text-secondary)',
     fontSize: '0.9rem',
     lineHeight: 1.7,
     whiteSpace: 'pre-wrap'
@@ -3404,14 +3279,14 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: '8px',
-    color: '#888',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     transition: 'all 0.2s'
   },
   einstellungenTabActive: {
     background: 'rgba(255, 215, 0, 0.15)',
     borderColor: 'rgba(255, 215, 0, 0.3)',
-    color: '#ffd700'
+    color: 'var(--primary)'
   },
   einstellungenGrid: {
     display: 'grid',
@@ -3427,14 +3302,14 @@ const styles = {
   },
   einstellungLabel: {
     display: 'block',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontWeight: '500',
     marginBottom: '8px',
     fontSize: '0.95rem'
   },
   einstellungHint: {
     display: 'block',
-    color: '#666',
+    color: 'var(--text-muted)',
     fontSize: '0.8rem',
     fontWeight: '400',
     marginTop: '4px'
@@ -3445,7 +3320,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '0.95rem',
     outline: 'none'
   },
@@ -3467,7 +3342,7 @@ const styles = {
     transition: 'background 0.2s'
   },
   toggleText: {
-    color: '#888',
+    color: 'var(--text-muted)',
     fontSize: '0.9rem'
   },
   changedBadge: {
@@ -3476,7 +3351,7 @@ const styles = {
     right: '8px',
     padding: '2px 8px',
     background: 'rgba(255, 215, 0, 0.2)',
-    color: '#ffd700',
+    color: 'var(--primary)',
     borderRadius: '4px',
     fontSize: '0.7rem',
     fontWeight: '600'
@@ -3493,7 +3368,7 @@ const styles = {
   },
   changesCount: {
     flex: 1,
-    color: '#ffd700',
+    color: 'var(--primary)',
     fontWeight: '500'
   }
 };

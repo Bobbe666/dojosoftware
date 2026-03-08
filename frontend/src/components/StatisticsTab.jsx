@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import '../styles/StatisticsTab.css';
 import axios from 'axios';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, AreaChart, Area,
@@ -56,51 +57,25 @@ const safeSum = (array, key) => {
 
 // Leerer Zustand Komponente
 const EmptyState = ({ icon: Icon, title, subtitle }) => (
-  <div className="empty-state" style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center'
-  }}>
-    <Icon size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
-    <div style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: '8px' }}>{title}</div>
-    <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>{subtitle}</div>
+  <div className="empty-state mst-empty-state">
+    <Icon size={48} className="mst-empty-icon" />
+    <div className="mst-empty-title">{title}</div>
+    <div className="mst-empty-sub">{subtitle}</div>
   </div>
 );
 
 // Status Badge Komponente
 const StatusBadge = ({ status, count }) => {
-  const color = STATUS_COLORS[status] || COLORS.slate;
   const label = STATUS_LABELS[status] || status;
+  const statusKey = status || 'default';
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '12px 16px',
-      background: `${color}15`,
-      borderLeft: `4px solid ${color}`,
-      borderRadius: '0 8px 8px 0',
-      marginBottom: '8px'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{
-          width: '10px',
-          height: '10px',
-          borderRadius: '50%',
-          background: color
-        }} />
-        <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{label}</span>
+    <div className={`mst-status-badge mst-status-badge--${statusKey}`}>
+      <div className="mst-status-badge-inner">
+        <div className={`mst-status-dot mst-status-dot--${statusKey}`} />
+        <span className="mst-status-label">{label}</span>
       </div>
-      <span style={{
-        color: color,
-        fontWeight: 700,
-        fontSize: '1.2rem'
-      }}>{count}</span>
+      <span className={`mst-status-count mst-status-count--${statusKey}`}>{count}</span>
     </div>
   );
 };
@@ -110,60 +85,23 @@ const TopDojoCard = ({ rank, dojo, maxMembers }) => {
   const percentage = maxMembers > 0 ? (dojo.mitglieder / maxMembers) * 100 : 0;
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      padding: '16px',
-      background: 'var(--bg-tertiary)',
-      borderRadius: '12px',
-      marginBottom: '10px',
-      border: '1px solid var(--border-default)'
-    }}>
-      <div style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '10px',
-        background: rank <= 3
-          ? `linear-gradient(135deg, ${rank === 1 ? '#D4AF37' : rank === 2 ? '#C0C0C0' : '#CD7F32'}, ${rank === 1 ? '#B8860B' : rank === 2 ? '#A8A8A8' : '#8B4513'})`
-          : 'var(--bg-secondary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: 700,
-        fontSize: '1.1rem',
-        color: rank <= 3 ? '#fff' : 'var(--text-secondary)'
-      }}>
+    <div className="mst-top-dojo-card">
+      <div className={`mst-rank-badge mst-rank-badge--${rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'default'}`}>
         {rank}
       </div>
-      <div style={{ flex: 1 }}>
-        <div style={{
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          marginBottom: '6px'
-        }}>
+      <div className="u-flex-1">
+        <div className="mst-dojo-name">
           {dojo.dojoname}
         </div>
-        <div style={{
-          height: '6px',
-          background: 'var(--bg-secondary)',
-          borderRadius: '3px',
-          overflow: 'hidden'
-        }}>
-          <div style={{
-            width: `${percentage}%`,
-            height: '100%',
-            background: `linear-gradient(90deg, ${COLORS.primary}, ${COLORS.teal})`,
-            borderRadius: '3px',
-            transition: 'width 0.5s ease'
-          }} />
+        <div className="mst-progress-track">
+          <div className="mst-progress-bar" style={{ width: `${percentage}%` }} />
         </div>
       </div>
-      <div style={{ textAlign: 'right' }}>
-        <div style={{ fontWeight: 700, color: COLORS.primary, fontSize: '1.2rem' }}>
+      <div className="mst-dojo-count-right">
+        <div className="mst-dojo-count-num">
           {formatNumber(dojo.mitglieder)}
         </div>
-        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+        <div className="mst-dojo-count-label">
           Mitglieder
         </div>
       </div>
@@ -263,7 +201,7 @@ const StatisticsTab = ({ token }) => {
       {/* KPI Cards */}
       <div className="stats-kpi-grid">
         <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: `${COLORS.success}20`, color: COLORS.success }}>
+          <div className="kpi-icon kpi-icon--success">
             <Target size={24} />
           </div>
           <div className="kpi-content">
@@ -274,7 +212,7 @@ const StatisticsTab = ({ token }) => {
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: `${COLORS.primary}20`, color: COLORS.primary }}>
+          <div className="kpi-icon kpi-icon--primary">
             <Users size={24} />
           </div>
           <div className="kpi-content">
@@ -285,7 +223,7 @@ const StatisticsTab = ({ token }) => {
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: `${COLORS.purple}20`, color: COLORS.purple }}>
+          <div className="kpi-icon kpi-icon--purple">
             <Building2 size={24} />
           </div>
           <div className="kpi-content">
@@ -296,7 +234,7 @@ const StatisticsTab = ({ token }) => {
         </div>
 
         <div className="kpi-card">
-          <div className="kpi-icon" style={{ background: `${COLORS.teal}20`, color: COLORS.teal }}>
+          <div className="kpi-icon kpi-icon--teal">
             <DollarSign size={24} />
           </div>
           <div className="kpi-content">
@@ -382,9 +320,9 @@ const StatisticsTab = ({ token }) => {
             Abo-Status Übersicht
           </h3>
           {subscriptionDistribution.length > 0 ? (
-            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+            <div className="mst-subscription-wrapper">
               {/* Pie Chart */}
-              <div style={{ flex: '0 0 180px' }}>
+              <div className="mst-pie-container">
                 <ResponsiveContainer width={180} height={180}>
                   <PieChart>
                     <Pie
@@ -408,7 +346,7 @@ const StatisticsTab = ({ token }) => {
                 </ResponsiveContainer>
               </div>
               {/* Status Liste */}
-              <div style={{ flex: 1 }}>
+              <div className="u-flex-1">
                 {subscriptionDistribution.map((item, index) => (
                   <StatusBadge
                     key={index}
@@ -434,7 +372,7 @@ const StatisticsTab = ({ token }) => {
             Top 10 Dojos nach Mitgliedern
           </h3>
           {topDojos.length > 0 ? (
-            <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '8px' }}>
+            <div className="mst-dojos-scroll">
               {topDojos.slice(0, 10).map((dojo, index) => (
                 <TopDojoCard
                   key={index}
@@ -455,54 +393,33 @@ const StatisticsTab = ({ token }) => {
       </div>
 
       {/* Mitglieder Status Übersicht */}
-      <div className="charts-grid" style={{ marginTop: '24px' }}>
+      <div className="charts-grid mst-charts-grid-top">
         <div className="chart-card">
           <h3 className="chart-title">
             <UserCheck size={18} />
             Mitglieder-Status
           </h3>
-          <div style={{ display: 'flex', gap: '16px', padding: '16px 0' }}>
-            <div style={{
-              flex: 1,
-              padding: '20px',
-              background: `${COLORS.success}15`,
-              borderRadius: '12px',
-              textAlign: 'center',
-              border: `1px solid ${COLORS.success}30`
-            }}>
-              <UserCheck size={32} style={{ color: COLORS.success, marginBottom: '8px' }} />
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: COLORS.success }}>
+          <div className="mst-member-status-row">
+            <div className="mst-member-status-card mst-member-status-card--success">
+              <UserCheck size={32} className="mst-member-status-icon mst-member-status-icon--success" />
+              <div className="mst-member-status-num mst-member-status-num--success">
                 {formatNumber(memberStatus.aktiv)}
               </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Aktive Mitglieder</div>
+              <div className="mst-text-secondary-sm">Aktive Mitglieder</div>
             </div>
-            <div style={{
-              flex: 1,
-              padding: '20px',
-              background: `${COLORS.slate}15`,
-              borderRadius: '12px',
-              textAlign: 'center',
-              border: `1px solid ${COLORS.slate}30`
-            }}>
-              <UserX size={32} style={{ color: COLORS.slate, marginBottom: '8px' }} />
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: COLORS.slate }}>
+            <div className="mst-member-status-card mst-member-status-card--slate">
+              <UserX size={32} className="mst-member-status-icon mst-member-status-icon--slate" />
+              <div className="mst-member-status-num mst-member-status-num--slate">
                 {formatNumber(memberStatus.inaktiv)}
               </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Inaktive Mitglieder</div>
+              <div className="mst-text-secondary-sm">Inaktive Mitglieder</div>
             </div>
-            <div style={{
-              flex: 1,
-              padding: '20px',
-              background: `${COLORS.primary}15`,
-              borderRadius: '12px',
-              textAlign: 'center',
-              border: `1px solid ${COLORS.primary}30`
-            }}>
-              <Clock size={32} style={{ color: COLORS.primary, marginBottom: '8px' }} />
-              <div style={{ fontSize: '2rem', fontWeight: 700, color: COLORS.primary }}>
+            <div className="mst-member-status-card mst-member-status-card--primary">
+              <Clock size={32} className="mst-member-status-icon mst-member-status-icon--primary" />
+              <div className="mst-member-status-num mst-member-status-num--primary">
                 {formatNumber(trialStats.trial)}
               </div>
-              <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Trial Dojos</div>
+              <div className="mst-text-secondary-sm">Trial Dojos</div>
             </div>
           </div>
         </div>

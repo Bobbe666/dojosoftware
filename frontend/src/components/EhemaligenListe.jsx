@@ -5,6 +5,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, Users } from 'lucide-react';
 import "../styles/themes.css";
 import "../styles/components.css";
+import "../styles/EhemaligenListe.css";
 
 const EhemaligenListe = () => {
   const { getDojoFilterParam } = useDojoContext();
@@ -101,14 +102,7 @@ const EhemaligenListe = () => {
     }
 
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '0.5rem',
-        marginTop: '2rem',
-        flexWrap: 'wrap'
-      }}>
+      <div className="el-pagination">
         <button
           onClick={() => goToPage(1)}
           disabled={pagination.page === 1}
@@ -126,7 +120,7 @@ const EhemaligenListe = () => {
           <ChevronLeft size={18} />
         </button>
 
-        {startPage > 1 && <span style={{ color: 'rgba(255,255,255,0.5)' }}>...</span>}
+        {startPage > 1 && <span className="u-text-muted">...</span>}
 
         {pages.map(page => (
           <button
@@ -138,7 +132,7 @@ const EhemaligenListe = () => {
           </button>
         ))}
 
-        {endPage < pagination.totalPages && <span style={{ color: 'rgba(255,255,255,0.5)' }}>...</span>}
+        {endPage < pagination.totalPages && <span className="u-text-muted">...</span>}
 
         <button
           onClick={() => goToPage(pagination.page + 1)}
@@ -170,13 +164,8 @@ const EhemaligenListe = () => {
 
   return (
     <div className="dashboard-container">
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '2rem'
-      }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="el-header">
+        <h1 className="el-header-h1">
           <Users size={28} />
           Ehemalige Mitglieder
         </h1>
@@ -188,97 +177,57 @@ const EhemaligenListe = () => {
         </button>
       </div>
 
-      <div style={{
-        marginBottom: '1.5rem',
-        display: 'flex',
-        gap: '1rem',
-        alignItems: 'center',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
-          <Search size={18} style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'rgba(255,255,255,0.5)'
-          }} />
+      <div className="el-toolbar">
+        <div className="el-search-wrap">
+          <Search size={18} className="el-search-icon" />
           <input
             type="text"
             placeholder="Suchen nach Name, Email..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.75rem 0.75rem 0.75rem 40px',
-              borderRadius: '6px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              background: 'rgba(31, 41, 55, 0.6)',
-              color: 'white'
-            }}
+            className="el-search-input"
           />
         </div>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.7)',
-          background: 'rgba(31, 41, 55, 0.6)',
-          padding: '0.75rem 1rem',
-          borderRadius: '6px',
-          whiteSpace: 'nowrap'
-        }}>
+        <div className="el-count-badge">
           {loading ? '...' : `${pagination.total} Ehemalige`}
           {pagination.totalPages > 1 && ` | Seite ${pagination.page}/${pagination.totalPages}`}
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.7)' }}>
+        <div className="el-loading">
           Lade ehemalige Mitglieder...
         </div>
       ) : (
         <>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '1rem'
-          }}>
+          <div className="el-grid">
             {ehemalige.length > 0 ? (
               ehemalige.map((ehemaliger) => (
                 <div
                   key={ehemaliger.id}
-                  className="stat-card"
-                  style={{
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
+                  className="stat-card el-card"
                 >
-                  <h3 style={{
-                    fontSize: '1.1rem',
-                    fontWeight: '600',
-                    margin: '0 0 0.5rem 0',
-                    color: '#ffd700'
-                  }}>
+                  <h3 className="el-card-name">
                     {ehemaliger.nachname}, {ehemaliger.vorname}
                   </h3>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: '1.6' }}>
+                  <div className="el-card-details">
                     {ehemaliger.austrittsdatum && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="el-card-detail-row">
                         <strong>Austritt:</strong> {new Date(ehemaliger.austrittsdatum).toLocaleDateString('de-DE')}
                       </p>
                     )}
                     {ehemaliger.email && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="el-card-detail-row">
                         <strong>Email:</strong> {ehemaliger.email}
                       </p>
                     )}
                     {ehemaliger.letzter_guertel && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="el-card-detail-row">
                         <strong>Letzter Gürtel:</strong> {ehemaliger.letzter_guertel}
                       </p>
                     )}
                     {ehemaliger.austrittsgrund && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="el-card-detail-row">
                         <strong>Grund:</strong> {ehemaliger.austrittsgrund}
                       </p>
                     )}
@@ -286,13 +235,9 @@ const EhemaligenListe = () => {
                 </div>
               ))
             ) : (
-              <div className="stat-card" style={{
-                gridColumn: '1 / -1',
-                padding: '2rem',
-                textAlign: 'center'
-              }}>
+              <div className="stat-card el-empty">
                 <h3>Keine ehemaligen Mitglieder gefunden</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                <p className="u-text-secondary">
                   {searchTerm ? 'Keine Treffer für die Suche.' : 'Es sind noch keine ehemaligen Mitglieder im System erfasst.'}
                 </p>
               </div>

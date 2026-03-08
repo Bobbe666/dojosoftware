@@ -320,7 +320,7 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
               fortschritte.map((skill) => (
                 <div key={skill.fortschritt_id} className="skill-card">
                   <div className="skill-header">
-                    <div className="skill-kategorie" style={{ color: skill.kategorie_farbe }}>
+                    <div className="skill-kategorie" style={{ '--kat-farbe': skill.kategorie_farbe }}>
                       {skill.kategorie_name}
                     </div>
                     {!readOnly && (
@@ -341,11 +341,8 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
                   <div className="skill-progress">
                     <div className="progress-bar">
                       <div
-                        className="progress-fill"
-                        style={{
-                          width: `${skill.fortschritt_prozent}%`,
-                          backgroundColor: getStatusColor(skill.status)
-                        }}
+                        className={`progress-fill mfo-progress-fill--${skill.status}`}
+                        style={{ width: `${skill.fortschritt_prozent}%` }}
                       />
                     </div>
                     <span className="progress-text">{skill.fortschritt_prozent}%</span>
@@ -353,18 +350,18 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
 
                   <div className="skill-footer">
                     <div className="skill-badges">
-                      <span className="badge badge-status" style={{ backgroundColor: getStatusColor(skill.status) }}>
+                      <span className={`badge badge-status mfo-badge-status--${skill.status}`}>
                         {skill.status.replace('_', ' ')}
                       </span>
-                      <span className="badge badge-priority" style={{ backgroundColor: getPrioritaetColor(skill.prioritaet) }}>
+                      <span className={`badge badge-priority mfo-badge-priority--${skill.prioritaet}`}>
                         {skill.prioritaet}
                       </span>
                       <span className="badge badge-diff">{skill.schwierigkeit}</span>
                     </div>
 
                     {!readOnly && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '12px', color: '#ffd700', fontWeight: 'bold', minWidth: '35px' }}>
+                      <div className="mfo-skill-controls">
+                        <span className="mfo-skill-pct">
                           {skill.fortschritt_prozent}%
                         </span>
                         <input
@@ -391,34 +388,10 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
                             });
                           }}
                           className="skill-slider"
-                          style={{
-                            flex: 1,
-                            minWidth: '200px'
-                          }}
                         />
-                        <button 
+                        <button
                           onClick={() => handleShowHistory(skill.fortschritt_id)}
-                          style={{
-                            padding: '6px 10px',
-                            fontSize: '12px',
-                            background: 'rgba(255, 215, 0, 0.2)',
-                            border: '1px solid rgba(255, 215, 0, 0.5)',
-                            borderRadius: '6px',
-                            color: '#ffd700',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            transition: 'all 0.2s',
-                            minWidth: '80px',
-                            flexShrink: 0
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.background = 'rgba(255, 215, 0, 0.3)';
-                            e.target.style.borderColor = 'rgba(255, 215, 0, 0.7)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.background = 'rgba(255, 215, 0, 0.2)';
-                            e.target.style.borderColor = 'rgba(255, 215, 0, 0.5)';
-                          }}
+                          className="mfo-btn-history"
                         >
                           📊 Historie
                         </button>
@@ -512,17 +485,12 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
         )}
 
         {activeTab === 'badges' && (
-          <div className="badges-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-            gap: '16px',
-            padding: '8px 0'
-          }}>
+          <div className="mfo-badges-grid">
             {badges.length === 0 ? (
               <div className="empty-state">
                 <Medal size={48} />
                 <p>Noch keine Auszeichnungen erhalten</p>
-                <p style={{ fontSize: '14px', color: '#888', marginTop: '8px' }}>
+                <p className="mfo-badge-empty-text">
                   Auszeichnungen werden für besondere Leistungen vergeben.
                 </p>
               </div>
@@ -552,86 +520,36 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
                 return (
                   <div
                     key={badge.badge_id}
+                    className="mfo-badge-card"
                     style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: `2px solid ${badge.farbe || '#ffd700'}`,
-                      borderRadius: '12px',
-                      padding: '20px',
-                      textAlign: 'center',
-                      transition: 'all 0.3s ease',
-                      cursor: 'default'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-4px)';
-                      e.currentTarget.style.boxShadow = `0 8px 24px ${badge.farbe || '#ffd700'}40`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
+                      '--badge-farbe': badge.farbe || '#ffd700',
+                      '--badge-farbe-40': `${badge.farbe || '#ffd700'}40`,
+                      '--badge-farbe-20': `${badge.farbe || '#ffd700'}20`,
+                      '--badge-farbe-30': `${badge.farbe || '#ffd700'}30`,
                     }}
                   >
-                    <div style={{
-                      width: '64px',
-                      height: '64px',
-                      margin: '0 auto 12px',
-                      background: `linear-gradient(135deg, ${badge.farbe || '#ffd700'}40, ${badge.farbe || '#ffd700'}20)`,
-                      border: `2px solid ${badge.farbe || '#ffd700'}`,
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '32px',
-                      boxShadow: `0 4px 12px ${badge.farbe || '#ffd700'}30`
-                    }}>
+                    <div className="mfo-badge-icon-circle">
                       {iconEmoji}
                     </div>
 
-                    <h3 style={{
-                      color: badge.farbe || '#ffd700',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      margin: '0 0 8px 0'
-                    }}>
+                    <h3 className="mfo-badge-name">
                       {badge.name}
                     </h3>
 
                     {badge.beschreibung && (
-                      <p style={{
-                        color: '#ccc',
-                        fontSize: '13px',
-                        margin: '0 0 12px 0',
-                        lineHeight: '1.4'
-                      }}>
+                      <p className="mfo-badge-desc">
                         {badge.beschreibung}
                       </p>
                     )}
 
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      flexWrap: 'wrap'
-                    }}>
+                    <div className="mfo-badge-meta">
                       {badge.kategorie && (
-                        <span style={{
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          color: '#aaa'
-                        }}>
+                        <span className="mfo-badge-tag">
                           {badge.kategorie}
                         </span>
                       )}
                       {badge.verliehen_am && (
-                        <span style={{
-                          background: 'rgba(34, 197, 94, 0.2)',
-                          color: '#22c55e',
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '11px'
-                        }}>
+                        <span className="mfo-badge-tag--date">
                           {new Date(badge.verliehen_am).toLocaleDateString('de-DE')}
                         </span>
                       )}
@@ -648,177 +566,47 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
       {showAddModal && (
         <div 
           ref={modalRef}
-          style={{
-            position: 'fixed !important',
-            top: '0 !important',
-            left: '0 !important',
-            right: '0 !important',
-            bottom: '0 !important',
-            width: '100vw !important',
-            height: '100vh !important',
-            background: 'rgba(0, 0, 0, 0.9) !important',
-            backdropFilter: 'blur(12px) !important',
-            display: 'flex !important',
-            alignItems: 'center !important',
-            justifyContent: 'center !important',
-            zIndex: '2147483647 !important',
-            padding: '20px !important',
-            margin: '0 !important',
-            boxSizing: 'border-box !important',
-            isolation: 'isolate !important',
-            transform: 'none !important',
-            overflow: 'hidden !important'
-          }}
+          className="modal-overlay"
           onClick={() => setShowAddModal(false)}
         >
           <div 
-            style={{
-              position: 'relative',
-              background: '#1a1a2e',
-              border: '3px solid #ffd700',
-              borderRadius: '16px',
-              padding: 0,
-              width: '450px',
-              maxWidth: '450px',
-              minWidth: '450px',
-              height: 'auto',
-              maxHeight: '80vh',
-              overflow: 'hidden',
-              zIndex: 2147483647,
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.3)',
-              display: 'flex',
-              flexDirection: 'column',
-              boxSizing: 'border-box',
-              margin: 0,
-              transform: 'none',
-              top: 'auto',
-              left: 'auto',
-              right: 'auto',
-              bottom: 'auto'
-            }}
+            className="modal-content"
             onClick={(e) => e.stopPropagation()}
           >
-            <div 
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 20px',
-                background: 'rgba(255, 215, 0, 0.1)',
-                borderBottom: '1px solid rgba(255, 215, 0, 0.3)',
-                flexShrink: 0,
-                boxSizing: 'border-box'
-              }}
-            >
-              <h2 
-                style={{
-                  margin: 0,
-                  color: '#ffd700',
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  lineHeight: 1.2
-                }}
-              >
+            <div className="mfo-modal-header">
+              <h2 className="mfo-modal-title">
                 {activeTab === 'skills' && 'Neuer Skill'}
                 {activeTab === 'ziele' && 'Neues Ziel'}
                 {activeTab === 'meilensteine' && 'Neuer Meilenstein'}
               </h2>
-              <button 
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  padding: 0,
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '4px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box'
-                }}
+              <button
+                className="mfo-modal-close"
                 onClick={() => setShowAddModal(false)}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(239, 68, 68, 0.3)';
-                  e.target.style.borderColor = '#ef4444';
-                  e.target.style.color = '#ef4444';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                  e.target.style.color = '#fff';
-                }}
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div 
-              style={{
-                padding: '24px',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                flex: 1,
-                maxHeight: 'calc(80vh - 120px)',
-                boxSizing: 'border-box'
-              }}
-            >
+            <div className="mfo-modal-body">
               {activeTab === 'skills' && (
                 <div 
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '16px',
-                    margin: 0
-                  }}
+                  className="mfo-form-grid"
                 >
-                  <div 
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      margin: 0
-                    }}
-                  >
-                    <label 
-                      style={{
-                        margin: 0,
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#ffd700',
-                        lineHeight: 1.3
-                      }}
-                    >
+                  <div className="mfo-form-col">
+                    <label className="mfo-label">
                       Kategorie
                     </label>
                     <select
-                      style={{
-                        padding: '10px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        height: '36px',
-                        minHeight: '36px',
-                        maxHeight: '36px',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s'
-                      }}
+                      className="mfo-field"
                       value={newSkill.kategorie_id}
                       onChange={(e) => setNewSkill({ ...newSkill, kategorie_id: e.target.value })}
                     >
-                      <option value="" style={{ background: '#1a1a2e', color: '#fff' }}>Wählen...</option>
+                      <option value="" className="mfo-option-dark">Wählen...</option>
                       {kategorien.map((kat) => (
                         <option 
                           key={kat.kategorie_id} 
                           value={kat.kategorie_id}
-                          style={{ background: '#1a1a2e', color: '#fff' }}
+                          className="mfo-option-dark"
                         >
                           {kat.name}
                         </option>
@@ -826,174 +614,60 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
                     </select>
                   </div>
 
-                  <div 
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      margin: 0
-                    }}
-                  >
-                    <label 
-                      style={{
-                        margin: 0,
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#ffd700',
-                        lineHeight: 1.3
-                      }}
-                    >
+                  <div className="mfo-form-col">
+                    <label className="mfo-label">
                       Skill Name *
                     </label>
                     <input
                       type="text"
-                      style={{
-                        padding: '10px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        height: '36px',
-                        minHeight: '36px',
-                        maxHeight: '36px',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s'
-                      }}
+                      className="mfo-field"
                       value={newSkill.skill_name}
                       onChange={(e) => setNewSkill({ ...newSkill, skill_name: e.target.value })}
                       placeholder="z.B. Frontkick"
                     />
                   </div>
 
-                  <div 
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      margin: 0,
-                      gridColumn: '1 / -1'
-                    }}
-                  >
-                    <label 
-                      style={{
-                        margin: 0,
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#ffd700',
-                        lineHeight: 1.3
-                      }}
-                    >
+                  <div className="mfo-form-col mfo-form-col--full">
+                    <label className="mfo-label">
                       Beschreibung
                     </label>
                     <textarea
-                      style={{
-                        padding: '10px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        height: '70px',
-                        minHeight: '70px',
-                        maxHeight: '100px',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s',
-                        resize: 'vertical'
-                      }}
+                      className="mfo-field--textarea"
                       value={newSkill.beschreibung}
                       onChange={(e) => setNewSkill({ ...newSkill, beschreibung: e.target.value })}
                       rows={3}
                     />
                   </div>
 
-                  <div 
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      margin: 0
-                    }}
-                  >
-                    <label 
-                      style={{
-                        margin: 0,
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#ffd700',
-                        lineHeight: 1.3
-                      }}
-                    >
+                  <div className="mfo-form-col">
+                    <label className="mfo-label">
                       Priorität
                     </label>
                     <select
-                      style={{
-                        padding: '10px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        height: '36px',
-                        minHeight: '36px',
-                        maxHeight: '36px',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s'
-                      }}
+                      className="mfo-field"
                       value={newSkill.prioritaet}
                       onChange={(e) => setNewSkill({ ...newSkill, prioritaet: e.target.value })}
                     >
-                      <option value="niedrig" style={{ background: '#1a1a2e', color: '#fff' }}>Niedrig</option>
-                      <option value="mittel" style={{ background: '#1a1a2e', color: '#fff' }}>Mittel</option>
-                      <option value="hoch" style={{ background: '#1a1a2e', color: '#fff' }}>Hoch</option>
-                      <option value="kritisch" style={{ background: '#1a1a2e', color: '#fff' }}>Kritisch</option>
+                      <option value="niedrig" className="mfo-option-dark">Niedrig</option>
+                      <option value="mittel" className="mfo-option-dark">Mittel</option>
+                      <option value="hoch" className="mfo-option-dark">Hoch</option>
+                      <option value="kritisch" className="mfo-option-dark">Kritisch</option>
                     </select>
                   </div>
 
-                  <div 
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
-                      margin: 0
-                    }}
-                  >
-                    <label 
-                      style={{
-                        margin: 0,
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#ffd700',
-                        lineHeight: 1.3
-                      }}
-                    >
+                  <div className="mfo-form-col">
+                    <label className="mfo-label">
                       Schwierigkeit
                     </label>
                     <select
-                      style={{
-                        padding: '10px 12px',
-                        background: 'rgba(0, 0, 0, 0.3)',
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '14px',
-                        fontFamily: 'inherit',
-                        height: '36px',
-                        minHeight: '36px',
-                        maxHeight: '36px',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s'
-                      }}
+                      className="mfo-field"
                       value={newSkill.schwierigkeit}
                       onChange={(e) => setNewSkill({ ...newSkill, schwierigkeit: e.target.value })}
                     >
-                      <option value="anfaenger" style={{ background: '#1a1a2e', color: '#fff' }}>Anfänger</option>
-                      <option value="fortgeschritten" style={{ background: '#1a1a2e', color: '#fff' }}>Fortgeschritten</option>
-                      <option value="experte" style={{ background: '#1a1a2e', color: '#fff' }}>Experte</option>
-                      <option value="meister" style={{ background: '#1a1a2e', color: '#fff' }}>Meister</option>
+                      <option value="anfaenger" className="mfo-option-dark">Anfänger</option>
+                      <option value="fortgeschritten" className="mfo-option-dark">Fortgeschritten</option>
+                      <option value="experte" className="mfo-option-dark">Experte</option>
+                      <option value="meister" className="mfo-option-dark">Meister</option>
                     </select>
                   </div>
                 </div>
@@ -1097,70 +771,19 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
               )}
             </div>
 
-            <div 
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '8px',
-                padding: '16px 20px',
-                background: 'rgba(0, 0, 0, 0.2)',
-                borderTop: '1px solid rgba(255, 215, 0, 0.3)',
-                flexShrink: 0,
-                boxSizing: 'border-box'
-              }}
-            >
-              <button 
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#fff',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box',
-                  minWidth: '60px'
-                }}
+            <div className="mfo-modal-footer">
+              <button
+                className="mfo-btn-cancel"
                 onClick={() => setShowAddModal(false)}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.2)';
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-                }}
               >
                 Abbrechen
               </button>
               <button
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  border: 'none',
-                  background: '#ffd700',
-                  color: '#1a1a2e',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box',
-                  minWidth: '60px'
-                }}
+                className="mfo-btn-submit"
                 onClick={() => {
                   if (activeTab === 'skills') handleAddSkill();
                   else if (activeTab === 'ziele') handleAddZiel();
                   else if (activeTab === 'meilensteine') handleAddMeilenstein();
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#ffed4e';
-                  e.target.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = '#ffd700';
-                  e.target.style.transform = 'translateY(0)';
                 }}
               >
                 Hinzufügen
@@ -1174,164 +797,73 @@ const MitgliedFortschritt = ({ mitgliedId, readOnly = false }) => {
       {showHistoryModal && (
         <div 
           data-history-modal
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0, 0, 0, 0.9)',
-            backdropFilter: 'blur(12px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 2147483647,
-            padding: '20px',
-            margin: 0,
-            boxSizing: 'border-box',
-            isolation: 'isolate'
-          }}
+          className="modal-overlay"
           onClick={() => setShowHistoryModal(false)}
         >
           <div 
-            style={{
-              position: 'relative',
-              background: '#1a1a2e',
-              border: '3px solid #ffd700',
-              borderRadius: '16px',
-              padding: 0,
-              width: '600px',
-              maxWidth: '90vw',
-              height: 'auto',
-              maxHeight: '80vh',
-              overflow: 'hidden',
-              zIndex: 2147483647,
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.3)',
-              display: 'flex',
-              flexDirection: 'column',
-              boxSizing: 'border-box',
-              margin: 0,
-              transform: 'none',
-              top: 'auto',
-              left: 'auto',
-              right: 'auto',
-              bottom: 'auto'
-            }}
+            className="modal-content modal-content--history"
             onClick={(e) => e.stopPropagation()}
           >
-            <div 
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '16px 20px',
-                background: 'rgba(255, 215, 0, 0.1)',
-                borderBottom: '1px solid rgba(255, 215, 0, 0.3)',
-                flexShrink: 0,
-                boxSizing: 'border-box'
-              }}
-            >
-              <h2 
-                style={{
-                  margin: 0,
-                  color: '#ffd700',
-                  fontSize: '18px',
-                  fontWeight: 700,
-                  lineHeight: 1.2
-                }}
-              >
+            <div className="mfo-modal-header">
+              <h2 className="mfo-modal-title">
                 📊 Änderungshistorie
               </h2>
-              <button 
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  padding: 0,
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '4px',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  transition: 'all 0.2s',
-                  boxSizing: 'border-box'
-                }}
+              <button className="mfo-modal-close"
                 onClick={() => setShowHistoryModal(false)}
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div 
-              style={{
-                padding: '20px',
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                flex: 1,
-                maxHeight: 'calc(80vh - 120px)',
-                boxSizing: 'border-box'
-              }}
-            >
+            <div className="mfo-modal-body--history">
               {selectedSkillHistory.length === 0 ? (
-                <p style={{ color: '#fff', textAlign: 'center', margin: '20px 0' }}>
+                <p className="mfo-empty-msg">
                   Keine Änderungen vorhanden
                 </p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="mfo-history-list">
                   {selectedSkillHistory.map((entry, index) => (
                     <div 
                       key={index}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 215, 0, 0.2)',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        color: '#fff'
-                      }}
+                      className="mfo-history-card"
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#ffd700' }}>
+                      <div className="mfo-history-row">
+                        <span className="mfo-history-name">
                           {entry.skill_name}
                         </span>
-                        <span style={{ fontSize: '12px', color: '#ccc' }}>
+                        <span className="mfo-history-ts">
                           {new Date(entry.update_timestamp).toLocaleString('de-DE')}
                         </span>
                       </div>
                       
-                      <div style={{ display: 'flex', gap: '16px', fontSize: '14px' }}>
+                      <div className="mfo-history-change">
                         <div>
-                          <span style={{ color: '#ccc' }}>Fortschritt: </span>
-                          <span style={{ color: '#ff6b35' }}>{entry.alter_fortschritt}%</span>
-                          <span style={{ color: '#fff', margin: '0 8px' }}>→</span>
-                          <span style={{ color: '#22c55e' }}>{entry.neuer_fortschritt}%</span>
+                          <span className="u-text-secondary">Fortschritt: </span>
+                          <span className="mfo-old-value">{entry.alter_fortschritt}%</span>
+                          <span className="mfo-arrow">→</span>
+                          <span className="u-text-success">{entry.neuer_fortschritt}%</span>
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', gap: '16px', fontSize: '14px', marginTop: '4px' }}>
+                      <div className="mfo-history-change--mt">
                         <div>
-                          <span style={{ color: '#ccc' }}>Status: </span>
-                          <span style={{ color: '#ff6b35' }}>{entry.alter_status}</span>
-                          <span style={{ color: '#fff', margin: '0 8px' }}>→</span>
-                          <span style={{ color: '#22c55e' }}>{entry.neuer_status}</span>
+                          <span className="u-text-secondary">Status: </span>
+                          <span className="mfo-old-value">{entry.alter_status}</span>
+                          <span className="mfo-arrow">→</span>
+                          <span className="u-text-success">{entry.neuer_status}</span>
                         </div>
                       </div>
                       
                       {entry.notiz && (
-                        <div style={{ marginTop: '8px', fontSize: '13px', color: '#ccc' }}>
-                          <span style={{ color: '#ffd700' }}>Notiz: </span>
+                        <div className="mfo-note">
+                          <span className="u-text-accent">Notiz: </span>
                           {entry.notiz}
                         </div>
                       )}
                       
                       {entry.aktualisiert_von_name && (
-                        <div style={{ marginTop: '8px', fontSize: '13px', color: '#ccc' }}>
-                          <span style={{ color: '#ffd700' }}>Geändert von: </span>
+                        <div className="mfo-note">
+                          <span className="u-text-accent">Geändert von: </span>
                           {entry.aktualisiert_von_name}
                         </div>
                       )}

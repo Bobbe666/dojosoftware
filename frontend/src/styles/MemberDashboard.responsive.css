@@ -1,0 +1,195 @@
+/* ================================================================
+   MemberDashboard.responsive.css
+   Mobile-First Responsive für das Mitglieder-Dashboard
+   Desktop-Layout (≥768px) bleibt unverändert.
+   ================================================================ */
+
+/* ===============================================================
+   TABLET & MOBIL (≤ 767px)
+   =============================================================== */
+
+@media (max-width: 767px) {
+
+  /* --- Hauptcontainer: kein Padding, kein Radius --- */
+  .dashboard-container {
+    padding: 0.5rem !important;
+    border-radius: 0 !important;
+  }
+
+  .dashboard-start {
+    padding: 0.5rem 0 !important;
+  }
+
+  /* --- Header: kompakter, Button-Texte ausblenden --- */
+  .dashboard-header {
+    padding: 0.5rem 0.75rem !important;
+    min-height: auto !important;
+    gap: 0.5rem !important;
+  }
+
+  .dashboard-header-left h2 {
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+  }
+
+  .dashboard-logo {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  .dashboard-header-right {
+    gap: 0.3rem !important;
+  }
+
+  /* Text-Beschriftungen in Header-Buttons ausblenden */
+  .logout-text {
+    display: none !important;
+  }
+
+  /* User-Namen ausblenden, nur Icon anzeigen */
+  .user-name {
+    display: none !important;
+  }
+
+  /* --- Willkommens-Bereich: Schrift verkleinern --- */
+  .dashboard-start h1 {
+    font-size: 1.3rem !important;
+    letter-spacing: 2px !important;
+  }
+
+  /* --- Stats-Grid: Ausweis oben (volle Breite), Stats 2-spaltig darunter --- */
+  .member-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.6rem !important;
+    margin-bottom: 1rem !important;
+    align-items: start !important;
+  }
+
+  /* Ausweis-Container: volle Breite, ganz oben */
+  .member-stats-grid .mitgliedsausweis-container {
+    grid-column: 1 / -1 !important;
+    order: -1 !important;
+  }
+
+  /* Mitgliedsausweis: skaliert auf Handybreite */
+  .mitgliedsausweis {
+    width: 100% !important;
+    max-width: 100% !important;
+    font-size: 0.82em !important;
+    padding: 0.75rem !important;
+  }
+
+  .ausweis-body {
+    gap: 10px !important;
+  }
+
+  .ausweis-title .title-jp {
+    font-size: 0.65rem !important;
+  }
+
+  .ausweis-title .title-de {
+    font-size: 0.65rem !important;
+    letter-spacing: 1px !important;
+  }
+
+  .mitgliedsausweis .ausweis-foto {
+    width: 54px !important;
+    height: 66px !important;
+  }
+
+  /* QR auf Handy kleiner */
+  .mitgliedsausweis .ausweis-qr svg {
+    width: 54px !important;
+    height: 54px !important;
+  }
+
+  /* --- Navigations-Kacheln: 7er → 3er Grid --- */
+  .member-navigation-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .member-navigation-grid .cta-tile {
+    padding: 0.75rem 0.4rem !important;
+    min-height: 72px !important;
+    font-size: 0.8rem !important;
+    gap: 0.4rem !important;
+  }
+
+  /* --- Schnellzugriff: 5er → 3er Grid --- */
+  .member-quick-actions {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+    margin-top: 0.75rem !important;
+  }
+
+  .member-quick-actions .cta-tile {
+    padding: 0.6rem 0.4rem !important;
+    min-height: 60px !important;
+    font-size: 0.8rem !important;
+    gap: 0.3rem !important;
+  }
+
+}
+
+/* ===============================================================
+   KLEINE HANDYS (≤ 479px)
+   =============================================================== */
+
+@media (max-width: 479px) {
+
+  .dashboard-container {
+    padding: 0.35rem !important;
+  }
+
+  /* Auf sehr kleinen Screens: Titel-Text ausblenden */
+  .dashboard-header-left h2 {
+    display: none !important;
+  }
+
+  /* Ausweis: noch kompakter */
+  .mitgliedsausweis {
+    font-size: 0.75em !important;
+    padding: 0.6rem !important;
+  }
+
+  .mitgliedsausweis .ausweis-foto {
+    width: 46px !important;
+    height: 56px !important;
+  }
+
+  .mitgliedsausweis .ausweis-qr svg {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  /* Kacheln noch kompakter */
+  .member-navigation-grid .cta-tile {
+    min-height: 62px !important;
+    padding: 0.55rem 0.3rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  .member-navigation-grid .cta-tile svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .member-quick-actions .cta-tile {
+    min-height: 52px !important;
+    padding: 0.5rem 0.3rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  .member-quick-actions .cta-tile svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Stats-Karten: kleinere Zahlen */
+  .member-stats-grid > div:not(.mitgliedsausweis-container) {
+    gap: 0.5rem !important;
+  }
+
+}

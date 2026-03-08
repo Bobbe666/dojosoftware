@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { X, Calendar, CheckCircle, Clock } from 'lucide-react';
 import config from '../config/config.js';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/CheckinSystem.css';
@@ -29,27 +30,21 @@ const MemberCheckin = ({ onClose }) => {
   const loadMemberAndCourses = async () => {
     try {
       setLoading(true);
-      const userEmail = user?.email;
-      if (!userEmail) {
-        throw new Error('Keine Benutzer-E-Mail gefunden');
+      const mitgliedId = user?.mitglied_id;
+      if (!mitgliedId) {
+        throw new Error('Keine Mitglieds-ID gefunden');
       }
 
-      // Lade Mitgliedsdaten
-      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
+      // Mitgliedsdaten direkt per ID laden (korrekt mit /api und fetchWithAuth)
+      const memberResponse = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}`);
       if (!memberResponse.ok) {
         throw new Error(`Mitgliedsdaten nicht gefunden: ${memberResponse.statusText}`);
       }
       const member = await memberResponse.json();
       setMemberData(member);
 
-      // Lade heutige Kurse mit dojo_id Filter
-      const dojoFilterParam = getDojoFilterParam();
-      const coursesUrl = dojoFilterParam
-        ? `${API_BASE}/checkin/courses-today?${dojoFilterParam}`
-        : `${API_BASE}/checkin/courses-today`;
-      console.log('🔍 Lade Kurse von:', coursesUrl);
-
-      const coursesResponse = await fetch(coursesUrl);
+      // Heutige Kurse laden
+      const coursesResponse = await fetchWithAuth(`${API_BASE}/checkin/courses-today`);
       if (coursesResponse.ok) {
         const result = await coursesResponse.json();
         console.log('✅ Kurse geladen:', result.courses?.length || 0);
@@ -58,8 +53,8 @@ const MemberCheckin = ({ onClose }) => {
         }
       }
 
-      // Lade bereits eingecheckte Kurse für dieses Mitglied (ALLE Check-ins, auch completed)
-      const checkinsResponse = await fetch(`${API_BASE}/checkin/today-member/${member.mitglied_id}`);
+      // Bereits eingecheckte Kurse laden
+      const checkinsResponse = await fetchWithAuth(`${API_BASE}/checkin/today-member/${mitgliedId}`);
       if (checkinsResponse.ok) {
         const checkinsResult = await checkinsResponse.json();
         if (checkinsResult.success) {
@@ -105,12 +100,9 @@ const MemberCheckin = ({ onClose }) => {
         checkin_method: 'touch'
       };
 
-      const response = await fetch(`${API_BASE}/checkin/multi-course`, {
+      const response = await fetchWithAuth(`${API_BASE}/checkin/multi-course`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       });
 
@@ -131,7 +123,7 @@ const MemberCheckin = ({ onClose }) => {
 
       // Prüfe ob Mitglied heute Geburtstag hat
       try {
-        const birthdayResponse = await fetch(`${API_BASE}/mitglieder/${memberData.mitglied_id}/birthday-check`);
+        const birthdayResponse = await fetchWithAuth(`${API_BASE}/mitglieder/${memberData.mitglied_id}/birthday-check`);
         const birthdayData = await birthdayResponse.json();
 
         if (birthdayData.hasBirthday) {
@@ -179,8 +171,8 @@ const MemberCheckin = ({ onClose }) => {
 
   if (!memberData) {
     return (
-      <div className="modal-overlay">
-        <div className="modal-content checkin-modal">
+      <div className="modal-overlay member-checkin-modal" onClick={onClose}>
+        <div className="modal-content checkin-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h2>Check-in</h2>
             <button onClick={onClose} className="close-button">
@@ -200,8 +192,8 @@ const MemberCheckin = ({ onClose }) => {
   }
 
   return (
-    <div className="modal-overlay member-checkin-modal">
-      <div className="modal-content checkin-modal">
+    <div className="modal-overlay member-checkin-modal" onClick={onClose}>
+      <div className="modal-content checkin-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2>Check-in für {memberData.vorname} {memberData.nachname}</h2>
           <button onClick={onClose} className="close-button">

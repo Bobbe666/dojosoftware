@@ -24,7 +24,7 @@
   background: rgba(26, 26, 46, 0.95) !important;
   backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 8px !important;
+  border-radius: var(--comp-radius-md) !important;
   padding: 0.75rem 1rem !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
   height: fit-content !important;
@@ -34,7 +34,7 @@
 
 .rechnung-erstellen-container .rechnung-form h2 {
   margin: 0 0 0.5rem 0 !important;
-  color: #ffffff !important;
+  color: var(--text-1) !important;
   font-size: 1rem !important;
   text-shadow: none !important;
 }
@@ -58,7 +58,7 @@
 
 .rechnung-erstellen-container .form-section h3 {
   margin: 0 0 0.3rem 0 !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   font-size: 0.75rem !important;
   font-weight: 600 !important;
 }
@@ -68,15 +68,15 @@
   width: 100% !important;
   padding: 0.3rem 0.45rem !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 4px !important;
+  border-radius: var(--comp-radius-xs) !important;
   font-size: 0.75rem !important;
-  color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--text-1) !important;
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
 .form-section select option {
   background: #1a1a2e;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   padding: 0.5rem;
 }
 
@@ -84,7 +84,7 @@
 .form-section input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
 }
 
 .rechnung-erstellen-container .form-grid {
@@ -103,7 +103,7 @@
 .rechnung-erstellen-container .form-grid label {
   display: block !important;
   margin-bottom: 0 !important;
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: var(--text-1) !important;
   font-size: 0.7rem !important;
   font-weight: 600 !important;
   line-height: 1.2 !important;
@@ -124,16 +124,16 @@
 .position-input select {
   width: 100%;
   padding: 0.5rem 0.6rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 215, 0, 0.25);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
 }
 
 .position-input select option {
   background: #1a1a2e;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   padding: 0.5rem;
 }
 
@@ -141,10 +141,10 @@
   width: 60px !important;
   max-width: 60px !important;
   padding: 0.5rem 0.4rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 215, 0, 0.25);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
   text-align: center;
   -moz-appearance: textfield;
@@ -159,9 +159,9 @@
 .btn-add {
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
+  color: var(--text-1);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -182,7 +182,7 @@
   background: linear-gradient(135deg, var(--primary), #f59e0b) !important;
   color: var(--bg-secondary) !important;
   border: 1px solid rgba(255, 215, 0, 0.3) !important;
-  border-radius: 8px !important;
+  border-radius: var(--comp-radius-md) !important;
   font-size: 0.9rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -193,13 +193,13 @@
 .btn-save:hover {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--primary-alpha-10);
+  box-shadow: 0 4px 12px rgba(255,215,0,0.1);
 }
 
 /* Rechnungsvorschau */
 .rechnung-preview {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 0.5rem;
   width: 100%;
@@ -270,7 +270,7 @@
 
 /* Invoice Title */
 .invoice-title {
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-section-gap);
 }
 
 .invoice-title h1 {
@@ -293,7 +293,7 @@
 .invoice-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-section-gap);
   font-size: 9pt;
   table-layout: auto;
 }
@@ -385,7 +385,7 @@
 
 /* Payment Terms */
 .payment-terms {
-  margin-top: 2rem;
+  margin-top: var(--ui-section-gap);
   font-size: 9pt;
 }
 
@@ -404,7 +404,7 @@
 /* QR-Codes Sektion - nebeneinander */
 .qr-codes-section {
   display: flex !important;
-  gap: 2rem !important;
+  gap: var(--ui-section-gap) !important;
   justify-content: center !important;
   flex-wrap: nowrap !important;
   align-items: flex-start !important;
@@ -435,22 +435,22 @@
 /* Positionen Liste */
 .rechnung-erstellen-container .positionen-liste-header {
   font-size: 0.85rem;
-  color: #ffd700;
+  color: var(--primary);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
 }
 
 .rechnung-erstellen-container .position-item {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.75rem;
   margin-bottom: 0.5rem;
 }
 
 .rechnung-erstellen-container .position-item-text {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
 }
 
 .rechnung-erstellen-container .position-item-divider {
@@ -466,7 +466,7 @@
   margin: 0;
   padding: 0;
   cursor: pointer;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 /* Checkbox Label - gut lesbar */
@@ -474,7 +474,7 @@
 .rechnung-erstellen-container label.checkbox-label,
 .form-section .checkbox-label {
   font-size: 0.9rem !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   background: none !important;
@@ -486,7 +486,7 @@
 
 .rechnung-erstellen-container .rabatt-label {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-1);
   font-weight: 500;
 }
 
@@ -496,8 +496,8 @@
   width: 80px;
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.95);
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-1);
   text-align: center;
   -moz-appearance: textfield;
 }
@@ -568,9 +568,9 @@
 }
 
 .dojo-selection-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -602,18 +602,18 @@
   position: absolute;
   right: 0;
   top: 0;
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 .dojo-selection-card h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.95);
+  font-size: var(--ui-section-title);
+  color: var(--text-1);
 }
 
 .dojo-selection-card .dojo-address {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   margin: 0 0 0.75rem 0;
   line-height: 1.4;
 }
@@ -621,14 +621,14 @@
 .dojo-selection-card .steuer-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   font-size: 0.75rem;
   font-weight: 500;
 }
 
 .dojo-selection-card .steuer-badge.kleinunternehmer {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--status-success);
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
@@ -809,7 +809,7 @@
 .variante-btn {
   padding: 0.75rem 1rem;
   border: 2px solid var(--border-color, rgba(255, 255, 255, 0.2));
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   background: var(--input-bg, rgba(255, 255, 255, 0.05));
   color: var(--text-primary, #ffffff);
   font-size: 0.9rem;
@@ -835,9 +835,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
   background: var(--input-bg, rgba(255, 255, 255, 0.05));
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-top: 1rem;
 }
 
@@ -865,7 +865,7 @@
   padding: 0.75rem;
   font-size: 0.9rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -951,4 +951,450 @@
 [data-theme="tda-vib"] .varianten-modal-actions .btn-primary {
   background: #6B4423;
   color: #fff;
+}
+
+/* ── Inline-style replacements (re- prefix) ─────────────────────────────── */
+
+/* re-state-loading / re-state-error: full-width centred messages */
+.re-state-center {
+  text-align: center;
+  padding: 3rem;
+}
+.re-state-center--loading { color: var(--text-primary); }
+.re-state-center--error   { color: var(--error); }
+
+/* re-field-col: flex column for a label + input pair */
+.re-field-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+/* re-label-sm: compact label inside a tight form */
+.re-label-sm {
+  margin-bottom: 0;
+  font-size: 0.7rem;
+  line-height: 1.2;
+}
+
+/* re-input-sm: compact text/date/number input */
+.re-input-sm {
+  padding: 0.3rem 0.45rem;
+  font-size: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* re-qr-block: centred QR-code column */
+.re-qr-block {
+  text-align: center;
+  flex: 0 0 auto;
+  width: 90px;
+}
+
+/* re-qr-wrap: white background wrapper around the QR SVG/img */
+.re-qr-wrap {
+  padding: 0.3rem;
+  background: #fff;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+/* re-qr-title: bold uppercase section heading in print area */
+.re-qr-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--text-inverse);
+  text-shadow: none;
+  box-shadow: none;
+  text-transform: uppercase;
+}
+
+/* re-qr-label: small label line beneath QR code */
+.re-qr-label--md {
+  margin-top: 0;
+  font-size: 0.75rem;
+  color: var(--text-inverse);
+  font-weight: 600;
+  line-height: 1.2;
+}
+.re-qr-label--sm {
+  margin-top: 0;
+  font-size: 0.7rem;
+  color: var(--text-inverse);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* ── Additional inline-style replacements – 2026-03-07 ───────────────────── */
+
+/* Reload button in error state */
+.re-btn-reload {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+/* form-section overrides that duplicate .form-section CSS (keep specificity) */
+.re-form-section--positions {
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+/* Rechnungsdaten h3 */
+.re-h3-rechnungsdaten {
+  margin: 0 0 0.3rem 0;
+  font-size: 0.75rem;
+}
+
+/* Zahlungsfrist field column (flex column, no position) */
+.re-field-col--zahlungsfrist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+/* Menge input in position-input row */
+.re-menge-input {
+  padding: 0.3rem 0.35rem;
+  font-size: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Rabattfähigkeit wrapper row */
+.re-rabatt-row {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Checkbox label wrapper */
+.re-checkbox-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+/* Checkbox input */
+.re-checkbox {
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Checkbox label span */
+.re-checkbox-label-text {
+  font-size: 0.85rem;
+}
+
+/* Rabatt % input box (neue Position) */
+.re-rabatt-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Rabatt % label */
+.re-rabatt-label {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Rabatt percent input (neue Position) */
+.re-rabatt-input {
+  padding: 0.3rem 0.4rem;
+  font-size: 0.85rem;
+  width: 70px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 4px;
+  color: var(--primary);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Positions list scrollable container */
+.re-positions-list {
+  margin-top: 1rem;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* Position item inner header row */
+.re-position-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+/* Position name span */
+.re-position-name {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+/* Rabatt badge inline */
+.re-rabatt-badge {
+  color: var(--success);
+  margin-left: 0.5rem;
+  font-weight: 600;
+}
+
+/* Remove position button */
+.re-btn-remove {
+  background: rgba(239, 68, 68, 0.3);
+  border: none;
+  border-radius: 4px;
+  color: var(--error);
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* Position bottom row (rabatt checkbox + input) */
+.re-position-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+/* Inline rabatt label in position */
+.re-position-rabatt-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+/* Checkbox in position row */
+.re-pos-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #ffd700;
+  cursor: pointer;
+}
+
+/* Rabatt input group in position */
+.re-pos-rabatt-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Position rabatt number input */
+.re-pos-rabatt-input {
+  width: 55px;
+  padding: 0.2rem 0.3rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #ffd700;
+  border-radius: 4px;
+  color: var(--primary);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Percent symbol span */
+.re-percent-symbol {
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+/* Rabatt info button (?) */
+.re-btn-info {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 50%;
+  color: var(--primary);
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* Rabatt label+button row */
+.re-rabatt-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 0;
+}
+
+/* Rabatt tooltip modal */
+.re-tooltip-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.98);
+  border: 2px solid rgba(255, 215, 0, 1);
+  border-radius: 8px;
+  color: var(--text-inverse);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  max-width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  white-space: normal;
+}
+
+/* Tooltip close button */
+.re-btn-tooltip-close {
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  background: #000000;
+  color: var(--primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: bold;
+  width: 100%;
+}
+
+/* Tooltip backdrop overlay */
+.re-tooltip-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+}
+
+/* Field col with overflow visible (for tooltip) */
+.re-field-col--overflow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+  position: relative;
+  overflow: visible;
+}
+
+/* Skonto tage read-only input */
+.re-input-readonly {
+  padding: 0.3rem 0.45rem;
+  font-size: 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: rgba(255, 255, 255, 0.03);
+  cursor: not-allowed;
+}
+
+/* "Bitte Kunde wählen" placeholder */
+.re-no-customer {
+  color: var(--text-muted);
+}
+
+/* Invoice logo img */
+.re-invoice-logo {
+  max-width: 200px;
+  max-height: 100px;
+  object-fit: contain;
+}
+
+/* Invoice h1 override */
+.re-invoice-h1 {
+  color: var(--text-inverse);
+  font-weight: bold;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+/* Payment + QR layout row */
+.re-payment-qr-row {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+  align-items: flex-start;
+}
+
+/* payment-terms flex override */
+.re-payment-terms {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* qr-codes-section layout override */
+.re-qr-codes-section {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  width: 180px;
+  margin-right: 5mm;
+}
+
+/* No-bank-data warning block */
+.re-no-bankdata {
+  flex: 1;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  text-align: center;
+  min-width: 400px;
+}
+
+/* Error text in no-bankdata */
+.re-no-bankdata-text {
+  color: var(--error);
+  margin: 0;
+}
+
+/* Footer dojo info row */
+.re-footer-row {
+  margin-bottom: 0.3rem;
+}
+
+/* rechnung-footer override */
+.re-footer {
+  position: absolute;
+  bottom: 0;
+  left: 20mm;
+  right: 20mm;
+  padding-top: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: 7pt;
+  color: var(--text-inverse);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Modal body intro text */
+.re-modal-intro {
+  margin-bottom: 1rem;
+  color: var(--text-secondary);
 }

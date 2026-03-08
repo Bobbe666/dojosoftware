@@ -67,28 +67,28 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-font-semibold { font-weight: 600 !important; }
 .ds-font-bold { font-weight: 700 !important; }
 
-.ds-text-primary { color: var(--text-primary, #ffffff) !important; }
-.ds-text-secondary { color: var(--text-secondary, rgba(255,255,255,0.7)) !important; }
-.ds-text-muted { color: var(--text-tertiary, rgba(255,255,255,0.5)) !important; }
+.ds-text-primary { color: var(--text-1) !important; }
+.ds-text-secondary { color: var(--text-2) !important; }
+.ds-text-muted { color: var(--text-4) !important; }
 .ds-text-gold { color: var(--primary, #FFD700) !important; }
-.ds-text-success { color: var(--success, #4ECDC4) !important; }
-.ds-text-warning { color: var(--warning, #FFA500) !important; }
-.ds-text-danger { color: var(--danger, #FF6B35) !important; }
+.ds-text-success { color: var(--status-success) !important; }
+.ds-text-warning { color: var(--status-warning) !important; }
+.ds-text-danger { color: var(--status-error) !important; }
 
 /* ===== BACKGROUNDS ===== */
 .ds-bg-transparent { background: transparent !important; }
 .ds-bg-glass {
-  background: var(--glass-bg, rgba(255,255,255,0.05)) !important;
+  background: var(--surface-2) !important;
   backdrop-filter: blur(20px) !important;
 }
-.ds-bg-card { background: var(--glass-bg, rgba(255,255,255,0.05)) !important; }
+.ds-bg-card { background: var(--surface-2) !important; }
 .ds-bg-primary { background: var(--primary, #FFD700) !important; }
-.ds-bg-success { background: var(--success, #4ECDC4) !important; }
-.ds-bg-warning { background: var(--warning, #FFA500) !important; }
-.ds-bg-danger { background: var(--danger, #FF6B35) !important; }
+.ds-bg-success { background: var(--status-success) !important; }
+.ds-bg-warning { background: var(--status-warning) !important; }
+.ds-bg-danger { background: var(--status-error) !important; }
 
 /* ===== BORDERS ===== */
-.ds-border { border: 1px solid var(--border-color, rgba(255,255,255,0.1)) !important; }
+.ds-border { border: 1px solid rgba(255,255,255,0.1) !important; }
 .ds-border-gold { border-color: var(--primary, #FFD700) !important; }
 .ds-border-0 { border: none !important; }
 .ds-rounded-sm { border-radius: 4px !important; }
@@ -148,7 +148,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
@@ -169,18 +169,18 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-btn-secondary {
-  background: var(--glass-bg, rgba(255,255,255,0.08));
-  color: var(--text-primary, #fff);
-  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .ds-btn-secondary:hover {
-  background: var(--glass-bg-hover, rgba(255,255,255,0.12));
-  border-color: var(--primary-alpha-35, rgba(255,215,0,0.35));
+  background: var(--surface-hover);
+  border-color: rgba(255,215,0,0.35);
 }
 
 .ds-btn-danger {
-  background: var(--danger, #FF6B35);
+  background: var(--status-error);
   color: #fff;
 }
 
@@ -200,7 +200,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 
 .ds-btn-icon {
   padding: 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
 }
 
 .ds-btn:disabled {
@@ -219,17 +219,17 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-form-label {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-secondary, rgba(255,255,255,0.7));
+  color: var(--text-2);
 }
 
 .ds-form-input,
 .ds-form-select,
 .ds-form-textarea {
   padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-  background: var(--glass-bg, rgba(255,255,255,0.05));
-  color: var(--text-primary, #fff);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,255,255,0.1);
+  background: var(--surface-2);
+  color: var(--text-1);
   font-size: 0.875rem;
   transition: all 0.3s ease;
 }
@@ -239,25 +239,25 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-form-textarea:focus {
   outline: none;
   border-color: var(--primary, #FFD700);
-  box-shadow: 0 0 0 3px var(--primary-alpha-20, rgba(255,215,0,0.2));
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
 }
 
 .ds-form-input::placeholder {
-  color: var(--text-tertiary, rgba(255,255,255,0.4));
+  color: var(--text-4);
 }
 
 /* ===== SCOPED CARDS ===== */
 .ds-card {
-  background: var(--glass-bg, rgba(255,255,255,0.05));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   backdrop-filter: blur(20px);
   transition: all 0.3s ease;
 }
 
 .ds-card:hover {
-  border-color: var(--primary-alpha-35, rgba(255,215,0,0.35));
+  border-color: rgba(255,215,0,0.35);
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
 
@@ -268,7 +268,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   gap: 1rem;
   padding-bottom: 1rem;
   margin-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .ds-card-title {
@@ -285,7 +285,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-card-footer {
   padding-top: 1rem;
   margin-top: 1rem;
-  border-top: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 /* ===== SCOPED MODALS ===== */
@@ -302,9 +302,9 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-modal {
-  background: var(--bg-secondary, #1a1a2e);
-  border-radius: 16px;
-  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  background: var(--modal-bg-dark);
+  border-radius: var(--comp-radius-xl);
+  border: 1px solid rgba(255,255,255,0.1);
   max-width: 500px;
   width: 100%;
   max-height: 90vh;
@@ -316,7 +316,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem;
-  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .ds-modal-title {
@@ -335,7 +335,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   justify-content: flex-end;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 /* ===== SCOPED BADGES ===== */
@@ -349,30 +349,30 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-badge-primary {
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
+  background: rgba(255,215,0,0.2);
   color: var(--primary, #FFD700);
 }
 
 .ds-badge-success {
-  background: rgba(78, 205, 196, 0.2);
-  color: #4ECDC4;
+  background: var(--status-success-bg);
+  color: var(--status-success);
 }
 
 .ds-badge-warning {
-  background: rgba(255, 165, 0, 0.2);
-  color: #FFA500;
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
 }
 
 .ds-badge-danger {
-  background: rgba(255, 107, 53, 0.2);
-  color: #FF6B35;
+  background: var(--status-error-bg);
+  color: var(--status-error);
 }
 
 /* ===== SCOPED STAT CARDS ===== */
 .ds-stat-card {
-  background: var(--glass-bg, rgba(255,255,255,0.05));
-  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
-  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   display: flex;
   align-items: center;
@@ -381,18 +381,18 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-stat-card:hover {
-  border-color: var(--primary-alpha-35, rgba(255,215,0,0.35));
+  border-color: rgba(255,215,0,0.35);
   transform: translateY(-2px);
 }
 
 .ds-stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
+  background: rgba(255,215,0,0.2);
   color: var(--primary, #FFD700);
 }
 
@@ -403,13 +403,13 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary, #fff);
+  color: var(--text-1);
   line-height: 1.2;
 }
 
 .ds-stat-label {
   font-size: 0.875rem;
-  color: var(--text-secondary, rgba(255,255,255,0.7));
+  color: var(--text-2);
 }
 
 /* ===== SCOPED EMPTY STATE ===== */
@@ -420,7 +420,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   justify-content: center;
   padding: 3rem 1.5rem;
   text-align: center;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-4);
 }
 
 .ds-empty-state-icon {
@@ -433,7 +433,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: var(--text-primary, #fff);
+  color: var(--text-1);
 }
 
 .ds-empty-state-text {
@@ -445,7 +445,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid var(--glass-bg, rgba(255,255,255,0.1));
+  border: 3px solid var(--surface-3);
   border-top-color: var(--primary, #FFD700);
   border-radius: 50%;
   animation: ds-spin 0.8s linear infinite;
@@ -473,10 +473,10 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: rgba(255, 107, 53, 0.1);
-  border: 1px solid rgba(255, 107, 53, 0.3);
-  border-radius: 8px;
-  color: #FF6B35;
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error-border);
+  border-radius: var(--comp-radius-md);
+  color: var(--status-error);
   font-size: 0.875rem;
 }
 
@@ -485,10 +485,10 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background: rgba(78, 205, 196, 0.1);
-  border: 1px solid rgba(78, 205, 196, 0.3);
-  border-radius: 8px;
-  color: #4ECDC4;
+  background: var(--status-success-bg);
+  border: 1px solid var(--status-success-border);
+  border-radius: var(--comp-radius-md);
+  color: var(--status-success);
   font-size: 0.875rem;
 }
 

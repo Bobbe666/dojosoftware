@@ -1,0 +1,525 @@
+/* ============================================================================
+   PRUEFUNG DURCHFUEHREN – scoped utility classes (prefix: pd-)
+   ============================================================================ */
+
+/* Filter box */
+.pd-filter-box {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Filter row */
+.pd-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* Filter label – primary bold */
+.pd-label-primary {
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* Filter label – secondary small */
+.pd-label-secondary {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* Date / select input */
+.pd-filter-input {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.9rem;
+}
+
+/* Stil select */
+.pd-stil-select {
+  padding: 0.5rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 180px;
+  height: 38px;
+}
+
+/* Select / option dark background */
+.pd-option-dark {
+  background: #1a1a2e;
+}
+
+/* Loading / empty state */
+.pd-loading-center {
+  text-align: center;
+  padding: 3rem;
+}
+
+/* Pruefungen grid */
+.pd-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Date group heading */
+.pd-date-h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* "HEUTE" badge */
+.pd-badge-heute {
+  margin-left: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* "vergangen" badge */
+.pd-badge-vergangen {
+  margin-left: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+/* Date sub-line */
+.pd-date-sub {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* Expanded pruefling container */
+.pd-expanded-body {
+  padding: 0 1rem 1rem 1rem;
+}
+
+/* Pruefling header inner flex */
+.pd-pruefling-inner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+/* Name heading */
+.pd-pruefling-name {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--primary);
+}
+
+/* Sub-line under name */
+.pd-pruefling-sub {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Status + points row */
+.pd-status-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Edit form body */
+.pd-edit-form {
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Compact result row */
+.pd-result-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Flex-auto column */
+.pd-col-auto {
+  flex: 0 0 auto;
+}
+
+/* Mini label */
+.pd-mini-label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.75rem;
+}
+
+/* Button row within result */
+.pd-btn-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Gurt navigator */
+.pd-gurt-nav {
+  flex: 0 0 auto;
+  min-width: 180px;
+}
+
+/* Gurt row */
+.pd-gurt-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Gurt nav button */
+.pd-gurt-btn {
+  padding: 0.3rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: rgba(255, 215, 0, 0.1);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+/* Award icon inline */
+.pd-icon-inline {
+  display: inline;
+  margin-right: 0.3rem;
+}
+
+/* Punktzahl columns (Erreicht / Max) */
+.pd-col-100 {
+  flex: 0 0 auto;
+  min-width: 100px;
+}
+
+/* Textarea / input within edit form */
+.pd-edit-input {
+  font-size: 0.8rem;
+  padding: 0.4rem;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: white;
+}
+
+/* Prueferkommentar section */
+.pd-kommentar-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Kommentar label */
+.pd-kommentar-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.95rem;
+}
+
+/* Inhalte box */
+.pd-inhalte-box {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+/* Inhalte box heading */
+.pd-inhalte-h4 {
+  color: var(--primary);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+/* Kategorie block */
+.pd-kategorie-block {
+  margin-bottom: 1.5rem;
+}
+
+/* Inhalte grid */
+.pd-inhalte-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* Single inhalt row */
+.pd-inhalt-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* Inhalt text */
+.pd-inhalt-text {
+  color: var(--text-primary);
+  flex: 1;
+}
+
+/* Bestanden toggle wrapper */
+.pd-bestanden-wrap {
+  min-width: 140px;
+}
+
+/* Punktzahl mini input wrapper */
+.pd-pkt-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 120px;
+}
+
+/* Punktzahl input */
+.pd-pkt-input {
+  width: 70px;
+  padding: 0.4rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Max label beside input */
+.pd-pkt-max {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Action button row */
+.pd-action-row {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Page title gradient */
+.pd-page-title {
+  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* Alert margin-bottom */
+.pd-alert-mb {
+  margin-bottom: 1rem;
+}
+
+/* Toggle button small size */
+.pd-btn-toggle-sm {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.75rem;
+  min-width: auto;
+}
+
+/* Check/X icon margin */
+.pd-icon-mr {
+  margin-right: 0.3rem;
+}
+
+/* Inhalt bestanden button size */
+.pd-inhalt-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  width: 100%;
+}
+
+/* Textarea kommentar */
+.pd-textarea {
+  width: 100%;
+  font-size: 0.95rem;
+  padding: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: white;
+  resize: vertical;
+}
+
+/* Edit input override (form-input variant for edit forms) */
+.pd-edit-input {
+  font-size: 0.8rem;
+  padding: 0.4rem;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: white;
+}
+
+/* Kategorie h5 heading */
+.pd-kategorie-h5 {
+  color: var(--primary);
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+/* Pruefling number avatar */
+.pd-pruefling-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+/* Punktzahl badge */
+.pd-pkt-badge {
+  padding: 0.4rem 0.8rem;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Reset button small */
+.pd-btn-reset {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+/* Pruefling header row (clickable) */
+.pd-pruefling-header {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Gurt display box */
+.pd-gurt-display {
+  flex: 1;
+  text-align: center;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  min-width: 80px;
+  background: var(--gurt-bg, rgba(255,255,255,0.1));
+}
+
+/* Gurt label text */
+.pd-gurt-label {
+  font-size: 0.75rem;
+  color: #FFD700;
+  font-weight: 600;
+}
+.pd-gurt-label--dark {
+  color: #1a1a2e;
+}
+
+/* === Migrated from inline styles === */
+
+/* Active filter button overlay */
+.logout-button.pd-filter-btn--active {
+  background: linear-gradient(135deg, #FFD700, #FFA500) !important;
+  color: #1a1a2e !important;
+}
+
+/* Datum card – three states */
+.pd-datum-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.pd-datum-card--today  { background: rgba(59,130,246,0.1);    border: 2px solid rgba(59,130,246,0.5); }
+.pd-datum-card--past   { background: rgba(255,255,255,0.03);  border: 1px solid rgba(156,163,175,0.2); }
+.pd-datum-card--future { background: rgba(255,255,255,0.05);  border: 1px solid rgba(255,215,0,0.3); }
+
+/* Datum header – three states */
+.pd-datum-header {
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+.pd-datum-header--today  { background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.05) 100%); }
+.pd-datum-header--past   { background: linear-gradient(135deg, rgba(156,163,175,0.15) 0%, rgba(156,163,175,0.05) 100%); }
+.pd-datum-header--future { background: linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(255,215,0,0.05) 100%); }
+
+/* Datum icon/title/chevron – color via parent card modifier */
+.pd-datum-card--today  .pd-datum-icon,
+.pd-datum-card--today  .pd-datum-title,
+.pd-datum-card--today  .pd-datum-chevron { color: #3b82f6; }
+
+.pd-datum-card--past   .pd-datum-icon,
+.pd-datum-card--past   .pd-datum-title,
+.pd-datum-card--past   .pd-datum-chevron { color: #9ca3af; }
+
+.pd-datum-card--future .pd-datum-icon,
+.pd-datum-card--future .pd-datum-title,
+.pd-datum-card--future .pd-datum-chevron { color: #FFD700; }
+
+.pd-datum-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.pd-datum-chevron {
+  transition: transform 0.3s ease;
+}
+.pd-datum-chevron--expanded {
+  transform: rotate(180deg);
+}
+
+/* Pruefling card */
+.pd-pruefling-card {
+  margin-top: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.2);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+.pd-pruefling-card--editing {
+  background: rgba(255,215,0,0.08);
+  border: 2px solid rgba(255,215,0,0.5);
+}
+
+/* Pruefling collapse chevron */
+.pd-pruefling-chevron {
+  color: var(--primary);
+  margin-left: 0.5rem;
+  transition: transform 0.3s ease;
+}
+.pd-pruefling-chevron--expanded {
+  transform: rotate(180deg);
+}

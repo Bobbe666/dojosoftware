@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import '../styles/TestNotificationButton.css';
 
 
 const TestNotificationButton = () => {
@@ -79,92 +80,25 @@ const TestNotificationButton = () => {
   };
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
-      background: '#1e1e2d',
-      border: '2px solid #ffd700',
-      borderRadius: '12px',
-      padding: '1.5rem',
-      zIndex: 9999,
-      minWidth: '300px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
-    }}>
-      <h3 style={{ color: '#ffd700', margin: '0 0 1rem 0', fontSize: '1.1rem' }}>
+    <div className="test-notification-panel">
+      <h3 className="test-notification-title">
         🧪 Test-Benachrichtigung
       </h3>
 
-      <button
-        onClick={createTestNotification}
-        disabled={loading}
-        style={{
-          width: '100%',
-          padding: '0.8rem',
-          background: '#ffd700',
-          border: 'none',
-          borderRadius: '8px',
-          color: '#1e1e2d',
-          fontWeight: '600',
-          fontSize: '1rem',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          marginBottom: '0.5rem',
-          opacity: loading ? 0.6 : 1
-        }}
-      >
+      <button className="tnb-btn tnb-btn--gold" onClick={createTestNotification} disabled={loading}>
         {loading ? 'Erstelle...' : 'Test-Benachrichtigung erstellen'}
       </button>
 
-      <button
-        onClick={runMigration}
-        disabled={loading}
-        style={{
-          width: '100%',
-          padding: '0.8rem',
-          background: '#F59E0B',
-          border: 'none',
-          borderRadius: '8px',
-          color: '#fff',
-          fontWeight: '600',
-          fontSize: '1rem',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          marginBottom: '0.5rem',
-          opacity: loading ? 0.6 : 1
-        }}
-      >
+      <button className="tnb-btn tnb-btn--amber" onClick={runMigration} disabled={loading}>
         {loading ? 'Führe aus...' : '🔧 Tabelle migrieren'}
       </button>
 
-      <button
-        onClick={checkDebugInfo}
-        disabled={loading}
-        style={{
-          width: '100%',
-          padding: '0.8rem',
-          background: '#3B82F6',
-          border: 'none',
-          borderRadius: '8px',
-          color: '#fff',
-          fontWeight: '600',
-          fontSize: '1rem',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          opacity: loading ? 0.6 : 1
-        }}
-      >
+      <button className="tnb-btn tnb-btn--blue" onClick={checkDebugInfo} disabled={loading}>
         {loading ? 'Lade...' : 'Debug-Info anzeigen'}
       </button>
 
       {message && (
-        <div style={{
-          marginTop: '1rem',
-          padding: '0.8rem',
-          background: message.startsWith('✅') ? '#1a3d2e' : '#3d1a1a',
-          border: `2px solid ${message.startsWith('✅') ? '#22c55e' : '#ff4545'}`,
-          borderRadius: '8px',
-          color: message.startsWith('✅') ? '#4ade80' : '#ff6b6b',
-          fontSize: '0.9rem',
-          whiteSpace: 'pre-wrap'
-        }}>
+        <div className={`tnb-message${message.startsWith('✅') ? ' tnb-message--ok' : ' tnb-message--error'}`}>
           {message}
         </div>
       )}

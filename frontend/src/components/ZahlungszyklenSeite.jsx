@@ -292,157 +292,32 @@ const ZahlungszyklenSeite = () => {
         ) : (
           <>
             {/* Statistics */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-              gap: '0.625rem',
-              marginBottom: '1.25rem'
-            }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.625rem',
-                padding: '0.625rem',
-                background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  minWidth: '36px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'rgba(255, 215, 0, 0.15)',
-                  color: '#ffd700',
-                  padding: '0'
-                }}>
+            <div className="zzs-stats-grid">
+              <div className="zzs-stat-card">
+                <div className="zzs-stat-icon">
                   <Calendar size={18} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 500,
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    margin: '0 0 0.15rem 0',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.02em',
-                    textShadow: 'none',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
-                  }}>Gesamt Zyklen</h3>
-                  <p style={{
-                    fontSize: '1.1rem',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    margin: 0,
-                    lineHeight: 1,
-                    textShadow: 'none',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
-                  }}>{zahlungszyklen.length}</p>
+                <div className="u-flex-1-min0">
+                  <h3 className="zzs-stat-label">Gesamt Zyklen</h3>
+                  <p className="zzs-stat-value">{zahlungszyklen.length}</p>
                 </div>
               </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.625rem',
-                padding: '0.625rem',
-                background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  minWidth: '36px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'rgba(255, 215, 0, 0.15)',
-                  color: '#ffd700',
-                  padding: '0'
-                }}>
+              <div className="zzs-stat-card">
+                <div className="zzs-stat-icon">
                   <Check size={18} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 500,
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    margin: '0 0 0.15rem 0',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.02em',
-                    textShadow: 'none',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
-                  }}>Aktive Zyklen</h3>
-                  <p style={{
-                    fontSize: '1.1rem',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    margin: 0,
-                    lineHeight: 1,
-                    textShadow: 'none',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
-                  }}>{zahlungszyklen.filter(z => z.aktiv).length}</p>
+                <div className="u-flex-1-min0">
+                  <h3 className="zzs-stat-label">Aktive Zyklen</h3>
+                  <p className="zzs-stat-value">{zahlungszyklen.filter(z => z.aktiv).length}</p>
                 </div>
               </div>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.625rem',
-                padding: '0.625rem',
-                background: 'rgba(255, 255, 255, 0.08)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '10px',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)'
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  minWidth: '36px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'rgba(255, 215, 0, 0.15)',
-                  color: '#ffd700',
-                  padding: '0'
-                }}>
+              <div className="zzs-stat-card">
+                <div className="zzs-stat-icon">
                   <Clock size={18} />
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h3 style={{
-                    fontSize: '0.7rem',
-                    fontWeight: 500,
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    margin: '0 0 0.15rem 0',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.02em',
-                    textShadow: 'none',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
-                  }}>Kürzester Zyklus</h3>
-                  <p style={{
-                    fontSize: '1.1rem',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    margin: 0,
-                    lineHeight: 1,
-                    textShadow: 'none',
-                    WebkitFontSmoothing: 'antialiased',
-                    MozOsxFontSmoothing: 'grayscale'
-                  }}>
+                <div className="u-flex-1-min0">
+                  <h3 className="zzs-stat-label">Kürzester Zyklus</h3>
+                  <p className="zzs-stat-value">
                     {zahlungszyklen.length > 0
                       ? `${Math.min(...zahlungszyklen.map(z => z.intervall_tage))} Tage`
                       : '0 Tage'
@@ -598,51 +473,16 @@ const ZyklusDisplayCard = ({ zyklus, formatIntervall, onEdit, onDelete }) => {
       
       <div className="card-content">
         <div className="zyklus-info">
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            color: 'rgba(255, 255, 255, 0.9)',
-            padding: '0.5rem',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '6px',
-            fontSize: '0.875rem'
-          }}>
-            <Clock size={16} style={{ color: '#ffd700', flexShrink: 0 }} />
-            <span style={{
-              color: '#ffd700',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              textShadow: 'none',
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale'
-            }}>{formatIntervall(zyklus.intervall_tage)}</span>
+          <div className="zzs-info-row">
+            <Clock size={16} className="zzs-icon-primary" />
+            <span className="zzs-value-primary">{formatIntervall(zyklus.intervall_tage)}</span>
           </div>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            color: 'rgba(255, 255, 255, 0.9)',
-            padding: '0.5rem',
-            background: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '6px',
-            fontSize: '0.875rem'
-          }}>
-            <Calendar size={16} style={{ color: '#ffd700', flexShrink: 0 }} />
+          <div className="zzs-info-row">
+            <Calendar size={16} className="zzs-icon-primary" />
             <span>Alle {zyklus.intervall_tage} Tage</span>
           </div>
           {zyklus.beschreibung && (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.25rem',
-              color: 'rgba(255, 255, 255, 0.8)',
-              padding: '0.5rem',
-              background: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '6px',
-              fontSize: '0.875rem',
-              fontStyle: 'italic'
-            }}>
+            <div className="zzs-info-row--desc">
               <span>{zyklus.beschreibung}</span>
             </div>
           )}

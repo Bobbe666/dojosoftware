@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, User, AlertCircle, List, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import axios from 'axios';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+import config from '../config/config.js';
 import MemberHeader from './MemberHeader.jsx';
 import '../styles/components.css';
 import '../styles/themes.css';
+import '../styles/MemberSchedule.css';
 
 const MemberSchedule = () => {
   const { user } = useAuth();
   const [schedule, setSchedule] = useState([]);
   const [pastSchedule, setPastSchedule] = useState([]); // Vergangene Termine
   const [fullStundenplan, setFullStundenplan] = useState([]); // Kompletter Stundenplan für Kalenderansicht
+  const [memberEvents, setMemberEvents] = useState([]); // Einmalige Events (Weißwurstfrühstück etc.)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' oder 'calendar'
@@ -19,50 +22,51 @@ const MemberSchedule = () => {
   const [calendarFilter, setCalendarFilter] = useState('all'); // 'all', 'my-courses', 'other-courses'
 
   useEffect(() => {
-    if (user?.email) {
+    if (user?.mitglied_id) {
       loadSchedule();
     }
-  }, [user?.email]);
+  }, [user?.mitglied_id]);
 
   const loadSchedule = async () => {
     setLoading(true);
     try {
-      // 1. Lade Mitgliedsdaten über Email
-      const userEmail = user?.email || 'tom@example.com';
-      console.log('Lade Mitgliedsdaten für Email:', userEmail);
+      const mitgliedId = user.mitglied_id;
+      const API_BASE = config.apiBaseUrl;
 
-      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
-
-      if (!memberResponse.ok) {
-        throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);
+      // 1. Lade kommende Termine (Listenansicht)
+      const termineResponse = await fetchWithAuth(`${API_BASE}/stundenplan/member/${mitgliedId}/termine`);
+      if (termineResponse.ok) {
+        const termineData = await termineResponse.json();
+        setSchedule(termineData);
       }
 
-      const memberData = await memberResponse.json();
-      console.log('Mitgliedsdaten geladen:', memberData);
-      setMemberData(memberData);
+      // 2. Lade kompletten Stundenplan (Kalenderansicht)
+      const stundenplanResponse = await fetchWithAuth(`${API_BASE}/stundenplan`);
+      let stundenplanData = [];
+      if (stundenplanResponse.ok) {
+        stundenplanData = await stundenplanResponse.json();
+        setFullStundenplan(stundenplanData);
+      }
 
-      // 2. Lade kommende Termine basierend auf Anwesenheitshistorie und Stundenplan (für Listenansicht)
-      const termineResponse = await axios.get(`/stundenplan/member/${memberData.mitglied_id}/termine`);
-      console.log('Termine geladen:', termineResponse.data);
-      setSchedule(termineResponse.data);
-
-      // 3. Lade kompletten Stundenplan (für Kalenderansicht)
-      const stundenplanResponse = await axios.get('/stundenplan');
-      console.log('Kompletter Stundenplan geladen:', stundenplanResponse.data);
-      setFullStundenplan(stundenplanResponse.data);
+      // 3. Lade einmalige Events (Weißwurstfrühstück, Turniere, etc.)
+      const eventsResponse = await fetchWithAuth(`${API_BASE}/events/member/${mitgliedId}`);
+      if (eventsResponse.ok) {
+        const eventsData = await eventsResponse.json();
+        setMemberEvents(eventsData.events || []);
+      }
 
       // 4. Lade vergangene Anwesenheiten
-      const anwesenheitResponse = await axios.get(`/anwesenheit/${memberData.mitglied_id}`);
-      console.log('Anwesenheitsdaten geladen:', anwesenheitResponse.data);
+      const anwesenheitResponse = await fetchWithAuth(`${API_BASE}/anwesenheit/${mitgliedId}`);
 
       // Konvertiere Anwesenheitsdaten zu Termin-Format (nur die letzten 20)
-      const pastTermine = anwesenheitResponse.data
+      const anwesenheitData = anwesenheitResponse.ok ? await anwesenheitResponse.json() : [];
+      const pastTermine = (Array.isArray(anwesenheitData) ? anwesenheitData : [])
         .filter(a => a.anwesend === 1 || a.anwesend === true)
         .sort((a, b) => new Date(b.datum) - new Date(a.datum))
         .slice(0, 20)
         .map(a => {
           // Finde den zugehörigen Kurs im Stundenplan
-          const kurs = stundenplanResponse.data.find(k => k.id === a.stundenplan_id);
+          const kurs = stundenplanData.find(k => k.id === a.stundenplan_id);
           return {
             id: a.id,
             title: kurs?.kursname || 'Training',
@@ -138,7 +142,26 @@ const MemberSchedule = () => {
     }
     // Wenn 'all', werden alle Events angezeigt
 
-    return regularEvents;
+    // 5. Einmalige Events für diesen Tag
+    const eventItems = memberEvents
+      .filter(e => {
+        if (!e.datum) return false;
+        const eDatum = e.datum.substring(0, 10);
+        return eDatum === dateString;
+      })
+      .map(e => ({
+        id: `event-${e.event_id}`,
+        title: e.titel,
+        zeit: e.uhrzeit_beginn
+          ? e.uhrzeit_beginn.slice(0, 5) + (e.uhrzeit_ende ? ` - ${e.uhrzeit_ende.slice(0, 5)}` : '')
+          : '',
+        raum: e.ort || '',
+        typ: 'event',
+        isMemberCourse: e.ist_angemeldet === 1,
+        stil: e.event_typ || 'Event'
+      }));
+
+    return [...regularEvents, ...eventItems];
   };
 
   const navigateMonth = (direction) => {
@@ -217,10 +240,9 @@ const MemberSchedule = () => {
   if (loading) {
     return (
       <div className="dashboard-container">
-        <MemberHeader />
         <div className="dashboard-content">
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#ffd700' }}>
-            <div className="loading-spinner" style={{ margin: '0 auto 1rem', border: '3px solid rgba(255, 215, 0, 0.3)', borderTopColor: '#ffd700', width: '40px', height: '40px' }}></div>
+          <div className="ms-loading-center">
+            <div className="loading-spinner ms-spinner"></div>
             <p>Lade Termine...</p>
           </div>
         </div>
@@ -231,32 +253,13 @@ const MemberSchedule = () => {
   if (error) {
     return (
       <div className="dashboard-container">
-        <MemberHeader />
         <div className="dashboard-content">
-          <div style={{
-            padding: '3rem',
-            margin: '2rem auto',
-            maxWidth: '600px',
-            background: 'rgba(255, 107, 53, 0.1)',
-            border: '2px solid rgba(255, 107, 53, 0.3)',
-            borderRadius: '15px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>⚔️</div>
-            <h3 style={{ color: '#ff6b35', marginBottom: '1rem', fontSize: '1.3rem' }}>{error}</h3>
+          <div className="ms-error-box">
+            <div className="ms-error-emoji">⚔️</div>
+            <h3 className="ms-error-heading">{error}</h3>
             <button
               onClick={loadSchedule}
-              style={{
-                padding: '0.75rem 2rem',
-                background: 'linear-gradient(135deg, #ffd700, #ff6b35)',
-                border: 'none',
-                borderRadius: '10px',
-                color: '#1a1a2e',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                marginTop: '1rem',
-                fontSize: '1rem'
-              }}
+              className="ms-error-retry-btn"
             >
               🔄 Nochmal versuchen
             </button>
@@ -269,194 +272,68 @@ const MemberSchedule = () => {
   return (
     <div className="dashboard-container">
       <MemberHeader />
-
-      <div className="dashboard-content" style={{ padding: '2rem' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="dashboard-content ms-content-wrapper">
+        <div className="ms-inner">
           {/* Header */}
-          <div style={{ marginBottom: '2rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <Calendar size={32} style={{ color: '#ffd700' }} />
-                <h1 style={{ color: '#ffd700', margin: 0 }}>Meine Termine</h1>
+          <div className="ms-header-section">
+            <div className="ms-header-row">
+              <div className="u-flex-row-lg">
+                <Calendar size={32} className="u-text-accent" />
+                <h1 className="ms-heading-primary">Meine Termine</h1>
               </div>
 
               {/* View Toggle */}
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="u-flex-gap-sm">
                 <button
                   onClick={() => setViewMode('list')}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: viewMode === 'list' ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${viewMode === 'list' ? '#ffd700' : 'rgba(255, 215, 0, 0.2)'}`,
-                    borderRadius: '8px',
-                    color: viewMode === 'list' ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.3s ease'
-                  }}
+                  className={`ms-view-btn${viewMode === 'list' ? ' ms-view-btn--active' : ''}`}
                 >
                   <List size={18} />
                   Liste
                 </button>
                 <button
                   onClick={() => setViewMode('calendar')}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: viewMode === 'calendar' ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${viewMode === 'calendar' ? '#ffd700' : 'rgba(255, 215, 0, 0.2)'}`,
-                    borderRadius: '8px',
-                    color: viewMode === 'calendar' ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'all 0.3s ease'
-                  }}
+                  className={`ms-view-btn${viewMode === 'calendar' ? ' ms-view-btn--active' : ''}`}
                 >
                   <CalendarDays size={18} />
                   Kalender
                 </button>
               </div>
             </div>
-            <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0 }}>
+            <p className="ms-header-subtitle">
               Hier findest du alle deine geplanten Trainings und Prüfungen
             </p>
           </div>
 
           {/* Legende/Filter für Kalenderansicht */}
           {viewMode === 'calendar' && (
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 215, 0, 0.2)',
-              borderRadius: '12px',
-              padding: '1rem',
-              marginBottom: '1rem',
-              display: 'flex',
-              gap: '1rem',
-              alignItems: 'center',
-              flexWrap: 'wrap'
-            }}>
-              <div style={{ color: 'rgba(255, 255, 255, 0.8)', fontWeight: '500' }}>Filter:</div>
+            <div className="ms-filter-bar">
+              <div className="ms-filter-label">Filter:</div>
 
               {/* Alle Kurse */}
               <button
                 onClick={() => setCalendarFilter('all')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  background: calendarFilter === 'all' ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
-                  border: `1.5px solid ${calendarFilter === 'all' ? '#ffd700' : 'rgba(255, 215, 0, 0.2)'}`,
-                  borderRadius: '8px',
-                  color: calendarFilter === 'all' ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  fontSize: '0.9rem',
-                  fontWeight: calendarFilter === 'all' ? '600' : '400'
-                }}
-                onMouseEnter={(e) => {
-                  if (calendarFilter !== 'all') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (calendarFilter !== 'all') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                  }
-                }}
+                className={`ms-filter-btn${calendarFilter === 'all' ? ' ms-filter-btn--active' : ''}`}
               >
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 50%, rgba(255, 255, 255, 0.05) 50%)',
-                  border: '2px solid rgba(255, 215, 0, 0.5)',
-                  borderRadius: '4px'
-                }}></div>
+                <div className="ms-swatch ms-swatch-all"></div>
                 <span>Alle Kurse</span>
               </button>
 
               {/* Deine Kurse */}
               <button
                 onClick={() => setCalendarFilter('my-courses')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  background: calendarFilter === 'my-courses' ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
-                  border: `1.5px solid ${calendarFilter === 'my-courses' ? '#ffd700' : 'rgba(255, 215, 0, 0.2)'}`,
-                  borderRadius: '8px',
-                  color: calendarFilter === 'my-courses' ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  fontSize: '0.9rem',
-                  fontWeight: calendarFilter === 'my-courses' ? '600' : '400'
-                }}
-                onMouseEnter={(e) => {
-                  if (calendarFilter !== 'my-courses') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (calendarFilter !== 'my-courses') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                  }
-                }}
+                className={`ms-filter-btn${calendarFilter === 'my-courses' ? ' ms-filter-btn--active' : ''}`}
               >
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  background: 'rgba(255, 215, 0, 0.2)',
-                  border: '2px solid #ffd700',
-                  borderRadius: '4px'
-                }}></div>
+                <div className="ms-swatch ms-swatch-mine"></div>
                 <span>✓ Deine Kurse</span>
               </button>
 
               {/* Andere Kurse */}
               <button
                 onClick={() => setCalendarFilter('other-courses')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  background: calendarFilter === 'other-courses' ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
-                  border: `1.5px solid ${calendarFilter === 'other-courses' ? '#ffd700' : 'rgba(255, 215, 0, 0.2)'}`,
-                  borderRadius: '8px',
-                  color: calendarFilter === 'other-courses' ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease',
-                  fontSize: '0.9rem',
-                  fontWeight: calendarFilter === 'other-courses' ? '600' : '400'
-                }}
-                onMouseEnter={(e) => {
-                  if (calendarFilter !== 'other-courses') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (calendarFilter !== 'other-courses') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                  }
-                }}
+                className={`ms-filter-btn${calendarFilter === 'other-courses' ? ' ms-filter-btn--active' : ''}`}
               >
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '2px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '4px'
-                }}></div>
+                <div className="ms-swatch ms-swatch-other"></div>
                 <span>• Andere Kurse</span>
               </button>
             </div>
@@ -466,124 +343,126 @@ const MemberSchedule = () => {
           {viewMode === 'calendar' ? (
             renderCalendarView()
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {schedule.length === 0 ? (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 215, 0, 0.2)',
-                  borderRadius: '16px',
-                  padding: '3rem',
-                  textAlign: 'center'
-                }}>
-                  <AlertCircle size={48} style={{ color: '#ffd700', margin: '0 auto 1rem' }} />
-                  <h3 style={{ color: '#ffd700', marginBottom: '0.5rem' }}>Keine Termine gefunden</h3>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Du hast aktuell keine geplanten Termine.</p>
+            <div className="ms-column-layout">
+
+              {/* Einmalige Events (Turniere, Lehrgänge, etc.) */}
+              {memberEvents.length > 0 && (
+                <div className="ms-section-mb">
+                  <h2 className="ms-section-heading">
+                    <Calendar size={22} /> Besondere Events
+                  </h2>
+                  <div className="u-flex-col-md">
+                    {memberEvents.map(event => {
+                      const eventTypeIcons = { 'Turnier': '🏆', 'Lehrgang': '👥', 'Prüfung': '🥋', 'Seminar': '📚', 'Workshop': '🎯', 'Feier': '🎉', 'Sonstiges': '📅' };
+                      const icon = eventTypeIcons[event.event_typ] || '📅';
+                      return (
+                        <div key={event.event_id} className={`ms-event-card${event.ist_angemeldet ? ' ms-event-card--angemeldet' : ''}`}>
+                          <div className="ms-event-icon-box">
+                            {icon}
+                          </div>
+                          <div className="u-flex-1">
+                            <div className="ms-card-header-sm">
+                              <h3 className="ms-card-title-sm">{event.titel}</h3>
+                              {event.ist_angemeldet ? (
+                                <span className="ms-badge-success">✓ Angemeldet</span>
+                              ) : (
+                                <span className="ms-badge-primary">Anmelden →</span>
+                              )}
+                            </div>
+                            <div className="ms-meta-group">
+                              <div className="ms-meta-row-sm">
+                                <Calendar size={14} className="u-text-accent" />
+                                {new Date(event.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                              </div>
+                              {event.uhrzeit_beginn && (
+                                <div className="ms-meta-row-sm">
+                                  <Clock size={14} className="u-text-accent" />
+                                  {event.uhrzeit_beginn.slice(0, 5)}{event.uhrzeit_ende ? ` – ${event.uhrzeit_ende.slice(0, 5)}` : ''} Uhr
+                                </div>
+                              )}
+                              {event.ort && (
+                                <div className="ms-meta-row-sm">
+                                  <MapPin size={14} className="u-text-accent" />
+                                  {event.ort}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : (
-                schedule
+              )}
+
+              {/* Reguläre Trainingstermine */}
+              {schedule.length === 0 && memberEvents.length === 0 ? (
+                <div className="ms-empty-state">
+                  <AlertCircle size={48} className="ms-empty-icon" />
+                  <h3 className="ms-empty-heading">Keine Termine gefunden</h3>
+                  <p className="u-text-secondary">Du hast aktuell keine geplanten Termine.</p>
+                </div>
+              ) : schedule.length > 0 ? (
+                <>
+                  {memberEvents.length > 0 && <h2 className="ms-section-heading"><Calendar size={22} /> Reguläre Trainingstermine</h2>}
+                  {schedule
                   .sort((a, b) => new Date(a.datum) - new Date(b.datum))
                   .map(termin => (
-                    <div key={termin.id} style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: `1px solid ${termin.typ === 'prüfung' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 215, 0, 0.2)'}`,
-                      borderRadius: '16px',
-                      padding: '1.5rem',
-                      display: 'flex',
-                      gap: '1.5rem',
-                      alignItems: 'flex-start',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.borderColor = termin.typ === 'prüfung' ? '#ef4444' : '#ffd700';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.borderColor = termin.typ === 'prüfung' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 215, 0, 0.2)';
-                    }}>
+                    <div key={termin.id} className={`ms-training-card${termin.typ === 'prüfung' ? ' ms-training-card--pruefung' : ''}`}>
                       {/* Icon */}
-                      <div style={{
-                        fontSize: '3rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minWidth: '80px',
-                        height: '80px',
-                        background: termin.typ === 'prüfung' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 215, 0, 0.1)',
-                        borderRadius: '12px'
-                      }}>
+                      <div className={`ms-training-icon-box${termin.typ === 'prüfung' ? ' ms-training-icon-box--pruefung' : ''}`}>
                         {termin.typ === 'prüfung' ? '🏆' : '🥋'}
                       </div>
 
                       {/* Content */}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                      <div className="u-flex-1">
+                        <div className="ms-card-header">
                           <div>
-                            <h3 style={{ color: '#ffd700', margin: '0 0 0.5rem 0', fontSize: '1.25rem' }}>
+                            <h3 className="ms-card-title">
                               {termin.title}
                             </h3>
-                            <span style={{
-                              padding: '0.25rem 0.75rem',
-                              background: termin.status === 'bestätigt' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                              color: termin.status === 'bestätigt' ? '#10b981' : '#3b82f6',
-                              borderRadius: '6px',
-                              fontSize: '0.85rem',
-                              fontWeight: '500'
-                            }}>
+                            <span className={`ms-status-badge${termin.status === 'bestätigt' ? ' ms-status-badge--bestaetigt' : ' ms-status-badge--angemeldet'}`}>
                               {termin.status === 'bestätigt' ? '✓ Bestätigt' : '⏳ Angemeldet'}
                             </span>
                           </div>
                         </div>
 
                         {/* Details Grid */}
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                          gap: '1rem'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <Calendar size={16} style={{ color: '#ffd700' }} />
+                        <div className="ms-details-grid">
+                          <div className="ms-meta-row">
+                            <Calendar size={16} className="u-text-accent" />
                             <span>{formatDate(termin.datum)}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <Clock size={16} style={{ color: '#ffd700' }} />
+                          <div className="ms-meta-row">
+                            <Clock size={16} className="u-text-accent" />
                             <span>{termin.zeit}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <MapPin size={16} style={{ color: '#ffd700' }} />
+                          <div className="ms-meta-row">
+                            <MapPin size={16} className="u-text-accent" />
                             <span>{termin.raum}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255, 255, 255, 0.8)' }}>
-                            <User size={16} style={{ color: '#ffd700' }} />
+                          <div className="ms-meta-row">
+                            <User size={16} className="u-text-accent" />
                             <span>{termin.trainer}</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   ))
-              )}
+                  }
+                </>
+              ) : null}
 
               {/* Vergangene Termine - nur in Listenansicht */}
               {pastSchedule.length > 0 && (
-                <div style={{ marginTop: '3rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                    <Calendar size={28} style={{ color: 'rgba(255, 215, 0, 0.7)' }} />
-                    <h2 style={{ color: 'rgba(255, 215, 0, 0.9)', margin: 0 }}>Meine vergangenen Termine</h2>
+                <div className="ms-past-section">
+                  <div className="ms-past-header">
+                    <Calendar size={28} className="ms-icon-primary-alpha" />
+                    <h2 className="ms-heading-primary">Meine vergangenen Termine</h2>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="u-flex-col-md">
                     {pastSchedule.map(termin => (
-                      <div key={termin.id} style={{
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        border: '1px solid rgba(255, 215, 0, 0.15)',
-                        borderRadius: '12px',
-                        padding: '1rem',
-                        display: 'flex',
-                        gap: '1rem',
-                        alignItems: 'center',
-                        opacity: 0.8,
-                        transition: 'all 0.3s ease'
-                      }}
+                      <div key={termin.id} className="ms-past-card"
                       onMouseEnter={(e) => {
                         e.currentTarget.style.opacity = '1';
                         e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
@@ -593,60 +472,39 @@ const MemberSchedule = () => {
                         e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.15)';
                       }}>
                         {/* Kleines Icon */}
-                        <div style={{
-                          fontSize: '2rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          minWidth: '50px',
-                          height: '50px',
-                          background: 'rgba(255, 215, 0, 0.05)',
-                          borderRadius: '8px'
-                        }}>
+                        <div className="ms-past-icon-box">
                           ✓
                         </div>
 
                         {/* Content */}
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                            <h4 style={{ color: 'rgba(255, 215, 0, 0.9)', margin: 0, fontSize: '1rem' }}>
+                        <div className="u-flex-1">
+                          <div className="ms-card-header-center">
+                            <h4 className="ms-card-title-xs">
                               {termin.title}
                             </h4>
-                            <span style={{
-                              padding: '0.2rem 0.6rem',
-                              background: 'rgba(16, 185, 129, 0.15)',
-                              color: 'rgba(16, 185, 129, 0.9)',
-                              borderRadius: '4px',
-                              fontSize: '0.75rem',
-                              fontWeight: '500'
-                            }}>
+                            <span className="ms-badge-absolviert">
                               ✓ Absolviert
                             </span>
                           </div>
 
                           {/* Details */}
-                          <div style={{
-                            display: 'flex',
-                            gap: '1.5rem',
-                            flexWrap: 'wrap',
-                            fontSize: '0.85rem'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                              <Calendar size={14} style={{ color: 'rgba(255, 215, 0, 0.6)' }} />
+                          <div className="ms-past-details-row">
+                            <div className="ms-meta-row-sm">
+                              <Calendar size={14} className="ms-icon-primary-alpha" />
                               <span>{formatDate(termin.datum)}</span>
                             </div>
                             {termin.zeit && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                                <Clock size={14} style={{ color: 'rgba(255, 215, 0, 0.6)' }} />
+                              <div className="ms-meta-row-sm">
+                                <Clock size={14} className="ms-icon-primary-alpha" />
                                 <span>{termin.zeit}</span>
                               </div>
                             )}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                              <MapPin size={14} style={{ color: 'rgba(255, 215, 0, 0.6)' }} />
+                            <div className="ms-meta-row-sm">
+                              <MapPin size={14} className="ms-icon-primary-alpha" />
                               <span>{termin.raum}</span>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-                              <User size={14} style={{ color: 'rgba(255, 215, 0, 0.6)' }} />
+                            <div className="ms-meta-row-sm">
+                              <User size={14} className="ms-icon-primary-alpha" />
                               <span>{termin.trainer}</span>
                             </div>
                           </div>

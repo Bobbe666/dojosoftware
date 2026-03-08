@@ -12,25 +12,24 @@ import {
   CheckCircle, AlertCircle, Loader2, MapPin, ChevronRight
 } from 'lucide-react';
 import config from '../config/config.js';
+import '../styles/ProbetrainingBuchung.css';
 
 const ProbetrainingBuchung = () => {
   const [searchParams] = useSearchParams();
 
   // Subdomain aus URL oder window.location ermitteln
   const getSubdomain = () => {
-    // Erst aus URL-Parameter versuchen (für Testing)
+    // Erst aus URL-Parameter versuchen (z.B. ?dojo=kampfkunst-schreiner)
     const paramSubdomain = searchParams.get('dojo');
     if (paramSubdomain) return paramSubdomain;
 
-    // Dann aus Hostname
+    // Dann aus Hostname: z.B. kampfkunst.dojo.tda-intl.org -> kampfkunst
     const hostname = window.location.hostname;
     const parts = hostname.split('.');
-    // z.B. demo1.dojo.tda-intl.org -> demo1
-    if (parts.length >= 3 && parts[1] === 'dojo') {
+    if (parts.length >= 4 && parts[1] === 'dojo') {
       return parts[0];
     }
-    // Fallback für Entwicklung
-    return 'demo1';
+    return null;
   };
 
   const subdomain = getSubdomain();
@@ -59,6 +58,12 @@ const ProbetrainingBuchung = () => {
 
   // Dojo-Daten und Kurse laden
   useEffect(() => {
+    if (!subdomain) {
+      setLoading(false);
+      setError('Kein Dojo gefunden. Bitte rufen Sie diese Seite über die Adresse Ihres Dojos auf (z.B. mein-dojo.dojo.tda-intl.org/probetraining).');
+      return;
+    }
+
     const loadData = async () => {
       try {
         setLoading(true);
@@ -131,238 +136,14 @@ const ProbetrainingBuchung = () => {
     ? kurse.filter(k => k.stil_name === stile.find(s => s.stil_id == formData.stil_id)?.name)
     : kurse;
 
-  // Styles
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
-      padding: '2rem 1rem',
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif'
-    },
-    card: {
-      maxWidth: '600px',
-      margin: '0 auto',
-      background: 'rgba(255, 255, 255, 0.05)',
-      backdropFilter: 'blur(20px)',
-      borderRadius: '16px',
-      border: '1px solid rgba(255, 215, 0, 0.2)',
-      overflow: 'hidden'
-    },
-    header: {
-      background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05))',
-      padding: '2rem',
-      textAlign: 'center',
-      borderBottom: '1px solid rgba(255, 215, 0, 0.2)'
-    },
-    logo: {
-      width: '80px',
-      height: '80px',
-      borderRadius: '50%',
-      objectFit: 'cover',
-      marginBottom: '1rem',
-      border: '3px solid rgba(255, 215, 0, 0.3)'
-    },
-    title: {
-      color: '#ffd700',
-      fontSize: '1.75rem',
-      fontWeight: 700,
-      margin: '0 0 0.5rem 0'
-    },
-    subtitle: {
-      color: 'rgba(255, 255, 255, 0.7)',
-      fontSize: '1rem',
-      margin: 0
-    },
-    form: {
-      padding: '2rem'
-    },
-    formGroup: {
-      marginBottom: '1.5rem'
-    },
-    label: {
-      display: 'block',
-      color: 'rgba(255, 255, 255, 0.9)',
-      fontSize: '0.9rem',
-      fontWeight: 500,
-      marginBottom: '0.5rem'
-    },
-    input: {
-      width: '100%',
-      padding: '0.875rem 1rem',
-      background: 'rgba(255, 255, 255, 0.05)',
-      border: '1px solid rgba(255, 215, 0, 0.2)',
-      borderRadius: '8px',
-      color: '#ffffff',
-      fontSize: '1rem',
-      outline: 'none',
-      transition: 'all 0.2s',
-      boxSizing: 'border-box'
-    },
-    inputFocus: {
-      borderColor: '#ffd700',
-      boxShadow: '0 0 0 3px rgba(255, 215, 0, 0.1)'
-    },
-    select: {
-      width: '100%',
-      padding: '0.875rem 1rem',
-      background: 'rgba(255, 255, 255, 0.05)',
-      border: '1px solid rgba(255, 215, 0, 0.2)',
-      borderRadius: '8px',
-      color: '#ffffff',
-      fontSize: '1rem',
-      outline: 'none',
-      cursor: 'pointer'
-    },
-    textarea: {
-      width: '100%',
-      padding: '0.875rem 1rem',
-      background: 'rgba(255, 255, 255, 0.05)',
-      border: '1px solid rgba(255, 215, 0, 0.2)',
-      borderRadius: '8px',
-      color: '#ffffff',
-      fontSize: '1rem',
-      minHeight: '100px',
-      resize: 'vertical',
-      outline: 'none',
-      boxSizing: 'border-box'
-    },
-    kursGrid: {
-      display: 'grid',
-      gap: '0.75rem'
-    },
-    kursCard: {
-      display: 'flex',
-      alignItems: 'center',
-      padding: '1rem',
-      background: 'rgba(255, 255, 255, 0.03)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      transition: 'all 0.2s'
-    },
-    kursCardSelected: {
-      background: 'rgba(255, 215, 0, 0.1)',
-      borderColor: '#ffd700'
-    },
-    kursRadio: {
-      width: '20px',
-      height: '20px',
-      marginRight: '1rem',
-      accentColor: '#ffd700'
-    },
-    kursInfo: {
-      flex: 1
-    },
-    kursName: {
-      color: '#ffffff',
-      fontWeight: 600,
-      fontSize: '0.95rem',
-      marginBottom: '0.25rem'
-    },
-    kursDetails: {
-      color: 'rgba(255, 255, 255, 0.6)',
-      fontSize: '0.85rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.5rem'
-    },
-    checkbox: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      gap: '0.75rem',
-      marginBottom: '1.5rem'
-    },
-    checkboxInput: {
-      width: '20px',
-      height: '20px',
-      marginTop: '2px',
-      accentColor: '#ffd700',
-      cursor: 'pointer'
-    },
-    checkboxLabel: {
-      color: 'rgba(255, 255, 255, 0.8)',
-      fontSize: '0.9rem',
-      lineHeight: 1.5
-    },
-    button: {
-      width: '100%',
-      padding: '1rem',
-      background: 'linear-gradient(135deg, #ffd700, #ffed4a)',
-      color: '#1a1a2e',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '1.1rem',
-      fontWeight: 700,
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: '0.5rem',
-      transition: 'all 0.2s'
-    },
-    buttonDisabled: {
-      opacity: 0.6,
-      cursor: 'not-allowed'
-    },
-    error: {
-      background: 'rgba(239, 68, 68, 0.1)',
-      border: '1px solid rgba(239, 68, 68, 0.3)',
-      borderRadius: '8px',
-      padding: '1rem',
-      marginBottom: '1.5rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '0.75rem',
-      color: '#ef4444'
-    },
-    success: {
-      textAlign: 'center',
-      padding: '3rem 2rem'
-    },
-    successIcon: {
-      width: '80px',
-      height: '80px',
-      background: 'rgba(16, 185, 129, 0.2)',
-      borderRadius: '50%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      margin: '0 auto 1.5rem'
-    },
-    successTitle: {
-      color: '#10b981',
-      fontSize: '1.5rem',
-      fontWeight: 700,
-      marginBottom: '1rem'
-    },
-    successText: {
-      color: 'rgba(255, 255, 255, 0.8)',
-      fontSize: '1rem',
-      lineHeight: 1.6
-    },
-    loading: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '4rem 2rem',
-      color: 'rgba(255, 255, 255, 0.7)'
-    },
-    row: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '1rem'
-    }
-  };
-
   // Loading State
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={styles.loading}>
-            <Loader2 size={48} style={{ animation: 'spin 1s linear infinite', color: '#ffd700' }} />
-            <p style={{ marginTop: '1rem' }}>Lade Dojo-Daten...</p>
+      <div className="ptb-container">
+        <div className="ptb-card">
+          <div className="ptb-loading">
+            <Loader2 size={48} className="ptb-loading-icon" />
+            <p className="ptb-loading-text">Lade Dojo-Daten...</p>
           </div>
         </div>
       </div>
@@ -372,11 +153,11 @@ const ProbetrainingBuchung = () => {
   // Error State (Dojo nicht gefunden)
   if (!dojoData) {
     return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={{ ...styles.loading, color: '#ef4444' }}>
+      <div className="ptb-container">
+        <div className="ptb-card">
+          <div className="ptb-loading ptb-loading-error">
             <AlertCircle size={48} />
-            <p style={{ marginTop: '1rem' }}>{error || 'Dojo nicht gefunden'}</p>
+            <p className="ptb-loading-text">{error || 'Dojo nicht gefunden'}</p>
           </div>
         </div>
       </div>
@@ -386,14 +167,14 @@ const ProbetrainingBuchung = () => {
   // Success State
   if (success) {
     return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={styles.success}>
-            <div style={styles.successIcon}>
+      <div className="ptb-container">
+        <div className="ptb-card">
+          <div className="ptb-success">
+            <div className="ptb-success-icon">
               <CheckCircle size={48} color="#10b981" />
             </div>
-            <h2 style={styles.successTitle}>Vielen Dank!</h2>
-            <p style={styles.successText}>
+            <h2 className="ptb-success-title">Vielen Dank!</h2>
+            <p className="ptb-success-text">
               Ihre Probetraining-Anfrage wurde erfolgreich übermittelt.<br /><br />
               Wir werden uns in Kürze bei Ihnen melden, um einen Termin zu vereinbaren.
             </p>
@@ -404,89 +185,89 @@ const ProbetrainingBuchung = () => {
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
+    <div className="ptb-container">
+      <div className="ptb-card">
         {/* Header */}
-        <div style={styles.header}>
+        <div className="ptb-header">
           {dojoData.logo_url && (
-            <img src={dojoData.logo_url} alt={dojoData.name} style={styles.logo} />
+            <img src={dojoData.logo_url} alt={dojoData.name} className="ptb-logo" />
           )}
-          <h1 style={styles.title}>Probetraining buchen</h1>
-          <p style={styles.subtitle}>{dojoData.name}</p>
+          <h1 className="ptb-title">Probetraining buchen</h1>
+          <p className="ptb-subtitle">{dojoData.name}</p>
           {dojoData.kontakt?.adresse && (
-            <p style={{ ...styles.subtitle, fontSize: '0.85rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+            <p className="ptb-subtitle ptb-address">
               <MapPin size={14} /> {dojoData.kontakt.adresse}
             </p>
           )}
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={handleSubmit} className="ptb-form">
           {error && (
-            <div style={styles.error}>
+            <div className="ptb-error">
               <AlertCircle size={20} />
               <span>{error}</span>
             </div>
           )}
 
           {/* Name */}
-          <div style={styles.row}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Vorname *</label>
+          <div className="ptb-row">
+            <div className="ptb-form-group">
+              <label className="ptb-label">Vorname *</label>
               <input
                 type="text"
                 required
                 value={formData.vorname}
                 onChange={e => setFormData({...formData, vorname: e.target.value})}
-                style={styles.input}
+                className="ptb-input"
                 placeholder="Max"
               />
             </div>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Nachname *</label>
+            <div className="ptb-form-group">
+              <label className="ptb-label">Nachname *</label>
               <input
                 type="text"
                 required
                 value={formData.nachname}
                 onChange={e => setFormData({...formData, nachname: e.target.value})}
-                style={styles.input}
+                className="ptb-input"
                 placeholder="Mustermann"
               />
             </div>
           </div>
 
           {/* Kontakt */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>E-Mail *</label>
+          <div className="ptb-form-group">
+            <label className="ptb-label">E-Mail *</label>
             <input
               type="email"
               required
               value={formData.email}
               onChange={e => setFormData({...formData, email: e.target.value})}
-              style={styles.input}
+              className="ptb-input"
               placeholder="max@beispiel.de"
             />
           </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Telefon</label>
+          <div className="ptb-form-group">
+            <label className="ptb-label">Telefon</label>
             <input
               type="tel"
               value={formData.telefon}
               onChange={e => setFormData({...formData, telefon: e.target.value})}
-              style={styles.input}
+              className="ptb-input"
               placeholder="+49 123 456789"
             />
           </div>
 
           {/* Stil-Auswahl */}
           {stile.length > 0 && (
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Welcher Stil interessiert Sie?</label>
+            <div className="ptb-form-group">
+              <label className="ptb-label">Welcher Stil interessiert Sie?</label>
               <select
                 value={formData.stil_id}
                 onChange={e => setFormData({...formData, stil_id: e.target.value, kurs_id: ''})}
-                style={styles.select}
+                className="ptb-select"
               >
                 <option value="">Alle Stile anzeigen</option>
                 {stile.map(s => (
@@ -498,16 +279,13 @@ const ProbetrainingBuchung = () => {
 
           {/* Kurs-Auswahl */}
           {filteredKurse.length > 0 && (
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Wählen Sie einen Termin</label>
-              <div style={styles.kursGrid}>
+            <div className="ptb-form-group">
+              <label className="ptb-label">Wählen Sie einen Termin</label>
+              <div className="ptb-kurs-grid">
                 {filteredKurse.map(kurs => (
                   <label
                     key={kurs.stundenplan_id || kurs.kurs_id}
-                    style={{
-                      ...styles.kursCard,
-                      ...(formData.kurs_id == (kurs.stundenplan_id || kurs.kurs_id) ? styles.kursCardSelected : {})
-                    }}
+                    className={`ptb-kurs-card${formData.kurs_id == (kurs.stundenplan_id || kurs.kurs_id) ? ' ptb-kurs-card--selected' : ''}`}
                   >
                     <input
                       type="radio"
@@ -515,17 +293,17 @@ const ProbetrainingBuchung = () => {
                       value={kurs.stundenplan_id || kurs.kurs_id}
                       checked={formData.kurs_id == (kurs.stundenplan_id || kurs.kurs_id)}
                       onChange={e => setFormData({...formData, kurs_id: e.target.value})}
-                      style={styles.kursRadio}
+                      className="ptb-kurs-radio"
                     />
-                    <div style={styles.kursInfo}>
-                      <div style={styles.kursName}>{kurs.name}</div>
-                      <div style={styles.kursDetails}>
+                    <div className="ptb-kurs-info">
+                      <div className="ptb-kurs-name">{kurs.name}</div>
+                      <div className="ptb-kurs-details">
                         <Calendar size={14} />
                         {kurs.wochentag}
-                        <Clock size={14} style={{ marginLeft: '0.5rem' }} />
+                        <Clock size={14} className="ptb-kurs-clock" />
                         {kurs.start_zeit?.substring(0, 5)} - {kurs.end_zeit?.substring(0, 5)}
                         {kurs.stil_name && (
-                          <span style={{ marginLeft: '0.5rem', color: '#ffd700' }}>
+                          <span className="ptb-kurs-stil">
                             {kurs.stil_name}
                           </span>
                         )}
@@ -538,35 +316,35 @@ const ProbetrainingBuchung = () => {
           )}
 
           {/* Wunschdatum */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Wunschdatum (optional)</label>
+          <div className="ptb-form-group">
+            <label className="ptb-label">Wunschdatum (optional)</label>
             <input
               type="date"
               value={formData.wunschdatum}
               onChange={e => setFormData({...formData, wunschdatum: e.target.value})}
-              style={styles.input}
+              className="ptb-input"
               min={new Date().toISOString().split('T')[0]}
             />
           </div>
 
           {/* Nachricht */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Nachricht (optional)</label>
+          <div className="ptb-form-group">
+            <label className="ptb-label">Nachricht (optional)</label>
             <textarea
               value={formData.nachricht}
               onChange={e => setFormData({...formData, nachricht: e.target.value})}
-              style={styles.textarea}
+              className="ptb-textarea"
               placeholder="Haben Sie Fragen oder besondere Wünsche?"
             />
           </div>
 
           {/* Wie gefunden */}
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Wie sind Sie auf uns aufmerksam geworden?</label>
+          <div className="ptb-form-group">
+            <label className="ptb-label">Wie sind Sie auf uns aufmerksam geworden?</label>
             <select
               value={formData.wie_gefunden}
               onChange={e => setFormData({...formData, wie_gefunden: e.target.value})}
-              style={styles.select}
+              className="ptb-select"
             >
               <option value="">Bitte auswählen</option>
               <option value="Google">Google / Suchmaschine</option>
@@ -579,16 +357,16 @@ const ProbetrainingBuchung = () => {
           </div>
 
           {/* Datenschutz */}
-          <div style={styles.checkbox}>
+          <div className="ptb-checkbox">
             <input
               type="checkbox"
               id="datenschutz"
               checked={formData.datenschutz_akzeptiert}
               onChange={e => setFormData({...formData, datenschutz_akzeptiert: e.target.checked})}
-              style={styles.checkboxInput}
+              className="ptb-checkbox-input"
             />
-            <label htmlFor="datenschutz" style={styles.checkboxLabel}>
-              Ich habe die <a href="/datenschutz" target="_blank" style={{ color: '#ffd700' }}>Datenschutzerklärung</a> gelesen
+            <label htmlFor="datenschutz" className="ptb-checkbox-label">
+              Ich habe die <a href="/datenschutz" target="_blank" className="u-text-accent">Datenschutzerklärung</a> gelesen
               und bin mit der Verarbeitung meiner Daten einverstanden. *
             </label>
           </div>
@@ -597,14 +375,11 @@ const ProbetrainingBuchung = () => {
           <button
             type="submit"
             disabled={submitting}
-            style={{
-              ...styles.button,
-              ...(submitting ? styles.buttonDisabled : {})
-            }}
+            className="ptb-button"
           >
             {submitting ? (
               <>
-                <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
+                <Loader2 size={20} className="ptb-spinner-inline" />
                 Wird gesendet...
               </>
             ) : (
@@ -617,12 +392,8 @@ const ProbetrainingBuchung = () => {
         </form>
       </div>
 
-      {/* CSS Animation */}
+      {/* CSS Animation for select options */}
       <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
         input::placeholder, textarea::placeholder {
           color: rgba(255, 255, 255, 0.4);
         }

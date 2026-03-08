@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/MitgliedDetail.css';
+import '../styles/VertragFormular.css';
 
 /**
  * Wiederverwendbares Vertragsformular
@@ -336,15 +337,15 @@ const VertragFormular = ({
   };
 
   if (loading) {
-    return <div style={{ padding: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>Lade Vertragsdaten...</div>;
+    return <div className="vf-loading">Lade Vertragsdaten...</div>;
   }
 
   return (
     <div className="vertrag-formular">
-      <div className="form-grid" style={{ gap: '1rem' }}>
+      <div className="form-grid vf-gap-1">
         {/* Tarif Auswahl */}
-        <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', display: 'block' }}>Tarif *</label>
+        <div className="form-group vf-full-col">
+          <label className="vf-label">Tarif *</label>
           <select
             value={vertrag.tarif_id || ''}
             onChange={(e) => {
@@ -361,7 +362,7 @@ const VertragFormular = ({
                 vertragsende: calculatedEnde
               });
             }}
-            style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
+            className="vf-select"
           >
             <option value="">Tarif auswählen</option>
             {tarife.map(tarif => (
@@ -375,19 +376,19 @@ const VertragFormular = ({
             ))}
           </select>
           {tarife.length === 0 && (
-            <p style={{ fontSize: '0.75rem', color: '#F59E0B', marginTop: '0.3rem', marginBottom: 0 }}>
+            <p className="vf-field-warning">
               ⚠️ Keine passenden Tarife gefunden
             </p>
           )}
         </div>
 
         {/* Zahlungsintervall & Vertragsbeginn */}
-        <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', display: 'block' }}>Zahlungsintervall *</label>
+        <div className="form-group vf-form-group-mb">
+          <label className="vf-label">Zahlungsintervall *</label>
           <select
             value={vertrag.billing_cycle || ''}
             onChange={(e) => onChange({...vertrag, billing_cycle: e.target.value})}
-            style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
+            className="vf-select"
           >
             <option value="">Bitte wählen...</option>
             {zahlungszyklen.length > 0 ? (
@@ -409,8 +410,8 @@ const VertragFormular = ({
           </select>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '0.5rem' }}>
-          <label style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', display: 'block' }}>Vertragsbeginn *</label>
+        <div className="form-group vf-form-group-mb">
+          <label className="vf-label">Vertragsbeginn *</label>
           <input
             type="date"
             value={vertrag.vertragsbeginn || ''}
@@ -422,7 +423,7 @@ const VertragFormular = ({
                 vertragsende: calculatedEnde
               });
             }}
-            style={{ padding: '0.6rem 0.75rem', fontSize: '0.9rem', lineHeight: '1.5', minHeight: '44px', height: 'auto' }}
+            className="vf-select"
           />
         </div>
 
@@ -432,59 +433,37 @@ const VertragFormular = ({
           if (!paymentInfo) return null;
 
           return (
-            <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
-              <div style={{
-                padding: '0.8rem',
-                background: paymentInfo.discount > 0 ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(255, 255, 255, 0.12) 100%)' : 'rgba(255, 255, 255, 0.08)',
-                border: paymentInfo.discount > 0 ? '2px solid rgba(16, 185, 129, 0.5)' : '2px solid rgba(255, 215, 0, 0.3)',
-                borderRadius: '8px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="form-group vf-full-col">
+              <div className={`vf-price-box${paymentInfo.discount > 0 ? ' vf-price-box--discount' : ' vf-price-box--standard'}`}>
+                <div className="vf-price-row">
                   <div>
-                    <h5 style={{
-                      margin: '0 0 0.3rem 0',
-                      color: paymentInfo.discount > 0 ? '#10B981' : '#ffd700',
-                      fontSize: '0.85rem',
-                      fontWeight: '700'
-                    }}>
+                    <h5 className={`vf-price-heading${paymentInfo.discount > 0 ? ' vf-price-heading--discount' : ''}`}>
                       💶 Zahlungsbetrag pro {paymentInfo.period}
                     </h5>
                     {paymentInfo.discount > 0 && (
-                      <div style={{ fontSize: '0.8rem', color: '#10B981', marginBottom: '0.2rem' }}>
-                        <span style={{ textDecoration: 'line-through', opacity: '0.7', color: 'rgba(255, 255, 255, 0.6)' }}>
+                      <div className="vf-success-note">
+                        <span className="vf-price-strike">
                           €{paymentInfo.originalAmount.toFixed(2)}
                         </span>
-                        <span style={{ marginLeft: '0.4rem', fontWeight: '600', color: '#10B981' }}>
+                        <span className="vf-discount-amount">
                           → €{paymentInfo.amount.toFixed(2)}
                         </span>
                       </div>
                     )}
                     {paymentInfo.discount === 0 && (
-                      <div style={{ fontSize: '0.9rem', fontWeight: '700', color: 'rgba(255, 255, 255, 0.95)' }}>
+                      <div className="vf-price-strong">
                         €{paymentInfo.amount.toFixed(2)}
                       </div>
                     )}
                   </div>
                   {paymentInfo.discount > 0 && (
-                    <div style={{
-                      padding: '0.4rem 0.8rem',
-                      background: '#10B981',
-                      color: 'white',
-                      borderRadius: '16px',
-                      fontWeight: '700',
-                      fontSize: '0.8rem'
-                    }}>
+                    <div className="vf-discount-badge">
                       🎉 {paymentInfo.discount}% Rabatt
                     </div>
                   )}
                 </div>
                 {paymentInfo.discount > 0 && (
-                  <div style={{
-                    marginTop: '0.3rem',
-                    fontSize: '0.75rem',
-                    color: '#10B981',
-                    fontStyle: 'italic'
-                  }}>
+                  <div className="vf-savings-note">
                     💰 Sie sparen €{(paymentInfo.originalAmount - paymentInfo.amount).toFixed(2)} im Jahr!
                   </div>
                 )}
@@ -495,7 +474,7 @@ const VertragFormular = ({
 
         {/* Vertragszusammenfassung - Readonly Felder */}
         {vertrag.tarif_id && (
-          <div className="form-group" style={{ gridColumn: '1 / -1', marginTop: '0.5rem', marginBottom: '1rem' }}>
+          <div className="form-group vf-full-col-top">
             <div className="vertrag-info-box">
               <h4>📋 Vertragszusammenfassung</h4>
 
@@ -531,7 +510,7 @@ const VertragFormular = ({
 
               <div className="vertrag-warning-box">
                 <strong>⚠️ Wichtig zur Kündigung:</strong>
-                <div style={{ color: 'rgba(255, 255, 255, 0.9)', marginTop: '0.3rem' }}>
+                <div className="vf-text-primary-mt">
                   • Der Vertrag hat eine Mindestlaufzeit von <strong>{vertrag.mindestlaufzeit_monate || 12} Monaten</strong>, die vollständig abgelaufen sein muss<br/>
                   • Frühestmögliches Vertragsende: <strong>{vertrag.vertragsende ? new Date(vertrag.vertragsende).toLocaleDateString('de-DE') : 'N/A'}</strong><br/>
                   • Kündigung muss <strong>{vertrag.kuendigungsfrist_monate || 3} Monate</strong> vor Vertragsende eingehen<br/>
@@ -544,21 +523,14 @@ const VertragFormular = ({
 
         {/* SEPA-Mandat - PFLICHTFELD für Lastschrift */}
         {mitgliedId && (
-          <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
-            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', display: 'block' }}>
-              SEPA-Mandat <span style={{ color: '#EF4444' }}>*</span>
+          <div className="form-group vf-full-col">
+            <label className="vf-label">
+              SEPA-Mandat <span className="u-text-error">*</span>
             </label>
             <select
               value={vertrag.sepa_mandat_id || ''}
               onChange={(e) => onChange({...vertrag, sepa_mandat_id: e.target.value ? parseInt(e.target.value) : null})}
-              style={{
-                padding: '0.6rem 0.75rem',
-                fontSize: '0.9rem',
-                lineHeight: '1.5',
-                minHeight: '44px',
-                height: 'auto',
-                borderColor: !vertrag.sepa_mandat_id && (sepaMandate || archivierteMandate.length > 0) ? '#EF4444' : undefined
-              }}
+              className={`vf-select${!vertrag.sepa_mandat_id && (sepaMandate || archivierteMandate.length > 0) ? ' vf-select--error' : ''}`}
             >
               <option value="">-- Bitte SEPA-Mandat auswählen --</option>
               {sepaMandate && (
@@ -575,48 +547,21 @@ const VertragFormular = ({
 
             {/* Fehler: Kein Mandat ausgewählt aber Mandate vorhanden */}
             {!vertrag.sepa_mandat_id && (sepaMandate || archivierteMandate.length > 0) && (
-              <p style={{
-                fontSize: '0.8rem',
-                color: '#EF4444',
-                marginTop: '0.4rem',
-                marginBottom: 0,
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                borderRadius: '6px',
-                border: '1px solid rgba(239, 68, 68, 0.3)'
-              }}>
+              <p className="vf-notice vf-notice-error">
                 ⚠️ <strong>Pflichtfeld:</strong> Bitte wählen Sie ein SEPA-Mandat aus. Ohne SEPA-Mandat kann keine Lastschrift eingezogen werden.
               </p>
             )}
 
             {/* Hinweis: Kein Mandat vorhanden */}
             {!sepaMandate && archivierteMandate.length === 0 && (
-              <p style={{
-                fontSize: '0.8rem',
-                color: '#F59E0B',
-                marginTop: '0.4rem',
-                marginBottom: 0,
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(245, 158, 11, 0.1)',
-                borderRadius: '6px',
-                border: '1px solid rgba(245, 158, 11, 0.3)'
-              }}>
+              <p className="vf-notice vf-notice-warning">
                 ⚠️ <strong>Kein SEPA-Mandat vorhanden!</strong> Bitte erstellen Sie zuerst ein SEPA-Mandat im Finanzen-Tab, bevor Sie den Vertrag speichern.
               </p>
             )}
 
             {/* Bestätigung: Mandat ausgewählt */}
             {vertrag.sepa_mandat_id && (
-              <p style={{
-                fontSize: '0.8rem',
-                color: '#10B981',
-                marginTop: '0.4rem',
-                marginBottom: 0,
-                padding: '0.5rem 0.75rem',
-                background: 'rgba(16, 185, 129, 0.1)',
-                borderRadius: '6px',
-                border: '1px solid rgba(16, 185, 129, 0.3)'
-              }}>
+              <p className="vf-notice vf-notice-success">
                 ✓ SEPA-Mandat ausgewählt. Lastschriften können eingezogen werden.
               </p>
             )}
@@ -625,17 +570,10 @@ const VertragFormular = ({
 
         {/* Hinweis für neue Mitglieder ohne ID */}
         {!mitgliedId && (
-          <div className="form-group" style={{ gridColumn: '1 / -1', marginBottom: '0.5rem' }}>
-            <div style={{
-              padding: '0.75rem 1rem',
-              background: 'rgba(59, 130, 246, 0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              fontSize: '0.85rem',
-              color: '#60A5FA'
-            }}>
+          <div className="form-group vf-full-col">
+            <div className="vf-info-box">
               <strong>💳 SEPA-Lastschriftmandat:</strong>
-              <p style={{ margin: '0.5rem 0 0 0', color: 'rgba(255, 255, 255, 0.8)' }}>
+              <p className="vf-secondary-para">
                 Das SEPA-Mandat wird nach dem Speichern des Mitglieds im Finanzen-Tab erstellt.
                 Ohne gültiges SEPA-Mandat können keine Lastschriften eingezogen werden.
               </p>
@@ -648,7 +586,7 @@ const VertragFormular = ({
       <div className="vertrag-legal-box">
         <h4>📋 Rechtliche Dokumente & Einverständniserklärungen</h4>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div className="u-flex-col-sm">
           <div className={`vertrag-checkbox-wrapper ${vertrag.agb_akzeptiert ? 'checked' : ''}`}>
             <input
               type="checkbox"
@@ -656,13 +594,13 @@ const VertragFormular = ({
               checked={vertrag.agb_akzeptiert || false}
               onChange={(e) => onChange({...vertrag, agb_akzeptiert: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label vf-small">
               <strong>AGB akzeptiert *</strong> (Version {vertrag.agb_version || '1.0'})
               {' '}
               <button
                 type="button"
                 onClick={() => openDokument('agb')}
-                style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer', background: 'rgba(255, 215, 0, 0.2)', border: '1px solid rgba(255, 215, 0, 0.5)', borderRadius: '4px', color: '#ffd700' }}
+                className="vf-gold-btn"
               >
                 📄 Anzeigen
               </button>
@@ -676,13 +614,13 @@ const VertragFormular = ({
               checked={vertrag.datenschutz_akzeptiert || false}
               onChange={(e) => onChange({...vertrag, datenschutz_akzeptiert: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label vf-small">
               <strong>Datenschutzerklärung akzeptiert *</strong> (Version {vertrag.datenschutz_version || '1.0'})
               {' '}
               <button
                 type="button"
                 onClick={() => openDokument('dsgvo')}
-                style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer', background: 'rgba(255, 215, 0, 0.2)', border: '1px solid rgba(255, 215, 0, 0.5)', borderRadius: '4px', color: '#ffd700' }}
+                className="vf-gold-btn"
               >
                 📄 Anzeigen
               </button>
@@ -696,13 +634,13 @@ const VertragFormular = ({
               checked={vertrag.dojo_regeln_akzeptiert || false}
               onChange={(e) => onChange({...vertrag, dojo_regeln_akzeptiert: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label vf-small">
               <strong>Dojo-Regeln akzeptiert *</strong>
               {' '}
               <button
                 type="button"
                 onClick={() => openDokument('dojo_regeln')}
-                style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer', background: 'rgba(255, 215, 0, 0.2)', border: '1px solid rgba(255, 215, 0, 0.5)', borderRadius: '4px', color: '#ffd700' }}
+                className="vf-gold-btn"
               >
                 📄 Anzeigen
               </button>
@@ -716,13 +654,13 @@ const VertragFormular = ({
               checked={vertrag.hausordnung_akzeptiert || false}
               onChange={(e) => onChange({...vertrag, hausordnung_akzeptiert: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label vf-small">
               <strong>Hausordnung akzeptiert *</strong>
               {' '}
               <button
                 type="button"
                 onClick={() => openDokument('hausordnung')}
-                style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer', background: 'rgba(255, 215, 0, 0.2)', border: '1px solid rgba(255, 215, 0, 0.5)', borderRadius: '4px', color: '#ffd700' }}
+                className="vf-gold-btn"
               >
                 📄 Anzeigen
               </button>
@@ -736,27 +674,27 @@ const VertragFormular = ({
               checked={vertrag.haftungsausschluss_akzeptiert || false}
               onChange={(e) => onChange({...vertrag, haftungsausschluss_akzeptiert: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem' }}>
+            <span className="vertrag-checkbox-label vf-small">
               <strong>Haftungsausschluss akzeptiert</strong>
               {' '}
               <button
                 type="button"
                 onClick={() => openDokument('haftungsausschluss')}
-                style={{ marginLeft: '0.5rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer', background: 'rgba(255, 215, 0, 0.2)', border: '1px solid rgba(255, 215, 0, 0.5)', borderRadius: '4px', color: '#ffd700' }}
+                className="vf-gold-btn"
               >
                 📄 Anzeigen
               </button>
             </span>
           </div>
 
-          <label className={`vertrag-checkbox-wrapper ${vertrag.gesundheitserklaerung ? 'checked' : ''}`} style={{ marginTop: '1rem' }}>
+          <label className={`vertrag-checkbox-wrapper ${vertrag.gesundheitserklaerung ? 'checked' : ''} vf-mt-1`}>
             <input
               type="checkbox"
               className="vertrag-checkbox"
               checked={vertrag.gesundheitserklaerung || false}
               onChange={(e) => onChange({...vertrag, gesundheitserklaerung: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <span className="vertrag-checkbox-label vf-small-primary">
               Gesundheitliche Eignung bestätigt
             </span>
           </label>
@@ -768,7 +706,7 @@ const VertragFormular = ({
               checked={vertrag.foto_einverstaendnis || false}
               onChange={(e) => onChange({...vertrag, foto_einverstaendnis: e.target.checked})}
             />
-            <span className="vertrag-checkbox-label" style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <span className="vertrag-checkbox-label vf-small-primary">
               Foto/Video-Einwilligung erteilt
             </span>
           </label>
@@ -782,72 +720,27 @@ const VertragFormular = ({
       {/* Dokument-Anzeige Modal */}
       {showDokumentModal && aktuellesDokument && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '2rem'
-          }}
+          className="vf-modal-overlay"
           onClick={() => setShowDokumentModal(false)}
         >
           <div
-            style={{
-              background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
-              borderRadius: '12px',
-              maxWidth: '800px',
-              width: '100%',
-              maxHeight: '80vh',
-              overflow: 'hidden',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-              border: '1px solid rgba(255, 215, 0, 0.3)'
-            }}
+            className="vf-modal-box"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              style={{
-                padding: '1.5rem',
-                borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: 'rgba(255, 255, 255, 0.05)'
-              }}
-            >
-              <h3 style={{ margin: 0, color: '#ffd700', fontSize: '1.3rem' }}>
+            <div className="vf-modal-header">
+              <h3 className="vf-doc-heading">
                 {aktuellesDokument.titel}
               </h3>
               <button
                 onClick={() => setShowDokumentModal(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#ffd700',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  padding: '0.5rem'
-                }}
+                className="vf-modal-close-btn"
               >
                 ✕
               </button>
             </div>
-            <div
-              style={{
-                padding: '1.5rem',
-                overflowY: 'auto',
-                maxHeight: 'calc(80vh - 100px)',
-                color: 'rgba(255, 255, 255, 0.9)',
-                lineHeight: '1.6'
-              }}
-            >
+            <div className="vf-modal-body">
               {aktuellesDokument.text.split('\n').map((zeile, index) => (
-                <p key={index} style={{ marginBottom: '0.8rem' }}>
+                <p key={index} className="vf-margin-bottom-08">
                   {zeile}
                 </p>
               ))}

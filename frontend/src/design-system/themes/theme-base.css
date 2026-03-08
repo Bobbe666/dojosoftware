@@ -130,6 +130,73 @@
 
   /* ===== FOCUS RING ===== */
   --focus-ring: 0 0 0 2px var(--bg-body), 0 0 0 4px var(--primary);
+
+  /* ===== SURFACE HIERARCHY (Glassmorphism-Stufen für Dark-Mode) ===== */
+  /* Werden von Light-Themes überschrieben */
+  --surface-1: rgba(255, 255, 255, 0.03);    /* subtilste Fläche */
+  --surface-2: rgba(255, 255, 255, 0.05);    /* leichte Erhebung */
+  --surface-3: rgba(255, 255, 255, 0.07);    /* mittlere Erhebung */
+  --surface-4: rgba(255, 255, 255, 0.10);    /* deutliche Erhebung */
+  --surface-hover: rgba(255, 255, 255, 0.12); /* Hover-State */
+  --surface-active: rgba(255, 255, 255, 0.15); /* Aktiv/Ausgewählt */
+
+  /* ===== TEXT HIERARCHY (nummeriert für konsistente Gewichtung) ===== */
+  --text-1: rgba(255, 255, 255, 0.90);   /* primär — Überschriften, wichtige Werte */
+  --text-2: rgba(255, 255, 255, 0.75);   /* sekundär — Labels, Beschreibungen */
+  --text-3: rgba(255, 255, 255, 0.55);   /* tertiär — Hilfstexte */
+  --text-4: rgba(255, 255, 255, 0.40);   /* subtil — Platzhalter, Deaktiviert */
+  --text-5: rgba(255, 255, 255, 0.35);   /* sehr subtil — Meta-Infos */
+
+  /* ===== MODAL-SPEZIFISCH ===== */
+  --modal-bg-dark: #13131f;                               /* Minimalistisches Dark-Modal */
+  --modal-bg-secondary: #1a1a2e;                          /* Sekundäres Modal / Drawer */
+  --modal-overlay: rgba(0, 0, 0, 0.75);                  /* Standard-Overlay */
+  --modal-border-subtle: 1px solid rgba(255, 255, 255, 0.07); /* Subtile Modal-Trenner */
+  --modal-radius-outer: 14px;                             /* Äußerer Modal-Radius */
+  --modal-radius-inner: 8px;                              /* Innerer Bereich-Radius */
+
+  /* ===== STATUS — ALPHA-VARIANTEN (präzise für konsistente Darstellung) ===== */
+
+  /* Success / Grün */
+  --status-success: #4ade80;
+  --status-success-bg: rgba(74, 222, 128, 0.06);
+  --status-success-bg-hover: rgba(74, 222, 128, 0.12);
+  --status-success-border: rgba(74, 222, 128, 0.3);
+
+  /* Warning / Orange */
+  --status-warning: #fbbf24;
+  --status-warning-text: #fb923c;
+  --status-warning-bg: rgba(251, 191, 36, 0.06);
+  --status-warning-bg-hover: rgba(251, 146, 60, 0.12);
+  --status-warning-border: rgba(251, 146, 60, 0.3);
+
+  /* Error / Rot */
+  --status-error: #f87171;
+  --status-error-bg: rgba(248, 113, 113, 0.06);
+  --status-error-bg-hover: rgba(248, 113, 113, 0.12);
+  --status-error-border: rgba(248, 113, 113, 0.3);
+
+  /* Indigo / Info */
+  --status-indigo: rgba(165, 180, 252, 0.9);
+  --status-indigo-bg: rgba(99, 102, 241, 0.07);
+  --status-indigo-bg-hover: rgba(99, 102, 241, 0.12);
+  --status-indigo-border: rgba(99, 102, 241, 0.3);
+  --status-indigo-border-strong: rgba(99, 102, 241, 0.5);
+
+  /* ===== COMPONENT RADIUS (Pixel-Werte passend zum Modal-Design) ===== */
+  /* Ergänzt die rem-basierten spacing.css Radius-Tokens */
+  --comp-radius-xs: 4px;
+  --comp-radius-sm: 6px;
+  --comp-radius-md: 8px;
+  --comp-radius-lg: 12px;
+  --comp-radius-xl: 14px;
+  --comp-radius-pill: 20px;
+  --comp-radius-circle: 50%;
+
+  /* ===== TRANSITION (einheitlich für alle Komponenten) ===== */
+  --transition-fast: 0.15s ease;      /* Hover, Focus */
+  --transition-normal: 0.2s ease;     /* Toggle, Slide */
+  --transition-slow: 0.3s ease;       /* Theme-Wechsel */
 }
 
 /* ========================================
@@ -170,7 +237,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 19px; /* Zentrale Basisgröße — 1rem = 19px. Hier ändern = überall aktiv */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;

@@ -4,6 +4,7 @@ import { Calendar, Users, CheckCircle, Clock, LogOut, UserCheck } from 'lucide-r
 import axios from 'axios';
 import '../styles/components.css';
 import '../styles/themes.css';
+import '../styles/TrainerDashboard.css';
 
 // Importiere die bestehenden Komponenten
 import CheckinSystem from './CheckinSystem';
@@ -20,57 +21,21 @@ const TrainerDashboard = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
-      padding: '0'
-    }}>
+    <div className="trainer-dashboard">
       {/* Header */}
-      <div style={{
-        background: 'rgba(0, 0, 0, 0.3)',
-        borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
-        padding: '1.5rem 2rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
-      }}>
+      <div className="trainer-dashboard-header">
         <div>
-          <h1 style={{
-            color: '#FFD700',
-            marginBottom: '0.5rem',
-            fontSize: '2rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem'
-          }}>
+          <h1 className="trainer-dashboard-title">
             <UserCheck size={32} />
             Trainer Dashboard
           </h1>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+          <p className="u-text-secondary">
             Willkommen, {user?.vorname || user?.username || 'Trainer'}!
           </p>
         </div>
         <button
           onClick={handleLogout}
-          style={{
-            background: 'rgba(239, 68, 68, 0.2)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
-            borderRadius: '8px',
-            padding: '0.75rem 1.5rem',
-            color: '#EF4444',
-            cursor: 'pointer',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
-          }}
+          className="trainer-dashboard-logout-btn"
         >
           <LogOut size={18} />
           Abmelden
@@ -78,69 +43,24 @@ const TrainerDashboard = () => {
       </div>
 
       {/* Navigation Tabs */}
-      <div style={{
-        background: 'rgba(0, 0, 0, 0.2)',
-        borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
-        padding: '0 2rem',
-        display: 'flex',
-        gap: '1rem'
-      }}>
+      <div className="trainer-dashboard-nav">
         <button
           onClick={() => setActiveView('checkin')}
-          style={{
-            background: activeView === 'checkin' ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
-            border: 'none',
-            borderBottom: activeView === 'checkin' ? '2px solid #FFD700' : '2px solid transparent',
-            padding: '1rem 2rem',
-            color: activeView === 'checkin' ? '#FFD700' : 'rgba(255, 255, 255, 0.7)',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '1rem',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
+          className={`trainer-dashboard-tab${activeView === 'checkin' ? ' trainer-dashboard-tab--active' : ''}`}
         >
           <CheckCircle size={20} />
           Check-in
         </button>
         <button
           onClick={() => setActiveView('anwesenheit')}
-          style={{
-            background: activeView === 'anwesenheit' ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
-            border: 'none',
-            borderBottom: activeView === 'anwesenheit' ? '2px solid #FFD700' : '2px solid transparent',
-            padding: '1rem 2rem',
-            color: activeView === 'anwesenheit' ? '#FFD700' : 'rgba(255, 255, 255, 0.7)',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '1rem',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
+          className={`trainer-dashboard-tab${activeView === 'anwesenheit' ? ' trainer-dashboard-tab--active' : ''}`}
         >
           <Users size={20} />
           Anwesenheit
         </button>
         <button
           onClick={() => setActiveView('stundenplan')}
-          style={{
-            background: activeView === 'stundenplan' ? 'rgba(255, 215, 0, 0.2)' : 'transparent',
-            border: 'none',
-            borderBottom: activeView === 'stundenplan' ? '2px solid #FFD700' : '2px solid transparent',
-            padding: '1rem 2rem',
-            color: activeView === 'stundenplan' ? '#FFD700' : 'rgba(255, 255, 255, 0.7)',
-            cursor: 'pointer',
-            fontWeight: '600',
-            fontSize: '1rem',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
+          className={`trainer-dashboard-tab${activeView === 'stundenplan' ? ' trainer-dashboard-tab--active' : ''}`}
         >
           <Calendar size={20} />
           Stundenplan
@@ -148,10 +68,7 @@ const TrainerDashboard = () => {
       </div>
 
       {/* Content Area */}
-      <div style={{
-        padding: '0',
-        minHeight: 'calc(100vh - 140px)'
-      }}>
+      <div className="trainer-dashboard-content">
         {activeView === 'checkin' && <CheckinSystem />}
         {activeView === 'anwesenheit' && <Anwesenheit />}
         {activeView === 'stundenplan' && <Stundenplan />}

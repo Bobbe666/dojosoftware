@@ -938,7 +938,7 @@ const RechnungErstellen = () => {
   if (loading) {
     return (
       <div className="rechnung-erstellen-container">
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#ffffff' }}>
+        <div className="re-state-center re-state-center--loading">
           Lade Daten...
         </div>
       </div>
@@ -948,10 +948,10 @@ const RechnungErstellen = () => {
   if (error) {
     return (
       <div className="rechnung-erstellen-container">
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
+        <div className="re-state-center re-state-center--error">
           <h2>Fehler</h2>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+          <button onClick={() => window.location.reload()} className="re-btn-reload">
             Seite neu laden
           </button>
         </div>
@@ -1146,17 +1146,11 @@ const RechnungErstellen = () => {
             </select>
           </div>
 
-          <div className="form-section" style={{ marginBottom: '0.4rem', paddingBottom: '0.4rem' }}>
-            <h3 style={{ margin: '0 0 0.3rem 0', fontSize: '0.75rem' }}>Rechnungsdaten</h3>
-            <div className="form-grid" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(2, 1fr)', 
-              gap: '0.5rem 0.6rem', 
-              marginBottom: '0',
-              alignItems: 'start'
-            }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
-                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Belegdatum</label>
+          <div className="form-section">
+            <h3 className="re-h3-rechnungsdaten">Rechnungsdaten</h3>
+            <div className="form-grid">
+              <div className="re-field-col">
+                <label className="re-label-sm">Belegdatum</label>
                 <input
                   type="date"
                   value={rechnungsDaten.belegdatum}
@@ -1168,30 +1162,25 @@ const RechnungErstellen = () => {
                       zahlungsfrist: calculateZahlungsfrist(neuesBelegdatum)
                     });
                   }}
-                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                  className="re-input-sm"
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
-                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Leistungsdatum</label>
+              <div className="re-field-col">
+                <label className="re-label-sm">Leistungsdatum</label>
                 <input
                   type="date"
                   value={rechnungsDaten.leistungsdatum}
                   onChange={(e) => setRechnungsDaten({...rechnungsDaten, leistungsdatum: e.target.value})}
-                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                  className="re-input-sm"
                 />
               </div>
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '0.1rem',
-                minWidth: '0'
-              }}>
-                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Zahlungsfrist</label>
+              <div className="re-field-col--zahlungsfrist">
+                <label className="re-label-sm">Zahlungsfrist</label>
                 <input
                   type="date"
                   value={rechnungsDaten.zahlungsfrist}
                   onChange={(e) => setRechnungsDaten({...rechnungsDaten, zahlungsfrist: e.target.value})}
-                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                  className="re-input-sm"
                 />
               </div>
             </div>
@@ -1199,11 +1188,11 @@ const RechnungErstellen = () => {
 
           <div className="form-section">
             <h3>Position hinzufügen</h3>
-            <div className="position-input" style={{ display: 'grid', gridTemplateColumns: '1fr 60px auto', gap: '0.5rem', alignItems: 'end' }}>
+            <div className="position-input">
               <select
                 onChange={(e) => handleArtikelChange(e.target.value)}
                 value={neuePosition.artikel_id}
-                style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                className="re-input-sm"
               >
                 <option value="">Artikel wählen...</option>
                 {artikel.map(a => (
@@ -1218,26 +1207,26 @@ const RechnungErstellen = () => {
                 value={neuePosition.menge}
                 onChange={(e) => setNeuePosition({...neuePosition, menge: parseInt(e.target.value)})}
                 min="1"
-                style={{ padding: '0.3rem 0.35rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                className="re-menge-input"
               />
-              <button onClick={addPosition} className="btn-add" style={{ whiteSpace: 'nowrap' }}>Hinzufügen</button>
+              <button onClick={addPosition} className="btn-add">Hinzufügen</button>
             </div>
 
             {/* Rabattfähigkeit */}
-            <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+            <div className="re-rabatt-row">
+              <label className="re-checkbox-label-wrap">
                 <input
                   type="checkbox"
                   checked={neuePosition.ist_rabattfaehig}
                   onChange={(e) => setNeuePosition({...neuePosition, ist_rabattfaehig: e.target.checked, rabatt_prozent: e.target.checked ? neuePosition.rabatt_prozent : 0})}
-                  style={{ cursor: 'pointer', width: '14px', height: '14px', flexShrink: 0 }}
+                  className="re-checkbox"
                 />
-                <span className="checkbox-label" style={{ fontSize: '0.85rem' }}>Rabattfähig</span>
+                <span className="checkbox-label re-checkbox-label-text">Rabattfähig</span>
               </label>
 
               {neuePosition.ist_rabattfaehig && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255, 215, 0, 0.1)', padding: '0.4rem 0.75rem', borderRadius: '6px', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-                  <label style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.85)', fontWeight: '500', whiteSpace: 'nowrap' }}>Rabatt %:</label>
+                <div className="re-rabatt-box">
+                  <label className="re-rabatt-label">Rabatt %:</label>
                   <input
                     type="number"
                     value={neuePosition.rabatt_prozent}
@@ -1245,17 +1234,7 @@ const RechnungErstellen = () => {
                     min="0"
                     max="100"
                     step="0.01"
-                    style={{
-                      padding: '0.3rem 0.4rem',
-                      fontSize: '0.85rem',
-                      width: '70px',
-                      background: 'rgba(0, 0, 0, 0.3)',
-                      border: '1px solid rgba(255, 215, 0, 0.4)',
-                      borderRadius: '4px',
-                      color: '#ffd700',
-                      textAlign: 'center',
-                      fontWeight: '600'
-                    }}
+                    className="re-rabatt-input"
                   />
                 </div>
               )}
@@ -1263,39 +1242,22 @@ const RechnungErstellen = () => {
 
             {/* Hinzugefügte Positionen */}
             {positionen.length > 0 && (
-              <div style={{ marginTop: '1rem', maxHeight: '350px', overflowY: 'auto' }}>
+              <div className="re-positions-list">
                 {positionen.map((pos, index) => (
-                  <div key={index} className="position-item" style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    padding: '0.6rem 0.75rem',
-                    marginBottom: '0.5rem'
-                  }}>
+                  <div key={index} className="position-item">
                     {/* Zeile 1: Artikelname + X-Button */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.95)' }}>
+                    <div className="re-position-header">
+                      <span className="re-position-name">
                         <strong>{pos.bezeichnung}</strong> - {pos.menge}x {Number(pos.einzelpreis).toFixed(2)} €
                         {pos.ist_rabattfaehig && pos.rabatt_prozent > 0 && (
-                          <span style={{ color: '#10B981', marginLeft: '0.5rem', fontWeight: 600 }}>(-{pos.rabatt_prozent}%)</span>
+                          <span className="re-rabatt-badge">(-{pos.rabatt_prozent}%)</span>
                         )}
                       </span>
-                      <button onClick={() => removePosition(index)} style={{
-                        background: 'rgba(239, 68, 68, 0.3)',
-                        border: 'none',
-                        borderRadius: '4px',
-                        color: '#ff6b6b',
-                        width: '24px',
-                        height: '24px',
-                        cursor: 'pointer',
-                        fontSize: '1.1rem',
-                        fontWeight: 'bold',
-                        lineHeight: '1'
-                      }}>×</button>
+                      <button onClick={() => removePosition(index)} className="re-btn-remove">×</button>
                     </div>
                     {/* Zeile 2: Rabatt-Checkbox + Eingabe */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingTop: '0.4rem', borderTop: '1px solid rgba(255, 215, 0, 0.15)' }}>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.8rem', color: '#ffd700' }}>
+                    <div className="re-position-footer">
+                      <label className="re-position-rabatt-label">
                         <input
                           type="checkbox"
                           checked={pos.ist_rabattfaehig || false}
@@ -1308,12 +1270,12 @@ const RechnungErstellen = () => {
                             };
                             setPositionen(updatedPositionen);
                           }}
-                          style={{ width: '16px', height: '16px', accentColor: '#ffd700', cursor: 'pointer' }}
+                          className="re-pos-checkbox"
                         />
                         Rabatt
                       </label>
                       {pos.ist_rabattfaehig && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        <div className="re-pos-rabatt-wrap">
                           <input
                             type="number"
                             value={pos.rabatt_prozent || 0}
@@ -1323,9 +1285,9 @@ const RechnungErstellen = () => {
                               setPositionen(updatedPositionen);
                             }}
                             min="0" max="100" step="0.5"
-                            style={{ width: '55px', padding: '0.2rem 0.3rem', background: 'rgba(0,0,0,0.4)', border: '1px solid #ffd700', borderRadius: '4px', color: '#ffd700', fontSize: '0.8rem', textAlign: 'center' }}
+                            className="re-pos-rabatt-input"
                           />
-                          <span style={{ fontSize: '0.8rem', color: '#ffd700' }}>%</span>
+                          <span className="re-percent-symbol">%</span>
                         </div>
                       )}
                     </div>
@@ -1337,84 +1299,34 @@ const RechnungErstellen = () => {
 
           <div className="form-section">
             <h3>Rabatt & Skonto</h3>
-            <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem 0.6rem', marginBottom: '0' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0', position: 'relative', overflow: 'visible' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', marginBottom: '0' }}>
-                  <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Rabatt %</label>
+            <div className="form-grid">
+              <div className="re-field-col--overflow">
+                <div className="re-rabatt-label-row">
+                  <label className="re-label-sm">Rabatt %</label>
                   <button
                     type="button"
                     onClick={() => setShowRabattHinweis(!showRabattHinweis)}
-                    style={{
-                      background: 'rgba(255, 215, 0, 0.2)',
-                      border: '1px solid rgba(255, 215, 0, 0.4)',
-                      borderRadius: '50%',
-                      color: '#ffd700',
-                      width: '14px',
-                      height: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
-                      padding: 0,
-                      flexShrink: 0
-                    }}
+                    className="re-btn-info"
                     title="Info anzeigen"
                   >
                     ?
                   </button>
                 </div>
                 {showRabattHinweis && (
-                  <div style={{
-                    position: 'fixed',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: 9999,
-                    padding: '1rem',
-                    background: 'rgba(255, 215, 0, 0.98)',
-                    border: '2px solid rgba(255, 215, 0, 1)',
-                    borderRadius: '8px',
-                    color: '#000000',
-                    fontSize: '0.85rem',
-                    lineHeight: '1.5',
-                    maxWidth: '320px',
-                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
-                    whiteSpace: 'normal'
-                  }}>
+                  <div className="re-tooltip-modal">
                     <strong>Globaler Rabatt:</strong> Dieser Rabatt wird auf die gesamte Rechnung angewendet.
                     <br /><br />
                     Für <strong>einzelne Positionen</strong> können Sie den Rabatt oben in der Positionsliste festlegen.
                     <button
                       onClick={() => setShowRabattHinweis(false)}
-                      style={{
-                        marginTop: '0.75rem',
-                        padding: '0.4rem 0.75rem',
-                        background: '#000000',
-                        color: '#ffd700',
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold',
-                        width: '100%'
-                      }}
+                      className="re-btn-tooltip-close"
                     >
                       Verstanden
                     </button>
                   </div>
                 )}
                 {showRabattHinweis && (
-                  <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    zIndex: 9998
-                  }} onClick={() => setShowRabattHinweis(false)} />
+                  <div className="re-tooltip-overlay" onClick={() => setShowRabattHinweis(false)} />
                 )}
                 <input
                   type="number"
@@ -1423,11 +1335,11 @@ const RechnungErstellen = () => {
                   min="0"
                   max="100"
                   step="0.01"
-                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                  className="re-input-sm"
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
-                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Skonto %</label>
+              <div className="re-field-col">
+                <label className="re-label-sm">Skonto %</label>
                 <input
                   type="number"
                   value={rechnungsDaten.skonto_prozent}
@@ -1435,24 +1347,24 @@ const RechnungErstellen = () => {
                   min="0"
                   max="100"
                   step="0.01"
-                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box' }}
+                  className="re-input-sm"
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: '0' }}>
-                <label style={{ marginBottom: '0', fontSize: '0.7rem', lineHeight: '1.2' }}>Skonto Tage</label>
+              <div className="re-field-col">
+                <label className="re-label-sm">Skonto Tage</label>
                 <input
                   type="number"
                   value={rechnungsDaten.skonto_tage}
                   readOnly
                   min="0"
                   placeholder="Automatisch aus Zahlungsziel"
-                  style={{ padding: '0.3rem 0.45rem', fontSize: '0.75rem', width: '100%', boxSizing: 'border-box', backgroundColor: 'rgba(255, 255, 255, 0.03)', cursor: 'not-allowed' }}
+                  className="re-input-readonly"
                 />
               </div>
             </div>
           </div>
 
-          <button onClick={handleSpeichern} className="btn-save" style={{ marginTop: '0.5rem', padding: '0.6rem', fontSize: '0.9rem' }}>Rechnung speichern</button>
+          <button onClick={handleSpeichern} className="btn-save">Rechnung speichern</button>
         </div>
 
         {/* Rechnungsvorschau */}
@@ -1473,7 +1385,7 @@ const RechnungErstellen = () => {
                       <div>{selectedMitglied.plz} {selectedMitglied.ort}</div>
                     </>
                   ) : (
-                    <div style={{color: '#999'}}>Bitte Kunde wählen</div>
+                    <div className="re-no-customer">Bitte Kunde wählen</div>
                   )}
                 </div>
               </div>
@@ -1483,7 +1395,7 @@ const RechnungErstellen = () => {
                     src={dojoLogo}
                     alt={activeDojo?.dojoname || 'Dojo Logo'}
                     className="invoice-logo"
-                    style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain' }}
+                    className="re-invoice-logo"
                   />
                 ) : (
                   <div className="logo-placeholder">{activeDojo?.dojoname?.substring(0, 3)?.toUpperCase() || 'LOGO'}</div>
@@ -1499,7 +1411,7 @@ const RechnungErstellen = () => {
 
             {/* Title */}
             <div className="invoice-title">
-              <h1 style={{ color: '#000000', fontWeight: 'bold', textShadow: 'none', boxShadow: 'none' }}>Rechnung</h1>
+              <h1 className="re-invoice-h1">Rechnung</h1>
               <div className="page-number">Seite 1 von 1</div>
             </div>
 
@@ -1568,9 +1480,9 @@ const RechnungErstellen = () => {
             </div>
 
             {/* Payment Terms und QR Codes nebeneinander */}
-            <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', alignItems: 'flex-start' }}>
+            <div className="re-payment-qr-row">
               {/* Payment Terms - Links */}
-              <div className="payment-terms" style={{ flex: '1', minWidth: '300px' }}>
+              <div className="payment-terms re-payment-terms">
                 <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
                 {rechnungsDaten.zahlungsfrist ? (
                   <>
@@ -1623,7 +1535,7 @@ const RechnungErstellen = () => {
               }
               return hasBankData;
             })() ? (
-              <div className="qr-codes-section" style={{ flex: '0 0 auto', display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'nowrap', alignItems: 'flex-start', width: '180px', marginRight: '5mm' }}>
+              <div className="qr-codes-section re-qr-codes-section">
                 {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
                   <>
                     {/* QR-Code mit Skonto */}
@@ -1636,19 +1548,19 @@ const RechnungErstellen = () => {
                       }
                       const skontoDatum = formatDateDDMMYYYY(rechnungsDaten.belegdatum, Number(rechnungsDaten.skonto_tage));
                       return (
-                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
-                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                        <div className="re-qr-block">
+                          <h4 className="qr-code-title re-qr-title">Zahlung mit Skonto</h4>
+                          <div className="re-qr-wrap">
                             <QRCodeSVG 
                               value={qrCodeMitSkonto} 
                               size={70}
                               level="M"
                             />
                           </div>
-                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          <p className="re-qr-label--md">
                             Betrag: {betragMitSkonto.toFixed(2)} €
                           </p>
-                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          <p className="re-qr-label--sm">
                             bis zum {skontoDatum} zu zahlen
                           </p>
                         </div>
@@ -1664,19 +1576,19 @@ const RechnungErstellen = () => {
                       }
                       const zahlungsfristDatum = formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist);
                       return (
-                        <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                          <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
-                          <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                        <div className="re-qr-block">
+                          <h4 className="qr-code-title re-qr-title">Zahlung ohne Skonto</h4>
+                          <div className="re-qr-wrap">
                             <QRCodeSVG 
                               value={qrCodeOhneSkonto} 
                               size={70}
                               level="M"
                             />
                           </div>
-                          <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          <p className="re-qr-label--md">
                             Betrag: {betragOhneSkonto.toFixed(2)} €
                           </p>
-                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          <p className="re-qr-label--sm">
                             ab {zahlungsfristDatum} zu zahlen
                           </p>
                         </div>
@@ -1694,20 +1606,20 @@ const RechnungErstellen = () => {
                     }
                     const zahlungsfristDatum = formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist);
                     return (
-                      <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000000', textShadow: 'none', boxShadow: 'none', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
-                        <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                      <div className="re-qr-block">
+                        <h4 className="qr-code-title re-qr-title">QR-Code für Überweisung</h4>
+                        <div className="re-qr-wrap">
                           <QRCodeSVG 
                             value={qrCode} 
                             size={70}
                             level="M"
                           />
                         </div>
-                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                        <p className="re-qr-label--md">
                           Betrag: {betrag.toFixed(2)} €
                         </p>
                         {zahlungsfristDatum && (
-                          <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000000', fontWeight: '600', lineHeight: '1.2' }}>
+                          <p className="re-qr-label--sm">
                             bis zum {zahlungsfristDatum} zu zahlen
                           </p>
                         )}
@@ -1717,8 +1629,8 @@ const RechnungErstellen = () => {
                 )}
               </div>
             ) : (
-              <div style={{ flex: '1', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', textAlign: 'center', minWidth: '400px' }}>
-                <p style={{ color: '#ef4444', margin: 0 }}>
+              <div className="re-no-bankdata">
+                <p className="re-no-bankdata-text">
                   ⚠️ QR-Codes können nicht angezeigt werden. Bitte stellen Sie sicher, dass Bankdaten (IBAN, BIC, Kontoinhaber) in den Dojo-Einstellungen hinterlegt sind.
                 </p>
               </div>
@@ -1726,21 +1638,9 @@ const RechnungErstellen = () => {
             </div>
 
             {/* Fußzeile mit Dojo-Daten und Bankdaten */}
-            <div className="rechnung-footer" style={{
-              position: 'absolute',
-              bottom: '0',
-              left: '20mm',
-              right: '20mm',
-              paddingTop: '0.75rem',
-              paddingBottom: '0.5rem',
-              borderTop: '1px solid rgba(0, 0, 0, 0.2)',
-              fontSize: '7pt',
-              color: '#000000',
-              lineHeight: '1.6',
-              textAlign: 'center'
-            }}>
+            <div className="rechnung-footer re-footer">
               {/* Zeile 1: Dojo-Informationen */}
-              <div style={{ marginBottom: '0.3rem' }}>
+              <div className="re-footer-row">
                 {[
                   activeDojo?.dojoname,
                   activeDojo?.strasse && activeDojo?.hausnummer ? `${activeDojo.strasse} ${activeDojo.hausnummer}` : null,
@@ -1781,7 +1681,7 @@ const RechnungErstellen = () => {
               <h2><Building2 size={24} /> Dojo auswählen</h2>
             </div>
             <div className="modal-body">
-              <p style={{ marginBottom: '1rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+              <p className="re-modal-intro">
                 Für welches Dojo soll die Rechnung erstellt werden?
               </p>
               <div className="dojo-selection-grid">

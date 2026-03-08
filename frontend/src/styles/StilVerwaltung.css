@@ -79,12 +79,10 @@ Der äußerste Container, der die gesamte Stil-Verwaltung umschließt
 */
 .stil-verwaltung {
   min-height: 100vh;              /* Mindesthöhe = volle Browserhöhe */
-  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  background: linear-gradient(135deg, var(--color-midnight-900) 0%, var(--color-midnight-700) 50%, var(--color-midnight-800) 100%);
   /* ^ Diagonaler Gradient von dunkel-blau zu dunkel-lila für Kampfkunst-Atmosphäre */
-  color: #ffffff;                 /* Alle Texte standardmäßig weiß */
-  padding: 2rem;                  /* 32px Innenabstand rundherum */
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  /* ^ Moderne, gut lesbare Schriftart mit Fallbacks für verschiedene Systeme */
+  color: var(--text-primary);                 /* Alle Texte standardmäßig weiß */
+  padding: var(--ui-page-padding); /* Container-Padding via Design-Token */
   animation: fadeIn 0.6s ease-out; /* NEU: Sanfte Einblend-Animation beim Laden */
 }
 
@@ -105,12 +103,12 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
   justify-content: space-between; /* Links: Titel, Rechts: Buttons */
   align-items: flex-start;        /* Oben ausrichten (nicht mittig) */
   margin-bottom: 3rem;            /* 48px Abstand nach unten */
-  padding: 2rem;                  /* 32px Innenabstand */
-  background: var(--glass-bg); /* Verstärkter Glaseffekt */
+  padding: var(--ui-page-padding); /* Header-Padding via Design-Token */
+  background: var(--surface-3); /* Verstärkter Glaseffekt */
   backdrop-filter: blur(20px);    /* Weichzeichnung des Hintergrunds = Glassmorphism */
-  border-radius: 20px;            /* Abgerundete Ecken */
-  border: 1px solid rgba(255, 215, 0, 0.2); /* NEU: Gold-Rand statt weiß */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);  /* Schatten für Tiefeneffekt */
+  border-radius: var(--comp-radius-pill);            /* Abgerundete Ecken */
+  border: 1px solid var(--primary-alpha-20); /* NEU: Gold-Rand statt weiß */
+  box-shadow: 0 8px 32px var(--text-disabled);  /* Schatten für Tiefeneffekt */
   position: relative;             /* NEU: Für Shimmer-Effekt */
   overflow: hidden;               /* NEU: Für Shimmer-Effekt */
   animation: fadeInUp 0.8s ease-out; /* NEU: Einblend-Animation */
@@ -129,14 +127,14 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
   -webkit-text-fill-color: transparent; /* Text transparent machen für Gradient-Effekt */
   background-clip: text;         /* Gradient nur auf Text (Standard) */
   margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); /* NEU: Gold-Glüh-Effekt */
+  text-shadow: 0 0 20px var(--primary-alpha-50); /* NEU: Gold-Glüh-Effekt */
   position: relative;            /* NEU: Für z-index */
   z-index: 2;                    /* NEU: Über Shimmer-Effekt */
 }
 
 .header-left p {
   font-size: 1.1rem;             /* Etwas größer als normaler Text */
-  color: rgba(255, 255, 255, 0.7); /* Halbtransparentes Weiß = gedämpft */
+  color: var(--text-secondary); /* Halbtransparentes Weiß = gedämpft */
   margin: 0;                     /* Kein Außenabstand */
   position: relative;            /* NEU: Für z-index */
   z-index: 2;                    /* NEU: Über Shimmer-Effekt */
@@ -162,10 +160,10 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
 /* Add-Stil Button - Verwendet zentrales Tab-Design */
 .add-stil-btn {
   background: transparent;       /* Transparent wie Tab-Design */
-  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand wie Tab-Design */
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
-  padding: 12px 24px;            /* Innenabstand */
-  border-radius: 8px;            /* Abgerundete Ecken */
+  border: 1px solid var(--primary-alpha-20); /* Gold-Rand wie Tab-Design */
+  color: var(--text-secondary); /* Gedämpfter Text */
+  padding: 0.75rem var(--ui-card-padding); /* Innenabstand */
+  border-radius: var(--comp-radius-md);            /* Abgerundete Ecken */
   font-weight: 600;              /* Semi-Bold */
   font-size: 1rem;               /* Normale Schriftgröße */
   cursor: pointer;               /* Zeiger bei Hover */
@@ -182,7 +180,7 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-10), transparent);
   transition: left 0.5s;
 }
 
@@ -191,9 +189,9 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
 }
 
 .add-stil-btn:hover {
-  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund bei Hover */
-  border-color: rgba(255, 215, 0, 0.4); /* Stärkerer Rand bei Hover */
-  color: rgba(255, 255, 255, 0.9); /* Hellerer Text bei Hover */
+  background: var(--border-default); /* Dezenter Hintergrund bei Hover */
+  border-color: var(--primary-alpha-40); /* Stärkerer Rand bei Hover */
+  color: var(--text-1); /* Hellerer Text bei Hover */
   transform: translateY(-1px);   /* Leicht nach oben */
 }
 
@@ -201,16 +199,16 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
   background: var(--gradient-gold); /* Gradient nur bei Active */
   color: var(--bg-secondary);                /* Dunkler Text */
   border-color: var(--primary);         /* Gold-Rand */
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+  box-shadow: 0 4px 15px var(--primary-alpha-30); /* Gold-Schatten */
 }
 
 /* NEU: Back-Button */
 .back-btn {
-  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund */
-  color: rgba(255, 255, 255, 0.8); /* Gedämpfter Text */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
-  padding: 10px 20px;            /* Innenabstand */
-  border-radius: 10px;           /* Abgerundete Ecken */
+  background: var(--border-default); /* Dezenter Hintergrund */
+  color: var(--text-1); /* Gedämpfter Text */
+  border: 1px solid var(--border-hover); /* Dezenter Rand */
+  padding: 0.625rem 1.25rem;     /* Innenabstand */
+  border-radius: var(--comp-radius-lg);           /* Abgerundete Ecken */
   cursor: pointer;               /* Zeiger bei Hover */
   transition: all 0.3s ease;     /* Sanfte Übergänge */
   text-decoration: none;         /* Keine Unterstreichung */
@@ -220,9 +218,9 @@ Oberer Bereich mit Titel, Beschreibung und Action-Buttons - ERWEITERT
 }
 
 .back-btn:hover {
-  background: rgba(255, 255, 255, 0.2); /* Hellerer Hintergrund */
+  background: var(--border-hover); /* Hellerer Hintergrund */
   transform: translateX(-5px);   /* Nach links bewegen */
-  color: #fff;                   /* Weißer Text */
+  color: var(--text-primary);                   /* Weißer Text */
 }
 
 /* 
@@ -239,7 +237,7 @@ Visuelle Darstellung von Kampfkunst-Gürteln mit Primär- und Sekundärfarben
   border-radius: 2px;            /* Leicht abgerundete Ecken */
   position: relative;            /* Für Sekundär-Streifen */
   flex-shrink: 0;                /* Größe nicht ändern */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+  border: 1px solid var(--border-hover); /* Dezenter Rand */
 }
 
 /* Kleine Belt-Preview für Grid-Auswahl */
@@ -249,7 +247,7 @@ Visuelle Darstellung von Kampfkunst-Gürteln mit Primär- und Sekundärfarben
   border-radius: 2px;            /* Leicht abgerundete Ecken */
   position: relative;            /* Für Sekundär-Streifen */
   flex-shrink: 0;                /* Größe nicht ändern */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+  border: 1px solid var(--border-hover); /* Dezenter Rand */
   margin-bottom: 4px;            /* Abstand zum Text */
 }
 
@@ -257,10 +255,10 @@ Visuelle Darstellung von Kampfkunst-Gürteln mit Primär- und Sekundärfarben
 .belt-preview-large {
   width: 80px;                   /* 80px Breite */
   height: 24px;                  /* 24px Höhe */
-  border-radius: 4px;            /* Stärker abgerundete Ecken */
+  border-radius: var(--comp-radius-xs);            /* Stärker abgerundete Ecken */
   position: relative;            /* Für Sekundär-Streifen */
   flex-shrink: 0;                /* Größe nicht ändern */
-  border: 2px solid rgba(255, 255, 255, 0.3); /* Stärkerer Rand */
+  border: 2px solid var(--text-disabled); /* Stärkerer Rand */
 }
 
 /* Basis-Gürtel (Primärfarbe) */
@@ -270,6 +268,7 @@ Visuelle Darstellung von Kampfkunst-Gürteln mit Primär- und Sekundärfarben
   border-radius: inherit;        /* Ecken-Radius vom Parent übernehmen */
   position: relative;            /* Für Sekundär-Streifen */
   overflow: hidden;              /* Verstecke überstehende Streifen */
+  background-color: var(--belt-primaer, #CCCCCC);
 }
 
 /* Sekundär-Streifen (falls vorhanden) */
@@ -281,6 +280,7 @@ Visuelle Darstellung von Kampfkunst-Gürteln mit Primär- und Sekundärfarben
   height: 30%;                   /* 30% der Gürtel-Höhe */
   transform: translateY(-50%);   /* Exakte vertikale Zentrierung */
   border-radius: inherit;        /* Ecken-Radius übernehmen */
+  background-color: var(--belt-sekundaer, #888);
 }
 
 /* 
@@ -304,35 +304,35 @@ Gürtel-Auswahl Grid und Kategorien für Standard-Gürtel
 }
 
 .belt-categories::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-lg);
 }
 
 .belt-categories::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.3);
-  border-radius: 10px;
+  background: var(--primary-alpha-30);
+  border-radius: var(--comp-radius-lg);
 }
 
 .belt-categories::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.5);
+  background: var(--primary-alpha-50);
 }
 
 /* Einzelne Belt-Kategorie (Grundstufe, Mittelstufe, etc.) */
 .belt-category {
   margin-bottom: 1.5rem;         /* 24px Abstand zwischen Kategorien */
   padding: 1rem;                 /* 16px Innenabstand */
-  background: rgba(255, 255, 255, 0.05); /* Leicht sichtbarer Hintergrund */
-  border-radius: 12px;           /* Abgerundete Ecken */
-  border: 1px solid rgba(255, 215, 0, 0.1); /* Goldener Rand */
+  background: var(--surface-2); /* Leicht sichtbarer Hintergrund */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
+  border: 1px solid var(--primary-alpha-10); /* Goldener Rand */
   overflow: visible;             /* Sicherstellen, dass Text nicht abgeschnitten wird */
 }
 
 /* Kategorie-Titel */
 .category-title {
-  font-size: 1.1rem;             /* 18px Schrift */
+  font-size: var(--ui-section-title); /* Section-Titel via Design-Token */
   font-weight: 600;              /* Semi-Bold */
   margin: 0 0 1rem 0;            /* Nur unten 16px Abstand */
-  color: #ffd700;                /* Gold-Farbe */
+  color: var(--primary);                /* Gold-Farbe */
   display: flex;                 /* Flexbox für Emoji + Text */
   align-items: center;           /* Vertikal zentrieren */
   gap: 0.5rem;                   /* Abstand zwischen Emoji und Text */
@@ -350,9 +350,9 @@ Gürtel-Auswahl Grid und Kategorien für Standard-Gürtel
 /* Einzelne Belt-Option zum Anklicken */
 .belt-option {
   padding: 1rem 0.75rem;         /* Mehr Padding für bessere Lesbarkeit */
-  background: rgba(255, 255, 255, 0.05); /* Dezenter Hintergrund */
-  border: 2px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
-  border-radius: 12px;           /* Mehr abgerundete Ecken */
+  background: var(--surface-2); /* Dezenter Hintergrund */
+  border: 2px solid var(--border-default); /* Dezenter Rand */
+  border-radius: var(--comp-radius-xl);           /* Mehr abgerundete Ecken */
   cursor: pointer;               /* Zeiger bei Hover */
   transition: all 0.3s ease;     /* Sanfte Übergänge */
   text-align: center;            /* Zentrierter Inhalt */
@@ -367,22 +367,22 @@ Gürtel-Auswahl Grid und Kategorien für Standard-Gürtel
 
 /* Belt-Option bei Hover */
 .belt-option:hover {
-  background: rgba(255, 255, 255, 0.1); /* Hellerer Hintergrund */
-  border-color: rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  background: var(--border-default); /* Hellerer Hintergrund */
+  border-color: var(--primary-alpha-30); /* Gold-Rand */
   transform: translateY(-2px);   /* 2px nach oben */
 }
 
 /* Ausgewählte Belt-Option */
 .belt-option.selected {
-  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
+  background: var(--primary-alpha-10); /* Gold-Hintergrund */
   border-color: var(--primary);         /* Gold-Rand */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+  box-shadow: 0 0 15px var(--primary-alpha-30); /* Gold-Glüh-Effekt */
 }
 
 /* Gürtel-Name unter der Vorschau */
 .belt-name {
   font-size: 0.8rem;             /* 13px kleine Schrift */
-  color: rgba(255, 255, 255, 0.8); /* Leicht gedämpftes Weiß */
+  color: var(--text-1); /* Leicht gedämpftes Weiß */
   margin-top: 0.5rem;            /* 8px Abstand nach oben */
   font-weight: 500;              /* Etwas fetter */
   line-height: 1.3;              /* Etwas mehr Zeilenhöhe für Umbruch */
@@ -396,7 +396,7 @@ Gürtel-Auswahl Grid und Kategorien für Standard-Gürtel
 
 /* Ausgewählter Gürtel-Name */
 .belt-option.selected .belt-name {
-  color: #ffd700;                /* Gold-Farbe für ausgewählten */
+  color: var(--primary);                /* Gold-Farbe für ausgewählten */
   font-weight: 600;              /* Semi-Bold */
 }
 
@@ -409,17 +409,17 @@ Vorschau-Bereich für gewählten Gürtel in Modals
 
 /* Belt-Preview Section Container */
 .belt-preview-section {
-  margin: 1.5rem 0;              /* 24px Abstand oben/unten */
-  padding: 1.5rem;               /* 24px Innenabstand */
-  background: rgba(255, 255, 255, 0.05); /* Dezenter Hintergrund */
-  border-radius: 12px;           /* Abgerundete Ecken */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+  margin: 1.5rem 0;              /* Abstand oben/unten */
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
+  background: var(--surface-2); /* Dezenter Hintergrund */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
+  border: 1px solid var(--border-default); /* Dezenter Rand */
 }
 
 /* Vorschau-Überschrift */
 .belt-preview-section h4 {
-  font-size: 1.1rem;             /* 18px Überschrift */
-  color: #ffd700;                /* Gold-Farbe */
+  font-size: var(--ui-section-title); /* Section-Titel via Design-Token */
+  color: var(--primary);                /* Gold-Farbe */
   margin: 0 0 1rem 0;            /* Nur unten 16px Abstand */
 }
 
@@ -438,7 +438,7 @@ Vorschau-Bereich für gewählten Gürtel in Modals
 .belt-info strong {
   display: block;                /* Als Block-Element */
   font-size: 1.1rem;             /* Etwas größere Schrift */
-  color: #fff;                   /* Weißer Text */
+  color: var(--text-primary);                   /* Weißer Text */
   margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
 }
 
@@ -448,7 +448,7 @@ Vorschau-Bereich für gewählten Gürtel in Modals
   flex-direction: column;        /* Vertikal stapeln */
   gap: 0.25rem;                  /* 4px Abstand zwischen Codes */
   font-size: 0.9rem;             /* Kleinere Schrift */
-  color: rgba(255, 255, 255, 0.7); /* Gedämpftes Weiß */
+  color: var(--text-secondary); /* Gedämpftes Weiß */
 }
 
 /* 
@@ -475,28 +475,28 @@ Farb-Auswahl für eigene Gürtel-Erstellung
 .color-picker {
   width: 60px;                   /* 60px Breite */
   height: 40px;                  /* 40px Höhe */
-  border: 2px solid rgba(255, 255, 255, 0.3); /* Dezenter Rand */
-  border-radius: 8px;            /* Abgerundete Ecken */
+  border: 2px solid var(--text-disabled); /* Dezenter Rand */
+  border-radius: var(--comp-radius-md);            /* Abgerundete Ecken */
   cursor: pointer;               /* Zeiger bei Hover */
   transition: all 0.3s ease;     /* Sanfte Übergänge */
   background: none;              /* Kein zusätzlicher Hintergrund */
 }
 
 .color-picker:hover {
-  border-color: #ffd700;         /* Gold-Rand bei Hover */
+  border-color: var(--primary);         /* Gold-Rand bei Hover */
   transform: scale(1.05);        /* Leichte Vergrößerung */
 }
 
 /* Color-Preview Anzeige */
 .color-preview {
   padding: 0.5rem 1rem;          /* 8px oben/unten, 16px links/rechts */
-  border-radius: 6px;            /* Abgerundete Ecken */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Dezenter Rand */
+  border-radius: var(--comp-radius-sm);            /* Abgerundete Ecken */
+  border: 1px solid var(--border-hover); /* Dezenter Rand */
   font-size: 0.85rem;            /* Kleinere Schrift */
-  font-family: 'Courier New', monospace; /* Monospace für HEX-Codes */
+  font-family: var(--font-family-mono); /* Monospace für HEX-Codes */
   font-weight: 500;              /* Etwas fetter */
-  color: rgba(0, 0, 0, 0.8);     /* Dunkler Text (lesbar auf hellen Farben) */
-  text-shadow: 0 0 2px rgba(255, 255, 255, 0.8); /* Weißer Text-Schatten */
+  color: var(--text-1);     /* Dunkler Text (lesbar auf hellen Farben) */
+  text-shadow: 0 0 2px var(--text-1); /* Weißer Text-Schatten */
   min-width: 80px;               /* Mindestbreite */
   text-align: center;            /* Zentrierter Text */
 }
@@ -509,8 +509,8 @@ Success- und Error-Meldungen die oben erscheinen - Verbesserte Styles
 */
 .message {
   padding: 1rem 1.5rem;          /* Innenabstand: 16px oben/unten, 24px links/rechts */
-  border-radius: 12px;           /* Abgerundete Ecken */
-  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
+  margin-bottom: var(--ui-section-gap); /* Abstand nach unten via Design-Token */
   display: flex;                 /* Flexbox für Text + Schließen-Button */
   align-items: center;           /* Vertikal mittig */
   justify-content: space-between; /* Text links, X rechts */
@@ -523,19 +523,19 @@ Success- und Error-Meldungen die oben erscheinen - Verbesserte Styles
 /* Success-Meldungen (grün) - Erweitert */
 .message.success,
 .success-message {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+  background: linear-gradient(135deg, var(--badge-success-bg), var(--status-success-bg));
   /* ^ Grüner Gradient mit niedriger Transparenz */
-  border: 1px solid rgba(34, 197, 94, 0.3); /* Grüner Rand */
-  color: #90EE90;                /* Hellgrüne Textfarbe für bessere Lesbarkeit */
+  border: 1px solid var(--status-success-border); /* Grüner Rand */
+  color: var(--color-success-300);                /* Hellgrüne Textfarbe für bessere Lesbarkeit */
 }
 
 /* Error-Meldungen (rot) - Erweitert */
 .message.error,
 .error-message {
-  background: linear-gradient(135deg, rgba(220, 20, 60, 0.2), rgba(220, 20, 60, 0.1));
+  background: linear-gradient(135deg, var(--badge-error-bg), var(--alert-error-bg));
   /* ^ Roter Gradient mit niedriger Transparenz */
-  border: 1px solid rgba(220, 20, 60, 0.3); /* Roter Rand */
-  color: #ff6b6b;                /* Hellrote Textfarbe für bessere Lesbarkeit */
+  border: 1px solid var(--status-error-border); /* Roter Rand */
+  color: var(--color-error-400);                /* Hellrote Textfarbe für bessere Lesbarkeit */
 }
 
 /* Schließen-Button (X) bei Meldungen */
@@ -556,7 +556,7 @@ Success- und Error-Meldungen die oben erscheinen - Verbesserte Styles
 }
 
 .message-close:hover {
-  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund bei Hover */
+  background: var(--border-default); /* Dezenter Hintergrund bei Hover */
   transform: rotate(90deg);      /* Drehung bei Hover */
 }
 
@@ -581,8 +581,8 @@ HINWEIS: Schwarzer Hintergrund zwischen Cards bleibt erhalten (gewünscht)
   display: grid;                 /* CSS Grid Layout */
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   /* ^ Automatisch spalten, jede mindestens 350px breit */
-  gap: 1rem;                     /* 16px Abstand zwischen Karten (reduziert von 32px) */
-  padding: 1.5rem;               /* Innenabstand für bessere Optik */
+  gap: var(--ui-stats-gap);      /* Grid-Gap via Design-Token */
+  padding: var(--ui-card-padding); /* Grid-Padding via Design-Token */
   animation: fadeInUp 1s ease-out 0.2s both; /* Verzögerte Animation */
 }
 
@@ -593,11 +593,11 @@ EINZELNE STIL-KARTE (.stil-card) - ERWEITERT
 Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 */
 .stil-card {
-  background: rgba(255, 255, 255, 0.1); /* Verstärkter Glassmorphism-Hintergrund */
+  background: var(--border-default); /* Verstärkter Glassmorphism-Hintergrund */
   backdrop-filter: blur(20px);   /* Weichzeichnung für Glaseffekt */
-  border-radius: 20px;           /* Stark abgerundete Ecken */
-  padding: 1.5rem;               /* 32px Innenabstand */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Verstärkter Rand */
+  border-radius: var(--comp-radius-pill);           /* Stark abgerundete Ecken */
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
+  border: 1px solid var(--border-hover); /* Verstärkter Rand */
   cursor: pointer;               /* Zeiger bei Hover (klickbar) */
   transition: all 0.4s ease;     /* Langsamere, sanftere Übergänge */
   position: relative;            /* Für ::before Pseudo-Element */
@@ -615,9 +615,9 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
   background: conic-gradient(
     from 0deg,
     transparent,
-    rgba(255, 215, 0, 0.1),
+    var(--primary-alpha-10),
     transparent,
-    rgba(255, 107, 53, 0.1),
+    var(--secondary-alpha-10),
     transparent
   );                             /* Konischer Gradient für Rotating Border */
   animation: spin 8s linear infinite; /* Langsame Rotation */
@@ -633,15 +633,15 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 /* Hover-Effekt für Stil-Karten - Erweitert */
 .stil-card:hover {
   transform: translateY(-8px) scale(1.02); /* Nach oben + leichte Vergrößerung */
-  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2); /* Gold-Schatten */
-  border-color: rgba(255, 215, 0, 0.5); /* Gold-Rand bei Hover */
+  box-shadow: 0 20px 40px var(--primary-alpha-20); /* Gold-Schatten */
+  border-color: var(--primary-alpha-50); /* Gold-Rand bei Hover */
 }
 
 /* Inaktive Stil-Karten */
 .stil-card.inactive {
   opacity: 0.6; /* Gedämpfte Sichtbarkeit */
-  background: rgba(255, 255, 255, 0.03); /* Dunklerer Hintergrund */
-  border-color: rgba(255, 255, 255, 0.05); /* Schwächerer Rand */
+  background: var(--surface-1); /* Dunklerer Hintergrund */
+  border-color: var(--surface-2); /* Schwächerer Rand */
 }
 
 .stil-card.inactive:hover {
@@ -650,12 +650,12 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 }
 
 .stil-card.inactive .stil-card-header h3 {
-  color: #ffd700 !important; /* Gold-Farbe für gute Lesbarkeit auch bei inaktiven Stilen */
+  color: var(--primary) !important; /* Gold-Farbe für gute Lesbarkeit auch bei inaktiven Stilen */
   opacity: 1 !important;
 }
 
 .stil-card.inactive .stil-beschreibung {
-  color: rgba(255, 255, 255, 0.5); /* Gedämpfte Beschreibung */
+  color: var(--text-muted); /* Gedämpfte Beschreibung */
 }
 
 /* Card-Content mit z-index über Rotating Border */
@@ -678,16 +678,16 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
   font-size: 1.5rem;             /* 24px Titel */
   font-weight: 600;              /* Semi-Bold */
   margin: 0 0 1rem 0;            /* Abstand nach unten */
-  color: #ffd700;                /* Gold-Farbe statt weiß */
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+  color: var(--primary);                /* Gold-Farbe statt weiß */
+  text-shadow: 0 0 10px var(--primary-alpha-30); /* Gold-Glüh-Effekt */
 }
 
 /* Badge mit Anzahl Graduierungen */
 .stil-badge {
-  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gold-Orange Gradient */
-  color: #000;                   /* Schwarzer Text (besser lesbar auf Gold) */
+  background: var(--gradient-gold); /* Gold-Orange Gradient */
+  color: var(--color-black);                   /* Schwarzer Text (besser lesbar auf Gold) */
   padding: 0.25rem 0.75rem;      /* 4px oben/unten, 12px links/rechts */
-  border-radius: 12px;           /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
   font-size: 0.85rem;            /* Kleinerer Text */
   font-weight: 600;              /* Semi-Bold */
 }
@@ -695,7 +695,7 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 /* Beschreibung des Stils - Erweitert */
 .stil-beschreibung,
 .stil-card p {
-  color: rgba(255, 255, 255, 0.8); /* Weniger gedämpftes Weiß */
+  color: var(--text-1); /* Weniger gedämpftes Weiß */
   margin: 0.5rem 0;              /* Oben und unten Abstand */
   line-height: 1.5;              /* Zeilenhöhe für bessere Lesbarkeit */
 }
@@ -706,27 +706,27 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
   gap: 1rem;                     /* 16px Abstand zwischen Stats */
   margin-top: 1rem;              /* 16px Abstand nach oben */
   padding-top: 1rem;             /* 16px Innenabstand nach oben */
-  border-top: 1px solid rgba(255, 255, 255, 0.1); /* Trennlinie */
+  border-top: 1px solid var(--border-default); /* Trennlinie */
 }
 
 /* Einzelner Stil-Stat */
 .stil-stat {
-  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
+  background: var(--primary-alpha-10); /* Gold-Hintergrund */
   padding: 0.5rem 1rem;          /* Innenabstand */
-  border-radius: 8px;            /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-md);            /* Abgerundete Ecken */
   text-align: center;            /* Zentrierter Text */
   flex: 1;                       /* Gleichmäßige Aufteilung */
 }
 
 .stil-stat-number {
-  color: #ffd700;                /* Gold-Farbe für Zahlen */
+  color: var(--primary);                /* Gold-Farbe für Zahlen */
   font-size: 1.2rem;             /* Größere Zahlen */
   font-weight: 700;              /* Sehr fett */
   display: block;                /* Als Block-Element */
 }
 
 .stil-stat-label {
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfte Beschriftung */
+  color: var(--text-secondary); /* Gedämpfte Beschriftung */
   font-size: 0.8rem;             /* Kleinere Schrift */
   text-transform: uppercase;     /* Großbuchstaben */
   letter-spacing: 0.5px;         /* Buchstabenabstand */
@@ -750,13 +750,13 @@ Jede Karte repräsentiert einen Kampfkunst-Stil - Neue Rotating Border Effekte
 
 /* Aktiver Status (grüner Punkt mit Glow) */
 .status-dot.active {
-  background: #ffd700;           /* Grüne Farbe */
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.5); /* Grüner Glüh-Effekt */
+  background: var(--primary);           /* Grüne Farbe */
+  box-shadow: 0 0 10px var(--status-success-border); /* Grüner Glüh-Effekt */
 }
 
 /* Inaktiver Status (grauer Punkt) */
 .status-dot.inactive {
-  background: #6b7280;           /* Grau */
+  background: var(--color-gray-500);           /* Grau */
 }
 
 /* 
@@ -766,11 +766,11 @@ DETAIL-ANSICHT (.stil-detail) - ERWEITERT
 Ansicht wenn ein einzelner Stil ausgewählt wird - Verbesserte Animationen
 */
 .stil-detail {
-  background: rgba(255, 255, 255, 0.08); /* Glassmorphism-Hintergrund */
+  background: var(--bg-card-hover); /* Glassmorphism-Hintergrund */
   backdrop-filter: blur(20px);   /* Weichzeichnung */
-  border-radius: 20px;           /* Abgerundete Ecken */
-  padding: 2rem;                 /* Innenabstand */
-  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand */
+  border-radius: var(--comp-radius-pill);           /* Abgerundete Ecken */
+  padding: var(--ui-page-padding); /* Detail-Padding via Design-Token */
+  border: 1px solid var(--primary-alpha-20); /* Gold-Rand */
   animation: fadeInUp 0.8s ease-out; /* Einblend-Animation */
 }
 
@@ -779,9 +779,9 @@ Ansicht wenn ein einzelner Stil ausgewählt wird - Verbesserte Animationen
   display: flex;                 /* Flexbox Layout */
   justify-content: space-between; /* Titel links, Button rechts */
   align-items: center;           /* Vertikal zentrieren */
-  margin-bottom: 2rem;           /* Abstand nach unten */
+  margin-bottom: var(--ui-section-gap); /* Abstand nach unten via Design-Token */
   padding-bottom: 1rem;          /* Innenabstand nach unten */
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Trennlinie */
+  border-bottom: 2px solid var(--primary-alpha-30); /* Gold-Trennlinie */
 }
 
 /* Titel in Detail-Header - Erweitert */
@@ -790,11 +790,11 @@ Ansicht wenn ein einzelner Stil ausgewählt wird - Verbesserte Animationen
   font-size: 2rem;               /* Größere Überschrift */
   font-weight: 700;              /* Sehr fett */
   margin: 0;                     /* Kein Außenabstand */
-  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gold-Orange Gradient */
+  background: var(--gradient-gold); /* Gold-Orange Gradient */
   -webkit-background-clip: text; /* Gradient auf Text */
   -webkit-text-fill-color: transparent; /* Transparent für Gradient */
   background-clip: text;         /* Standard Gradient-Text */
-  text-shadow: 0 0 15px rgba(255, 215, 0, 0.5); /* Stärkerer Glüh-Effekt */
+  text-shadow: 0 0 15px var(--primary-alpha-50); /* Stärkerer Glüh-Effekt */
 }
 
 /* Detail-Stats unter dem Titel */
@@ -802,7 +802,7 @@ Ansicht wenn ein einzelner Stil ausgewählt wird - Verbesserte Animationen
   display: flex;                 /* Flexbox Layout */
   gap: 1.5rem;                   /* Abstand zwischen Stats */
   margin-top: 0.5rem;            /* Abstand nach oben */
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  color: var(--text-secondary); /* Gedämpfter Text */
   font-size: 0.9rem;             /* Kleinere Schrift */
 }
 
@@ -816,8 +816,8 @@ Die 4 Tabs: Allgemein, Graduierungen, Prüfungsinhalte, Statistiken - Neue Glanz
 .tab-navigation {
   display: flex;                 /* Flexbox Layout */
   gap: 1rem;                     /* Größerer Abstand zwischen Tabs */
-  margin-bottom: 2rem;           /* 32px Abstand nach unten */
-  background: rgba(0, 0, 0, 0.3); /* Dunklerer Hintergrund */
+  margin-bottom: var(--ui-section-gap); /* Abstand nach unten via Design-Token */
+  background: var(--text-disabled); /* Dunklerer Hintergrund */
   padding: 0.5rem;               /* 8px Innenabstand */
   border-radius: 15px;           /* Stärker abgerundete Ecken */
   backdrop-filter: blur(10px);   /* Glassmorphism-Effekt */
@@ -827,10 +827,10 @@ Die 4 Tabs: Allgemein, Graduierungen, Prüfungsinhalte, Statistiken - Neue Glanz
 .tab,
 .tab-btn {
   background: transparent;       /* Kein Hintergrund */
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  color: var(--text-secondary); /* Gedämpfter Text */
   border: none;                  /* Kein Rand */
-  padding: 12px 24px;            /* Größerer Innenabstand */
-  border-radius: 10px;           /* Abgerundete Ecken */
+  padding: 0.75rem var(--ui-card-padding); /* Tab-Innenabstand */
+  border-radius: var(--comp-radius-lg);           /* Abgerundete Ecken */
   cursor: pointer;               /* Zeiger bei Hover */
   font-weight: 500;              /* Etwas fetter */
   transition: all 0.3s ease;     /* Sanfte Übergänge */
@@ -850,7 +850,7 @@ Die 4 Tabs: Allgemein, Graduierungen, Prüfungsinhalte, Statistiken - Neue Glanz
   height: 100%;                  /* Volle Höhe */
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(255, 215, 0, 0.2), 
+    var(--primary-alpha-20), 
     transparent);                /* Horizontaler Gold-Gradient */
   transition: left 0.5s ease;    /* Sanfte Bewegung */
 }
@@ -865,17 +865,17 @@ Die 4 Tabs: Allgemein, Graduierungen, Prüfungsinhalte, Statistiken - Neue Glanz
 /* Tab bei Hover */
 .tab:hover:not(.active),
 .tab-btn:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund */
-  color: #fff;                   /* Weißer Text */
+  background: var(--border-default); /* Dezenter Hintergrund */
+  color: var(--text-primary);                   /* Weißer Text */
 }
 
 /* Aktiver Tab - Erweitert */
 .tab.active,
 .tab-btn.active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35); /* Gold-Orange Gradient */
-  color: #1a1a2e;                /* Dunkler Text statt schwarz */
+  background: var(--gradient-gold); /* Gold-Orange Gradient */
+  color: var(--color-midnight-700);                /* Dunkler Text statt schwarz */
   font-weight: 600;              /* Semi-Bold */
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+  box-shadow: 0 4px 15px var(--primary-alpha-30); /* Gold-Schatten */
 }
 
 /* 
@@ -885,11 +885,11 @@ TAB-INHALT (.tab-content)
 Der Inhalt unter den Tabs - Erweitert
 */
 .tab-content {
-  background: rgba(255, 255, 255, 0.05); /* Glassmorphism-Hintergrund */
+  background: var(--surface-2); /* Glassmorphism-Hintergrund */
   backdrop-filter: blur(20px);   /* Weichzeichnung */
-  border-radius: 20px;           /* Abgerundete Ecken */
-  padding: 2rem;                 /* 32px Innenabstand */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+  border-radius: var(--comp-radius-pill);           /* Abgerundete Ecken */
+  padding: var(--ui-page-padding); /* Tab-Content-Padding via Design-Token */
+  border: 1px solid var(--border-default); /* Dezenter Rand */
   min-height: 400px;             /* Mindesthöhe für Konsistenz */
   animation: fadeIn 0.5s ease-out; /* Einblend-Animation */
 }
@@ -901,28 +901,22 @@ Der Inhalt unter den Tabs - Erweitert
 }
 
 /* Stats Grid in Statistiken Tab */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
 
 .stat-item {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
+  border: 1px solid var(--border-default);
 }
 
 .stat-item h4 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 0.5rem 0;
   font-size: 1.2rem;
 }
 
 .stat-item p {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -934,12 +928,12 @@ Bereich zum Verwalten der Gürtel/Graduierungen - Verbesserte Hover-Effekte
 */
 .graduierung-manager,
 .pruefungsinhalt-manager {
-  background: rgba(30, 30, 50, 0.7); /* Einheitlicher Glassmorphism-Hintergrund */
-  border-radius: 20px;           /* Abgerundete Ecken (vereinheitlicht) */
-  border: 1px solid rgba(255, 215, 0, 0.3); /* Einheitlicher Gold-Rand */
-  padding: 2rem;               /* Innenabstand */
+  background: var(--glass-bg-strong); /* Einheitlicher Glassmorphism-Hintergrund */
+  border-radius: var(--comp-radius-pill);           /* Abgerundete Ecken (vereinheitlicht) */
+  border: 1px solid var(--primary-alpha-30); /* Einheitlicher Gold-Rand */
+  padding: var(--ui-page-padding); /* Container-Padding via Design-Token */
   backdrop-filter: blur(30px);   /* Einheitliche Weichzeichnung */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); /* Einheitlicher Schatten */
+  box-shadow: 0 8px 32px var(--color-black-alpha-50); /* Einheitlicher Schatten */
   animation: fadeIn 0.4s ease-out; /* Einblend-Animation */
 }
 
@@ -948,20 +942,20 @@ Bereich zum Verwalten der Gürtel/Graduierungen - Verbesserte Hover-Effekte
   display: flex;                 /* Flexbox Layout */
   justify-content: space-between; /* Titel links, Button rechts */
   align-items: center;           /* Vertikal zentrieren */
-  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+  margin-bottom: var(--ui-section-gap); /* Abstand nach unten via Design-Token */
   padding-bottom: 1.5rem;          /* 16px Abstand nach unten */
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2); /* Trennlinie */
+  border-bottom: 2px solid var(--primary-alpha-20); /* Trennlinie */
 }
 
 /* Überschrift in Section Header */
 .section-header h3 {
   font-size: 1.5rem;             /* 24px Überschrift */
   margin: 0;                     /* Kein Außenabstand */
-  color: #ffd700;                /* Gold-Farbe */
+  color: var(--primary);                /* Gold-Farbe */
   font-weight: 700;              /* Fett */
   text-transform: uppercase;     /* Großbuchstaben */
   letter-spacing: 2px;           /* Buchstabenabstand */
-  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+  text-shadow: 0 2px 10px var(--primary-alpha-30); /* Gold-Schatten */
 }
 
 /* Container für Sub-Tabs/Buttons */
@@ -974,23 +968,23 @@ Bereich zum Verwalten der Gürtel/Graduierungen - Verbesserte Hover-Effekte
 /* Sub-Tab Buttons */
 .sub-tab-btn {
   padding: 0.75rem 1.5rem;       /* 12px oben/unten, 24px links/rechts */
-  background: rgba(255, 215, 0, 0.1); /* Leicht goldener Hintergrund */
-  border: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
-  border-radius: 8px;            /* Abgerundete Ecken */
-  color: #ffd700;                /* Gold-Text */
+  background: var(--primary-alpha-10); /* Leicht goldener Hintergrund */
+  border: 2px solid var(--primary-alpha-30); /* Gold-Rand */
+  border-radius: var(--comp-radius-md);            /* Abgerundete Ecken */
+  color: var(--primary);                /* Gold-Text */
   font-size: 0.95rem;            /* 15.2px */
   font-weight: 600;              /* Semi-Bold */
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;           /* Kein Zeilenumbruch */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); /* Text-Schatten für Lesbarkeit */
+  text-shadow: 0 1px 2px var(--text-disabled); /* Text-Schatten für Lesbarkeit */
 }
 
 .sub-tab-btn:hover:not(:disabled) {
-  background: rgba(255, 215, 0, 0.2); /* Hellerer Hintergrund bei Hover */
-  border-color: #ffd700;         /* Kräftigerer Gold-Rand */
+  background: var(--primary-alpha-20); /* Hellerer Hintergrund bei Hover */
+  border-color: var(--primary);         /* Kräftigerer Gold-Rand */
   transform: translateY(-2px);   /* Leicht nach oben */
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+  box-shadow: 0 4px 12px var(--primary-alpha-30); /* Gold-Schatten */
 }
 
 .sub-tab-btn:disabled {
@@ -1000,22 +994,22 @@ Bereich zum Verwalten der Gürtel/Graduierungen - Verbesserte Hover-Effekte
 
 /* Info-Box für Drag & Drop - Glassmorphism Design */
 .drag-drop-info {
-  background: rgba(30, 30, 50, 0.6); /* Dunkler Glassmorphism */
-  border: 1px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
-  border-radius: 12px;           /* Abgerundete Ecken */
+  background: var(--glass-bg-strong); /* Dunkler Glassmorphism */
+  border: 1px solid var(--primary-alpha-30); /* Gold-Rand */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
   padding: 1rem 1.5rem;          /* Mehr Innenabstand */
   margin-bottom: 1.5rem;         /* Abstand nach unten */
   display: flex;                 /* Flexbox Layout */
   align-items: center;           /* Vertikal zentrieren */
   gap: 0.75rem;                  /* Abstand zwischen Icon und Text */
-  color: rgba(255, 255, 255, 0.9); /* Weißer Text */
+  color: var(--text-1); /* Weißer Text */
   font-size: 0.95rem;            /* Größere Schrift */
   backdrop-filter: blur(20px);   /* Weichzeichnung */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); /* Schatten */
+  box-shadow: 0 4px 16px var(--color-black-alpha-20); /* Schatten */
 }
 
 .drag-drop-info strong {
-  color: #ffd700;                /* Gold für wichtige Teile */
+  color: var(--primary);                /* Gold für wichtige Teile */
 }
 
 .info-icon {
@@ -1045,16 +1039,16 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   min-width: 30px;               /* Mindestbreite */
   height: 30px;                  /* 30px Höhe */
   cursor: grab;                  /* Greif-Cursor */
-  color: rgba(255, 255, 255, 0.5); /* Gedämpfter Text */
+  color: var(--text-muted); /* Gedämpfter Text */
   transition: all 0.2s ease;     /* Sanfte Übergänge */
-  border-radius: 6px;            /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-sm);            /* Abgerundete Ecken */
   margin-right: 0.75rem;         /* Abstand nach rechts */
 }
 
 /* Drag Handle bei Hover */
 .drag-handle:hover {
-  color: #ffd700;                /* Gold-Farbe bei Hover */
-  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund */
+  color: var(--primary);                /* Gold-Farbe bei Hover */
+  background: var(--primary-alpha-10); /* Gold-Hintergrund */
 }
 
 /* Drag Handle beim aktiven Ziehen */
@@ -1071,13 +1065,13 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 
 /* Einzelne Graduierung in der Liste - Verbessert mit Grid Layout */
 .graduierung-item {
-  background: rgba(40, 40, 65, 0.6);  /* Dunklerer Glassmorphism */
+  background: var(--glass-bg-strong);  /* Dunklerer Glassmorphism */
   border-radius: 15px;           /* Größere abgerundete Ecken */
-  border: 1px solid rgba(255, 255, 255, 0.15); /* Stärkerer Gesamtrand */
+  border: 1px solid var(--surface-active); /* Stärkerer Gesamtrand */
   border-left: 5px solid;        /* Dickere farbige linke Kante */
-  padding: 1.5rem;               /* Mehr Innenabstand */
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
   backdrop-filter: blur(25px);   /* Stärkere Weichzeichnung */
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* Stärkerer Schatten */
+  box-shadow: 0 6px 20px var(--text-disabled); /* Stärkerer Schatten */
   transition: all 0.3s ease;     /* Sanfte Übergänge */
   position: relative;            /* Für Glanz-Effekt */
   overflow: hidden;              /* Für Glanz-Effekt */
@@ -1095,25 +1089,25 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 .graduierung-item.is-dragging {
   opacity: 0.6;                  /* Halbtransparent */
   transform: rotate(2deg);       /* Leichte Drehung */
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Stärkerer Schatten */
-  border-left-color: #ffd700;    /* Gold-Rand links */
+  box-shadow: 0 8px 25px var(--color-black-alpha-40); /* Stärkerer Schatten */
+  border-left-color: var(--primary);    /* Gold-Rand links */
   z-index: 999;                  /* Über anderen Elementen */
 }
 
 /* Graduierung-Item im Drag-Overlay */
 .graduierung-item.is-dragging-overlay {
-  background: rgba(255, 255, 255, 0.15); /* Hellerer Hintergrund */
-  border: 2px solid #ffd700;     /* Gold-Rand rundherum */
-  box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3); /* Gold-Schatten */
+  background: var(--surface-active); /* Hellerer Hintergrund */
+  border: 2px solid var(--primary);     /* Gold-Rand rundherum */
+  box-shadow: 0 10px 30px var(--primary-alpha-30); /* Gold-Schatten */
   transform: rotate(3deg) scale(1.05); /* Drehung und Vergrößerung */
   backdrop-filter: blur(20px);   /* Verstärkte Weichzeichnung */
 }
 
 /* Drop-Zone während Drag-Over */
 .graduierung-list.is-drag-over {
-  background: rgba(255, 215, 0, 0.05); /* Sehr dezenter Gold-Hintergrund */
-  border: 2px dashed rgba(255, 215, 0, 0.3); /* Gestrichelte Gold-Umrandung */
-  border-radius: 12px;           /* Abgerundete Ecken */
+  background: var(--primary-alpha-10); /* Sehr dezenter Gold-Hintergrund */
+  border: 2px dashed var(--primary-alpha-30); /* Gestrichelte Gold-Umrandung */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
   padding: 0.5rem;               /* Etwas Padding für gestrichelte Umrandung */
 }
 
@@ -1127,7 +1121,7 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   height: 100%;                  /* Volle Höhe */
   background: linear-gradient(90deg, 
     transparent, 
-    rgba(255, 255, 255, 0.1), 
+    var(--border-default), 
     transparent);                /* Weißer Glanz-Gradient */
   transition: left 0.5s ease;    /* Sanfte Bewegung */
 }
@@ -1139,8 +1133,8 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 /* Hover-Effekt für Graduierung Items - Erweitert */
 .graduierung-item:hover {
   transform: translateY(-2px);   /* 2px nach oben (konsistent mit Cards) */
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); /* Stärkerer Schatten */
-  border-color: rgba(255, 215, 0, 0.3); /* Gold-Rand bei Hover */
+  box-shadow: 0 8px 24px var(--color-black-alpha-40); /* Stärkerer Schatten */
+  border-color: var(--primary-alpha-30); /* Gold-Rand bei Hover */
 }
 
 /* Graduierung Header - Grid Layout */
@@ -1150,18 +1144,18 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   align-items: center;           /* Vertikal zentrieren */
   gap: 1rem;                     /* Abstand zwischen Spalten */
   padding: 0.75rem;              /* Innenabstand */
-  border-bottom: 1px solid rgba(255, 215, 0, 0.15); /* Trennlinie */
+  border-bottom: 1px solid var(--primary-alpha-15); /* Trennlinie */
   transition: background 0.3s ease; /* Sanfter Übergang */
 }
 
 .graduierung-header.clickable:hover {
-  background: rgba(255, 215, 0, 0.05); /* Leichter Gold-Hintergrund beim Hover */
-  border-radius: 8px;            /* Abgerundete Ecken beim Hover */
+  background: var(--primary-alpha-10); /* Leichter Gold-Hintergrund beim Hover */
+  border-radius: var(--comp-radius-md);            /* Abgerundete Ecken beim Hover */
 }
 
 /* Graduierung Name mit Farbkreis */
 .graduierung-name {
-  color: #fff;                   /* Weißer Text */
+  color: var(--text-primary);                   /* Weißer Text */
   font-weight: 600;              /* Semi-Bold */
   font-size: 1.1rem;             /* Etwas größere Schrift */
   display: flex;                 /* Flexbox für Name + Farbkreis */
@@ -1174,19 +1168,19 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   width: 20px;                   /* 20px Breite */
   height: 20px;                  /* 20px Höhe */
   border-radius: 50%;            /* Perfekter Kreis */
-  border: 2px solid rgba(255, 255, 255, 0.3); /* Dezenter Rand */
+  border: 2px solid var(--text-disabled); /* Dezenter Rand */
   display: inline-block;         /* Inline-Block für Nebeneinander */
 }
 
 /* Graduierung Details - Grid Layout */
 .graduierung-details {
-  color: rgba(255, 255, 255, 0.8); /* Hellerer Text */
+  color: var(--text-1); /* Hellerer Text */
   font-size: 0.9rem;             /* Kleinere Schrift */
   display: grid;                 /* Grid Layout */
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Responsive Spalten */
   gap: 0.75rem;                  /* Abstand zwischen Details */
   padding-top: 0.75rem;          /* Abstand nach oben */
-  border-top: 1px solid rgba(255, 255, 255, 0.08); /* Dezente Trennlinie */
+  border-top: 1px solid var(--bg-card-hover); /* Dezente Trennlinie */
 }
 
 /* Action-Buttons (Bearbeiten, Löschen) - Erweitert */
@@ -1205,7 +1199,7 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 .button-divider {
   width: 2px;
   height: 36px;
-  background: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-30);
   display: inline-block;
   margin: 0 0.5rem;
 }
@@ -1223,7 +1217,6 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   align-items: center;
   justify-content: center;
 }
-
 
 /* ===== GRADUIERUNG BUTTONS - Extends Central Buttons.css ===== */
 
@@ -1239,7 +1232,7 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 .button-divider {
   width: 2px;
   height: 36px;
-  background: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-30);
   display: inline-block;
   margin: 0 0.5rem;
 }
@@ -1258,7 +1251,6 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   justify-content: center;
 }
 
-
 /* Graduierung Actions Button Overrides - Minimal, let Buttons.css handle most */
 .graduierung-actions {
   display: flex;
@@ -1267,14 +1259,12 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   flex-wrap: wrap;
 }
 
-
-
 /* Reihenfolge Badge */
 .reihenfolge-badge {
-  background: rgba(255, 215, 0, 0.2); /* Gold-Hintergrund */
-  color: #ffd700;                /* Gold-Text */
+  background: var(--primary-alpha-20); /* Gold-Hintergrund */
+  color: var(--primary);                /* Gold-Text */
   padding: 2px 6px;              /* Kleiner Innenabstand */
-  border-radius: 4px;            /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-xs);            /* Abgerundete Ecken */
   font-size: 0.75rem;            /* Kleinere Schrift */
   font-weight: 600;              /* Semi-Bold */
   margin-left: 0.5rem;           /* Abstand zum Namen */
@@ -1287,18 +1277,18 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
   justify-content: center;       /* Horizontal zentrieren */
   gap: 1rem;                     /* Größerer Abstand zwischen Elementen */
   padding: 0.75rem;              /* Mehr Innenabstand */
-  background: rgba(0, 123, 255, 0.08); /* Stärkerer blauer Hintergrund */
-  border-radius: 8px;            /* Größere abgerundete Ecken */
-  border: 1px solid rgba(0, 123, 255, 0.2); /* Stärkerer blauer Rand */
+  background: var(--alert-info-bg); /* Stärkerer blauer Hintergrund */
+  border-radius: var(--comp-radius-md);            /* Größere abgerundete Ecken */
+  border: 1px solid var(--badge-info-bg); /* Stärkerer blauer Rand */
 }
 
 /* Move-Button Styling */
 .move-btn {
-  background: rgba(0, 123, 255, 0.2); /* Blauer Hintergrund */
-  border: 1px solid rgba(0, 123, 255, 0.4); /* Blauer Rand */
-  color: #ffd700;                /* Blaue Schrift */
+  background: var(--badge-info-bg); /* Blauer Hintergrund */
+  border: 1px solid var(--status-info-border); /* Blauer Rand */
+  color: var(--primary);                /* Blaue Schrift */
   padding: 6px 10px;             /* Etwas größerer Innenabstand */
-  border-radius: 4px;            /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-xs);            /* Abgerundete Ecken */
   cursor: pointer;               /* Zeiger-Cursor */
   transition: all 0.2s ease;     /* Sanfte Übergänge */
   font-size: 1rem;               /* Normale Schrift */
@@ -1311,10 +1301,10 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 }
 
 .move-btn:hover:not(:disabled) {
-  background: rgba(0, 123, 255, 0.3); /* Hellerer blauer Hintergrund */
-  border-color: #ffd700;         /* Vollständig blauer Rand */
+  background: var(--status-info-border); /* Hellerer blauer Hintergrund */
+  border-color: var(--primary);         /* Vollständig blauer Rand */
   transform: translateY(-1px);   /* Leicht nach oben */
-  color: #0056b3;                /* Dunklere blaue Schrift */
+  color: var(--color-info-700);                /* Dunklere blaue Schrift */
 }
 
 .move-btn:disabled {
@@ -1324,11 +1314,10 @@ Spezielle Styles für @dnd-kit Drag & Drop Funktionalität
 
 /* Move-Info Text */
 .move-info {
-  color: rgba(255, 255, 255, 0.5); /* Gedämpfter Text */
+  color: var(--text-muted); /* Gedämpfter Text */
   font-size: 0.8rem;             /* Kleinere Schrift */
   font-style: italic;            /* Kursiv */
 }
-
 
 /* Verbessertes Touch-Support für Mobile Drag & Drop */
 @media (max-width: 768px) {
@@ -1351,18 +1340,18 @@ Styling für den Prüfungsinhalt-Bereich
 
 /* Graduierung Prüfung Container */
 .graduierung-pruefung {
-  background: rgba(255, 255, 255, 0.05); /* Glassmorphism */
-  border-radius: 12px;           /* Abgerundete Ecken */
-  padding: 1.5rem;               /* Innenabstand */
-  margin-bottom: 2rem;           /* Abstand nach unten */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* Dezenter Rand */
+  background: var(--surface-2); /* Glassmorphism */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
+  margin-bottom: var(--ui-section-gap); /* Abstand nach unten via Design-Token */
+  border: 1px solid var(--border-default); /* Dezenter Rand */
 }
 
 /* Prüfungsinhalt Kategorien */
 .pruefungsinhalt-categories {
   display: grid;                 /* Grid Layout */
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive Spalten */
-  gap: 1.5rem;                   /* Abstand zwischen Kategorien */
+  gap: var(--ui-section-gap);    /* Abstand zwischen Kategorien via Design-Token */
   margin-top: 1rem;              /* Abstand nach oben */
   padding: 1rem;                 /* Innenabstand */
   animation: slideDown 0.3s ease-out; /* Slide-Down Animation */
@@ -1381,19 +1370,19 @@ Styling für den Prüfungsinhalt-Bereich
 
 /* Einzelne Kategorie */
 .category {
-  background: rgba(255, 255, 255, 0.03); /* Sehr dezenter Hintergrund */
-  border-radius: 10px;           /* Abgerundete Ecken */
+  background: var(--surface-1); /* Sehr dezenter Hintergrund */
+  border-radius: var(--comp-radius-lg);           /* Abgerundete Ecken */
   padding: 1rem;                 /* Innenabstand */
-  border: 1px solid rgba(255, 255, 255, 0.05); /* Sehr dezenter Rand */
+  border: 1px solid var(--surface-2); /* Sehr dezenter Rand */
   display: flex;                 /* Flexbox für vertikales Layout */
   flex-direction: column;        /* Vertikal ausrichten */
   min-height: 300px;             /* Mindesthöhe für einheitliche Karten */
 }
 
 .category h5 {
-  color: #ffd700;                /* Gold-Überschrift */
+  color: var(--primary);                /* Gold-Überschrift */
   margin: 0 0 0.75rem 0;         /* Abstand nach unten */
-  font-size: 1.1rem;             /* Größere Schrift */
+  font-size: var(--ui-section-title); /* Section-Titel via Design-Token */
   flex-shrink: 0;                /* Überschrift darf nicht schrumpfen */
 }
 
@@ -1410,7 +1399,7 @@ Styling für den Prüfungsinhalt-Bereich
 }
 
 .category li {
-  color: rgba(255, 255, 255, 0.8); /* Gedämpftes Weiß */
+  color: var(--text-1); /* Gedämpftes Weiß */
   padding: 0.25rem 0;            /* Vertikaler Abstand */
   font-size: 0.9rem;             /* Kleinere Schrift */
   display: flex;                 /* Flexbox für horizontales Layout */
@@ -1421,7 +1410,7 @@ Styling für den Prüfungsinhalt-Bereich
 
 .category li:before {
   content: '•';                  /* Bullet Point */
-  color: #ffd700;                /* Gold-Farbe */
+  color: var(--primary);                /* Gold-Farbe */
   margin-right: 0.5rem;          /* Abstand nach rechts */
   flex-shrink: 0;                /* Bullet darf nicht schrumpfen */
 }
@@ -1448,7 +1437,7 @@ Popup-Fenster für Formulare - Verbesserte Styles und Animationen
   left: 0;                       /* Links bei 0 */
   right: 0;                      /* Rechts bei 0 */
   bottom: 0;                     /* Unten bei 0 */
-  background: rgba(0, 0, 0, 0.8); /* Dunklerer Hintergrund */
+  background: var(--text-1); /* Dunklerer Hintergrund */
   backdrop-filter: blur(8px);    /* Weichzeichnung des Hintergrunds */
   display: flex;                 /* Flexbox für Zentrierung */
   align-items: center;           /* Vertikal zentrieren */
@@ -1459,18 +1448,18 @@ Popup-Fenster für Formulare - Verbesserte Styles und Animationen
 
 /* Modal-Inhalt - Erweitert */
 .modal-content:not(.stil-modal) {
-  background: rgba(26, 26, 46, 0.98); /* Dunklerer Hintergrund für bessere Lesbarkeit */
+  background: var(--bg-overlay-blur); /* Dunklerer Hintergrund für bessere Lesbarkeit */
   backdrop-filter: blur(20px);   /* Weichzeichnung */
-  border-radius: 20px;           /* Stärker abgerundete Ecken */
-  padding: 2rem;                 /* Gleichmäßiges Padding */
-  border: 1px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  border-radius: var(--comp-radius-pill);           /* Stärker abgerundete Ecken */
+  padding: var(--ui-page-padding); /* Modal-Padding via Design-Token */
+  border: 1px solid var(--primary-alpha-30); /* Gold-Rand */
   max-width: 700px;              /* Etwas größere Breite */
   width: 90%;                    /* Responsive Breite */
   max-height: 85vh;              /* Maximal 85% der Bildschirmhöhe */
   overflow-y: auto;              /* Scrollbar für gesamten Content */
   animation: slideInFromRight 0.4s ease-out; /* Slide-In Animation */
   position: relative;            /* Für Gradient-Header */
-  color: rgba(255, 255, 255, 0.9); /* Heller Text im Modal */
+  color: var(--text-1); /* Heller Text im Modal */
   box-sizing: border-box;        /* Padding inbegriffen */
 }
 
@@ -1481,33 +1470,33 @@ Popup-Fenster für Formulare - Verbesserte Styles und Animationen
 .modal-content h4,
 .modal-content h5,
 .modal-content div {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-1) !important;
 }
 
 /* Form-Labels speziell */
 .modal-content .form-label,
 .modal-content .form-group label {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: var(--text-1) !important;
   font-weight: 500;
 }
 
 /* Kategorie-Titel */
 .modal-content .category-title {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 /* Modal Header - NICHT für stil-modal */
 .modal-content:not(.stil-modal) .modal-header {
   margin: -2rem -2rem 1.5rem -2rem; /* Negatives Margin um Modal-Padding zu überschreiben */
   padding: 1.5rem 2rem;          /* Eigenes Padding */
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 /* Modal Actions - NICHT für stil-modal */
 .modal-content:not(.stil-modal) .modal-actions {
   margin: 1.5rem -2rem -2rem -2rem; /* Negatives Margin */
   padding: 1.5rem 2rem;          /* Eigenes Padding */
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-default);
 }
 
 /* Scrollbar Styling für Modal */
@@ -1516,17 +1505,17 @@ Popup-Fenster für Formulare - Verbesserte Styles und Animationen
 }
 
 .modal-content::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-lg);
 }
 
 .modal-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.3);
-  border-radius: 10px;
+  background: var(--primary-alpha-30);
+  border-radius: var(--comp-radius-lg);
 }
 
 .modal-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.5);
+  background: var(--primary-alpha-50);
 }
 
 /* Modal Gradient-Header */
@@ -1537,7 +1526,7 @@ Popup-Fenster für Formulare - Verbesserte Styles und Animationen
   left: 0;                       /* Links bei 0 */
   right: 0;                      /* Rechts bei 0 */
   height: 2px;                   /* 2px hoch */
-  background: linear-gradient(90deg, #ffd700, #ff6b35, #ffd700); /* Gold-Orange-Gold Gradient */
+  background: var(--gradient-gold); /* Gold-Orange-Gold Gradient */
   border-radius: 20px 20px 0 0;  /* Nur oben abgerundet */
 }
 
@@ -1582,15 +1571,15 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
   align-items: center;           /* Vertikal zentrieren */
   margin-bottom: 1.5rem;         /* Abstand nach unten */
   padding-bottom: 1rem;          /* Innenabstand nach unten */
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Trennlinie */
+  border-bottom: 1px solid var(--primary-alpha-20); /* Gold-Trennlinie */
 }
 
 /* Modal-Überschrift - Erweitert mit höherer Spezifität */
 .modal-overlay .modal-content.create-stil-modal .modal-title {
   font-size: 1.5rem !important;             /* 24px Überschrift */
   margin: 0 !important;                     /* Kein Außenabstand */
-  color: #ffd700 !important;                /* Gold-Farbe */
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3) !important; /* Gold-Glüh-Effekt */
+  color: var(--primary) !important;                /* Gold-Farbe */
+  text-shadow: 0 0 10px var(--primary-alpha-30) !important; /* Gold-Glüh-Effekt */
   font-weight: 600 !important;               /* Fette Schrift */
 }
 
@@ -1603,7 +1592,7 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
 .modal-close {
   background: none;              /* Kein Hintergrund */
   border: none;                  /* Kein Rand */
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  color: var(--text-secondary); /* Gedämpfter Text */
   font-size: 1.5rem;             /* Größeres X */
   cursor: pointer;               /* Zeiger bei Hover */
   padding: 0;                    /* Kein Innenabstand */
@@ -1617,8 +1606,8 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
 }
 
 .modal-close:hover {
-  color: #fff;                   /* Weißer Text */
-  background: rgba(255, 255, 255, 0.1); /* Dezenter Hintergrund */
+  color: var(--text-primary);                   /* Weißer Text */
+  background: var(--border-default); /* Dezenter Hintergrund */
   transform: rotate(90deg);      /* Drehung bei Hover */
 }
 
@@ -1627,9 +1616,9 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
   display: flex;                 /* Flexbox Layout */
   gap: 1rem;                     /* 16px Abstand zwischen Buttons */
   justify-content: flex-end;     /* Rechts ausrichten */
-  margin-top: 2rem;              /* 32px Abstand nach oben */
-  padding-top: 1.5rem;           /* 24px Abstand nach oben */
-  border-top: 1px solid rgba(255, 255, 255, 0.1); /* Trennlinie */
+  margin-top: var(--ui-section-gap); /* Abstand via Design-Token */
+  padding-top: 1.5rem;           /* Innenabstand nach oben */
+  border-top: 1px solid var(--border-default); /* Trennlinie */
 }
 
 /* ============================================================================
@@ -1641,11 +1630,11 @@ body .modal-overlay .modal-content.create-stil-modal {
   max-width: 700px !important;
   max-height: 70vh !important;
   padding: 0 !important;
-  background: rgba(26, 26, 46, 0.95) !important;
+  background: var(--bg-overlay-blur) !important;
   backdrop-filter: blur(20px) !important;
-  border-radius: 20px !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  border-radius: var(--comp-radius-pill) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
+  box-shadow: 0 8px 32px var(--text-disabled) !important;
   word-wrap: break-word !important;
   box-sizing: border-box !important;
   overflow: visible !important;
@@ -1658,7 +1647,7 @@ body .modal-overlay .modal-content.create-stil-modal .modal-header {
   align-items: center !important;
   margin-bottom: 1rem !important;
   padding: 1.5rem 2.5rem 1rem 2.5rem !important;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-bottom: 1px solid var(--primary-alpha-20) !important;
   box-sizing: border-box !important;
   overflow: visible !important;
 }
@@ -1667,8 +1656,8 @@ body .modal-overlay .modal-content.create-stil-modal .modal-header {
 body .modal-overlay .modal-content.create-stil-modal .modal-title {
   font-size: 1.5rem !important;
   margin: 0 !important;
-  color: #ffd700 !important;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3) !important;
+  color: var(--primary) !important;
+  text-shadow: 0 0 10px var(--primary-alpha-30) !important;
   font-weight: 600 !important;
   box-sizing: border-box !important;
   overflow: visible !important;
@@ -1696,16 +1685,16 @@ body .modal-overlay .modal-content.create-stil-modal .step-title {
 
 body .modal-overlay .modal-content.create-stil-modal .step-title h4 {
   font-size: 1.4rem !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   margin: 0 0 0.5rem 0 !important;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3) !important;
+  text-shadow: 0 0 10px var(--primary-alpha-30) !important;
   box-sizing: border-box !important;
   overflow: visible !important;
   white-space: normal !important;
 }
 
 body .modal-overlay .modal-content.create-stil-modal .step-title p {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--text-1) !important;
   margin: 0 !important;
   font-size: 0.95rem !important;
   box-sizing: border-box !important;
@@ -1724,7 +1713,7 @@ body .modal-overlay .modal-content.create-stil-modal .form-group {
 
 /* Form Labels - Höchste Spezifität */
 body .modal-overlay .modal-content.create-stil-modal .form-label {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-1) !important;
   font-weight: 600 !important;
   margin-bottom: 0.5rem !important;
   font-size: 0.9rem !important;
@@ -1740,11 +1729,11 @@ body .modal-overlay .modal-content.create-stil-modal .form-label {
 
 /* Form Inputs - Höchste Spezifität */
 body .modal-overlay .modal-content.create-stil-modal .form-input {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 2px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 8px !important;
+  background: var(--bg-card-hover) !important;
+  border: 2px solid var(--primary-alpha-20) !important;
+  border-radius: var(--comp-radius-md) !important;
   padding: 0.75rem 1rem !important;
-  color: #ffffff !important;
+  color: var(--text-primary) !important;
   font-size: 1rem !important;
   font-weight: 500 !important;
   backdrop-filter: blur(20px) !important;
@@ -1756,22 +1745,22 @@ body .modal-overlay .modal-content.create-stil-modal .form-input {
 
 body .modal-overlay .modal-content.create-stil-modal .form-input:focus {
   outline: none !important;
-  border-color: #ffd700 !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important;
+  border-color: var(--primary) !important;
+  background-color: var(--surface-hover) !important;
+  box-shadow: 0 0 15px var(--primary-alpha-20) !important;
 }
 
 body .modal-overlay .modal-content.create-stil-modal .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--text-3) !important;
 }
 
 /* Form Textareas - Höchste Spezifität */
 body .modal-overlay .modal-content.create-stil-modal .form-textarea {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 2px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 8px !important;
+  background: var(--bg-card-hover) !important;
+  border: 2px solid var(--primary-alpha-20) !important;
+  border-radius: var(--comp-radius-md) !important;
   padding: 0.75rem 1rem !important;
-  color: #ffffff !important;
+  color: var(--text-primary) !important;
   font-size: 1rem !important;
   font-weight: 500 !important;
   backdrop-filter: blur(20px) !important;
@@ -1785,23 +1774,23 @@ body .modal-overlay .modal-content.create-stil-modal .form-textarea {
 
 body .modal-overlay .modal-content.create-stil-modal .form-textarea:focus {
   outline: none !important;
-  border-color: #ffd700 !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important;
+  border-color: var(--primary) !important;
+  background-color: var(--surface-hover) !important;
+  box-shadow: 0 0 15px var(--primary-alpha-20) !important;
 }
 
 body .modal-overlay .modal-content.create-stil-modal .form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: var(--text-3) !important;
 }
 
 /* Form Selects - Höchste Spezifität */
 body .modal-overlay .modal-content.create-stil-modal .form-select {
   width: 100% !important;
   padding: 0.75rem 1rem !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  border: 2px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 8px !important;
-  color: #ffffff !important;
+  background: var(--bg-card-hover) !important;
+  border: 2px solid var(--primary-alpha-20) !important;
+  border-radius: var(--comp-radius-md) !important;
+  color: var(--text-primary) !important;
   font-size: 1rem !important;
   font-weight: 500 !important;
   backdrop-filter: blur(20px) !important;
@@ -1817,15 +1806,15 @@ body .modal-overlay .modal-content.create-stil-modal .form-select {
 }
 
 body .modal-overlay .modal-content.create-stil-modal .form-select:hover {
-  border-color: #ffd700 !important;
-  background-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: var(--primary) !important;
+  background-color: var(--surface-hover) !important;
 }
 
 body .modal-overlay .modal-content.create-stil-modal .form-select:focus {
   outline: none !important;
-  border-color: #ffd700 !important;
-  background-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important;
+  border-color: var(--primary) !important;
+  background-color: var(--surface-active) !important;
+  box-shadow: 0 0 15px var(--primary-alpha-20) !important;
 }
 
 /* Modal Actions - Höchste Spezifität */
@@ -1834,7 +1823,7 @@ body .modal-overlay .modal-content.create-stil-modal .modal-actions {
   justify-content: space-between !important;
   align-items: center !important;
   padding: 1rem 2.5rem 1.5rem 2.5rem !important;
-  border-top: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-top: 1px solid var(--primary-alpha-20) !important;
   margin-top: 0.5rem !important;
   gap: 1rem !important;
   box-sizing: border-box !important;
@@ -1855,7 +1844,7 @@ Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
 .form-group label,
 .form-label {
   display: block;                /* Als Block-Element */
-  color: #ffd700;                /* Gold-Farbe */
+  color: var(--primary);                /* Gold-Farbe */
   font-weight: 600;              /* Semi-Bold */
   margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
   font-size: 0.9rem;             /* Etwas kleinere Schrift */
@@ -1871,17 +1860,17 @@ Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
 .form-textarea,
 .form-select {
   width: 100% !important;                   /* Volle Breite */
-  padding: 12px 16px !important;            /* Größerer Innenabstand */
-  border: 2px solid rgba(255, 215, 0, 0.4) !important; /* Sichtbarer Gold-Rand */
-  border-radius: 10px !important;           /* Stärker abgerundete Ecken */
-  background: rgba(255, 255, 255, 0.1) !important; /* Leicht sichtbarer Hintergrund */
-  color: #fff !important;                   /* Weißer Text */
+  padding: 0.75rem 1rem !important;         /* Innenabstand */
+  border: 2px solid var(--primary-alpha-40) !important; /* Sichtbarer Gold-Rand */
+  border-radius: var(--comp-radius-lg) !important;           /* Stärker abgerundete Ecken */
+  background: var(--border-default) !important; /* Leicht sichtbarer Hintergrund */
+  color: var(--text-primary) !important;                   /* Weißer Text */
   font-size: 1rem !important;               /* Normale Schriftgröße */
   font-weight: 600 !important;              /* Fetter für bessere Lesbarkeit */
   transition: all 0.3s ease !important;     /* Sanfte Übergänge */
   backdrop-filter: blur(10px) !important;   /* Weichzeichnung */
   box-sizing: border-box !important;        /* Border-Box für korrekte Breite */
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3) !important; /* Deutlicher Inset-Schatten */
+  box-shadow: inset 0 2px 6px var(--text-disabled) !important; /* Deutlicher Inset-Schatten */
 }
 
 /* Input-Felder bei Hover - NEU */
@@ -1891,8 +1880,8 @@ Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
 .form-input:hover:not(:focus),
 .form-textarea:hover:not(:focus),
 .form-select:hover:not(:focus) {
-  border-color: rgba(255, 215, 0, 0.6) !important; /* Hellerer Gold-Rand bei Hover */
-  background: rgba(255, 255, 255, 0.15) !important; /* Etwas hellerer Hintergrund */
+  border-color: var(--primary-alpha-60) !important; /* Hellerer Gold-Rand bei Hover */
+  background: var(--surface-active) !important; /* Etwas hellerer Hintergrund */
 }
 
 /* Input-Felder bei Fokus - Erweitert */
@@ -1903,31 +1892,31 @@ Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
 .form-textarea:focus,
 .form-select:focus {
   outline: none !important;                 /* Standard-Fokus-Rahmen entfernen */
-  border-color: #ffd700 !important;         /* Gold-Rand bei Fokus */
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3), inset 0 2px 6px rgba(0, 0, 0, 0.3) !important; /* Gold-Glüh-Effekt + Inset */
-  background: rgba(255, 255, 255, 0.18) !important; /* Hellerer Hintergrund */
+  border-color: var(--primary) !important;         /* Gold-Rand bei Fokus */
+  box-shadow: 0 0 0 3px var(--primary-alpha-30), inset 0 2px 6px var(--text-disabled) !important; /* Gold-Glüh-Effekt + Inset */
+  background: var(--surface-active) !important; /* Hellerer Hintergrund */
 }
 
 /* Placeholder-Styling */
 .form-input::placeholder,
 .form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.5); /* Gedämpfte Placeholder */
+  color: var(--text-muted); /* Gedämpfte Placeholder */
 }
 
 /* Dropdown-Optionen (schwarzer Text auf weißem Hintergrund) */
 .form-group select option {
-  background: #ffffff;           /* Weißer Hintergrund für bessere Lesbarkeit */
-  color: #000000;                /* Schwarzer Text für Kontrast */
+  background: var(--color-white);           /* Weißer Hintergrund für bessere Lesbarkeit */
+  color: var(--color-black);                /* Schwarzer Text für Kontrast */
   padding: 0.5rem;               /* Innenabstand für bessere Klickbarkeit */
 }
 
 /* ===== MODAL-SPEZIFISCHE FORM STYLES - Höhere Spezifität ===== */
 .modal-overlay .modal-content.create-stil-modal .form-input {
-  background: rgba(255, 255, 255, 0.08) !important; /* Transparenter Hintergrund */
-  border: 2px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Rand */
-  border-radius: 8px !important;        /* Abgerundete Ecken */
+  background: var(--bg-card-hover) !important; /* Transparenter Hintergrund */
+  border: 2px solid var(--primary-alpha-20) !important; /* Gold-Rand */
+  border-radius: var(--comp-radius-md) !important;        /* Abgerundete Ecken */
   padding: 0.75rem 1rem !important;    /* Innenabstand */
-  color: #ffffff !important;           /* Weiße Textfarbe */
+  color: var(--text-primary) !important;           /* Weiße Textfarbe */
   font-size: 1rem !important;          /* Schriftgröße */
   font-weight: 500 !important;          /* Mittlere Schriftstärke */
   backdrop-filter: blur(20px) !important; /* Weichzeichnung */
@@ -1936,21 +1925,21 @@ Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
 
 .modal-overlay .modal-content.create-stil-modal .form-input:focus {
   outline: none !important;            /* Entfernt Standard-Outline */
-  border-color: #ffd700 !important;    /* Gold-Rand bei Focus */
-  background-color: rgba(255, 255, 255, 0.12) !important; /* Hellerer Hintergrund */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important; /* Gold-Glüh-Effekt */
+  border-color: var(--primary) !important;    /* Gold-Rand bei Focus */
+  background-color: var(--surface-hover) !important; /* Hellerer Hintergrund */
+  box-shadow: 0 0 15px var(--primary-alpha-20) !important; /* Gold-Glüh-Effekt */
 }
 
 .modal-overlay .modal-content.create-stil-modal .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important; /* Gedämpfte Platzhalter-Farbe */
+  color: var(--text-3) !important; /* Gedämpfte Platzhalter-Farbe */
 }
 
 .modal-overlay .modal-content.create-stil-modal .form-textarea {
-  background: rgba(255, 255, 255, 0.08) !important; /* Transparenter Hintergrund */
-  border: 2px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Rand */
-  border-radius: 8px !important;        /* Abgerundete Ecken */
+  background: var(--bg-card-hover) !important; /* Transparenter Hintergrund */
+  border: 2px solid var(--primary-alpha-20) !important; /* Gold-Rand */
+  border-radius: var(--comp-radius-md) !important;        /* Abgerundete Ecken */
   padding: 0.75rem 1rem !important;    /* Innenabstand */
-  color: #ffffff !important;           /* Weiße Textfarbe */
+  color: var(--text-primary) !important;           /* Weiße Textfarbe */
   font-size: 1rem !important;          /* Schriftgröße */
   font-weight: 500 !important;          /* Mittlere Schriftstärke */
   backdrop-filter: blur(20px) !important; /* Weichzeichnung */
@@ -1961,17 +1950,17 @@ Alle Formular-Elemente - Verbesserte Focus-States und neue Komponenten
 
 .modal-overlay .modal-content.create-stil-modal .form-textarea:focus {
   outline: none !important;            /* Entfernt Standard-Outline */
-  border-color: #ffd700 !important;    /* Gold-Rand bei Focus */
-  background-color: rgba(255, 255, 255, 0.12) !important; /* Hellerer Hintergrund */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2) !important; /* Gold-Glüh-Effekt */
+  border-color: var(--primary) !important;    /* Gold-Rand bei Focus */
+  background-color: var(--surface-hover) !important; /* Hellerer Hintergrund */
+  box-shadow: 0 0 15px var(--primary-alpha-20) !important; /* Gold-Glüh-Effekt */
 }
 
 .modal-overlay .modal-content.create-stil-modal .form-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important; /* Gedämpfte Platzhalter-Farbe */
+  color: var(--text-3) !important; /* Gedämpfte Platzhalter-Farbe */
 }
 
 .modal-overlay .modal-content.create-stil-modal .form-label {
-  color: rgba(255, 255, 255, 0.9) !important; /* Weiße Label-Farbe */
+  color: var(--text-1) !important; /* Weiße Label-Farbe */
   font-weight: 600 !important;          /* Fette Schrift */
   margin-bottom: 0.5rem !important;     /* Abstand nach unten */
   font-size: 0.9rem !important;         /* Kleinere Schrift */
@@ -2018,7 +2007,7 @@ Alle Button-Stile für die Anwendung - Verbesserte Hover-Effekte
 .btn {
   padding: 0.75rem 1.5rem;       /* 12px oben/unten, 24px links/rechts */
   border: none;                  /* Kein Rand */
-  border-radius: 12px;           /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-xl);           /* Abgerundete Ecken */
   font-weight: 600;              /* Semi-Bold Text */
   cursor: pointer;               /* Zeiger bei Hover */
   transition: all 0.3s ease;     /* Sanfte Übergänge */
@@ -2053,9 +2042,9 @@ Alle Button-Stile für die Anwendung - Verbesserte Hover-Effekte
 .form-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: var(--ui-section-gap); /* Abstand via Design-Token */
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--border-default);
 }
 
 /* Gefährlicher Button - Verwendet zentrales Tab-Design aus Buttons.css */
@@ -2083,8 +2072,8 @@ Verschiedene Loading-Zustände und Spinner
   display: flex;                 /* Flexbox Layout */
   align-items: center;           /* Horizontal zentrieren */
   justify-content: center;       /* Vertikal zentrieren */
-  padding: 2rem;                 /* Innenabstand */
-  color: rgba(255, 255, 255, 0.7); /* Gedämpfter Text */
+  padding: var(--ui-page-padding); /* Padding via Design-Token */
+  color: var(--text-secondary); /* Gedämpfter Text */
 }
 
 /* Großer Loading-Spinner für Hauptseite */
@@ -2098,8 +2087,8 @@ Verschiedene Loading-Zustände und Spinner
 .loading-spinner {
   width: 40px;                   /* 40px breit */
   height: 40px;                  /* 40px hoch */
-  border: 3px solid rgba(255, 215, 0, 0.3); /* Gold-Rand mit Transparenz */
-  border-top: 3px solid #ffd700; /* Gold-Rand oben */
+  border: 3px solid var(--primary-alpha-30); /* Gold-Rand mit Transparenz */
+  border-top: 3px solid var(--primary); /* Gold-Rand oben */
   border-radius: 50%;            /* Perfekter Kreis */
   animation: spin 1s linear infinite; /* Drehanimation */
   margin-right: 1rem;            /* Abstand nach rechts */
@@ -2109,8 +2098,8 @@ Verschiedene Loading-Zustände und Spinner
 .loading-spinner-large {
   width: 3rem;                   /* 48px breit */
   height: 3rem;                  /* 48px hoch */
-  border: 3px solid rgba(255, 255, 255, 0.2); /* Grauer Rand */
-  border-top: 3px solid #ffd700; /* Gold-Rand oben */
+  border: 3px solid var(--border-hover); /* Grauer Rand */
+  border-top: 3px solid var(--primary); /* Gold-Rand oben */
   border-radius: 50%;            /* Perfekter Kreis */
   animation: spin 1s linear infinite; /* Drehanimation */
 }
@@ -2124,30 +2113,30 @@ Anzeige wenn keine Daten vorhanden sind
 .empty-state {
   text-align: center;            /* Zentrierter Text */
   padding: 4rem 2rem;            /* 64px oben/unten, 32px links/rechts */
-  background: rgba(255, 255, 255, 0.03); /* Sehr dezenter Hintergrund */
-  border-radius: 20px;           /* Abgerundete Ecken */
-  border: 2px dashed rgba(255, 255, 255, 0.1); /* Gestrichelte Umrandung */
-  color: rgba(255, 255, 255, 0.6); /* Gedämpfter Text */
+  background: var(--surface-1); /* Sehr dezenter Hintergrund */
+  border-radius: var(--comp-radius-pill);           /* Abgerundete Ecken */
+  border: 2px dashed var(--border-default); /* Gestrichelte Umrandung */
+  color: var(--text-3); /* Gedämpfter Text */
 }
 
 /* Empty State Icon */
 .empty-state-icon {
   font-size: 3rem;               /* 48px großes Icon */
-  color: rgba(255, 215, 0, 0.5); /* Gold mit Transparenz */
+  color: var(--primary-alpha-50); /* Gold mit Transparenz */
   margin-bottom: 1rem;           /* Abstand nach unten */
 }
 
 /* Überschrift im Empty State - Erweitert */
 .empty-state h3 {
   font-size: 1.5rem;             /* 24px Überschrift */
-  color: #ffd700;                /* Gold-Farbe */
+  color: var(--primary);                /* Gold-Farbe */
   margin-bottom: 0.5rem;         /* 8px Abstand nach unten */
 }
 
 /* Text im Empty State */
 .empty-state p {
-  color: rgba(255, 255, 255, 0.6); /* Gedämpftes Weiß */
-  margin-bottom: 2rem;           /* 32px Abstand nach unten */
+  color: var(--text-3); /* Gedämpftes Weiß */
+  margin-bottom: var(--ui-section-gap); /* Abstand via Design-Token */
 }
 
 /* 
@@ -2158,20 +2147,19 @@ Die 3 Statistik-Karten oben (Anzahl Stile, Graduierungen, Schüler) - Neue Hover
 */
 .stil-stats {
   display: grid;                 /* CSS Grid Layout */
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  /* ^ Automatisch so viele Spalten wie möglich, jede mindestens 200px */
-  gap: 0.75rem !important;                   /* 12px Abstand zwischen Karten (reduziert von 24px) */
+  grid-template-columns: var(--ui-stats-cols); /* Responsive Spalten via Design-Token */
+  gap: var(--ui-stats-gap) !important;        /* Gap via Design-Token */
   margin-bottom: 0.5rem;         /* 8px Abstand nach unten - MINIMIERT */
 }
 
 /* Einzelne Statistik-Karte - Erweitert */
 .stil-verwaltung .stil-stats .stat-card {
-  background: rgba(255, 255, 255, 0.05) !important; /* Halbtransparenter weißer Hintergrund */
+  background: var(--surface-2) !important; /* Halbtransparenter weißer Hintergrund */
   backdrop-filter: blur(20px) !important;   /* Glassmorphism-Effekt */
   border-radius: 16px !important;           /* Abgerundete Ecken */
   padding: 1rem !important;                 /* 16px Innenabstand (reduziert von 32px) */
   text-align: center !important;            /* Zentrierter Text */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important; /* Dezenter Rand */
+  border: 1px solid var(--border-default) !important; /* Dezenter Rand */
   transition: all 0.3s ease !important;     /* Sanfte Übergänge für alle Eigenschaften */
   position: relative !important;            /* Für absolute Positionierung von ::before */
   overflow: hidden !important;              /* Verstecke überstehende Effekte */
@@ -2180,8 +2168,8 @@ Die 3 Statistik-Karten oben (Anzahl Stile, Graduierungen, Schüler) - Neue Hover
 /* Hover-Effekt für Statistik-Karten - Erweitert */
 .stil-verwaltung .stil-stats .stat-card:hover {
   transform: translateY(-5px) !important;   /* 5px nach oben bewegen */
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important; /* Stärkerer Schatten */
-  border-color: rgba(255, 215, 0, 0.3) !important; /* Gold-Rand bei Hover */
+  box-shadow: 0 20px 40px var(--color-black-alpha-40) !important; /* Stärkerer Schatten */
+  border-color: var(--primary-alpha-30) !important; /* Gold-Rand bei Hover */
 }
 
 /* Große Zahl in Statistik-Karten */
@@ -2189,7 +2177,7 @@ Die 3 Statistik-Karten oben (Anzahl Stile, Graduierungen, Schüler) - Neue Hover
   font-size: 1.8rem !important;             /* 28.8px große Zahl (reduziert von 40px) */
   font-weight: 700 !important;              /* Sehr fett */
   margin: 0 0 0.25rem 0 !important;          /* Nur unten 4px Abstand (reduziert von 8px) */
-  background: linear-gradient(135deg, #ffd700, #ff6b35) !important; /* Gold-Orange Gradient */
+  background: var(--gradient-gold) !important; /* Gold-Orange Gradient */
   -webkit-background-clip: text !important; /* Gradient auf Text anwenden */
   -webkit-text-fill-color: transparent !important; /* Text transparent für Gradient */
   background-clip: text !important;         /* Standard Gradient-Text */
@@ -2197,7 +2185,7 @@ Die 3 Statistik-Karten oben (Anzahl Stile, Graduierungen, Schüler) - Neue Hover
 
 /* Beschriftung unter der Zahl */
 .stil-verwaltung .stil-stats .stat-card p {
-  color: rgba(255, 255, 255, 0.7) !important; /* Gedämpftes Weiß */
+  color: var(--text-secondary) !important; /* Gedämpftes Weiß */
   font-size: 0.9rem !important;             /* Kleinere Schrift (reduziert von 1.1rem) */
   margin: 0 !important;                     /* Kein Außenabstand */
   font-weight: 500 !important;              /* Etwas fetter */
@@ -2214,17 +2202,17 @@ Angepasste Scrollbalken für moderne Optik
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1); /* Dezenter Track-Hintergrund */
-  border-radius: 4px;            /* Abgerundete Ecken */
+  background: var(--border-default); /* Dezenter Track-Hintergrund */
+  border-radius: var(--comp-radius-xs);            /* Abgerundete Ecken */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.5); /* Gold-Scrollbalken */
-  border-radius: 4px;            /* Abgerundete Ecken */
+  background: var(--primary-alpha-50); /* Gold-Scrollbalken */
+  border-radius: var(--comp-radius-xs);            /* Abgerundete Ecken */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 215, 0, 0.7); /* Hellerer Gold-Scrollbalken bei Hover */
+  background: var(--primary-alpha-60); /* Hellerer Gold-Scrollbalken bei Hover */
 }
 
 /* 
@@ -2251,7 +2239,7 @@ Anpassungen für verschiedene Bildschirmgrößen
   
   /* Hauptcontainer */
   .stil-verwaltung {
-    padding: 1rem;               /* Weniger Padding auf kleinen Bildschirmen */
+    padding: var(--ui-page-padding-sm); /* Mobile Padding via Design-Token */
   }
   
   /* Header */
@@ -2372,11 +2360,11 @@ Anpassungen für verschiedene Bildschirmgrößen
   max-width: 700px !important;            /* Größere Breite für mehrstufiges Design */
   max-height: 70vh !important;           /* Reduzierte Höhe von 85vh auf 70vh */
   padding: 0 !important;                 /* Kein Padding - wird intern verwaltet */
-  background: rgba(26, 26, 46, 0.95) !important; /* Dunkler Hintergrund */
+  background: var(--bg-overlay-blur) !important; /* Dunkler Hintergrund */
   backdrop-filter: blur(20px) !important; /* Weichzeichnung */
-  border-radius: 20px !important;        /* Stärker abgerundete Ecken */
-  border: 1px solid rgba(255, 215, 0, 0.3) !important; /* Gold-Rand */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important; /* Schatten */
+  border-radius: var(--comp-radius-pill) !important;        /* Stärker abgerundete Ecken */
+  border: 1px solid var(--primary-alpha-30) !important; /* Gold-Rand */
+  box-shadow: 0 8px 32px var(--text-disabled) !important; /* Schatten */
   word-wrap: break-word !important;     /* Umbruch bei langen Wörtern */
   box-sizing: border-box !important;    /* Padding wird in die Breite einberechnet */
 }
@@ -2394,7 +2382,7 @@ Anpassungen für verschiedene Bildschirmgrößen
   align-items: center !important;           /* Vertikal zentrieren */
   margin-bottom: 1rem !important;         /* Reduzierter Abstand nach unten */
   padding: 1.5rem 2.5rem 1rem 2.5rem !important;  /* Optimierte Abstände */
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Trennlinie */
+  border-bottom: 1px solid var(--primary-alpha-20) !important; /* Gold-Trennlinie */
 }
 
 .progress-indicator {
@@ -2408,34 +2396,34 @@ Anpassungen für verschiedene Bildschirmgrößen
   width: 32px;               /* 32px Breite */
   height: 32px;              /* 32px Höhe */
   border-radius: 50%;        /* Kreis */
-  background: rgba(255, 255, 255, 0.1); /* Gedämpfter Hintergrund */
-  border: 2px solid rgba(255, 215, 0, 0.3); /* Gold-Rand */
+  background: var(--border-default); /* Gedämpfter Hintergrund */
+  border: 2px solid var(--primary-alpha-30); /* Gold-Rand */
   display: flex;             /* Flexbox für Zentrierung */
   align-items: center;        /* Vertikal zentrieren */
   justify-content: center;    /* Horizontal zentrieren */
   font-weight: 600;          /* Fette Schrift */
   font-size: 0.9rem;         /* Kleinere Schrift */
-  color: rgba(255, 255, 255, 0.6); /* Gedämpfte Textfarbe */
+  color: var(--text-3); /* Gedämpfte Textfarbe */
   transition: all 0.3s ease;  /* Sanfte Übergänge */
 }
 
 .progress-step.active {
-  background: #ffd700;       /* Gold-Hintergrund */
-  color: #1a1a2e;           /* Dunkle Textfarbe */
-  border-color: #ffd700;     /* Gold-Rand */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4); /* Gold-Glüh-Effekt */
+  background: var(--primary);       /* Gold-Hintergrund */
+  color: var(--color-midnight-700);           /* Dunkle Textfarbe */
+  border-color: var(--primary);     /* Gold-Rand */
+  box-shadow: 0 0 15px var(--primary-alpha-40); /* Gold-Glüh-Effekt */
 }
 
 .progress-line {
   height: 2px;               /* 2px Höhe */
   flex: 1;                  /* Nimmt verfügbaren Platz ein */
-  background: rgba(255, 215, 0, 0.2); /* Gedämpfte Gold-Linie */
+  background: var(--primary-alpha-20); /* Gedämpfte Gold-Linie */
   transition: all 0.3s ease; /* Sanfte Übergänge */
 }
 
 .progress-line.active {
-  background: #ffd700;       /* Gold-Linie */
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+  background: var(--primary);       /* Gold-Linie */
+  box-shadow: 0 0 8px var(--primary-alpha-30); /* Gold-Glüh-Effekt */
 }
 
 /* Modal Steps - Höhere Spezifität ohne aggressive Overflow-Behandlung */
@@ -2456,13 +2444,13 @@ Anpassungen für verschiedene Bildschirmgrößen
 
 .step-title h4 {
   font-size: 1.4rem;         /* 22px Überschrift */
-  color: #ffd700;            /* Gold-Farbe */
+  color: var(--primary);            /* Gold-Farbe */
   margin: 0 0 0.5rem 0;      /* Abstand nach unten */
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); /* Gold-Glüh-Effekt */
+  text-shadow: 0 0 10px var(--primary-alpha-30); /* Gold-Glüh-Effekt */
 }
 
 .step-title p {
-  color: rgba(255, 255, 255, 0.8); /* Gedämpfte Textfarbe */
+  color: var(--text-1); /* Gedämpfte Textfarbe */
   margin: 0;                 /* Kein Außenabstand */
   font-size: 0.95rem;       /* Kleinere Schrift */
 }
@@ -2479,10 +2467,10 @@ Anpassungen für verschiedene Bildschirmgrößen
 .modal-overlay .modal-content.create-stil-modal .form-select {
   width: 100% !important;              /* Volle Breite */
   padding: 0.75rem 1rem !important;    /* Innenabstand */
-  background: rgba(255, 255, 255, 0.08) !important; /* Transparenter Hintergrund */
-  border: 2px solid rgba(255, 215, 0, 0.2) !important; /* Gold-Rand */
-  border-radius: 8px !important;        /* Abgerundete Ecken */
-  color: #ffffff !important;           /* Weiße Textfarbe */
+  background: var(--bg-card-hover) !important; /* Transparenter Hintergrund */
+  border: 2px solid var(--primary-alpha-20) !important; /* Gold-Rand */
+  border-radius: var(--comp-radius-md) !important;        /* Abgerundete Ecken */
+  color: var(--text-primary) !important;           /* Weiße Textfarbe */
   font-size: 1rem !important;          /* Schriftgröße */
   font-weight: 500 !important;          /* Mittlere Schriftstärke */
   backdrop-filter: blur(20px) !important; /* Weichzeichnung */
@@ -2496,15 +2484,15 @@ Anpassungen für verschiedene Bildschirmgrößen
 }
 
 .form-select:hover {
-  border-color: #ffd700;     /* Gold-Rand bei Hover */
-  background-color: rgba(255, 255, 255, 0.12); /* Hellerer Hintergrund */
+  border-color: var(--primary);     /* Gold-Rand bei Hover */
+  background-color: var(--surface-hover); /* Hellerer Hintergrund */
 }
 
 .form-select:focus {
   outline: none;            /* Entfernt Standard-Outline */
-  border-color: #ffd700;    /* Gold-Rand bei Focus */
-  background-color: rgba(255, 255, 255, 0.15); /* Hellerer Hintergrund */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); /* Gold-Glüh-Effekt */
+  border-color: var(--primary);    /* Gold-Rand bei Focus */
+  background-color: var(--surface-active); /* Hellerer Hintergrund */
+  box-shadow: 0 0 15px var(--primary-alpha-20); /* Gold-Glüh-Effekt */
 }
 
 /* Equipment Tags */
@@ -2523,35 +2511,35 @@ Anpassungen für verschiedene Bildschirmgrößen
   align-items: center;      /* Vertikal zentrieren */
   gap: 0.5rem;             /* Abstand zwischen Checkbox und Text */
   padding: 0.5rem 0.75rem; /* Innenabstand */
-  background: rgba(255, 255, 255, 0.05); /* Transparenter Hintergrund */
-  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand */
-  border-radius: 20px;      /* Abgerundete Ecken */
+  background: var(--surface-2); /* Transparenter Hintergrund */
+  border: 1px solid var(--primary-alpha-20); /* Gold-Rand */
+  border-radius: var(--comp-radius-pill);      /* Abgerundete Ecken */
   cursor: pointer;           /* Zeiger bei Hover */
   transition: all 0.3s ease; /* Sanfte Übergänge */
   font-size: 0.9rem;        /* Kleinere Schrift */
-  color: rgba(255, 255, 255, 0.8); /* Gedämpfte Textfarbe */
+  color: var(--text-1); /* Gedämpfte Textfarbe */
 }
 
 .equipment-tag:hover {
-  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund bei Hover */
-  border-color: #ffd700;    /* Gold-Rand bei Hover */
+  background: var(--primary-alpha-10); /* Gold-Hintergrund bei Hover */
+  border-color: var(--primary);    /* Gold-Rand bei Hover */
 }
 
 .equipment-tag input[type="checkbox"] {
   margin: 0;                /* Kein Außenabstand */
-  accent-color: #ffd700;     /* Gold-Akzentfarbe */
+  accent-color: var(--primary);     /* Gold-Akzentfarbe */
 }
 
 .equipment-tag input[type="checkbox"]:checked + span {
-  color: #ffd700;           /* Gold-Textfarbe wenn ausgewählt */
+  color: var(--primary);           /* Gold-Textfarbe wenn ausgewählt */
   font-weight: 600;         /* Fette Schrift */
 }
 
 /* Confirmation Summary */
 .confirmation-summary {
-  background: rgba(255, 255, 255, 0.05); /* Transparenter Hintergrund */
-  border: 1px solid rgba(255, 215, 0, 0.2); /* Gold-Rand */
-  border-radius: 12px;      /* Abgerundete Ecken */
+  background: var(--surface-2); /* Transparenter Hintergrund */
+  border: 1px solid var(--primary-alpha-20); /* Gold-Rand */
+  border-radius: var(--comp-radius-xl);      /* Abgerundete Ecken */
   padding: 1rem;          /* Reduzierter Innenabstand */
   margin-bottom: 1rem;    /* Reduzierter Abstand nach unten */
   margin: 0 0.5rem 1rem 0.5rem; /* Reduzierter horizontaler Abstand */
@@ -2564,8 +2552,8 @@ Anpassungen für verschiedene Bildschirmgrößen
   justify-content: space-between; /* Platz zwischen Label und Wert */
   align-items: center;      /* Vertikal zentrieren */
   padding: 0.5rem 0;        /* Vertikaler Innenabstand */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Trennlinie */
-  color: rgba(255, 255, 255, 0.9); /* Textfarbe */
+  border-bottom: 1px solid var(--border-default); /* Trennlinie */
+  color: var(--text-1); /* Textfarbe */
 }
 
 .summary-item:last-child {
@@ -2573,7 +2561,7 @@ Anpassungen für verschiedene Bildschirmgrößen
 }
 
 .summary-item strong {
-  color: #ffd700;           /* Gold-Farbe für Labels */
+  color: var(--primary);           /* Gold-Farbe für Labels */
   font-weight: 600;         /* Fette Schrift */
 }
 
@@ -2587,10 +2575,10 @@ Anpassungen für verschiedene Bildschirmgrößen
 /* Button Varianten */
 .btn-outline {
   background: transparent;   /* Transparenter Hintergrund */
-  border: 2px solid rgba(255, 215, 0, 0.5); /* Gold-Rand */
-  color: #ffd700;           /* Gold-Textfarbe */
+  border: 2px solid var(--primary-alpha-50); /* Gold-Rand */
+  color: var(--primary);           /* Gold-Textfarbe */
   padding: 0.75rem 1.5rem; /* Innenabstand */
-  border-radius: 8px;       /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-md);       /* Abgerundete Ecken */
   font-weight: 600;         /* Fette Schrift */
   cursor: pointer;          /* Zeiger bei Hover */
   transition: all 0.3s ease; /* Sanfte Übergänge */
@@ -2601,17 +2589,17 @@ Anpassungen für verschiedene Bildschirmgrößen
 }
 
 .btn-outline:hover {
-  background: rgba(255, 215, 0, 0.1); /* Gold-Hintergrund bei Hover */
-  border-color: #ffd700;    /* Gold-Rand bei Hover */
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2); /* Gold-Glüh-Effekt */
+  background: var(--primary-alpha-10); /* Gold-Hintergrund bei Hover */
+  border-color: var(--primary);    /* Gold-Rand bei Hover */
+  box-shadow: 0 0 15px var(--primary-alpha-20); /* Gold-Glüh-Effekt */
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #28a745, #20c997); /* Grün-Gradient */
+  background: linear-gradient(135deg, var(--color-success-500), var(--color-success-400)); /* Grün-Gradient */
   border: none;            /* Kein Rand */
-  color: #ffffff;          /* Weiße Textfarbe */
+  color: var(--text-primary);          /* Weiße Textfarbe */
   padding: 0.75rem 1.5rem; /* Innenabstand */
-  border-radius: 8px;       /* Abgerundete Ecken */
+  border-radius: var(--comp-radius-md);       /* Abgerundete Ecken */
   font-weight: 600;         /* Fette Schrift */
   cursor: pointer;          /* Zeiger bei Hover */
   transition: all 0.3s ease; /* Sanfte Übergänge */
@@ -2619,12 +2607,12 @@ Anpassungen für verschiedene Bildschirmgrößen
   display: inline-flex;     /* Flexbox für Icon-Buttons */
   align-items: center;      /* Vertikal zentrieren */
   gap: 0.5rem;             /* Abstand zwischen Icon und Text */
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); /* Grün-Schatten */
+  box-shadow: 0 4px 15px var(--status-success-border); /* Grün-Schatten */
 }
 
 .btn-success:hover {
   transform: translateY(-2px); /* Leicht nach oben bewegen */
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4); /* Stärkerer Schatten */
+  box-shadow: 0 6px 20px var(--status-success-border); /* Stärkerer Schatten */
 }
 
 .btn-success:disabled {
@@ -2635,53 +2623,53 @@ Anpassungen für verschiedene Bildschirmgrößen
 
 /* Modal Button Styles - Höchste Spezifität ohne !important */
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
-  color: #1a1a2e;
-  border: 1px solid #ffd700;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  background: var(--gradient-gold);
+  color: var(--color-midnight-700);
+  border: 1px solid var(--primary);
+  box-shadow: 0 4px 15px var(--primary-alpha-30);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-primary:hover {
-  background: linear-gradient(135deg, #ffed4e, #ff8c52);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-  border-color: #ffed4e;
+  background: linear-gradient(135deg, var(--color-gold-light), var(--color-orange-light));
+  box-shadow: 0 6px 20px var(--primary-alpha-40);
+  border-color: var(--color-gold-light);
   transform: translateY(-2px);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-secondary {
   background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  color: var(--text-secondary);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--border-default);
+  border-color: var(--primary-alpha-40);
+  color: var(--text-1);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-success {
-  background: linear-gradient(135deg, #28a745, #20c997);
-  border: 1px solid #28a745;
-  color: #ffffff;
-  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+  background: linear-gradient(135deg, var(--color-success-500), var(--color-success-400));
+  border: 1px solid var(--color-success-500);
+  color: var(--text-primary);
+  box-shadow: 0 4px 15px var(--status-success-border);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-success:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+  box-shadow: 0 6px 20px var(--status-success-border);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-outline {
   background: transparent;
-  border: 2px solid rgba(255, 215, 0, 0.5);
-  color: #ffd700;
+  border: 2px solid var(--primary-alpha-50);
+  color: var(--primary);
 }
 
 body .stil-verwaltung .modal-overlay .modal-content.create-stil-modal .btn-outline:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: #ffd700;
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary);
+  box-shadow: 0 0 15px var(--primary-alpha-20);
 }
   
   /* Belt-Modal Mobile - NICHT für stil-modal */
@@ -2804,7 +2792,7 @@ BESTEHENDE BELT-PREVIEW FEATURES:
 DESIGN-PRINZIPIEN:
 - Glassmorphism 2.0 mit mehrschichtigen Backdrop-Filtern
 - Schwarzer Hintergrund zwischen Cards bleibt erhalten (gewünscht)
-- Gold-Orange Farbschema (#ffd700, #ff6b35) durchgängig
+- Gold-Orange Farbschema (var(--primary), var(--secondary)) durchgängig
 - Sanfte Animationen und Hover-Effekte für moderne UX
 - Responsive Grid-Layouts für alle Bildschirmgrößen
 - Professionelle Loading- und Empty-States
@@ -2830,17 +2818,17 @@ TECHNISCHE DETAILS:
   justify-content: flex-end;
   padding-top: 1rem;
   margin-top: 1rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.1);
-  gap: 0.5rem;
+  border-top: 1px solid var(--primary-alpha-10);
+  gap: var(--ui-btn-gap);        /* Button-Gap via Design-Token */
 }
 
 /* Löschen-Button - Angepasst an aktuelles Design */
 .stil-card-actions .btn-danger {
   background: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: rgba(239, 68, 68, 0.9);
+  border: 1px solid var(--status-error-border);
+  color: var(--color-error-500);
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -2851,17 +2839,16 @@ TECHNISCHE DETAILS:
 }
 
 .stil-card-actions .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.6);
-  color: #ef4444;
+  background: var(--alert-error-bg);
+  border-color: var(--status-error-border);
+  color: var(--color-error-500);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 4px 12px var(--badge-error-bg);
 }
 
 .stil-card-actions .btn-danger:active {
   transform: translateY(0);
 }
-
 
 /* ============================================================================
    INAKTIVE STILE - AUSKLAPPBARER BEREICH
@@ -2869,9 +2856,9 @@ TECHNISCHE DETAILS:
 
 /* Container für inaktive Stile */
 .inactive-stile-section {
-  margin-top: 2rem;
+  margin-top: var(--ui-section-gap); /* Abstand via Design-Token */
   padding-top: 1rem;
-  border-top: 2px solid rgba(255, 215, 0, 0.1);
+  border-top: 2px solid var(--primary-alpha-10);
 }
 
 /* Toggle-Button für inaktive Stile */
@@ -2881,10 +2868,10 @@ TECHNISCHE DETAILS:
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--surface-1);
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: var(--comp-radius-xl);
+  color: var(--text-secondary);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -2894,21 +2881,21 @@ TECHNISCHE DETAILS:
 }
 
 .inactive-stile-toggle:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--surface-2);
+  border-color: var(--primary-alpha-40);
+  color: var(--text-1);
   transform: translateY(-1px);
 }
 
 .inactive-stile-toggle .toggle-icon {
   font-size: 0.875rem;
-  color: #ffd700;
+  color: var(--primary);
   transition: transform 0.3s ease;
 }
 
 .inactive-stile-toggle .toggle-text {
   flex: 1;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-1);
 }
 
 /* Inaktive Grid */
@@ -2933,33 +2920,33 @@ TECHNISCHE DETAILS:
 .drag-drop-info {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  margin-bottom: 20px;
+  gap: 0.625rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
+  font-size: 0.875rem;
+  margin-bottom: var(--ui-section-gap-sm);
 }
 
 .drag-drop-info .info-icon {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 
 .drag-drop-info strong {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 /* Stil Card Actions */
 .stil-card-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--ui-btn-gap);        /* Button-Gap via Design-Token */
   justify-content: flex-end;
   align-items: center;
-  padding-top: 15px;
-  margin-top: 15px;
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  padding-top: 0.9375rem;
+  margin-top: 0.9375rem;
+  border-top: 1px solid var(--primary-alpha-20);
 }
 
 /* Move Buttons */
@@ -2969,15 +2956,15 @@ TECHNISCHE DETAILS:
   padding: 0;
   font-size: 18px;
   font-weight: bold;
-  background: rgba(52, 152, 219, 0.1);
-  border: 1px solid rgba(52, 152, 219, 0.3);
-  color: #3498db;
+  background: var(--alert-info-bg);
+  border: 1px solid var(--status-info-border);
+  color: var(--color-info-500);
   transition: all 0.2s ease;
 }
 
 .stil-card-actions .move-btn:hover:not(:disabled) {
-  background: rgba(52, 152, 219, 0.2);
-  border-color: rgba(52, 152, 219, 0.5);
+  background: var(--badge-info-bg);
+  border-color: var(--status-info-border);
   transform: translateY(-2px);
 }
 
@@ -2988,23 +2975,23 @@ TECHNISCHE DETAILS:
 .stil-card-actions .move-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-  background: rgba(100, 100, 100, 0.1);
-  border-color: rgba(100, 100, 100, 0.2);
-  color: rgba(100, 100, 100, 0.5);
+  background: var(--surface-4);
+  border-color: var(--border-hover);
+  color: var(--text-muted);
 }
 
 /* Stil Grid */
 .stil-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  gap: var(--ui-stats-gap);      /* Gap via Design-Token */
   position: relative;
 }
 
 /* Hover Effect für Cards */
 .stil-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 20px var(--color-black-alpha-20);
 }
 
 /* Responsiveness */
@@ -3014,8 +3001,8 @@ TECHNISCHE DETAILS:
   }
 
   .drag-drop-info {
-    font-size: 16px;
-    padding: 16px 24px;
+    font-size: 1rem;
+    padding: 1rem var(--ui-card-padding);
   }
 
   .stil-card-actions .move-btn {
@@ -3033,21 +3020,21 @@ TECHNISCHE DETAILS:
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  margin-bottom: var(--ui-section-gap); /* Abstand via Design-Token */
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .section-header h3 {
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 20px;
+  color: var(--text-1);
+  font-size: 1.25rem;
   font-weight: 600;
   margin: 0;
 }
 
 .header-buttons {
   display: flex;
-  gap: 12px;
+  gap: 0.75rem;
   align-items: center;
 }
 
@@ -3055,7 +3042,7 @@ TECHNISCHE DETAILS:
   .section-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 1rem;
   }
 
   .header-buttons {
@@ -3078,8 +3065,8 @@ html body .modal-overlay .modal-content.stil-modal {
   box-sizing: border-box !important;
   margin: 0 auto !important;
   max-width: 850px !important;
-  background: rgba(26, 26, 46, 0.98) !important;
-  color: rgba(255, 255, 255, 0.9) !important;
+  background: var(--bg-overlay-blur) !important;
+  color: var(--text-1) !important;
 }
 
 html body .modal-overlay .modal-content.stil-modal .modal-header,
@@ -3099,13 +3086,13 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-actions {
 }
 
 html body .modal-overlay .modal-content.stil-modal * {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: var(--text-1) !important;
   box-sizing: border-box !important;
 }
 
 html body .modal-overlay .modal-content.stil-modal .modal-title,
 html body .modal-overlay .modal-content.stil-modal h3 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 /* 
@@ -3116,31 +3103,31 @@ Styling für den neuen Prüfungseinstellungen-Tab
 */
 
 .pruefungseinstellungen-tab {
-  padding: 1.5rem;
-  background: rgba(20, 20, 30, 0.7);
-  border-radius: 12px;
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
+  background: var(--glass-bg-strong);
+  border-radius: var(--comp-radius-xl);
   backdrop-filter: blur(10px);
 }
 
 .pruefungseinstellungen-tab h3 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.8rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
 
 .pruefungseinstellungen-tab .tab-description {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-size: 0.95rem;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-section-gap); /* Abstand via Design-Token */
   line-height: 1.5;
 }
 
 .pruefungseinstellungen-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  gap: var(--ui-section-gap);    /* Gap via Design-Token */
+  margin-bottom: var(--ui-section-gap); /* Abstand via Design-Token */
 }
 
 @media (max-width: 968px) {
@@ -3152,19 +3139,19 @@ Styling für den neuen Prüfungseinstellungen-Tab
 /* Wartezeiten-Sektion */
 .wartezeiten-section,
 .schwarzgurt-section {
-  background: rgba(30, 30, 45, 0.6);
-  padding: 1.5rem;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--glass-bg-strong);
+  padding: var(--ui-card-padding); /* Card-Padding via Design-Token */
+  border-radius: var(--comp-radius-lg);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .wartezeiten-section h4,
 .schwarzgurt-section h4 {
-  color: #ffd700;
+  color: var(--primary);
   font-size: 1.2rem;
   margin-bottom: 1.5rem;
   font-weight: 500;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-30);
   padding-bottom: 0.5rem;
 }
 
@@ -3172,7 +3159,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .label-info {
   display: block;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   font-weight: 400;
   margin-top: 0.25rem;
 }
@@ -3194,25 +3181,25 @@ Styling für den neuen Prüfungseinstellungen-Tab
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 .checkbox-text {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
 }
 
 /* Checkbox-Info Box */
 .checkbox-info {
   margin-top: 1rem;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.05);
-  border-left: 3px solid #ffd700;
-  border-radius: 6px;
+  background: var(--primary-alpha-10);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--comp-radius-sm);
 }
 
 .checkbox-info p {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-1);
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
   font-weight: 500;
@@ -3225,7 +3212,7 @@ Styling für den neuen Prüfungseinstellungen-Tab
 }
 
 .checkbox-info ul li {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   padding: 0.25rem 0;
   padding-left: 1.5rem;
@@ -3236,15 +3223,15 @@ Styling für den neuen Prüfungseinstellungen-Tab
   content: "→";
   position: absolute;
   left: 0;
-  color: #ffd700;
+  color: var(--primary);
   font-weight: bold;
 }
 
 /* Hover-Effekte */
 .wartezeiten-section:hover,
 .schwarzgurt-section:hover {
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1);
+  border-color: var(--primary-alpha-40);
+  box-shadow: 0 0 15px var(--primary-alpha-10);
   transition: all 0.3s ease;
 }
 
@@ -3254,23 +3241,23 @@ Styling für den neuen Prüfungseinstellungen-Tab
   max-width: 150px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
-  background: rgba(40, 40, 60, 0.8);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
-  color: #fff;
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--primary-alpha-30);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-primary);
   transition: all 0.3s ease;
 }
 
 .pruefungseinstellungen-tab .form-input[type="number"]:focus {
   outline: none;
-  border-color: #ffd700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-alpha-30);
 }
 
 /* Small Text Hinweise */
 .pruefungseinstellungen-tab small {
   display: block;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 0.5rem;
   font-style: italic;
@@ -3280,27 +3267,27 @@ Styling für den neuen Prüfungseinstellungen-Tab
 .pruefungseinstellungen-tab .sub-tabs {
   display: flex;
   justify-content: flex-end;
-  margin-top: 2rem;
+  margin-top: var(--ui-section-gap); /* Abstand via Design-Token */
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-20);
 }
 
 .pruefungseinstellungen-tab .sub-tab-btn {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 193, 7, 0.3));
-  color: #ffd700;
-  border: 2px solid #ffd700;
+  background: linear-gradient(135deg, var(--primary-alpha-20), var(--color-bootstrap-warning-alpha-30));
+  color: var(--primary);
+  border: 2px solid var(--primary);
   padding: 0.75rem 2rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 10px var(--text-disabled);
 }
 
 .pruefungseinstellungen-tab .sub-tab-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.4));
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, var(--primary-alpha-30), var(--color-bootstrap-warning-alpha-40));
+  box-shadow: 0 6px 20px var(--primary-alpha-40);
   transform: translateY(-2px);
 }
 
@@ -3308,3 +3295,981 @@ Styling für den neuen Prüfungseinstellungen-Tab
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============================================================
+   sv- Utility Classes (auto-generated from inline style audit)
+   ============================================================ */
+
+/* 11x: form label style */
+.sv-label-primary {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* 5x: section heading */
+.sv-heading-primary {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+/* 4x: bottom spacing */
+.sv-mb-15 {
+  margin-bottom: 1.5rem;
+}
+
+/* 4x: section header row with border */
+.sv-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* 4x: flex row small gap */
+.sv-flex-gap-sm {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* 3x: centered flex child */
+.sv-center-flex {
+  text-align: center;
+  flex: 1;
+}
+
+/* 3x: two-column grid */
+.sv-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* 3x: muted meta label (12px) */
+.sv-meta-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* 2x: gold info card */
+.sv-card-gold {
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* 2x: placeholder / empty row */
+.sv-placeholder-row {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* 2x: bottom action bar */
+.sv-actions-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 1.5rem;
+}
+
+/* 2x: secondary label 13px */
+.sv-label-secondary-13 {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+/* 2x: secondary text 12px */
+.sv-text-secondary-12 {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* 2x: secondary label 0.9rem 500 */
+.sv-label-secondary {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* 2x: primary bold 14px */
+.sv-text-primary-14 {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* 2x: muted 12px */
+.sv-text-muted-12 {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+/* 2x: muted 11px */
+.sv-text-muted-11 {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* 2x: stat large primary */
+.sv-stat-lg {
+  color: var(--primary);
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* 2x: stat medium primary */
+.sv-stat-md {
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* 2x: text align right */
+.sv-text-right {
+  text-align: right;
+}
+
+/* ============================================================================
+   MIGRATED INLINE STYLES (sv- prefix) — added during CSS migration
+   ============================================================================ */
+
+/* --- GraduierungItem --- */
+.sv-grad-item-relative {
+  position: relative;
+  z-index: 1;
+}
+
+.sv-grad-actions {
+  position: relative;
+  z-index: 9999;
+}
+
+.sv-grad-action-btn {
+  position: relative;
+  z-index: 10000;
+  pointer-events: auto;
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+}
+
+.sv-grad-move-btn {
+  position: relative;
+  z-index: 10000;
+  pointer-events: auto;
+}
+
+/* --- GraduierungManager header --- */
+.sv-grad-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  isolation: isolate;
+  position: relative;
+  z-index: 10000;
+}
+
+.sv-grad-manager-title {
+  font-size: 1.5rem;
+  margin: 0;
+  color: var(--primary);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+.sv-grad-manager-btn-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.sv-grad-manager-btn {
+  position: relative;
+  z-index: 10001;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  filter: none;
+  text-shadow: none;
+  background: rgba(30, 30, 50, 0.95);
+  border: 2px solid #ffd700;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  isolation: isolate;
+}
+
+/* --- Modal overlay (5 modals share same pattern) --- */
+.sv-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 0;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+/* --- Modal content base --- */
+.sv-modal-content {
+  display: block;
+  width: 90%;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overflow-y: visible;
+  background: rgba(26, 26, 46, 0.98);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.sv-modal-content--800 { max-width: 800px; }
+.sv-modal-content--700 { max-width: 700px; }
+.sv-modal-content--600 { max-width: 600px; }
+.sv-modal-content--900 { max-width: 900px; }
+
+/* --- Modal header separator --- */
+.sv-modal-header-sep {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* --- Close button (all modals) --- */
+.sv-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Tab navigation (structure only; active state = dynamic) --- */
+.sv-tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+  overflow-x: auto;
+}
+
+/* --- Belt grid --- */
+.sv-belt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sv-belt-option-label {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+  line-height: 1.3;
+  word-wrap: break-word;
+  width: 100%;
+}
+
+/* --- Belt preview box --- */
+.sv-belt-preview-box {
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  margin-bottom: 1.5rem;
+}
+
+.sv-belt-preview-title {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.sv-belt-preview-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.sv-belt-preview-name {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.sv-belt-preview-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* --- Number/text input base --- */
+.sv-number-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.sv-text-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+/* --- Color picker inputs --- */
+.sv-color-picker {
+  width: 50px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sv-color-text-input {
+  flex: 1;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* --- Sekundaerfarbe label (bg + border are dynamic) --- */
+.sv-sekundaer-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sv-sekundaer-checkbox {
+  margin-right: 0.75rem;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* --- Modal footer / action row --- */
+.sv-modal-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sv-btn-cancel {
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.sv-btn-save {
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #ffd700;
+  border-radius: 8px;
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* --- Textarea (PruefungsinhaltFormModal) --- */
+.sv-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+}
+
+/* --- PruefungsinhaltForm belt info row --- */
+.sv-belt-info-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.sv-belt-info-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sv-belt-info-kat {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* --- PruefungsinhalteViewModal kategorie grid --- */
+.sv-pruef-kat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.sv-pruef-kat-card {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.sv-pruef-kat-title {
+  margin: 0 0 1rem 0;
+  color: var(--primary);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sv-pruef-inhalt-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sv-pruef-inhalt-item {
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  border-left: 3px solid rgba(255, 215, 0, 0.5);
+}
+
+.sv-pruef-inhalt-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+.sv-pruef-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+/* --- PruefungsinhaltManager --- */
+.sv-chevron {
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+  display: inline-block;
+}
+
+.sv-pruef-mgr-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.sv-pruef-action-btn {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+}
+
+.sv-sub-tabs-mt {
+  margin-top: 0.5rem;
+}
+
+/* --- Allgemein tab --- */
+.sv-allgemein-apply-btn {
+  background: linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(34, 139, 34, 0.3));
+  border-color: #32CD32;
+}
+
+.sv-graduierungen-isolation {
+  isolation: isolate;
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Statistics summary grid --- */
+.sv-stats-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.sv-stat-summary-card {
+  padding: 20px;
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.sv-stat-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.sv-stat-value {
+  color: var(--primary);
+  font-size: 36px;
+  font-weight: bold;
+}
+
+/* --- Statistics main 2-col grid --- */
+.sv-stats-main-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 25px;
+  align-items: start;
+}
+
+/* --- Statistics section cards --- */
+.sv-stats-card {
+  padding: 25px;
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+}
+
+.sv-stats-card-mt {
+  margin-top: 30px;
+  padding: 25px;
+  background: rgba(20, 20, 35, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+}
+
+.sv-stats-card-title {
+  color: var(--primary);
+  font-size: 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.sv-stats-card-subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+
+.sv-stats-card-title-center {
+  color: var(--primary);
+  font-size: 18px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sv-stats-card-subtitle-center {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* --- Pruefungs success panel (sticky right column) --- */
+.sv-pruef-success-panel {
+  padding: 25px;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05));
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  position: sticky;
+  top: 20px;
+}
+
+.sv-percent-circle-wrap {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.sv-percent-circle {
+  width: 150px;
+  height: 150px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05));
+  border: 3px solid rgba(255, 215, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+}
+
+.sv-percent-number {
+  font-size: 42px;
+  font-weight: bold;
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  line-height: 1;
+}
+
+.sv-percent-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 5px;
+}
+
+/* --- Statistics detail rows --- */
+.sv-stat-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sv-stat-detail-row {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  justify-content: space-between;
+}
+
+.sv-stat-detail-row--green {
+  padding: 10px 12px;
+  background: rgba(50, 205, 50, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #32CD32;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sv-stat-detail-row--red {
+  padding: 10px 12px;
+  background: rgba(220, 20, 60, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #DC143C;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sv-stat-detail-row--orange {
+  padding: 10px 12px;
+  background: rgba(255, 165, 0, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #FFA500;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sv-stat-detail-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.sv-stat-detail-value {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sv-stat-detail-value--green {
+  color: #32CD32;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sv-stat-detail-value--red {
+  color: #DC143C;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sv-stat-detail-value--orange {
+  color: #FFA500;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* --- Statistics punkte section --- */
+.sv-punkte-gesamt-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.sv-punkte-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.sv-punkte-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 15px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-left: 4px solid var(--grad-farbe, #FFD700);
+}
+
+.sv-punkte-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  background-color: var(--grad-farbe, #FFD700);
+}
+
+.sv-erfolgsquote {
+  color: #32CD32;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* --- Hochstufungen section --- */
+.sv-hochstufungen-total {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(50, 205, 50, 0.05));
+  border-radius: 12px;
+  border: 2px solid rgba(50, 205, 50, 0.3);
+}
+
+.sv-hochstufungen-number {
+  color: #32CD32;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.sv-hochstufungen-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.sv-monat-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sv-monat-chip {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  text-align: center;
+  min-width: 70px;
+}
+
+.sv-letzte-hochstufungen {
+  display: grid;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sv-hochstufung-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border-left: 4px solid var(--zu-farbe, #FFD700);
+}
+
+.sv-farb-dot-sm {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: var(--dot-color, #888);
+}
+
+.sv-farb-arrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sv-punktzahl {
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* --- Create Stil modal overlay flex alignment --- */
+.sv-create-modal-overlay-flex {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 0;
+  overflow-y: auto;
+}
+
+/* --- Small reaktivieren button --- */
+.sv-btn-sm-compact {
+  min-width: 40px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* --- Required asterisk --- */
+.sv-required-star {
+  color: var(--error);
+  font-weight: 700;
+}
+
+/* --- Required hint small text --- */
+.sv-required-hint {
+  color: var(--error);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* --- Subtitle paragraph in modal header --- */
+.sv-modal-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+/* --- Close/wide button in Prüfungsinhalte footer --- */
+.sv-btn-wide {
+  min-width: 200px;
+}
+
+/* --- Graduierung h4 in PruefungsinhaltManager --- */
+.sv-grad-h4 {
+  margin: 0;
+}
+
+/* --- Hochstufungen pro Monat wrapper --- */
+.sv-mb-20 {
+  margin-bottom: 20px;
+}
+
+/* === INLINE STYLE MIGRATIONS === */
+
+/* Loading buttons */
+.sv-grad-manager-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+.sv-btn-cancel:disabled { cursor: not-allowed; opacity: 0.5; }
+.sv-btn-save:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Kategorie tab buttons */
+.sv-kat-tab-btn {
+  padding: 0.75rem 1.5rem; background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7); cursor: pointer; font-size: 0.95rem;
+  font-weight: 400; transition: all 0.2s ease; white-space: nowrap;
+}
+.sv-kat-tab-btn--active {
+  background: rgba(255, 215, 0, 0.15); border-color: rgba(255, 215, 0, 0.5);
+  color: #ffd700; font-weight: 600;
+}
+
+/* Belt option cards */
+.sv-belt-option-card {
+  padding: 1rem 0.75rem; background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 12px;
+  cursor: pointer; transition: all 0.3s ease;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 110px; box-sizing: border-box;
+}
+.sv-belt-option-card--selected { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; }
+.sv-belt-option-name { font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); margin-top: 0.5rem; text-align: center; line-height: 1.3; word-wrap: break-word; width: 100%; }
+.sv-belt-option-name--selected { color: #ffd700; }
+
+/* Custom name input validation */
+.sv-grad-name-input {
+  width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px;
+  color: var(--text-primary); font-size: 1rem; box-sizing: border-box;
+}
+.sv-grad-name-input--error {
+  border: 2px solid rgba(255, 107, 107, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+}
+
+/* Sekundaer label */
+.sv-sekundaer-label { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.2); }
+.sv-sekundaer-label--active { background: rgba(255, 215, 0, 0.15); border-color: rgba(255, 215, 0, 0.3); }
+.sv-sekundaer-text { font-size: 0.9rem; font-weight: 500; color: rgba(255, 255, 255, 0.7); }
+.sv-sekundaer-text--active { color: #ffd700; font-weight: 600; }
+
+/* Chevron rotation */
+.sv-chevron { display: inline-block; transition: transform 0.2s ease; }
+.sv-chevron--expanded { transform: rotate(180deg); }

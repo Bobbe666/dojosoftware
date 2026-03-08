@@ -509,12 +509,12 @@ const Kurse = () => {
 
   return (
     <div className="kurse-container-modern">
-      <div className="kurse-header" style={{ marginBottom: '0.5rem' }}>
-        <h2 style={{ fontSize: '1.2rem', marginBottom: '0.2rem' }}>🥋 {t('management.title')}</h2>
+      <div className="kurse-header ku-header">
+        <h2 className="ku-header-title">🥋 {t('management.title')}</h2>
       </div>
 
       {/* Tab Navigation */}
-      <div className="tab-navigation" style={{ marginBottom: '0.5rem' }}>
+      <div className="tab-navigation ku-tab-nav">
         <button
           className={`tab-button ${activeTab === "kurse" ? "active" : ""}`}
           onClick={() => setActiveTab("kurse")}
@@ -539,61 +539,25 @@ const Kurse = () => {
     return (
       <>
         {/* Sortierung innerhalb der Stil-Gruppen */}
-        <div style={{
-          display: 'flex',
-          gap: '0.5rem',
-          marginBottom: '1rem',
-          flexWrap: 'wrap',
-          alignItems: 'center'
-        }}>
-          <span style={{ color: '#ffffff', fontWeight: 600, marginRight: '0.5rem' }}>
+        <div className="ku-sort-row">
+          <span className="ku-sort-label">
             📊 {t('management.sortBy')}
           </span>
           <button
             onClick={() => handleSort('gruppenname')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'gruppenname' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'gruppenname' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
+            className={`ku-sort-btn ${sortConfig.key === 'gruppenname' ? 'active' : ''}`}
           >
             🏷️ {t('management.sortGroup')} {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
           </button>
           <button
             onClick={() => handleSort('raum')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'raum' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'raum' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
+            className={`ku-sort-btn ${sortConfig.key === 'raum' ? 'active' : ''}`}
           >
             🏛️ {t('management.sortRoom')} {sortConfig.key === 'raum' && getSortIcon('raum')}
           </button>
           <button
             onClick={() => handleSort('trainer')}
-            style={{
-              padding: '0.5rem 1rem',
-              background: sortConfig.key === 'trainer' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-              border: sortConfig.key === 'trainer' ? '2px solid rgba(255, 215, 0, 0.6)' : '1px solid rgba(255, 215, 0, 0.3)',
-              borderRadius: '8px',
-              color: '#ffffff',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              transition: 'all 0.2s'
-            }}
+            className={`ku-sort-btn ${sortConfig.key === 'trainer' ? 'active' : ''}`}
           >
             👨‍🏫 {t('management.sortTrainer')} {sortConfig.key === 'trainer' && getSortIcon('trainer')}
           </button>
@@ -624,202 +588,82 @@ const Kurse = () => {
         </div>
 
         {/* Statistiken */}
-        <div className="kurse-stats" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-          gap: '0.5rem',
-          marginBottom: '0.5rem',
-          marginTop: '0.2rem'
-        }}>
+        <div className="kurse-stats ku-stats-grid">
           <div 
-            className="stat-card"
-            style={{
-              padding: '0.5rem',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-              minHeight: '78px', // 30% höher (60px * 1.3 = 78px)
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.2)'
-            }}
+            className="stat-card ku-stat-card"
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.5rem',
-              marginBottom: '0.1rem'
-            }}>
-              <span style={{ fontSize: '1.2rem' }}>🥋</span>
-              <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#1f2937' }}>
+            <div className="ku-stat-inner">
+              <span className="ku-stat-emoji-lg">🥋</span>
+              <span className="ku-stat-number-dark">
                 {kurse.length}
               </span>
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div className="ku-stat-label-muted">
               {t('stats.totalCourses')}
             </div>
           </div>
           <div 
-            className="stat-card"
-            style={{
-              padding: '0.5rem',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-              minHeight: '78px', // 30% höher
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.2)'
-            }}
+            className="stat-card ku-stat-card"
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.3rem',
-              marginBottom: '0.05rem'
-            }}>
-              <span style={{ fontSize: '1rem' }}>🎯</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff' }}>
+            <div className="ku-stat-inner-sm">
+              <span className="ku-stat-emoji">🎯</span>
+              <span className="ku-stat-number">
                 {sortedKurse.length}
               </span>
             </div>
-            <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div className="ku-stat-label">
               {t('stats.filteredResults')}
             </div>
           </div>
           <div 
-            className="stat-card"
-            style={{
-              padding: '0.5rem',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-              minHeight: '78px', // 30% höher
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.2)'
-            }}
+            className="stat-card ku-stat-card"
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.3rem',
-              marginBottom: '0.05rem'
-            }}>
-              <span style={{ fontSize: '1rem' }}>👥</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff' }}>
+            <div className="ku-stat-inner-sm">
+              <span className="ku-stat-emoji">👥</span>
+              <span className="ku-stat-number">
                 {new Set(kurse.map(k => k.trainer_id)).size}
               </span>
             </div>
-            <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div className="ku-stat-label">
               {t('stats.activeTrainers')}
             </div>
           </div>
           <div 
-            className="stat-card"
-            style={{
-              padding: '0.5rem',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-              minHeight: '78px', // 30% höher
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.2)'
-            }}
+            className="stat-card ku-stat-card"
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.3rem',
-              marginBottom: '0.05rem'
-            }}>
-              <span style={{ fontSize: '1rem' }}>🏠</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff' }}>
+            <div className="ku-stat-inner-sm">
+              <span className="ku-stat-emoji">🏠</span>
+              <span className="ku-stat-number">
                 {new Set(kurse.map(k => k.raum_id)).size || 0}
               </span>
             </div>
-            <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div className="ku-stat-label">
               {t('stats.rooms')}
             </div>
           </div>
           <div 
-            className="stat-card"
-            style={{
-              padding: '0.5rem',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-              minHeight: '78px', // 30% höher
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.2)'
-            }}
+            className="stat-card ku-stat-card"
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.3rem',
-              marginBottom: '0.05rem'
-            }}>
-              <span style={{ fontSize: '1rem' }}>👶</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff' }}>
+            <div className="ku-stat-inner-sm">
+              <span className="ku-stat-emoji">👶</span>
+              <span className="ku-stat-number">
                 {kurse.filter(k => k.gruppe && k.gruppe.toLowerCase().includes('kind')).length}
               </span>
             </div>
-            <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div className="ku-stat-label">
               {t('stats.childrenCourses')}
             </div>
           </div>
           <div 
-            className="stat-card"
-            style={{
-              padding: '0.5rem',
-              borderRadius: '6px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-              textAlign: 'center',
-              minHeight: '78px', // 30% höher
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.08)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 215, 0, 0.2)'
-            }}
+            className="stat-card ku-stat-card"
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '0.3rem',
-              marginBottom: '0.05rem'
-            }}>
-              <span style={{ fontSize: '1rem' }}>👨‍💼</span>
-              <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#ffffff' }}>
+            <div className="ku-stat-inner-sm">
+              <span className="ku-stat-emoji">👨‍💼</span>
+              <span className="ku-stat-number">
                 {kurse.filter(k => k.gruppe && !k.gruppe.toLowerCase().includes('kind')).length}
               </span>
             </div>
-            <div style={{ fontSize: '0.6rem', color: '#ffffff', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            <div className="ku-stat-label">
               {t('stats.adultCourses')}
             </div>
           </div>
@@ -829,23 +673,12 @@ const Kurse = () => {
         <div className="kurse-by-stil">
           {Object.keys(kurseByStil).length > 0 ? (
             Object.keys(kurseByStil).sort().map((stilName, stilIndex) => (
-              <div key={stilName} className="stil-section" style={{ marginBottom: '2rem' }}>
+              <div key={stilName} className="stil-section ku-stil-mb">
                 {/* Stil-Header mit Dropdown */}
                 <h2
                   className="stil-header"
                   onClick={() => toggleStil(stilName)}
-                  style={{
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '1rem 1.5rem',
-                    background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))',
-                    border: '2px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '12px',
-                    marginBottom: '1rem',
-                    transition: 'all 0.3s ease'
-                  }}
+                  
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15))';
                     e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.5)';
@@ -855,28 +688,18 @@ const Kurse = () => {
                     e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🥋</span>
-                    <span style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ffffff', textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)' }}>
+                  <span className="u-flex-row-lg">
+                    <span className="ku-stat-emoji-lg">🥋</span>
+                    <span className="ku-stil-title">
                       {stilName}
                     </span>
-                    <span style={{
-                      fontSize: '0.9rem',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontWeight: 600
-                    }}>
+                    <span className="ku-stil-count">
                       {kurseByStil[stilName].length} {kurseByStil[stilName].length === 1 ? 'Kurs' : 'Kurse'}
                     </span>
                   </span>
-                  <span style={{
-                    transform: collapsedStile[stilName] ? 'rotate(-90deg)' : 'rotate(0deg)',
-                    transition: 'transform 0.3s ease',
-                    fontSize: '1.2rem',
-                    color: '#ffffff'
-                  }}>
+                  <span
+                    className={`ku-stil-chevron-span${collapsedStile[stilName] ? ' ku-stil-chevron-span--collapsed' : ''}`}
+                  >
                     ▼
                   </span>
                 </h2>
@@ -943,21 +766,9 @@ const Kurse = () => {
                 {hasMultipleLocations && kurs.standort_name && (
                   <div
                     className="kurs-standort-badge"
-                    style={{
-                      background: kurs.standort_farbe || '#4F46E5',
-                      color: 'white',
-                      padding: '6px 12px',
-                      fontSize: '0.75rem',
-                      fontWeight: '600',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      borderRadius: '6px',
-                      marginTop: '8px',
-                      marginBottom: '4px'
-                    }}
+                    style={{ '--standort-color': kurs.standort_farbe || '#4F46E5' }}
                   >
-                    <span style={{ fontSize: '0.9rem' }}>📍</span>
+                    <span className="ku-pin-icon">📍</span>
                     <span>{kurs.standort_name}</span>
                   </div>
                 )}
@@ -1116,18 +927,8 @@ const Kurse = () => {
                 {!showNewRoomForm && (
                   <button 
                     type="button"
-                    className="add-new-btn"
+                    className="add-new-btn ku-btn-add-room-trigger"
                     onClick={() => setShowNewRoomForm(true)}
-                    style={{
-                      marginTop: '0.5rem',
-                      padding: '0.4rem 0.8rem',
-                      fontSize: '0.8rem',
-                      background: 'rgba(255, 215, 0, 0.2)',
-                      border: '1px solid rgba(255, 215, 0, 0.5)',
-                      borderRadius: '6px',
-                      color: '#ffffff',
-                      cursor: 'pointer'
-                    }}
                   >
                     ➕ Neuen Raum hinzufügen
                   </button>
@@ -1135,31 +936,18 @@ const Kurse = () => {
                 
                 {/* Formular für neuen Raum */}
                 {showNewRoomForm && (
-                  <div className="new-room-form" style={{
-                    marginTop: '0.5rem',
-                    padding: '1rem',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px'
-                  }}>
-                    <h4 style={{ color: '#ffffff', marginBottom: '0.8rem', fontSize: '0.9rem' }}>
+                  <div className="new-room-form ku-new-room-form">
+                    <h4 className="ku-new-room-h4">
                       🏠 Neuen Raum erstellen
                     </h4>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="u-flex-col-sm">
                       <input
                         type="text"
                         placeholder="Raum-Name (z.B. Hauptraum)"
                         value={newRoomData.name}
                         onChange={(e) => setNewRoomData({ ...newRoomData, name: e.target.value })}
-                        style={{
-                          padding: '0.4rem',
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          border: '1px solid rgba(255, 215, 0, 0.4)',
-                          borderRadius: '4px',
-                          color: '#ffffff',
-                          fontSize: '0.9rem'
-                        }}
+                        className="ku-room-input"
                       />
                       
                       <input
@@ -1167,14 +955,7 @@ const Kurse = () => {
                         placeholder="Beschreibung (optional)"
                         value={newRoomData.beschreibung}
                         onChange={(e) => setNewRoomData({ ...newRoomData, beschreibung: e.target.value })}
-                        style={{
-                          padding: '0.4rem',
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          border: '1px solid rgba(255, 215, 0, 0.4)',
-                          borderRadius: '4px',
-                          color: '#ffffff',
-                          fontSize: '0.9rem'
-                        }}
+                        className="ku-room-input"
                       />
                       
                       <input
@@ -1182,14 +963,7 @@ const Kurse = () => {
                         placeholder="Größe (optional, z.B. 50m²)"
                         value={newRoomData.groesse}
                         onChange={(e) => setNewRoomData({ ...newRoomData, groesse: e.target.value })}
-                        style={{
-                          padding: '0.4rem',
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          border: '1px solid rgba(255, 215, 0, 0.4)',
-                          borderRadius: '4px',
-                          color: '#ffffff',
-                          fontSize: '0.9rem'
-                        }}
+                        className="ku-room-input"
                       />
                       
                       <input
@@ -1197,29 +971,14 @@ const Kurse = () => {
                         placeholder="Kapazität (optional)"
                         value={newRoomData.kapazitaet}
                         onChange={(e) => setNewRoomData({ ...newRoomData, kapazitaet: e.target.value })}
-                        style={{
-                          padding: '0.4rem',
-                          background: 'rgba(255, 255, 255, 0.15)',
-                          border: '1px solid rgba(255, 215, 0, 0.4)',
-                          borderRadius: '4px',
-                          color: '#ffffff',
-                          fontSize: '0.9rem'
-                        }}
+                        className="ku-room-input"
                       />
                       
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      <div className="ku-room-btn-row">
                         <button
                           type="button"
                           onClick={() => handleNewRoom(newRoomData, false)}
-                          style={{
-                            padding: '0.4rem 0.8rem',
-                            background: 'rgba(0, 255, 0, 0.3)',
-                            border: '1px solid rgba(0, 255, 0, 0.5)',
-                            borderRadius: '4px',
-                            color: '#ffffff',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem'
-                          }}
+                          className="ku-btn-add-room"
                         >
                           ✅ Hinzufügen
                         </button>
@@ -1230,15 +989,7 @@ const Kurse = () => {
                             setShowNewRoomForm(false);
                             setNewRoomData({ name: "", beschreibung: "", groesse: "", kapazitaet: "" });
                           }}
-                          style={{
-                            padding: '0.4rem 0.8rem',
-                            background: 'rgba(255, 0, 0, 0.3)',
-                            border: '1px solid rgba(255, 0, 0, 0.5)',
-                            borderRadius: '4px',
-                            color: '#ffffff',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem'
-                          }}
+                          className="ku-btn-cancel-room"
                         >
                           ❌ Abbrechen
                         </button>
@@ -1286,7 +1037,7 @@ const Kurse = () => {
         <div className="einstellungen-grid">
           
           {/* Trainer verwalten */}
-          <div className="einstellungen-card" style={{animationDelay: "0.1s"}}>
+          <div className="einstellungen-card ku-card-delay-1">
             <div className="card-header">
               <h3>👨‍🏫 {t('trainers.title')}</h3>
             </div>
@@ -1366,8 +1117,7 @@ const Kurse = () => {
                         ✅ {t('trainers.addTrainer')}
                       </button>
                       <button
-                        className="cancel-btn-small"
-                        style={{marginLeft: '1rem', padding: '14px 28px', fontSize: '1.1rem'}}
+                        className="cancel-btn-small ku-cancel-trainer-btn"
                         onClick={() => {
                           setShowNewTrainerForm(false);
                           setNewTrainerData({ vorname: "", nachname: "", email: "", telefon: "" });
@@ -1390,7 +1140,7 @@ const Kurse = () => {
           </div>
 
           {/* Gruppen verwalten */}
-          <div className="einstellungen-card" style={{animationDelay: "0.2s"}}>
+          <div className="einstellungen-card ku-card-delay-2">
             <div className="card-header">
               <h3>🏷️ {t('groups.title')}</h3>
             </div>
@@ -1454,7 +1204,7 @@ const Kurse = () => {
           </div>
 
           {/* Stile verwalten */}
-          <div className="einstellungen-card" style={{animationDelay: "0.3s"}}>
+          <div className="einstellungen-card ku-card-delay-3">
             <div className="card-header">
               <h3>🥋 {t('styles.title')}</h3>
             </div>
@@ -1522,7 +1272,7 @@ const Kurse = () => {
           </div>
 
           {/* Räume verwalten */}
-          <div className="einstellungen-card" style={{animationDelay: "0.4s"}}>
+          <div className="einstellungen-card ku-card-delay-4">
             <div className="card-header">
               <h3>🏛️ {t('rooms.title')}</h3>
             </div>
@@ -1546,15 +1296,15 @@ const Kurse = () => {
                           onClick={() => {/* TODO: Implementieren */}}
                         >↓</button>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontWeight: 'bold' }}>{raum.name}</span>
+                      <div className="ku-room-info-col">
+                        <span className="ku-room-name">{raum.name}</span>
                         {raum.beschreibung && (
-                          <span style={{ fontSize: '0.8rem', color: '#ccc', marginTop: '0.2rem' }}>
+                          <span className="ku-room-desc">
                             {raum.beschreibung}
                           </span>
                         )}
                         {(raum.groesse || raum.kapazitaet) && (
-                          <span style={{ fontSize: '0.7rem', color: '#999', marginTop: '0.1rem' }}>
+                          <span className="ku-room-size">
                             {raum.groesse && `${raum.groesse}`}
                             {raum.groesse && raum.kapazitaet && ' • '}
                             {raum.kapazitaet && `${raum.kapazitaet} Personen`}
@@ -1573,14 +1323,8 @@ const Kurse = () => {
               <div className="new-item-form">
                 <h4>🆕 {t('rooms.addNew')}</h4>
                 {showNewRoomFormStammdaten ? (
-                  <div className="room-form-stammdaten" style={{
-                    padding: '1rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    marginTop: '0.5rem'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div className="room-form-stammdaten ku-room-stammdaten-form">
+                    <div className="u-flex-col-sm">
                       <input
                         type="text"
                         className="form-input"
@@ -1613,7 +1357,7 @@ const Kurse = () => {
                         onChange={(e) => setNewRoomDataStammdaten({ ...newRoomDataStammdaten, kapazitaet: e.target.value })}
                       />
                       
-                      <div className="input-buttons" style={{ marginTop: '0.5rem' }}>
+                      <div className="input-buttons ku-input-buttons-mt">
                         <button 
                           className="add-btn-small" 
                           onClick={() => handleNewRoom(newRoomDataStammdaten, true)}

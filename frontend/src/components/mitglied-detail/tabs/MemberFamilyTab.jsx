@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import config from '../../../config/config';
+import './MemberFamilyTab.css';
 
 // Vertreter-Typ Optionen
 const VERTRETER_TYPEN = [
@@ -21,19 +22,19 @@ const RABATT_GRUENDE = [
   { value: 'Sonstiges', label: 'Sonstiges' }
 ];
 
-// Inline-Styles fuer Vertreter-Formular
+// Inline-Styles fuer Vertreter-Formular (kept for gridRowStyle / inputStyle / labelStyle used in edit form)
 const inputStyle = {
   width: '100%',
   padding: '0.6rem',
   background: 'rgba(255, 255, 255, 0.05)',
   border: '1px solid rgba(255, 255, 255, 0.1)',
   borderRadius: '4px',
-  color: '#fff',
+  color: 'var(--text-primary)',
   fontSize: '0.9rem'
 };
 
 const labelStyle = {
-  color: 'rgba(255, 255, 255, 0.7)',
+  color: 'var(--text-secondary)',
   fontWeight: '500',
   fontSize: '0.9rem'
 };
@@ -124,135 +125,63 @@ const MemberFamilyTab = ({
   ));
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="mft-root">
       {/* Familienmitglieder-Liste - immer anzeigen */}
-      <div className="field-group card" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="field-group card u-mb-15">
+          <h3 className="mft-h3-familie">
             <span>Familienmitglieder</span>
             {familienId && (
-              <span style={{
-                fontSize: '0.75rem',
-                padding: '0.25rem 0.5rem',
-                background: 'rgba(255, 215, 0, 0.15)',
-                borderRadius: '4px',
-                color: '#FFD700'
-              }}>
+              <span className="mft-familie-badge">
                 Familie #{familienId}
               </span>
             )}
           </h3>
 
           {loadingFamilie ? (
-            <div style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,255,255,0.5)' }}>
+            <div className="mft-loading">
               Lade Familienmitglieder...
             </div>
           ) : familienmitglieder.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div className="u-flex-col-md">
               {familienmitglieder.map((fm) => (
                 <div
                   key={fm.mitglied_id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    padding: '0.75rem 1rem',
-                    background: fm.mitglied_id === mitglied?.mitglied_id
-                      ? 'rgba(255, 215, 0, 0.1)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    borderRadius: '8px',
-                    border: fm.mitglied_id === mitglied?.mitglied_id
-                      ? '1px solid rgba(255, 215, 0, 0.3)'
-                      : '1px solid rgba(255, 255, 255, 0.08)',
-                    cursor: fm.mitglied_id !== mitglied?.mitglied_id ? 'pointer' : 'default',
-                    transition: 'all 0.2s ease'
-                  }}
+                  className={`mft-member-row ${fm.mitglied_id === mitglied?.mitglied_id ? 'mft-member-row--current' : 'mft-member-row--other'}`}
                   onClick={() => {
                     if (fm.mitglied_id !== mitglied?.mitglied_id) {
                       window.location.href = `/dashboard/mitglieder/${fm.mitglied_id}`;
                     }
                   }}
-                  onMouseEnter={(e) => {
-                    if (fm.mitglied_id !== mitglied?.mitglied_id) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (fm.mitglied_id !== mitglied?.mitglied_id) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                    }
-                  }}
                 >
                   {/* Avatar/Icon */}
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: fm.ist_minderjaehrig ? 'rgba(100, 149, 237, 0.2)' : 'rgba(255, 215, 0, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.2rem',
-                    flexShrink: 0
-                  }}>
+                  <div className={`mft-avatar ${fm.ist_minderjaehrig ? 'mft-avatar--minor' : 'mft-avatar--adult'}`}>
                     {fm.ist_minderjaehrig ? '👶' : '👤'}
                   </div>
 
                   {/* Name und Details */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontWeight: '500',
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
+                  <div className="u-flex-1-min0">
+                    <div className="mft-member-name">
                       {fm.vorname} {fm.nachname}
                       {fm.mitglied_id === mitglied?.mitglied_id && (
-                        <span style={{
-                          fontSize: '0.7rem',
-                          padding: '0.15rem 0.4rem',
-                          background: 'rgba(255, 215, 0, 0.2)',
-                          borderRadius: '3px',
-                          color: '#FFD700'
-                        }}>
+                        <span className="mft-current-badge">
                           aktuell
                         </span>
                       )}
                     </div>
-                    <div style={{
-                      fontSize: '0.85rem',
-                      color: 'rgba(255, 255, 255, 0.5)',
-                      display: 'flex',
-                      gap: '0.75rem',
-                      flexWrap: 'wrap',
-                      alignItems: 'center'
-                    }}>
+                    <div className="mft-member-meta">
                       {fm.alter_jahre !== null && (
                         <span>{fm.alter_jahre} Jahre</span>
                       )}
                       {fm.tarif_name && (
-                        <span style={{ color: 'rgba(255, 215, 0, 0.7)' }}>{fm.tarif_name}</span>
+                        <span className="mft-tarif-name">{fm.tarif_name}</span>
                       )}
                       {fm.rabatt_prozent && parseFloat(fm.rabatt_prozent) > 0 && (
-                        <span style={{
-                          padding: '0.15rem 0.4rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          background: 'rgba(76, 175, 80, 0.2)',
-                          color: '#4CAF50',
-                          fontWeight: '500'
-                        }}>
+                        <span className="mft-rabatt-badge">
                           -{fm.rabatt_prozent}% {fm.rabatt_grund || 'Rabatt'}
                         </span>
                       )}
                       {fm.vertrag_status && (
-                        <span style={{
-                          padding: '0.1rem 0.3rem',
-                          borderRadius: '3px',
-                          fontSize: '0.75rem',
-                          background: fm.vertrag_status === 'aktiv' ? 'rgba(76, 175, 80, 0.2)' : 'rgba(255, 152, 0, 0.2)',
-                          color: fm.vertrag_status === 'aktiv' ? '#4CAF50' : '#FF9800'
-                        }}>
+                        <span className={fm.vertrag_status === 'aktiv' ? 'mft-vertrag-aktiv' : 'mft-vertrag-inaktiv'}>
                           {fm.vertrag_status}
                         </span>
                       )}
@@ -261,7 +190,7 @@ const MemberFamilyTab = ({
 
                   {/* Link-Icon */}
                   {fm.mitglied_id !== mitglied?.mitglied_id && (
-                    <div style={{ color: 'rgba(255, 255, 255, 0.3)', fontSize: '1.2rem' }}>
+                    <div className="mft-link-arrow">
                       →
                     </div>
                   )}
@@ -269,12 +198,7 @@ const MemberFamilyTab = ({
               ))}
             </div>
           ) : (
-            <div style={{
-              textAlign: 'center',
-              padding: '1.5rem',
-              color: 'rgba(255, 255, 255, 0.5)',
-              fontStyle: 'italic'
-            }}>
+            <div className="mft-empty">
               Keine Familienmitglieder vorhanden
             </div>
           )}
@@ -337,10 +261,10 @@ const MemberFamilyTab = ({
       </div>
 
       {/* Gesetzliche Vertreter */}
-      <div className="field-group card" style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Gesetzliche Vertreter</h3>
+      <div className="field-group card u-mb-15">
+        <h3 className="mft-h3-vertreter">Gesetzliche Vertreter</h3>
         {editMode ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="mft-edit-col">
             {/* Vertreter 1 */}
             <div style={gridRowStyle}>
               <label style={labelStyle}>Vertreter:</label>
@@ -419,93 +343,52 @@ const MemberFamilyTab = ({
           </div>
         ) : (
           /* Read-Only Tabelle */
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '0.9rem',
-              minWidth: '600px'
-            }}>
+          <div className="mft-table-wrap">
+            <table className="mft-table">
               <thead>
-                <tr style={{
-                  borderBottom: '2px solid rgba(255, 215, 0, 0.3)',
-                  background: 'rgba(255, 215, 0, 0.05)'
-                }}>
-                  <th style={{
-                    padding: '1rem',
-                    textAlign: 'left',
-                    color: '#FFD700',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    minWidth: '200px'
-                  }}>Vertreter</th>
-                  <th style={{
-                    padding: '1rem',
-                    textAlign: 'left',
-                    color: '#FFD700',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    minWidth: '200px'
-                  }}>Name</th>
-                  <th style={{
-                    padding: '1rem',
-                    textAlign: 'left',
-                    color: '#FFD700',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    minWidth: '180px'
-                  }}>Telefon</th>
-                  <th style={{
-                    padding: '1rem',
-                    textAlign: 'left',
-                    color: '#FFD700',
-                    fontWeight: '600',
-                    fontSize: '0.9rem',
-                    minWidth: '250px'
-                  }}>E-Mail</th>
+                <tr className="mft-thead-row">
+                  <th className="mft-th">Vertreter</th>
+                  <th className="mft-th">Name</th>
+                  <th className="mft-th mft-th--telefon">Telefon</th>
+                  <th className="mft-th mft-th--email">E-Mail</th>
                 </tr>
               </thead>
               <tbody>
                 {(mitglied.vertreter1_name || mitglied.vertreter1_typ) && (
-                  <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <tr className="mft-tbody-row">
+                    <td className="mft-td">
                       {mitglied.vertreter1_typ || 'Nicht angegeben'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <td className="mft-td">
                       {mitglied.vertreter1_name || 'Nicht angegeben'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <td className="mft-td">
                       {mitglied.vertreter1_telefon || 'Nicht angegeben'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <td className="mft-td">
                       {mitglied.vertreter1_email || 'Nicht angegeben'}
                     </td>
                   </tr>
                 )}
                 {(mitglied.vertreter2_name || mitglied.vertreter2_typ) && (
-                  <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <tr className="mft-tbody-row">
+                    <td className="mft-td">
                       {mitglied.vertreter2_typ || 'Nicht angegeben'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <td className="mft-td">
                       {mitglied.vertreter2_name || 'Nicht angegeben'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <td className="mft-td">
                       {mitglied.vertreter2_telefon || 'Nicht angegeben'}
                     </td>
-                    <td style={{ padding: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <td className="mft-td">
                       {mitglied.vertreter2_email || 'Nicht angegeben'}
                     </td>
                   </tr>
                 )}
                 {(!mitglied.vertreter1_name && !mitglied.vertreter1_typ && !mitglied.vertreter2_name && !mitglied.vertreter2_typ) && (
                   <tr>
-                    <td colSpan="4" style={{
-                      padding: '2rem',
-                      textAlign: 'center',
-                      color: 'rgba(255, 255, 255, 0.5)',
-                      fontStyle: 'italic'
-                    }}>
+                    <td colSpan="4" className="mft-td-empty">
                       Keine Vertreter eingetragen
                     </td>
                   </tr>
@@ -514,7 +397,7 @@ const MemberFamilyTab = ({
             </table>
           </div>
         )}
-        <div className="info-box" style={{ marginTop: '1rem' }}>
+        <div className="info-box mft-infobox-mt">
           <p><strong>Hinweis:</strong> Vertreter-Informationen sind nur fuer minderjaehrige Mitglieder erforderlich oder wenn eine gesetzliche Vertretung vorliegt.</p>
         </div>
       </div>

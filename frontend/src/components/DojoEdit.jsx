@@ -758,7 +758,7 @@ const DojoEdit = () => {
 
           {/* Dojo Header */}
           <div className="mitglied-header">
-            <div className="mitglied-avatar" style={{ fontSize: '2.5rem' }}>
+            <div className="mitglied-avatar de-avatar-emoji">
               🏯
             </div>
             {!sidebarCollapsed && (
@@ -865,7 +865,7 @@ const DojoEdit = () => {
                 </div>
               </div>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Adresse</h4>
+              <h4 className="de-section-heading">Adresse</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Straße</label>
@@ -876,7 +876,7 @@ const DojoEdit = () => {
                     placeholder="Straßenname"
                   />
                 </div>
-                <div className="form-group" style={{ maxWidth: '120px' }}>
+                <div className="form-group de-form-group-120">
                   <label>Hausnummer</label>
                   <input
                     type="text"
@@ -888,7 +888,7 @@ const DojoEdit = () => {
               </div>
 
               <div className="form-row">
-                <div className="form-group" style={{ maxWidth: '150px' }}>
+                <div className="form-group de-form-group-150">
                   <label>PLZ</label>
                   <input
                     type="text"
@@ -1012,7 +1012,7 @@ const DojoEdit = () => {
 
           {/* Räume Tab */}
           {activeTab === 'raeume' && (
-            <div className="form-section" style={{ padding: 0, background: 'transparent' }}>
+            <div className="form-section de-btn-reset">
               <RaumVerwaltung />
             </div>
           )}
@@ -1022,7 +1022,7 @@ const DojoEdit = () => {
             <div className="form-section">
               <h3>Rechtliche Informationen</h3>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Register & Behörden</h4>
+              <h4 className="de-section-heading">Register & Behörden</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Vereinsregister-Nr.</label>
@@ -1054,7 +1054,7 @@ const DojoEdit = () => {
                 />
               </div>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Vorstand (für Vereine)</h4>
+              <h4 className="de-section-heading">Vorstand (für Vereine)</h4>
               <div className="form-group">
                 <label>1. Vorsitzender</label>
                 <input
@@ -1114,7 +1114,7 @@ const DojoEdit = () => {
             <div className="form-section">
               <h3>Versicherungen</h3>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Haftpflichtversicherung</h4>
+              <h4 className="de-section-heading">Haftpflichtversicherung</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Versicherungsgesellschaft</label>
@@ -1145,7 +1145,7 @@ const DojoEdit = () => {
                 />
               </div>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Weitere Versicherungen</h4>
+              <h4 className="de-section-heading">Weitere Versicherungen</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Unfallversicherung</label>
@@ -1183,38 +1183,28 @@ const DojoEdit = () => {
           {activeTab === 'vertraege' && (
             <div className="form-section">
               <h3>Vertragsmodell & Einstellungen</h3>
-              <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.5rem' }}>
+              <p className="de-intro-text">
                 Wählen Sie das Vertragsmodell und konfigurieren Sie die Standardeinstellungen für neue Verträge
               </p>
 
               {/* Vertragsmodell Auswahl */}
-              <h4 style={{ marginTop: '1rem', marginBottom: '1rem', color: '#ffd700' }}>🔄 Vertragsmodell auswählen</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <h4 className="de-section-heading-md">🔄 Vertragsmodell auswählen</h4>
+              <div className="de-option-list">
                 {/* Option 1: Gesetzliche Verlängerung */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: formData.vertragsmodell === 'gesetzlich' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: formData.vertragsmodell === 'gesetzlich' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}>
+                <label className={`de-option-label${formData.vertragsmodell === 'gesetzlich' ? ' de-option-label--gesetzlich-active' : ' de-option-label--inactive'}`}>
                   <input
                     type="radio"
                     name="vertragsmodell"
                     value="gesetzlich"
                     checked={formData.vertragsmodell === 'gesetzlich'}
                     onChange={(e) => setFormData({ ...formData, vertragsmodell: e.target.value })}
-                    style={{ marginTop: '4px' }}
+                    className="de-radio-mt"
                   />
                   <div>
-                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                    <div className="de-label-bold">
                       📜 Gesetzliche Verlängerung (Standard)
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                    <div className="de-text-secondary-sm">
                       Vertrag verlängert sich automatisch. Nach der Verlängerung kann das Mitglied
                       jederzeit mit <strong>1 Monat Frist</strong> kündigen (gemäß Gesetz für faire Verbraucherverträge 2022).
                     </div>
@@ -1222,30 +1212,20 @@ const DojoEdit = () => {
                 </label>
 
                 {/* Option 2: Beitragsgarantie */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: formData.vertragsmodell === 'beitragsgarantie' ? 'rgba(20, 184, 166, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: formData.vertragsmodell === 'beitragsgarantie' ? '2px solid #14b8a6' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}>
+                <label className={`de-option-label${formData.vertragsmodell === 'beitragsgarantie' ? ' de-option-label--beitragsgarantie-active' : ' de-option-label--inactive'}`}>
                   <input
                     type="radio"
                     name="vertragsmodell"
                     value="beitragsgarantie"
                     checked={formData.vertragsmodell === 'beitragsgarantie'}
                     onChange={(e) => setFormData({ ...formData, vertragsmodell: e.target.value })}
-                    style={{ marginTop: '4px' }}
+                    className="de-radio-mt"
                   />
                   <div>
-                    <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                    <div className="de-label-bold">
                       💰 Beitragsgarantie-Modell
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: '1.5' }}>
+                    <div className="de-text-secondary-sm">
                       Mitglied muss <strong>aktiv verlängern</strong>, um seinen aktuellen Beitrag zu behalten.
                       Bei Nicht-Verlängerung gilt automatisch der aktuelle Tarifpreis oder der Vertrag endet.
                     </div>
@@ -1255,16 +1235,10 @@ const DojoEdit = () => {
 
               {/* Beitragsgarantie Einstellungen */}
               {formData.vertragsmodell === 'beitragsgarantie' && (
-                <div style={{
-                  background: 'rgba(20, 184, 166, 0.1)',
-                  border: '1px solid rgba(20, 184, 166, 0.3)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginBottom: '1.5rem'
-                }}>
-                  <h4 style={{ color: '#14b8a6', marginBottom: '1rem' }}>⚙️ Beitragsgarantie-Einstellungen</h4>
+                <div className="de-bg-section-teal">
+                  <h4 className="de-heading-teal">⚙️ Beitragsgarantie-Einstellungen</h4>
 
-                  <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <div className="form-group de-mb-md">
                     <label>Bei Nicht-Verlängerung</label>
                     <select
                       value={formData.beitragsgarantie_bei_nichtverlaengerung}
@@ -1275,7 +1249,7 @@ const DojoEdit = () => {
                     </select>
                   </div>
 
-                  <h5 style={{ marginTop: '1rem', marginBottom: '0.75rem', color: '#fff' }}>📧 Erinnerungs-E-Mails</h5>
+                  <h5 className="de-subheading-text-primary">📧 Erinnerungs-E-Mails</h5>
                   <div className="form-row">
                     <div className="form-group">
                       <label>1. Erinnerung (Tage vorher)</label>
@@ -1312,7 +1286,7 @@ const DojoEdit = () => {
               )}
 
               {/* Allgemeine Vertragseinstellungen */}
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>📝 Allgemeine Einstellungen</h4>
+              <h4 className="de-section-heading">📝 Allgemeine Einstellungen</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Kündigungsfrist (Monate)</label>
@@ -1361,7 +1335,7 @@ const DojoEdit = () => {
                 />
               </div>
 
-              <div className="form-row" style={{ marginTop: '1rem' }}>
+              <div className="form-row de-form-row-mt">
                 <div className="form-group">
                   <label className="checkbox-label">
                     <input
@@ -1385,7 +1359,7 @@ const DojoEdit = () => {
               </div>
 
               {/* Vertragspreise */}
-              <h4 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#ffd700' }}>💶 Vertragslaufzeiten & Preise</h4>
+              <h4 className="de-section-heading-xl">💶 Vertragslaufzeiten & Preise</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label className="checkbox-label">
@@ -1403,7 +1377,7 @@ const DojoEdit = () => {
                       value={formData.vertrag_3_monate_preis}
                       onChange={(e) => setFormData({ ...formData, vertrag_3_monate_preis: e.target.value })}
                       placeholder="Preis in EUR"
-                      style={{ marginTop: '0.5rem' }}
+                      className="de-mt-sm"
                     />
                   )}
                 </div>
@@ -1423,7 +1397,7 @@ const DojoEdit = () => {
                       value={formData.vertrag_6_monate_preis}
                       onChange={(e) => setFormData({ ...formData, vertrag_6_monate_preis: e.target.value })}
                       placeholder="Preis in EUR"
-                      style={{ marginTop: '0.5rem' }}
+                      className="de-mt-sm"
                     />
                   )}
                 </div>
@@ -1443,14 +1417,14 @@ const DojoEdit = () => {
                       value={formData.vertrag_12_monate_preis}
                       onChange={(e) => setFormData({ ...formData, vertrag_12_monate_preis: e.target.value })}
                       placeholder="Preis in EUR"
-                      style={{ marginTop: '0.5rem' }}
+                      className="de-mt-sm"
                     />
                   )}
                 </div>
               </div>
 
               {/* Rabatte */}
-              <h4 style={{ marginTop: '2rem', marginBottom: '1rem', color: '#ffd700' }}>🏷️ Rabatte</h4>
+              <h4 className="de-section-heading-xl">🏷️ Rabatte</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Familienrabatt (%)</label>
@@ -1505,16 +1479,10 @@ const DojoEdit = () => {
               </div>
 
               {/* Info-Box */}
-              <div style={{
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '12px',
-                padding: '1rem',
-                marginTop: '2rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '1.5rem' }}>ℹ️</span>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)', lineHeight: '1.6' }}>
+                            <div className="de-info-box-blue">
+                <div className="de-flex-start-gap">
+                  <span className="de-icon-lg">ℹ️</span>
+                  <div className="de-info-text">
                     <strong>Hinweis zum deutschen Verbraucherrecht:</strong><br />
                     Seit März 2022 können Verbraucher nach automatischer Vertragsverlängerung jederzeit mit 1 Monat Frist kündigen.
                     Das Beitragsgarantie-Modell bietet eine faire Alternative: Mitglieder behalten ihren Preis, wenn sie aktiv verlängern.
@@ -1560,7 +1528,7 @@ const DojoEdit = () => {
                 </div>
               </div>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Trainer-Lizenzen</h4>
+              <h4 className="de-section-heading">Trainer-Lizenzen</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>A-Lizenz Trainer</label>
@@ -1649,7 +1617,7 @@ const DojoEdit = () => {
                   onChange={(e) => setFormData({ ...formData, google_maps_url: e.target.value })}
                   placeholder="https://maps.google.com/?cid=..."
                 />
-                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginTop: '0.5rem' }}>
+                <p className="de-map-hint">
                   Link zu Ihrem Google Maps Eintrag für Standort-Anzeige
                 </p>
               </div>
@@ -1672,7 +1640,7 @@ const DojoEdit = () => {
             <div className="form-section">
               <h3>Betrieb & Kontakte</h3>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Notfallkontakte</h4>
+              <h4 className="de-section-heading">Notfallkontakte</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label>Notfallkontakt Name</label>
@@ -1704,7 +1672,7 @@ const DojoEdit = () => {
                 />
               </div>
 
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>Betriebszeiten</h4>
+              <h4 className="de-section-heading">Betriebszeiten</h4>
               <div className="form-row">
                 <div className="form-group">
                   <label className="checkbox-label">
@@ -1736,52 +1704,24 @@ const DojoEdit = () => {
               <h3>Rechtliche Dokumente</h3>
 
               {/* Info-Box über neue Dokumentenverwaltung */}
-              <div style={{
-                background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)',
-                border: '2px solid #3B82F6',
-                borderRadius: '12px',
-                padding: '1.5rem',
-                marginBottom: '2rem',
-                boxShadow: '0 4px 6px rgba(59, 130, 246, 0.1)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
-                  <div style={{ fontSize: '2rem' }}>ℹ️</div>
+              <div className="de-docs-info-box">
+                <div className="de-docs-info-inner">
+                  <div className="de-docs-icon">ℹ️</div>
                   <div>
-                    <h4 style={{
-                      margin: '0 0 0.5rem 0',
-                      color: '#1E3A8A',
-                      fontSize: '1.1rem',
-                      fontWeight: '700'
-                    }}>
+                    <h4 className="de-docs-heading">
                       Versionierte Dokumentenverwaltung
                     </h4>
-                    <p style={{
-                      margin: '0 0 0.75rem 0',
-                      color: '#1E40AF',
-                      fontSize: '0.95rem',
-                      lineHeight: '1.6'
-                    }}>
+                    <p className="de-docs-body">
                       Ihre rechtlichen Dokumente (AGB, Datenschutzerklärung) werden jetzt <strong>versioniert</strong> in der Datenbank gespeichert.
                       Dies ermöglicht:
                     </p>
-                    <ul style={{
-                      margin: '0',
-                      paddingLeft: '1.5rem',
-                      color: '#1E40AF',
-                      fontSize: '0.9rem',
-                      lineHeight: '1.6'
-                    }}>
+                    <ul className="de-docs-list">
                       <li>Automatische Versionsverwaltung (z.B. Version 1.0, 1.1, 2.0)</li>
                       <li>Zeitstempel für jede Dokumentenänderung</li>
                       <li>Nachvollziehbarkeit: Welche AGB-Version wurde bei Vertragsabschluss akzeptiert?</li>
                       <li>Gültigkeit von/bis Datum für jede Version</li>
                     </ul>
-                    <p style={{
-                      margin: '1rem 0 0 0',
-                      color: '#1E40AF',
-                      fontSize: '0.85rem',
-                      fontStyle: 'italic'
-                    }}>
+                    <p className="de-docs-hint">
                       💡 <strong>Hinweis:</strong> Standard-Dokumente (AGB v1.0, Datenschutz v1.0) wurden bereits automatisch für Ihr Dojo erstellt.
                       Die Dokumente werden beim Vertragsabschluss automatisch mit Zeitstempel erfasst.
                     </p>
@@ -1790,41 +1730,27 @@ const DojoEdit = () => {
               </div>
 
               {/* AGB & Datenschutz mit Versionierung */}
-              <div style={{
-                background: 'rgba(255, 215, 0, 0.05)',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                borderRadius: '8px',
-                padding: '1.5rem',
-                marginBottom: '2rem'
-              }}>
-                <h4 style={{ color: '#FFD700', marginBottom: '1rem' }}>
+              <div className="de-agb-box">
+                <h4 className="de-primary-mb">
                   AGB & Datenschutz (mit Versionierung)
                 </h4>
 
                 {/* Versionsinfo */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '1rem',
-                  marginBottom: '1.5rem',
-                  padding: '1rem',
-                  background: 'rgba(0,0,0,0.2)',
-                  borderRadius: '6px'
-                }}>
+                <div className="de-versions-grid">
                   <div>
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>AGB Version:</span>
-                    <strong style={{ marginLeft: '0.5rem', color: '#FFD700' }}>v{formData.agb_version}</strong>
+                    <span className="de-text-secondary-xs">AGB Version:</span>
+                    <strong className="de-ml-primary">v{formData.agb_version}</strong>
                     {formData.agb_letzte_aenderung && (
-                      <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                      <span className="de-hint-muted">
                         (geaendert: {new Date(formData.agb_letzte_aenderung).toLocaleDateString('de-DE')})
                       </span>
                     )}
                   </div>
                   <div>
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>Datenschutz Version:</span>
-                    <strong style={{ marginLeft: '0.5rem', color: '#FFD700' }}>v{formData.dsgvo_version}</strong>
+                    <span className="de-text-secondary-xs">Datenschutz Version:</span>
+                    <strong className="de-ml-primary">v{formData.dsgvo_version}</strong>
                     {formData.dsgvo_letzte_aenderung && (
-                      <span style={{ marginLeft: '0.5rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
+                      <span className="de-hint-muted">
                         (geaendert: {new Date(formData.dsgvo_letzte_aenderung).toLocaleDateString('de-DE')})
                       </span>
                     )}
@@ -1838,7 +1764,7 @@ const DojoEdit = () => {
                     onChange={(e) => setFormData({ ...formData, agb_text: e.target.value })}
                     rows="8"
                     placeholder="Ihre AGB..."
-                    style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+                    className="de-mono"
                   />
                 </div>
 
@@ -1849,22 +1775,13 @@ const DojoEdit = () => {
                     onChange={(e) => setFormData({ ...formData, dsgvo_text: e.target.value })}
                     rows="8"
                     placeholder="Ihre Datenschutzerklaerung..."
-                    style={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
+                    className="de-mono"
                   />
                 </div>
 
                 {/* Benachrichtigung & Speichern */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '1rem',
-                  marginTop: '1rem',
-                  paddingTop: '1rem',
-                  borderTop: '1px solid rgba(255,255,255,0.1)'
-                }}>
-                  <label className="checkbox-label" style={{ margin: 0 }}>
+                <div className="de-agb-actions">
+                  <label className="checkbox-label de-checkbox-no-margin">
                     <input
                       type="checkbox"
                       checked={agbSendNotification}
@@ -1873,19 +1790,12 @@ const DojoEdit = () => {
                     <span>Mitglieder per E-Mail benachrichtigen</span>
                   </label>
 
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="u-flex-gap-sm">
                     <button
                       type="button"
                       onClick={() => saveAgbDsgvo(false)}
                       disabled={agbSaveLoading || isNewDojo}
-                      style={{
-                        padding: '0.6rem 1rem',
-                        background: 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        cursor: agbSaveLoading ? 'wait' : 'pointer'
-                      }}
+                      className="de-btn-agb-ghost"
                     >
                       {agbSaveLoading ? 'Speichere...' : 'Speichern'}
                     </button>
@@ -1893,15 +1803,7 @@ const DojoEdit = () => {
                       type="button"
                       onClick={() => saveAgbDsgvo(true)}
                       disabled={agbSaveLoading || isNewDojo}
-                      style={{
-                        padding: '0.6rem 1rem',
-                        background: '#FFD700',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#000',
-                        fontWeight: '600',
-                        cursor: agbSaveLoading ? 'wait' : 'pointer'
-                      }}
+                      className="de-btn-agb-gold"
                     >
                       {agbSaveLoading ? 'Speichere...' : 'Speichern + Version erhoehen'}
                     </button>
@@ -1909,21 +1811,14 @@ const DojoEdit = () => {
                 </div>
 
                 {agbMessage && (
-                  <div style={{
-                    marginTop: '1rem',
-                    padding: '0.75rem 1rem',
-                    borderRadius: '6px',
-                    background: agbMessage.includes('Fehler') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                    color: agbMessage.includes('Fehler') ? '#FCA5A5' : '#86EFAC',
-                    fontSize: '0.9rem'
-                  }}>
+                  <div className={`de-agb-message ${agbMessage.includes('Fehler') ? 'de-agb-message--error' : 'de-agb-message--success'}`}>
                     {agbMessage}
                   </div>
                 )}
               </div>
 
               {/* Weitere Dokumente (ohne Versionierung) */}
-              <h4 style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1rem' }}>
+              <h4 className="de-heading-secondary">
                 Weitere Dokumente
               </h4>
 
@@ -2064,16 +1959,9 @@ const DojoEdit = () => {
           
           {activeTab === 'bank' && isNewDojo && (
             <div className="form-section">
-              <div style={{ 
-                padding: '40px', 
-                textAlign: 'center', 
-                color: 'rgba(255, 255, 255, 0.6)',
-                background: 'rgba(255, 215, 0, 0.05)',
-                borderRadius: '12px',
-                border: '1px dashed rgba(255, 215, 0, 0.3)'
-              }}>
-                <AlertCircle size={48} style={{ marginBottom: '16px', color: '#ffd700' }} />
-                <h3 style={{ color: '#ffd700', marginBottom: '8px' }}>Dojo zuerst speichern</h3>
+              <div className="de-bank-empty">
+                <AlertCircle size={48} className="de-bank-empty-icon" />
+                <h3 className="de-bank-empty-title">Dojo zuerst speichern</h3>
                 <p>Bankverbindungen können nach dem Erstellen des Dojos hinzugefügt werden.</p>
               </div>
             </div>
@@ -2081,14 +1969,14 @@ const DojoEdit = () => {
 
           {/* Logos Tab */}
           {activeTab === 'logos' && (
-            <div className="form-section" style={{ padding: 0, background: 'transparent' }}>
+            <div className="form-section de-btn-reset">
               <DojoLogos dojoId={id} />
             </div>
           )}
 
           {/* Admin-Accounts Tab */}
           {activeTab === 'admins' && (
-            <div className="form-section" style={{ padding: 0, background: 'transparent' }}>
+            <div className="form-section de-btn-reset">
               <AdminVerwaltung />
             </div>
           )}
@@ -2107,8 +1995,8 @@ const DojoEdit = () => {
               </div>
 
               {/* API Base URL */}
-              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="form-group de-mb-lg">
+                <label className="u-flex-row-sm">
                   <span>🌐 API Base URL</span>
                 </label>
                 <div className="api-input-group">
@@ -2132,8 +2020,8 @@ const DojoEdit = () => {
               </div>
 
               {/* API Token Section */}
-              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div className="form-group de-mb-lg">
+                <label className="de-api-token-label">
                   <span>🔑 API-Token</span>
                   {apiToken && (
                     <span className="api-status-badge">✓ Aktiv</span>
@@ -2142,7 +2030,7 @@ const DojoEdit = () => {
 
                 {apiToken ? (
                   <>
-                    <div className="api-input-group" style={{ marginBottom: '1rem' }}>
+                    <div className="api-input-group de-mb-md">
                       <input
                         type="text"
                         value={apiToken}
@@ -2318,60 +2206,23 @@ const DojoEdit = () => {
               <h3>Design & Theme</h3>
 
               {/* Theme-Auswahl */}
-              <h4 style={{ marginTop: '1rem', marginBottom: '1rem', color: '#ffd700' }}>🎨 Theme-Auswahl</h4>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '1rem',
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: '12px',
-                  marginBottom: '1rem'
-                }}>
-                  <div style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '8px',
-                    background: currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.5rem'
-                  }}>
+              <h4 className="de-section-heading-md">🎨 Theme-Auswahl</h4>
+              <div className="de-mb-lg">
+                <div className="de-theme-current-box">
+                  <div className="de-theme-preview-square" style={{ '--theme-preview': currentTheme?.preview || 'linear-gradient(135deg, #0f0f23, #16213e)' }}>
                     {isDarkMode ? '🌙' : '☀️'}
                   </div>
                   <div>
-                    <div style={{ fontWeight: '600', color: '#fff' }}>{currentTheme?.name || 'Midnight Blue'}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{currentTheme?.description}</div>
-                    <span style={{
-                      display: 'inline-block',
-                      marginTop: '0.25rem',
-                      padding: '0.15rem 0.5rem',
-                      fontSize: '0.75rem',
-                      borderRadius: '4px',
-                      background: isDarkMode ? 'rgba(139, 92, 246, 0.2)' : 'rgba(251, 191, 36, 0.2)',
-                      color: isDarkMode ? '#a78bfa' : '#fbbf24'
-                    }}>
+                    <div className="de-theme-name">{currentTheme?.name || 'Midnight Blue'}</div>
+                    <div className="u-text-secondary-sm">{currentTheme?.description}</div>
+                    <span className={isDarkMode ? 'de-mode-badge--dark' : 'de-mode-badge--light'}>
                       {isDarkMode ? 'Dark Mode' : 'Light Mode'}
                     </span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowThemeSelector(!showThemeSelector)}
-                    style={{
-                      marginLeft: 'auto',
-                      padding: '0.5rem 1rem',
-                      background: '#ffd700',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#000',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}
+                    className="de-btn-theme-change"
                   >
                     <Palette size={18} />
                     Theme wechseln
@@ -2379,46 +2230,20 @@ const DojoEdit = () => {
                 </div>
 
                 {showThemeSelector && (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '1rem',
-                    marginTop: '1rem'
-                  }}>
+                  <div className="de-theme-selector-grid">
                     {themes.map(t => (
                       <div
                         key={t.id}
                         onClick={() => handleThemeChange(t.id)}
-                        style={{
-                          padding: '1rem',
-                          background: theme === t.id ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255,255,255,0.05)',
-                          border: theme === t.id ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.1)',
-                          borderRadius: '12px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
+                        className={theme === t.id ? 'de-theme-card--selected' : 'de-theme-card--unselected'}
                       >
-                        <div style={{
-                          width: '100%',
-                          height: '40px',
-                          borderRadius: '6px',
-                          background: t.preview,
-                          marginBottom: '0.75rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}>
+                        <div className="de-theme-preview-bar" style={{ '--theme-preview': t.preview }}>
                           {t.isDark ? '🌙' : '☀️'}
                         </div>
-                        <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.9rem' }}>{t.name}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)' }}>{t.description}</div>
+                        <div className="de-theme-card-name">{t.name}</div>
+                        <div className="de-theme-card-desc">{t.description}</div>
                         {theme === t.id && (
-                          <div style={{
-                            marginTop: '0.5rem',
-                            fontSize: '0.75rem',
-                            color: '#ffd700',
-                            fontWeight: '600'
-                          }}>
+                          <div className="de-theme-card-active">
                             ✓ Aktiv
                           </div>
                         )}
@@ -2429,9 +2254,9 @@ const DojoEdit = () => {
               </div>
 
               {/* Dojo-Farbe */}
-              <h4 style={{ marginTop: '1.5rem', marginBottom: '1rem', color: '#ffd700' }}>🎯 Dojo-Farbe</h4>
+              <h4 className="de-section-heading">🎯 Dojo-Farbe</h4>
               <div className="form-group">
-                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1rem' }}>
+                <p className="de-color-hint">
                   Diese Farbe wird zur visuellen Kennzeichnung des Dojos verwendet (z.B. im Switcher, Dashboards, etc.)
                 </p>
                 <div className="color-picker-wrapper">
@@ -2440,20 +2265,20 @@ const DojoEdit = () => {
                     value={formData.farbe}
                     onChange={(e) => setFormData({ ...formData, farbe: e.target.value })}
                   />
-                  <div className="color-preview" style={{ backgroundColor: formData.farbe }}>
+                  <div className="color-preview" style={{ '--preview-color': formData.farbe }}>
                     <span>{formData.farbe}</span>
                   </div>
                 </div>
               </div>
               <div className="color-suggestions">
-                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginBottom: '0.5rem' }}>Vorschläge:</p>
+                <p className="de-color-suggestions-label">Vorschläge:</p>
                 <div className="color-buttons">
                   {['#FFD700', '#FF6B35', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'].map(color => (
                     <button
                       key={color}
                       type="button"
                       className="color-button"
-                      style={{ backgroundColor: color }}
+                      style={{ '--swatch-color': color }}
                       onClick={() => setFormData({ ...formData, farbe: color })}
                       title={color}
                     />
@@ -2467,47 +2292,24 @@ const DojoEdit = () => {
           {activeTab === 'probetraining' && (
             <div className="form-section">
               <h3>Probetraining-Buchung</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem' }}>
+              <p className="de-subtext-mb">
                 Hier finden Sie den Link zu Ihrem Probetraining-Buchungsformular.
                 Teilen Sie diesen Link auf Ihrer Website oder Social Media, damit Interessenten
                 direkt ein Probetraining bei Ihnen buchen können.
               </p>
 
               {subdomain ? (
-                <div style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  border: '1px solid rgba(255,215,0,0.2)'
-                }}>
-                  <label style={{
-                    display: 'block',
-                    marginBottom: '0.5rem',
-                    color: '#ffd700',
-                    fontWeight: '600'
-                  }}>
+                <div className="de-probetraining-box">
+                  <label className="de-probetraining-label">
                     Ihr Probetraining-Link:
                   </label>
 
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.5rem',
-                    alignItems: 'center',
-                    marginBottom: '1rem'
-                  }}>
+                  <div className="de-probetraining-url-row">
                     <input
                       type="text"
                       readOnly
                       value={`https://${subdomain}.dojo.tda-intl.org/probetraining`}
-                      style={{
-                        flex: 1,
-                        padding: '0.75rem 1rem',
-                        background: 'rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '8px',
-                        color: '#fff',
-                        fontSize: '0.95rem'
-                      }}
+                      className="de-probetraining-input"
                     />
                     <button
                       type="button"
@@ -2516,76 +2318,37 @@ const DojoEdit = () => {
                         setProbetrainingCopied(true);
                         setTimeout(() => setProbetrainingCopied(false), 2000);
                       }}
-                      style={{
-                        padding: '0.75rem 1.25rem',
-                        background: probetrainingCopied ? '#10b981' : '#ffd700',
-                        border: 'none',
-                        borderRadius: '8px',
-                        color: '#000',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        transition: 'all 0.2s'
-                      }}
+                      className={probetrainingCopied ? 'de-copy-btn--copied' : 'de-copy-btn'}
                     >
                       {probetrainingCopied ? '✓ Kopiert!' : '📋 Kopieren'}
                     </button>
                   </div>
 
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: '1rem',
-                    marginTop: '1.5rem'
-                  }}>
+                  <div className="de-probetraining-links-grid">
                     <a
                       href={`https://${subdomain}.dojo.tda-intl.org/probetraining`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.5rem',
-                        padding: '0.75rem 1rem',
-                        background: 'rgba(59, 130, 246, 0.2)',
-                        border: '1px solid rgba(59, 130, 246, 0.3)',
-                        borderRadius: '8px',
-                        color: '#60a5fa',
-                        textDecoration: 'none',
-                        fontWeight: '500'
-                      }}
+                      className="de-probetraining-link"
                     >
                       🔗 Link öffnen
                     </a>
                   </div>
 
-                  <div style={{
-                    marginTop: '2rem',
-                    padding: '1rem',
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(16, 185, 129, 0.2)'
-                  }}>
-                    <h4 style={{ color: '#10b981', marginBottom: '0.5rem' }}>💡 Tipp</h4>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: 0 }}>
+                  <div className="de-tip-box">
+                    <h4 className="de-heading-success">💡 Tipp</h4>
+                    <p className="de-text-secondary-no-margin">
                       Alle Probetraining-Anfragen werden automatisch in Ihrer Interessenten-Liste gespeichert.
                       Sie finden diese unter <strong>Mitglieder → Interessenten</strong>.
                     </p>
                   </div>
                 </div>
               ) : (
-                <div style={{
-                  padding: '2rem',
-                  textAlign: 'center',
-                  background: 'rgba(255,255,255,0.05)',
-                  borderRadius: '12px',
-                  color: 'rgba(255,255,255,0.6)'
-                }}>
+                <div className="de-probetraining-empty">
                   <p>Keine Subdomain konfiguriert.</p>
-                  <p style={{ fontSize: '0.9rem' }}>
+                  <p className="de-probetraining-empty-hint">
                     Bitte kontaktieren Sie den Support, um eine Subdomain für Ihr Dojo einzurichten.
-                  </p>
+                </p>
                 </div>
               )}
             </div>
@@ -2595,57 +2358,34 @@ const DojoEdit = () => {
           {activeTab === 'email' && (
             <div className="form-section">
               <h3>E-Mail-Konfiguration</h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '1.5rem' }}>
+              <p className="de-subtext-mb">
                 Wählen Sie, wie E-Mails von Ihrem Dojo versendet werden sollen.
               </p>
 
               {emailMessage && (
-                <div style={{
-                  padding: '1rem',
-                  marginBottom: '1.5rem',
-                  borderRadius: '8px',
-                  background: emailMessage.includes('❌') ? 'rgba(239, 68, 68, 0.1)' :
-                              emailMessage.includes('⚠️') ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                  border: emailMessage.includes('❌') ? '1px solid rgba(239, 68, 68, 0.3)' :
-                          emailMessage.includes('⚠️') ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)',
-                  color: emailMessage.includes('❌') ? '#f87171' :
-                         emailMessage.includes('⚠️') ? '#fbbf24' : '#34d399'
-                }}>
+                <div className={`de-email-message ${emailMessage.includes('❌') ? 'de-email-message--error' : emailMessage.includes('⚠️') ? 'de-email-message--warning' : 'de-email-message--success'}`}>
                   {emailMessage}
                 </div>
               )}
 
               {/* E-Mail-Modus Auswahl */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '1rem',
-                marginBottom: '2rem'
-              }}>
+              <div className="de-email-mode-grid">
                 {/* Option 1: Zentral */}
-                <label style={{
-                  display: 'block',
-                  padding: '1.5rem',
-                  background: emailSettings.email_mode === 'zentral' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: emailSettings.email_mode === 'zentral' ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <label className={`de-email-mode-label${emailSettings.email_mode === 'zentral' ? ' de-email-mode-label--zentral-active' : ' de-email-mode-label--inactive'}`}>
+                  <div className="de-flex-start-gap">
                     <input
                       type="radio"
                       name="email_mode"
                       value="zentral"
                       checked={emailSettings.email_mode === 'zentral'}
                       onChange={(e) => setEmailSettings({ ...emailSettings, email_mode: e.target.value })}
-                      style={{ marginTop: '0.25rem' }}
+                      className="de-mt-xs"
                     />
                     <div>
-                      <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      <div className="de-label-bold">
                         Zentraler Versand (Standard)
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                      <div className="u-text-secondary-sm">
                         E-Mails werden über den zentralen DojoSoftware-Server versendet.
                         Keine Konfiguration nötig.
                       </div>
@@ -2654,29 +2394,21 @@ const DojoEdit = () => {
                 </label>
 
                 {/* Option 2: Eigener SMTP */}
-                <label style={{
-                  display: 'block',
-                  padding: '1.5rem',
-                  background: emailSettings.email_mode === 'eigener_smtp' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: emailSettings.email_mode === 'eigener_smtp' ? '2px solid #3b82f6' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <label className={`de-email-mode-label${emailSettings.email_mode === 'eigener_smtp' ? ' de-email-mode-label--smtp-active' : ' de-email-mode-label--inactive'}`}>
+                  <div className="de-flex-start-gap">
                     <input
                       type="radio"
                       name="email_mode"
                       value="eigener_smtp"
                       checked={emailSettings.email_mode === 'eigener_smtp'}
                       onChange={(e) => setEmailSettings({ ...emailSettings, email_mode: e.target.value })}
-                      style={{ marginTop: '0.25rem' }}
+                      className="de-mt-xs"
                     />
                     <div>
-                      <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      <div className="de-label-bold">
                         Eigener SMTP-Server
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                      <div className="u-text-secondary-sm">
                         Verwenden Sie Ihren eigenen Mailserver (z.B. Gmail, Outlook).
                         Erfordert SMTP-Zugangsdaten.
                       </div>
@@ -2685,29 +2417,21 @@ const DojoEdit = () => {
                 </label>
 
                 {/* Option 3: TDA E-Mail */}
-                <label style={{
-                  display: 'block',
-                  padding: '1.5rem',
-                  background: emailSettings.email_mode === 'tda_email' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(255,255,255,0.05)',
-                  border: emailSettings.email_mode === 'tda_email' ? '2px solid #8b5cf6' : '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                <label className={`de-email-mode-label${emailSettings.email_mode === 'tda_email' ? ' de-email-mode-label--tda-active' : ' de-email-mode-label--inactive'}`}>
+                  <div className="de-flex-start-gap">
                     <input
                       type="radio"
                       name="email_mode"
                       value="tda_email"
                       checked={emailSettings.email_mode === 'tda_email'}
                       onChange={(e) => setEmailSettings({ ...emailSettings, email_mode: e.target.value })}
-                      style={{ marginTop: '0.25rem' }}
+                      className="de-mt-xs"
                     />
                     <div>
-                      <div style={{ fontWeight: '600', color: '#fff', marginBottom: '0.25rem' }}>
+                      <div className="de-label-bold">
                         @tda-intl.com E-Mail
                       </div>
-                      <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                      <div className="u-text-secondary-sm">
                         Nutzen Sie eine professionelle E-Mail-Adresse wie dojo@tda-intl.com
                       </div>
                     </div>
@@ -2717,14 +2441,8 @@ const DojoEdit = () => {
 
               {/* SMTP-Einstellungen (nur bei eigener SMTP) */}
               {emailSettings.email_mode === 'eigener_smtp' && (
-                <div style={{
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid rgba(59, 130, 246, 0.2)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginBottom: '1.5rem'
-                }}>
-                  <h4 style={{ color: '#60a5fa', marginBottom: '1rem' }}>SMTP-Server Einstellungen</h4>
+                <div className="de-smtp-box">
+                  <h4 className="de-heading-info">SMTP-Server Einstellungen</h4>
 
                   <div className="form-row">
                     <div className="form-group">
@@ -2736,7 +2454,7 @@ const DojoEdit = () => {
                         placeholder="z.B. smtp.gmail.com"
                       />
                     </div>
-                    <div className="form-group" style={{ maxWidth: '150px' }}>
+                    <div className="form-group de-form-group-150">
                       <label>Port *</label>
                       <input
                         type="number"
@@ -2745,7 +2463,7 @@ const DojoEdit = () => {
                         placeholder="587"
                       />
                     </div>
-                    <div className="form-group" style={{ maxWidth: '100px' }}>
+                    <div className="form-group de-form-group-100">
                       <label>SSL/TLS</label>
                       <select
                         value={emailSettings.smtp_secure ? '1' : '0'}
@@ -2776,7 +2494,7 @@ const DojoEdit = () => {
                         placeholder={emailSettings.has_smtp_password ? '••••••••' : 'Passwort eingeben'}
                       />
                       {emailSettings.has_smtp_password && (
-                        <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem', display: 'block' }}>
+                        <small className="de-hint-block">
                           Passwort ist hinterlegt. Leer lassen, um es beizubehalten.
                         </small>
                       )}
@@ -2787,14 +2505,8 @@ const DojoEdit = () => {
 
               {/* TDA E-Mail Einstellungen */}
               {emailSettings.email_mode === 'tda_email' && (
-                <div style={{
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  border: '1px solid rgba(139, 92, 246, 0.2)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  marginBottom: '1.5rem'
-                }}>
-                  <h4 style={{ color: '#a78bfa', marginBottom: '1rem' }}>TDA E-Mail Zugangsdaten</h4>
+                <div className="de-tda-email-box">
+                  <h4 className="de-heading-purple">TDA E-Mail Zugangsdaten</h4>
 
                   <div className="form-row">
                     <div className="form-group">
@@ -2815,20 +2527,15 @@ const DojoEdit = () => {
                         placeholder={emailSettings.has_tda_password ? '••••••••' : 'Passwort eingeben'}
                       />
                       {emailSettings.has_tda_password && (
-                        <small style={{ color: 'rgba(255,255,255,0.5)', marginTop: '0.25rem', display: 'block' }}>
+                        <small className="de-hint-block">
                           Passwort ist hinterlegt. Leer lassen, um es beizubehalten.
                         </small>
                       )}
                     </div>
                   </div>
 
-                  <div style={{
-                    marginTop: '1rem',
-                    padding: '1rem',
-                    background: 'rgba(139, 92, 246, 0.1)',
-                    borderRadius: '8px'
-                  }}>
-                    <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', margin: 0 }}>
+                  <div className="de-tda-hint-box">
+                    <p className="de-text-secondary-no-margin">
                       💡 <strong>Hinweis:</strong> Eine @tda-intl.com E-Mail-Adresse muss zunächst vom
                       TDA Intl Support eingerichtet werden. Kontaktieren Sie uns, falls Sie noch keine haben.
                     </p>
@@ -2837,41 +2544,27 @@ const DojoEdit = () => {
               )}
 
               {/* Speichern Button */}
-              <div style={{ marginBottom: '2rem' }}>
+              <div className="de-email-save-wrapper">
                 <button
                   type="button"
                   onClick={saveEmailSettings}
                   disabled={emailLoading}
-                  style={{
-                    padding: '0.75rem 1.5rem',
-                    background: '#ffd700',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#000',
-                    fontWeight: '600',
-                    cursor: emailLoading ? 'not-allowed' : 'pointer',
-                    opacity: emailLoading ? 0.7 : 1
-                  }}
+                  className="de-btn-email-save"
                 >
                   {emailLoading ? 'Wird gespeichert...' : 'E-Mail-Einstellungen speichern'}
                 </button>
               </div>
 
               {/* Test-E-Mail Bereich */}
-              <div style={{
-                background: 'rgba(255,255,255,0.05)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                padding: '1.5rem'
-              }}>
-                <h4 style={{ color: '#ffd700', marginBottom: '1rem' }}>Test-E-Mail senden</h4>
-                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <div className="de-test-email-box">
+                <h4 className="de-primary-mb">Test-E-Mail senden</h4>
+                <p className="de-text-secondary-no-margin de-mb-md">
                   Senden Sie eine Test-E-Mail, um Ihre Konfiguration zu überprüfen.
                 </p>
 
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+                <div className="de-test-email-row">
+                  <div className="u-flex-1">
+                    <label className="u-form-label-secondary">
                       Test-E-Mail-Adresse
                     </label>
                     <input
@@ -2879,30 +2572,14 @@ const DojoEdit = () => {
                       value={testEmail}
                       onChange={(e) => setTestEmail(e.target.value)}
                       placeholder="ihre@email.de"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem 1rem',
-                        background: 'rgba(0,0,0,0.3)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '8px',
-                        color: '#fff'
-                      }}
+                      className="de-test-email-input"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={sendTestEmailForDojo}
                     disabled={emailLoading || !testEmail}
-                    style={{
-                      padding: '0.75rem 1.25rem',
-                      background: emailLoading ? 'rgba(59, 130, 246, 0.5)' : '#3b82f6',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontWeight: '600',
-                      cursor: emailLoading || !testEmail ? 'not-allowed' : 'pointer',
-                      whiteSpace: 'nowrap'
-                    }}
+                    className="de-test-email-btn"
                   >
                     {emailLoading ? 'Wird gesendet...' : '📤 Test senden'}
                   </button>

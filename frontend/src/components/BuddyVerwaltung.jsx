@@ -10,7 +10,8 @@ import config from '../config/config.js';
 import MarketingAktionen from './MarketingAktionen';
 import MarketingJahresplan from './MarketingJahresplan';
 import FreundeWerbenFreunde from './FreundeWerbenFreunde';
-import { Users, Calendar, CalendarDays, Gift } from 'lucide-react';
+import FreieAktionen from './FreieAktionen';
+import { Users, Calendar, CalendarDays, Gift, Zap } from 'lucide-react';
 import '../styles/Dashboard.css';
 import '../styles/MarketingAktionen.css';
 import '../styles/BuddyVerwaltung.css';
@@ -260,44 +261,9 @@ const BuddyVerwaltung = () => {
         <div className="buddy-verwaltung">
             {/* Header */}
             <div className="page-header">
-                <h1 style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '0.5rem',
-                    position: 'relative',
-                    backgroundImage: 'none !important',
-                    WebkitBackgroundClip: 'unset !important',
-                    WebkitTextFillColor: 'unset !important',
-                    backgroundClip: 'unset !important',
-                    color: 'transparent'
-                }}>
-                    <span style={{ 
-                        fontSize: '1.8rem',
-                        filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-                        position: 'relative',
-                        zIndex: 1000,
-                        lineHeight: 1,
-                        display: 'inline-block',
-                        flexShrink: 0,
-                        textShadow: 'none',
-                        WebkitTextFillColor: 'unset',
-                        backgroundImage: 'none',
-                        WebkitBackgroundClip: 'unset',
-                        backgroundClip: 'unset'
-                    }}>👥</span>
-                    <span style={{ 
-                        WebkitFontSmoothing: 'antialiased',
-                        MozOsxFontSmoothing: 'grayscale',
-                        color: '#FFD700',
-                        WebkitTextFillColor: '#FFD700',
-                        backgroundImage: 'none',
-                        WebkitBackgroundClip: 'unset',
-                        backgroundClip: 'unset',
-                        textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
-                        position: 'relative',
-                        zIndex: 1
-                    }}>Buddy-Gruppen Verwaltung</span>
+                <h1 className="buddy-page-title">
+                    <span className="buddy-title-icon">👥</span>
+                    <span className="buddy-title-text">Buddy-Gruppen Verwaltung</span>
                 </h1>
                 <p>Verwalte Freunde-Gruppen, Einladungen und Marketing-Aktionen</p>
             </div>
@@ -317,6 +283,13 @@ const BuddyVerwaltung = () => {
                 >
                     <Gift size={18} />
                     Freunde werben
+                </button>
+                <button
+                    className={`buddy-tab ${activeTab === 'freie-aktionen' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('freie-aktionen')}
+                >
+                    <Zap size={18} />
+                    Freie Aktionen
                 </button>
                 <button
                     className={`buddy-tab ${activeTab === 'aktionen' ? 'active' : ''}`}
@@ -339,6 +312,8 @@ const BuddyVerwaltung = () => {
                 <MarketingJahresplan />
             ) : activeTab === 'referral' ? (
                 <FreundeWerbenFreunde />
+            ) : activeTab === 'freie-aktionen' ? (
+                <FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} />
             ) : activeTab === 'aktionen' ? (
                 <MarketingAktionen />
             ) : (
@@ -681,7 +656,7 @@ const BuddyVerwaltung = () => {
 
                                             return (
                                                 <div key={activity.id} className="activity-item-enhanced">
-                                                    <div className="activity-icon-wrapper" style={{ backgroundColor: `${getActivityColor(activity.aktivitaet_typ)}20`, borderColor: getActivityColor(activity.aktivitaet_typ) }}>
+                                                    <div className="activity-icon-wrapper" style={{ '--activity-color': getActivityColor(activity.aktivitaet_typ) }}>
                                                         <span className="activity-icon">{getActivityIcon(activity.aktivitaet_typ)}</span>
                                                     </div>
                                                     <div className="activity-content-enhanced">

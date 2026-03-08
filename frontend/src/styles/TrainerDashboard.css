@@ -1,0 +1,77 @@
+/* TrainerDashboard Component Styles */
+
+.trainer-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 0;
+}
+
+.trainer-dashboard-header {
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 1.5rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trainer-dashboard-title {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.trainer-dashboard-logout-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  color: var(--error);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.trainer-dashboard-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+}
+
+.trainer-dashboard-nav {
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 0 2rem;
+  display: flex;
+  gap: 1rem;
+}
+
+.trainer-dashboard-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 1rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.trainer-dashboard-tab--active {
+  background: rgba(255, 215, 0, 0.2);
+  border-bottom-color: #FFD700;
+  color: #FFD700;
+}
+
+.trainer-dashboard-content {
+  padding: 0;
+  min-height: calc(100vh - 140px);
+}

@@ -19,7 +19,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
 
 /* Glass Card Verbesserungen */
 .verwaltung-container .glass-card {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
   box-shadow:
@@ -61,7 +61,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
 
 /* Card Title */
 .card-title {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: var(--font-size-xl);
   font-weight: 700;
   margin-bottom: var(--spacing-xl);
@@ -85,7 +85,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   bottom: -2px;
   width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   border-radius: 2px;
 }
 
@@ -105,7 +105,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: var(--border-radius-sm);
-  color: var(--text-primary);
+  color: var(--text-1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow:
     0 1px 4px rgba(0, 0, 0, 0.2),
@@ -121,7 +121,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   top: 0;
   height: 100%;
   width: 4px;
-  background: linear-gradient(180deg, var(--primary-color), transparent);
+  background: linear-gradient(180deg, var(--primary), transparent);
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -144,7 +144,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   flex: 1;
   font-weight: 600;
   font-size: var(--font-size-md);
-  color: #ffffff !important;
+  color: var(--text-1) !important;
   letter-spacing: 0.5px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   padding-left: var(--spacing-sm);
@@ -168,7 +168,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   transform: translateX(-50%);
   width: 100px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
 }
 
 .verwaltung-formular input,
@@ -178,7 +178,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 215, 0, 0.2);
   border-radius: var(--border-radius-md);
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: var(--font-size-base);
   font-weight: 500;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -189,14 +189,14 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
 }
 
 .verwaltung-formular input::placeholder {
-  color: var(--text-secondary);
+  color: var(--text-2);
   opacity: 0.7;
 }
 
 .verwaltung-formular input:focus,
 .verwaltung-bearbeiten-input:focus {
   background: rgba(255, 255, 255, 0.08);
-  border-color: var(--primary-color);
+  border-color: var(--primary);
   box-shadow:
     inset 0 2px 6px rgba(0, 0, 0, 0.2),
     0 0 0 4px rgba(255, 215, 0, 0.2),
@@ -225,7 +225,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: var(--primary-color);
+  accent-color: var(--primary);
 }
 
 /* Sortier-Buttons */
@@ -238,7 +238,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
 .sort-btn {
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  color: var(--primary-color);
+  color: var(--primary);
   padding: 0px 4px;
   border-radius: 2px;
   cursor: pointer;
@@ -254,7 +254,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
 
 .sort-btn:hover {
   background: rgba(255, 215, 0, 0.2);
-  border-color: var(--primary-color);
+  border-color: var(--primary);
 }
 
 .sort-btn:disabled {
@@ -276,7 +276,7 @@ Modernes Glassmorphism-Design mit Gold-Akzenten und Premium-Effekten
 /* Leere-Zustand */
 .verwaltung-liste + p,
 .glass-card > p {
-  color: var(--text-secondary);
+  color: var(--text-2);
   text-align: center;
   padding: var(--spacing-xl);
   font-style: italic;

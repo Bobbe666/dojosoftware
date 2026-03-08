@@ -3,9 +3,9 @@
    ===================================================================================== */
 
 .mitglied-fortschritt {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  padding: var(--ui-page-padding-sm);
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
 }
 
 /* Header & Tabs */
@@ -15,7 +15,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .fortschritt-tabs {
@@ -28,11 +28,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: var(--glass-bg);
+  padding: 0.75rem var(--ui-form-gap);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 500;
@@ -41,7 +41,7 @@
 .tab-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 215, 0, 0.4);
-  color: #fff;
+  color: var(--text-1);
 }
 
 .tab-btn.active {
@@ -53,8 +53,8 @@
 .tab-badge {
   background: rgba(0, 0, 0, 0.3);
   padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: var(--comp-radius-xl);
+  font-size: var(--ui-badge-size-sm);
   font-weight: 700;
 }
 
@@ -69,7 +69,7 @@
   padding: 0.75rem 1.25rem;
   background: var(--gradient-gold);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: var(--bg-secondary);
   font-weight: 600;
   cursor: pointer;
@@ -90,14 +90,14 @@
 .skills-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .skill-card {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 0.75rem;
   transition: all 0.3s;
 }
@@ -120,6 +120,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  color: var(--kat-farbe, var(--primary));
 }
 
 .skill-actions {
@@ -132,19 +133,19 @@
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .icon-btn:hover {
   background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--status-error);
+  color: var(--status-error);
 }
 
 .skill-name {
-  font-size: 0.95rem;
+  font-size: var(--ui-card-body);
   font-weight: 600;
   margin: 0 0 0.5rem 0;
   color: var(--primary);
@@ -152,8 +153,8 @@
 
 .skill-desc {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0 0 1rem 0;
+  color: var(--text-2);
+  margin: 0 0 var(--ui-form-gap) 0;
   line-height: 1.4;
 }
 
@@ -161,7 +162,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
 }
 
 .progress-bar {
@@ -200,12 +201,12 @@
 
 .badge {
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #fff;
+  color: var(--text-1);
 }
 
 .badge-status {
@@ -248,14 +249,14 @@
 .ziele-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .ziel-card {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 0.75rem;
   transition: all 0.3s;
 }
@@ -279,14 +280,14 @@
 
 .ziel-header h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--ui-card-body);
   color: var(--primary);
 }
 
 .ziel-status {
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: var(--comp-radius-xl);
+  font-size: var(--ui-badge-size-sm);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -299,19 +300,19 @@
 
 .status-erreicht {
   background: rgba(16, 185, 129, 0.2);
-  color: #10B981;
-  border: 1px solid #10B981;
+  color: var(--status-success);
+  border: 1px solid var(--status-success);
 }
 
 .status-verfehlt {
   background: rgba(239, 68, 68, 0.2);
-  color: #EF4444;
-  border: 1px solid #EF4444;
+  color: var(--status-error);
+  border: 1px solid var(--status-error);
 }
 
 .ziel-desc {
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0 0 1rem 0;
+  color: var(--text-2);
+  margin: 0 0 var(--ui-form-gap) 0;
   line-height: 1.5;
 }
 
@@ -319,8 +320,8 @@
   display: flex;
   gap: 1.5rem;
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
-  margin-bottom: 1rem;
+  color: var(--text-3);
+  margin-bottom: var(--ui-form-gap);
 }
 
 .ziel-progress {
@@ -333,22 +334,22 @@
 .meilensteine-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .meilenstein-card {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-form-gap);
   text-align: center;
   transition: all 0.3s;
 }
 
 .meilenstein-card.erreicht {
   border-color: rgba(255, 215, 0, 0.5);
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
 }
 
@@ -358,21 +359,21 @@
 }
 
 .meilenstein-icon {
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
   display: flex;
   justify-content: center;
 }
 
 .meilenstein-card h3 {
   margin: 0 0 0.5rem 0;
-  font-size: 0.95rem;
+  font-size: var(--ui-card-body);
   color: var(--primary);
 }
 
 .meilenstein-card p {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-size: 0.85rem;
-  margin: 0 0 1rem 0;
+  margin: 0 0 var(--ui-form-gap) 0;
   line-height: 1.4;
 }
 
@@ -380,9 +381,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: var(--ui-form-gap);
+  font-size: var(--ui-badge-size-sm);
+  color: var(--text-3);
 }
 
 .meilenstein-typ {
@@ -391,8 +392,8 @@
 }
 
 .meilenstein-toggle {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0.5rem var(--ui-form-gap);
+  border-radius: var(--comp-radius-md);
   border: none;
   font-weight: 600;
   cursor: pointer;
@@ -402,7 +403,7 @@
 
 .btn-complete {
   background: linear-gradient(135deg, #10B981, #059669);
-  color: #fff;
+  color: var(--text-1);
 }
 
 .btn-complete:hover {
@@ -412,7 +413,7 @@
 
 .btn-undo {
   background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -426,13 +427,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1rem;
-  color: rgba(255, 255, 255, 0.5);
+  padding: 3rem var(--ui-page-padding-sm);
+  color: var(--text-3);
   text-align: center;
 }
 
 .empty-state svg {
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
   opacity: 0.5;
 }
 
@@ -486,7 +487,7 @@ div.mitglied-fortschritt .modal-overlay,
   position: relative !important;
   background: var(--bg-secondary) !important;
   border: 2px solid var(--primary) !important;
-  border-radius: 12px !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 0 !important;
   width: 450px !important;
   max-width: 450px !important;
@@ -525,7 +526,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   justify-content: space-between !important;
   align-items: center !important;
   padding: 16px 20px !important;
-  background: var(--primary-alpha-10) !important;
+  background: rgba(255,215,0,0.1) !important;
   border-bottom: 1px solid rgba(255, 215, 0, 0.3) !important;
   flex-shrink: 0 !important;
   box-sizing: border-box !important;
@@ -545,8 +546,8 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   padding: 0 !important;
   background: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  border-radius: 4px !important;
-  color: #fff !important;
+  border-radius: var(--comp-radius-xs) !important;
+  color: var(--text-1) !important;
   cursor: pointer !important;
   display: flex !important;
   align-items: center !important;
@@ -559,8 +560,8 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 
 .mitglied-fortschritt .close-btn:hover {
   background: rgba(239, 68, 68, 0.3) !important;
-  border-color: #ef4444 !important;
-  color: #ef4444 !important;
+  border-color: var(--status-error) !important;
+  color: var(--status-error) !important;
 }
 
 /* Modal Body - HÖHER */
@@ -608,8 +609,8 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   padding: 10px 12px !important;
   background: rgba(0, 0, 0, 0.3) !important;
   border: 1px solid rgba(255, 215, 0, 0.3) !important;
-  border-radius: 6px !important;
-  color: #fff !important;
+  border-radius: var(--comp-radius-sm) !important;
+  color: var(--text-1) !important;
   font-size: 14px !important;
   font-family: inherit !important;
   height: 36px !important;
@@ -637,7 +638,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 .mitglied-fortschritt .form-group select:focus,
 .mitglied-fortschritt .form-group textarea:focus {
   outline: none !important;
-  border-color: #ffd700 !important;
+  border-color: var(--primary) !important;
   background: rgba(0, 0, 0, 0.5) !important;
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.2) !important;
 }
@@ -650,7 +651,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 
 .mitglied-fortschritt .form-group select option {
   background: var(--bg-secondary) !important;
-  color: #fff !important;
+  color: var(--text-1) !important;
   padding: 8px !important;
 }
 
@@ -670,7 +671,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 .mitglied-fortschritt .btn-primary,
 .mitglied-fortschritt .btn-secondary {
   padding: 8px 16px !important;
-  border-radius: 4px !important;
+  border-radius: var(--comp-radius-xs) !important;
   font-size: 13px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -692,7 +693,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
 
 .mitglied-fortschritt .btn-secondary {
   background: rgba(255, 255, 255, 0.1) !important;
-  color: #fff !important;
+  color: var(--text-1) !important;
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
 }
 
@@ -708,7 +709,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
 }
 
 .loading-spinner {
@@ -718,7 +719,7 @@ div.mitglied-fortschritt .modal-overlay .modal-content,
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
 }
 
 @keyframes fadeIn {
@@ -823,9 +824,9 @@ div.mitglied-fortschritt .modal-content,
   left: auto !important;
   right: auto !important;
   bottom: auto !important;
-  background: #1a1a2e !important;
-  border: 2px solid #ffd700 !important;
-  border-radius: 12px !important;
+  background: var(--modal-bg-dark) !important;
+  border: 2px solid var(--primary) !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 0 !important;
   height: auto !important;
   max-height: 80vh !important;
@@ -878,9 +879,9 @@ html body .mitglied-fortschritt .modal-content {
   left: auto !important;
   right: auto !important;
   bottom: auto !important;
-  background: #1a1a2e !important;
-  border: 2px solid #ffd700 !important;
-  border-radius: 12px !important;
+  background: var(--modal-bg-dark) !important;
+  border: 2px solid var(--primary) !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 0 !important;
   height: auto !important;
   max-height: 80vh !important;
@@ -967,9 +968,9 @@ html body .mitglied-fortschritt .modal-content {
   left: auto !important;
   right: auto !important;
   bottom: auto !important;
-  background: #1a1a2e !important;
-  border: 2px solid #ffd700 !important;
-  border-radius: 12px !important;
+  background: var(--modal-bg-dark) !important;
+  border: 2px solid var(--primary) !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 0 !important;
   height: auto !important;
   max-height: 80vh !important;
@@ -979,4 +980,426 @@ html body .mitglied-fortschritt .modal-content {
   display: flex !important;
   flex-direction: column !important;
   box-sizing: border-box !important;
+}
+
+/* ============================================================
+   mfo- utility classes  (auto-generated 2026-03-06)
+   ============================================================ */
+
+/* Option elements dark background */
+.mfo-option-dark {
+  background: #1a1a2e;
+  color: var(--text-primary);
+}
+
+/* Form field: dark input/select/textarea */
+.mfo-field {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  box-sizing: border-box;
+  transition: all 0.2s;
+}
+
+.mfo-field--textarea {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  height: 70px;
+  min-height: 70px;
+  max-height: 100px;
+  box-sizing: border-box;
+  transition: all 0.2s;
+  resize: vertical;
+}
+
+/* Form group column */
+.mfo-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+}
+
+/* Form label */
+.mfo-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  line-height: 1.3;
+}
+
+/* Skill controls row */
+.mfo-skill-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* Skill percentage badge */
+.mfo-skill-pct {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: bold;
+  min-width: 35px;
+}
+
+/* History entry row: space-between */
+.mfo-history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+/* History entry name */
+.mfo-history-name {
+  font-weight: bold;
+  color: var(--primary);
+}
+
+/* History timestamp */
+.mfo-history-ts {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* History change line */
+.mfo-history-change {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+}
+
+/* History change line with top margin */
+.mfo-history-change--mt {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* Arrow span */
+.mfo-arrow {
+  color: var(--text-primary);
+  margin: 0 8px;
+}
+
+/* Old value */
+.mfo-old-value {
+  color: var(--secondary);
+}
+
+/* Note / changed-by line */
+.mfo-note {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* History card */
+.mfo-history-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+}
+
+/* History list */
+.mfo-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Empty history message */
+.mfo-empty-msg {
+  color: var(--text-primary);
+  text-align: center;
+  margin: 20px 0;
+}
+
+/* Badges grid */
+.mfo-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  padding: 8px 0;
+}
+
+/* Badge meta row */
+.mfo-badge-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Badge tag: secondary */
+.mfo-badge-tag {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Badge tag: success date */
+.mfo-badge-tag--date {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--success);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+/* Badge description */
+.mfo-badge-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+/* Modal body scroll area */
+.mfo-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(80vh - 120px);
+  box-sizing: border-box;
+}
+
+/* Modal history body */
+.mfo-modal-body--history {
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  max-height: calc(80vh - 120px);
+  box-sizing: border-box;
+}
+
+/* Modal footer buttons row */
+.mfo-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 215, 0, 0.3);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* Modal header row */
+.mfo-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+/* Modal header title */
+.mfo-modal-title {
+  margin: 0;
+  color: var(--primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Modal close button */
+.mfo-modal-close {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+/* Form grid 2 cols */
+.mfo-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 0;
+}
+
+/* Cancel button */
+.mfo-btn-cancel {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  transition: all 0.2s;
+  box-sizing: border-box;
+  min-width: 60px;
+}
+
+/* Submit button */
+.mfo-btn-submit {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: #ffd700;
+  color: var(--bg-secondary);
+  transition: all 0.2s;
+  box-sizing: border-box;
+  min-width: 60px;
+}
+
+/* History button */
+.mfo-btn-history {
+  padding: 6px 10px;
+  font-size: 12px;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 6px;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+/* badge empty state text */
+.mfo-badge-empty-text {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* Skill slider - static flex grow and min width */
+.skill-slider {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Form column spanning full grid width */
+.mfo-form-col--full {
+  grid-column: 1 / -1;
+}
+
+/* History modal content - wider than the add modal */
+.modal-content--history {
+  width: 600px !important;
+  max-width: 90vw !important;
+  min-width: unset !important;
+}
+
+/* ── inline-style replacements (2026-03-07) ── */
+
+/* Progress fill — per-status colors */
+.mfo-progress-fill--nicht_gestartet { background: #6B7280; }
+.mfo-progress-fill--in_arbeit       { background: #3B82F6; }
+.mfo-progress-fill--gemeistert      { background: #10B981; }
+.mfo-progress-fill--auf_eis         { background: #F59E0B; }
+
+/* Badge status — per-status background */
+.mfo-badge-status--nicht_gestartet { background: #6B7280; }
+.mfo-badge-status--in_arbeit       { background: #3B82F6; }
+.mfo-badge-status--gemeistert      { background: #10B981; }
+.mfo-badge-status--auf_eis         { background: #F59E0B; }
+
+/* Badge priority — per-priority background */
+.mfo-badge-priority--niedrig  { background: #10B981; }
+.mfo-badge-priority--mittel   { background: #3B82F6; }
+.mfo-badge-priority--hoch     { background: #F59E0B; }
+.mfo-badge-priority--kritisch { background: #EF4444; }
+
+/* Badge card */
+.mfo-badge-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--badge-farbe, #ffd700);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+.mfo-badge-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px var(--badge-farbe-40, #ffd70040);
+}
+
+/* Badge icon circle */
+.mfo-badge-icon-circle {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  background: linear-gradient(135deg, var(--badge-farbe-40, #ffd70040), var(--badge-farbe-20, #ffd70020));
+  border: 2px solid var(--badge-farbe, #ffd700);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  box-shadow: 0 4px 12px var(--badge-farbe-30, #ffd70030);
+}
+
+/* Badge name heading */
+.mfo-badge-name {
+  color: var(--badge-farbe, #ffd700);
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+}
+
+/* Hover states for interactive buttons */
+.mfo-btn-history:hover {
+  background: rgba(255, 215, 0, 0.3);
+  border-color: rgba(255, 215, 0, 0.7);
+}
+.mfo-modal-close:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+.mfo-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.mfo-btn-submit:hover {
+  background: #ffed4e;
+  transform: translateY(-1px);
 }

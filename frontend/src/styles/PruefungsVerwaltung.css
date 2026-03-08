@@ -1,0 +1,3177 @@
+/* PruefungsVerwaltung.css - Migrated from inline styles */
+
+.pv-flex-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pv-flex-col-xs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.pv-flex-col-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pv-form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.pv-field-label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  display: block;
+}
+
+.pv-meta-sm {
+  font-size: 0.75rem;
+  margin: 0 0 0.375rem 0;
+  color: var(--text-secondary);
+}
+
+.pv-muted-sm {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pv-muted-xs {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.pv-muted-xxs {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+}
+
+.pv-text-secondary {
+  color: var(--text-secondary);
+}
+
+.pv-text-muted {
+  color: var(--text-muted);
+}
+
+.pv-warning {
+  color: var(--warning);
+}
+
+.pv-warning-clickable {
+  color: var(--warning);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pv-sky {
+  color: var(--color-sky-500);
+}
+
+.pv-muted-sm-row {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.pv-secondary-bold {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.pv-bold-primary-sm {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+/* === pv2 second-pass cleanup === */
+.pv2-p-075 {
+  padding: 0.75rem;
+}
+
+.pv2-mb-1 {
+  margin-bottom: 1rem;
+}
+
+.pv2-fw600 {
+  font-weight: 600;
+}
+
+.pv2-dark-input {
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+}
+
+.pv2-mb-15 {
+  margin-bottom: 1.5rem;
+}
+
+.pv2-mt-2 {
+  margin-top: 2rem;
+}
+
+.pv2-center-3rem {
+  text-align: center;
+  padding: 3rem;
+}
+
+.pv2-text-center {
+  text-align: center;
+}
+
+.pv2-mr-05 {
+  margin-right: 0.5rem;
+}
+
+.pv2-warning-label {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: var(--warning);
+}
+
+.pv2-fw700-primary {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pv2-heading-primary {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.pv2-fs-0875 {
+  font-size: 0.875rem;
+}
+
+.pv2-muted-mt {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+.pv2-flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.pv2-secondary-mb {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.pv2-muted-mb {
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.pv2-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #0ea5e9;
+  cursor: pointer;
+}
+
+.pv2-p-1 {
+  padding: 1rem;
+}
+
+.pv2-input-sm {
+  padding: 0.375rem;
+  font-size: 0.8125rem;
+}
+
+.pv2-mt-1 {
+  margin-top: 1rem;
+}
+
+.pv2-mt-15 {
+  margin-top: 1.5rem;
+}
+
+.pv2-mr-025 {
+  margin-right: 0.25rem;
+}
+
+.pv2-mb-05 {
+  margin-bottom: 0.5rem;
+}
+
+.pv2-grid-span-full {
+  grid-column: 1 / -1;
+}
+
+.pv2-fw700-success {
+  font-weight: 700;
+  color: var(--success);
+  font-size: 1rem;
+}
+
+.pv2-stat-success {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--success);
+}
+
+.pv2-stat-purple {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #8b5cf6;
+}
+
+.pv2-fs-075-secondary {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.pv2-flex-cursor {
+  flex: 1;
+  cursor: pointer;
+}
+
+.pv2-grid-2col-1 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.pv2-grid-2col-08 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* === pv3 third-pass cleanup === */
+
+/* Page header icon + title row */
+.pv3-page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.pv3-header-icon {
+  font-size: 2.5rem;
+  filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3));
+  position: relative;
+  z-index: 10;
+  line-height: 1;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.pv3-header-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+  text-shadow: none;
+  -webkit-text-fill-color: #FFD700;
+  background: none;
+  -webkit-background-clip: initial;
+  background-clip: initial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.5px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Header controls row */
+.pv3-header-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.pv3-select-min200 {
+  min-width: 200px;
+}
+
+.pv3-btn-refresh {
+  padding: 12px 28px;
+  min-width: 160px;
+}
+
+/* Tabs container */
+.pv3-tabs-row {
+  margin-bottom: 2rem;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Tab button — base (inactive) */
+.pv3-tab-btn {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.15);
+  white-space: nowrap;
+}
+
+/* Tab button — active */
+.pv3-tab-btn.active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+/* Termine section header */
+.pv3-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.pv3-section-title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.pv3-section-count {
+  margin-left: 0.5rem;
+  color: var(--warning);
+  font-weight: bold;
+}
+
+.pv3-section-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* "Neuer Termin" button */
+.pv3-btn-new-termin {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+}
+
+/* Loading/empty state containers */
+.pv3-loading-center {
+  text-align: center;
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pv3-empty-state {
+  text-align: center;
+  padding: 3rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.pv3-empty-state-dashed-gold {
+  text-align: center;
+  padding: 3rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 2px dashed rgba(255, 215, 0, 0.2);
+}
+
+/* Termine list wrapper */
+.pv3-termine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Geplante/Vergangene section headings */
+.pv3-group-heading-warning {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--warning);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pv3-group-heading-muted {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pv3-termin-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Termin card */
+.pv3-termin-card {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}
+
+.pv3-termin-card--today {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  opacity: 1;
+}
+
+.pv3-termin-card--past {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0.6;
+}
+
+/* Termin card header row */
+.pv3-termin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Termin title row (calendar + h3 + chevron) */
+.pv3-termin-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Termin meta row (Zeit/Stil/Ort/Teilnehmer) */
+.pv3-termin-meta-row {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Termin heading text */
+.pv3-termin-heading-warning {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #EAB308;
+}
+
+.pv3-termin-heading-today {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+/* Badges */
+.pv3-badge-today {
+  padding: 0.25rem 0.75rem;
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pv3-badge-past {
+  padding: 0.25rem 0.75rem;
+  background-color: #6b7280;
+  color: white;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pv3-badge-public {
+  padding: 0.25rem 0.75rem;
+  background-color: #0369a1;
+  color: white;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* Stil badge (yellow) */
+.pv3-badge-stil {
+  padding: 0.125rem 0.5rem;
+  background-color: #EAB308;
+  color: var(--bg-primary);
+  border-radius: 0.375rem;
+  font-weight: 700;
+}
+
+/* Teilnehmer count badge (purple) */
+.pv3-badge-teilnehmer {
+  padding: 0.125rem 0.5rem;
+  background-color: #8b5cf6;
+  color: white;
+  border-radius: 0.375rem;
+  font-weight: 700;
+}
+
+/* Small action buttons on termin cards */
+.pv3-btn-action-sm {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+/* Green "Ergebnisse" button variant */
+.pv3-btn-results {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 50%, transparent 100%);
+  border: none;
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+}
+
+/* Red "Löschen" button variant */
+.pv3-btn-delete {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 50%, transparent 100%);
+  border: none;
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.2);
+}
+
+/* Vorlage-empty state inside expanded termin */
+.pv3-vorlage-empty {
+  padding: 2rem;
+  text-align: center;
+  background-color: rgba(245, 158, 11, 0.1);
+  border-radius: 0.5rem;
+  border: 1px dashed rgba(245, 158, 11, 0.3);
+}
+
+.pv3-vorlage-empty-title {
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.pv3-vorlage-empty-text {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Table row — termin pruefung row */
+.pv3-table-row-gold {
+  background-color: rgba(255, 215, 0, 0.05);
+  border-left: 3px solid rgba(255, 215, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+/* Table th with min-width + warning color */
+.pv3-th-180 {
+  min-width: 180px;
+  color: var(--warning);
+}
+.pv3-th-150 {
+  min-width: 150px;
+  color: var(--warning);
+}
+.pv3-th-140 {
+  min-width: 140px;
+  color: var(--warning);
+}
+.pv3-th-130 {
+  min-width: 130px;
+  color: var(--warning);
+}
+.pv3-th-120 {
+  min-width: 120px;
+  color: var(--warning);
+}
+.pv3-th-110 {
+  min-width: 110px;
+  color: var(--warning);
+}
+.pv3-th-100 {
+  min-width: 100px;
+  color: var(--warning);
+}
+
+/* Stil tag in table (purple) */
+.pv3-tag-stil-purple {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background-color: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+/* Gurt dot — fixed size circle */
+.pv3-gurt-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  background-color: var(--dot-color, #6b7280);
+}
+
+/* Graduierung select (dark bg, gold border) */
+.pv3-grad-select {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+  min-width: 120px;
+}
+
+/* Graduierung select (dark bg, green border) */
+.pv3-grad-select-green {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+  min-width: 120px;
+}
+
+/* Progress bar wrapper */
+.pv3-progress-wrap {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Wartezeit value */
+.pv3-wartezeit-value {
+  font-weight: 700;
+  color: var(--success);
+  font-size: 0.9375rem;
+}
+
+/* Status badge — "Zugelassen" (gold) */
+.pv3-badge-zugelassen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(255, 215, 0, 0.2);
+  color: var(--color-gold-400);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Externe Anmeldungen heading */
+.pv3-extern-heading {
+  color: var(--color-sky-500);
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Externe Anmeldungen table small */
+.pv3-extern-table {
+  font-size: 0.85rem;
+}
+
+/* Externe Anmeldungen date cell */
+.pv3-extern-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Kandidaten section header bar */
+.pv3-kandidaten-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.pv3-kandidaten-title {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.pv3-kandidaten-count {
+  margin-left: 0.5rem;
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+.pv3-kandidaten-subtitle {
+  margin: 0.125rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Filter controls row */
+.pv3-filter-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Button group for Berechtigungs-filter */
+.pv3-btn-group {
+  display: flex;
+  gap: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 0.375rem;
+  padding: 0.125rem;
+}
+
+/* Filter toggle button — inactive */
+.pv3-filter-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-weight: 400;
+  transition: all 0.2s;
+}
+
+/* Filter toggle button — active */
+.pv3-filter-btn.active {
+  background-color: #EAB308;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+/* Dark select for filters (gold border) */
+.pv3-dark-select {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  outline: none;
+}
+
+/* Search wrapper */
+.pv3-search-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Search input */
+.pv3-search-input {
+  flex: 1;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.375rem;
+  font-weight: 500;
+  outline: none;
+}
+
+/* Search clear button */
+.pv3-search-clear {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Batch-zulassen button */
+.pv3-batch-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Kandidaten table */
+.pv3-kandidaten-table {
+  font-size: 0.8125rem;
+}
+
+/* Checkbox gold */
+.pv3-checkbox-gold {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #ffd700;
+}
+
+/* th sortable */
+.pv3-th-sort {
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+/* th non-sortable (still warning) */
+.pv3-th-nosort {
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+/* Dash placeholder cell */
+.pv3-dash {
+  color: #d1d5db;
+}
+
+/* Stil tag in kandidaten table */
+.pv3-tag-stil-border {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Graduierung display row */
+.pv3-grad-display-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Gurt dot current (white border) */
+.pv3-gurt-dot-white {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+/* Gurt dot green border (ziel) */
+.pv3-gurt-dot-green {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 197, 94, 0.5);
+  flex-shrink: 0;
+  background-color: var(--dot-color, #6b7280);
+}
+
+/* Grad name label secondary */
+.pv3-grad-name-secondary {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Grad name label primary (ziel) */
+.pv3-grad-name-primary {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Stunden column content */
+.pv3-stunden-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.pv3-stunden-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Progress bar wrapper (grey track) */
+.pv3-progress-wrap-grey {
+  width: 100%;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Monate column */
+.pv3-monate-col {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Badge inline-flex small */
+.pv3-badge-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+
+/* Btn action inline-flex */
+.pv3-btn-action-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Legende */
+.pv3-legende,
+.pv3-legende-bar {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+.pv3-legende-row {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+}
+
+/* Legende line indicators */
+.pv3-legende-line-green {
+  width: 20px;
+  height: 4px;
+  background-color: rgba(34, 197, 94, 0.5);
+  border-radius: 2px;
+}
+
+.pv3-legende-line-gold {
+  width: 20px;
+  height: 4px;
+  background-color: rgba(255, 215, 0, 0.5);
+  border-radius: 2px;
+}
+
+.pv3-legende-line-white {
+  width: 20px;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+/* Zugelassen/Abgeschlossen section header */
+.pv3-tab-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Statistiken section */
+.pv3-stats-heading {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.pv3-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.pv3-stat-error {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--error);
+}
+
+.pv3-stat-warning {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--warning);
+}
+
+.pv3-stat-info {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--info);
+}
+
+.pv3-stat-cyan {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #06b6d4;
+}
+
+/* Progress bar inline (Stil-Statistiken) */
+.pv3-progress-bar-success {
+  flex: 1;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pv3-progress-bar-6px {
+  flex: 1;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pv3-progress-percent-bold {
+  font-weight: bold;
+}
+
+.pv3-percent-fw600 {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Punktzahl note */
+.pv3-punktzahl-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* Abgeschlossen graduation display */
+.pv3-grad-display-sm {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* Status/action btn in Abgeschlossen */
+.pv3-btn-status-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* Graduierung nach Graduierung cards */
+.pv3-grad-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pv3-grad-card-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.pv3-grad-card-title {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.pv3-grad-card-count {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--warning);
+  margin-bottom: 0.25rem;
+}
+
+/* Gurtverteilung belt display */
+.pv3-belt-display-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pv3-belt-bar {
+  width: 50px;
+  height: 18px;
+  border-radius: 9px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+}
+
+.pv3-belt-count {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--warning);
+  margin-bottom: 0.25rem;
+}
+
+/* Statistiken insights */
+.pv3-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.pv3-insight-success-big {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--success);
+}
+
+.pv3-insight-purple-big {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #8b5cf6;
+}
+
+.pv3-insight-warning-big {
+  font-size: 1rem;
+  color: var(--warning);
+  margin-top: 0.5rem;
+}
+
+/* Ergebnis Modal */
+.pv3-modal-max600 {
+  max-width: 600px;
+}
+
+.pv3-modal-muted-mb {
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+}
+
+/* Shortcut hint box */
+.pv3-shortcut-hint {
+  padding: 0.75rem;
+  background-color: #eff6ff;
+  border-radius: 0.5rem;
+  border: 1px solid #bfdbfe;
+  margin-bottom: 1.5rem;
+}
+
+.pv3-shortcut-title {
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+.pv3-shortcut-text {
+  font-size: 0.8125rem;
+  color: var(--info);
+  margin-top: 0.25rem;
+}
+
+/* Gurt picker */
+.pv3-gurt-picker {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 2px solid #e5e7eb;
+}
+
+.pv3-gurt-picker-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+  border-radius: 0.5rem;
+  border: 2px solid #d1d5db;
+  min-height: 60px;
+}
+
+.pv3-gurt-picker-btn {
+  padding: 0.5rem;
+  min-width: auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv3-gurt-ball {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.4);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pv3-gurt-ball-shine {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5), transparent);
+  pointer-events: none;
+}
+
+.pv3-gurt-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+/* Batch Modal */
+.pv3-batch-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.pv3-batch-modal-desc {
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+}
+
+/* Batch quick-select bar */
+.pv3-batch-quick {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 215, 0, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.pv3-batch-quick-label {
+  color: var(--text-secondary);
+  margin-right: 0.5rem;
+}
+
+/* Batch quick buttons */
+.pv3-btn-batch-success {
+  background-color: rgba(34, 197, 94, 0.3);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.pv3-btn-batch-error {
+  background-color: rgba(239, 68, 68, 0.3);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+/* Batch table */
+.pv3-batch-th-200 {
+  min-width: 200px;
+  color: var(--warning);
+}
+.pv3-batch-th-180 {
+  min-width: 180px;
+  color: var(--warning);
+}
+.pv3-batch-th-130 {
+  min-width: 130px;
+  color: var(--warning);
+  text-align: center;
+}
+.pv3-batch-th-100 {
+  min-width: 100px;
+  color: var(--warning);
+}
+
+/* Batch gurt dot small */
+.pv3-gurt-dot-sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background-color: var(--dot-color, #6b7280);
+}
+
+/* Batch ergebnis text */
+.pv3-batch-ergebnis-text {
+  font-weight: 600;
+  font-size: 0.8125rem;
+}
+
+/* Batch summary bar */
+.pv3-batch-summary {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pv3-batch-summary-counts {
+  display: flex;
+  gap: 2rem;
+}
+
+.pv3-batch-count-success {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.pv3-batch-count-label {
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+.pv3-batch-count-error {
+  color: var(--error);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+/* Neuer Termin Modal overlay */
+.pv3-modal-overlay-full {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+/* Edit Termin Modal overlay (lower z-index variant) */
+.pv3-modal-overlay-edit {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0;
+  overflow-y: auto;
+}
+
+/* Termin-Auswahl Modal overlay */
+.pv3-modal-overlay-auswahl {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Dark modal box */
+.pv3-modal-dark {
+  background: #1a1a1a;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  border-top: none;
+  max-width: 750px;
+  width: 90%;
+  margin: 0 auto 20px;
+  color: var(--text-primary);
+}
+
+/* Edit modal box */
+.pv3-modal-dark-edit {
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  max-width: 850px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  margin: 0 auto 20px;
+  color: var(--text-primary);
+}
+
+/* Termin-Auswahl modal box */
+.pv3-modal-auswahl {
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+/* Modal header section */
+.pv3-modal-header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.pv3-modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--warning);
+}
+
+/* Progress bar section */
+.pv3-progress-section {
+  display: flex;
+  padding: 1.5rem 2rem;
+  background: #0a0a0a;
+  border-bottom: 1px solid #333;
+}
+
+/* Step item */
+.pv3-step-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Step connecting line */
+.pv3-step-line {
+  position: absolute;
+  top: 15px;
+  left: -50%;
+  right: 50%;
+  height: 2px;
+}
+
+.pv3-step-line--active {
+  background: #EAB308;
+}
+
+.pv3-step-line--inactive {
+  background: #333;
+}
+
+/* Step circle */
+.pv3-step-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 2;
+}
+
+.pv3-step-circle--active {
+  background: #EAB308;
+  color: #000;
+  border: 2px solid #EAB308;
+}
+
+.pv3-step-circle--inactive {
+  background: #2a2a2a;
+  color: #666;
+  border: 2px solid #333;
+}
+
+/* Step label */
+.pv3-step-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.pv3-step-label--active {
+  color: #EAB308;
+  font-weight: 600;
+}
+
+.pv3-step-label--inactive {
+  color: #999;
+  font-weight: 400;
+}
+
+/* Modal content area */
+.pv3-modal-content-area {
+  padding: 2rem;
+  min-height: 300px;
+}
+
+/* Dark form input */
+.pv3-dark-form-input {
+  padding: 0.6rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  width: 100%;
+  background: #2a2a2a;
+  color: var(--text-primary);
+}
+
+/* Slightly smaller dark form input (edit modal) */
+.pv3-dark-form-input-sm {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  background: #2a2a2a;
+  color: var(--text-primary);
+}
+
+/* Textarea with resize */
+.pv3-dark-textarea {
+  padding: 0.6rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  width: 100%;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.pv3-dark-textarea-sm {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  resize: vertical;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.pv3-dark-textarea-sm-tall {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+/* Additional info grid */
+.pv3-info-grid {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Step3 grid */
+.pv3-step3-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Modal footer */
+.pv3-modal-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid #333;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+/* Dark outline button */
+.pv3-btn-dark-outline {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Dark outline button sm (edit modal) */
+.pv3-btn-dark-outline-sm {
+  padding: 0.5rem 1rem;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+/* Validation error box */
+.pv3-validation-error {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #4a1515;
+  border: 1px solid #8b2020;
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pv3-validation-error-icon {
+  font-size: 1.2rem;
+}
+
+/* Öffentlich checkbox label */
+.pv3-oeffentlich-row {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pv3-oeffentlich-row-mb {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pv3-oeffentlich-label {
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Edit section headings */
+.pv3-edit-section-heading {
+  color: var(--warning);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #EAB308;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  background: transparent;
+}
+
+.pv3-edit-section-heading-mt {
+  color: var(--warning);
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #EAB308;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  background: transparent;
+}
+
+/* Edit modal title */
+.pv3-edit-modal-title {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pv3-edit-modal-subtitle {
+  margin-bottom: 2rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Edit modal footer */
+.pv3-edit-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  background: transparent;
+}
+
+/* Termin-Auswahl modal */
+.pv3-auswahl-subtitle {
+  color: var(--text-secondary, #888);
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.pv3-auswahl-warning {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--warning);
+}
+
+/* Termin-Auswahl button */
+.pv3-auswahl-btn {
+  background: var(--bg-tertiary, #2a2a3e);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.pv3-auswahl-btn-date {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.pv3-auswahl-btn-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+}
+
+/* Termin-Auswahl cancel button */
+.pv3-auswahl-cancel {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* SortIcon */
+.pv3-sort-icon-inactive {
+  margin-left: 0.25rem;
+  opacity: 0.3;
+  font-size: 0.75rem;
+}
+
+.pv3-sort-icon-active {
+  margin-left: 0.25rem;
+  color: var(--warning);
+  font-size: 0.75rem;
+}
+
+/* Loading spinner for Lade Dojos */
+.pv3-loading-primary {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+/* ============================================================
+   ADDITIONAL pv3- CLASSES: Progress bars, badges, modals, etc.
+   ============================================================ */
+
+/* Progress bar wrapper (static part) */
+.pv3-progress-wrap {
+  width: 100%;
+  height: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Wartezeit value */
+.pv3-wartezeit-value {
+  font-weight: 700;
+  color: var(--success);
+  font-size: 0.9375rem;
+}
+
+/* Status badge: Zugelassen */
+.pv3-badge-zugelassen {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  background-color: rgba(255, 215, 0, 0.2);
+  color: var(--color-gold-400, #fbbf24);
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Extern Anmeldungen heading */
+.pv3-extern-heading {
+  color: var(--color-sky-500, #0ea5e9);
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Extern table font-size */
+.pv3-extern-table {
+  font-size: 0.85rem;
+}
+
+/* Extern date cell */
+.pv3-extern-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Muted text with left margin */
+.pv3-muted-ml {
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+/* ---- Vergangene Termine ---- */
+.pv3-verg-heading {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pv3-verg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pv3-verg-card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  opacity: 0.6;
+}
+
+.pv3-verg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pv3-verg-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.pv3-verg-heading-text {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--warning);
+}
+
+.pv3-verg-meta-row {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.pv3-vorlage-empty-verg {
+  padding: 2rem;
+  text-align: center;
+  background-color: rgba(245, 158, 11, 0.1);
+  border-radius: 0.5rem;
+  border: 1px dashed rgba(245, 158, 11, 0.3);
+}
+
+/* ---- Kandidaten Tab ---- */
+.pv3-kandidaten-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.pv3-kandidaten-h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.pv3-kandidaten-count {
+  margin-left: 0.5rem;
+  color: var(--primary);
+  font-weight: bold;
+  font-size: 0.875rem;
+}
+
+.pv3-kandidaten-sub {
+  margin: 0.125rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.pv3-filter-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pv3-filter-group {
+  display: flex;
+  gap: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 0.375rem;
+  padding: 0.125rem;
+}
+
+.pv3-filter-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pv3-filter-btn.active {
+  background-color: #EAB308;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.pv3-filter-btn:not(.active) {
+  background-color: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+.pv3-filter-select {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 500;
+  outline: none;
+}
+
+.pv3-search-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 200px;
+}
+
+.pv3-search-input {
+  flex: 1;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  border-radius: 0.375rem;
+  font-weight: 500;
+  outline: none;
+}
+
+.pv3-search-clear {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.pv3-batch-zulassen-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.pv3-loading-center-4rem {
+  text-align: center;
+  padding: 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pv3-empty-dashed {
+  text-align: center;
+  padding: 3rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 2px dashed rgba(255, 215, 0, 0.2);
+}
+
+.pv3-checkbox-gold {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #ffd700;
+}
+
+.pv3-th-sortable {
+  min-width: 140px;
+  color: var(--warning);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-sortable-sm {
+  min-width: 90px;
+  color: var(--warning);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-sortable-xs {
+  min-width: 80px;
+  color: var(--warning);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-sortable-md {
+  min-width: 120px;
+  color: var(--warning);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-plain {
+  color: var(--warning);
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-plain-110 {
+  min-width: 110px;
+  color: var(--warning);
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-plain-80 {
+  min-width: 80px;
+  color: var(--warning);
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-plain-100 {
+  min-width: 100px;
+  color: var(--warning);
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-plain-100-center {
+  min-width: 100px;
+  text-align: center;
+  color: var(--warning);
+  font-size: 0.8125rem;
+  padding: 0.5rem;
+}
+
+.pv3-th-plain-40-center {
+  width: 40px;
+  text-align: center;
+  color: var(--warning);
+}
+
+.pv3-table-sm {
+  font-size: 0.8125rem;
+}
+
+/* Dash placeholder */
+.pv3-dash-muted {
+  color: #d1d5db;
+}
+
+/* Stil badge (same as inline version) */
+.pv3-stil-badge-sm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Grad row (flex row with gap 0.5rem) */
+.pv3-grad-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Gurt dot with no special border (dynamic bg) */
+.pv3-gurt-dot-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  background-color: var(--dot-color, #6b7280);
+}
+
+/* Grad name text */
+.pv3-grad-name {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Grad name primary variant */
+.pv3-grad-name-primary {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Gurt dot with green border (for target grad select) */
+.pv3-gurt-dot-green {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 197, 94, 0.5);
+  flex-shrink: 0;
+  background-color: var(--dot-color, #6b7280);
+}
+
+/* Grad select with green border */
+.pv3-grad-select-green {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: #1a1a1a;
+  color: var(--text-primary);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+  min-width: 120px;
+}
+
+/* Stunden column flex */
+.pv3-stunden-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.pv3-stunden-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pv3-stunden-count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  /* color is dynamic */
+}
+
+/* Monate column */
+.pv3-monate-col {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  /* color is dynamic */
+}
+
+/* Badge with inline-flex */
+.pv3-badge-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+
+/* Action button with inline-flex */
+.pv3-btn-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Punktzahl note in abgeschlossen */
+.pv3-punktzahl-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ---- Statistiken Tab ---- */
+.pv3-stat-h2 {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.pv3-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.pv3-stat-error {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--error);
+}
+
+.pv3-stat-warning {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--warning);
+}
+
+.pv3-stat-info {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--info);
+}
+
+.pv3-stat-cyan {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #06b6d4;
+}
+
+/* Statistik nach Stil: progress bar */
+.pv3-bar-wrap-gray {
+  flex: 1;
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pv3-bar-wrap-gray-sm {
+  flex: 1;
+  height: 6px;
+  background-color: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pv3-bar-fill-green {
+  height: 100%;
+  background-color: #10b981;
+}
+
+.pv3-bar-percent {
+  font-weight: bold;
+}
+
+.pv3-bar-percent-sm {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Grad by graduierung grid */
+.pv3-grad-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.pv3-grad-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.pv3-grad-dot-sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background-color: var(--dot-color, #6b7280);
+}
+
+.pv3-grad-card-name {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.pv3-grad-card-count {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--warning);
+  margin-bottom: 0.25rem;
+}
+
+/* Gurtverteilung */
+.pv3-gurt-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.pv3-gurt-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pv3-belt-display {
+  width: 50px;
+  height: 18px;
+  border-radius: 9px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+  background-color: var(--dot-color, #cccccc);
+}
+
+.pv3-gurt-card-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pv3-gurt-card-count {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--warning);
+  margin-bottom: 0.25rem;
+}
+
+/* Insights grid */
+.pv3-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.pv3-insight-success {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--success);
+}
+
+.pv3-insight-purple {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #8b5cf6;
+}
+
+.pv3-insight-next-stil {
+  font-size: 1rem;
+  color: var(--warning);
+  margin-top: 0.5rem;
+}
+
+/* ---- Ergebnis Modal ---- */
+.pv3-modal-muted {
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+}
+
+.pv3-ergebnis-label {
+  margin-bottom: 0.5rem;
+  display: block;
+  font-weight: 600;
+}
+
+.pv3-ergebnis-label-hint {
+  font-size: 0.875rem;
+  font-weight: normal;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+.pv3-gurt-picker-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 2px solid #e5e7eb;
+}
+
+.pv3-gurt-arrow-btn {
+  padding: 0.5rem;
+  min-width: auto;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv3-gurt-display-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
+  border-radius: 0.5rem;
+  border: 2px solid #d1d5db;
+  min-height: 60px;
+}
+
+.pv3-gurt-big-dot {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4);
+  flex-shrink: 0;
+  position: relative;
+  background-color: var(--dot-color, #e5e7eb);
+}
+
+.pv3-gurt-shine {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), transparent);
+  pointer-events: none;
+}
+
+.pv3-gurt-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.pv3-shortcut-box {
+  padding: 0.75rem;
+  background-color: #eff6ff;
+  border-radius: 0.5rem;
+  border: 1px solid #bfdbfe;
+  margin-bottom: 1.5rem;
+}
+
+.pv3-shortcut-title {
+  font-size: 0.875rem;
+  color: #1e40af;
+}
+
+.pv3-shortcut-text {
+  font-size: 0.8125rem;
+  color: var(--info);
+  margin-top: 0.25rem;
+}
+
+/* ---- Batch Ergebnis Modal ---- */
+.pv3-batch-muted-p {
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+}
+
+.pv3-batch-schnell-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background-color: rgba(255, 215, 0, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.pv3-batch-schnell-label {
+  color: var(--text-secondary);
+  margin-right: 0.5rem;
+}
+
+.pv3-batch-btn-green {
+  background-color: rgba(34, 197, 94, 0.3);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.pv3-batch-btn-red {
+  background-color: rgba(239, 68, 68, 0.3);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.pv3-batch-th-200 {
+  min-width: 200px;
+  color: var(--warning);
+}
+
+.pv3-batch-th-120 {
+  min-width: 120px;
+  color: var(--warning);
+}
+
+.pv3-batch-th-130-center {
+  min-width: 130px;
+  color: var(--warning);
+  text-align: center;
+}
+
+.pv3-batch-th-100 {
+  min-width: 100px;
+  color: var(--warning);
+}
+
+.pv3-batch-th-180 {
+  min-width: 180px;
+  color: var(--warning);
+}
+
+.pv3-batch-gurt-sm {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background-color: var(--dot-color, #6b7280);
+}
+
+.pv3-batch-gurt-text {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.pv3-batch-summary {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pv3-batch-summary-counts {
+  display: flex;
+  gap: 2rem;
+}
+
+.pv3-batch-count-success {
+  color: var(--success);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.pv3-batch-count-error {
+  color: var(--error);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.pv3-batch-muted-ml {
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+/* ---- Neuer Termin Modal ---- */
+.pv3-modal-overlay-dark {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.pv3-modal-dark {
+  background: #1a1a1a;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  border-top: none;
+  max-width: 750px;
+  width: 90%;
+  margin: 0 auto 20px;
+  color: var(--text-primary);
+}
+
+.pv3-modal-header {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.pv3-modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--warning);
+}
+
+.pv3-modal-progress-section {
+  display: flex;
+  padding: 1.5rem 2rem;
+  background: #0a0a0a;
+  border-bottom: 1px solid #333;
+}
+
+.pv3-modal-step-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.pv3-modal-content-area {
+  padding: 2rem;
+  min-height: 300px;
+}
+
+.pv3-dark-input {
+  padding: 0.6rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  width: 100%;
+  background: #2a2a2a;
+  color: var(--text-primary);
+}
+
+.pv3-dark-input-sm {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  background: #2a2a2a;
+  color: var(--text-primary);
+}
+
+.pv3-dark-textarea {
+  padding: 0.6rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  width: 100%;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.pv3-dark-textarea-sm {
+  padding: 0.5rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100%;
+  min-height: 70px;
+  resize: vertical;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+
+.pv3-modal-footer {
+  padding: 1rem 2rem;
+  border-top: 1px solid #333;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.pv3-modal-btn-cancel {
+  padding: 0.6rem 1.2rem;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pv3-modal-btn-submit {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  background: #EAB308;
+  color: #000;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ---- Edit Termin Modal ---- */
+.pv3-edit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 0;
+  overflow-y: auto;
+}
+
+.pv3-edit-modal-box {
+  background: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid #333;
+  max-width: 850px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  margin: 0 auto 20px;
+  color: var(--text-primary);
+}
+
+.pv3-edit-section-heading {
+  color: var(--warning);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #EAB308;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  background: transparent;
+}
+
+.pv3-edit-section-heading-mt {
+  color: var(--warning);
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 2px solid #EAB308;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  background: transparent;
+}
+
+.pv3-edit-modal-h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pv3-edit-modal-sub {
+  margin-bottom: 2rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.pv3-edit-oeffentlich-row {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pv3-edit-oeffentlich-label {
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pv3-edit-textarea-grid {
+  display: grid;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.pv3-edit-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  background: transparent;
+}
+
+.pv3-edit-btn-cancel {
+  padding: 0.5rem 1rem;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #2a2a2a;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.pv3-edit-btn-cancel:hover {
+  background: #333;
+}
+
+/* Validierungshinweis (Error box) */
+.pv3-validation-error {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #4a1515;
+  border: 1px solid #8b2020;
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* neuerTermin Öffentlich row */
+.pv3-oeffentlich-row {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Termin-Auswahl modal */
+.pv3-auswahl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pv3-auswahl-modal-box {
+  background: var(--bg-secondary, #1e1e2e);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 480px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.pv3-auswahl-muted-p {
+  color: var(--text-secondary, #888);
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.pv3-auswahl-warning-span {
+  display: block;
+  margin-top: 0.4rem;
+  color: var(--warning);
+}
+
+.pv3-auswahl-termin-btn,
+.pv3-auswahl-btn {
+  background: var(--bg-tertiary, #2a2a3e);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.pv3-auswahl-termin-btn:hover,
+.pv3-auswahl-btn:hover {
+  border-color: #6366f1;
+}
+
+.pv3-auswahl-termin-date,
+.pv3-auswahl-btn-date {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.pv3-auswahl-termin-info,
+.pv3-auswahl-btn-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+}
+
+.pv3-auswahl-cancel-btn,
+.pv3-auswahl-cancel {
+  margin-top: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* Batch checkbox - static green accent */
+.pv3-batch-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #10b981;
+}
+
+/* Icon helpers */
+.pv3-icon-warning-large {
+  color: var(--warning);
+  margin: 0 auto 1rem;
+}
+
+.pv3-icon-purple {
+  color: #8b5cf6;
+}
+
+.pv3-icon-chevron-warning {
+  color: var(--warning);
+  transition: transform 0.2s;
+}
+
+.pv3-icon-chevron-muted {
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.pv3-batch-ergebnis-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Ergebnis strong label */
+.pv3-ergebnis-strong {
+  font-size: 1.1rem;
+}
+
+/* Step progress indicators in Neuer Termin modal */
+.pv3-step-connector {
+  position: absolute;
+  top: 15px;
+  left: -50%;
+  right: 50%;
+  height: 2px;
+}
+
+.pv3-step-circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  position: relative;
+  z-index: 2;
+}
+
+.pv3-step-label {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* === INLINE STYLE MIGRATIONS === */
+
+/* Calendar icon colors */
+.pv3-calendar-today { color: #3b82f6; }
+.pv3-calendar-upcoming { color: #8b5cf6; }
+
+/* Selected graduation dot (with gold border) */
+.pv3-gurt-dot--selected { border: 2px solid rgba(234, 179, 8, 0.5); }
+
+/* Progress bar fill (shared) — height + transition static; width stays inline */
+.pv3-bar-fill { height: 100%; transition: width 0.3s ease; }
+.pv3-bar-fill--good { background: linear-gradient(90deg, #10b981, #34d399); }
+.pv3-bar-fill--warn { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+/* External status badge */
+.pv3-extern-status { padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+.pv3-extern-status--bestaetigt { background: #14532d; color: #86efac; }
+.pv3-extern-status--abgesagt { background: #4a1515; color: #fca5a5; }
+.pv3-extern-status--pending { background: #1e3a5f; color: #93c5fd; }
+
+/* Kandidaten table rows */
+.pv3-kandidat-row--berechtigt {
+  background-color: rgba(34, 197, 94, 0.05);
+  border-left: 3px solid rgba(34, 197, 94, 0.5);
+  transition: all 0.2s ease;
+}
+.pv3-kandidat-row--zugelassen {
+  background-color: rgba(255, 215, 0, 0.05);
+  border-left: 3px solid rgba(255, 215, 0, 0.5);
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+/* Met/not-met value colors */
+.pv3-value--met { color: #10b981; }
+.pv3-value--not-met { color: #ef4444; }
+
+/* Ergebnis label box */
+.pv3-ergebnis-label-box--bestanden { background-color: #d1fae5; border: 2px solid #10b981; }
+.pv3-ergebnis-label-box--failed { background-color: #fee2e2; border: 2px solid #ef4444; }
+
+/* Ergebnis text colors */
+.pv3-ergebnis-strong--bestanden { color: #065f46; }
+.pv3-ergebnis-strong--failed { color: #991b1b; }
+
+/* Batch results table */
+.pv3-batch-row--bestanden { background-color: rgba(34, 197, 94, 0.1); }
+.pv3-batch-row--failed { background-color: rgba(239, 68, 68, 0.1); }
+.pv3-batch-gurt-sm--failed { opacity: 0.5; }
+.pv3-batch-grad-text--bestanden { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.9); }
+.pv3-batch-grad-text--failed { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.5); text-decoration: line-through; }
+.pv3-batch-ergebnis-text { font-weight: 600; font-size: 0.8125rem; }
+
+/* Step indicators */
+.pv3-step-connector--active { background: #EAB308; }
+.pv3-step-circle--active { background: #EAB308 !important; color: #000 !important; border-color: #EAB308 !important; }
+.pv3-step-label--active { color: #EAB308; font-weight: 600; }
+
+/* Modal buttons */
+.pv3-modal-btn-weiter {
+  padding: 0.6rem 1.2rem; border: none; border-radius: 6px;
+  background: #EAB308; color: #000; cursor: pointer;
+  font-size: 0.9rem; font-weight: 600;
+}
+.pv3-modal-btn-weiter:disabled { background: #555; color: #888; cursor: not-allowed; }
+.pv3-modal-btn-save { display: flex; align-items: center; transition: all 0.2s; }
+.pv3-modal-btn-save:hover:not(:disabled) { background: #F59E0B; }

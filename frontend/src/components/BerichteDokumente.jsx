@@ -5,7 +5,7 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 
-const BerichteDokumente = () => {
+const BerichteDokumente = ({ embedded = false }) => {
   const [documents, setDocuments] = useState([]);
   const [selectedDocType, setSelectedDocType] = useState('all');
   const [loading, setLoading] = useState(false);
@@ -15,12 +15,12 @@ const BerichteDokumente = () => {
   // Dokumenttypen
   const documentTypes = [
     { id: 'all', label: 'Alle Dokumente', icon: <FileText size={18} /> },
-    { id: 'vertrag', label: 'Mitgliedschaftsvertrag', icon: <FileText size={18} />, color: '#DC2626', featured: true },
-    { id: 'mitgliederliste', label: 'Mitgliederliste', icon: <Users size={18} />, color: '#3B82F6' },
-    { id: 'anwesenheit', label: 'Anwesenheitsberichte', icon: <FileCheck size={18} />, color: '#10B981' },
-    { id: 'beitraege', label: 'Beitragsübersicht', icon: <DollarSign size={18} />, color: '#F59E0B' },
+    { id: 'vertrag', label: 'Mitgliedschaftsvertrag', icon: <FileText size={18} />, color: 'var(--error)', featured: true },
+    { id: 'mitgliederliste', label: 'Mitgliederliste', icon: <Users size={18} />, color: 'var(--info)' },
+    { id: 'anwesenheit', label: 'Anwesenheitsberichte', icon: <FileCheck size={18} />, color: 'var(--success)' },
+    { id: 'beitraege', label: 'Beitragsübersicht', icon: <DollarSign size={18} />, color: 'var(--warning)' },
     { id: 'statistiken', label: 'Statistiken', icon: <TrendingUp size={18} />, color: '#8B5CF6' },
-    { id: 'pruefungen', label: 'Prüfungsurkunden', icon: <Award size={18} />, color: '#EF4444' },
+    { id: 'pruefungen', label: 'Prüfungsurkunden', icon: <Award size={18} />, color: 'var(--error)' },
     { id: 'custom', label: 'Benutzerdefiniert', icon: <FileText size={18} />, color: '#6B7280' }
   ];
 
@@ -189,10 +189,12 @@ const BerichteDokumente = () => {
 
   return (
     <div className="berichte-dokumente">
+      {!embedded && (
       <div className="page-header">
         <h1>📄 Berichte & Dokumente</h1>
         <p>PDF-Berichte erstellen, verwalten und herunterladen</p>
       </div>
+      )}
 
       {message && (
         <div className={`message ${message.includes('✅') ? 'success' : message.includes('❌') ? 'error' : 'info'}`}>
@@ -209,9 +211,9 @@ const BerichteDokumente = () => {
               key={docType.id}
               className={`quick-create-card ${docType.featured ? 'featured' : ''}`}
               onClick={() => handleCreateDocument(docType.label)}
-              style={{ borderLeftColor: docType.color }}
+              style={{ '--typ-color': docType.color }}
             >
-              <div className="quick-create-icon" style={{ color: docType.color }}>
+              <div className="quick-create-icon">
                 {docType.icon}
               </div>
               <div className="quick-create-content">

@@ -1,0 +1,242 @@
+/* ============================================================
+   StatisticsTab — utility classes (mst- prefix)
+   ============================================================ */
+
+/* Empty state body (EmptyState component override) */
+.empty-state.mst-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.mst-empty-icon {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.mst-empty-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.mst-empty-sub {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* Status badge */
+.mst-status-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 8px;
+}
+
+.mst-status-badge-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mst-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.mst-status-label {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.mst-status-count {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+/* Top Dojo Card */
+.mst-top-dojo-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border-default);
+}
+
+.mst-rank-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.mst-dojo-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.mst-progress-track {
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mst-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.mst-dojo-count-right {
+  text-align: right;
+}
+
+.mst-dojo-count-num {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.mst-dojo-count-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Subscription chart wrapper */
+.mst-subscription-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.mst-pie-container {
+  flex: 0 0 180px;
+}
+
+/* Top-dojos scroll wrapper */
+.mst-dojos-scroll {
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Charts grid margin */
+.mst-charts-grid-top {
+  margin-top: 24px;
+}
+
+/* Member status row */
+.mst-member-status-row {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+/* Member status card — dynamic bg/border set inline */
+.mst-member-status-card {
+  flex: 1;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.mst-member-status-icon {
+  margin-bottom: 8px;
+}
+
+.mst-member-status-num {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Repeated 3x: secondary text in small size */
+.mst-text-secondary-sm {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* ── MIGRATED INLINE STYLES (2026-03-07) ─────────────────── */
+
+/* Status badge per-status colors */
+.mst-status-badge--active    { background: #10B98115; border-left: 4px solid #10B981; }
+.mst-status-badge--trial     { background: #3B82F615; border-left: 4px solid #3B82F6; }
+.mst-status-badge--expired   { background: #EF444415; border-left: 4px solid #EF4444; }
+.mst-status-badge--cancelled { background: #64748B15; border-left: 4px solid #64748B; }
+.mst-status-badge--pending   { background: #F59E0B15; border-left: 4px solid #F59E0B; }
+.mst-status-badge--default   { background: #64748B15; border-left: 4px solid #64748B; }
+
+.mst-status-dot--active    { background: #10B981; }
+.mst-status-dot--trial     { background: #3B82F6; }
+.mst-status-dot--expired   { background: #EF4444; }
+.mst-status-dot--cancelled { background: #64748B; }
+.mst-status-dot--pending   { background: #F59E0B; }
+.mst-status-dot--default   { background: #64748B; }
+
+.mst-status-count--active    { color: #10B981; }
+.mst-status-count--trial     { color: #3B82F6; }
+.mst-status-count--expired   { color: #EF4444; }
+.mst-status-count--cancelled { color: #64748B; }
+.mst-status-count--pending   { color: #F59E0B; }
+.mst-status-count--default   { color: #64748B; }
+
+/* Rank badge: top 3 podium colors */
+.mst-rank-badge--gold {
+  background: linear-gradient(135deg, #D4AF37, #B8860B);
+  color: #fff;
+}
+.mst-rank-badge--silver {
+  background: linear-gradient(135deg, #C0C0C0, #A8A8A8);
+  color: #fff;
+}
+.mst-rank-badge--bronze {
+  background: linear-gradient(135deg, #CD7F32, #8B4513);
+  color: #fff;
+}
+.mst-rank-badge--default {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+/* Progress bar gradient */
+.mst-progress-bar {
+  background: linear-gradient(90deg, #3B82F6, #14B8A6);
+}
+
+/* Dojo count primary color */
+.mst-dojo-count-num {
+  color: #3B82F6;
+}
+
+/* KPI icon per-color variants */
+.kpi-icon--success { background: #10B98120; color: #10B981; }
+.kpi-icon--primary { background: #3B82F620; color: #3B82F6; }
+.kpi-icon--purple  { background: #8B5CF620; color: #8B5CF6; }
+.kpi-icon--teal    { background: #14B8A620; color: #14B8A6; }
+
+/* Member status card per-color variants */
+.mst-member-status-card--success { background: #10B98115; border: 1px solid #10B98130; }
+.mst-member-status-card--slate   { background: #64748B15; border: 1px solid #64748B30; }
+.mst-member-status-card--primary { background: #3B82F615; border: 1px solid #3B82F630; }
+
+.mst-member-status-icon--success { color: #10B981; }
+.mst-member-status-icon--slate   { color: #64748B; }
+.mst-member-status-icon--primary { color: #3B82F6; }
+
+.mst-member-status-num--success { color: #10B981; }
+.mst-member-status-num--slate   { color: #64748B; }
+.mst-member-status-num--primary { color: #3B82F6; }

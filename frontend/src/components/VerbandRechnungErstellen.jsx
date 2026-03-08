@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { Building2, Check, Search, X, Loader2, Save, Eye, Download, CheckCircle, BookOpen } from 'lucide-react';
 import '../styles/RechnungErstellen.css';
+import '../styles/VerbandRechnungErstellen.css';
 
 const VerbandRechnungErstellen = ({ token: propToken }) => {
   const { token: contextToken } = useAuth();
@@ -424,8 +425,8 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   if (loading) {
     return (
       <div className="rechnung-erstellen-container">
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#ffffff' }}>
-          <Loader2 size={32} style={{ animation: 'spin 1s linear infinite' }} />
+        <div className="vre-loading-center">
+          <Loader2 size={32} className="vre-spinner-icon" />
           <p>Lade Daten...</p>
         </div>
       </div>
@@ -435,49 +436,17 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
   return (
     <div className="rechnung-erstellen-container">
       {/* View Mode Toggle */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '0.5rem',
-        padding: '1rem',
-        background: 'rgba(26, 26, 46, 0.95)',
-        borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
-        marginBottom: '1rem'
-      }}>
+      <div className="vre-view-toggle">
         <button
           onClick={() => setViewMode('erstellen')}
-          style={{
-            padding: '0.6rem 1.5rem',
-            background: viewMode === 'erstellen' ? 'linear-gradient(135deg, #c9a227, #a68519)' : 'rgba(255, 255, 255, 0.05)',
-            border: viewMode === 'erstellen' ? 'none' : '1px solid rgba(255, 215, 0, 0.3)',
-            borderRadius: '8px',
-            color: viewMode === 'erstellen' ? '#000' : '#ffd700',
-            cursor: 'pointer',
-            fontWeight: viewMode === 'erstellen' ? '600' : '400',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
+          className={`vre-toggle-btn${viewMode === 'erstellen' ? ' vre-toggle-btn--active' : ''}`}
         >
           <Save size={18} />
           Rechnung erstellen
         </button>
         <button
           onClick={() => setViewMode('ansehen')}
-          style={{
-            padding: '0.6rem 1.5rem',
-            background: viewMode === 'ansehen' ? 'linear-gradient(135deg, #c9a227, #a68519)' : 'rgba(255, 255, 255, 0.05)',
-            border: viewMode === 'ansehen' ? 'none' : '1px solid rgba(255, 215, 0, 0.3)',
-            borderRadius: '8px',
-            color: viewMode === 'ansehen' ? '#000' : '#ffd700',
-            cursor: 'pointer',
-            fontWeight: viewMode === 'ansehen' ? '600' : '400',
-            transition: 'all 0.3s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
+          className={`vre-toggle-btn${viewMode === 'ansehen' ? ' vre-toggle-btn--active' : ''}`}
         >
           <Eye size={18} />
           Rechnungen ansehen
@@ -486,111 +455,73 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
       {/* Rechnungen Liste */}
       {viewMode === 'ansehen' ? (
-        <div style={{ padding: '1rem', maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{
-            background: 'rgba(26, 26, 46, 0.95)',
-            borderRadius: '12px',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              padding: '1rem 1.5rem',
-              borderBottom: '1px solid rgba(255, 215, 0, 0.2)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h2 style={{ color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Building2 size={24} style={{ color: '#ffd700' }} />
+        <div className="vre-list-wrapper">
+          <div className="vre-list-card">
+            <div className="vre-list-header">
+              <h2 className="vre-list-title">
+                <Building2 size={24} className="u-text-accent" />
                 TDA Rechnungen
               </h2>
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}>
+              <span className="vre-list-count">
                 {rechnungen.length} Rechnungen
               </span>
             </div>
 
             {rechnungen.length === 0 ? (
-              <div style={{ padding: '3rem', textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>
+              <div className="vre-table-empty">
                 Keine Rechnungen vorhanden
               </div>
             ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="vre-table-scroll">
+                <table className="vre-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Rechnungs-Nr.</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Datum</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Empfänger</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Betrag</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Status</th>
-                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', color: '#ffd700', fontWeight: '600', fontSize: '0.85rem' }}>Aktionen</th>
+                    <tr className="vre-thead-row">
+                      <th className="vre-th-center-primary">Rechnungs-Nr.</th>
+                      <th className="vre-th-center-primary">Datum</th>
+                      <th className="vre-th-center-primary">Empfänger</th>
+                      <th className="vre-th-right-primary">Betrag</th>
+                      <th className="vre-th-center-primary-center">Status</th>
+                      <th className="vre-th-center-primary-center">Aktionen</th>
                     </tr>
                   </thead>
                   <tbody>
                     {rechnungen.map((rechnung) => {
                       const statusColors = getStatusColor(rechnung.status);
                       return (
-                        <tr key={rechnung.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                          <td style={{ padding: '0.75rem 1rem', color: '#fff', fontFamily: 'monospace' }}>
+                        <tr key={rechnung.id} className="vre-tbody-row">
+                          <td className="vre-td-mono">
                             {rechnung.rechnungsnummer}
                           </td>
-                          <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.8)' }}>
+                          <td className="vre-td-secondary">
                             {rechnung.rechnungsdatum ? formatDateDDMMYYYY(rechnung.rechnungsdatum) : '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1rem', color: 'rgba(255,255,255,0.8)' }}>
+                          <td className="vre-td-secondary">
                             {rechnung.empfaenger_name || '-'}
                           </td>
-                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right', color: '#fff', fontWeight: '500' }}>
+                          <td className="vre-td-primary-bold">
                             {Number(rechnung.summe_brutto || 0).toFixed(2)} €
                           </td>
-                          <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                            <span style={{
-                              display: 'inline-block',
-                              padding: '0.25rem 0.75rem',
-                              background: statusColors.bg,
-                              border: `1px solid ${statusColors.border}`,
-                              borderRadius: '12px',
-                              color: statusColors.text,
-                              fontSize: '0.8rem',
-                              fontWeight: '500',
-                              textTransform: 'capitalize'
-                            }}>
+                          <td className="vre-td-center">
+                            <span
+                              className="vre-status-badge"
+                              style={{ '--status-bg': statusColors.bg, '--status-border': statusColors.border, '--status-text': statusColors.text }}
+                            >
                               {rechnung.status || 'offen'}
                             </span>
                           </td>
-                          <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                          <td className="vre-td-actions">
+                            <div className="vre-actions-flex">
                               <button
                                 onClick={() => handleViewRechnung(rechnung.id)}
                                 title="Ansehen"
-                                style={{
-                                  padding: '0.4rem',
-                                  background: 'rgba(255, 215, 0, 0.1)',
-                                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                                  borderRadius: '6px',
-                                  color: '#ffd700',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
+                                className="vre-btn-view"
                               >
                                 <Eye size={16} />
                               </button>
                               <button
                                 onClick={() => handleDownloadRechnung(rechnung.id)}
                                 title="Drucken/PDF"
-                                style={{
-                                  padding: '0.4rem',
-                                  background: 'rgba(99, 102, 241, 0.1)',
-                                  border: '1px solid rgba(99, 102, 241, 0.3)',
-                                  borderRadius: '6px',
-                                  color: '#6366f1',
-                                  cursor: 'pointer',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
+                                className="vre-btn-download"
                               >
                                 <Download size={16} />
                               </button>
@@ -598,17 +529,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                                 <button
                                   onClick={() => handleMarkAsBezahlt(rechnung.id)}
                                   title="Als bezahlt markieren"
-                                  style={{
-                                    padding: '0.4rem',
-                                    background: 'rgba(34, 197, 94, 0.1)',
-                                    border: '1px solid rgba(34, 197, 94, 0.3)',
-                                    borderRadius: '6px',
-                                    color: '#22c55e',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
+                                  className="vre-btn-bezahlt"
                                 >
                                   <CheckCircle size={16} />
                                 </button>
@@ -617,17 +538,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                                 <button
                                   onClick={() => handleEuerZuordnen(rechnung)}
                                   title="In EÜR buchen"
-                                  style={{
-                                    padding: '0.4rem',
-                                    background: 'rgba(168, 85, 247, 0.1)',
-                                    border: '1px solid rgba(168, 85, 247, 0.3)',
-                                    borderRadius: '6px',
-                                    color: '#a855f7',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
+                                  className="vre-btn-euer"
                                 >
                                   <BookOpen size={16} />
                                 </button>
@@ -644,7 +555,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
           </div>
 
           {error && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.75rem 1rem', borderRadius: '8px', marginTop: '1rem', fontSize: '0.9rem' }}>
+            <div className="vre-error-banner">
               {error}
             </div>
           )}
@@ -658,7 +569,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
           {/* Kunde */}
           <div className="form-section">
             <h3>KUNDE</h3>
-            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+            <div className="vre-empfaenger-tabs">
               {[
                 { id: 'dojo_mitglied', label: 'Mitglieder' },
                 { id: 'verbandsmitglied', label: 'Verband' },
@@ -668,15 +579,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 <button
                   key={tab.id}
                   onClick={() => { setEmpfaengerTyp(tab.id); setSelectedEmpfaenger(null); }}
-                  style={{
-                    padding: '0.3rem 0.5rem',
-                    fontSize: '0.7rem',
-                    background: empfaengerTyp === tab.id ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${empfaengerTyp === tab.id ? '#ffd700' : 'rgba(255, 255, 255, 0.1)'}`,
-                    borderRadius: '4px',
-                    color: empfaengerTyp === tab.id ? '#ffd700' : '#aaa',
-                    cursor: 'pointer'
-                  }}
+                  className={`vre-tab-btn${empfaengerTyp === tab.id ? ' vre-tab-btn--active' : ''}`}
                 >
                   {tab.label}
                 </button>
@@ -699,9 +602,9 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 ))}
               </select>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <div className="vre-manuell-col">
                 <input type="text" value={manuellName} onChange={(e) => setManuellName(e.target.value)} placeholder="Name / Firma *" />
-                <textarea value={manuellAdresse} onChange={(e) => setManuellAdresse(e.target.value)} placeholder="Adresse" rows={2} style={{ resize: 'none' }} />
+                <textarea value={manuellAdresse} onChange={(e) => setManuellAdresse(e.target.value)} placeholder="Adresse" rows={2} className="vre-textarea-noresize" />
                 <input type="email" value={manuellEmail} onChange={(e) => setManuellEmail(e.target.value)} placeholder="E-Mail" />
               </div>
             )}
@@ -759,26 +662,26 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                 value={neuePosition.menge}
                 onChange={(e) => setNeuePosition({ ...neuePosition, menge: parseInt(e.target.value) || 1 })}
                 min="1"
-                style={{ width: '60px' }}
+                className="vre-qty-input"
               />
               <button onClick={addPosition} className="btn-add">Hinzufügen</button>
             </div>
 
             {/* Hinzugefügte Positionen */}
             {positionen.length > 0 && (
-              <div style={{ marginTop: '0.75rem', maxHeight: '350px', overflowY: 'auto' }}>
+              <div className="vre-positions-list">
                 {positionen.map((pos, index) => (
-                  <div key={index} className="position-item" style={{ padding: '0.35rem 0.5rem', marginBottom: '0.25rem', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div key={index} className="position-item vre-position-item-inner">
                     {/* Zeile 1: Bezeichnung + Löschen */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                      <span style={{ color: '#fff', fontSize: '0.75rem', fontWeight: '500' }}>{pos.bezeichnung}</span>
+                    <div className="vre-pos-header">
+                      <span className="vre-pos-name">{pos.bezeichnung}</span>
                       <button
                         onClick={() => removePosition(index)}
-                        style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '3px', color: '#ef4444', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold', padding: 0, lineHeight: 1 }}
+                        className="vre-btn-remove-pos"
                       >×</button>
                     </div>
                     {/* Zeile 2: Menge, Preis, Rabatt, Summe - alles in einer Zeile */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div className="vre-pos-details">
                       <input
                         type="number"
                         value={pos.menge}
@@ -788,12 +691,12 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                           setPositionen(updatedPositionen);
                         }}
                         min="1"
-                        style={{ width: '32px', padding: '1px 2px', fontSize: '0.65rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '2px', color: '#fff', textAlign: 'center' }}
+                        className="vre-pos-menge-input"
                       />
-                      <span style={{ color: '#666', fontSize: '0.6rem' }}>×</span>
-                      <span style={{ color: '#aaa', fontSize: '0.65rem' }}>{pos.einzelpreis.toFixed(2)}€</span>
-                      <span style={{ color: '#444' }}>|</span>
-                      <span style={{ color: '#888', fontSize: '0.6rem' }}>Rabatt</span>
+                      <span className="vre-text-muted-xs">×</span>
+                      <span className="vre-pos-preis">{pos.einzelpreis.toFixed(2)}€</span>
+                      <span className="vre-pos-separator">|</span>
+                      <span className="vre-text-muted-xs">Rabatt</span>
                       <input
                         type="number"
                         value={pos.rabatt_prozent || 0}
@@ -806,10 +709,10 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                         min="0"
                         max="100"
                         step="1"
-                        style={{ width: '32px', padding: '1px 2px', fontSize: '0.65rem', background: 'rgba(255,215,0,0.1)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '2px', color: '#ffd700', textAlign: 'center' }}
+                        className="vre-pos-rabatt-input"
                       />
-                      <span style={{ color: '#888', fontSize: '0.6rem' }}>%</span>
-                      <span style={{ marginLeft: 'auto', color: '#ffd700', fontSize: '0.7rem', fontWeight: '500' }}>
+                      <span className="vre-text-muted-xs">%</span>
+                      <span className="vre-pos-sum">
                         = {((pos.menge * pos.einzelpreis) * (1 - (pos.rabatt_prozent || 0) / 100)).toFixed(2)} €
                       </span>
                     </div>
@@ -823,27 +726,13 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
           <div className="form-section">
             <h3>RABATT & SKONTO</h3>
             <div className="form-grid">
-              <div style={{ position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+              <div className="vre-rabatt-field">
+                <div className="vre-rabatt-label-row">
                   <label>Rabatt %</label>
                   <button
                     type="button"
                     onClick={() => setShowRabattHinweis(!showRabattHinweis)}
-                    style={{
-                      background: 'rgba(255, 215, 0, 0.2)',
-                      border: '1px solid rgba(255, 215, 0, 0.4)',
-                      borderRadius: '50%',
-                      color: '#ffd700',
-                      width: '14px',
-                      height: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontSize: '0.65rem',
-                      fontWeight: 'bold',
-                      padding: 0
-                    }}
+                    className="vre-btn-info"
                   >
                     ?
                   </button>
@@ -874,7 +763,7 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                   type="number"
                   value={rechnungsDaten.skonto_tage}
                   readOnly
-                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.03)', cursor: 'not-allowed' }}
+                  className="vre-input-readonly"
                 />
               </div>
             </div>
@@ -883,54 +772,23 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
           {/* Rabatt Hinweis Modal */}
           {showRabattHinweis && (
             <>
-              <div style={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 9999,
-                padding: '1rem',
-                background: 'rgba(255, 215, 0, 0.98)',
-                border: '2px solid #ffd700',
-                borderRadius: '8px',
-                color: '#000',
-                fontSize: '0.85rem',
-                maxWidth: '320px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)'
-              }}>
+              <div className="vre-hint-modal">
                 <strong>Globaler Rabatt:</strong> Dieser Rabatt wird auf die gesamte Rechnung angewendet.
                 <br /><br />
                 Für <strong>einzelne Positionen</strong> können Sie den Rabatt oben in der Positionsliste festlegen.
                 <button
                   onClick={() => setShowRabattHinweis(false)}
-                  style={{
-                    marginTop: '0.75rem',
-                    padding: '0.4rem 0.75rem',
-                    background: '#000',
-                    color: '#ffd700',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    width: '100%'
-                  }}
+                  className="vre-hint-modal-btn"
                 >
                   Verstanden
                 </button>
               </div>
-              <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0, 0, 0, 0.5)',
-                zIndex: 9998
-              }} onClick={() => setShowRabattHinweis(false)} />
+              <div className="vre-hint-overlay" onClick={() => setShowRabattHinweis(false)} />
             </>
           )}
 
           {error && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '0.5rem', borderRadius: '6px', marginTop: '0.5rem', fontSize: '0.8rem' }}>
+            <div className="vre-error-banner-sm">
               {error}
             </div>
           )}
@@ -967,12 +825,12 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                       ))}
                     </>
                   ) : (
-                    <div style={{ color: '#999' }}>Bitte Kunde wählen</div>
+                    <div className="u-text-muted">Bitte Kunde wählen</div>
                   )}
                 </div>
               </div>
               <div className="invoice-meta">
-                <img src="/public/tda-logo.png" alt="TDA Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', marginLeft: 'auto', display: 'block', marginBottom: '0.5rem' }} onError={(e) => { e.target.style.display = 'none'; }} />
+                <img src="/public/tda-logo.png" alt="TDA Logo" className="vre-invoice-logo" onError={(e) => { e.target.style.display = 'none'; }} />
                 <div className="invoice-numbers">
                   <div>Rechnungs-Nr.: {rechnungsDaten.rechnungsnummer}</div>
                   <div>Kundennummer: {rechnungsDaten.kundennummer || '-'}</div>
@@ -1054,8 +912,8 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
             </div>
 
             {/* Payment Terms und QR Codes */}
-            <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', alignItems: 'flex-start' }}>
-              <div className="payment-terms" style={{ flex: '1', minWidth: '300px' }}>
+            <div className="vre-payment-qr-row">
+              <div className="payment-terms vre-payment-terms-col">
                 <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
                 {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
                   <p>
@@ -1078,54 +936,54 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
                   {Number(rechnungsDaten.skonto_prozent) > 0 && Number(rechnungsDaten.skonto_tage) > 0 ? (
                     <>
                       {/* QR-Code mit Skonto */}
-                      <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000', textTransform: 'uppercase' }}>Zahlung mit Skonto</h4>
-                        <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                      <div className="vre-td-center-w90">
+                        <h4 className="qr-code-title vre-section-title">Zahlung mit Skonto</h4>
+                        <div className="vre-logo-wrapper">
                           <QRCodeSVG
                             value={generateEPCQRCode(calculateEndbetrag() - calculateSkonto())}
                             size={70}
                             level="M"
                           />
                         </div>
-                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000', fontWeight: '600' }}>
+                        <p className="vre-label-small-bold">
                           Betrag: {(calculateEndbetrag() - calculateSkonto()).toFixed(2)} €
                         </p>
-                        <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000' }}>
+                        <p className="vre-label-small">
                           bis zum {formatDateDDMMYYYY(rechnungsDaten.belegdatum, rechnungsDaten.skonto_tage)}
                         </p>
                       </div>
                       {/* QR-Code ohne Skonto */}
-                      <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                        <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000', textTransform: 'uppercase' }}>Zahlung ohne Skonto</h4>
-                        <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                      <div className="vre-td-center-w90">
+                        <h4 className="qr-code-title vre-section-title">Zahlung ohne Skonto</h4>
+                        <div className="vre-logo-wrapper">
                           <QRCodeSVG
                             value={generateEPCQRCode(calculateEndbetrag())}
                             size={70}
                             level="M"
                           />
                         </div>
-                        <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000', fontWeight: '600' }}>
+                        <p className="vre-label-small-bold">
                           Betrag: {calculateEndbetrag().toFixed(2)} €
                         </p>
-                        <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000' }}>
+                        <p className="vre-label-small">
                           ab {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}
                         </p>
                       </div>
                     </>
                   ) : (
-                    <div style={{ textAlign: 'center', flex: '0 0 auto', width: '90px' }}>
-                      <h4 className="qr-code-title" style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 'bold', color: '#000', textTransform: 'uppercase' }}>QR-Code für Überweisung</h4>
-                      <div style={{ padding: '0.3rem', background: '#fff', display: 'inline-block', borderRadius: '4px' }}>
+                    <div className="vre-td-center-w90">
+                      <h4 className="qr-code-title vre-section-title">QR-Code für Überweisung</h4>
+                      <div className="vre-logo-wrapper">
                         <QRCodeSVG
                           value={generateEPCQRCode(calculateEndbetrag())}
                           size={70}
                           level="M"
                         />
                       </div>
-                      <p style={{ marginTop: '0', fontSize: '0.75rem', color: '#000', fontWeight: '600' }}>
+                      <p className="vre-label-small-bold">
                         Betrag: {calculateEndbetrag().toFixed(2)} €
                       </p>
-                      <p style={{ marginTop: '0', fontSize: '0.7rem', color: '#000' }}>
+                      <p className="vre-label-small">
                         bis zum {formatDateDDMMYYYY(rechnungsDaten.zahlungsfrist)}
                       </p>
                     </div>
@@ -1135,20 +993,8 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
             </div>
 
             {/* Footer */}
-            <div className="rechnung-footer" style={{
-              position: 'absolute',
-              bottom: '0',
-              left: '20mm',
-              right: '20mm',
-              paddingTop: '0.75rem',
-              paddingBottom: '0.5rem',
-              borderTop: '1px solid rgba(0, 0, 0, 0.2)',
-              fontSize: '7pt',
-              color: '#000',
-              lineHeight: '1.6',
-              textAlign: 'center'
-            }}>
-              <div style={{ marginBottom: '0.3rem' }}>
+            <div className="rechnung-footer">
+              <div className="vre-footer-row-mb">
                 {selectedOrganisation?.name} | {selectedOrganisation?.adresse} | info@tda-intl.org | www.tda-intl.org
               </div>
               <div>
@@ -1162,18 +1008,18 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
       {/* Vorschau Modal */}
       {showVorschauModal && (
-        <div className="modal-overlay" onClick={() => setShowVorschauModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a2e', border: '1px solid rgba(201, 162, 39, 0.3)', borderRadius: '12px', width: '900px', height: '85vh', maxWidth: '90vw', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <h3 style={{ color: '#fff', margin: 0 }}>Rechnung erstellt</h3>
-              <button onClick={() => setShowVorschauModal(false)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={20} /></button>
+        <div className="modal-overlay vre-modal-overlay" onClick={() => setShowVorschauModal(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="vre-modal-content">
+            <div className="vre-modal-header">
+              <h3 className="vre-modal-title">Rechnung erstellt</h3>
+              <button onClick={() => setShowVorschauModal(false)} className="vre-modal-close-btn"><X size={20} /></button>
             </div>
-            <div style={{ flex: 1, overflow: 'auto' }}>
-              <iframe src={vorschauUrl} title="Rechnung Vorschau" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
+            <div className="vre-modal-body">
+              <iframe src={vorschauUrl} title="Rechnung Vorschau" className="vre-modal-iframe" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <button onClick={() => setShowVorschauModal(false)} style={{ padding: '0.6rem 1rem', background: 'transparent', border: '1px solid rgba(201, 162, 39, 0.5)', color: '#c9a227', borderRadius: '6px', cursor: 'pointer' }}>Schließen</button>
-              <button onClick={() => window.open(vorschauUrl + '?print=1', '_blank')} style={{ padding: '0.6rem 1rem', background: 'linear-gradient(135deg, #c9a227, #a68519)', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="vre-modal-footer">
+              <button onClick={() => setShowVorschauModal(false)} className="vre-btn-modal-close">Schließen</button>
+              <button onClick={() => window.open(vorschauUrl + '?print=1', '_blank')} className="vre-btn-modal-download">
                 <Download size={16} /> PDF herunterladen
               </button>
             </div>

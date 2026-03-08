@@ -1,4 +1,4 @@
-/* DojoSwitcher.css - Compact Modern Design */
+/* DojoSwitcher.css */
 
 .dojo-switcher {
   position: relative;
@@ -20,29 +20,28 @@
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* Trigger Button */
+/* ── Trigger Button ── */
 .dojo-switcher-trigger {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 10px;
-  padding: 8px 14px;
-  color: #ffffff;
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: var(--comp-radius-lg);
+  padding: 9px 16px;
+  color: var(--text-1);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
-  transition: all 0.2s ease;
-  min-width: 180px;
+  transition: all 0.15s ease;
+  min-width: 190px;
+  max-width: 260px;
 }
 
 .dojo-switcher-trigger:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 215, 0, 0.35);
+  background: var(--surface-3);
+  border-color: rgba(255, 215, 0, 0.3);
 }
 
 .dojo-switcher-indicator {
@@ -50,15 +49,16 @@
   height: 10px;
   border-radius: 50%;
   border: 2px solid;
+  border-color: var(--mode-color, #ffd700);
   flex-shrink: 0;
   transition: border-color 0.2s ease;
 }
 
 .dojo-switcher-name {
   flex: 1;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -67,66 +67,55 @@
 .chevron {
   transition: transform 0.2s ease;
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-4);
 }
 
 .chevron.open {
   transform: rotate(180deg);
 }
 
-/* Overlay */
+/* ── Overlay ── */
 .dojo-switcher-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2147483646 !important;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
+  inset: 0;
+  z-index: 2147483646;
+  background: rgba(0, 0, 0, 0.35);
 }
 
-/* Dropdown */
+/* ── Dropdown ── */
 .dojo-switcher-dropdown {
   position: fixed !important;
-  background: linear-gradient(145deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: var(--modal-bg-dark);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
   z-index: 2147483647 !important;
-  min-width: 280px;
-  max-width: 320px;
-  animation: dropdownSlide 0.15s ease-out;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  width: 300px;
+  animation: dsSlide 0.14s ease-out;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   max-height: 80vh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
-@keyframes dropdownSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes dsSlide {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* Search */
+/* ── Search ── */
 .dropdown-search {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .dropdown-search .search-icon {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-4);
   flex-shrink: 0;
 }
 
@@ -135,237 +124,283 @@
   background: transparent;
   border: none;
   outline: none;
-  color: #ffffff;
-  font-size: 0.85rem;
+  color: var(--text-1);
+  font-size: 0.83rem;
   padding: 0;
 }
 
 .dropdown-search input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-4);
 }
 
-/* List */
+/* ── List ── */
 .dropdown-list {
   padding: 6px;
   overflow-y: auto;
   flex: 1;
 }
 
-/* Section Header */
+.dropdown-list::-webkit-scrollbar { width: 3px; }
+.dropdown-list::-webkit-scrollbar-track { background: transparent; }
+.dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+/* ── Section Header ── */
 .dropdown-section-header {
   display: flex;
   align-items: center;
+  gap: 5px;
+  padding: 6px 8px 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-4);
+}
+
+/* ── Admin 2×2 Icon Grid ── */
+.ds-admin-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 10px 8px 5px;
+}
+
+.ds-admin-btn {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 6px;
-  padding: 8px 10px 6px;
-  font-size: 0.7rem;
+  color: var(--text-3);
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.ds-admin-btn:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-1);
+}
+
+.ds-admin-btn.active {
+  background: rgba(255, 215, 0, 0.08);
+  border-color: rgba(255, 215, 0, 0.3);
+  color: var(--primary);
+}
+
+.ds-btn-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.ds-btn-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.ds-admin-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ds-admin-btn:disabled:hover {
+  background: var(--surface-2);
+  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-3);
+}
+
+/* ── Alle Dojos Button ── */
+.ds-alle-dojos-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 16px);
+  margin: 6px 8px 4px;
+  padding: 10px 14px;
+  background: rgba(255, 107, 53, 0.07);
+  border: 1px solid rgba(255, 107, 53, 0.18);
+  border-radius: 10px;
+  color: var(--text-2);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.ds-alle-dojos-btn:hover {
+  background: rgba(255, 107, 53, 0.13);
+  border-color: rgba(255, 107, 53, 0.3);
+  color: var(--text-1);
+}
+
+.ds-alle-dojos-btn.active {
+  background: rgba(255, 107, 53, 0.15);
+  border-color: rgba(255, 107, 53, 0.4);
+  color: #ff7a4d;
+}
+
+.ds-alle-badge {
+  margin-left: auto;
+  font-size: 0.62rem;
+  background: rgba(255, 107, 53, 0.12);
+  color: #ff7a4d;
+  border: 1px solid rgba(255, 107, 53, 0.25);
+  padding: 2px 7px;
+  border-radius: 4px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.45);
 }
 
-.dropdown-section-header svg {
-  opacity: 0.7;
+/* ── Divider ── */
+.ds-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 4px 6px;
 }
 
-/* Dropdown Items - Compact Style */
+/* ── Dojo Color Dot ── */
+.ds-dojo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  background: var(--accent-color, #ffd700);
+}
+
+/* ── Dropdown Item ── */
 .dropdown-item {
   background: transparent;
   border: none;
-  border-radius: 6px;
-  padding: 8px 10px;
+  border-radius: 8px;
+  padding: 9px 12px;
   margin-bottom: 2px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
   display: flex;
-  align-items: center;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 9px;
   width: 100%;
   text-align: left;
-  border-left: 3px solid transparent;
-}
-
-.dropdown-item.compact {
-  padding: 7px 10px;
-}
-
-.dropdown-item.with-info {
-  padding: 8px 10px;
-  align-items: flex-start;
+  border-left: 2px solid transparent;
 }
 
 .dropdown-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-left-color: var(--accent-color, rgba(255, 255, 255, 0.3));
+  background: var(--surface-2);
+  border-left-color: var(--accent-color, rgba(255, 255, 255, 0.25));
 }
 
 .dropdown-item.active {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   border-left-color: var(--accent-color, #ffd700);
 }
 
-.dropdown-item.active .item-name {
-  color: #ffffff;
-}
-
-/* Item Elements */
-.item-icon {
-  font-size: 1rem;
-  flex-shrink: 0;
-  width: 20px;
-  text-align: center;
-  margin-top: 2px;
-}
-
+/* ── Item Elements ── */
 .item-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
 .item-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-}
-
-.item-info {
-  font-size: 0.72rem;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.item-percent {
-  opacity: 0.8;
+  gap: 6px;
 }
 
 .item-name {
   flex: 1;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
+  color: var(--text-1);
+  font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.item-info {
+  font-size: 0.7rem;
+  opacity: 0.85;
+  color: var(--info-color, rgba(255, 255, 255, 0.7));
+}
+
+.item-percent {
+  opacity: 0.75;
+}
+
 .item-badge {
   display: inline-block;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
   flex-shrink: 0;
 }
 
-.item-badge.gold {
-  background: rgba(218, 165, 32, 0.15);
-  color: #daa520;
-  border: 1px solid rgba(218, 165, 32, 0.3);
-}
+.item-badge.gold   { background: rgba(255,215,0,0.1);  color: var(--primary);  border: 1px solid rgba(255,215,0,0.25); }
+.item-badge.blue   { background: rgba(59,130,246,0.1); color: #60a5fa;         border: 1px solid rgba(59,130,246,0.25); }
+.item-badge.green  { background: rgba(16,185,129,0.1); color: #34d399;         border: 1px solid rgba(16,185,129,0.25); }
+.item-badge.orange { background: rgba(255,107,53,0.1); color: #ff7a4d;         border: 1px solid rgba(255,107,53,0.25); }
+.item-badge.purple { background: rgba(139,92,246,0.1); color: #a78bfa;         border: 1px solid rgba(139,92,246,0.25); }
+.item-badge.primary{ background: rgba(255,215,0,0.12); color: #ffd700;         border: 1px solid rgba(255,215,0,0.3); }
 
-.item-badge.blue {
-  background: rgba(59, 130, 246, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
-.item-badge.green {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.item-badge.orange {
-  background: rgba(255, 107, 53, 0.15);
-  color: #ff6b35;
-  border: 1px solid rgba(255, 107, 53, 0.3);
-}
-
-.item-badge.purple {
-  background: rgba(139, 92, 246, 0.15);
-  color: #a78bfa;
-  border: 1px solid rgba(139, 92, 246, 0.3);
-}
-
-.item-badge.primary {
-  background: rgba(255, 215, 0, 0.15);
-  color: #ffd700;
-  border: 1px solid rgba(255, 215, 0, 0.3);
-}
-
-/* Empty State */
+/* ── Empty State ── */
 .dropdown-empty {
-  padding: 20px;
+  padding: 16px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
+  color: var(--text-4);
+  font-size: 0.82rem;
 }
 
-/* Footer */
+/* ── Footer ── */
 .dropdown-footer {
-  padding: 8px 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  padding: 8px 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .footer-link {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-4);
   text-decoration: none;
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   font-weight: 500;
-  transition: color 0.2s ease;
+  transition: color 0.15s ease;
 }
 
 .footer-link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
 }
 
-.footer-hint {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-/* Scrollbar */
-.dropdown-list::-webkit-scrollbar {
-  width: 4px;
-}
-
-.dropdown-list::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.dropdown-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
-
-.dropdown-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* Responsive */
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .dojo-switcher-trigger {
-    min-width: 160px;
-    padding: 8px 12px;
+    min-width: 130px;
+    padding: 7px 10px;
   }
 
   .dojo-switcher-dropdown {
-    min-width: 260px;
-    max-width: calc(100vw - 32px);
+    width: calc(100vw - 32px);
     left: 16px !important;
-    right: 16px;
   }
+}
+
+/* Migrated from inline styles */
+.dojo-switcher-message {
+  color: var(--secondary);
+  font-size: 0.85rem;
+  padding: 10px;
 }

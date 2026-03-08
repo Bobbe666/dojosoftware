@@ -3,6 +3,7 @@ import config from '../config/config.js';
 import '../styles/themes.css';
 import '../styles/components.css';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import '../styles/ZahlungsEinstellungen.css';
 
 
 const ZahlungsEinstellungen = () => {
@@ -124,20 +125,20 @@ const ZahlungsEinstellungen = () => {
       </div>
 
       {error && (
-        <div className="alert error" style={{ marginBottom: '2rem' }}>
+        <div className="alert error mb-2rem">
           ❌ {error}
         </div>
       )}
 
       {success && (
-        <div className="alert success" style={{ marginBottom: '2rem' }}>
+        <div className="alert success mb-2rem">
           ✅ {success}
         </div>
       )}
 
       {/* Current Status */}
       {providerStatus && (
-        <div className="standard-card" style={{ marginBottom: '2rem' }}>
+        <div className="standard-card mb-2rem">
           <div className="standard-card-content">
             <h3 className="standard-card-title">Aktueller Status</h3>
             <div className="provider-status">
@@ -153,7 +154,7 @@ const ZahlungsEinstellungen = () => {
       )}
 
       {/* Provider Selection */}
-      <div className="provider-selection" style={{ marginBottom: '2rem' }}>
+      <div className="provider-selection mb-2rem">
         <div className="payment-options">
 
           {/* Manual SEPA Option */}
@@ -245,7 +246,7 @@ const ZahlungsEinstellungen = () => {
         <div className="configuration-forms">
 
           {/* Stripe Configuration */}
-          <div className="standard-card" style={{ marginBottom: '1rem' }}>
+          <div className="standard-card mb-1rem">
             <div className="standard-card-content">
               <h3 className="standard-card-title">🔑 Stripe Konfiguration</h3>
               <div className="form-grid">
@@ -276,7 +277,7 @@ const ZahlungsEinstellungen = () => {
           </div>
 
           {/* DATEV Configuration */}
-          <div className="standard-card" style={{ marginBottom: '1rem' }}>
+          <div className="standard-card mb-1rem">
             <div className="standard-card-content">
               <h3 className="standard-card-title">📊 DATEV Konfiguration</h3>
               <div className="form-grid">
@@ -320,7 +321,7 @@ const ZahlungsEinstellungen = () => {
       )}
 
       {/* Cost Comparison */}
-      <div className="standard-card" style={{ marginBottom: '2rem' }}>
+      <div className="standard-card mb-2rem">
         <div className="standard-card-content">
           <h3 className="standard-card-title">💰 Kostenvergleich</h3>
           <div className="cost-comparison">

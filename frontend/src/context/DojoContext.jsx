@@ -62,7 +62,9 @@ export const DojoProvider = ({ children }) => {
 
   const loadDojos = useCallback(async () => {
     try {
-      const token = localStorage.getItem('dojo_auth_token');
+      // 🔒 Prüfe beide Token-Namen (dojo_auth_token und authToken)
+      const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+      const userJson = localStorage.getItem('dojo_user');
 
       // 🔒 Nur laden wenn User eingeloggt ist
       if (!token) {
@@ -77,7 +79,44 @@ export const DojoProvider = ({ children }) => {
         'Authorization': `Bearer ${token}`
       };
 
-      // 🔒 Lade nur zentral verwaltete Dojos (ohne separate Tenants wie Demo)
+      let user = null;
+      try {
+        user = userJson ? JSON.parse(userJson) : null;
+      } catch (e) {
+        console.error('❌ Fehler beim Parsen der User-Daten:', e);
+      }
+
+      // 🎯 Wenn User ein dojo_id hat (Tenant-Benutzer), lade nur dieses Dojo
+      if (user && user.dojo_id) {
+        console.log(`🎯 Lade spezifisches Dojo für User (dojo_id: ${user.dojo_id})`);
+
+        const response = await fetch(`${config.apiBaseUrl}/auth/my-dojo`, {
+          headers
+        });
+
+        if (!response.ok) {
+          console.error('My-Dojo API Response:', response.status, response.statusText);
+          throw new Error('Fehler beim Laden des Dojos');
+        }
+
+        const data = await response.json();
+        console.log('✅ Dojo-Response:', data);
+
+        if (data.success && data.dojo) {
+          // Setze dieses Dojo als einziges in der Liste
+          setDojos([data.dojo]);
+          setActiveDojo(data.dojo);
+        } else {
+          console.error('❌ Kein Dojo in Response gefunden');
+          setDojos([]);
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      // 🔒 Ansonsten: Lade zentral verwaltete Dojos (für Super-Admin)
+      console.log('🔒 Lade zentral verwaltete Dojos (Super-Admin Modus)');
       const response = await fetch(`${config.apiBaseUrl}/dojos?filter=managed`, {
         headers
       });
@@ -140,6 +179,18 @@ export const DojoProvider = ({ children }) => {
 
   // URL-Parameter für API-Calls
   const getDojoFilterParam = useCallback(() => {
+    // 🔒 Wenn Filter="all" gesetzt ist, immer die Dojo-IDs senden (unabhängig von activeDojo)
+    if (filter === 'all') {
+      if (dojos && dojos.length > 0) {
+        const dojoIds = dojos.map(d => d.id).join(',');
+        return `dojo_ids=${dojoIds}`;
+      }
+      // WICHTIG: Niemals 'dojo_id=all' zurückgeben, da dies ALLE Dojos (inkl. Demo-Dojos) zurückgibt!
+      // Stattdessen leeren String zurückgeben - verhindert Datenladen bis Dojos geladen sind
+      console.warn('⚠️ getDojoFilterParam: Dojos noch nicht geladen, gebe leeren String zurück');
+      return '';
+    }
+
     // Super-Admin Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
     if (activeDojo === 'super-admin') {
       return '';
@@ -153,13 +204,6 @@ export const DojoProvider = ({ children }) => {
     switch (filter) {
       case 'current':
         return activeDojo ? `dojo_id=${activeDojo.id}` : '';
-      case 'all':
-        // 🔒 Bei "Alle" die spezifischen Dojo-IDs senden statt "all"
-        if (dojos && dojos.length > 0) {
-          const dojoIds = dojos.map(d => d.id).join(',');
-          return `dojo_ids=${dojoIds}`;
-        }
-        return 'dojo_id=all';
       case 'compare':
         return 'dojo_id=compare';
       default:

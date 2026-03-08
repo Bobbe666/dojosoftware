@@ -15,16 +15,11 @@
     "pruefungswesen": "Examinations",
     "events": "Events",
     "finanzen": "Finances",
-    "artikelverwaltung": "Product Management",
     "verwaltung": "Dojo Management",
-    "personal": "Staff",
-    "berichte": "Reports",
+    "berichte": "Documents & Reports",
     "einstellungen": "Settings",
     "schnellaktionen": "Quick Actions",
-    "support": "Support",
-    "wunschliste": "Wishlist",
-    "info": "Info",
-    "hilfe": "Help"
+    "hilfeSupport": "Help & Support"
   },
   "checkin": {
     "memberCheckin": "Member Check-in",
@@ -113,6 +108,8 @@
     "articlesDesc": "Manage inventory and stock levels"
   },
   "berichte": {
+    "dokumentenzentrale": "Document Center",
+    "dokumentenzentraleDesc": "Manage all documents, templates & contracts centrally",
     "evaluations": "Analytics",
     "evaluationsDesc": "Create statistics and reports",
     "reportsAndDocs": "Reports & Documents",

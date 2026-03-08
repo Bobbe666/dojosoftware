@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Building2, ChevronDown, Search, Settings, LayoutGrid, Shield, Headphones, Globe } from 'lucide-react';
+import { Building2, ChevronDown, Search, Settings } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
 import '../styles/DojoSwitcher.css';
@@ -50,7 +50,7 @@ const DojoSwitcher = () => {
   if (!activeDojo) {
     return (
       <div className="dojo-switcher loading">
-        <div style={{ color: '#ff6b35', fontSize: '0.85rem', padding: '10px' }}>
+        <div className="dojo-switcher-message">
           Kein Dojo gefunden
         </div>
       </div>
@@ -60,12 +60,19 @@ const DojoSwitcher = () => {
   if (!dojos || dojos.length === 0) {
     return (
       <div className="dojo-switcher loading">
-        <div style={{ color: '#ff6b35', fontSize: '0.85rem', padding: '10px' }}>
+        <div className="dojo-switcher-message">
           Keine Dojos verfügbar
         </div>
       </div>
     );
   }
+
+  // Super-Admin: role='admin' ohne eigene dojo_id ODER explizit 'super_admin'
+  const isSuperAdmin = ((user?.rolle === 'admin' || user?.role === 'admin') && user?.dojo_id === null)
+    || user?.role === 'super_admin' || user?.rolle === 'super_admin';
+
+  // Für Nicht-Super-Admins mit nur einem Dojo: Switcher komplett ausblenden
+  if (!isSuperAdmin && dojos.length <= 1) return null;
 
   const handleSwitchDojo = (dojo) => {
     switchDojo(dojo);
@@ -110,7 +117,6 @@ const DojoSwitcher = () => {
     navigate('/dashboard', { replace: true });
   };
 
-  const isSuperAdmin = (user?.rolle === 'admin' || user?.role === 'admin') && user?.dojo_id === null;
   const isInSuperAdminMode = activeDojo === 'super-admin';
   const isInVerbandMode = activeDojo === 'verband';
   const isInSupportMode = activeDojo === 'support';
@@ -141,10 +147,10 @@ const DojoSwitcher = () => {
   // Get current mode display info
   const getCurrentModeInfo = () => {
     if (isInLizenzenMode) return { icon: '📋', label: 'Lizenzverwaltung', color: '#8B5CF6' };
-    if (isInSupportMode) return { icon: '🎫', label: 'Support Center', color: '#10b981' };
-    if (isInVerbandMode) return { icon: '🌐', label: 'TDA Verband', color: '#3B82F6' };
+    if (isInSupportMode) return { icon: '🎫', label: 'Support Center', color: 'var(--success)' };
+    if (isInVerbandMode) return { icon: '🌐', label: 'TDA Verband', color: 'var(--info)' };
     if (isInSuperAdminMode) return { icon: '🏢', label: 'TDA Int\'l Org', color: '#DAA520' };
-    if (showAllDojos) return { icon: '📊', label: 'Alle Dojos', color: '#FF6B35' };
+    if (showAllDojos) return { icon: '📊', label: 'Alle Dojos', color: 'var(--secondary)' };
     return { icon: '🥋', label: activeDojo?.dojoname || 'Dojo', color: activeDojo?.farbe || '#FFD700' };
   };
 
@@ -172,7 +178,7 @@ const DojoSwitcher = () => {
         color: prozent >= 90 ? '#ef4444' : prozent >= 75 ? '#f59e0b' : '#22c55e'
       };
     }
-    return { text: 'Regelbesteuert', percent: null, color: '#6b7280' };
+    return { text: 'Regelbesteuert', percent: null, color: 'var(--text-muted)' };
   };
 
   return (
@@ -183,8 +189,9 @@ const DojoSwitcher = () => {
         onClick={handleToggle}
         title="Workspace wechseln"
         type="button"
+        style={{ '--mode-color': modeInfo.color }}
       >
-        <div className="dojo-switcher-indicator" style={{ borderColor: modeInfo.color }} />
+        <div className="dojo-switcher-indicator" />
         <span className="dojo-switcher-name">{modeInfo.icon} {modeInfo.label}</span>
         <ChevronDown size={14} className={`chevron ${isOpen ? 'open' : ''}`} />
       </button>
@@ -206,122 +213,122 @@ const DojoSwitcher = () => {
               left: `${dropdownPosition.left}px`
             }}
           >
-            {/* Search */}
-            <div className="dropdown-search">
-              <Search size={14} className="search-icon" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Suchen..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-              />
-            </div>
+            {/* Search – nur ab 6 Dojos */}
+            {dojos.length > 5 && (
+              <div className="dropdown-search">
+                <Search size={14} className="search-icon" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Dojo suchen…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            )}
 
             <div className="dropdown-list">
-              {/* Admin Section */}
+              {/* Admin Schnellzugriff – kompaktes 2×2-Grid */}
               {isSuperAdmin && !searchQuery && (
                 <>
-                  <div className="dropdown-section-header">
-                    <Shield size={12} />
-                    Administration
+                  <div className="ds-admin-grid">
+                    <button
+                      type="button"
+                      className={`ds-admin-btn ${isInSuperAdminMode ? 'active' : ''}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToSuperAdmin(); }}
+                    >
+                      <span className="ds-btn-icon">🏢</span>
+                      <span className="ds-btn-label">TDA Org</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`ds-admin-btn ${isInLizenzenMode ? 'active' : ''}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); navigate('/dashboard/lizenzen'); }}
+                    >
+                      <span className="ds-btn-icon">📋</span>
+                      <span className="ds-btn-label">Lizenzen</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`ds-admin-btn ${isInVerbandMode ? 'active' : ''}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToVerband(); }}
+                    >
+                      <span className="ds-btn-icon">🌐</span>
+                      <span className="ds-btn-label">Verband</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`ds-admin-btn ${isInSupportMode ? 'active' : ''}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToSupport(); }}
+                    >
+                      <span className="ds-btn-icon">🎫</span>
+                      <span className="ds-btn-label">Support</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="ds-admin-btn"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); window.open('https://hof.tda-intl.org', '_blank'); }}
+                    >
+                      <span className="ds-btn-icon">🌟</span>
+                      <span className="ds-btn-label">Hall of Fame</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="ds-admin-btn"
+                      disabled
+                    >
+                      <span className="ds-btn-icon">🗓️</span>
+                      <span className="ds-btn-label">Events</span>
+                    </button>
                   </div>
 
-                  {/* TDA Int'l Org */}
                   <button
                     type="button"
-                    className={`dropdown-item compact ${isInSuperAdminMode ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToSuperAdmin(); }}
-                    style={{ '--accent-color': '#DAA520' }}
-                  >
-                    <span className="item-icon">🏢</span>
-                    <span className="item-name">TDA Int'l Org</span>
-                    <span className="item-badge gold">Admin</span>
-                  </button>
-
-                  {/* Lizenzverwaltung */}
-                  <button
-                    type="button"
-                    className={`dropdown-item compact ${window.location.pathname === '/dashboard/lizenzen' ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsOpen(false); navigate('/dashboard/lizenzen'); }}
-                    style={{ '--accent-color': '#8B5CF6' }}
-                  >
-                    <span className="item-icon">📋</span>
-                    <span className="item-name">Lizenzverwaltung</span>
-                    <span className="item-badge purple">SaaS</span>
-                  </button>
-
-                  {/* TDA Verband */}
-                  <button
-                    type="button"
-                    className={`dropdown-item compact ${isInVerbandMode ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToVerband(); }}
-                    style={{ '--accent-color': '#3B82F6' }}
-                  >
-                    <span className="item-icon">🌐</span>
-                    <span className="item-name">TDA Verband</span>
-                    <span className="item-badge blue">Verband</span>
-                  </button>
-
-                  {/* Support Center */}
-                  <button
-                    type="button"
-                    className={`dropdown-item compact ${isInSupportMode ? 'active' : ''}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToSupport(); }}
-                    style={{ '--accent-color': '#10b981' }}
-                  >
-                    <span className="item-icon">🎫</span>
-                    <span className="item-name">Support Center</span>
-                    <span className="item-badge green">Support</span>
-                  </button>
-
-                  {/* Alle Dojos */}
-                  <button
-                    type="button"
-                    className={`dropdown-item compact ${showAllDojos ? 'active' : ''}`}
+                    className={`ds-alle-dojos-btn ${showAllDojos ? 'active' : ''}`}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShowAll(); }}
-                    style={{ '--accent-color': '#FF6B35' }}
                   >
-                    <span className="item-icon">📊</span>
-                    <span className="item-name">Alle Dojos</span>
-                    <span className="item-badge orange">Gesamt</span>
+                    <span>📊</span>
+                    <span>Alle Dojos</span>
+                    <span className="ds-alle-badge">Gesamt</span>
                   </button>
+
+                  <div className="ds-divider" />
                 </>
               )}
 
-              {/* Dojos Section */}
+              {/* Dojos-Liste */}
               {filteredDojos.length > 0 && (
                 <>
-                  {!searchQuery && (
+                  {!searchQuery && isSuperAdmin && (
                     <div className="dropdown-section-header">
                       <Building2 size={12} />
                       Dojos
                     </div>
                   )}
-
                   {filteredDojos.map(dojo => {
                     const info = getDojoInfo(dojo);
+                    const isActive = !showAllDojos && activeDojo?.id === dojo.id;
                     return (
                       <button
                         key={dojo.id}
                         type="button"
-                        className={`dropdown-item with-info ${!showAllDojos && activeDojo?.id === dojo.id ? 'active' : ''}`}
+                        className={`dropdown-item ${isActive ? 'active' : ''}`}
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchDojo(dojo); }}
-                        style={{ '--accent-color': dojo.farbe || '#FFD700' }}
+                        style={{ '--accent-color': dojo.farbe || '#FFD700', '--info-color': info.color }}
                       >
-                        <span className="item-icon">🥋</span>
+                        <span className="ds-dojo-dot" />
                         <div className="item-content">
                           <div className="item-row">
                             <span className="item-name">{dojo.dojoname}</span>
                             {!!dojo.ist_hauptdojo && <span className="item-badge primary">Haupt</span>}
                           </div>
-                          <div className="item-info" style={{ color: info.color }}>
-                            {info.text}
-                            {info.percent !== null && (
-                              <span className="item-percent">({info.percent}%)</span>
-                            )}
-                          </div>
+                          {isSuperAdmin && (
+                            <div className="item-info">
+                              {info.text}
+                              {info.percent !== null && <span className="item-percent"> ({info.percent}%)</span>}
+                            </div>
+                          )}
                         </div>
                       </button>
                     );
@@ -329,22 +336,20 @@ const DojoSwitcher = () => {
                 </>
               )}
 
-              {/* No results */}
               {searchQuery && filteredDojos.length === 0 && (
-                <div className="dropdown-empty">
-                  Keine Ergebnisse für "{searchQuery}"
-                </div>
+                <div className="dropdown-empty">Keine Ergebnisse für „{searchQuery}"</div>
               )}
             </div>
 
             {/* Footer */}
-            <div className="dropdown-footer">
-              <a href="/dashboard/dojos" className="footer-link" onClick={() => setIsOpen(false)}>
-                <Settings size={12} />
-                Dojos verwalten
-              </a>
-              <span className="footer-hint">ESC zum Schließen</span>
-            </div>
+            {isSuperAdmin && (
+              <div className="dropdown-footer">
+                <a href="/dashboard/dojos" className="footer-link" onClick={() => setIsOpen(false)}>
+                  <Settings size={12} />
+                  Dojos verwalten
+                </a>
+              </div>
+            )}
           </div>
         </>,
         document.body

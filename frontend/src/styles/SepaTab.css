@@ -1,0 +1,197 @@
+/* SepaTab.css — SEPA Mandate & Batches Tab (st- prefix) */
+
+/* Stats grid — 4 columns */
+.st-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Icon badge: warning/gold */
+.st-badge-warning {
+  background: rgba(251, 191, 36, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* Icon badge: info/blue */
+.st-badge-info {
+  background: rgba(59, 130, 246, 0.2);
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+
+/* Stat value: gold/warning */
+.st-stat-gold {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gold-400);
+}
+
+/* Stat value: info/blue */
+.st-stat-info {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--info);
+}
+
+/* Actions bar */
+.st-actions-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Primary action button */
+.st-btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--primary);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Secondary action button (blue outline) */
+.st-btn-blue {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--info);
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Mandate section wrapper */
+.st-section-mb {
+  margin-bottom: 2rem;
+}
+
+/* IBAN cell — monospace */
+.st-td-mono-secondary {
+  padding: 0.75rem;
+  color: var(--text-secondary);
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+/* Referenz cell — monospace, primary color */
+.st-td-mono-primary {
+  padding: 0.75rem;
+  color: var(--text-primary);
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+/* Center-aligned primary text cell */
+.st-td-center-primary {
+  padding: 0.75rem;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+/* Inline action button: pause (warning) */
+.st-btn-pause {
+  background: rgba(251, 191, 36, 0.2);
+  color: var(--color-gold-400);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+/* Inline action button: activate (success) */
+.st-btn-activate {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+/* Download XML button */
+.st-btn-download {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: none;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0 auto;
+}
+
+/* Modal container */
+.st-modal-box {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  border: 1px solid var(--border-default);
+}
+
+/* Narrow modal variant */
+.st-modal-box-sm {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 450px;
+  border: 1px solid var(--border-default);
+}
+
+/* Confirm primary button inside modal */
+.st-btn-confirm-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Confirm blue button inside modal */
+.st-btn-confirm-blue {
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Intro paragraph in batch modal */
+.st-modal-intro {
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+/* Mandate count line */
+.st-modal-count {
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+}
+
+/* Status badge base — dynamic bg/color applied inline */
+.st-status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  background: var(--badge-bg, rgba(156,163,175,0.2));
+  color: var(--badge-color, var(--text-muted));
+}

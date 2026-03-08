@@ -11,9 +11,10 @@ import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Buttons.css';
 import '../styles/Dashboard.css';
+import '../styles/PruefungsVerwaltung.css';
 
 const PruefungsVerwaltung = () => {
-  const { getDojoFilterParam, activeDojo } = useDojoContext();
+  const { getDojoFilterParam, activeDojo, loading: dojosLoading, dojos } = useDojoContext();
   const API_BASE_URL = '/api'; // Nutzt Vite-Proxy
 
   // State
@@ -26,6 +27,10 @@ const PruefungsVerwaltung = () => {
   const [activeTab, setActiveTab] = useState('termine'); // termine, kandidaten, zugelassen, abgeschlossen, statistiken
   const [selectedKandidaten, setSelectedKandidaten] = useState([]);
   const [datumFilter, setDatumFilter] = useState('alle'); // alle, zukuenftig, vergangen
+
+  // Graduierungen pro Stil (für manuelle Auswahl)
+  const [graduierungenProStil, setGraduierungenProStil] = useState({}); // { stil_id: [graduierungen] }
+  const [selectedGraduierungen, setSelectedGraduierungen] = useState({}); // { "mitglied_id-stil_id": graduierung_id }
 
   // Prüfungstermin Modal
   const [pruefungsDaten, setPruefungsDaten] = useState({
@@ -76,9 +81,13 @@ const PruefungsVerwaltung = () => {
     gurtlaenge: '',
     bemerkungen: '',
     teilnahmebedingungen: '',
+    oeffentlich: false,
     ist_historisch: false,
     historisch_bemerkung: ''
   });
+
+  // Externe Anmeldungen pro Termin
+  const [externeAnmeldungen, setExterneAnmeldungen] = useState({});
 
   // Termin bearbeiten Modal
   const [showEditTerminModal, setShowEditTerminModal] = useState(false);
@@ -92,9 +101,13 @@ const PruefungsVerwaltung = () => {
   const [batchTermin, setBatchTermin] = useState(null);
   const [batchErgebnisse, setBatchErgebnisse] = useState({});
 
+  // Termin-Auswahl Modal (beim Zulassen)
+  const [terminAuswahlModal, setTerminAuswahlModal] = useState({ open: false, kandidat: null, termine: [], isAusnahme: false });
+
   // Filter für Kandidaten
   const [berechtigungsFilter, setBerechtigungsFilter] = useState('all'); // 'all', 'berechtigt', 'nicht_berechtigt'
   const [kandidatenStilFilter, setKandidatenStilFilter] = useState('all');
+  const [kandidatenSuchbegriff, setKandidatenSuchbegriff] = useState('');
 
   // Filter für Zugelassene und Abgeschlossene Prüfungen
   const [zugelasseneStilFilter, setZugelasseneStilFilter] = useState('all');
@@ -110,6 +123,14 @@ const PruefungsVerwaltung = () => {
 
   // Daten laden basierend auf aktivem Tab
   useEffect(() => {
+    // 🔒 WICHTIG: Nur laden wenn Dojos vollständig geladen sind
+    if (dojosLoading || !dojos || dojos.length === 0) {
+      console.log('⏳ Warte auf Dojos...', { dojosLoading, dojosCount: dojos?.length });
+      return;
+    }
+
+    console.log('✅ Dojos geladen, lade Prüfungsdaten...', { activeTab, dojos: dojos.length });
+
     if (activeTab === 'termine') {
       fetchPruefungstermine();
     } else if (activeTab === 'kandidaten') {
@@ -125,19 +146,52 @@ const PruefungsVerwaltung = () => {
       fetchZugelassenePruefungen();
       fetchAbgeschlossenePruefungen();
     }
-  }, [activeTab, selectedStil]);
+  }, [activeTab, selectedStil, dojosLoading, dojos]);
 
   const fetchStile = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/stile?aktiv=true`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
         }
       });
       const data = await response.json();
       setStile(data || []);
+
+      // Lade Graduierungen für alle Stile
+      if (data && data.length > 0) {
+        fetchGraduierungenFuerStile(data);
+      }
     } catch (error) {
       console.error('Fehler beim Laden der Stile:', error);
+    }
+  };
+
+  const fetchGraduierungenFuerStile = async (stileArray) => {
+    try {
+      const graduierungen = {};
+
+      // Lade Graduierungen für jeden Stil parallel
+      await Promise.all(
+        stileArray.map(async (stil) => {
+          try {
+            const response = await fetch(`${API_BASE_URL}/stile/${stil.stil_id}/graduierungen`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
+              }
+            });
+            const data = await response.json();
+            graduierungen[stil.stil_id] = data || [];
+          } catch (error) {
+            console.error(`Fehler beim Laden der Graduierungen für Stil ${stil.name}:`, error);
+            graduierungen[stil.stil_id] = [];
+          }
+        })
+      );
+
+      setGraduierungenProStil(graduierungen);
+    } catch (error) {
+      console.error('Fehler beim Laden der Graduierungen:', error);
     }
   };
 
@@ -146,13 +200,21 @@ const PruefungsVerwaltung = () => {
     setError('');
     try {
       const dojoParam = getDojoFilterParam();
+
+      // 🔒 WICHTIG: Nicht laden wenn dojoParam leer ist
+      if (!dojoParam) {
+        console.warn('⚠️ DojoParam ist leer - warte auf Dojo-Laden');
+        setLoading(false);
+        return;
+      }
+
       const stilParam = selectedStil !== 'all' ? `&stil_id=${selectedStil}` : '';
 
       const response = await fetch(
         `${API_BASE_URL}/pruefungen/kandidaten?${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -174,13 +236,21 @@ const PruefungsVerwaltung = () => {
     setLoading(true);
     try {
       const dojoParam = getDojoFilterParam();
+
+      // 🔒 WICHTIG: Nicht laden wenn dojoParam leer ist (Dojos noch nicht geladen)
+      if (!dojoParam) {
+        console.warn('⚠️ DojoParam ist leer - warte auf Dojo-Laden');
+        setLoading(false);
+        return;
+      }
+
       const stilParam = selectedStil !== 'all' ? `&stil_id=${selectedStil}` : '';
 
       const response = await fetch(
         `${API_BASE_URL}/pruefungen?status=geplant&${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -202,13 +272,21 @@ const PruefungsVerwaltung = () => {
     setLoading(true);
     try {
       const dojoParam = getDojoFilterParam();
+
+      // 🔒 WICHTIG: Nicht laden wenn dojoParam leer ist
+      if (!dojoParam) {
+        console.warn('⚠️ DojoParam ist leer - warte auf Dojo-Laden');
+        setLoading(false);
+        return;
+      }
+
       const stilParam = selectedStil !== 'all' ? `&stil_id=${selectedStil}` : '';
 
       const response = await fetch(
         `${API_BASE_URL}/pruefungen?status=bestanden&${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -227,11 +305,18 @@ const PruefungsVerwaltung = () => {
     try {
       const dojoParam = getDojoFilterParam();
 
+      // 🔒 WICHTIG: Nicht laden wenn dojoParam leer ist
+      if (!dojoParam) {
+        console.warn('⚠️ DojoParam ist leer - warte auf Dojo-Laden');
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(
         `${API_BASE_URL}/pruefungen/stats/statistiken?${dojoParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -249,6 +334,14 @@ const PruefungsVerwaltung = () => {
     setLoading(true);
     try {
       const dojoParam = getDojoFilterParam();
+
+      // 🔒 WICHTIG: Nicht laden wenn dojoParam leer ist
+      if (!dojoParam) {
+        console.warn('⚠️ DojoParam ist leer - warte auf Dojo-Laden');
+        setLoading(false);
+        return;
+      }
+
       const stilParam = selectedStil !== 'all' ? `&stil_id=${selectedStil}` : '';
 
       // Lade geplante Prüfungen
@@ -256,7 +349,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen?status=geplant&${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -267,7 +360,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/pruefungen/termine?${dojoParam}${stilParam}`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -314,7 +407,8 @@ const PruefungsVerwaltung = () => {
           pruefungsgebuehr: termin.pruefungsgebuehr,
           anmeldefrist: termin.anmeldefrist ? termin.anmeldefrist.split('T')[0] : null,
           bemerkungen: termin.bemerkungen,
-          teilnahmebedingungen: termin.teilnahmebedingungen
+          teilnahmebedingungen: termin.teilnahmebedingungen,
+          oeffentlich: termin.oeffentlich ? true : false
         };
       });
 
@@ -331,12 +425,22 @@ const PruefungsVerwaltung = () => {
           zeit: group.pruefungen[0]?.pruefungszeit || group.vorlageData?.zeit || 'Nicht festgelegt',
           pruefer_name: group.pruefungen[0]?.pruefer_name || group.vorlageData?.pruefer_name || 'Nicht festgelegt',
           isVorlage: group.pruefungen.length === 0 && group.vorlageData,
-          vorlageData: group.vorlageData
+          vorlageData: group.vorlageData,
+          oeffentlich: group.vorlageData?.oeffentlich || false
         };
       }).sort((a, b) => {
-        // Erst nach Datum sortieren (neueste zuerst)
-        const dateCompare = new Date(b.datum) - new Date(a.datum);
+        // Zukünftige Termine zuerst (aufsteigend), vergangene danach (absteigend)
+        const today = new Date(); today.setHours(0,0,0,0);
+        const da = new Date(a.datum); const db = new Date(b.datum);
+        const aFuture = da >= today; const bFuture = db >= today;
+        if (aFuture !== bFuture) return aFuture ? -1 : 1; // Zukunft zuerst
+        const dateCompare = aFuture
+          ? da - db   // Zukünftige: aufsteigend (nächster zuerst)
+          : db - da;  // Vergangene: absteigend (neuester zuerst)
         if (dateCompare !== 0) return dateCompare;
+        // Bei gleichem Datum: nach Uhrzeit sortieren
+        const timeCompare = (a.zeit || '00:00').localeCompare(b.zeit || '00:00');
+        if (timeCompare !== 0) return timeCompare;
         // Dann nach Stil-Name sortieren
         return (a.stil_name || '').localeCompare(b.stil_name || '');
       });
@@ -368,7 +472,7 @@ const PruefungsVerwaltung = () => {
             `${API_BASE_URL}/pruefungen/termine?stil_id=${kandidat.stil_id}&dojo_id=${dojoId}`,
             {
               headers: {
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
               }
             }
           );
@@ -436,17 +540,21 @@ const PruefungsVerwaltung = () => {
         pruefungsdatumZeit = datumStr;
       }
 
+      // Ermittle die ausgewählte Graduierung (falls manuell gewählt, sonst die empfohlene)
+      const key = `${kandidat.mitglied_id}-${kandidat.stil_id}`;
+      const graduierung_nachher_id = selectedGraduierungen[key] || kandidat.naechste_graduierung_id;
+
       const response = await fetch(
         `${API_BASE_URL}/pruefungen/kandidaten/${kandidat.mitglied_id}/zulassen`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           },
           body: JSON.stringify({
             stil_id: kandidat.stil_id,
-            graduierung_nachher_id: kandidat.naechste_graduierung_id,
+            graduierung_nachher_id: graduierung_nachher_id,
             pruefungsdatum: pruefungsdatumZeit,
             pruefungsort: datenZuVerwenden.pruefungsort || null,
             pruefungsgebuehr: datenZuVerwenden.pruefungsgebuehr ? parseFloat(datenZuVerwenden.pruefungsgebuehr) : null,
@@ -466,6 +574,7 @@ const PruefungsVerwaltung = () => {
       setSuccess(`${kandidat.vorname} ${kandidat.nachname} wurde zur Prüfung am ${formattedDate} zugelassen!`);
       fetchKandidaten();
       fetchZugelassenePruefungen();
+      fetchPruefungstermine(); // Aktualisiere auch die Prüfungstermine-Liste
 
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
@@ -485,6 +594,52 @@ const PruefungsVerwaltung = () => {
     await handleKandidatZulassen(kandidat, null);
   };
 
+  // Termin-Auswahl Modal öffnen (beim Zulassen)
+  const openTerminAuswahl = (kandidat, isAusnahme = false) => {
+    const heute = new Date();
+    heute.setHours(0, 0, 0, 0);
+    const verfuegbareTermine = pruefungstermine.filter(t => {
+      if (t.stil_id !== kandidat.stil_id) return false;
+      const terminDatum = new Date(t.datum);
+      terminDatum.setHours(0, 0, 0, 0);
+      return terminDatum >= heute;
+    });
+
+    if (verfuegbareTermine.length === 0) {
+      setError(`Kein zukünftiger Prüfungstermin für ${kandidat.stil_name} gefunden. Bitte legen Sie zuerst einen Termin an.`);
+      return;
+    }
+
+    setTerminAuswahlModal({ open: true, kandidat, termine: verfuegbareTermine, isAusnahme });
+  };
+
+  // Termin im Modal ausgewählt
+  const handleTerminAuswahlSelected = async (termin) => {
+    const { kandidat, isAusnahme } = terminAuswahlModal;
+    setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false });
+
+    const customDaten = {
+      pruefungsdatum: termin.datum,
+      pruefungszeit: termin.zeit !== 'Nicht festgelegt' ? termin.zeit : '10:00',
+      pruefungsort: termin.ort,
+      pruefungsgebuehr: termin.vorlageData?.pruefungsgebuehr,
+      anmeldefrist: termin.vorlageData?.anmeldefrist,
+      bemerkungen: termin.vorlageData?.bemerkungen,
+      teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen
+    };
+
+    if (isAusnahme) {
+      if (!window.confirm(
+        `${kandidat.vorname} ${kandidat.nachname} erfüllt die zeitlichen Voraussetzungen noch nicht.\n\n` +
+        `Möchten Sie eine Ausnahme-Zulassung erteilen?`
+      )) {
+        return;
+      }
+    }
+
+    await handleKandidatZulassen(kandidat, customDaten);
+  };
+
   // Funktion zum Entfernen der Zulassung
   const handleZulassungEntfernen = async (pruefung) => {
     if (!window.confirm(`Möchten Sie die Zulassung von ${pruefung.vorname} ${pruefung.nachname} wirklich entfernen?`)) {
@@ -497,7 +652,7 @@ const PruefungsVerwaltung = () => {
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -507,6 +662,7 @@ const PruefungsVerwaltung = () => {
       setSuccess(`Zulassung von ${pruefung.vorname} ${pruefung.nachname} wurde entfernt.`);
       fetchZugelassenePruefungen(); // Liste aktualisieren
       fetchKandidaten(); // Kandidaten auch aktualisieren
+      fetchPruefungstermine(); // Prüfungstermine auch aktualisieren
 
       setTimeout(() => setSuccess(''), 3000);
     } catch (error) {
@@ -537,7 +693,7 @@ const PruefungsVerwaltung = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           },
           body: JSON.stringify({
             bestanden: neuerStatus,
@@ -583,7 +739,7 @@ const PruefungsVerwaltung = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           },
           body: JSON.stringify(updateData)
         }
@@ -669,7 +825,7 @@ const PruefungsVerwaltung = () => {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
               },
               body: JSON.stringify(updateData)
             }
@@ -732,7 +888,7 @@ const PruefungsVerwaltung = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           },
           body: JSON.stringify({
             current_graduierung_id: graduierung_id,
@@ -782,6 +938,7 @@ const PruefungsVerwaltung = () => {
         anmeldefrist: neuerTermin.anmeldefrist || null,
         bemerkungen: neuerTermin.bemerkungen || null,
         teilnahmebedingungen: neuerTermin.teilnahmebedingungen || null,
+        oeffentlich: neuerTermin.oeffentlich ? 1 : 0,
         dojo_id: activeDojo.id
       };
 
@@ -789,7 +946,7 @@ const PruefungsVerwaltung = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
         },
         body: JSON.stringify(terminData)
       });
@@ -818,8 +975,9 @@ const PruefungsVerwaltung = () => {
         gurtlaenge: '',
         bemerkungen: '',
         teilnahmebedingungen: '',
-    ist_historisch: false,
-    historisch_bemerkung: ''
+        oeffentlich: false,
+        ist_historisch: false,
+        historisch_bemerkung: ''
       });
 
       // Aktualisiere Termin-Liste
@@ -869,16 +1027,22 @@ const PruefungsVerwaltung = () => {
       pruefungsgebuehr: termin.vorlageData?.pruefungsgebuehr || '',
       anmeldefrist: formatDateForInput(termin.vorlageData?.anmeldefrist),
       bemerkungen: termin.vorlageData?.bemerkungen || '',
-      teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen || ''
+      teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen || '',
+      oeffentlich: termin.vorlageData?.oeffentlich ? true : false
     });
     setShowEditTerminModal(true);
   };
 
-  const toggleTerminExpanded = (terminKey) => {
+  const toggleTerminExpanded = (terminKey, termin) => {
+    const isCurrentlyExpanded = expandedTermine[terminKey];
     setExpandedTermine(prev => ({
       ...prev,
       [terminKey]: !prev[terminKey]
     }));
+    // Externe Anmeldungen laden wenn öffentlicher Termin aufgeklappt wird
+    if (!isCurrentlyExpanded && termin?.oeffentlich && termin?.vorlageData?.termin_id) {
+      fetchExterneAnmeldungen(termin.vorlageData.termin_id);
+    }
   };
 
   // Sortier-Funktion
@@ -894,11 +1058,11 @@ const PruefungsVerwaltung = () => {
   const SortIcon = ({ columnKey }) => {
     if (sortConfig.key !== columnKey) {
       return (
-        <span style={{ marginLeft: '0.25rem', opacity: 0.3, fontSize: '0.75rem' }}>⇅</span>
+        <span className="pv3-sort-icon-inactive">⇅</span>
       );
     }
     return (
-      <span style={{ marginLeft: '0.25rem', color: '#EAB308', fontSize: '0.75rem' }}>
+      <span className="pv3-sort-icon-active">
         {sortConfig.direction === 'asc' ? '↑' : '↓'}
       </span>
     );
@@ -944,7 +1108,7 @@ const PruefungsVerwaltung = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
         },
         body: JSON.stringify({
           datum: editTermin.pruefungsdatum,
@@ -955,7 +1119,8 @@ const PruefungsVerwaltung = () => {
           pruefungsgebuehr: editTermin.pruefungsgebuehr ? parseFloat(editTermin.pruefungsgebuehr) : null,
           anmeldefrist: editTermin.anmeldefrist || null,
           bemerkungen: editTermin.bemerkungen || null,
-          teilnahmebedingungen: editTermin.teilnahmebedingungen || null
+          teilnahmebedingungen: editTermin.teilnahmebedingungen || null,
+          oeffentlich: editTermin.oeffentlich ? 1 : 0
         })
       });
 
@@ -974,6 +1139,18 @@ const PruefungsVerwaltung = () => {
     } catch (error) {
       setError(error.message);
       setTimeout(() => setError(''), 5000);
+    }
+  };
+
+  const fetchExterneAnmeldungen = async (termin_id) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/pruefungen/termine/${termin_id}/anmeldungen`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}` }
+      });
+      const data = await response.json();
+      setExterneAnmeldungen(prev => ({ ...prev, [termin_id]: data.anmeldungen || [] }));
+    } catch (err) {
+      console.error('Fehler beim Laden der externen Anmeldungen:', err);
     }
   };
 
@@ -998,7 +1175,7 @@ const PruefungsVerwaltung = () => {
       const response = await fetch(`${API_BASE_URL}/pruefungen/termine/${termin.vorlageData.termin_id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
         }
       });
 
@@ -1035,7 +1212,7 @@ const PruefungsVerwaltung = () => {
         `${API_BASE_URL}/stile/${stil_id}/graduierungen`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
           }
         }
       );
@@ -1092,50 +1269,34 @@ const PruefungsVerwaltung = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showErgebnisModal, pruefungsErgebnis, selectedPruefung, graduierungenFuerModal]);
 
+  // 🔒 Warte auf Dojos bevor irgendwas angezeigt wird
+  if (dojosLoading || !dojos || dojos.length === 0) {
+    return (
+      <div className="content-card pv2-center-3rem">
+        <div className="u-emoji-xl">⏳</div>
+        <h2 className="pv3-loading-primary">Lade Dojos...</h2>
+        <p className="pv-text-secondary">
+          Bitte warten Sie, während die Dojo-Daten geladen werden.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="content-card">
       <div className="page-header">
         <div>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '1.25rem',
-            marginBottom: '0.5rem'
-          }}>
-            <span style={{ 
-              fontSize: '2.5rem',
-              filter: 'drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3))',
-              position: 'relative',
-              zIndex: 10,
-              lineHeight: 1,
-              display: 'inline-block',
-              flexShrink: 0
-            }}>🎓</span>
-            <h1 style={{ 
-              fontSize: '2.5rem',
-              fontWeight: '700',
-              color: '#FFD700',
-              margin: 0,
-              textShadow: 'none',
-              WebkitTextFillColor: '#FFD700',
-              background: 'none',
-              WebkitBackgroundClip: 'initial',
-              backgroundClip: 'initial',
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale',
-              letterSpacing: '0.5px',
-              position: 'relative',
-              zIndex: 2
-            }}>Prüfungsverwaltung</h1>
+          <div className="pv3-page-header-row">
+            <span className="pv3-header-icon">🎓</span>
+            <h1 className="pv3-header-title">Prüfungsverwaltung</h1>
           </div>
           <p>Gurtprüfungen planen, durchführen und dokumentieren</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        <div className="pv3-header-controls">
           <select
             value={selectedStil}
             onChange={(e) => setSelectedStil(e.target.value)}
-            className="form-select"
-            style={{ minWidth: '200px' }}
+            className="form-select pv3-select-min200"
           >
             <option value="all">Alle Stile</option>
             {stile.map(stil => (
@@ -1151,11 +1312,7 @@ const PruefungsVerwaltung = () => {
               else if (activeTab === 'abgeschlossen') fetchAbgeschlossenePruefungen();
               else if (activeTab === 'statistiken') fetchStatistiken();
             }}
-            className="logout-button"
-            style={{
-              padding: '12px 28px',
-              minWidth: '160px'
-            }}
+            className="logout-button pv3-btn-refresh"
           >
             🔄 Aktualisieren
           </button>
@@ -1163,188 +1320,38 @@ const PruefungsVerwaltung = () => {
       </div>
 
       {/* Tabs */}
-      <div style={{
-        marginBottom: '2rem',
-        display: 'flex',
-        gap: '0.75rem',
-        flexWrap: 'wrap'
-      }}>
+      <div className="pv3-tabs-row">
         <button
           onClick={() => setActiveTab('termine')}
-          style={{
-            background: activeTab === 'termine'
-              ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)'
-              : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.95)',
-            padding: '0.5rem 0.75rem',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.95rem',
-            fontWeight: '600',
-            boxShadow: activeTab === 'termine'
-              ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-              : '0 2px 8px rgba(255, 215, 0, 0.15)',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'termine') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.15)';
-            }
-          }}
+          className={`pv3-tab-btn${activeTab === 'termine' ? ' active' : ''}`}
         >
           <Calendar size={18} />
           Prüfungstermine
         </button>
         <button
           onClick={() => setActiveTab('kandidaten')}
-          style={{
-            background: activeTab === 'kandidaten'
-              ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)'
-              : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.95)',
-            padding: '0.5rem 0.75rem',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.95rem',
-            fontWeight: '600',
-            boxShadow: activeTab === 'kandidaten'
-              ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-              : '0 2px 8px rgba(255, 215, 0, 0.15)',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'kandidaten') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.15)';
-            }
-          }}
+          className={`pv3-tab-btn${activeTab === 'kandidaten' ? ' active' : ''}`}
         >
           <Users size={18} />
           Prüfungskandidaten
         </button>
         <button
           onClick={() => setActiveTab('zugelassen')}
-          style={{
-            background: activeTab === 'zugelassen'
-              ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)'
-              : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.95)',
-            padding: '0.5rem 0.75rem',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.95rem',
-            fontWeight: '600',
-            boxShadow: activeTab === 'zugelassen'
-              ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-              : '0 2px 8px rgba(255, 215, 0, 0.15)',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'zugelassen') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.15)';
-            }
-          }}
+          className={`pv3-tab-btn${activeTab === 'zugelassen' ? ' active' : ''}`}
         >
           <Check size={18} />
           Zugelassene Prüfungen
         </button>
         <button
           onClick={() => setActiveTab('abgeschlossen')}
-          style={{
-            background: activeTab === 'abgeschlossen'
-              ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)'
-              : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.95)',
-            padding: '0.5rem 0.75rem',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.95rem',
-            fontWeight: '600',
-            boxShadow: activeTab === 'abgeschlossen'
-              ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-              : '0 2px 8px rgba(255, 215, 0, 0.15)',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'abgeschlossen') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.15)';
-            }
-          }}
+          className={`pv3-tab-btn${activeTab === 'abgeschlossen' ? ' active' : ''}`}
         >
           <Award size={18} />
           Abgeschlossene Prüfungen
         </button>
         <button
           onClick={() => setActiveTab('statistiken')}
-          style={{
-            background: activeTab === 'statistiken'
-              ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)'
-              : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)',
-            border: 'none',
-            color: 'rgba(255, 255, 255, 0.95)',
-            padding: '0.5rem 0.75rem',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            borderRadius: '6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.95rem',
-            fontWeight: '600',
-            boxShadow: activeTab === 'statistiken'
-              ? '0 4px 12px rgba(255, 215, 0, 0.3)'
-              : '0 2px 8px rgba(255, 215, 0, 0.15)',
-            whiteSpace: 'nowrap'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            if (activeTab !== 'statistiken') {
-              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 50%, transparent 100%)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.15)';
-            }
-          }}
+          className={`pv3-tab-btn${activeTab === 'statistiken' ? ' active' : ''}`}
         >
           <TrendingUp size={18} />
           Statistiken
@@ -1353,12 +1360,12 @@ const PruefungsVerwaltung = () => {
 
       {/* Success/Error Messages */}
       {success && (
-        <div className="alert alert-success" style={{ marginBottom: '1rem' }}>
+        <div className="alert alert-success pv2-mb-1">
           ✅ {success}
         </div>
       )}
       {error && (
-        <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+        <div className="alert alert-error pv2-mb-1">
           ❌ {error}
         </div>
       )}
@@ -1366,20 +1373,11 @@ const PruefungsVerwaltung = () => {
       {/* Prüfungstermine Tab */}
       {activeTab === 'termine' && (
         <div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="pv3-section-header">
             <div>
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>
+              <h2 className="pv3-section-title">
                 GEPLANTE PRÜFUNGSTERMINE
-                <span style={{
-                  marginLeft: '0.5rem',
-                  color: '#EAB308',
-                  fontWeight: 'bold'
-                }}>
+                <span className="pv3-section-count">
                   ({(() => {
                     const heute = new Date();
                     heute.setHours(0, 0, 0, 0);
@@ -1401,35 +1399,13 @@ const PruefungsVerwaltung = () => {
                   })()})
                 </span>
               </h2>
-              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
+              <p className="pv3-section-subtitle">
                 Übersicht aller geplanten Prüfungen gruppiert nach Datum
               </p>
             </div>
             <button
               onClick={() => setShowNeuerTerminModal(true)}
-              style={{
-                background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)',
-                border: 'none',
-                color: 'rgba(255, 255, 255, 0.95)',
-                padding: '0.5rem 0.75rem',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                fontSize: '0.95rem',
-                fontWeight: '600',
-                boxShadow: '0 2px 8px rgba(255, 215, 0, 0.2)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, transparent 100%)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 215, 0, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.2)';
-              }}
+              className="pv3-btn-new-termin"
             >
               <Calendar size={18} />
               Neuer Termin
@@ -1437,33 +1413,20 @@ const PruefungsVerwaltung = () => {
           </div>
 
           {loading ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '4rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
+            <div className="pv3-loading-center">
               <div className="loading-spinner-large"></div>
-              <p style={{ color: '#6b7280' }}>Termine werden geladen...</p>
+              <p className="pv-text-muted">Termine werden geladen...</p>
             </div>
           ) : pruefungstermine.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '3rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '0.5rem',
-              border: '1px dashed rgba(255, 255, 255, 0.1)'
-            }}>
-              <Calendar size={48} style={{ color: 'rgba(255, 255, 255, 0.3)', marginBottom: '1rem' }} />
-              <h3 style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>Keine Prüfungstermine geplant</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem' }}>
+            <div className="pv3-empty-state">
+              <Calendar size={48} className="pv2-muted-mb" />
+              <h3 className="pv2-secondary-mb">Keine Prüfungstermine geplant</h3>
+              <p className="pv-muted-sm-row">
                 Aktuell gibt es keine geplanten Prüfungstermine. Lassen Sie Kandidaten zur Prüfung zu, um Termine zu erstellen.
               </p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            <div className="pv3-termine-list">
               {/* Geplante Termine */}
               {(() => {
                 const heute = new Date();
@@ -1480,17 +1443,10 @@ const PruefungsVerwaltung = () => {
 
                 return (
                   <div>
-                    <h3 style={{
-                      marginBottom: '1rem',
-                      fontSize: '1.1rem',
-                      fontWeight: '700',
-                      color: '#EAB308',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
+                    <h3 className="pv3-group-heading-warning">
                       GEPLANTE PRÜFUNGSTERMINE ({geplanteTermine.length} {geplanteTermine.length === 1 ? 'TERMIN' : 'TERMINE'})
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="pv3-termin-group-list">
                       {geplanteTermine.map((termin, index) => {
                         const datum = new Date(termin.datum);
                         const isToday = termin.datum === new Date().toISOString().split('T')[0];
@@ -1499,131 +1455,70 @@ const PruefungsVerwaltung = () => {
                 return (
                   <div
                     key={index}
-                    style={{
-                      backgroundColor: isToday
-                        ? 'rgba(59, 130, 246, 0.1)'
-                        : isPast
-                          ? 'rgba(255, 255, 255, 0.03)'
-                          : 'rgba(255, 255, 255, 0.05)',
-                      border: isToday
-                        ? '1px solid rgba(59, 130, 246, 0.3)'
-                        : '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '0.75rem',
-                      padding: '1.5rem',
-                      boxShadow: isToday
-                        ? '0 4px 12px rgba(59, 130, 246, 0.15)'
-                        : '0 2px 8px rgba(0, 0, 0, 0.1)',
-                      opacity: isPast ? 0.6 : 1
-                    }}
+                    className={isToday ? 'pv3-termin-card--today' : 'pv3-termin-card'}
                   >
                     {/* Termin-Header */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      marginBottom: '1rem',
-                      paddingBottom: '1rem',
-                      borderBottom: '1px solid #e5e7eb'
-                    }}>
+                    <div className="pv3-termin-header">
                       <div
-                        style={{ flex: 1, cursor: 'pointer' }}
-                        onClick={() => toggleTerminExpanded(`${termin.datum}_${termin.stil_id}`)}
+                        className="pv2-flex-cursor"
+                        onClick={() => toggleTerminExpanded(`${termin.datum}_${termin.stil_id}`, termin)}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                          <Calendar size={24} style={{ color: isToday ? '#3b82f6' : '#8b5cf6' }} />
-                          <h3 style={{
-                            margin: 0,
-                            fontSize: '1.25rem',
-                            fontWeight: '700',
-                            color: isToday ? '#3b82f6' : '#EAB308'
-                          }}>
+                        <div className="pv3-termin-title-row">
+                          <Calendar size={24} className={isToday ? 'pv3-calendar-today' : 'pv3-calendar-upcoming'} />
+                          <h3 className={isToday ? 'pv3-termin-heading-today' : 'pv3-termin-heading-warning'}>
                             {datum.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                           </h3>
                           {expandedTermine[`${termin.datum}_${termin.stil_id}`] ? (
-                            <ChevronUp size={24} style={{ color: '#EAB308', transition: 'transform 0.2s' }} />
+                            <ChevronUp size={24} className="pv-warning" />
                           ) : (
-                            <ChevronDown size={24} style={{ color: '#6b7280', transition: 'transform 0.2s' }} />
+                            <ChevronDown size={24} className="pv-text-muted" />
                           )}
                           {isToday && (
-                            <span style={{
-                              padding: '0.25rem 0.75rem',
-                              backgroundColor: '#3b82f6',
-                              color: 'white',
-                              borderRadius: '0.375rem',
-                              fontSize: '0.75rem',
-                              fontWeight: '700',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em'
-                            }}>
+                            <span className="pv3-badge-today">
                               Heute
                             </span>
                           )}
                           {isPast && !isToday && (
-                            <span style={{
-                              padding: '0.25rem 0.75rem',
-                              backgroundColor: '#6b7280',
-                              color: 'white',
-                              borderRadius: '0.375rem',
-                              fontSize: '0.75rem',
-                              fontWeight: '700',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em'
-                            }}>
+                            <span className="pv3-badge-past">
                               Vergangen
                             </span>
                           )}
+                          {termin.oeffentlich && (
+                            <span className="pv3-badge-public">
+                              🌐 Öffentlich
+                            </span>
+                          )}
                         </div>
-                        <div style={{
-                          display: 'flex',
-                          gap: '2rem',
-                          fontSize: '0.875rem',
-                          color: '#6b7280'
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: '600' }}>⏰ Uhrzeit:</span>
+                        <div className="pv3-termin-meta-row">
+                          <div className="pv-flex-row">
+                            <span className="pv2-fw600">⏰ Uhrzeit:</span>
                             <span>{termin.zeit}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: '600' }}>🥋 Stil:</span>
-                            <span style={{
-                              padding: '0.125rem 0.5rem',
-                              backgroundColor: '#EAB308',
-                              color: '#1a1a1a',
-                              borderRadius: '0.375rem',
-                              fontWeight: '700'
-                            }}>
+                          <div className="pv-flex-row">
+                            <span className="pv2-fw600">🥋 Stil:</span>
+                            <span className="pv3-badge-stil">
                               {termin.stil_name}
                             </span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: '600' }}>📍 Ort:</span>
+                          <div className="pv-flex-row">
+                            <span className="pv2-fw600">📍 Ort:</span>
                             <span>{termin.ort}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <span style={{ fontWeight: '600' }}>👥 Teilnehmer:</span>
-                            <span style={{
-                              padding: '0.125rem 0.5rem',
-                              backgroundColor: '#8b5cf6',
-                              color: 'white',
-                              borderRadius: '0.375rem',
-                              fontWeight: '700'
-                            }}>
+                          <div className="pv-flex-row">
+                            <span className="pv2-fw600">👥 Teilnehmer:</span>
+                            <span className="pv3-badge-teilnehmer">
                               {termin.anzahl}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="u-flex-gap-sm">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handlePruefungslistePDF(termin);
                           }}
-                          className="logout-button"
-                          style={{
-                            padding: '0.4rem 0.6rem',
-                            fontSize: '0.85rem'
-                          }}
+                          className="logout-button pv3-btn-action-sm"
                           title="Teilnehmerliste als PDF drucken"
                         >
                           📄 PDF
@@ -1634,23 +1529,7 @@ const PruefungsVerwaltung = () => {
                               e.stopPropagation();
                               openBatchErgebnisModal(termin);
                             }}
-                            className="logout-button"
-                            style={{
-                              padding: '0.4rem 0.6rem',
-                              fontSize: '0.85rem',
-                              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 50%, transparent 100%)',
-                              border: 'none',
-                              color: 'rgba(255, 255, 255, 0.95)',
-                              boxShadow: '0 2px 8px rgba(34, 197, 94, 0.2)'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(34, 197, 94, 0.2) 50%, transparent 100%)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 50%, transparent 100%)';
-                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(34, 197, 94, 0.2)';
-                            }}
+                            className="logout-button pv3-btn-results"
                             title="Ergebnisse fuer alle Teilnehmer eintragen"
                           >
                             <Award size={16} />
@@ -1662,11 +1541,7 @@ const PruefungsVerwaltung = () => {
                             e.stopPropagation();
                             handleTerminBearbeiten(termin);
                           }}
-                          className="logout-button"
-                          style={{
-                            padding: '0.4rem 0.6rem',
-                            fontSize: '0.85rem'
-                          }}
+                          className="logout-button pv3-btn-action-sm"
                           title="Termin bearbeiten"
                         >
                           <Edit size={16} />
@@ -1677,23 +1552,7 @@ const PruefungsVerwaltung = () => {
                             e.stopPropagation();
                             handleTerminLoeschen(termin);
                           }}
-                          className="logout-button"
-                          style={{
-                            padding: '0.4rem 0.6rem',
-                            fontSize: '0.85rem',
-                            background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 50%, transparent 100%)',
-                            border: 'none',
-                            color: 'rgba(255, 255, 255, 0.95)',
-                            boxShadow: '0 2px 8px rgba(220, 53, 69, 0.2)'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.4) 0%, rgba(220, 53, 69, 0.2) 50%, transparent 100%)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 50%, transparent 100%)';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(220, 53, 69, 0.2)';
-                          }}
+                          className="logout-button pv3-btn-delete"
                           title="Termin löschen"
                         >
                           <Trash2 size={16} />
@@ -1706,176 +1565,187 @@ const PruefungsVerwaltung = () => {
                     {expandedTermine[`${termin.datum}_${termin.stil_id}`] && (
                       <>
                         {termin.isVorlage ? (
-                        <div style={{
-                          padding: '2rem',
-                          textAlign: 'center',
-                          backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                          borderRadius: '0.5rem',
-                          border: '1px dashed rgba(245, 158, 11, 0.3)'
-                        }}>
-                          <Calendar size={48} style={{ color: '#f59e0b', margin: '0 auto 1rem' }} />
-                          <h4 style={{ color: 'rgba(255, 255, 255, 0.9)', margin: '0 0 0.5rem 0' }}>
+                        <div className="pv3-vorlage-empty">
+                          <Calendar size={48} className="pv3-icon-warning-large" />
+                          <h4 className="pv3-vorlage-empty-title">
                             Termin ohne Teilnehmer
                           </h4>
-                          <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', margin: 0 }}>
+                          <p className="pv3-vorlage-empty-text">
                             Dieser Termin wurde angelegt, hat aber noch keine zugelassenen Kandidaten.
                             <br />
                             Teilnehmer koennen ueber das Mitgliederprofil zu diesem Termin angemeldet werden.
                           </p>
                         </div>
                       ) : (
-                        <div className="table-container" style={{ marginTop: '1rem' }}>
-                          <table className="data-table" style={{ fontSize: '0.875rem' }}>
+                        <div className="table-container pv2-mt-1">
+                          <table className="data-table pv2-fs-0875">
                             <thead>
                               <tr>
-                                <th style={{ minWidth: '180px', color: '#EAB308' }}>Name</th>
-                                <th style={{ minWidth: '110px', color: '#EAB308' }}>Geburtsdatum</th>
-                                <th style={{ minWidth: '100px', color: '#EAB308' }}>Stil</th>
-                                <th style={{ minWidth: '150px', color: '#EAB308' }}>Aktueller Gurt</th>
-                                <th style={{ minWidth: '150px', color: '#EAB308' }}>Angestrebter Gurt</th>
-                                <th style={{ minWidth: '140px', color: '#EAB308' }}>Trainingsstunden</th>
-                                <th style={{ minWidth: '100px', color: '#EAB308' }}>Wartezeit</th>
-                                <th style={{ minWidth: '130px', color: '#EAB308' }}>Status</th>
+                                <th className="pv3-th-180">Name</th>
+                                <th className="pv3-th-110">Geburtsdatum</th>
+                                <th className="pv3-th-100">Stil</th>
+                                <th className="pv3-th-150">Aktueller Gurt</th>
+                                <th className="pv3-th-150">Angestrebter Gurt</th>
+                                <th className="pv3-th-140">Trainingsstunden</th>
+                                <th className="pv3-th-100">Wartezeit</th>
+                                <th className="pv3-th-130">Status</th>
                               </tr>
                             </thead>
                             <tbody>
                               {termin.pruefungen.map((pruefung, pIndex) => (
                                 <tr
                                   key={pIndex}
-                                  style={{
-                                    backgroundColor: 'rgba(255, 215, 0, 0.05)',
-                                    borderLeft: '3px solid rgba(255, 215, 0, 0.5)',
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                  className="hover-row"
+                                  className="pv3-table-row-gold hover-row"
                                 >
                                   <td>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                                      <span style={{ fontWeight: '700', color: 'rgba(255, 255, 255, 0.95)' }}>
+                                    <div className="pv-flex-col-xs">
+                                      <span className="pv2-fw700-primary">
                                         {pruefung.vorname} {pruefung.nachname}
                                       </span>
-                                      <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                      <span className="pv-muted-sm">
                                         ID: {pruefung.mitglied_id}
                                       </span>
                                     </div>
                                   </td>
                                   <td>
-                                    <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                                    <span className="pv-text-secondary">
                                       {pruefung.geburtsdatum ? new Date(pruefung.geburtsdatum).toLocaleDateString('de-DE') : '—'}
                                     </span>
                                   </td>
                                   <td>
-                                    <span style={{
-                                      display: 'inline-block',
-                                      padding: '0.25rem 0.75rem',
-                                      backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                                      color: '#a78bfa',
-                                      borderRadius: '0.375rem',
-                                      fontSize: '0.8125rem',
-                                      fontWeight: '600',
-                                      border: '1px solid rgba(139, 92, 246, 0.3)'
-                                    }}>
+                                    <span className="pv3-tag-stil-purple">
                                       {pruefung.stil_name}
                                     </span>
                                   </td>
                                   <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <div style={{
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '50%',
-                                        backgroundColor: pruefung.farbe_vorher || '#6b7280',
-                                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                        flexShrink: 0
-                                      }} />
-                                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: '600', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8125rem' }}>
+                                    <div className="pv-flex-row">
+                                      <div
+                                        className="pv3-gurt-dot"
+                                        style={{ '--dot-color': pruefung.farbe_vorher || '#6b7280' }}
+                                      />
+                                      <div className="pv2-flex-col">
+                                        <span className="pv-bold-primary-sm">
                                           {pruefung.graduierung_vorher || 'Keine'}
                                         </span>
-                                        <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                        <span className="pv-muted-xs">
                                           Ziel-Gurt
                                         </span>
                                       </div>
                                     </div>
                                   </td>
                                   <td>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                      <div style={{
-                                        width: '24px',
-                                        height: '24px',
-                                        borderRadius: '50%',
-                                        backgroundColor: pruefung.farbe_nachher || '#EAB308',
-                                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                        flexShrink: 0
-                                      }} />
-                                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontWeight: '600', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8125rem' }}>
+                                    {graduierungenProStil[pruefung.stil_id] && graduierungenProStil[pruefung.stil_id].length > 0 ? (
+                                      <div className="pv-flex-row">
+                                        {(() => {
+                                          const key = `${pruefung.mitglied_id}-${pruefung.stil_id}`;
+                                          const selectedGradId = selectedGraduierungen[key] || pruefung.graduierung_nachher_id;
+                                          const selectedGrad = graduierungenProStil[pruefung.stil_id].find(g => g.graduierung_id === selectedGradId);
+
+                                          return (
+                                            <>
+                                              <div
+                                                className="pv3-gurt-dot pv3-gurt-dot--selected"
+                                                style={{ '--dot-color': selectedGrad?.farbe_hex || pruefung.farbe_nachher || '#EAB308' }}
+                                                title={selectedGrad?.name || pruefung.graduierung_nachher || 'Keine Auswahl'}
+                                              />
+                                              <select
+                                                value={selectedGradId || ''}
+                                                onChange={async (e) => {
+                                                  const newGradId = parseInt(e.target.value);
+                                                  setSelectedGraduierungen({
+                                                    ...selectedGraduierungen,
+                                                    [key]: newGradId
+                                                  });
+
+                                                  try {
+                                                    const response = await fetch(
+                                                      `${API_BASE_URL}/pruefungen/${pruefung.pruefung_id}/graduierung`,
+                                                      {
+                                                        method: 'PUT',
+                                                        headers: {
+                                                          'Content-Type': 'application/json',
+                                                          'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
+                                                        },
+                                                        body: JSON.stringify({ graduierung_nachher_id: newGradId })
+                                                      }
+                                                    );
+
+                                                    if (response.ok) {
+                                                      fetchPruefungstermine();
+                                                      setSuccess('Graduierung erfolgreich aktualisiert!');
+                                                      setTimeout(() => setSuccess(''), 2000);
+                                                    } else {
+                                                      const errorData = await response.json();
+                                                      setError(errorData.error || 'Fehler beim Speichern der Graduierung');
+                                                      setTimeout(() => setError(''), 3000);
+                                                    }
+                                                  } catch (err) {
+                                                    console.error('Fehler beim Speichern der Graduierung:', err);
+                                                    setError('Fehler beim Speichern der Graduierung');
+                                                    setTimeout(() => setError(''), 3000);
+                                                  }
+                                                }}
+                                                className="pv3-grad-select"
+                                                title="Ziel-Graduierung ändern"
+                                              >
+                                                {graduierungenProStil[pruefung.stil_id]
+                                                  .filter(grad => grad.aktiv === 1)
+                                                  .sort((a, b) => a.reihenfolge - b.reihenfolge)
+                                                  .map((grad) => (
+                                                    <option key={grad.graduierung_id} value={grad.graduierung_id}>
+                                                      {grad.name}
+                                                    </option>
+                                                  ))}
+                                              </select>
+                                            </>
+                                          );
+                                        })()}
+                                      </div>
+                                    ) : (
+                                      <div className="pv-flex-row">
+                                        <div
+                                          className="pv3-gurt-dot"
+                                          style={{ '--dot-color': pruefung.farbe_nachher || '#EAB308' }}
+                                        />
+                                        <span className="pv-bold-primary-sm">
                                           {pruefung.graduierung_nachher}
                                         </span>
-                                        <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
-                                          Ziel-Gurt
-                                        </span>
                                       </div>
-                                    </div>
+                                    )}
                                   </td>
                                   <td>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <span style={{ fontWeight: '700', color: '#22c55e', fontSize: '1rem' }}>
+                                    <div className="pv-flex-col-sm">
+                                      <div className="pv-flex-row">
+                                        <span className="pv2-fw700-success">
                                           {pruefung.anwesenheiten_aktuell || 0}
                                         </span>
-                                        <span style={{ color: '#6b7280', fontSize: '0.8125rem' }}>
+                                        <span className="pv-muted-xs">
                                           / {pruefung.min_trainingseinheiten || 0}
                                         </span>
                                       </div>
-                                      <div style={{
-                                        width: '100%',
-                                        height: '6px',
-                                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '3px',
-                                        overflow: 'hidden'
-                                      }}>
-                                        <div style={{
-                                          width: `${Math.min(100, ((pruefung.anwesenheiten_aktuell || 0) / (pruefung.min_trainingseinheiten || 1)) * 100)}%`,
-                                          height: '100%',
-                                          backgroundColor: ((pruefung.anwesenheiten_aktuell || 0) >= (pruefung.min_trainingseinheiten || 0)) ? '#22c55e' : '#f59e0b',
-                                          transition: 'width 0.3s ease'
-                                        }} />
+                                      <div className="pv3-progress-wrap">
+                                        <div
+                                          className={`pv3-bar-fill${((pruefung.anwesenheiten_aktuell || 0) >= (pruefung.min_trainingseinheiten || 0)) ? ' pv3-bar-fill--good' : ' pv3-bar-fill--warn'}`}
+                                          style={{ width: `${Math.min(100, ((pruefung.anwesenheiten_aktuell || 0) / (pruefung.min_trainingseinheiten || 1)) * 100)}%` }}
+                                        />
                                       </div>
-                                      <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                      <span className="pv-muted-xs">
                                         {((pruefung.anwesenheiten_aktuell || 0) >= (pruefung.min_trainingseinheiten || 0)) ? '100%' : Math.round(((pruefung.anwesenheiten_aktuell || 0) / (pruefung.min_trainingseinheiten || 1)) * 100) + '%'} erreicht
                                       </span>
                                     </div>
                                   </td>
                                   <td>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                      <span style={{
-                                        fontWeight: '700',
-                                        color: '#22c55e',
-                                        fontSize: '0.9375rem'
-                                      }}>
+                                    <div className="pv-flex-col-sm">
+                                      <span className="pv3-wartezeit-value">
                                         {pruefung.monate_seit_letzter_pruefung || 0} Mon.
                                       </span>
-                                      <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                      <span className="pv-muted-xs">
                                         von {pruefung.min_wartezeit_monate || 0}
                                       </span>
                                     </div>
                                   </td>
                                   <td>
-                                    <span style={{
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.375rem',
-                                      padding: '0.375rem 0.75rem',
-                                      backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                                      color: '#fbbf24',
-                                      borderRadius: '0.375rem',
-                                      fontSize: '0.8125rem',
-                                      fontWeight: '600',
-                                      border: '1px solid rgba(255, 215, 0, 0.3)'
-                                    }}>
+                                    <span className="pv3-badge-zugelassen">
                                       <Check size={14} />
                                       Zugelassen
                                     </span>
@@ -1886,6 +1756,68 @@ const PruefungsVerwaltung = () => {
                           </table>
                         </div>
                       )}
+
+                        {/* Externe Anmeldungen */}
+                        {termin.oeffentlich && termin.vorlageData?.termin_id && (
+                          <div className="pv2-mt-15">
+                            <h4 className="pv3-extern-heading">
+                              🌐 Externe Anmeldungen
+                            </h4>
+                            {(() => {
+                              const anmeldungen = externeAnmeldungen[termin.vorlageData.termin_id];
+                              if (!anmeldungen) {
+                                return (
+                                  <p className="pv-muted-sm-row">
+                                    Lade externe Anmeldungen...
+                                  </p>
+                                );
+                              }
+                              if (anmeldungen.length === 0) {
+                                return (
+                                  <p className="pv-muted-sm-row">
+                                    Keine externen Anmeldungen vorhanden.
+                                  </p>
+                                );
+                              }
+                              return (
+                                <div className="table-container">
+                                  <table className="data-table pv3-extern-table">
+                                    <thead>
+                                      <tr>
+                                        <th className="pv-sky">Name</th>
+                                        <th className="pv-sky">E-Mail</th>
+                                        <th className="pv-sky">Verein</th>
+                                        <th className="pv-sky">Aktueller Gurt</th>
+                                        <th className="pv-sky">Angestrebter Gurt</th>
+                                        <th className="pv-sky">Status</th>
+                                        <th className="pv-sky">Datum</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {anmeldungen.map(a => (
+                                        <tr key={a.id}>
+                                          <td>{a.vorname} {a.nachname}</td>
+                                          <td>{a.email}</td>
+                                          <td>{a.verein || '—'}</td>
+                                          <td>{a.aktueller_gurt || '—'}</td>
+                                          <td>{a.angestrebter_gurt || '—'}</td>
+                                          <td>
+                                            <span className={`pv3-extern-status pv3-extern-status--${a.status}`}>
+                                              {a.status}
+                                            </span>
+                                          </td>
+                                          <td className="pv3-extern-date">
+                                            {new Date(a.erstellt_am).toLocaleDateString('de-DE')}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -1912,17 +1844,10 @@ const PruefungsVerwaltung = () => {
 
                 return (
                   <div>
-                    <h3 style={{
-                      marginBottom: '1rem',
-                      fontSize: '1.1rem',
-                      fontWeight: '700',
-                      color: '#6b7280',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
+                    <h3 className="pv3-group-heading-muted">
                       VERGANGENE PRÜFUNGSTERMINE ({vergangeneTermine.length} {vergangeneTermine.length === 1 ? 'TERMIN' : 'TERMINE'})
                     </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    <div className="pv3-termin-group-list">
                       {vergangeneTermine.map((termin, index) => {
                         const datum = new Date(termin.datum);
                         const isToday = false; // Vergangene Termine sind nie heute
@@ -1931,107 +1856,58 @@ const PruefungsVerwaltung = () => {
                         return (
                           <div
                             key={index}
-                            style={{
-                              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              borderRadius: '0.75rem',
-                              padding: '1.5rem',
-                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                              opacity: 0.6
-                            }}
+                            className="pv3-termin-card--past"
                           >
                             {/* Termin-Header */}
-                            <div style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'flex-start',
-                              marginBottom: '1rem',
-                              paddingBottom: '1rem',
-                              borderBottom: '1px solid #e5e7eb'
-                            }}>
+                            <div className="pv3-termin-header">
                               <div
-                                style={{ flex: 1, cursor: 'pointer' }}
-                                onClick={() => toggleTerminExpanded(`${termin.datum}_${termin.stil_id}`)}
+                                className="pv2-flex-cursor"
+                                onClick={() => toggleTerminExpanded(`${termin.datum}_${termin.stil_id}`, termin)}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                  <Calendar size={24} style={{ color: '#8b5cf6' }} />
-                                  <h3 style={{
-                                    margin: 0,
-                                    fontSize: '1.25rem',
-                                    fontWeight: '700',
-                                    color: '#EAB308'
-                                  }}>
+                                <div className="pv3-termin-title-row">
+                                  <Calendar size={24} className="pv3-icon-purple" />
+                                  <h3 className="pv3-termin-heading-warning">
                                     {datum.toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                                   </h3>
                                   {expandedTermine[`${termin.datum}_${termin.stil_id}`] ? (
-                                    <ChevronUp size={24} style={{ color: '#EAB308', transition: 'transform 0.2s' }} />
+                                    <ChevronUp size={24} className="pv3-icon-chevron-warning" />
                                   ) : (
-                                    <ChevronDown size={24} style={{ color: '#6b7280', transition: 'transform 0.2s' }} />
+                                    <ChevronDown size={24} className="pv3-icon-chevron-muted" />
                                   )}
-                                  <span style={{
-                                    padding: '0.25rem 0.75rem',
-                                    backgroundColor: '#6b7280',
-                                    color: 'white',
-                                    borderRadius: '0.375rem',
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.05em'
-                                  }}>
+                                  <span className="pv3-badge-past">
                                     Vergangen
                                   </span>
                                 </div>
-                                <div style={{
-                                  display: 'flex',
-                                  gap: '2rem',
-                                  fontSize: '0.875rem',
-                                  color: '#6b7280'
-                                }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: '600' }}>⏰ Uhrzeit:</span>
+                                <div className="pv3-termin-meta-row">
+                                  <div className="pv-flex-row">
+                                    <span className="pv2-fw600">⏰ Uhrzeit:</span>
                                     <span>{termin.zeit}</span>
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: '600' }}>🥋 Stil:</span>
-                                    <span style={{
-                                      padding: '0.125rem 0.5rem',
-                                      backgroundColor: '#EAB308',
-                                      color: '#1a1a1a',
-                                      borderRadius: '0.375rem',
-                                      fontWeight: '700'
-                                    }}>
+                                  <div className="pv-flex-row">
+                                    <span className="pv2-fw600">🥋 Stil:</span>
+                                    <span className="pv3-badge-stil">
                                       {termin.stil_name}
                                     </span>
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: '600' }}>📍 Ort:</span>
+                                  <div className="pv-flex-row">
+                                    <span className="pv2-fw600">📍 Ort:</span>
                                     <span>{termin.ort}</span>
                                   </div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: '600' }}>👥 Teilnehmer:</span>
-                                    <span style={{
-                                      padding: '0.125rem 0.5rem',
-                                      backgroundColor: '#8b5cf6',
-                                      color: 'white',
-                                      borderRadius: '0.375rem',
-                                      fontWeight: '700'
-                                    }}>
+                                  <div className="pv-flex-row">
+                                    <span className="pv2-fw600">👥 Teilnehmer:</span>
+                                    <span className="pv3-badge-teilnehmer">
                                       {termin.anzahl}
                                     </span>
                                   </div>
                                 </div>
                               </div>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <div className="u-flex-gap-sm">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handlePruefungslistePDF(termin);
                                   }}
-                                  className="logout-button"
-                                  style={{
-                                    padding: '0.4rem 0.6rem',
-                                    fontSize: '0.85rem'
-                                  }}
+                                  className="logout-button pv3-btn-action-sm"
                                   title="Teilnehmerliste als PDF drucken"
                                 >
                                   📄 PDF
@@ -2042,15 +1918,7 @@ const PruefungsVerwaltung = () => {
                                       e.stopPropagation();
                                       openBatchErgebnisModal(termin);
                                     }}
-                                    className="logout-button"
-                                    style={{
-                                      padding: '0.4rem 0.6rem',
-                                      fontSize: '0.85rem',
-                                      background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.3) 0%, rgba(34, 197, 94, 0.1) 50%, transparent 100%)',
-                                      border: 'none',
-                                      color: 'rgba(255, 255, 255, 0.95)',
-                                      boxShadow: '0 2px 8px rgba(34, 197, 94, 0.2)'
-                                    }}
+                                    className="logout-button pv3-btn-results"
                                     onMouseEnter={(e) => {
                                       e.currentTarget.style.background = 'linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(34, 197, 94, 0.2) 50%, transparent 100%)';
                                       e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
@@ -2070,11 +1938,7 @@ const PruefungsVerwaltung = () => {
                                     e.stopPropagation();
                                     handleTerminBearbeiten(termin);
                                   }}
-                                  className="logout-button"
-                                  style={{
-                                    padding: '0.4rem 0.6rem',
-                                    fontSize: '0.85rem'
-                                  }}
+                                  className="logout-button pv3-btn-action-sm"
                                   title="Termin bearbeiten"
                                 >
                                   <Edit size={16} />
@@ -2085,15 +1949,7 @@ const PruefungsVerwaltung = () => {
                                     e.stopPropagation();
                                     handleTerminLoeschen(termin);
                                   }}
-                                  className="logout-button"
-                                  style={{
-                                    padding: '0.4rem 0.6rem',
-                                    fontSize: '0.85rem',
-                                    background: 'linear-gradient(135deg, rgba(220, 53, 69, 0.3) 0%, rgba(220, 53, 69, 0.1) 50%, transparent 100%)',
-                                    border: 'none',
-                                    color: 'rgba(255, 255, 255, 0.95)',
-                                    boxShadow: '0 2px 8px rgba(220, 53, 69, 0.2)'
-                                  }}
+                                  className="logout-button pv3-btn-delete"
                                   onMouseEnter={(e) => {
                                     e.currentTarget.style.background = 'linear-gradient(135deg, rgba(220, 53, 69, 0.4) 0%, rgba(220, 53, 69, 0.2) 50%, transparent 100%)';
                                     e.currentTarget.style.boxShadow = '0 4px 12px rgba(220, 53, 69, 0.3)';
@@ -2114,176 +1970,123 @@ const PruefungsVerwaltung = () => {
                             {expandedTermine[`${termin.datum}_${termin.stil_id}`] && (
                               <>
                                 {termin.isVorlage ? (
-                                <div style={{
-                                  padding: '2rem',
-                                  textAlign: 'center',
-                                  backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                                  borderRadius: '0.5rem',
-                                  border: '1px dashed rgba(245, 158, 11, 0.3)'
-                                }}>
-                                  <Calendar size={48} style={{ color: '#f59e0b', margin: '0 auto 1rem' }} />
-                                  <h4 style={{ color: 'rgba(255, 255, 255, 0.9)', margin: '0 0 0.5rem 0' }}>
+                                <div className="pv3-vorlage-empty">
+                                  <Calendar size={48} className="pv3-icon-warning-large" />
+                                  <h4 className="pv3-vorlage-empty-title">
                                     Termin ohne Teilnehmer
                                   </h4>
-                                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.875rem', margin: 0 }}>
+                                  <p className="pv3-vorlage-empty-text">
                                     Dieser Termin wurde angelegt, hat aber noch keine zugelassenen Kandidaten.
                                     <br />
                                     Teilnehmer koennen ueber das Mitgliederprofil zu diesem Termin angemeldet werden.
                                   </p>
                                 </div>
                               ) : (
-                                <div className="table-container" style={{ marginTop: '1rem' }}>
-                                  <table className="data-table" style={{ fontSize: '0.875rem' }}>
+                                <div className="table-container pv2-mt-1">
+                                  <table className="data-table pv2-fs-0875">
                                     <thead>
                                       <tr>
-                                        <th style={{ minWidth: '180px', color: '#EAB308' }}>Name</th>
-                                        <th style={{ minWidth: '110px', color: '#EAB308' }}>Geburtsdatum</th>
-                                        <th style={{ minWidth: '100px', color: '#EAB308' }}>Stil</th>
-                                        <th style={{ minWidth: '150px', color: '#EAB308' }}>Aktueller Gurt</th>
-                                        <th style={{ minWidth: '150px', color: '#EAB308' }}>Angestrebter Gurt</th>
-                                        <th style={{ minWidth: '140px', color: '#EAB308' }}>Trainingsstunden</th>
-                                        <th style={{ minWidth: '100px', color: '#EAB308' }}>Wartezeit</th>
-                                        <th style={{ minWidth: '130px', color: '#EAB308' }}>Status</th>
+                                        <th className="pv3-th-180">Name</th>
+                                        <th className="pv3-th-110">Geburtsdatum</th>
+                                        <th className="pv3-th-100">Stil</th>
+                                        <th className="pv3-th-150">Aktueller Gurt</th>
+                                        <th className="pv3-th-150">Angestrebter Gurt</th>
+                                        <th className="pv3-th-140">Trainingsstunden</th>
+                                        <th className="pv3-th-100">Wartezeit</th>
+                                        <th className="pv3-th-130">Status</th>
                                       </tr>
                                     </thead>
                                     <tbody>
                                       {termin.pruefungen.map((pruefung, pIndex) => (
                                         <tr
                                           key={pIndex}
-                                          style={{
-                                            backgroundColor: 'rgba(255, 215, 0, 0.05)',
-                                            borderLeft: '3px solid rgba(255, 215, 0, 0.5)',
-                                            transition: 'all 0.2s ease'
-                                          }}
-                                          className="hover-row"
+                                          className="hover-row pv3-table-row-gold"
                                         >
                                           <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                                              <span style={{ fontWeight: '700', color: 'rgba(255, 255, 255, 0.95)' }}>
+                                            <div className="pv-flex-col-xs">
+                                              <span className="pv2-fw700-primary">
                                                 {pruefung.vorname} {pruefung.nachname}
                                               </span>
-                                              <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                              <span className="pv-muted-sm">
                                                 ID: {pruefung.mitglied_id}
                                               </span>
                                             </div>
                                           </td>
                                           <td>
-                                            <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                                            <span className="pv-text-secondary">
                                               {pruefung.geburtsdatum ? new Date(pruefung.geburtsdatum).toLocaleDateString('de-DE') : '—'}
                                             </span>
                                           </td>
                                           <td>
-                                            <span style={{
-                                              display: 'inline-block',
-                                              padding: '0.25rem 0.75rem',
-                                              backgroundColor: 'rgba(139, 92, 246, 0.2)',
-                                              color: '#a78bfa',
-                                              borderRadius: '0.375rem',
-                                              fontSize: '0.8125rem',
-                                              fontWeight: '600',
-                                              border: '1px solid rgba(139, 92, 246, 0.3)'
-                                            }}>
+                                            <span className="pv3-tag-stil-purple">
                                               {pruefung.stil_name}
                                             </span>
                                           </td>
                                           <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                              <div style={{
-                                                width: '24px',
-                                                height: '24px',
-                                                borderRadius: '50%',
-                                                backgroundColor: pruefung.farbe_vorher || '#6b7280',
-                                                border: '2px solid rgba(255, 255, 255, 0.3)',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                flexShrink: 0
-                                              }} />
-                                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <span style={{ fontWeight: '600', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8125rem' }}>
+                                            <div className="pv-flex-row">
+                                              <div
+                                                className="pv3-gurt-dot"
+                                                style={{ '--dot-color': pruefung.farbe_vorher || '#6b7280' }}
+                                              />
+                                              <div className="pv2-flex-col">
+                                                <span className="pv-bold-primary-sm">
                                                   {pruefung.graduierung_vorher || 'Keine'}
                                                 </span>
-                                                <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                                <span className="pv-muted-xs">
                                                   Ziel-Gurt
                                                 </span>
                                               </div>
                                             </div>
                                           </td>
                                           <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                              <div style={{
-                                                width: '24px',
-                                                height: '24px',
-                                                borderRadius: '50%',
-                                                backgroundColor: pruefung.farbe_nachher || '#EAB308',
-                                                border: '2px solid rgba(255, 255, 255, 0.3)',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                                flexShrink: 0
-                                              }} />
-                                              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                <span style={{ fontWeight: '600', color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.8125rem' }}>
+                                            <div className="pv-flex-row">
+                                              <div
+                                                className="pv3-gurt-dot"
+                                                style={{ '--dot-color': pruefung.farbe_nachher || '#EAB308' }}
+                                              />
+                                              <div className="pv2-flex-col">
+                                                <span className="pv-bold-primary-sm">
                                                   {pruefung.graduierung_nachher}
                                                 </span>
-                                                <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                                <span className="pv-muted-xs">
                                                   Ziel-Gurt
                                                 </span>
                                               </div>
                                             </div>
                                           </td>
                                           <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <span style={{ fontWeight: '700', color: '#22c55e', fontSize: '1rem' }}>
+                                            <div className="pv-flex-col-sm">
+                                              <div className="pv-flex-row">
+                                                <span className="pv2-fw700-success">
                                                   {pruefung.anwesenheiten_aktuell || 0}
                                                 </span>
-                                                <span style={{ color: '#6b7280', fontSize: '0.8125rem' }}>
+                                                <span className="pv-muted-xs">
                                                   / {pruefung.min_trainingseinheiten || 0}
                                                 </span>
                                               </div>
-                                              <div style={{
-                                                width: '100%',
-                                                height: '6px',
-                                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                                borderRadius: '3px',
-                                                overflow: 'hidden'
-                                              }}>
-                                                <div style={{
-                                                  width: `${Math.min(100, ((pruefung.anwesenheiten_aktuell || 0) / (pruefung.min_trainingseinheiten || 1)) * 100)}%`,
-                                                  height: '100%',
-                                                  backgroundColor: ((pruefung.anwesenheiten_aktuell || 0) >= (pruefung.min_trainingseinheiten || 0)) ? '#22c55e' : '#f59e0b',
-                                                  transition: 'width 0.3s ease'
-                                                }} />
+                                              <div className="pv3-progress-wrap">
+                                                <div
+                                                  className={`pv3-bar-fill${((pruefung.anwesenheiten_aktuell || 0) >= (pruefung.min_trainingseinheiten || 0)) ? ' pv3-bar-fill--good' : ' pv3-bar-fill--warn'}`}
+                                                  style={{ width: `${Math.min(100, ((pruefung.anwesenheiten_aktuell || 0) / (pruefung.min_trainingseinheiten || 1)) * 100)}%` }}
+                                                />
                                               </div>
-                                              <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                              <span className="pv-muted-xs">
                                                 {((pruefung.anwesenheiten_aktuell || 0) >= (pruefung.min_trainingseinheiten || 0)) ? '100%' : Math.round(((pruefung.anwesenheiten_aktuell || 0) / (pruefung.min_trainingseinheiten || 1)) * 100) + '%'} erreicht
                                               </span>
                                             </div>
                                           </td>
                                           <td>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                              <span style={{
-                                                fontWeight: '700',
-                                                color: '#22c55e',
-                                                fontSize: '0.9375rem'
-                                              }}>
+                                            <div className="pv-flex-col-sm">
+                                              <span className="pv3-wartezeit-value">
                                                 {pruefung.monate_seit_letzter_pruefung || 0} Mon.
                                               </span>
-                                              <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                                              <span className="pv-muted-xs">
                                                 von {pruefung.min_wartezeit_monate || 0}
                                               </span>
                                             </div>
                                           </td>
                                           <td>
-                                            <span style={{
-                                              display: 'inline-flex',
-                                              alignItems: 'center',
-                                              gap: '0.375rem',
-                                              padding: '0.375rem 0.75rem',
-                                              backgroundColor: 'rgba(255, 215, 0, 0.2)',
-                                              color: '#fbbf24',
-                                              borderRadius: '0.375rem',
-                                              fontSize: '0.8125rem',
-                                              fontWeight: '600',
-                                              border: '1px solid rgba(255, 215, 0, 0.3)'
-                                            }}>
+                                            <span className="pv3-badge-zugelassen">
                                               <Check size={14} />
                                               Zugelassen
                                             </span>
@@ -2325,6 +2128,16 @@ const PruefungsVerwaltung = () => {
           filteredKandidaten = filteredKandidaten.filter(k => k.stil_id === parseInt(kandidatenStilFilter));
         }
 
+        // Suchfilter anwenden (Name, Vorname, ID)
+        if (kandidatenSuchbegriff.trim() !== '') {
+          const suchbegriff = kandidatenSuchbegriff.toLowerCase().trim();
+          filteredKandidaten = filteredKandidaten.filter(k =>
+            (k.vorname && k.vorname.toLowerCase().includes(suchbegriff)) ||
+            (k.nachname && k.nachname.toLowerCase().includes(suchbegriff)) ||
+            (k.mitglied_id && k.mitglied_id.toString().includes(suchbegriff))
+          );
+        }
+
         // Sortierung anwenden
         if (sortConfig.key) {
           filteredKandidaten = applySorting(filteredKandidaten, sortConfig.key, sortConfig.direction);
@@ -2332,94 +2145,44 @@ const PruefungsVerwaltung = () => {
 
         return (
         <div>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '1.5rem',
-            padding: '1rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            borderRadius: '0.5rem',
-            border: '1px solid rgba(255, 215, 0, 0.2)'
-          }}>
-            <div style={{ flex: 1 }}>
-              <h2 style={{ margin: 0, fontSize: '1rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+          <div className="pv3-kandidaten-header">
+            <div className="u-flex-1">
+              <h2 className="pv3-kandidaten-title">
                 Prüfungskandidaten
-                <span style={{
-                  marginLeft: '0.5rem',
-                  color: '#ffd700',
-                  fontWeight: 'bold',
-                  fontSize: '0.875rem'
-                }}>
+                <span className="pv3-kandidaten-count">
                   ({filteredKandidaten.filter(k => k.berechtigt).length} berechtigt / {filteredKandidaten.length} angezeigt
                   {(berechtigungsFilter !== 'all' || kandidatenStilFilter !== 'all') && ` von ${kandidaten.length} gesamt`})
                 </span>
               </h2>
-              <p style={{ margin: '0.125rem 0 0 0', fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+              <p className="pv3-kandidaten-subtitle">
                 {selectedKandidaten.length > 0
                   ? `${selectedKandidaten.length} Kandidat${selectedKandidaten.length > 1 ? 'en' : ''} ausgewählt`
                   : 'Wählen Sie Kandidaten aus, um sie zur Prüfung zuzulassen'}
               </p>
 
               {/* Filter Controls */}
-              <div style={{
-                display: 'flex',
-                gap: '0.75rem',
-                marginTop: '0.75rem',
-                alignItems: 'center',
-                flexWrap: 'wrap'
-              }}>
+              <div className="pv3-filter-row">
                 {/* Berechtigungsfilter */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>
+                <div className="pv-flex-row">
+                  <span className="pv-secondary-bold">
                     Berechtigung:
                   </span>
-                  <div style={{ display: 'flex', gap: '0.25rem', backgroundColor: 'rgba(0, 0, 0, 0.3)', borderRadius: '0.375rem', padding: '0.125rem' }}>
+                  <div className="pv3-btn-group">
                     <button
                       onClick={() => setBerechtigungsFilter('all')}
-                      style={{
-                        padding: '0.375rem 0.75rem',
-                        fontSize: '0.875rem',
-                        backgroundColor: berechtigungsFilter === 'all' ? '#EAB308' : 'transparent',
-                        color: berechtigungsFilter === 'all' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)',
-                        border: 'none',
-                        borderRadius: '0.25rem',
-                        cursor: 'pointer',
-                        fontWeight: berechtigungsFilter === 'all' ? '600' : '400',
-                        transition: 'all 0.2s'
-                      }}
+                      className={`pv3-filter-btn${berechtigungsFilter === 'all' ? ' active' : ''}`}
                     >
                       Alle
                     </button>
                     <button
                       onClick={() => setBerechtigungsFilter('berechtigt')}
-                      style={{
-                        padding: '0.375rem 0.75rem',
-                        fontSize: '0.875rem',
-                        backgroundColor: berechtigungsFilter === 'berechtigt' ? '#EAB308' : 'transparent',
-                        color: berechtigungsFilter === 'berechtigt' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)',
-                        border: 'none',
-                        borderRadius: '0.25rem',
-                        cursor: 'pointer',
-                        fontWeight: berechtigungsFilter === 'berechtigt' ? '600' : '400',
-                        transition: 'all 0.2s'
-                      }}
+                      className={`pv3-filter-btn${berechtigungsFilter === 'berechtigt' ? ' active' : ''}`}
                     >
                       Berechtigt
                     </button>
                     <button
                       onClick={() => setBerechtigungsFilter('nicht_berechtigt')}
-                      style={{
-                        padding: '0.375rem 0.75rem',
-                        fontSize: '0.875rem',
-                        backgroundColor: berechtigungsFilter === 'nicht_berechtigt' ? '#EAB308' : 'transparent',
-                        color: berechtigungsFilter === 'nicht_berechtigt' ? '#1a1a1a' : 'rgba(255, 255, 255, 0.7)',
-                        border: 'none',
-                        borderRadius: '0.25rem',
-                        cursor: 'pointer',
-                        fontWeight: berechtigungsFilter === 'nicht_berechtigt' ? '600' : '400',
-                        transition: 'all 0.2s'
-                      }}
+                      className={`pv3-filter-btn${berechtigungsFilter === 'nicht_berechtigt' ? ' active' : ''}`}
                     >
                       Nicht berechtigt
                     </button>
@@ -2427,38 +2190,51 @@ const PruefungsVerwaltung = () => {
                 </div>
 
                 {/* Stilfilter */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>
+                <div className="pv-flex-row">
+                  <span className="pv-secondary-bold">
                     Stil:
                   </span>
                   <select
                     value={kandidatenStilFilter}
                     onChange={(e) => setKandidatenStilFilter(e.target.value)}
-                    style={{
-                      padding: '0.375rem 0.75rem',
-                      fontSize: '0.875rem',
-                      backgroundColor: '#1a1a1a',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      border: '1px solid rgba(234, 179, 8, 0.3)',
-                      borderRadius: '0.375rem',
-                      cursor: 'pointer',
-                      fontWeight: '500',
-                      outline: 'none'
-                    }}
+                    className="pv3-dark-select"
                   >
-                    <option value="all" style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}>
+                    <option value="all" className="pv2-dark-input">
                       Alle Stile
                     </option>
                     {stile.map(stil => (
                       <option
                         key={stil.stil_id}
                         value={stil.stil_id}
-                        style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}
+                        className="pv2-dark-input"
                       >
                         {stil.name}
                       </option>
                     ))}
                   </select>
+                </div>
+
+                {/* Suchfeld */}
+                <div className="pv3-search-wrap">
+                  <span className="pv-secondary-bold">
+                    Suche:
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Name suchen..."
+                    value={kandidatenSuchbegriff}
+                    onChange={(e) => setKandidatenSuchbegriff(e.target.value)}
+                    className="pv3-search-input"
+                  />
+                  {kandidatenSuchbegriff && (
+                    <button
+                      onClick={() => setKandidatenSuchbegriff('')}
+                      className="pv3-search-clear"
+                      title="Suche zurücksetzen"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -2469,15 +2245,7 @@ const PruefungsVerwaltung = () => {
                   selectedKandidaten.forEach(kandidat => handleKandidatZulassen(kandidat));
                   setSelectedKandidaten([]);
                 }}
-                className="btn btn-primary"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.75rem 1.5rem',
-                  fontSize: '1rem',
-                  fontWeight: '600'
-                }}
+                className="btn btn-primary pv3-batch-btn"
               >
                 <Check size={20} />
                 {selectedKandidaten.length} Kandidat{selectedKandidaten.length > 1 ? 'en' : ''} zulassen
@@ -2486,59 +2254,35 @@ const PruefungsVerwaltung = () => {
           </div>
 
           {loading ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '4rem',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '1rem'
-            }}>
+            <div className="pv3-loading-center">
               <div className="loading-spinner-large"></div>
-              <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Kandidaten werden geladen...</p>
+              <p className="pv-text-secondary">Kandidaten werden geladen...</p>
             </div>
           ) : kandidaten.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '3rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '0.5rem',
-              border: '2px dashed rgba(255, 215, 0, 0.2)'
-            }}>
-              <Users size={48} style={{ color: 'rgba(255, 255, 255, 0.3)', marginBottom: '1rem' }} />
-              <h3 style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>Keine Kandidaten gefunden</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem' }}>
+            <div className="pv3-empty-state-dashed-gold">
+              <Users size={48} className="pv2-muted-mb" />
+              <h3 className="pv2-secondary-mb">Keine Kandidaten gefunden</h3>
+              <p className="pv-muted-sm-row">
                 Aktuell gibt es keine Mitglieder, die die Voraussetzungen für eine Prüfung erfüllen.
               </p>
             </div>
           ) : filteredKandidaten.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '3rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '0.5rem',
-              border: '2px dashed rgba(255, 215, 0, 0.2)'
-            }}>
-              <Users size={48} style={{ color: 'rgba(255, 255, 255, 0.3)', marginBottom: '1rem' }} />
-              <h3 style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '0.5rem' }}>Keine Kandidaten mit den aktuellen Filtern</h3>
-              <p style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.875rem' }}>
+            <div className="pv3-empty-state-dashed-gold">
+              <Users size={48} className="pv2-muted-mb" />
+              <h3 className="pv2-secondary-mb">Keine Kandidaten mit den aktuellen Filtern</h3>
+              <p className="pv-muted-sm-row">
                 Passen Sie die Filter an, um andere Kandidaten anzuzeigen.
               </p>
             </div>
           ) : (
             <div className="table-container">
-              <table className="data-table" style={{ fontSize: '0.8125rem' }}>
+              <table className="data-table pv3-table-sm">
                 <thead>
                   <tr>
-                    <th style={{ width: '40px', textAlign: 'center', color: '#EAB308' }}>
+                    <th className="pv3-th-plain-40-center">
                       <input
                         type="checkbox"
-                        style={{
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer',
-                          accentColor: '#ffd700'
-                        }}
+                        className="pv3-checkbox-gold"
                         onChange={(e) => {
                           if (e.target.checked) {
                             setSelectedKandidaten(filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen));
@@ -2553,71 +2297,52 @@ const PruefungsVerwaltung = () => {
                       />
                     </th>
                     <th
-                      style={{ minWidth: '140px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      className="pv3-th-sortable"
                       onClick={() => handleSort('name')}
                     >
                       Name <SortIcon columnKey="name" />
                     </th>
                     <th
-                      style={{ minWidth: '90px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      className="pv3-th-sortable-sm"
                       onClick={() => handleSort('geburtsdatum')}
                     >
                       Geb.datum <SortIcon columnKey="geburtsdatum" />
                     </th>
                     <th
-                      style={{ minWidth: '80px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      className="pv3-th-sortable-xs"
                       onClick={() => handleSort('stil_name')}
                     >
                       Stil <SortIcon columnKey="stil_name" />
                     </th>
                     <th
-                      style={{ minWidth: '120px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      className="pv3-th-sortable-md"
                       onClick={() => handleSort('graduierung_vorher_name')}
                     >
                       Aktuell <SortIcon columnKey="graduierung_vorher_name" />
                     </th>
                     <th
-                      style={{ minWidth: '120px', color: '#EAB308', cursor: 'pointer', userSelect: 'none', fontSize: '0.8125rem', padding: '0.5rem' }}
+                      className="pv3-th-sortable-md"
                       onClick={() => handleSort('graduierung_nachher_name')}
                     >
                       Ziel <SortIcon columnKey="graduierung_nachher_name" />
                     </th>
-                    <th style={{ minWidth: '110px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Stunden</th>
-                    <th style={{ minWidth: '80px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Monate</th>
-                    <th style={{ minWidth: '100px', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Status</th>
-                    <th style={{ minWidth: '100px', textAlign: 'center', color: '#EAB308', fontSize: '0.8125rem', padding: '0.5rem' }}>Aktion</th>
+                    <th className="pv3-th-plain-110">Stunden</th>
+                    <th className="pv3-th-plain-80">Monate</th>
+                    <th className="pv3-th-plain-100">Status</th>
+                    <th className="pv3-th-plain-100-center">Aktion</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredKandidaten.map((kandidat, index) => (
                     <tr
                       key={`${kandidat.mitglied_id}-${kandidat.stil_id}-${index}`}
-                      style={{
-                        backgroundColor: kandidat.bereits_zugelassen
-                          ? 'rgba(255, 215, 0, 0.05)'
-                          : kandidat.berechtigt
-                            ? 'rgba(34, 197, 94, 0.05)'
-                            : 'transparent',
-                        opacity: kandidat.bereits_zugelassen ? 0.7 : 1,
-                        transition: 'all 0.2s ease',
-                        borderLeft: kandidat.berechtigt && !kandidat.bereits_zugelassen
-                          ? '3px solid rgba(34, 197, 94, 0.5)'
-                          : kandidat.bereits_zugelassen
-                            ? '3px solid rgba(255, 215, 0, 0.5)'
-                            : '3px solid transparent'
-                      }}
-                      className="hover-row"
+                      className={`hover-row ${kandidat.bereits_zugelassen ? 'pv3-kandidat-row--zugelassen' : kandidat.berechtigt ? 'pv3-kandidat-row--berechtigt' : ''}`}
                     >
-                      <td style={{ textAlign: 'center' }}>
+                      <td className="pv2-text-center">
                         {kandidat.berechtigt && !kandidat.bereits_zugelassen ? (
                           <input
                             type="checkbox"
-                            style={{
-                              width: '18px',
-                              height: '18px',
-                              cursor: 'pointer',
-                              accentColor: '#ffd700'
-                            }}
+                            className="pv3-checkbox-gold"
                             checked={selectedKandidaten.some(k =>
                               k.mitglied_id === kandidat.mitglied_id && k.stil_id === kandidat.stil_id
                             )}
@@ -2632,209 +2357,198 @@ const PruefungsVerwaltung = () => {
                             }}
                           />
                         ) : (
-                          <span style={{ color: '#d1d5db' }}>—</span>
+                          <span className="pv3-dash-muted">—</span>
                         )}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                          <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                        <div className="pv-flex-col-xs">
+                          <strong className="u-text-primary">
                             {kandidat.vorname} {kandidat.nachname}
                           </strong>
-                          <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                          <span className="pv-muted-sm">
                             ID: {kandidat.mitglied_id}
                           </span>
                         </div>
                       </td>
-                      <td style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                      <td className="pv-text-secondary">
                         {new Date(kandidat.geburtsdatum).toLocaleDateString('de-DE')}
                       </td>
                       <td>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.4rem 0.6rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '6px',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          color: 'rgba(255, 255, 255, 0.8)',
-                          border: '1px solid rgba(255, 215, 0, 0.2)'
-                        }}>
+                        <span className="pv3-stil-badge-sm">
                           {kandidat.stil_name}
                         </span>
                       </td>
                       <td>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
+                        <div className="pv3-grad-row">
                           <div
-                            style={{
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              backgroundColor: kandidat.aktuelle_farbe || 'rgba(255, 255, 255, 0.1)',
-                              border: '2px solid rgba(255, 255, 255, 0.3)',
-                              flexShrink: 0
-                            }}
+                            className="pv3-gurt-dot-sm"
+                            style={{ '--dot-color': kandidat.aktuelle_farbe || 'rgba(255, 255, 255, 0.1)' }}
                             title={kandidat.aktuelle_graduierung || 'Keine'}
                           />
-                          <span style={{
-                            fontSize: '0.875rem',
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontWeight: '500'
-                          }}>
+                          <span className="pv3-grad-name">
                             {kandidat.aktuelle_graduierung || 'Keine'}
                           </span>
                         </div>
                       </td>
                       <td>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
-                          <div
-                            style={{
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              backgroundColor: kandidat.naechste_farbe || 'rgba(255, 255, 255, 0.1)',
-                              border: '2px solid rgba(34, 197, 94, 0.5)',
-                              flexShrink: 0
-                            }}
-                            title={kandidat.naechste_graduierung}
-                          />
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                            <span style={{
-                              fontSize: '0.875rem',
-                              color: 'rgba(255, 255, 255, 0.9)',
-                              fontWeight: '600'
-                            }}>
+                        {graduierungenProStil[kandidat.stil_id] && graduierungenProStil[kandidat.stil_id].length > 0 ? (
+                          <div className="pv-flex-row">
+                            {(() => {
+                              const key = `${kandidat.mitglied_id}-${kandidat.stil_id}`;
+                              const selectedGradId = selectedGraduierungen[key] || kandidat.angestrebte_graduierung_id || kandidat.naechste_graduierung_id;
+                              const selectedGrad = graduierungenProStil[kandidat.stil_id].find(g => g.graduierung_id === selectedGradId);
+
+                              return (
+                                <>
+                                  <div
+                                    className="pv3-gurt-dot-green"
+                                    style={{ '--dot-color': selectedGrad?.farbe_hex || 'rgba(255, 255, 255, 0.1)' }}
+                                    title={selectedGrad?.name || 'Keine Auswahl'}
+                                  />
+                                  <select
+                                    value={selectedGradId || ''}
+                                    onChange={async (e) => {
+                                      const newGradId = parseInt(e.target.value);
+                                      console.log('🎯 Graduierung geändert:', {
+                                        kandidat: kandidat.vorname + ' ' + kandidat.nachname,
+                                        newGradId,
+                                        pruefung_id: kandidat.pruefung_id,
+                                        bereits_zugelassen: kandidat.bereits_zugelassen
+                                      });
+
+                                      setSelectedGraduierungen({
+                                        ...selectedGraduierungen,
+                                        [key]: newGradId
+                                      });
+
+                                      // Wenn der Kandidat bereits zugelassen ist, sofort speichern
+                                      if (kandidat.pruefung_id) {
+                                        console.log('✅ Kandidat hat pruefung_id, speichere...', kandidat.pruefung_id);
+                                        try {
+                                          const response = await fetch(
+                                            `${API_BASE_URL}/pruefungen/${kandidat.pruefung_id}/graduierung`,
+                                            {
+                                              method: 'PUT',
+                                              headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
+                                              },
+                                              body: JSON.stringify({ graduierung_nachher_id: newGradId })
+                                            }
+                                          );
+
+                                          if (response.ok) {
+                                            // Alle Listen aktualisieren
+                                            fetchKandidaten();
+                                            fetchZugelassenePruefungen();
+                                            fetchPruefungstermine();
+                                            setSuccess('Graduierung erfolgreich aktualisiert!');
+                                            setTimeout(() => setSuccess(''), 2000);
+                                          } else {
+                                            const errorData = await response.json();
+                                            setError(errorData.error || 'Fehler beim Speichern der Graduierung');
+                                            setTimeout(() => setError(''), 3000);
+                                          }
+                                        } catch (error) {
+                                          console.error('Fehler beim Speichern der Graduierung:', error);
+                                          setError('Fehler beim Speichern der Graduierung');
+                                          setTimeout(() => setError(''), 3000);
+                                        }
+                                      }
+                                    }}
+                                    className="pv3-grad-select-green"
+                                    title="Wählen Sie die Ziel-Graduierung"
+                                  >
+                                    {graduierungenProStil[kandidat.stil_id]
+                                      .filter(grad => grad.aktiv === 1)
+                                      .sort((a, b) => a.reihenfolge - b.reihenfolge)
+                                      .map((grad) => (
+                                        <option key={grad.graduierung_id} value={grad.graduierung_id}>
+                                          {grad.name}
+                                          {grad.graduierung_id === kandidat.naechste_graduierung_id ? ' (Empfohlen)' : ''}
+                                        </option>
+                                      ))}
+                                  </select>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          <div className="pv3-grad-row">
+                            <div
+                              className="pv3-gurt-dot-green"
+                              style={{ '--dot-color': kandidat.naechste_farbe || 'rgba(255, 255, 255, 0.1)' }}
+                              title={kandidat.naechste_graduierung}
+                            />
+                            <span className="pv3-grad-name-primary">
                               {kandidat.naechste_graduierung}
                             </span>
-                            <span style={{
-                              fontSize: '0.7rem',
-                              color: 'rgba(255, 255, 255, 0.5)',
-                              fontWeight: '400'
-                            }}>
-                              Ziel-Gurt
-                            </span>
                           </div>
-                        </div>
+                        )}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{
-                              fontSize: '0.8125rem',
-                              fontWeight: '600',
-                              color: kandidat.absolvierte_stunden >= kandidat.benoetigte_stunden ? '#10b981' : '#ef4444'
-                            }}>
+                        <div className="pv3-stunden-col">
+                          <div className="pv3-stunden-header">
+                            <span
+                              className={`pv3-stunden-count ${kandidat.absolvierte_stunden >= kandidat.benoetigte_stunden ? 'pv3-value--met' : 'pv3-value--not-met'}`}
+                            >
                               {kandidat.absolvierte_stunden}
                             </span>
-                            <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                            <span className="pv-muted-sm">
                               / {kandidat.benoetigte_stunden}
                             </span>
                           </div>
-                          <div style={{
-                            width: '100%',
-                            height: '6px',
-                            backgroundColor: '#e5e7eb',
-                            borderRadius: '3px',
-                            overflow: 'hidden'
-                          }}>
+                          <div className="pv3-bar-wrap-gray-sm">
                             <div
-                              style={{
-                                width: `${Math.min(kandidat.fortschritt_prozent, 100)}%`,
-                                height: '100%',
-                                backgroundColor: kandidat.fortschritt_prozent >= 100 ? '#10b981' : '#f59e0b',
-                                transition: 'width 0.3s ease'
-                              }}
+                              className={`pv3-bar-fill${kandidat.fortschritt_prozent >= 100 ? ' pv3-bar-fill--good' : ' pv3-bar-fill--warn'}`}
+                              style={{ width: `${Math.min(kandidat.fortschritt_prozent, 100)}%` }}
                             />
                           </div>
-                          <span style={{ fontSize: '0.6875rem', color: '#9ca3af' }}>
+                          <span className="pv-muted-xs">
                             {kandidat.fortschritt_prozent}% erreicht
                           </span>
                         </div>
                       </td>
                       <td>
-                        <div style={{
-                          fontSize: '0.8125rem',
-                          fontWeight: '600',
-                          color: kandidat.monate_seit_letzter_pruefung >= kandidat.benoetigte_monate ? '#10b981' : '#ef4444'
-                        }}>
+                        <div className={`pv3-monate-col ${kandidat.monate_seit_letzter_pruefung >= kandidat.benoetigte_monate ? 'pv3-value--met' : 'pv3-value--not-met'}`}>
                           {kandidat.monate_seit_letzter_pruefung} Mon.
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+                        <div className="pv-muted-sm">
                           von {kandidat.benoetigte_monate}
                         </div>
                       </td>
                       <td>
                         {kandidat.bereits_zugelassen ? (
-                          <span className="badge badge-warning" style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem'
-                          }}>
+                          <span className="badge badge-warning pv3-badge-flex">
                             <Check size={14} />
                             Zugelassen
                           </span>
                         ) : kandidat.berechtigt ? (
-                          <span className="badge badge-success" style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem'
-                          }}>
+                          <span className="badge badge-success pv3-badge-flex">
                             <Check size={14} />
                             Berechtigt
                           </span>
                         ) : (
-                          <span className="badge badge-neutral" style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem',
-                            fontSize: '0.75rem'
-                          }}>
+                          <span className="badge badge-neutral pv3-badge-flex">
                             <X size={14} />
                             Noch nicht
                           </span>
                         )}
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td className="pv2-text-center">
                         {!kandidat.bereits_zugelassen ? (
                           kandidat.berechtigt ? (
                             <button
-                              onClick={() => handleKandidatZulassen(kandidat)}
-                              className="btn btn-sm btn-success"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.375rem',
-                                padding: '0.5rem 1rem',
-                                fontSize: '0.8125rem',
-                                fontWeight: '600'
-                              }}
+                              onClick={() => openTerminAuswahl(kandidat)}
+                              className="btn btn-sm btn-success pv3-btn-flex"
                             >
                               <Check size={16} />
                               Zulassen
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleAusnahmeZulassen(kandidat)}
-                              className="btn btn-sm btn-warning"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '0.375rem',
-                                padding: '0.5rem 1rem',
-                                fontSize: '0.8125rem',
-                                fontWeight: '600'
-                              }}
+                              onClick={() => openTerminAuswahl(kandidat, true)}
+                              className="btn btn-sm btn-warning pv3-btn-flex"
                               title="Ausnahme-Zulassung für Kandidaten ohne zeitliche Voraussetzungen"
                             >
                               <Check size={16} />
@@ -2855,15 +2569,7 @@ const PruefungsVerwaltung = () => {
                                 setError('Keine Prüfung-ID gefunden. Bitte aktualisieren Sie die Seite.');
                               }
                             }}
-                            className="btn btn-sm btn-danger"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.375rem',
-                              padding: '0.5rem 1rem',
-                              fontSize: '0.8125rem',
-                              fontWeight: '600'
-                            }}
+                            className="btn btn-sm btn-danger pv3-btn-flex"
                             title="Zulassung widerrufen"
                           >
                             <X size={16} />
@@ -2880,45 +2586,19 @@ const PruefungsVerwaltung = () => {
 
           {/* Legende */}
           {kandidaten.length > 0 && (
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(255, 215, 0, 0.15)'
-            }}>
-              <div style={{
-                display: 'flex',
-                gap: '2rem',
-                flexWrap: 'wrap',
-                fontSize: '0.875rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{
-                    width: '20px',
-                    height: '4px',
-                    backgroundColor: 'rgba(34, 197, 94, 0.5)',
-                    borderRadius: '2px'
-                  }} />
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Berechtigt zur Prüfung</span>
+            <div className="pv3-legende-bar">
+              <div className="pv3-legende-row">
+                <div className="pv-flex-row">
+                  <div className="pv3-legende-line-green" />
+                  <span className="pv-text-secondary">Berechtigt zur Prüfung</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{
-                    width: '20px',
-                    height: '4px',
-                    backgroundColor: 'rgba(255, 215, 0, 0.5)',
-                    borderRadius: '2px'
-                  }} />
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Bereits zugelassen</span>
+                <div className="pv-flex-row">
+                  <div className="pv3-legende-line-gold" />
+                  <span className="pv-text-secondary">Bereits zugelassen</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <div style={{
-                    width: '20px',
-                    height: '4px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                    borderRadius: '2px'
-                  }} />
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Noch nicht berechtigt</span>
+                <div className="pv-flex-row">
+                  <div className="pv3-legende-line-white" />
+                  <span className="pv-text-secondary">Noch nicht berechtigt</span>
                 </div>
               </div>
             </div>
@@ -2930,8 +2610,8 @@ const PruefungsVerwaltung = () => {
       {/* Zugelassene Prüfungen Tab */}
       {activeTab === 'zugelassen' && (
         <div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div className="pv2-mb-15">
+            <div className="pv3-tab-section-header">
               <h2>Zugelassene Prüfungen ({zugelassenePruefungen.length})</h2>
 
               {/* Datum Filter */}
@@ -2958,33 +2638,23 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Stilfilter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>
+            <div className="pv-flex-row">
+              <span className="pv-secondary-bold">
                 Stil:
               </span>
               <select
                 value={zugelasseneStilFilter}
                 onChange={(e) => setZugelasseneStilFilter(e.target.value)}
-                style={{
-                  padding: '0.375rem 0.75rem',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#1a1a1a',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid rgba(234, 179, 8, 0.3)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                  outline: 'none'
-                }}
+                className="pv3-dark-select"
               >
-                <option value="all" style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}>
+                <option value="all" className="pv2-dark-input">
                   Alle Stile
                 </option>
                 {stile.map(stil => (
                   <option
                     key={stil.stil_id}
                     value={stil.stil_id}
-                    style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}
+                    className="pv2-dark-input"
                   >
                     {stil.name}
                   </option>
@@ -2994,37 +2664,37 @@ const PruefungsVerwaltung = () => {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem' }}>Lädt...</div>
+            <div className="pv2-center-3rem">Lädt...</div>
           ) : (
             <div className="table-container">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('name')}
                     >
                       Name <SortIcon columnKey="name" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('stil_name')}
                     >
                       Stil <SortIcon columnKey="stil_name" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('graduierung_nachher_name')}
                     >
                       Angestrebt <SortIcon columnKey="graduierung_nachher_name" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('pruefungsdatum')}
                     >
                       Prüfungsdatum <SortIcon columnKey="pruefungsdatum" />
                     </th>
-                    <th style={{ color: '#EAB308' }}>Aktionen</th>
+                    <th className="pv-warning">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3087,43 +2757,18 @@ const PruefungsVerwaltung = () => {
                     <tr key={pruefung.pruefung_id}>
                       <td><strong>{pruefung.vorname} {pruefung.nachname}</strong></td>
                       <td>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.4rem 0.6rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '6px',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          color: 'rgba(255, 255, 255, 0.8)',
-                          border: '1px solid rgba(255, 215, 0, 0.2)'
-                        }}>
+                        <span className="pv3-stil-badge-sm">
                           {pruefung.stil_name}
                         </span>
                       </td>
                       <td>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
+                        <div className="pv3-grad-row">
                           <div
-                            style={{
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              backgroundColor: pruefung.farbe_nachher || 'rgba(255, 255, 255, 0.1)',
-                              border: '2px solid rgba(255, 255, 255, 0.3)',
-                              flexShrink: 0
-                            }}
+                            className="pv3-gurt-dot-sm"
+                            style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255, 255, 255, 0.1)' }}
                             title={pruefung.graduierung_nachher}
                           />
-                          <span style={{
-                            fontSize: '0.875rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            fontWeight: '600'
-                          }}>
+                          <span className="pv3-grad-name-primary">
                             {pruefung.graduierung_nachher}
                           </span>
                         </div>
@@ -3134,7 +2779,7 @@ const PruefungsVerwaltung = () => {
                           : 'Nicht festgelegt'}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div className="u-flex-wrap-gap">
                           <button
                             onClick={async () => {
                               if (!pruefung.stil_id) {
@@ -3170,12 +2815,7 @@ const PruefungsVerwaltung = () => {
                           </button>
                           <button
                             onClick={() => handleZulassungEntfernen(pruefung)}
-                            className="btn btn-sm btn-danger"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.375rem'
-                            }}
+                            className="btn btn-sm btn-danger pv3-badge-flex"
                           >
                             <X size={16} />
                             Entfernen
@@ -3195,37 +2835,27 @@ const PruefungsVerwaltung = () => {
       {/* Abgeschlossene Prüfungen Tab */}
       {activeTab === 'abgeschlossen' && (
         <div>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ marginBottom: '1rem' }}>Abgeschlossene Prüfungen ({abgeschlossenePruefungen.length})</h2>
+          <div className="pv2-mb-15">
+            <h2 className="pv2-mb-1">Abgeschlossene Prüfungen ({abgeschlossenePruefungen.length})</h2>
 
             {/* Stilfilter */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: '500' }}>
+            <div className="pv-flex-row">
+              <span className="pv-secondary-bold">
                 Stil:
               </span>
               <select
                 value={abgeschlosseneStilFilter}
                 onChange={(e) => setAbgeschlosseneStilFilter(e.target.value)}
-                style={{
-                  padding: '0.375rem 0.75rem',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#1a1a1a',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  border: '1px solid rgba(234, 179, 8, 0.3)',
-                  borderRadius: '0.375rem',
-                  cursor: 'pointer',
-                  fontWeight: '500',
-                  outline: 'none'
-                }}
+                className="pv3-dark-select"
               >
-                <option value="all" style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}>
+                <option value="all" className="pv2-dark-input">
                   Alle Stile
                 </option>
                 {stile.map(stil => (
                   <option
                     key={stil.stil_id}
                     value={stil.stil_id}
-                    style={{ backgroundColor: '#1a1a1a', color: 'rgba(255, 255, 255, 0.9)' }}
+                    className="pv2-dark-input"
                   >
                     {stil.name}
                   </option>
@@ -3235,43 +2865,43 @@ const PruefungsVerwaltung = () => {
           </div>
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '3rem' }}>Lädt...</div>
+            <div className="pv2-center-3rem">Lädt...</div>
           ) : (
             <div className="table-container">
               <table className="data-table">
                 <thead>
                   <tr>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('name')}
                     >
                       Name <SortIcon columnKey="name" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('stil_name')}
                     >
                       Stil <SortIcon columnKey="stil_name" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('graduierung_nachher')}
                     >
                       Graduierung <SortIcon columnKey="graduierung_nachher" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('pruefungsdatum')}
                     >
                       Datum <SortIcon columnKey="pruefungsdatum" />
                     </th>
                     <th
-                      style={{ color: '#EAB308', cursor: 'pointer', userSelect: 'none' }}
+                      className="pv-warning-clickable"
                       onClick={() => handleSort('bestanden')}
                     >
                       Ergebnis <SortIcon columnKey="bestanden" />
                     </th>
-                    <th style={{ color: '#EAB308' }}>Aktionen</th>
+                    <th className="pv-warning">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3292,43 +2922,18 @@ const PruefungsVerwaltung = () => {
                     <tr key={pruefung.pruefung_id}>
                       <td><strong>{pruefung.vorname} {pruefung.nachname}</strong></td>
                       <td>
-                        <span style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          padding: '0.4rem 0.6rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '6px',
-                          fontSize: '0.85rem',
-                          fontWeight: '500',
-                          color: 'rgba(255, 255, 255, 0.8)',
-                          border: '1px solid rgba(255, 215, 0, 0.2)'
-                        }}>
+                        <span className="pv3-stil-badge-sm">
                           {pruefung.stil_name}
                         </span>
                       </td>
                       <td>
-                        <div style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}>
+                        <div className="pv3-grad-row">
                           <div
-                            style={{
-                              width: '24px',
-                              height: '24px',
-                              borderRadius: '50%',
-                              backgroundColor: pruefung.farbe_nachher || 'rgba(255, 255, 255, 0.1)',
-                              border: '2px solid rgba(255, 255, 255, 0.3)',
-                              flexShrink: 0
-                            }}
+                            className="pv3-gurt-dot-sm"
+                            style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255, 255, 255, 0.1)' }}
                             title={pruefung.graduierung_nachher}
                           />
-                          <span style={{
-                            fontSize: '0.85rem',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            fontWeight: '500'
-                          }}>
+                          <span className="pv3-grad-name">
                             {pruefung.graduierung_nachher}
                           </span>
                         </div>
@@ -3346,29 +2951,20 @@ const PruefungsVerwaltung = () => {
                             </span>
                           )}
                           {pruefung.punktzahl && (
-                            <div style={{
-                              fontSize: '0.75rem',
-                              color: 'rgba(255, 255, 255, 0.5)',
-                              marginTop: '0.25rem'
-                            }}>
+                            <div className="pv3-punktzahl-note">
                               {pruefung.punktzahl} / {pruefung.max_punktzahl} Pkt.
                             </div>
                           )}
                         </div>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div className="u-flex-wrap-gap">
                           <button className="btn btn-sm btn-secondary">
                             <Download size={16} /> Urkunde
                           </button>
                           <button
                             onClick={() => handleStatusAendern(pruefung)}
-                            className="btn btn-sm btn-warning"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.375rem'
-                            }}
+                            className="btn btn-sm btn-warning pv3-badge-flex"
                           >
                             <Edit size={16} />
                             Status ändern
@@ -3388,56 +2984,56 @@ const PruefungsVerwaltung = () => {
       {/* Statistiken Tab */}
       {activeTab === 'statistiken' && statistiken && (
         <div>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Prüfungsstatistiken</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', marginBottom: '1.5rem' }}>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Gesamt</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+          <h2 className="pv3-stat-h2">Prüfungsstatistiken</h2>
+          <div className="pv3-stat-grid">
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Gesamt</h3>
+              <div className="pv2-stat-purple">
                 {statistiken.gesamt.gesamt}
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Prüfungen</div>
+              <div className="pv-muted-xxs">Prüfungen</div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Bestanden</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Bestanden</h3>
+              <div className="pv2-stat-success">
                 {statistiken.gesamt.bestanden}
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+              <div className="pv-muted-xxs">
                 {statistiken.gesamt.gesamt > 0
                   ? `${Math.round((statistiken.gesamt.bestanden / statistiken.gesamt.gesamt) * 100)}% Quote`
                   : '0% Quote'}
               </div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Nicht bestanden</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Nicht bestanden</h3>
+              <div className="pv3-stat-error">
                 {statistiken.gesamt.nicht_bestanden}
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+              <div className="pv-muted-xxs">
                 {statistiken.gesamt.gesamt > 0
                   ? `${Math.round((statistiken.gesamt.nicht_bestanden / statistiken.gesamt.gesamt) * 100)}%`
                   : '0%'}
               </div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Geplant</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#f59e0b' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Geplant</h3>
+              <div className="pv3-stat-warning">
                 {statistiken.gesamt.geplant}
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Anstehend</div>
+              <div className="pv-muted-xxs">Anstehend</div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Kandidaten</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#3b82f6' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Kandidaten</h3>
+              <div className="pv3-stat-info">
                 {kandidaten.length}
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>
+              <div className="pv-muted-xxs">
                 {kandidaten.filter(k => k.berechtigt).length} berechtigt
               </div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Ø Punktzahl</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Ø Punktzahl</h3>
+              <div className="pv2-stat-purple">
                 {(() => {
                   const bestandenePruefungen = abgeschlossenePruefungen.filter(p => p.bestanden && p.punktzahl && p.max_punktzahl);
                   const avgPunktzahl = bestandenePruefungen.length > 0
@@ -3446,11 +3042,11 @@ const PruefungsVerwaltung = () => {
                   return avgPunktzahl.toFixed(0);
                 })()}%
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Bestanden</div>
+              <div className="pv-muted-xxs">Bestanden</div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Ø Training</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#10b981' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Ø Training</h3>
+              <div className="pv2-stat-success">
                 {(() => {
                   const avgTrainingsstunden = kandidaten.length > 0
                     ? kandidaten.reduce((sum, k) => sum + (k.trainingsstunden || 0), 0) / kandidaten.length
@@ -3458,11 +3054,11 @@ const PruefungsVerwaltung = () => {
                   return avgTrainingsstunden.toFixed(0);
                 })()}h
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Kandidaten</div>
+              <div className="pv-muted-xxs">Kandidaten</div>
             </div>
-            <div className="stat-card" style={{ padding: '0.75rem' }}>
-              <h3 style={{ fontSize: '0.75rem', margin: '0 0 0.375rem 0', color: 'rgba(255, 255, 255, 0.7)' }}>Ø Monate</h3>
-              <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#06b6d4' }}>
+            <div className="stat-card pv2-p-075">
+              <h3 className="pv-meta-sm">Ø Monate</h3>
+              <div className="pv3-stat-cyan">
                 {(() => {
                   const avgMonate = kandidaten.length > 0
                     ? kandidaten.reduce((sum, k) => sum + (k.monate_seit_letzter || 0), 0) / kandidaten.length
@@ -3470,7 +3066,7 @@ const PruefungsVerwaltung = () => {
                   return avgMonate.toFixed(0);
                 })()}
               </div>
-              <div style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.5)' }}>Seit letzter</div>
+              <div className="pv-muted-xxs">Seit letzter</div>
             </div>
           </div>
 
@@ -3479,10 +3075,10 @@ const PruefungsVerwaltung = () => {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th style={{ color: '#EAB308' }}>Stil</th>
-                  <th style={{ color: '#EAB308' }}>Anzahl Prüfungen</th>
-                  <th style={{ color: '#EAB308' }}>Bestanden</th>
-                  <th style={{ color: '#EAB308' }}>Erfolgsquote</th>
+                  <th className="pv-warning">Stil</th>
+                  <th className="pv-warning">Anzahl Prüfungen</th>
+                  <th className="pv-warning">Bestanden</th>
+                  <th className="pv-warning">Erfolgsquote</th>
                 </tr>
               </thead>
               <tbody>
@@ -3492,17 +3088,14 @@ const PruefungsVerwaltung = () => {
                     <td>{stat.anzahl}</td>
                     <td>{stat.bestanden}</td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ flex: 1, height: '8px', backgroundColor: '#e5e7eb', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div className="pv-flex-row">
+                        <div className="pv3-bar-wrap-gray">
                           <div
-                            style={{
-                              width: `${(stat.bestanden / stat.anzahl) * 100}%`,
-                              height: '100%',
-                              backgroundColor: '#10b981'
-                            }}
+                            className="pv3-bar-fill-green"
+                            style={{ width: `${(stat.bestanden / stat.anzahl) * 100}%` }}
                           />
                         </div>
-                        <span style={{ fontWeight: 'bold' }}>
+                        <span className="pv3-bar-percent">
                           {Math.round((stat.bestanden / stat.anzahl) * 100)}%
                         </span>
                       </div>
@@ -3514,9 +3107,9 @@ const PruefungsVerwaltung = () => {
           </div>
 
           {/* Zusätzliche Statistiken */}
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Prüfungen nach Graduierung</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+          <div className="pv2-mt-2">
+            <h3 className="pv2-mb-1">Prüfungen nach Graduierung</h3>
+            <div className="pv3-grad-grid">
               {(() => {
                 // Gruppiere abgeschlossene Prüfungen nach Graduierung
                 const graduierungStats = {};
@@ -3533,23 +3126,18 @@ const PruefungsVerwaltung = () => {
                   .sort((a, b) => b[1].gesamt - a[1].gesamt)
                   .slice(0, 6)
                   .map(([grad, stats]) => (
-                    <div key={grad} className="stat-card" style={{ padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <div key={grad} className="stat-card pv2-p-1">
+                      <div className="pv3-grad-card-header">
                         <div
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            backgroundColor: stats.farbe || 'rgba(255, 255, 255, 0.1)',
-                            border: '2px solid rgba(255, 255, 255, 0.3)'
-                          }}
+                          className="pv3-grad-dot-sm"
+                          style={{ '--dot-color': stats.farbe || 'rgba(255, 255, 255, 0.1)' }}
                         />
-                        <h4 style={{ margin: 0, fontSize: '0.875rem' }}>{grad}</h4>
+                        <h4 className="pv3-grad-card-name">{grad}</h4>
                       </div>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#EAB308', marginBottom: '0.25rem' }}>
+                      <div className="pv3-grad-card-count">
                         {stats.gesamt}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                      <div className="pv2-fs-075-secondary">
                         {stats.bestanden} bestanden ({Math.round((stats.bestanden / stats.gesamt) * 100)}%)
                       </div>
                     </div>
@@ -3560,31 +3148,26 @@ const PruefungsVerwaltung = () => {
 
           {/* Gurtverteilung */}
           {statistiken.gurtverteilung && statistiken.gurtverteilung.length > 0 && (
-            <div style={{ marginTop: '2rem' }}>
-              <h3 style={{ marginBottom: '1rem' }}>Aktuelle Gurtverteilung</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <div className="pv2-mt-2">
+              <h3 className="pv2-mb-1">Aktuelle Gurtverteilung</h3>
+              <div className="pv3-gurt-grid">
                 {statistiken.gurtverteilung.map((gurt, index) => (
-                  <div key={index} className="stat-card" style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div key={index} className="stat-card pv2-p-1">
+                    <div className="pv3-gurt-card-header">
                       {/* Gürtel-Darstellung horizontal mit abgerundeten Enden wie im Bild */}
-                      <div style={{
-                        width: '50px',
-                        height: '18px',
-                        backgroundColor: gurt.farbe || '#CCCCCC',
-                        borderRadius: '9px',
-                        boxShadow: '0 3px 10px rgba(0, 0, 0, 0.4)',
-                        flexShrink: 0,
-                        border: '1.5px solid rgba(0, 0, 0, 0.2)'
-                      }} />
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: '600', color: 'rgba(255, 255, 255, 0.95)' }}>{gurt.graduierung_name}</h4>
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)' }}>{gurt.stil_name}</span>
+                      <div
+                        className="pv3-belt-display"
+                        style={{ '--dot-color': gurt.farbe || '#CCCCCC' }}
+                      />
+                      <div className="pv-flex-col-xs">
+                        <h4 className="pv3-gurt-card-name">{gurt.graduierung_name}</h4>
+                        <span className="pv-muted-sm">{gurt.stil_name}</span>
                       </div>
                     </div>
-                    <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#EAB308', marginBottom: '0.25rem' }}>
+                    <div className="pv3-gurt-card-count">
                       {gurt.anzahl}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+                    <div className="pv2-fs-075-secondary">
                       {gurt.anzahl === 1 ? 'Mitglied' : 'Mitglieder'}
                     </div>
                   </div>
@@ -3594,17 +3177,17 @@ const PruefungsVerwaltung = () => {
           )}
 
           {/* Monatliche Entwicklung */}
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Prüfungen der letzten 12 Monate</h3>
+          <div className="pv2-mt-2">
+            <h3 className="pv2-mb-1">Prüfungen der letzten 12 Monate</h3>
             <div className="table-container">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th style={{ color: '#EAB308' }}>Monat</th>
-                    <th style={{ color: '#EAB308' }}>Gesamt</th>
-                    <th style={{ color: '#EAB308' }}>Bestanden</th>
-                    <th style={{ color: '#EAB308' }}>Nicht bestanden</th>
-                    <th style={{ color: '#EAB308' }}>Erfolgsquote</th>
+                    <th className="pv-warning">Monat</th>
+                    <th className="pv-warning">Gesamt</th>
+                    <th className="pv-warning">Bestanden</th>
+                    <th className="pv-warning">Nicht bestanden</th>
+                    <th className="pv-warning">Erfolgsquote</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3645,26 +3228,23 @@ const PruefungsVerwaltung = () => {
                       <tr key={index}>
                         <td><strong>{stat.monat}</strong></td>
                         <td>{stat.gesamt}</td>
-                        <td style={{ color: '#10b981' }}>{stat.bestanden}</td>
-                        <td style={{ color: '#ef4444' }}>{stat.nichtBestanden}</td>
+                        <td className="u-text-success">{stat.bestanden}</td>
+                        <td className="u-text-error">{stat.nichtBestanden}</td>
                         <td>
                           {stat.gesamt > 0 ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                              <div style={{ flex: 1, height: '6px', backgroundColor: '#e5e7eb', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div className="pv-flex-row">
+                              <div className="pv3-bar-wrap-gray-sm">
                                 <div
-                                  style={{
-                                    width: `${(stat.bestanden / stat.gesamt) * 100}%`,
-                                    height: '100%',
-                                    backgroundColor: '#10b981'
-                                  }}
+                                  className="pv3-bar-fill-green"
+                                  style={{ width: `${(stat.bestanden / stat.gesamt) * 100}%` }}
                                 />
                               </div>
-                              <span style={{ fontSize: '0.875rem', fontWeight: '600' }}>
+                              <span className="pv3-bar-percent-sm">
                                 {Math.round((stat.bestanden / stat.gesamt) * 100)}%
                               </span>
                             </div>
                           ) : (
-                            <span style={{ color: 'rgba(255, 255, 255, 0.4)' }}>-</span>
+                            <span className="pv-text-muted">-</span>
                           )}
                         </td>
                       </tr>
@@ -3676,12 +3256,12 @@ const PruefungsVerwaltung = () => {
           </div>
 
           {/* Top Performer & Prüfungs-Insights */}
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Prüfungs-Insights</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+          <div className="pv2-mt-2">
+            <h3 className="pv2-mb-1">Prüfungs-Insights</h3>
+            <div className="pv3-insights-grid">
               {/* Beste Erfolgsquote nach Stil */}
               <div className="stat-card">
-                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#EAB308' }}>🏆 Beste Erfolgsquote</h4>
+                <h4 className="pv2-warning-label">🏆 Beste Erfolgsquote</h4>
                 {(() => {
                   const bestStil = statistiken.nach_stil.length > 0
                     ? statistiken.nach_stil.reduce((best, current) => {
@@ -3693,25 +3273,25 @@ const PruefungsVerwaltung = () => {
 
                   return bestStil ? (
                     <>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
+                      <div className="pv2-heading-primary">
                         {bestStil.stil_name}
                       </div>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#10b981' }}>
+                      <div className="pv3-insight-success">
                         {Math.round((bestStil.bestanden / bestStil.anzahl) * 100)}%
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.5rem' }}>
+                      <div className="pv2-muted-mt">
                         {bestStil.bestanden} von {bestStil.anzahl} Prüfungen bestanden
                       </div>
                     </>
                   ) : (
-                    <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Keine Daten vorhanden</div>
+                    <div className="pv-text-muted">Keine Daten vorhanden</div>
                   );
                 })()}
               </div>
 
               {/* Aktivster Monat */}
               <div className="stat-card">
-                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#EAB308' }}>📊 Aktivster Monat</h4>
+                <h4 className="pv2-warning-label">📊 Aktivster Monat</h4>
                 {(() => {
                   const monthlyCount = {};
                   abgeschlossenePruefungen.forEach(p => {
@@ -3726,25 +3306,25 @@ const PruefungsVerwaltung = () => {
 
                   return aktivsterMonat ? (
                     <>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
+                      <div className="pv2-heading-primary">
                         {aktivsterMonat[0]}
                       </div>
-                      <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#8b5cf6' }}>
+                      <div className="pv3-insight-purple">
                         {aktivsterMonat[1]}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.5rem' }}>
+                      <div className="pv2-muted-mt">
                         Prüfungen durchgeführt
                       </div>
                     </>
                   ) : (
-                    <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Keine Daten vorhanden</div>
+                    <div className="pv-text-muted">Keine Daten vorhanden</div>
                   );
                 })()}
               </div>
 
               {/* Nächste geplante Prüfung */}
               <div className="stat-card">
-                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#EAB308' }}>📅 Nächste Prüfung</h4>
+                <h4 className="pv2-warning-label">📅 Nächste Prüfung</h4>
                 {(() => {
                   const heute = new Date();
                   heute.setHours(0, 0, 0, 0);
@@ -3758,7 +3338,7 @@ const PruefungsVerwaltung = () => {
                   });
 
                   if (zukunftspr.length === 0) {
-                    return <div style={{ color: 'rgba(255, 255, 255, 0.5)' }}>Keine geplanten Prüfungen</div>;
+                    return <div className="pv-text-muted">Keine geplanten Prüfungen</div>;
                   }
 
                   // Gruppiere nach Datum und Stil
@@ -3781,17 +3361,17 @@ const PruefungsVerwaltung = () => {
 
                   return (
                     <>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.5rem' }}>
+                      <div className="pv2-heading-primary">
                         {new Date(naechste.datum).toLocaleDateString('de-DE', {
                           day: '2-digit',
                           month: 'long',
                           year: 'numeric'
                         })}
                       </div>
-                      <div style={{ fontSize: '1rem', color: '#f59e0b', marginTop: '0.5rem' }}>
+                      <div className="pv3-insight-next-stil">
                         {naechste.stil}
                       </div>
-                      <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '0.5rem' }}>
+                      <div className="pv2-muted-mt">
                         {naechste.anzahl} Teilnehmer
                       </div>
                     </>
@@ -3806,33 +3386,23 @@ const PruefungsVerwaltung = () => {
       {/* Ergebnis Modal */}
       {showErgebnisModal && selectedPruefung && (
         <div className="modal-overlay" onClick={() => setShowErgebnisModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+          <div className="modal-content pv3-modal-max600" onClick={(e) => e.stopPropagation()}>
             <h2>Prüfungsergebnis eintragen</h2>
-            <p style={{ marginBottom: '1.5rem', color: '#6b7280' }}>
-              <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>{selectedPruefung.vorname} {selectedPruefung.nachname}</strong> - {selectedPruefung.stil_name}
+            <p className="pv3-modal-muted">
+              <strong className="u-text-primary">{selectedPruefung.vorname} {selectedPruefung.nachname}</strong> - {selectedPruefung.stil_name}
             </p>
 
             {/* Bestanden Checkbox mit visueller Hervorhebung */}
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '1rem',
-                backgroundColor: pruefungsErgebnis.bestanden ? '#d1fae5' : '#fee2e2',
-                borderRadius: '0.5rem',
-                border: `2px solid ${pruefungsErgebnis.bestanden ? '#10b981' : '#ef4444'}`,
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}>
+            <div className="form-group pv2-mb-15">
+              <label className={`pv3-ergebnis-label-box ${pruefungsErgebnis.bestanden ? 'pv3-ergebnis-label-box--bestanden' : 'pv3-ergebnis-label-box--failed'}`}>
                 <input
                   type="checkbox"
                   checked={pruefungsErgebnis.bestanden}
                   onChange={(e) => setPruefungsErgebnis({ ...pruefungsErgebnis, bestanden: e.target.checked })}
-                  style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }}
+                  className="pv3-checkbox-gold"
                 />
-                <div style={{ flex: 1 }}>
-                  <strong style={{ fontSize: '1.1rem', color: pruefungsErgebnis.bestanden ? '#065f46' : '#991b1b' }}>
+                <div className="u-flex-1">
+                  <strong className={`pv3-ergebnis-strong ${pruefungsErgebnis.bestanden ? 'pv3-ergebnis-strong--bestanden' : 'pv3-ergebnis-strong--failed'}`}>
                     {pruefungsErgebnis.bestanden ? '✓ Prüfung bestanden' : '✗ Prüfung nicht bestanden'}
                   </strong>
                 </div>
@@ -3840,7 +3410,7 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Punktzahl */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="u-grid-2col">
               <div className="form-group">
                 <label>Erreichte Punktzahl</label>
                 <input
@@ -3866,87 +3436,37 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Gurt-Auswahl mit Pfeil-Buttons */}
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-              <label style={{ marginBottom: '0.5rem', display: 'block', fontWeight: '600' }}>
+            <div className="form-group pv2-mb-15">
+              <label className="pv3-ergebnis-label">
                 Gurt nach Prüfung
-                <span style={{ fontSize: '0.875rem', fontWeight: 'normal', color: '#6b7280', marginLeft: '0.5rem' }}>
+                <span className="pv3-ergebnis-label-hint">
                   (↑↓ Pfeiltasten zum Navigieren)
                 </span>
               </label>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1rem',
-                padding: '1rem',
-                backgroundColor: '#f9fafb',
-                borderRadius: '0.5rem',
-                border: '2px solid #e5e7eb'
-              }}>
+              <div className="pv3-gurt-picker-box">
                 {/* Pfeil nach unten */}
                 <button
                   type="button"
                   onClick={() => handleGraduierungAendern('down')}
-                  className="btn btn-sm btn-secondary"
-                  style={{
-                    padding: '0.5rem',
-                    minWidth: 'auto',
-                    width: '40px',
-                    height: '40px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  className="btn btn-sm btn-secondary pv3-gurt-arrow-btn"
                   disabled={pruefungsErgebnis.graduierung_nachher_index === 0}
                 >
                   <ChevronDown size={20} />
                 </button>
 
                 {/* Gurt-Anzeige */}
-                <div style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  padding: '0.75rem 1rem',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)',
-                  borderRadius: '0.5rem',
-                  border: '2px solid #d1d5db',
-                  minHeight: '60px'
-                }}>
+                <div className="pv3-gurt-display-box">
                   <div
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      backgroundColor: pruefungsErgebnis.graduierung_nachher_farbe || '#e5e7eb',
-                      border: '3px solid #fff',
-                      boxShadow: '0 3px 12px rgba(0,0,0,0.2), inset 0 2px 4px rgba(255,255,255,0.4)',
-                      flexShrink: 0,
-                      position: 'relative'
-                    }}
+                    className="pv3-gurt-big-dot"
+                    style={{ '--dot-color': pruefungsErgebnis.graduierung_nachher_farbe || '#e5e7eb' }}
                   >
-                    <div style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.5), transparent)`,
-                      pointerEvents: 'none'
-                    }} />
+                    <div className="pv3-gurt-shine" />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{
-                      fontSize: '1.1rem',
-                      fontWeight: '700',
-                      color: '#111827',
-                      marginBottom: '0.25rem'
-                    }}>
+                  <div className="u-flex-1">
+                    <div className="pv3-gurt-name">
                       {pruefungsErgebnis.graduierung_nachher_name || 'Keine Auswahl'}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                    <div className="pv-muted-sm">
                       {graduierungenFuerModal.length > 0
                         ? `Graduierung ${pruefungsErgebnis.graduierung_nachher_index + 1} von ${graduierungenFuerModal.length}`
                         : 'Keine Graduierungen verfügbar'}
@@ -3958,16 +3478,7 @@ const PruefungsVerwaltung = () => {
                 <button
                   type="button"
                   onClick={() => handleGraduierungAendern('up')}
-                  className="btn btn-sm btn-secondary"
-                  style={{
-                    padding: '0.5rem',
-                    minWidth: 'auto',
-                    width: '40px',
-                    height: '40px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
+                  className="btn btn-sm btn-secondary pv3-gurt-arrow-btn"
                   disabled={pruefungsErgebnis.graduierung_nachher_index === graduierungenFuerModal.length - 1}
                 >
                   <ChevronUp size={20} />
@@ -3976,7 +3487,7 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Prüfer-Kommentar */}
-            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <div className="form-group pv2-mb-15">
               <label>Prüfer-Kommentar</label>
               <textarea
                 value={pruefungsErgebnis.prueferkommentar}
@@ -3988,17 +3499,11 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Keyboard Shortcuts Hinweis */}
-            <div style={{
-              padding: '0.75rem',
-              backgroundColor: '#eff6ff',
-              borderRadius: '0.5rem',
-              border: '1px solid #bfdbfe',
-              marginBottom: '1.5rem'
-            }}>
-              <div style={{ fontSize: '0.875rem', color: '#1e40af' }}>
+            <div className="pv3-shortcut-box">
+              <div className="pv3-shortcut-title">
                 <strong>⌨️ Tastenkombinationen:</strong>
               </div>
-              <div style={{ fontSize: '0.8125rem', color: '#3b82f6', marginTop: '0.25rem' }}>
+              <div className="pv3-shortcut-text">
                 ↑↓ Pfeiltasten = Gurt wechseln • Strg+Enter = Speichern
               </div>
             </div>
@@ -4008,7 +3513,7 @@ const PruefungsVerwaltung = () => {
                 Abbrechen
               </button>
               <button onClick={handleErgebnisEintragen} className="btn btn-primary">
-                <Check size={18} style={{ marginRight: '0.5rem' }} />
+                <Check size={18} className="pv2-mr-05" />
                 Speichern (Strg+Enter)
               </button>
             </div>
@@ -4020,13 +3525,12 @@ const PruefungsVerwaltung = () => {
       {showBatchErgebnisModal && batchTermin && (
         <div className="modal-overlay" onClick={() => setShowBatchErgebnisModal(false)}>
           <div
-            className="modal-content"
+            className="modal-content pv3-batch-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto' }}
           >
-            <h2 style={{ marginBottom: '0.5rem' }}>Pruefungsergebnisse eintragen</h2>
-            <p style={{ marginBottom: '1rem', color: '#6b7280' }}>
-              <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+            <h2 className="pv2-mb-05">Pruefungsergebnisse eintragen</h2>
+            <p className="pv3-batch-muted-p">
+              <strong className="u-text-primary">
                 {new Date(batchTermin.datum).toLocaleDateString('de-DE', {
                   weekday: 'long',
                   day: '2-digit',
@@ -4035,127 +3539,82 @@ const PruefungsVerwaltung = () => {
                 })}
               </strong>
               {' - '}
-              <span style={{ color: '#EAB308' }}>{batchTermin.stil_name}</span>
+              <span className="pv-warning">{batchTermin.stil_name}</span>
               {' - '}
               {batchTermin.anzahl} Teilnehmer
             </p>
 
             {/* Schnellauswahl */}
-            <div style={{
-              display: 'flex',
-              gap: '0.75rem',
-              marginBottom: '1.5rem',
-              padding: '0.75rem',
-              backgroundColor: 'rgba(255, 215, 0, 0.1)',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(255, 215, 0, 0.3)'
-            }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.8)', marginRight: '0.5rem' }}>Schnellauswahl:</span>
+            <div className="pv3-batch-schnell-bar">
+              <span className="pv3-batch-schnell-label">Schnellauswahl:</span>
               <button
                 onClick={() => setBatchAlleBestanden(true)}
-                className="btn btn-sm"
-                style={{
-                  backgroundColor: 'rgba(34, 197, 94, 0.3)',
-                  color: '#22c55e',
-                  border: '1px solid rgba(34, 197, 94, 0.5)',
-                  padding: '0.25rem 0.75rem',
-                  fontSize: '0.8125rem'
-                }}
+                className="btn btn-sm pv3-btn-batch-success"
               >
-                <Check size={14} style={{ marginRight: '0.25rem' }} />
+                <Check size={14} className="pv2-mr-025" />
                 Alle bestanden
               </button>
               <button
                 onClick={() => setBatchAlleBestanden(false)}
-                className="btn btn-sm"
-                style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.5)',
-                  padding: '0.25rem 0.75rem',
-                  fontSize: '0.8125rem'
-                }}
+                className="btn btn-sm pv3-btn-batch-error"
               >
-                <X size={14} style={{ marginRight: '0.25rem' }} />
+                <X size={14} className="pv2-mr-025" />
                 Alle nicht bestanden
               </button>
             </div>
 
             {/* Teilnehmer-Liste */}
             <div className="table-container">
-              <table className="data-table" style={{ fontSize: '0.875rem' }}>
+              <table className="data-table pv2-fs-0875">
                 <thead>
                   <tr>
-                    <th style={{ minWidth: '200px', color: '#EAB308' }}>Name</th>
-                    <th style={{ minWidth: '120px', color: '#EAB308' }}>Aktueller Gurt</th>
-                    <th style={{ minWidth: '120px', color: '#EAB308' }}>Neuer Gurt</th>
-                    <th style={{ minWidth: '130px', color: '#EAB308', textAlign: 'center' }}>Ergebnis</th>
-                    <th style={{ minWidth: '100px', color: '#EAB308' }}>Punkte</th>
-                    <th style={{ minWidth: '180px', color: '#EAB308' }}>Kommentar</th>
+                    <th className="pv3-batch-th-200">Name</th>
+                    <th className="pv3-batch-th-120">Aktueller Gurt</th>
+                    <th className="pv3-batch-th-120">Neuer Gurt</th>
+                    <th className="pv3-batch-th-130-center">Ergebnis</th>
+                    <th className="pv3-batch-th-100">Punkte</th>
+                    <th className="pv3-batch-th-180">Kommentar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {batchTermin.pruefungen.map((pruefung) => {
                     const ergebnis = batchErgebnisse[pruefung.pruefung_id] || { bestanden: true, punktzahl: '', prueferkommentar: '' };
                     return (
-                      <tr key={pruefung.pruefung_id} style={{
-                        backgroundColor: ergebnis.bestanden ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'
-                      }}>
+                      <tr key={pruefung.pruefung_id} className={ergebnis.bestanden ? 'pv3-batch-row--bestanden' : 'pv3-batch-row--failed'}>
                         <td>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
-                            <span style={{ fontWeight: '700', color: 'rgba(255, 255, 255, 0.95)' }}>
+                          <div className="pv-flex-col-xs">
+                            <span className="pv2-fw700-primary">
                               {pruefung.vorname} {pruefung.nachname}
                             </span>
-                            <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            <span className="pv-muted-sm">
                               ID: {pruefung.mitglied_id}
                             </span>
                           </div>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: pruefung.farbe_vorher || '#6b7280',
-                              border: '2px solid rgba(255, 255, 255, 0.3)'
-                            }} />
-                            <span style={{ fontSize: '0.8125rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                          <div className="pv-flex-row">
+                            <div
+                              className="pv3-batch-gurt-sm"
+                              style={{ '--dot-color': pruefung.farbe_vorher || '#6b7280' }}
+                            />
+                            <span className="pv3-batch-gurt-text">
                               {pruefung.graduierung_vorher || 'Keine'}
                             </span>
                           </div>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: ergebnis.bestanden ? (pruefung.farbe_nachher || '#EAB308') : '#6b7280',
-                              border: '2px solid rgba(255, 255, 255, 0.3)',
-                              opacity: ergebnis.bestanden ? 1 : 0.5
-                            }} />
-                            <span style={{
-                              fontSize: '0.8125rem',
-                              color: ergebnis.bestanden ? 'rgba(255, 255, 255, 0.9)' : 'rgba(255, 255, 255, 0.5)',
-                              textDecoration: ergebnis.bestanden ? 'none' : 'line-through'
-                            }}>
+                          <div className="pv-flex-row">
+                            <div
+                              className={`pv3-batch-gurt-sm ${!ergebnis.bestanden ? 'pv3-batch-gurt-sm--failed' : ''}`}
+                              style={{ '--dot-color': ergebnis.bestanden ? (pruefung.farbe_nachher || '#EAB308') : '#6b7280' }}
+                            />
+                            <span className={ergebnis.bestanden ? 'pv3-batch-grad-text--bestanden' : 'pv3-batch-grad-text--failed'}>
                               {pruefung.graduierung_nachher}
                             </span>
                           </div>
                         </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <label style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.375rem 0.75rem',
-                            backgroundColor: ergebnis.bestanden ? '#d1fae5' : '#fee2e2',
-                            borderRadius: '0.375rem',
-                            border: `2px solid ${ergebnis.bestanden ? '#10b981' : '#ef4444'}`,
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                          }}>
+                        <td className="pv2-text-center">
+                          <label className={`pv3-batch-ergebnis-label ${ergebnis.bestanden ? 'pv3-ergebnis-label-box--bestanden' : 'pv3-ergebnis-label-box--failed'}`}>
                             <input
                               type="checkbox"
                               checked={ergebnis.bestanden}
@@ -4168,13 +3627,9 @@ const PruefungsVerwaltung = () => {
                                   }
                                 });
                               }}
-                              style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#10b981' }}
+                              className="pv3-batch-checkbox"
                             />
-                            <span style={{
-                              fontWeight: '600',
-                              fontSize: '0.8125rem',
-                              color: ergebnis.bestanden ? '#065f46' : '#991b1b'
-                            }}>
+                            <span className={`pv3-batch-ergebnis-text ${ergebnis.bestanden ? 'pv3-ergebnis-strong--bestanden' : 'pv3-ergebnis-strong--failed'}`}>
                               {ergebnis.bestanden ? 'Bestanden' : 'Nicht bestanden'}
                             </span>
                           </label>
@@ -4193,8 +3648,7 @@ const PruefungsVerwaltung = () => {
                                 }
                               });
                             }}
-                            className="form-input"
-                            style={{ padding: '0.375rem', fontSize: '0.8125rem' }}
+                            className="pv2-input-sm"
                             placeholder="Punkte"
                           />
                         </td>
@@ -4211,8 +3665,7 @@ const PruefungsVerwaltung = () => {
                                 }
                               });
                             }}
-                            className="form-input"
-                            style={{ padding: '0.375rem', fontSize: '0.8125rem' }}
+                            className="pv2-input-sm"
                             placeholder="Kommentar..."
                           />
                         </td>
@@ -4224,35 +3677,27 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Zusammenfassung */}
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '0.5rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <div style={{ display: 'flex', gap: '2rem' }}>
+            <div className="pv3-batch-summary">
+              <div className="pv3-batch-summary-counts">
                 <div>
-                  <span style={{ color: '#22c55e', fontWeight: '700', fontSize: '1.25rem' }}>
+                  <span className="pv3-batch-count-success">
                     {Object.values(batchErgebnisse).filter(e => e.bestanden).length}
                   </span>
-                  <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>Bestanden</span>
+                  <span className="pv3-batch-muted-ml">Bestanden</span>
                 </div>
                 <div>
-                  <span style={{ color: '#ef4444', fontWeight: '700', fontSize: '1.25rem' }}>
+                  <span className="pv3-batch-count-error">
                     {Object.values(batchErgebnisse).filter(e => !e.bestanden).length}
                   </span>
-                  <span style={{ color: '#6b7280', marginLeft: '0.5rem' }}>Nicht bestanden</span>
+                  <span className="pv3-batch-muted-ml">Nicht bestanden</span>
                 </div>
               </div>
-              <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+              <div className="pv-muted-sm-row">
                 Bestehensquote: {Math.round((Object.values(batchErgebnisse).filter(e => e.bestanden).length / Object.values(batchErgebnisse).length) * 100)}%
               </div>
             </div>
 
-            <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+            <div className="modal-actions pv2-mt-15">
               <button onClick={() => setShowBatchErgebnisModal(false)} className="btn btn-secondary">
                 Abbrechen
               </button>
@@ -4265,7 +3710,7 @@ const PruefungsVerwaltung = () => {
                   <>Speichern...</>
                 ) : (
                   <>
-                    <Check size={18} style={{ marginRight: '0.5rem' }} />
+                    <Check size={18} className="pv2-mr-05" />
                     Alle Ergebnisse speichern
                   </>
                 )}
@@ -4277,92 +3722,41 @@ const PruefungsVerwaltung = () => {
 
       {/* Neuer Termin Modal - CACHE BREAK v8.0 GOLDEN HEADER */}
       {showNeuerTerminModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          overflowY: 'auto'
-        }} onClick={() => { setShowNeuerTerminModal(false); setTerminStep(1); }}>
+        <div
+          className="pv3-modal-overlay-dark"
+          onClick={() => { setShowNeuerTerminModal(false); setTerminStep(1); }}
+        >
           <div
+            className="pv3-modal-dark"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#1a1a1a',
-              borderRadius: '0 0 12px 12px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-              border: '1px solid #333',
-              borderTop: 'none',
-              maxWidth: '750px',
-              width: '90%',
-              margin: '0 auto 20px',
-              color: '#e5e5e5'
-            }}
           >
             {/* Header */}
-            <div style={{ padding: '1.5rem 2rem 1rem', borderBottom: '1px solid #333' }}>
-              <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700', color: '#EAB308' }}>
+            <div className="pv3-modal-header">
+              <h2>
                 Neuer Prüfungstermin
               </h2>
             </div>
 
             {/* Progress Bar */}
-            <div style={{
-              display: 'flex',
-              padding: '1.5rem 2rem',
-              background: '#0a0a0a',
-              borderBottom: '1px solid #333'
-            }}>
+            <div className="pv3-modal-progress-section">
               {[
                 { num: 1, label: 'Grunddaten' },
                 { num: 2, label: 'Organisation' },
                 { num: 3, label: 'Zusatzinfos' }
               ].map((step, idx) => (
-                <div key={step.num} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                <div key={step.num} className="pv3-modal-step-wrapper">
                   {/* Connecting Line */}
                   {idx > 0 && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '15px',
-                      left: '-50%',
-                      right: '50%',
-                      height: '2px',
-                      background: terminStep > step.num - 1 ? '#EAB308' : '#333'
-                    }} />
+                    <div className={`pv3-step-connector ${terminStep > step.num - 1 ? 'pv3-step-connector--active' : ''}`} />
                   )}
 
                   {/* Circle */}
-                  <div style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    background: terminStep >= step.num ? '#EAB308' : '#2a2a2a',
-                    color: terminStep >= step.num ? '#000' : '#666',
-                    fontWeight: '700',
-                    fontSize: '0.9rem',
-                    border: `2px solid ${terminStep >= step.num ? '#EAB308' : '#333'}`,
-                    position: 'relative',
-                    zIndex: 2
-                  }}>
+                  <div className={`pv3-step-circle ${terminStep >= step.num ? 'pv3-step-circle--active' : ''}`}>
                     {step.num}
                   </div>
 
                   {/* Label */}
-                  <div style={{
-                    marginTop: '0.5rem',
-                    fontSize: '0.75rem',
-                    color: terminStep === step.num ? '#EAB308' : '#999',
-                    fontWeight: terminStep === step.num ? '600' : '400',
-                    textAlign: 'center'
-                  }}>
+                  <div className={`pv3-step-label ${terminStep === step.num ? 'pv3-step-label--active' : ''}`}>
                     {step.label}
                   </div>
                 </div>
@@ -4370,78 +3764,54 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Content */}
-            <div style={{ padding: '2rem', minHeight: '300px' }}>
+            <div className="pv3-modal-content-area">
               {/* Step 1: Grunddaten */}
               {terminStep === 1 && (
                 <div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                  <div className="pv2-mb-1">
+                    <label className="pv-form-label">
                       Kampfkunst-Stil *
                     </label>
                     <select
                       value={neuerTermin.stil_id}
                       onChange={(e) => setNeuerTermin({ ...neuerTermin, stil_id: e.target.value })}
-                      style={{
-                        padding: '0.6rem',
-                        border: '1px solid #444',
-                        borderRadius: '6px',
-                        fontSize: '0.95rem',
-                        width: '100%',
-                        background: '#2a2a2a',
-                        color: '#e5e5e5'
-                      }}
+                      className="pv3-dark-input"
                     >
-                      <option value="" style={{ background: '#2a2a2a', color: '#e5e5e5' }}>Bitte wählen...</option>
+                      <option value="">Bitte wählen...</option>
                       {stile.map(stil => (
-                        <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#2a2a2a', color: '#e5e5e5' }}>{stil.name}</option>
+                        <option key={stil.stil_id} value={stil.stil_id}>{stil.name}</option>
                       ))}
                     </select>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                  <div className="u-grid-2col">
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                      <label className="pv-form-label">
                         Prüfungsdatum *
                       </label>
                       <input
                         type="date"
                         value={neuerTermin.pruefungsdatum}
                         onChange={(e) => setNeuerTermin({ ...neuerTermin, pruefungsdatum: e.target.value })}
-                        style={{
-                          padding: '0.6rem',
-                          border: '1px solid #444',
-                          borderRadius: '6px',
-                          fontSize: '0.95rem',
-                          width: '100%',
-                          background: '#2a2a2a',
-                          color: '#e5e5e5'
-                        }}
+                        className="pv3-dark-input"
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                      <label className="pv-form-label">
                         Uhrzeit
                       </label>
                       <input
                         type="time"
                         value={neuerTermin.pruefungszeit}
                         onChange={(e) => setNeuerTermin({ ...neuerTermin, pruefungszeit: e.target.value })}
-                        style={{
-                          padding: '0.6rem',
-                          border: '1px solid #444',
-                          borderRadius: '6px',
-                          fontSize: '0.95rem',
-                          width: '100%',
-                          background: '#2a2a2a',
-                          color: '#e5e5e5'
-                        }}
+                        className="pv3-dark-input"
                       />
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="pv2-grid-2col-1">
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                      <label className="pv-form-label">
                         Prüfungsort
                       </label>
                       <input
@@ -4449,19 +3819,11 @@ const PruefungsVerwaltung = () => {
                         value={neuerTermin.pruefungsort}
                         onChange={(e) => setNeuerTermin({ ...neuerTermin, pruefungsort: e.target.value })}
                         placeholder="z.B. Dojo Haupthalle"
-                        style={{
-                          padding: '0.6rem',
-                          border: '1px solid #444',
-                          borderRadius: '6px',
-                          fontSize: '0.95rem',
-                          width: '100%',
-                          background: '#2a2a2a',
-                          color: '#e5e5e5'
-                        }}
+                        className="pv3-dark-input"
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                      <label className="pv-form-label">
                         Prüfer
                       </label>
                       <input
@@ -4469,15 +3831,7 @@ const PruefungsVerwaltung = () => {
                         value={neuerTermin.pruefer_name}
                         onChange={(e) => setNeuerTermin({ ...neuerTermin, pruefer_name: e.target.value })}
                         placeholder="z.B. Meister Schmidt"
-                        style={{
-                          padding: '0.6rem',
-                          border: '1px solid #444',
-                          borderRadius: '6px',
-                          fontSize: '0.95rem',
-                          width: '100%',
-                          background: '#2a2a2a',
-                          color: '#e5e5e5'
-                        }}
+                        className="pv3-dark-input"
                       />
                     </div>
                   </div>
@@ -4487,9 +3841,9 @@ const PruefungsVerwaltung = () => {
               {/* Step 2: Organisation */}
               {terminStep === 2 && (
                 <div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="pv2-grid-2col-1">
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                      <label className="pv-form-label">
                         Prüfungsgebühr (€)
                       </label>
                       <input
@@ -4498,64 +3852,51 @@ const PruefungsVerwaltung = () => {
                         value={neuerTermin.pruefungsgebuehr}
                         onChange={(e) => setNeuerTermin({ ...neuerTermin, pruefungsgebuehr: e.target.value })}
                         placeholder="0.00"
-                        style={{
-                          padding: '0.6rem',
-                          border: '1px solid #444',
-                          borderRadius: '6px',
-                          fontSize: '0.95rem',
-                          width: '100%',
-                          background: '#2a2a2a',
-                          color: '#e5e5e5'
-                        }}
+                        className="pv3-dark-input"
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                      <label className="pv-form-label">
                         Anmeldefrist
                       </label>
                       <input
                         type="date"
                         value={neuerTermin.anmeldefrist}
                         onChange={(e) => setNeuerTermin({ ...neuerTermin, anmeldefrist: e.target.value })}
-                        style={{
-                          padding: '0.6rem',
-                          border: '1px solid #444',
-                          borderRadius: '6px',
-                          fontSize: '0.95rem',
-                          width: '100%',
-                          background: '#2a2a2a',
-                          color: '#e5e5e5'
-                        }}
+                        className="pv3-dark-input"
                       />
                     </div>
                   </div>
                   {/* Validierungshinweis */}
                   {neuerTermin.anmeldefrist && neuerTermin.pruefungsdatum &&
                    new Date(neuerTermin.anmeldefrist) > new Date(neuerTermin.pruefungsdatum) && (
-                    <div style={{
-                      marginTop: '1rem',
-                      padding: '0.75rem',
-                      background: '#4a1515',
-                      border: '1px solid #8b2020',
-                      borderRadius: '6px',
-                      color: '#ff6b6b',
-                      fontSize: '0.9rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
-                      <span style={{ fontSize: '1.2rem' }}>⚠️</span>
+                    <div className="pv3-validation-error">
+                      <span>⚠️</span>
                       <span>Die Anmeldefrist muss vor dem Prüfungsdatum liegen. Bitte passen Sie das Datum an.</span>
                     </div>
                   )}
+
+                  {/* Öffentlich veröffentlichen */}
+                  <div className="pv3-oeffentlich-row">
+                    <input
+                      type="checkbox"
+                      id="neuerTermin_oeffentlich"
+                      checked={neuerTermin.oeffentlich}
+                      onChange={(e) => setNeuerTermin({ ...neuerTermin, oeffentlich: e.target.checked })}
+                      className="pv2-checkbox"
+                    />
+                    <label htmlFor="neuerTermin_oeffentlich" className="pv3-oeffentlich-label">
+                      🌐 Auf tda-intl.com veröffentlichen
+                    </label>
+                  </div>
                 </div>
               )}
 
               {/* Step 3: Zusatzinfos */}
               {terminStep === 3 && (
-                <div style={{ display: 'grid', gap: '1rem' }}>
+                <div className="pv3-step3-grid">
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                    <label className="pv-form-label">
                       Bemerkungen
                     </label>
                     <textarea
@@ -4563,21 +3904,11 @@ const PruefungsVerwaltung = () => {
                       onChange={(e) => setNeuerTermin({ ...neuerTermin, bemerkungen: e.target.value })}
                       placeholder="Zusätzliche Informationen..."
                       rows="3"
-                      style={{
-                        padding: '0.6rem',
-                        border: '1px solid #444',
-                        borderRadius: '6px',
-                        fontSize: '0.95rem',
-                        width: '100%',
-                        background: '#2a2a2a',
-                        color: '#e5e5e5',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
+                      className="pv3-dark-textarea"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', fontSize: '0.9rem' }}>
+                    <label className="pv-form-label">
                       Teilnahmebedingungen
                     </label>
                     <textarea
@@ -4585,17 +3916,7 @@ const PruefungsVerwaltung = () => {
                       onChange={(e) => setNeuerTermin({ ...neuerTermin, teilnahmebedingungen: e.target.value })}
                       placeholder="Bedingungen für Teilnehmer..."
                       rows="4"
-                      style={{
-                        padding: '0.6rem',
-                        border: '1px solid #444',
-                        borderRadius: '6px',
-                        fontSize: '0.95rem',
-                        width: '100%',
-                        background: '#2a2a2a',
-                        color: '#e5e5e5',
-                        fontFamily: 'inherit',
-                        resize: 'vertical'
-                      }}
+                      className="pv3-dark-textarea"
                     />
                   </div>
                 </div>
@@ -4603,35 +3924,19 @@ const PruefungsVerwaltung = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div style={{ padding: '1rem 2rem', borderTop: '1px solid #333', display: 'flex', gap: '0.5rem', justifyContent: 'space-between' }}>
+            <div className="pv3-modal-footer">
               <button
                 onClick={() => { setShowNeuerTerminModal(false); setTerminStep(1); }}
-                style={{
-                  padding: '0.6rem 1.2rem',
-                  border: '1px solid #555',
-                  borderRadius: '6px',
-                  background: '#2a2a2a',
-                  color: '#e5e5e5',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
+                className="pv3-modal-btn-cancel"
               >
                 Abbrechen
               </button>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="u-flex-gap-sm">
                 {terminStep > 1 && (
                   <button
                     onClick={() => setTerminStep(terminStep - 1)}
-                    style={{
-                      padding: '0.6rem 1.2rem',
-                      border: '1px solid #555',
-                      borderRadius: '6px',
-                      background: '#2a2a2a',
-                      color: '#e5e5e5',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem'
-                    }}
+                    className="pv3-modal-btn-cancel"
                   >
                     Zurück
                   </button>
@@ -4645,46 +3950,16 @@ const PruefungsVerwaltung = () => {
                       (terminStep === 2 && neuerTermin.anmeldefrist && neuerTermin.pruefungsdatum &&
                        new Date(neuerTermin.anmeldefrist) > new Date(neuerTermin.pruefungsdatum))
                     }
-                    style={{
-                      padding: '0.6rem 1.2rem',
-                      border: 'none',
-                      borderRadius: '6px',
-                      background: (
-                        (terminStep === 1 && (!neuerTermin.stil_id || !neuerTermin.pruefungsdatum)) ||
-                        (terminStep === 2 && neuerTermin.anmeldefrist && neuerTermin.pruefungsdatum &&
-                         new Date(neuerTermin.anmeldefrist) > new Date(neuerTermin.pruefungsdatum))
-                      ) ? '#555' : '#EAB308',
-                      color: (
-                        (terminStep === 1 && (!neuerTermin.stil_id || !neuerTermin.pruefungsdatum)) ||
-                        (terminStep === 2 && neuerTermin.anmeldefrist && neuerTermin.pruefungsdatum &&
-                         new Date(neuerTermin.anmeldefrist) > new Date(neuerTermin.pruefungsdatum))
-                      ) ? '#888' : '#000',
-                      cursor: (
-                        (terminStep === 1 && (!neuerTermin.stil_id || !neuerTermin.pruefungsdatum)) ||
-                        (terminStep === 2 && neuerTermin.anmeldefrist && neuerTermin.pruefungsdatum &&
-                         new Date(neuerTermin.anmeldefrist) > new Date(neuerTermin.pruefungsdatum))
-                      ) ? 'not-allowed' : 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '600'
-                    }}
+                    className="pv3-modal-btn-weiter"
                   >
                     Weiter
                   </button>
                 ) : (
                   <button
                     onClick={() => { handleNeuerTerminErstellen(); setTerminStep(1); }}
-                    style={{
-                      padding: '0.6rem 1.2rem',
-                      border: 'none',
-                      borderRadius: '6px',
-                      background: '#EAB308',
-                      color: '#000',
-                      cursor: 'pointer',
-                      fontSize: '0.9rem',
-                      fontWeight: '600'
-                    }}
+                    className="pv3-modal-btn-submit"
                   >
-                    <Calendar size={18} style={{ marginRight: '0.5rem', display: 'inline' }} />
+                    <Calendar size={18} className="pv2-mr-05" />
                     Termin erstellen
                   </button>
                 )}
@@ -4695,71 +3970,32 @@ const PruefungsVerwaltung = () => {
       )}
       {/* Termin bearbeiten Modal - CACHE BREAK v6.0 NO PADDING */}
       {showEditTerminModal && editTermin && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          paddingTop: '0',
-          overflowY: 'auto'
-        }} onClick={() => setShowEditTerminModal(false)}>
+        <div
+          className="pv3-edit-modal-overlay"
+          onClick={() => setShowEditTerminModal(false)}
+        >
           <div
+            className="pv3-edit-modal-box"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#1a1a1a',
-              borderRadius: '12px',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-              border: '1px solid #333',
-              maxWidth: '850px',
-              width: '90%',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '2rem',
-              margin: '0 auto 20px',
-              color: '#e5e5e5'
-            }}
           >
-            <h2 style={{ marginBottom: '0.5rem', fontSize: '1.5rem', fontWeight: '700', color: '#e5e5e5' }}>Prüfungstermin bearbeiten</h2>
-            <p style={{ marginBottom: '2rem', color: '#999', fontSize: '0.9rem' }}>
+            <h2 className="pv3-edit-modal-h2">Prüfungstermin bearbeiten</h2>
+            <p className="pv3-edit-modal-sub">
               Bearbeiten Sie die Details des Prüfungstermins.
             </p>
 
             {/* Grunddaten */}
-            <h3 style={{
-              color: '#EAB308',
-              marginTop: '0',
-              marginBottom: '1rem',
-              fontSize: '1.1rem',
-              borderBottom: '2px solid #EAB308',
-              paddingBottom: '0.5rem',
-              fontWeight: '600',
-              background: 'transparent'
-            }}>Grunddaten</h3>
+            <h3 className="pv3-edit-section-heading">Grunddaten</h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 1rem', marginBottom: '1.5rem' }}>
+            <div className="pv2-grid-2col-08">
               {/* Stil-Auswahl */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+              <div className="pv2-grid-span-full">
+                <label className="pv-field-label">
                   Kampfkunst-Stil *
                 </label>
                 <select
                   value={editTermin.stil_id}
                   onChange={(e) => setEditTermin({ ...editTermin, stil_id: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5'
-                  }}
+                  className="pv3-dark-input-sm"
                   required
                 >
                   <option value="">Bitte wählen...</option>
@@ -4773,86 +4009,53 @@ const PruefungsVerwaltung = () => {
 
               {/* Prüfungsdatum */}
               <div>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+                <label className="pv-field-label">
                   Prüfungsdatum *
                 </label>
                 <input
                   type="date"
                   value={editTermin.pruefungsdatum}
                   onChange={(e) => setEditTermin({ ...editTermin, pruefungsdatum: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5'
-                  }}
+                  className="pv3-dark-input-sm"
                   required
                 />
               </div>
 
               {/* Uhrzeit */}
               <div>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+                <label className="pv-field-label">
                   Uhrzeit
                 </label>
                 <input
                   type="time"
                   value={editTermin.pruefungszeit}
                   onChange={(e) => setEditTermin({ ...editTermin, pruefungszeit: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5'
-                  }}
+                  className="pv3-dark-input-sm"
                 />
               </div>
 
               {/* Prüfungsort */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+              <div className="pv2-grid-span-full">
+                <label className="pv-field-label">
                   Prüfungsort
                 </label>
                 <input
                   type="text"
                   value={editTermin.pruefungsort}
                   onChange={(e) => setEditTermin({ ...editTermin, pruefungsort: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5'
-                  }}
+                  className="pv3-dark-input-sm"
                   placeholder="z.B. Dojo Haupthalle, Sporthalle XYZ"
                 />
               </div>
             </div>
 
             {/* Organisatorisches */}
-            <h3 style={{
-              color: '#EAB308',
-              marginTop: '1.5rem',
-              marginBottom: '1rem',
-              fontSize: '1.1rem',
-              borderBottom: '2px solid #EAB308',
-              paddingBottom: '0.5rem',
-              fontWeight: '600',
-              background: 'transparent'
-            }}>Organisatorisches</h3>
+            <h3 className="pv3-edit-section-heading-mt">Organisatorisches</h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem 1rem', marginBottom: '1.5rem' }}>
+            <div className="pv2-grid-2col-08">
               {/* Prüfungsgebühr */}
               <div>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+                <label className="pv-field-label">
                   Prüfungsgebühr (€)
                 </label>
                 <input
@@ -4860,74 +4063,52 @@ const PruefungsVerwaltung = () => {
                   step="0.01"
                   value={editTermin.pruefungsgebuehr}
                   onChange={(e) => setEditTermin({ ...editTermin, pruefungsgebuehr: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5'
-                  }}
+                  className="pv3-dark-input-sm"
                   placeholder="0.00"
                 />
               </div>
 
               {/* Anmeldefrist */}
               <div>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+                <label className="pv-field-label">
                   Anmeldefrist
                 </label>
                 <input
                   type="date"
                   value={editTermin.anmeldefrist}
                   onChange={(e) => setEditTermin({ ...editTermin, anmeldefrist: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5'
-                  }}
+                  className="pv3-dark-input-sm"
                 />
               </div>
             </div>
 
-            {/* Zusätzliche Informationen */}
-            <h3 style={{
-              color: '#EAB308',
-              marginTop: '1.5rem',
-              marginBottom: '1rem',
-              fontSize: '1.1rem',
-              borderBottom: '2px solid #EAB308',
-              paddingBottom: '0.5rem',
-              fontWeight: '600',
-              background: 'transparent'
-            }}>Zusätzliche Informationen</h3>
+            {/* Öffentlich veröffentlichen (Edit) */}
+            <div className="pv3-edit-oeffentlich-row">
+              <input
+                type="checkbox"
+                id="editTermin_oeffentlich"
+                checked={editTermin.oeffentlich || false}
+                onChange={(e) => setEditTermin({ ...editTermin, oeffentlich: e.target.checked })}
+                className="pv2-checkbox"
+              />
+              <label htmlFor="editTermin_oeffentlich" className="pv3-edit-oeffentlich-label">
+                🌐 Auf tda-intl.com veröffentlichen
+              </label>
+            </div>
 
-            <div style={{ display: 'grid', gap: '0.8rem', marginBottom: '1.5rem' }}>
+            {/* Zusätzliche Informationen */}
+            <h3 className="pv3-edit-section-heading-mt">Zusätzliche Informationen</h3>
+
+            <div className="pv3-edit-textarea-grid">
               {/* Bemerkungen */}
               <div>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+                <label className="pv-field-label">
                   Bemerkungen
                 </label>
                 <textarea
                   value={editTermin.bemerkungen}
                   onChange={(e) => setEditTermin({ ...editTermin, bemerkungen: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    minHeight: '70px',
-                    resize: 'vertical',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5',
-                    fontFamily: 'inherit'
-                  }}
+                  className="pv3-dark-textarea-sm"
                   rows="2"
                   placeholder="Zusätzliche Informationen zur Prüfung..."
                 />
@@ -4935,75 +4116,88 @@ const PruefungsVerwaltung = () => {
 
               {/* Teilnahmebedingungen */}
               <div>
-                <label style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#e5e5e5', fontSize: '0.85rem', display: 'block' }}>
+                <label className="pv-field-label">
                   Teilnahmebedingungen
                 </label>
                 <textarea
                   value={editTermin.teilnahmebedingungen}
                   onChange={(e) => setEditTermin({ ...editTermin, teilnahmebedingungen: e.target.value })}
-                  style={{
-                    padding: '0.5rem',
-                    border: '1px solid #444',
-                    borderRadius: '6px',
-                    fontSize: '0.9rem',
-                    width: '100%',
-                    minHeight: '90px',
-                    resize: 'vertical',
-                    background: '#2a2a2a',
-                    color: '#e5e5e5',
-                    fontFamily: 'inherit'
-                  }}
+                  className="pv3-dark-textarea-sm"
                   rows="3"
                   placeholder="Beispiel:&#10;- Vollständige Trainingsausrüstung mitbringen&#10;- Pünktliches Erscheinen erforderlich&#10;- Prüfungsgebühr vorab überweisen"
                 />
               </div>
             </div>
 
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', background: 'transparent' }}>
+            <div className="pv3-edit-footer">
               <button
                 onClick={() => setShowEditTerminModal(false)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: '1px solid #555',
-                  borderRadius: '6px',
-                  background: '#2a2a2a',
-                  color: '#e5e5e5',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => e.target.style.background = '#333'}
-                onMouseOut={(e) => e.target.style.background = '#2a2a2a'}
+                className="pv3-edit-btn-cancel"
               >
                 Abbrechen
               </button>
               <button
                 onClick={handleTerminAktualisieren}
                 disabled={!editTermin.pruefungsdatum}
-                style={{
-                  padding: '0.5rem 1rem',
-                  border: 'none',
-                  borderRadius: '6px',
-                  background: !editTermin.pruefungsdatum ? '#555' : '#EAB308',
-                  color: !editTermin.pruefungsdatum ? '#888' : '#000',
-                  cursor: !editTermin.pruefungsdatum ? 'not-allowed' : 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => {
-                  if (!e.target.disabled) e.target.style.background = '#F59E0B';
-                }}
-                onMouseOut={(e) => {
-                  if (!e.target.disabled) e.target.style.background = '#EAB308';
-                }}
+                className="pv3-modal-btn-submit pv3-modal-btn-save"
               >
-                <Edit size={18} style={{ marginRight: '0.5rem' }} />
+                <Edit size={18} className="pv2-mr-05" />
                 Änderungen speichern
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Termin-Auswahl Modal */}
+      {terminAuswahlModal.open && (
+        <div
+          className="pv3-auswahl-modal-overlay"
+          onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false })}
+        >
+          <div
+            className="pv3-auswahl-modal-box"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="pv2-mb-05">
+              {terminAuswahlModal.isAusnahme ? 'Ausnahme-Zulassung' : 'Prüfungstermin wählen'}
+            </h3>
+            <p className="pv3-auswahl-muted-p">
+              {terminAuswahlModal.kandidat?.vorname} {terminAuswahlModal.kandidat?.nachname} —{' '}
+              {terminAuswahlModal.kandidat?.stil_name}
+              {terminAuswahlModal.isAusnahme && (
+                <span className="pv3-auswahl-warning-span">
+                  ⚠️ Zeitliche Voraussetzungen nicht erfüllt
+                </span>
+              )}
+            </p>
+            <div className="u-flex-col-md">
+              {terminAuswahlModal.termine.map((termin, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleTerminAuswahlSelected(termin)}
+                  className="pv3-auswahl-btn"
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#6366f1'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color, #333)'}
+                >
+                  <div className="pv3-auswahl-btn-date">
+                    {new Date(termin.datum).toLocaleDateString('de-DE', {
+                      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                    })}
+                  </div>
+                  <div className="pv3-auswahl-btn-meta">
+                    {termin.zeit !== 'Nicht festgelegt' && `🕐 ${termin.zeit} Uhr`}
+                    {termin.zeit !== 'Nicht festgelegt' && termin.ort !== 'Nicht festgelegt' && '  '}
+                    {termin.ort !== 'Nicht festgelegt' && `📍 ${termin.ort}`}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false })}
+              className="pv3-auswahl-cancel"
+            >
+              Abbrechen
+            </button>
           </div>
         </div>
       )}

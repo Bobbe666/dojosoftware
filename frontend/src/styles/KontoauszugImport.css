@@ -1,0 +1,663 @@
+/* KontoauszugImport — extracted inline styles (prefix: ki-) */
+
+/* ── Page wrapper ── */
+.ki-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Page header block ── */
+.ki-page-header {
+  margin-bottom: 1.5rem;
+}
+
+/* ── Page title ── */
+.ki-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0;
+}
+
+/* ── Page subtitle ── */
+.ki-page-subtitle {
+  color: var(--text-muted, #999);
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+/* ── Error banner ── */
+.ki-error-banner {
+  background: #ef444420;
+  border: 1px solid #ef444444;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  color: var(--error);
+}
+
+/* ── Error banner icon ── */
+.ki-error-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ── Error message text ── */
+.ki-error-text {
+  font-size: 0.875rem;
+}
+
+/* ── Error dismiss button ── */
+.ki-error-dismiss {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--error);
+}
+
+/* ── Upload step container ── */
+.ki-upload-wrap {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ── Upload loading indicator ── */
+.ki-upload-loading {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: var(--text-muted);
+}
+
+/* ── Spinning loader icon ── */
+.ki-spin {
+  animation: ki-spin 1s linear infinite;
+  display: inline-block;
+}
+
+/* ── Loader label ── */
+.ki-loading-label {
+  margin-left: 0.5rem;
+}
+
+/* ── Drop zone upload icon ── */
+.ki-upload-icon {
+  color: var(--primary, #ffd700);
+  display: block;
+  margin: 0 auto 1rem;
+}
+
+/* ── Drop zone headline ── */
+.ki-dropzone-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Drop zone sub-line ── */
+.ki-dropzone-sub {
+  color: var(--text-muted, #999);
+  font-size: 0.875rem;
+}
+
+/* ── Drop zone bank list hint ── */
+.ki-dropzone-hint {
+  color: var(--text-muted, #999);
+  font-size: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* ── Preview info bar (Bank + Zusammenfassung) ── */
+.ki-info-bar {
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* ── Label / meta text ── */
+.ki-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+/* ── Vertical divider ── */
+.ki-divider {
+  width: 1px;
+  height: 2rem;
+  background: var(--border-color, #333);
+}
+
+/* ── Bold primary text ── */
+.ki-bold-primary {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Ausgaben value ── */
+.ki-value-error {
+  font-weight: 600;
+  color: var(--error);
+}
+
+/* ── Einnahmen value ── */
+.ki-value-success {
+  font-weight: 600;
+  color: var(--success);
+}
+
+/* ── Actions group (right-aligned in info bar) ── */
+.ki-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Secondary action button ── */
+.ki-btn-secondary {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+/* ── Primary action button ── */
+.ki-btn-primary {
+  padding: 0.5rem 1.25rem;
+  background: var(--primary, #ffd700);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 700;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  cursor: pointer;
+}
+.ki-btn-primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── Spinning loader inside button ── */
+.ki-btn-spin {
+  animation: ki-spin 1s linear infinite;
+}
+
+/* ── Hint badges row ── */
+.ki-badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Rucklastschrift badge ── */
+.ki-badge-error {
+  background: #ef444415;
+  border: 1px solid #ef444440;
+  border-radius: 8px;
+  padding: 0.5rem 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--error);
+}
+
+/* ── Zahllauf-Match badge ── */
+.ki-badge-warning {
+  background: #f59e0b15;
+  border: 1px solid #f59e0b40;
+  border-radius: 8px;
+  padding: 0.5rem 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--warning);
+}
+
+/* ── Duplikat badge ── */
+.ki-badge-muted {
+  background: #6b728015;
+  border: 1px solid #6b728040;
+  border-radius: 8px;
+  padding: 0.5rem 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+/* ── Rucklastschrift navigate button inside badge ── */
+.ki-badge-btn-error {
+  background: #ef4444;
+  color: var(--text-primary);
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ── Faded / dimmed element ── */
+.ki-opacity {
+  opacity: 0.8;
+}
+
+/* ── Filter tabs row ── */
+.ki-filter-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ── Select-all label ── */
+.ki-select-all-label {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* ── Table outer wrapper ── */
+.ki-table-wrap {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Table ── */
+.ki-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+/* ── Table header row ── */
+.ki-thead-row {
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary, #111);
+}
+
+/* ── Checkbox column header ── */
+.ki-th-check {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  width: 2.5rem;
+}
+
+/* ── Table header cell (left-aligned) ── */
+.ki-th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Kategorie column header (wider) ── */
+.ki-th-kategorie {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  min-width: 160px;
+}
+
+/* ── Betrag column header (right-aligned) ── */
+.ki-th-betrag {
+  padding: 0.75rem 1rem;
+  text-align: right;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Standard table cell ── */
+.ki-td {
+  padding: 0.625rem 0.75rem;
+}
+
+/* ── Checkbox cell (left padded) ── */
+.ki-td-check {
+  padding: 0.625rem 0.75rem 0.625rem 1rem;
+}
+
+/* ── Date cell ── */
+.ki-td-date {
+  padding: 0.625rem 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ── Description cell ── */
+.ki-td-desc {
+  padding: 0.625rem 0.75rem;
+  color: var(--text-primary);
+  max-width: 320px;
+}
+
+/* ── Badge row inside description cell ── */
+.ki-desc-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+/* ── Rucklastschrift pill inside table cell ── */
+.ki-pill-error {
+  background: #ef444420;
+  border: 1px solid #ef444450;
+  color: var(--error);
+  border-radius: 4px;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Zahllauf-Match pill ── */
+.ki-pill-warning {
+  background: #f59e0b15;
+  border: 1px solid #f59e0b40;
+  color: var(--warning);
+  border-radius: 4px;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Duplikat pill ── */
+.ki-pill-muted {
+  background: #6b728015;
+  border: 1px solid #6b728040;
+  color: var(--text-muted);
+  border-radius: 4px;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Truncated description text ── */
+.ki-desc-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Empfanger sub-line ── */
+.ki-empfaenger {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Category select ── */
+.ki-select-kategorie {
+  background: var(--bg-tertiary, #111);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* ── Empty category placeholder ── */
+.ki-td-placeholder {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* ── Rucklastschrift typ-badge (non-selectable) ── */
+.ki-typ-badge-error {
+  background: #ef444415;
+  border: 1px solid #ef444440;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  color: var(--error);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* ── Betrag cell ── */
+.ki-td-betrag {
+  padding: 0.625rem 1rem 0.625rem 0.75rem;
+  text-align: right;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Footer tip ── */
+.ki-table-tip {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+/* ── Done step wrapper ── */
+.ki-done-wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* ── Done card ── */
+.ki-done-card {
+  background: #10b98120;
+  border: 1px solid #10b98140;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+}
+
+/* ── Done icon circle ── */
+.ki-done-icon {
+  width: 64px;
+  height: 64px;
+  background: #10b98130;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+/* ── Done headline ── */
+.ki-done-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Done success count ── */
+.ki-done-success {
+  color: var(--success);
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Done warning note ── */
+.ki-done-warning {
+  color: var(--warning);
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+/* ── Done error note ── */
+.ki-done-error {
+  color: var(--error);
+  font-size: 0.875rem;
+}
+
+/* ── Done hint text ── */
+.ki-done-hint {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+}
+
+/* ── Done button row ── */
+.ki-done-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* ── Done secondary button ── */
+.ki-done-btn-secondary {
+  padding: 0.625rem 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* ── Done primary button ── */
+.ki-done-btn-primary {
+  padding: 0.625rem 1.5rem;
+  background: var(--primary, #ffd700);
+  border: none;
+  border-radius: 8px;
+  color: #000;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+
+/* ── Pointer cursor utility ── */
+.ki-cursor-pointer {
+  cursor: pointer;
+}
+
+@keyframes ki-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── inline-style replacements (2026-03-07) ── */
+
+/* Drop zone */
+.ki-dropzone {
+  border: 2px dashed var(--border-color, #333);
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  background: var(--bg-secondary, #1a1a1a);
+  transition: all 0.2s;
+}
+.ki-dropzone--dragging {
+  border-color: var(--primary, #ffd700);
+  background: var(--bg-hover, rgba(255,215,0,0.05));
+}
+.ki-dropzone--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Bank badge (color from CSS vars set inline) */
+.ki-bank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: var(--bank-color-22, rgba(107,114,128,0.13));
+  border: 1px solid var(--bank-color-44, rgba(107,114,128,0.27));
+  color: var(--bank-color, #6b7280);
+  border-radius: 20px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+/* Filter tab buttons */
+.ki-filter-tab {
+  padding: 0.375rem 1rem;
+  border-radius: 20px;
+  border: none;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+.ki-filter-tab--active {
+  background: var(--primary, #ffd700);
+  color: #000;
+  font-weight: 700;
+}
+.ki-filter-tab--active-error {
+  background: var(--error);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Table body row */
+.ki-tbody-row {
+  border-bottom: 1px solid var(--border-color);
+  background: transparent;
+  opacity: 0.45;
+}
+.ki-tbody-row--selected {
+  background: var(--bg-hover, rgba(255,215,0,0.03));
+  opacity: 1;
+}
+
+/* Type select dropdown */
+.ki-typ-select {
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.ki-typ-select--ausgabe {
+  background: #ef444415;
+  border: 1px solid #ef444440;
+  color: #ef4444;
+}
+.ki-typ-select--einnahme {
+  background: #10b98115;
+  border: 1px solid #10b98140;
+  color: #10b981;
+}
+
+/* Betrag cell color modifiers */
+.ki-td-betrag--negativ { color: #ef4444; }
+.ki-td-betrag--positiv { color: #10b981; }

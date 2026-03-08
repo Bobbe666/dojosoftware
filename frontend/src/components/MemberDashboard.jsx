@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useDojoContext } from '../context/DojoContext.jsx';
 import {
   User,
   Calendar,
@@ -16,8 +17,14 @@ import {
   Star,
   QrCode,
   Download,
-  CalendarSync
+  CalendarSync,
+  Copy,
+  Check,
+  Gift
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
+import '../styles/MitgliedDetail.css';
 import MemberHeader from './MemberHeader.jsx';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
@@ -30,21 +37,27 @@ import '../styles/DashboardStart.css';
 import '../styles/MemberNavigation.css';
 import '../styles/MotivationQuotes.css';
 import '../styles/TrainingReminders.css';
+import '../styles/MemberDashboard.responsive.css';
+import '../styles/MemberDashboard.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import EventNotificationPopup from './EventNotificationPopup.jsx';
+import ProfilWizard from './ProfilWizard.jsx';
 
 
 const MemberDashboard = () => {
   const { t } = useTranslation('member');
   const { user } = useAuth();
+  const { activeDojo } = useDojoContext();
 
-  // Cache-Breaking für bessere Debugging
   const navigate = useNavigate();
 
   // Haupt-Daten States
   const [stats, setStats] = useState({
     trainingsstunden: 0,
-    anwesenheit: 0,
+    anwesenheitAnwesend: 0,
+    anwesenheitMoeglich: 0,
+    anwesenheit: null,
     offeneBeitraege: 0,
     naechstePruefung: null
   });
@@ -83,6 +96,24 @@ const MemberDashboard = () => {
     unreadCount: 0
   });
 
+  // Zahlungshinweise / Mahnungen aus mitglied_nachrichten
+  const [zahlungsNachrichten, setZahlungsNachrichten] = useState([]);
+  const [hatMahnung, setHatMahnung] = useState(false);
+
+  // Referral / Freunde werben Freunde
+  const [referralData, setReferralData] = useState(null);
+  const [referralCopied, setReferralCopied] = useState(false);
+
+  // ProfilWizard: beim ersten Login anzeigen
+  const [showProfilWizard, setShowProfilWizard] = useState(false);
+
+  // Event-Benachrichtigungs-Popup
+  const [neueEvents, setNeueEvents] = useState([]);
+  const [showEventPopup, setShowEventPopup] = useState(false);
+
+  // Alle kommenden Events für Dashboard-Widget
+  const [upcomingEvents, setUpcomingEvents] = useState([]);
+
   // Abwärtskompatibilität: Destrukturierte Werte für bestehenden Code
   const showMemberCheckin = modals.checkin;
   const showQRCode = modals.qrCode;
@@ -98,6 +129,9 @@ const MemberDashboard = () => {
   const acceptedConditions = examData.acceptedConditions;
   const notifications = notificationData.list;
   const unreadCount = notificationData.unreadCount;
+
+  // Ref für Mitgliedsausweis-Download
+  const ausweisRef = useRef(null);
 
   // Setter-Funktionen für Abwärtskompatibilität
   const setShowMemberCheckin = useCallback((val) => setModals(prev => ({ ...prev, checkin: val })), []);
@@ -133,6 +167,108 @@ const MemberDashboard = () => {
     }
   };
 
+
+  // Lade neue Events für Popup-Benachrichtigung
+  const loadNeueEvents = async (memberId) => {
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/events/member/${memberId}/neu`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.events?.length > 0) {
+          setNeueEvents(data.events);
+          setShowEventPopup(true);
+        }
+      }
+    } catch (e) {
+      // Event-Popup optional — kein Fehler anzeigen
+    }
+  };
+
+  // Lade alle kommenden Events für Dashboard-Widget
+  const loadUpcomingEvents = async (memberId) => {
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/events/member/${memberId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUpcomingEvents(data.events || []);
+        }
+      }
+    } catch (e) {
+      // optional — kein Fehler anzeigen
+    }
+  };
+
+  const handleEventPopupAnmelden = async (event, bestellungen) => {
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/events/${event.event_id}/anmelden`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: memberData?.mitglied_id, bestellungen })
+      });
+      await fetchWithAuth(`${config.apiBaseUrl}/events/${event.event_id}/gesehen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: memberData?.mitglied_id, aktion: 'angemeldet' })
+      });
+    } catch (e) { /* silent */ }
+    const remaining = neueEvents.filter(e => e.event_id !== event.event_id);
+    setNeueEvents(remaining);
+    if (remaining.length === 0) setShowEventPopup(false);
+  };
+
+  const handleEventPopupAblehnen = async (event) => {
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/events/${event.event_id}/gesehen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: memberData?.mitglied_id, aktion: 'abgelehnt' })
+      });
+    } catch (e) { /* silent */ }
+    const remaining = neueEvents.filter(e => e.event_id !== event.event_id);
+    setNeueEvents(remaining);
+    if (remaining.length === 0) setShowEventPopup(false);
+  };
+
+  const handleEventPopupSpaeter = async (event) => {
+    // Nur als "gesehen" markieren — wird nicht mehr beim nächsten Login angezeigt
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/events/${event.event_id}/gesehen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: memberData?.mitglied_id, aktion: 'gesehen' })
+      });
+    } catch (e) { /* silent */ }
+    const remaining = neueEvents.filter(e => e.event_id !== event.event_id);
+    setNeueEvents(remaining);
+    if (remaining.length === 0) setShowEventPopup(false);
+  };
+
+  // Lade Referral-Daten (Freunde werben Freunde)
+  const loadReferralData = async (memberId) => {
+    try {
+      const [settingsRes, codesRes] = await Promise.all([
+        fetchWithAuth(`${config.apiBaseUrl}/referral/settings`),
+        fetchWithAuth(`${config.apiBaseUrl}/referral/codes?mitglied_id=${memberId}`)
+      ]);
+
+      // Settings laden (optional – falls nicht erreichbar trotzdem Code anzeigen)
+      let settings = {};
+      if (settingsRes.ok) {
+        settings = await settingsRes.json();
+      }
+
+      // Code laden – anzeigen sobald ein Code vorhanden ist, unabhängig von aktiv-Flag
+      if (!codesRes.ok) return;
+      const codes = await codesRes.json();
+      const activeCode = Array.isArray(codes) ? codes.find(c => c.aktiv) : null;
+      if (!activeCode) return;
+
+      setReferralData({ ...settings, code: activeCode.code });
+    } catch (e) {
+      // Referral optional – kein Fehler anzeigen
+    }
+  };
 
   // Lade Push-Benachrichtigungen für dieses Mitglied
   const loadNotifications = async (email) => {
@@ -245,6 +381,12 @@ const MemberDashboard = () => {
         const memberData = await memberResponse.json();
         console.log('✅ Mitgliedsdaten empfangen:', memberData);
 
+        // ProfilWizard: Beim ersten Login anzeigen (fehlender Notfallkontakt)
+        const wizardKey = `profil_wizard_done_${memberData.mitglied_id}`;
+        if (!localStorage.getItem(wizardKey) && !memberData.notfallkontakt_name) {
+          setShowProfilWizard(true);
+        }
+
         // Anwesenheitsdaten laden (mit mitglied_id direkt)
         const attendanceResponse = await fetchWithAuth(`${config.apiBaseUrl}/anwesenheit/${memberData.mitglied_id}`);
 
@@ -287,27 +429,68 @@ const MemberDashboard = () => {
             : [];
 
         const paymentsData = memberVertraege;
-        
+
+        // Kurse des Mitglieds laden (für Stundenplan-basierte Anwesenheitsberechnung)
+        let memberKurse = [];
+        try {
+          const kurseResponse = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberData.mitglied_id}/kurse`);
+          if (kurseResponse.ok) {
+            const kurseData = await kurseResponse.json();
+            memberKurse = Array.isArray(kurseData) ? kurseData : (kurseData.kurse || []);
+          }
+        } catch (e) {
+          console.warn('⚠️ Kurse für Anwesenheitsberechnung nicht ladbar:', e);
+        }
+
         // Berechne Statistiken
 
-        // Gesamtanzahl der Trainingsstunden
-        const totalAttendance = Array.isArray(attendanceData) ? attendanceData.length : 0;
-
-        // Berechne Anwesenheitsquote wie im Detail-View
-        // = (Anwesende Trainings / Alle Trainingseinträge) * 100
+        // Tatsächlich besuchte Trainings (anwesend=1)
         const totalAnwesend = Array.isArray(attendanceData)
           ? attendanceData.filter(a => a.anwesend === 1 || a.anwesend === true).length
           : 0;
 
-        const attendancePercentage = totalAttendance > 0
-          ? Math.round((totalAnwesend / totalAttendance) * 100)
-          : 0;
+        // Mögliche Trainings seit Eintrittsdatum berechnen (Stundenplan-basiert)
+        const wochentagMap = {
+          'Montag': 1, 'Dienstag': 2, 'Mittwoch': 3, 'Donnerstag': 4,
+          'Freitag': 5, 'Samstag': 6, 'Sonntag': 0
+        };
+
+        const eintrittsdatum = memberData.eintrittsdatum ? new Date(memberData.eintrittsdatum) : null;
+        const heute = new Date();
+        heute.setHours(23, 59, 59, 0);
+
+        let moeglich = 0;
+        if (eintrittsdatum && memberKurse.length > 0) {
+          memberKurse.forEach(kurs => {
+            if (!kurs.wochentag) return;
+            const zielTag = wochentagMap[kurs.wochentag];
+            if (zielTag === undefined) return;
+
+            // Ersten Trainingstag ab Eintrittsdatum finden
+            const start = new Date(eintrittsdatum);
+            start.setHours(0, 0, 0, 0);
+            const tageOffset = (zielTag - start.getDay() + 7) % 7;
+            start.setDate(start.getDate() + tageOffset);
+
+            if (start <= heute) {
+              const diffMs = heute - start;
+              const diffTage = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              moeglich += Math.floor(diffTage / 7) + 1;
+            }
+          });
+        }
+
+        const attendancePercentage = moeglich > 0
+          ? Math.round((totalAnwesend / moeglich) * 100)
+          : null;
 
         // Offene Beiträge zählen - ABER: Beitragsfreie Mitglieder haben immer 0
+        // Gelöschte/archivierte Verträge (geloescht=true) ebenfalls ausschließen
         const openPayments = memberData.beitragsfrei === 1 || memberData.beitragsfrei === true
           ? 0
           : (Array.isArray(paymentsData)
               ? paymentsData.filter(v =>
+                  !v.geloescht &&
                   v.status === 'aktiv' &&
                   (!v.lastschrift_status || v.lastschrift_status === 'ausstehend' || v.lastschrift_status === 'fehlgeschlagen')
                 ).length
@@ -316,7 +499,9 @@ const MemberDashboard = () => {
         const nextExam = memberData.naechste_pruefung_datum;
 
         setStats({
-          trainingsstunden: totalAttendance,
+          trainingsstunden: totalAnwesend,
+          anwesenheitAnwesend: totalAnwesend,
+          anwesenheitMoeglich: moeglich,
           anwesenheit: attendancePercentage,
           offeneBeitraege: openPayments,
           naechstePruefung: nextExam
@@ -340,7 +525,15 @@ const MemberDashboard = () => {
         // Lade Prüfungsergebnisse
         await loadExamResults(memberData.mitglied_id);
 
-        
+        // Lade Referral-Daten
+        await loadReferralData(memberData.mitglied_id);
+
+        // Neue Events für Popup laden + alle kommenden Events für Widget
+        await Promise.all([
+          loadNeueEvents(memberData.mitglied_id),
+          loadUpcomingEvents(memberData.mitglied_id)
+        ]);
+
       } catch (error) {
         console.error('❌ Fehler beim Laden der Mitgliederdaten:', error);
         // Fallback auf Mock-Daten
@@ -388,6 +581,34 @@ const MemberDashboard = () => {
       checkBirthday();
     }
   }, [user?.email, user?.mitglied_id]);
+
+  // Zahlungshinweise / Mahnungen laden
+  useEffect(() => {
+    if (!user?.email) return;
+    const loadNachrichten = async () => {
+      try {
+        const resp = await fetchWithAuth('/api/member/nachrichten');
+        if (resp.ok) {
+          const data = await resp.json();
+          setZahlungsNachrichten(data.nachrichten || []);
+          setHatMahnung(data.hatMahnung || false);
+        }
+      } catch (err) {
+        // Fehler still ignorieren — Banner ist nicht kritisch
+      }
+    };
+    loadNachrichten();
+  }, [user?.email]);
+
+  // Browser-Titel und URL dynamisch setzen
+  useEffect(() => {
+    if (memberData) {
+      const name = `${memberData.vorname} ${memberData.nachname}`;
+      const dojo = activeDojo?.dojoname || memberData.dojo_name || 'Dojosoftware';
+      document.title = `${name} | ${dojo}`;
+    }
+    return () => { document.title = 'Dojosoftware'; };
+  }, [memberData, activeDojo]);
 
   // Lade alle verfügbaren Stile
   const loadStile = async () => {
@@ -564,216 +785,384 @@ const MemberDashboard = () => {
     <div className="dashboard-container">
       <MemberHeader />
 
+      {/* ProfilWizard: Notfallkontakt beim ersten Login */}
+      {showProfilWizard && memberData && (
+        <ProfilWizard
+          mitgliedId={memberData.mitglied_id}
+          vorname={memberData.vorname}
+          onClose={() => setShowProfilWizard(false)}
+        />
+      )}
+
+      {/* Event-Benachrichtigungs-Popup */}
+      {showEventPopup && neueEvents.length > 0 && (
+        <EventNotificationPopup
+          events={neueEvents}
+          memberData={memberData}
+          onAnmelden={handleEventPopupAnmelden}
+          onAblehnen={handleEventPopupAblehnen}
+          onSpaeter={handleEventPopupSpaeter}
+          onClose={() => setShowEventPopup(false)}
+        />
+      )}
+
+      {/* Zahlungshinweis-Banner */}
+      {hatMahnung && zahlungsNachrichten.length > 0 && (
+        <div className="member-alert-banner">
+          <span className="member-alert-icon">⚠️</span>
+          <div className="member-alert-content">
+            <strong className="member-alert-title">Offene Zahlung auf Ihrem Konto</strong>
+            <span className="member-alert-text">
+              Es gibt eine ausstehende Zahlung. Bitte prüfen Sie Ihre Zahlungsdaten und kontaktieren Sie uns bei Fragen.
+            </span>
+          </div>
+          <a href="/member/payments" className="member-alert-link">
+            Zur Zahlungsübersicht
+          </a>
+        </div>
+      )}
+
       <div className="dashboard-content">
         <div className="dashboard-start">
-          {/* Header - wie beim Admin Dashboard */}
-          <h1 style={{ marginBottom: '0.5rem' }}>{t('welcome.title')}, {memberData ? `${memberData.vorname} ${memberData.nachname}` : user?.username || 'Mitglied'}! <span style={{ marginLeft: '0.5rem' }}>👋</span></h1>
-          <p className="slogan" style={{ marginBottom: '1.5rem' }}>{t('welcome.subtitle')}</p>
+          {/* Header - Karate Design */}
+          <div className="member-welcome-wrap">
+            <div className="member-welcome-dojo">
+              道場 — {activeDojo?.dojoname || 'Kampfkunstschule'}
+            </div>
+            <div className="member-welcome-row">
+              <span className="member-welcome-kanji">歓迎</span>
+              <h1 className="member-welcome-title">
+                {memberData ? `${memberData.vorname} ${memberData.nachname}` : user?.username || 'Mitglied'}
+              </h1>
+              <span className="member-welcome-kanji">歓迎</span>
+            </div>
+            <div className="member-welcome-subtitle">
+              心技体 — Shin · Gi · Tai
+            </div>
+          </div>
 
-      {/* Statistiken-Bereich */}
+      {/* Ausweis + Stats: 2 Karten | Ausweis | 2 Karten */}
       {memberData && (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-          gap: '0.8rem', 
-          marginBottom: '1.5rem' 
-        }}>
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '12px',
-            padding: '1rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>🏃‍♂️</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.trainingHours')}</h3>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ffd700' }}>{stats.trainingsstunden}</div>
+        <div className="member-stats-grid md-stats-grid">
+
+          {/* Linke Spalte: Training + Anwesenheit */}
+          <div className="member-stat-column">
+            <div className="member-stat-card">
+              <div className="member-stat-icon">🏃‍♂️</div>
+              <h3 className="member-stat-label">{t('stats.trainingHours')}</h3>
+              <div className="member-stat-value">{stats.trainingsstunden}</div>
+            </div>
+            <div className="member-stat-card">
+              <div className="member-stat-icon">📊</div>
+              <h3 className="member-stat-label">{t('stats.attendance')}</h3>
+              <div className="member-stat-value">
+                {stats.anwesenheit !== null ? `${stats.anwesenheit}%` : '—'}
+              </div>
+              {stats.anwesenheitMoeglich > 0 && (
+                <div className="member-stat-sublabel">
+                  {stats.anwesenheitAnwesend} / {stats.anwesenheitMoeglich}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '12px',
-            padding: '1rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>📊</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.attendance')}</h3>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ffd700' }}>{stats.anwesenheit}%</div>
+          {/* Mitte: Mitgliedsausweis */}
+          <div className="mitgliedsausweis-container">
+            <div className="mitgliedsausweis" ref={ausweisRef}>
+              <div className="ausweis-title">
+                <span className="title-jp">格闘技学校</span>
+                <span className="title-de">Kampfkunstschule Schreiner</span>
+              </div>
+              <div className="ausweis-body">
+                <div className="ausweis-left">
+                  <img
+                    src={dojoLogo}
+                    alt="Kampfkunstschule Schreiner"
+                    className="ausweis-logo"
+                  />
+                </div>
+                <div className="ausweis-center">
+                  <div className="ausweis-kanji">武道</div>
+                  <div className="ausweis-name">
+                    {memberData.vorname} · {memberData.nachname}
+                  </div>
+                  <div className="ausweis-info-list">
+                    <div className="ausweis-info-row">
+                      <span className="info-label">Mitglieds-Nr.</span>
+                      <span className="info-value">{String(memberData.mitglied_id).padStart(5, '0')}</span>
+                    </div>
+                    <div className="ausweis-info-row">
+                      <span className="info-label">Mitglied seit</span>
+                      <span className="info-value">
+                        {memberData.eintrittsdatum
+                          ? new Date(memberData.eintrittsdatum).toLocaleDateString('de-DE', { month: '2-digit', year: 'numeric' })
+                          : '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="ausweis-right">
+                  <div className="ausweis-foto">
+                    {memberData.foto_pfad ? (
+                      <img
+                        src={`${config.apiBaseUrl.replace('/api', '')}/${memberData.foto_pfad}`}
+                        alt={`${memberData.vorname} ${memberData.nachname}`}
+                      />
+                    ) : (
+                      <div className="ausweis-foto-placeholder">
+                        <span>写真</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="ausweis-qr">
+                    <QRCodeSVG
+                      value={`DOJO-CHECKIN:${memberData.dojo_id || '0'}:${memberData.mitglied_id || '0'}`}
+                      size={70}
+                      level="M"
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="ausweis-footer">
+                <div className="ausweis-motto">心技体 — Shin Gi Tai</div>
+                <div className="ausweis-website">www.tda-vib.de</div>
+              </div>
+            </div>
           </div>
 
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '12px',
-            padding: '1rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>🎓</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.belt')}</h3>
-            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffd700' }}>{currentBelts}</div>
+          {/* Rechte Spalte: Gurt + Beiträge */}
+          <div className="member-stat-column">
+            <div className="member-stat-card">
+              <div className="member-stat-icon">🎓</div>
+              <h3 className="member-stat-label">{t('stats.belt')}</h3>
+              <div className="member-stat-value sm">{currentBelts}</div>
+            </div>
+            <div className="member-stat-card">
+              <div className="member-stat-icon">💳</div>
+              <h3 className="member-stat-label">{t('stats.openFees')}</h3>
+              <div className={`member-stat-value${stats.offeneBeitraege > 0 ? ' md-stat-value--error' : ' md-stat-value--success'}`}>
+                {stats.offeneBeitraege}
+              </div>
+            </div>
           </div>
 
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 215, 0, 0.2)',
-            borderRadius: '12px',
-            padding: '1rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', color: '#ffd700', marginBottom: '0.3rem' }}>💳</div>
-            <h3 style={{ color: '#ffffff', marginBottom: '0.3rem', fontSize: '0.9rem' }}>{t('stats.openFees')}</h3>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: stats.offeneBeitraege > 0 ? '#ef4444' : '#10b981' }}>
-              {stats.offeneBeitraege}
+        </div>
+      )}
+
+      {/* Hauptnavigation - alle 6 Karten in einer Reihe */}
+      <div className="cta-grid member-navigation-grid md-navigation-grid">
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/profile')}>
+          <User size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.myData')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/schedule')}>
+          <Calendar size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.mySchedule')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/payments')}>
+          <CreditCard size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.myPayments')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/stats')}>
+          <BarChart3 size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.myStats')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/styles')}>
+          <Trophy size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.styleAndBelt')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/equipment')}>
+          <Package size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.equipment')}</span>
+        </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/kalender')}>
+          <CalendarSync size={24} />
+          <span className="cta-tile-nav-label">{t('navigation.calendarSync')}</span>
+        </div>
+      </div>
+
+      {/* Schnellzugriff - eine Zeile */}
+      <div className="member-quick-actions-grid">
+        <div className="cta-tile cta-tile-quick" onClick={() => handleQuickAction('checkin')}>
+          <Clock size={20} />
+          <span className="cta-tile-quick-label">{t('quickActions.checkin')}</span>
+        </div>
+        <div className="cta-tile cta-tile-quick cta-tile-qr" onClick={() => setShowQRCode(true)}>
+          <QrCode size={20} />
+          <span className="cta-tile-quick-label">{t('quickActions.myQrCode')}</span>
+        </div>
+        <div className="cta-tile cta-tile-quick cta-tile-install" onClick={() => navigate('/app-install')}>
+          <Download size={20} />
+          <span className="cta-tile-quick-label">{t('quickActions.installApp')}</span>
+        </div>
+        <div className="cta-tile cta-tile-quick" onClick={() => navigate('/member/events')}>
+          <Calendar size={20} />
+          <span className="cta-tile-quick-label">{t('quickActions.events')}</span>
+        </div>
+        <div className="cta-tile cta-tile-quick" onClick={() => handleQuickAction('notifications')}>
+          <Bell size={20} />
+          <span className="cta-tile-quick-label">{t('quickActions.notifications')}</span>
+          {unreadCount > 0 && (
+            <span className="member-notif-badge">{unreadCount}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Kommende Events Widget */}
+      {upcomingEvents.length > 0 && (
+        <div className="member-events-wrap">
+          <div className="member-events-header">
+            <h3 className="member-events-title">
+              <Calendar size={16} /> Kommende Events
+            </h3>
+            <span className="member-events-link" onClick={() => navigate('/member/events')}>
+              Alle ansehen →
+            </span>
+          </div>
+          <div className="member-event-list">
+            {upcomingEvents.slice(0, 3).map(event => {
+              const eventDate = new Date(event.datum).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: 'short' });
+              return (
+                <div
+                  key={event.event_id}
+                  onClick={() => navigate('/member/events')}
+                  className={`md-event-card${event.ist_angemeldet ? ' md-event-card--registered' : ''}`}
+                >
+                  <div className="member-event-date">
+                    <div className="member-event-weekday">{eventDate.split(' ')[0]}</div>
+                    <div className="member-event-day">{eventDate.split(' ')[1]}</div>
+                    <div className="member-event-month">{eventDate.split(' ')[2]}</div>
+                  </div>
+                  <div className="member-event-info">
+                    <div className="member-event-name">{event.titel}</div>
+                    {event.ort && <div className="member-event-location">{event.ort}</div>}
+                  </div>
+                  {event.ist_angemeldet ? (
+                    <span className="member-event-badge registered">✓ Angemeldet</span>
+                  ) : (
+                    <span className="member-event-badge register">Anmelden</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Freunde werben Freunde – prominent nach den Quick Actions */}
+      {referralData && (
+        <div className="member-referral-wrap">
+          {/* Titel */}
+          <div className="member-referral-header">
+            <span className="member-referral-icon">🤝</span>
+            <div>
+              <div className="member-referral-title">Freunde werben Freunde</div>
+              <div className="member-referral-subtitle">
+                Empfehle uns und kassiere{referralData.standard_praemie ? ` ${referralData.standard_praemie} €` : ' eine Prämie'}!
+              </div>
+            </div>
+          </div>
+
+          {/* Prämie prominent */}
+          {referralData.standard_praemie && (
+            <div className="md-referral-praemie">
+              <span className="md-referral-praemie-icon">💶</span>
+              <div>
+                <div className="md-referral-praemie-amount">
+                  {referralData.standard_praemie} € pro Mitglied
+                </div>
+                <div className="md-referral-praemie-sub">
+                  Für jede erfolgreiche Empfehlung — unbegrenzt!
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Erklärung */}
+          <div className="md-referral-explanation">
+            Empfehle uns an Freunde oder Familie weiter. Für <strong className="u-text-primary">jedes neue Mitglied</strong>,
+            das sich mit deinem persönlichen Code anmeldet, bekommst du{' '}
+            <strong className="u-text-accent">
+              {referralData.standard_praemie ? `${referralData.standard_praemie} €` : 'eine Prämie'}
+              {referralData.max_kostenlos_monate > 0 ? ` oder bis zu ${referralData.max_kostenlos_monate} Gratismonate` : ''}
+            </strong>.
+            {' '}Je mehr du wirbst, desto mehr verdienst du!
+          </div>
+
+          {/* Code */}
+          <div>
+            <div className="md-referral-code-label">
+              Dein persönlicher Empfehlungscode
+            </div>
+            <div className="md-referral-code-box">
+              <span className="md-referral-code-value">
+                {referralData.code}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(referralData.code);
+                  setReferralCopied(true);
+                  setTimeout(() => setReferralCopied(false), 2000);
+                }}
+                className={`md-referral-copy-btn${referralCopied ? ' md-referral-copy-btn--copied' : ''}`}
+              >
+                {referralCopied ? <><Check size={14} /> Kopiert!</> : <><Copy size={14} /> Kopieren</>}
+              </button>
+            </div>
+          </div>
+
+          {/* Anmelde-Link */}
+          <div className="md-referral-link-wrap">
+            <div className="md-referral-link-label">
+              Anmeldeseite für deine Freunde:
+            </div>
+            <div className="md-referral-link-url">
+              {window.location.origin}/mitglied-werden
             </div>
           </div>
         </div>
       )}
 
-      {/* Hauptnavigation - alle 6 Karten in einer Reihe */}
-      <div className="cta-grid member-navigation-grid" style={{
-        gridTemplateColumns: 'repeat(6, 1fr)',
-        gap: '0.8rem',
-        marginBottom: '1.2rem'
-      }}>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/profile')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <User size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.myData')}</span>
-        </div>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/schedule')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <Calendar size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.mySchedule')}</span>
-        </div>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/payments')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <CreditCard size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.myPayments')}</span>
-        </div>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/stats')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <BarChart3 size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.myStats')}</span>
-        </div>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/styles')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <Trophy size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.styleAndBelt')}</span>
-        </div>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/equipment')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <Package size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.equipment')}</span>
-        </div>
-        <div className="cta-tile" onClick={() => handleNavigation('/member/kalender')} style={{ padding: '1rem', minHeight: '80px' }}>
-          <CalendarSync size={24} />
-          <span style={{ fontSize: '0.9rem' }}>{t('navigation.calendarSync')}</span>
-        </div>
-      </div>
-
-      {/* Schnellzugriff - kompakter */}
-      <div style={{ marginTop: '1rem' }}>
-        <div className="cta-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.8rem' }}>
-          <div className="cta-tile" onClick={() => handleQuickAction('checkin')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
-            <Clock size={20} />
-            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.checkin')}</span>
-          </div>
-          <div className="cta-tile" onClick={() => setShowQRCode(true)} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 53, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-            <QrCode size={20} />
-            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.myQrCode')}</span>
-          </div>
-          <div className="cta-tile" onClick={() => navigate('/app-install')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 237, 78, 0.15))', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-            <Download size={20} />
-            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.installApp')}</span>
-          </div>
-          <div className="cta-tile" onClick={() => navigate('/member/events')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
-            <Calendar size={20} />
-            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.events')}</span>
-          </div>
-          <div className="cta-tile" onClick={() => handleQuickAction('notifications')} style={{ cursor: 'pointer', padding: '0.8rem', minHeight: '60px', position: 'relative' }}>
-            <Bell size={20} />
-            <span style={{ fontSize: '0.85rem' }}>{t('quickActions.notifications')}</span>
-            {unreadCount > 0 && (
-              <span style={{
-                position: 'absolute',
-                top: '0.5rem',
-                right: '0.5rem',
-                background: '#ef4444',
-                color: 'white',
-                padding: '0.1rem 0.4rem',
-                borderRadius: '10px',
-                fontSize: '0.7rem',
-                fontWeight: 'bold'
-              }}>
-                {unreadCount}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Persönliche Informationen - kompakter */}
       {memberData && (
-        <div style={{ marginTop: '1.5rem' }}>
-          <h2 style={{ marginBottom: '0.8rem', color: '#ffd700', fontSize: '1.2rem' }}>{t('info.title')}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            
+        <div className="md-info-section">
+          <h2 className="md-info-section-title">{t('info.title')}</h2>
+          <div className="md-info-list">
+
             {/* Trainer-Empfehlung */}
             {memberData.trainer_empfehlung && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                gap: '0.8rem'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>👨‍🏫</div>
+              <div className="md-info-card">
+                <div className="mb-icon-lg">👨‍🏫</div>
                 <div>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Trainer-Empfehlung</h4>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginBottom: '0.3rem', fontSize: '0.85rem' }}>{memberData.trainer_empfehlung}</p>
+                  <h4 className="mb-value-primary">Trainer-Empfehlung</h4>
+                  <p className="mb-label-sm">{memberData.trainer_empfehlung}</p>
                 </div>
               </div>
             )}
 
             {/* Medizinische Hinweise */}
             {memberData.medizinische_hinweise && memberData.medizinische_hinweise !== 'Keine besonderen Hinweise' && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                gap: '0.8rem'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>🏥</div>
+              <div className="md-info-card">
+                <div className="mb-icon-lg">🏥</div>
                 <div>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Medizinische Hinweise</h4>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginBottom: '0.3rem', fontSize: '0.85rem' }}>{memberData.medizinische_hinweise}</p>
+                  <h4 className="mb-value-primary">Medizinische Hinweise</h4>
+                  <p className="mb-label-sm">{memberData.medizinische_hinweise}</p>
                 </div>
               </div>
             )}
 
             {/* Prüfungs-Countdown */}
             {nextExam && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                gap: '0.8rem'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>🎓</div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Nächste Prüfung</h4>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.2rem', fontSize: '0.85rem', fontWeight: '500' }}>
+              <div className="md-info-card">
+                <div className="mb-icon-lg">🎓</div>
+                <div className="u-flex-1">
+                  <h4 className="mb-value-primary">Nächste Prüfung</h4>
+                  <p className="md-exam-date-text">
                     {nextExam.stil} - {formatDate(nextExam.date)}
                   </p>
-                  <div style={{ 
-                    color: '#10B981', 
-                    fontSize: '0.8rem', 
-                    fontWeight: '600',
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '6px',
-                    display: 'inline-block'
-                  }}>
+                  <div className="md-countdown-badge">
                     {getDaysUntilExam(nextExam.date)} Tage verbleiben
                   </div>
                 </div>
@@ -782,17 +1171,10 @@ const MemberDashboard = () => {
 
             {/* Trainingsstunden-Tracker */}
             {Object.values(styleSpecificData).some(data => data && data.stunden_seit_letzter_pruefung !== undefined) && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                gap: '0.8rem'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>🎯</div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Trainingsfortschritt</h4>
+              <div className="md-info-card">
+                <div className="mb-icon-lg">🎯</div>
+                <div className="u-flex-1">
+                  <h4 className="mb-value-primary">Trainingsfortschritt</h4>
                   {Object.entries(styleSpecificData).map(([stilId, data]) => {
                     if (!data || !data.stunden_seit_letzter_pruefung) return null;
                     
@@ -804,63 +1186,30 @@ const MemberDashboard = () => {
                     const hoursNeeded = Math.max(0, requiredHours - data.stunden_seit_letzter_pruefung);
                     
                     return (
-                      <div key={stilId} style={{ 
-                        marginBottom: '0.5rem',
-                        paddingBottom: '0.5rem',
-                        borderBottom: '1px solid rgba(255, 215, 0, 0.1)'
-                      }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          fontSize: '0.85rem',
-                          marginBottom: '0.2rem'
-                        }}>
-                          <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: '500' }}>
+                      <div key={stilId} className="md-progress-row">
+                        <div className="md-progress-header">
+                          <span className="md-progress-stil-name">
                             {stil.name}
                           </span>
                           {hoursNeeded > 0 ? (
-                            <span style={{ 
-                              color: '#ff6b35', 
-                              fontSize: '0.8rem',
-                              fontWeight: '600'
-                            }}>
+                            <span className="md-hours-needed">
                               Noch {hoursNeeded}h
                             </span>
                           ) : (
-                            <span style={{ 
-                              color: '#10B981', 
-                              fontSize: '0.8rem',
-                              fontWeight: '600'
-                            }}>
+                            <span className="md-hours-ready">
                               ✅ Bereit
                             </span>
                           )}
                         </div>
-                        <div style={{
-                          width: '100%',
-                          height: '4px',
-                          background: 'rgba(255, 255, 255, 0.1)',
-                          borderRadius: '2px',
-                          overflow: 'hidden'
-                        }}>
-                          <div style={{
-                            width: `${Math.min(100, (data.stunden_seit_letzter_pruefung / requiredHours) * 100)}%`,
-                            height: '100%',
-                            background: 'linear-gradient(90deg, #ffd700, #ff6b35)',
-                            borderRadius: '2px',
-                            transition: 'width 0.5s ease'
+                        <div className="md-progress-track">
+                          <div className="md-progress-fill" style={{
+                            width: `${Math.min(100, (data.stunden_seit_letzter_pruefung / requiredHours) * 100)}%`
                           }}></div>
                         </div>
                       </div>
                     );
                   })}
-                  <div style={{ 
-                    marginTop: '0.5rem', 
-                    fontSize: '0.75rem', 
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    fontStyle: 'italic'
-                  }}>
+                  <div className="md-hint-text">
                     💡 Klicke auf "Stil & Gurt" für Details
                   </div>
                 </div>
@@ -869,17 +1218,10 @@ const MemberDashboard = () => {
 
             {/* Aktuelle Stile & Gürtel */}
             {memberStile.length > 0 && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                gap: '0.8rem'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>🥋</div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Meine Kampfkunst-Stile</h4>
+              <div className="md-info-card">
+                <div className="mb-icon-lg">🥋</div>
+                <div className="u-flex-1">
+                  <h4 className="mb-value-primary">Meine Kampfkunst-Stile</h4>
                   {memberStile.map((stil, index) => {
                     const stilData = styleSpecificData[stil.stil_id];
                     const currentGraduation = stilData?.current_graduierung_id ? 
@@ -887,51 +1229,26 @@ const MemberDashboard = () => {
                       stil.graduierungen?.[0];
                     
                     return (
-                      <div key={stil.stil_id} style={{ 
-                        marginBottom: index < memberStile.length - 1 ? '0.5rem' : '0',
-                        paddingBottom: index < memberStile.length - 1 ? '0.5rem' : '0',
-                        borderBottom: index < memberStile.length - 1 ? '1px solid rgba(255, 215, 0, 0.1)' : 'none'
-                      }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          fontSize: '0.85rem'
-                        }}>
-                          <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: '500' }}>
+                      <div key={stil.stil_id} className="md-stil-item">
+                        <div className="md-stil-row-header">
+                          <span className="md-stil-name">
                             {stil.name}
                           </span>
                           {currentGraduation && (
-                            <span style={{ 
-                              color: '#ffd700', 
-                              fontWeight: '600',
-                              background: 'rgba(255, 215, 0, 0.1)',
-                              padding: '0.2rem 0.5rem',
-                              borderRadius: '6px',
-                              fontSize: '0.8rem'
-                            }}>
+                            <span className="md-graduation-badge">
                               {currentGraduation.name}
                             </span>
                           )}
                         </div>
                         {stilData?.letzte_pruefung && (
-                          <div style={{ 
-                            fontSize: '0.75rem', 
-                            color: 'rgba(255, 255, 255, 0.6)',
-                            marginTop: '0.2rem'
-                          }}>
+                          <div className="md-last-exam-text">
                             Letzte Prüfung: {new Date(stilData.letzte_pruefung).toLocaleDateString('de-DE')}
                           </div>
                         )}
                       </div>
                     );
                   })}
-                  <div style={{ 
-                    marginTop: '0.5rem', 
-                    fontSize: '0.75rem', 
-                    color: 'rgba(255, 255, 255, 0.6)',
-                    fontStyle: 'italic'
-                  }}>
+                  <div className="md-hint-text">
                     💡 Klicke auf "Stil & Gurt" für Details
                   </div>
                 </div>
@@ -940,18 +1257,11 @@ const MemberDashboard = () => {
 
             {/* Familienrabatt */}
             {memberData.rabatt_prozent && memberData.rabatt_grund && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                gap: '0.8rem'
-              }}>
-                <div style={{ fontSize: '1.5rem' }}>👨‍👩‍👧‍👦</div>
+              <div className="md-info-card">
+                <div className="mb-icon-lg">👨‍👩‍👧‍👦</div>
                 <div>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.3rem', fontSize: '0.9rem' }}>Familienrabatt</h4>
-                  <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginBottom: '0.3rem', fontSize: '0.85rem' }}>
+                  <h4 className="mb-value-primary">Familienrabatt</h4>
+                  <p className="mb-label-sm">
                     Du erhältst {memberData.rabatt_prozent}% Rabatt ({memberData.rabatt_grund})
                   </p>
                 </div>
@@ -970,87 +1280,43 @@ const MemberDashboard = () => {
 
             {/* Zugelassene Prüfungen */}
             {approvedExams.length > 0 && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.8rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                  <div style={{ fontSize: '1.5rem' }}>🎓</div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ color: '#8b5cf6', marginBottom: '0.2rem', fontSize: '0.9rem' }}>
+              <div className="md-info-card-purple">
+                <div className="mb-flex-center-gap">
+                  <div className="mb-icon-lg">🎓</div>
+                  <div className="u-flex-1">
+                    <h4 className="md-section-heading-purple">
                       Zugelassene Prüfungen
-                      <span style={{
-                        marginLeft: '0.5rem',
-                        background: '#8b5cf6',
-                        color: 'white',
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '10px',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold'
-                      }}>
+                      <span className="md-count-badge-purple">
                         {approvedExams.length}
                       </span>
                     </h4>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="u-flex-col-sm">
                   {approvedExams.map((exam, index) => (
                     <div
                       key={exam.pruefung_id}
-                      style={{
-                        background: 'rgba(139, 92, 246, 0.1)',
-                        border: '1px solid rgba(139, 92, 246, 0.3)',
-                        borderRadius: '8px',
-                        padding: '0.6rem',
-                      }}
+                      className="md-exam-card-purple"
                     >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: '0.3rem'
-                      }}>
+                      <div className="md-exam-card-header">
                         <div>
-                          <div style={{
-                            fontWeight: 'bold',
-                            color: '#8b5cf6',
-                            fontSize: '0.85rem',
-                            marginBottom: '0.2rem'
-                          }}>
+                          <div className="md-exam-name-purple">
                             {exam.stil_name}
                           </div>
-                          <div style={{
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontSize: '0.8rem'
-                          }}>
+                          <div className="md-exam-sub-text">
                             Prüfung zum {exam.graduierung_nachher}
                           </div>
                         </div>
                         {exam.graduierung_nachher && exam.farbe_nachher && (
                           <div
-                            style={{
-                              width: '20px',
-                              height: '20px',
-                              borderRadius: '50%',
-                              backgroundColor: exam.farbe_nachher,
-                              border: '2px solid rgba(255, 255, 255, 0.3)',
-                              flexShrink: 0
-                            }}
+                            className="md-belt-dot md-belt-dot--sm"
+                            style={{ '--belt-color': exam.farbe_nachher }}
                             title={exam.graduierung_nachher}
                           />
                         )}
                       </div>
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '0.75rem',
-                        marginBottom: '0.2rem'
-                      }}>
+                      <div className="md-exam-date-text-sm">
                         📅 {exam.pruefungsdatum ? new Date(exam.pruefungsdatum).toLocaleDateString('de-DE', {
                           weekday: 'long',
                           year: 'numeric',
@@ -1059,16 +1325,7 @@ const MemberDashboard = () => {
                         }) : 'Termin wird noch bekanntgegeben'}
                       </div>
                       {exam.pruefungsdatum && getDaysUntilExam(exam.pruefungsdatum) > 0 && (
-                        <div style={{
-                          color: '#10B981',
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                          background: 'rgba(16, 185, 129, 0.1)',
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '6px',
-                          display: 'inline-block',
-                          marginTop: '0.3rem'
-                        }}>
+                        <div className="md-exam-countdown">
                           In {getDaysUntilExam(exam.pruefungsdatum)} Tagen
                         </div>
                       )}
@@ -1077,37 +1334,14 @@ const MemberDashboard = () => {
                       {!exam.teilnahme_bestaetigt ? (
                         <button
                           onClick={() => handleOpenExamRegistration(exam)}
-                          style={{
-                            marginTop: '0.5rem',
-                            width: '100%',
-                            padding: '0.5rem',
-                            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease'
-                          }}
+                          className="md-exam-register-btn"
                           onMouseOver={(e) => e.target.style.transform = 'scale(1.02)'}
                           onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
                         >
                           Jetzt Anmelden
                         </button>
                       ) : (
-                        <div style={{
-                          marginTop: '0.5rem',
-                          width: '100%',
-                          padding: '0.5rem',
-                          background: 'rgba(16, 185, 129, 0.2)',
-                          border: '1px solid rgba(16, 185, 129, 0.4)',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: 'bold',
-                          color: '#10B981',
-                          textAlign: 'center'
-                        }}>
+                        <div className="md-exam-confirmed-badge">
                           ✅ Teilnahme bestätigt
                         </div>
                       )}
@@ -1119,88 +1353,47 @@ const MemberDashboard = () => {
 
             {/* Prüfungsergebnisse */}
             {examResults.length > 0 && (
-              <div style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.8rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                  <div style={{ fontSize: '1.5rem' }}>🏆</div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{ color: '#ffd700', marginBottom: '0.2rem', fontSize: '0.9rem' }}>
+              <div className="md-info-card-col">
+                <div className="mb-flex-center-gap">
+                  <div className="mb-icon-lg">🏆</div>
+                  <div className="u-flex-1">
+                    <h4 className="md-section-heading-primary">
                       Prüfungsergebnisse
                     </h4>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="u-flex-col-sm">
                   {examResults.slice(0, 3).map((result, index) => (
                     <div
                       key={result.pruefung_id}
-                      style={{
-                        background: result.bestanden ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        border: result.bestanden ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-                        borderRadius: '8px',
-                        padding: '0.6rem',
-                      }}
+                      className={`md-exam-result-card${result.bestanden ? ' md-exam-result-card--pass' : ' md-exam-result-card--fail'}`}
                     >
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        marginBottom: '0.3rem'
-                      }}>
+                      <div className="md-result-header">
                         <div>
-                          <div style={{
-                            fontWeight: 'bold',
-                            color: result.bestanden ? '#10b981' : '#ef4444',
-                            fontSize: '0.85rem',
-                            marginBottom: '0.2rem'
-                          }}>
+                          <div className={`md-exam-result-stil${result.bestanden ? ' md-exam-result-stil--pass' : ' md-exam-result-stil--fail'}`}>
                             {result.stil_name}
                           </div>
-                          <div style={{
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            fontSize: '0.8rem'
-                          }}>
+                          <div className="md-result-sub-text">
                             {result.graduierung_nachher}
                           </div>
                         </div>
-                        <div style={{
-                          fontSize: '1.2rem'
-                        }}>
+                        <div className="md-result-emoji">
                           {result.bestanden ? '✅' : '❌'}
                         </div>
                       </div>
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '0.75rem'
-                      }}>
+                      <div className="md-result-date-text">
                         📅 {new Date(result.pruefungsdatum).toLocaleDateString('de-DE')}
                       </div>
                       {result.punktzahl && result.max_punktzahl && (
-                        <div style={{
-                          color: 'rgba(255, 255, 255, 0.6)',
-                          fontSize: '0.75rem',
-                          marginTop: '0.2rem'
-                        }}>
+                        <div className="md-result-score-text">
                           Punktzahl: {result.punktzahl} / {result.max_punktzahl}
                         </div>
                       )}
                     </div>
                   ))}
                   {examResults.length > 3 && (
-                    <div style={{
-                      textAlign: 'center',
-                      color: 'rgba(255, 255, 255, 0.6)',
-                      fontSize: '0.75rem',
-                      fontStyle: 'italic',
-                      marginTop: '0.2rem'
-                    }}>
+                    <div className="md-more-items-hint">
                       +{examResults.length - 3} weitere Prüfungen
                     </div>
                   )}
@@ -1211,31 +1404,15 @@ const MemberDashboard = () => {
             {/* Push-Benachrichtigungen */}
             <div
               id="member-notifications"
-              style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 215, 0, 0.2)',
-                borderRadius: '12px',
-                padding: '1rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.8rem'
-              }}
+              className="md-info-card-col"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <div style={{ fontSize: '1.5rem' }}>📢</div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ color: '#ffd700', marginBottom: '0.2rem', fontSize: '0.9rem' }}>
+              <div className="mb-flex-center-gap">
+                <div className="mb-icon-lg">📢</div>
+                <div className="u-flex-1">
+                  <h4 className="md-section-heading-primary">
                     {t('notifications.title')}
                     {unreadCount > 0 && (
-                      <span style={{
-                        marginLeft: '0.5rem',
-                        background: '#ef4444',
-                        color: 'white',
-                        padding: '0.1rem 0.4rem',
-                        borderRadius: '10px',
-                        fontSize: '0.7rem',
-                        fontWeight: 'bold'
-                      }}>
+                      <span className="md-count-badge-red">
                         {unreadCount}
                       </span>
                     )}
@@ -1244,54 +1421,25 @@ const MemberDashboard = () => {
               </div>
 
               {notifications.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="u-flex-col-sm">
                   {notifications.slice(0, 3).map((notification, index) => (
                     <div
                       key={notification.id || index}
-                      style={{
-                        background: notification.read ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 215, 0, 0.1)',
-                        border: notification.read ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(255, 215, 0, 0.3)',
-                        borderRadius: '8px',
-                        padding: '0.6rem',
-                      }}
+                      className={`md-notif-item${!notification.read ? ' md-notif-item--unread' : ''}`}
                     >
-                      <div style={{
-                        fontWeight: notification.read ? 'normal' : 'bold',
-                        color: notification.read ? 'rgba(255, 255, 255, 0.8)' : '#ffd700',
-                        fontSize: '0.85rem',
-                        marginBottom: '0.2rem'
-                      }}>
+                      <div className={`md-notif-title${!notification.read ? ' md-notif-title--unread' : ''}`}>
                         {notification.subject || notification.title}
                       </div>
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '0.8rem',
-                        marginBottom: '0.3rem'
-                      }}>
+                      <div className="md-notif-message">
                         {notification.message}
                       </div>
-                      <div style={{
-                        color: 'rgba(255, 255, 255, 0.5)',
-                        fontSize: '0.7rem'
-                      }}>
+                      <div className="md-notif-timestamp">
                         {notification.created_at ? new Date(notification.created_at).toLocaleString('de-DE') : 'Gerade eben'}
                       </div>
                       {notification.requires_confirmation && !notification.confirmed_at && (
                         <button
                           onClick={() => confirmNotification(notification.id)}
-                          style={{
-                            marginTop: '0.5rem',
-                            padding: '0.4rem 0.8rem',
-                            background: 'linear-gradient(135deg, #22c55e, #10b981)',
-                            border: 'none',
-                            borderRadius: '6px',
-                            color: 'white',
-                            fontSize: '0.75rem',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s',
-                            boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)'
-                          }}
+                          className="md-notif-confirm-btn"
                           onMouseOver={(e) => {
                             e.target.style.transform = 'translateY(-1px)';
                             e.target.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.4)';
@@ -1305,41 +1453,20 @@ const MemberDashboard = () => {
                         </button>
                       )}
                       {notification.requires_confirmation && notification.confirmed_at && (
-                        <div style={{
-                          marginTop: '0.5rem',
-                          padding: '0.4rem 0.8rem',
-                          background: 'rgba(34, 197, 94, 0.2)',
-                          border: '1px solid rgba(34, 197, 94, 0.3)',
-                          borderRadius: '6px',
-                          color: '#22c55e',
-                          fontSize: '0.75rem',
-                          fontWeight: '600',
-                          display: 'inline-block'
-                        }}>
+                        <div className="md-notif-confirmed-badge">
                           ✓ Bestätigt am {new Date(notification.confirmed_at).toLocaleString('de-DE')}
                         </div>
                       )}
                     </div>
                   ))}
                   {notifications.length > 3 && (
-                    <div style={{
-                      textAlign: 'center',
-                      color: 'rgba(255, 255, 255, 0.6)',
-                      fontSize: '0.75rem',
-                      fontStyle: 'italic',
-                      marginTop: '0.2rem'
-                    }}>
+                    <div className="md-more-items-hint">
                       +{notifications.length - 3} weitere Benachrichtigungen
                     </div>
                   )}
                 </div>
               ) : (
-                <p style={{
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontSize: '0.85rem',
-                  fontStyle: 'italic',
-                  margin: 0
-                }}>
+                <p className="md-notif-empty">
                   📭 {t('notifications.noNotifications')}
                 </p>
               )}
@@ -1350,46 +1477,17 @@ const MemberDashboard = () => {
 
       {/* Prüfungsanmeldung Modal */}
       {showExamRegistrationModal && selectedExam && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: '#1a1a2e',
-            border: '2px solid rgba(139, 92, 246, 0.4)',
-            borderRadius: '16px',
-            padding: '2rem',
-            maxWidth: '600px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            color: 'white'
-          }}>
+        <div className="md-modal-overlay">
+          <div className="md-modal-box">
             {/* Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '1.5rem',
-              paddingBottom: '1rem',
-              borderBottom: '2px solid rgba(139, 92, 246, 0.3)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                <div style={{ fontSize: '2rem' }}>🎓</div>
+            <div className="md-modal-header">
+              <div className="mb-flex-center-gap">
+                <div className="md-modal-icon">🎓</div>
                 <div>
-                  <h2 style={{ margin: 0, color: '#8b5cf6', fontSize: '1.5rem' }}>
+                  <h2 className="md-modal-title">
                     Prüfungsanmeldung
                   </h2>
-                  <p style={{ margin: '0.2rem 0 0 0', color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem' }}>
+                  <p className="md-modal-subtitle">
                     Bestätige deine Teilnahme
                   </p>
                 </div>
@@ -1400,55 +1498,35 @@ const MemberDashboard = () => {
                   setSelectedExam(null);
                   setAcceptedConditions(false);
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  padding: '0.2rem',
-                  lineHeight: 1
-                }}
+                className="md-modal-close-btn"
               >
                 ×
               </button>
             </div>
 
             {/* Prüfungsdetails */}
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div className="md-modal-details">
               {/* Stil & Graduierung */}
-              <div style={{
-                background: 'rgba(139, 92, 246, 0.1)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '12px',
-                padding: '1rem',
-                marginBottom: '1rem'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="md-modal-stil-card">
+                <div className="md-modal-stil-inner">
                   <div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                    <div className="md-modal-field-label">
                       Kampfkunst-Stil
                     </div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#8b5cf6', marginBottom: '0.5rem' }}>
+                    <div className="md-modal-stil-name">
                       {selectedExam.stil_name}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.2rem' }}>
+                    <div className="md-modal-pruefung-label">
                       Prüfung zum
                     </div>
-                    <div style={{ fontSize: '1rem', fontWeight: '600', color: '#ffd700' }}>
+                    <div className="md-modal-pruefung-value">
                       {selectedExam.graduierung_nachher}
                     </div>
                   </div>
                   {selectedExam.farbe_nachher && (
                     <div
-                      style={{
-                        width: '50px',
-                        height: '50px',
-                        borderRadius: '50%',
-                        backgroundColor: selectedExam.farbe_nachher,
-                        border: '3px solid rgba(255, 255, 255, 0.3)',
-                        flexShrink: 0
-                      }}
+                      className="md-belt-dot md-belt-dot--lg"
+                      style={{ '--belt-color': selectedExam.farbe_nachher }}
                       title={selectedExam.graduierung_nachher}
                     />
                   )}
@@ -1456,23 +1534,13 @@ const MemberDashboard = () => {
               </div>
 
               {/* Termin & Ort */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr',
-                gap: '0.8rem',
-                marginBottom: '1rem'
-              }}>
+              <div className="md-modal-termin-grid">
                 {selectedExam.pruefungsdatum && (
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    padding: '0.8rem',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                  <div className="md-modal-info-card">
+                    <div className="mb-label-xs">
                       📅 Datum & Uhrzeit
                     </div>
-                    <div style={{ fontSize: '1rem', fontWeight: '600', color: 'white' }}>
+                    <div className="md-modal-info-value">
                       {new Date(selectedExam.pruefungsdatum).toLocaleDateString('de-DE', {
                         weekday: 'long',
                         year: 'numeric',
@@ -1481,7 +1549,7 @@ const MemberDashboard = () => {
                       })}
                     </div>
                     {selectedExam.pruefungszeit && (
-                      <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)', marginTop: '0.2rem' }}>
+                      <div className="md-modal-time-text">
                         Uhrzeit: {selectedExam.pruefungszeit} Uhr
                       </div>
                     )}
@@ -1489,16 +1557,11 @@ const MemberDashboard = () => {
                 )}
 
                 {selectedExam.pruefungsort && (
-                  <div style={{
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '8px',
-                    padding: '0.8rem',
-                    border: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                  <div className="md-modal-info-card">
+                    <div className="mb-label-xs">
                       📍 Ort
                     </div>
-                    <div style={{ fontSize: '0.95rem', color: 'white' }}>
+                    <div className="md-modal-info-value-sm">
                       {selectedExam.pruefungsort}
                     </div>
                   </div>
@@ -1506,39 +1569,24 @@ const MemberDashboard = () => {
               </div>
 
               {/* Gebühr & Anmeldefrist */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '0.8rem',
-                marginBottom: '1rem'
-              }}>
+              <div className="md-modal-fee-grid">
                 {selectedExam.pruefungsgebuehr && (
-                  <div style={{
-                    background: 'rgba(255, 215, 0, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0.8rem',
-                    border: '1px solid rgba(255, 215, 0, 0.2)'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                  <div className="md-modal-fee-card">
+                    <div className="mb-label-xs">
                       💰 Prüfungsgebühr
                     </div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#ffd700' }}>
+                    <div className="md-modal-fee-value">
                       {parseFloat(selectedExam.pruefungsgebuehr).toFixed(2)} €
                     </div>
                   </div>
                 )}
 
                 {selectedExam.anmeldefrist && (
-                  <div style={{
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0.8rem',
-                    border: '1px solid rgba(239, 68, 68, 0.2)'
-                  }}>
-                    <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                  <div className="md-modal-frist-card">
+                    <div className="mb-label-xs">
                       ⏰ Anmeldefrist
                     </div>
-                    <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#ef4444' }}>
+                    <div className="md-modal-frist-value">
                       {new Date(selectedExam.anmeldefrist).toLocaleDateString('de-DE')}
                     </div>
                   </div>
@@ -1547,17 +1595,11 @@ const MemberDashboard = () => {
 
               {/* Gurtlänge */}
               {selectedExam.gurtlaenge && (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '8px',
-                  padding: '0.8rem',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  marginBottom: '1rem'
-                }}>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                <div className="md-modal-belt-card">
+                  <div className="mb-label-xs">
                     📏 Empfohlene Gurtlänge
                   </div>
-                  <div style={{ fontSize: '0.95rem', color: 'white' }}>
+                  <div className="md-modal-info-value-sm">
                     {selectedExam.gurtlaenge}
                   </div>
                 </div>
@@ -1565,17 +1607,11 @@ const MemberDashboard = () => {
 
               {/* Bemerkungen */}
               {selectedExam.bemerkungen && (
-                <div style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  borderRadius: '8px',
-                  padding: '0.8rem',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  marginBottom: '1rem'
-                }}>
-                  <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)', marginBottom: '0.3rem' }}>
+                <div className="md-modal-remarks-card">
+                  <div className="mb-label-xs">
                     📝 Bemerkungen
                   </div>
-                  <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)', whiteSpace: 'pre-line' }}>
+                  <div className="md-modal-remarks-text">
                     {selectedExam.bemerkungen}
                   </div>
                 </div>
@@ -1583,17 +1619,11 @@ const MemberDashboard = () => {
 
               {/* Teilnahmebedingungen */}
               {selectedExam.teilnahmebedingungen && (
-                <div style={{
-                  background: 'rgba(99, 102, 241, 0.1)',
-                  borderRadius: '8px',
-                  padding: '1rem',
-                  border: '1px solid rgba(99, 102, 241, 0.3)',
-                  marginBottom: '1rem'
-                }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#6366f1', marginBottom: '0.5rem' }}>
+                <div className="md-modal-conditions-card">
+                  <div className="md-modal-conditions-title">
                     📋 Teilnahmebedingungen
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)', whiteSpace: 'pre-line' }}>
+                  <div className="md-modal-conditions-text">
                     {selectedExam.teilnahmebedingungen}
                   </div>
                 </div>
@@ -1601,32 +1631,15 @@ const MemberDashboard = () => {
             </div>
 
             {/* Bestätigung */}
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              borderRadius: '12px',
-              padding: '1rem',
-              marginBottom: '1rem'
-            }}>
-              <label style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.8rem',
-                cursor: 'pointer',
-                fontSize: '0.9rem'
-              }}>
+            <div className="md-modal-checkbox-wrap">
+              <label className="md-modal-checkbox-label">
                 <input
                   type="checkbox"
                   checked={acceptedConditions}
                   onChange={(e) => setAcceptedConditions(e.target.checked)}
-                  style={{
-                    marginTop: '0.2rem',
-                    width: '18px',
-                    height: '18px',
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }}
+                  className="md-modal-checkbox-input"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                <span className="u-text-primary">
                   Ich bestätige hiermit meine Teilnahme an der Prüfung und akzeptiere die Teilnahmebedingungen.
                   Mir ist bewusst, dass die Prüfungsgebühr fällig wird.
                 </span>
@@ -1634,25 +1647,14 @@ const MemberDashboard = () => {
             </div>
 
             {/* Aktionen */}
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className="md-modal-actions">
               <button
                 onClick={() => {
                   setShowExamRegistrationModal(false);
                   setSelectedExam(null);
                   setAcceptedConditions(false);
                 }}
-                style={{
-                  flex: 1,
-                  padding: '0.8rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: 'white',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
+                className="md-modal-cancel-btn"
                 onMouseOver={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.15)'}
                 onMouseOut={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
               >
@@ -1661,25 +1663,8 @@ const MemberDashboard = () => {
               <button
                 onClick={handleExamRegistration}
                 disabled={!acceptedConditions}
-                style={{
-                  flex: 1,
-                  padding: '0.8rem',
-                  background: acceptedConditions
-                    ? 'linear-gradient(135deg, #8b5cf6, #6366f1)'
-                    : 'rgba(139, 92, 246, 0.3)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: acceptedConditions ? 'white' : 'rgba(255, 255, 255, 0.4)',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  cursor: acceptedConditions ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  if (acceptedConditions) {
-                    e.target.style.transform = 'scale(1.02)';
-                  }
-                }}
+                className="md-exam-confirm-btn"
+                onMouseOver={(e) => { if (acceptedConditions) e.target.style.transform = 'scale(1.02)'; }}
                 onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
               >
                 ✅ Teilnahme bestätigen

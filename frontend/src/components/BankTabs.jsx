@@ -226,34 +226,10 @@ const BankTabs = ({ dojoId }) => {
                 type="button"
                 onClick={() => setFormData({ ...formData, ist_aktiv: !formData.ist_aktiv })}
                 className={`logout-button checkbox-button ${formData.ist_aktiv ? 'active' : ''}`}
-                style={{
-                  width: '100%',
-                  justifyContent: 'flex-start',
-                  background: formData.ist_aktiv 
-                    ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))' 
-                    : 'transparent',
-                  borderColor: formData.ist_aktiv ? '#ffd700' : 'rgba(255, 215, 0, 0.2)',
-                  color: formData.ist_aktiv ? '#ffd700' : 'rgba(255, 255, 255, 0.7)'
-                }}
               >
-                <div 
-                  className="checkbox-indicator"
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    border: '2px solid',
-                    borderColor: formData.ist_aktiv ? '#ffd700' : 'rgba(255, 215, 0, 0.4)',
-                    borderRadius: '4px',
-                    background: formData.ist_aktiv ? '#ffd700' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '10px',
-                    transition: 'all 0.2s'
-                  }}
-                >
+                <div className="checkbox-indicator">
                   {formData.ist_aktiv && (
-                    <Check size={12} color="#1a1a2e" style={{ strokeWidth: 3 }} />
+                    <Check size={12} color="#1a1a2e" strokeWidth={3} />
                   )}
                 </div>
                 <span>AKTIV (SICHTBAR FÜR MITGLIEDER)</span>
@@ -265,34 +241,10 @@ const BankTabs = ({ dojoId }) => {
                 type="button"
                 onClick={() => setFormData({ ...formData, ist_standard: !formData.ist_standard })}
                 className={`logout-button checkbox-button ${formData.ist_standard ? 'active' : ''}`}
-                style={{
-                  width: '100%',
-                  justifyContent: 'flex-start',
-                  background: formData.ist_standard 
-                    ? 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1))' 
-                    : 'transparent',
-                  borderColor: formData.ist_standard ? '#ffd700' : 'rgba(255, 215, 0, 0.2)',
-                  color: formData.ist_standard ? '#ffd700' : 'rgba(255, 255, 255, 0.7)'
-                }}
               >
-                <div 
-                  className="checkbox-indicator"
-                  style={{
-                    width: '18px',
-                    height: '18px',
-                    border: '2px solid',
-                    borderColor: formData.ist_standard ? '#ffd700' : 'rgba(255, 215, 0, 0.4)',
-                    borderRadius: '4px',
-                    background: formData.ist_standard ? '#ffd700' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: '10px',
-                    transition: 'all 0.2s'
-                  }}
-                >
+                <div className="checkbox-indicator">
                   {formData.ist_standard && (
-                    <Check size={12} color="#1a1a2e" style={{ strokeWidth: 3 }} />
+                    <Check size={12} color="#1a1a2e" strokeWidth={3} />
                   )}
                 </div>
                 <span>STANDARD-KONTO</span>
@@ -300,7 +252,7 @@ const BankTabs = ({ dojoId }) => {
                   size={16} 
                   fill={formData.ist_standard ? '#ffd700' : 'none'}
                   color="#ffd700"
-                  style={{ marginLeft: '8px' }}
+                  className="checkbox-button__star"
                 />
               </button>
             </div>
@@ -392,8 +344,8 @@ const BankTabs = ({ dojoId }) => {
                   <label>
                     Secret Key
                     {formData.stripe_secret_configured && (
-                      <span style={{ color: '#22c55e', marginLeft: '8px', fontSize: '12px' }}>
-                        <Check size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> Konfiguriert
+                      <span className="bank-configured-badge">
+                        <Check size={12} /> Konfiguriert
                       </span>
                     )}
                   </label>
@@ -471,8 +423,8 @@ const BankTabs = ({ dojoId }) => {
                   <label>
                     Client Secret
                     {formData.paypal_secret_configured && (
-                      <span style={{ color: '#22c55e', marginLeft: '8px', fontSize: '12px' }}>
-                        <Check size={12} style={{ display: 'inline', verticalAlign: 'middle' }} /> Konfiguriert
+                      <span className="bank-configured-badge">
+                        <Check size={12} /> Konfiguriert
                       </span>
                     )}
                   </label>
@@ -596,12 +548,7 @@ const BankTabs = ({ dojoId }) => {
                   type="button"
                   onClick={() => handleDeleteBank(activeTab)}
                   disabled={loading}
-                  className="logout-button"
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    borderColor: 'rgba(239, 68, 68, 0.4)',
-                    color: '#ef4444'
-                  }}
+                  className="logout-button bank-delete-btn"
                 >
                   <X size={16} />
                   Löschen

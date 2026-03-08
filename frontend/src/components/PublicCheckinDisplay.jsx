@@ -173,16 +173,16 @@ const PublicCheckinDisplay = () => {
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         const placeholder = e.currentTarget.nextSibling;
-                        if (placeholder) placeholder.style.display = 'flex';
+                        if (placeholder) placeholder.classList.remove('avatar-placeholder--hidden');
                       }}
                       onLoad={(e) => {
                         const placeholder = e.currentTarget.nextSibling;
-                        if (placeholder) placeholder.style.display = 'none';
+                        if (placeholder) placeholder.classList.add('avatar-placeholder--hidden');
                       }}
-                      style={{ display: 'block' }}
+                      className="u-block"
                     />
                   ) : null}
-                  <div className="avatar-placeholder" style={{ display: (checkin.foto_pfad || checkin.profilbild) ? 'none' : 'flex' }}>
+                  <div className={`avatar-placeholder${(checkin.foto_pfad || checkin.profilbild) ? ' avatar-placeholder--hidden' : ''}`}>
                     {checkin.vorname?.charAt(0)}{checkin.nachname?.charAt(0)}
                   </div>
                 </div>

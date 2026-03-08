@@ -2,7 +2,7 @@
 
 .news-verwaltung,
 .news-formular {
-  padding: 2rem;
+  padding: var(--ui-page-padding);
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -12,45 +12,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-header-margin-b);
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--ui-header-gap);
 }
 
 .news-header-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--ui-header-gap);
 }
 
 .news-header h1 {
   margin: 0;
-  color: var(--color-text-primary, #fff);
-  font-size: 1.75rem;
+  color: var(--text-1);
+  font-size: var(--ui-page-title);
 }
 
 /* Buttons */
 .btn-back {
-  background: var(--color-bg-tertiary, #2a2a2a);
-  border: 1px solid var(--color-border, #3a3a3a);
-  color: var(--color-text-secondary, #aaa);
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-2);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-back:hover {
   background: var(--color-bg-secondary, #333);
-  color: var(--color-text-primary, #fff);
+  color: var(--text-1);
 }
 
 .btn-create-news {
   background: var(--gradient-gold, linear-gradient(135deg, #FFD700, #FFA500));
   border: none;
   color: #1a1a1a;
-  padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -70,43 +70,43 @@
 }
 
 .filter-btn {
-  background: var(--color-bg-tertiary, #2a2a2a);
-  border: 1px solid var(--color-border, #3a3a3a);
-  color: var(--color-text-secondary, #aaa);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text-2);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-pill);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .filter-btn:hover {
   background: var(--color-bg-secondary, #333);
-  color: var(--color-text-primary, #fff);
+  color: var(--text-1);
 }
 
 .filter-btn.active {
-  background: var(--color-gold, #FFD700);
-  border-color: var(--color-gold, #FFD700);
+  background: var(--primary);
+  border-color: var(--primary);
   color: #1a1a1a;
   font-weight: 600;
 }
 
 /* Messages */
 .news-error {
-  background: rgba(255, 77, 77, 0.15);
-  border: 1px solid var(--color-error, #ff4d4d);
-  color: var(--color-error, #ff4d4d);
+  background: var(--status-error-bg);
+  border: 1px solid var(--status-error);
+  color: var(--status-error);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1rem;
 }
 
 .news-success {
-  background: rgba(46, 204, 113, 0.15);
-  border: 1px solid var(--color-success, #2ecc71);
-  color: var(--color-success, #2ecc71);
+  background: var(--status-success-bg);
+  border: 1px solid var(--status-success);
+  color: var(--status-success);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1rem;
 }
 
@@ -114,7 +114,7 @@
 .news-empty {
   text-align: center;
   padding: 3rem;
-  color: var(--color-text-secondary, #aaa);
+  color: var(--text-2);
 }
 
 .news-empty p {
@@ -125,19 +125,19 @@
 .news-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--ui-grid-gap);
 }
 
 .news-card {
-  background: var(--color-bg-secondary, #252525);
-  border: 1px solid var(--color-border, #3a3a3a);
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-card-padding);
   transition: all 0.2s;
 }
 
 .news-card:hover {
-  border-color: var(--color-gold, #FFD700);
+  border-color: var(--primary);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -145,13 +145,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--ui-header-gap);
   margin-bottom: 0.75rem;
 }
 
 .news-title {
   margin: 0;
-  color: var(--color-text-primary, #fff);
+  color: var(--text-1);
   font-size: 1.25rem;
 }
 
@@ -164,39 +164,39 @@
 .news-status-badge,
 .news-zielgruppe-badge {
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: var(--comp-radius-xl);
+  font-size: var(--ui-badge-size);
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .news-status-badge.published {
-  background: rgba(46, 204, 113, 0.2);
-  color: var(--color-success, #2ecc71);
+  background: var(--status-success-bg);
+  color: var(--status-success);
 }
 
 .news-status-badge.draft {
-  background: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
 }
 
 .news-status-badge.archived {
-  background: rgba(108, 117, 125, 0.2);
+  background: var(--surface-3);
   color: #6c757d;
 }
 
 .news-zielgruppe-badge.homepage {
-  background: rgba(52, 152, 219, 0.2);
-  color: #3498db;
+  background: var(--status-indigo-bg);
+  color: var(--status-indigo);
 }
 
 .news-zielgruppe-badge.all-dojos {
-  background: rgba(155, 89, 182, 0.2);
-  color: #9b59b6;
+  background: var(--status-indigo-bg);
+  color: var(--status-indigo);
 }
 
 .news-description {
-  color: var(--color-text-secondary, #aaa);
+  color: var(--text-2);
   margin: 0 0 1rem 0;
   line-height: 1.5;
 }
@@ -206,9 +206,9 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--ui-header-gap);
   padding-top: 1rem;
-  border-top: 1px solid var(--color-border, #3a3a3a);
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .news-meta {
@@ -218,8 +218,8 @@
 }
 
 .news-date {
-  color: var(--color-text-tertiary, #666);
-  font-size: 0.85rem;
+  color: var(--text-4);
+  font-size: var(--ui-card-label);
 }
 
 .news-actions {
@@ -231,71 +231,71 @@
 .btn-delete,
 .btn-delete-confirm,
 .btn-cancel {
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-sm);
+  font-size: var(--ui-btn-font);
   cursor: pointer;
   transition: all 0.2s;
   border: none;
 }
 
 .btn-edit {
-  background: var(--color-bg-tertiary, #2a2a2a);
-  color: var(--color-text-primary, #fff);
-  border: 1px solid var(--color-border, #3a3a3a);
+  background: var(--surface-2);
+  color: var(--text-1);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn-edit:hover {
-  background: var(--color-gold, #FFD700);
+  background: var(--primary);
   color: #1a1a1a;
-  border-color: var(--color-gold, #FFD700);
+  border-color: var(--primary);
 }
 
 .btn-delete {
-  background: rgba(255, 77, 77, 0.1);
-  color: var(--color-error, #ff4d4d);
-  border: 1px solid var(--color-error, #ff4d4d);
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  border: 1px solid var(--status-error);
 }
 
 .btn-delete:hover {
-  background: var(--color-error, #ff4d4d);
+  background: var(--status-error);
   color: #fff;
 }
 
 .btn-delete-confirm {
-  background: var(--color-error, #ff4d4d);
+  background: var(--status-error);
   color: #fff;
 }
 
 .btn-cancel {
-  background: var(--color-bg-tertiary, #2a2a2a);
-  color: var(--color-text-secondary, #aaa);
-  border: 1px solid var(--color-border, #3a3a3a);
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 /* News Formular */
 .news-form {
-  background: var(--color-bg-secondary, #252525);
-  border: 1px solid var(--color-border, #3a3a3a);
-  border-radius: 12px;
-  padding: 2rem;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-page-padding);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--ui-form-gap);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: var(--color-text-primary, #fff);
+  margin-bottom: var(--ui-form-group-gap);
+  color: var(--text-1);
   font-weight: 500;
 }
 
 .char-count {
   font-weight: 400;
-  color: var(--color-text-tertiary, #666);
-  font-size: 0.85rem;
+  color: var(--text-4);
+  font-size: var(--ui-form-hint);
   margin-left: 0.5rem;
 }
 
@@ -304,11 +304,11 @@
 .form-select {
   width: 100%;
   padding: 0.75rem 1rem;
-  background: var(--color-bg-tertiary, #1a1a1a);
-  border: 1px solid var(--color-border, #3a3a3a);
-  border-radius: 8px;
-  color: var(--color-text-primary, #fff);
-  font-size: 1rem;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
+  font-size: var(--ui-form-input);
   transition: border-color 0.2s;
 }
 
@@ -316,7 +316,7 @@
 .form-textarea:focus,
 .form-select:focus {
   outline: none;
-  border-color: var(--color-gold, #FFD700);
+  border-color: var(--primary);
 }
 
 .form-textarea {
@@ -335,15 +335,15 @@
 .form-hint {
   display: block;
   margin-top: 0.5rem;
-  color: var(--color-text-tertiary, #666);
-  font-size: 0.85rem;
+  color: var(--text-4);
+  font-size: var(--ui-form-hint);
 }
 
 /* Radio Group */
 .radio-group {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .radio-label {
@@ -351,20 +351,20 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  background: var(--color-bg-tertiary, #1a1a1a);
-  border: 1px solid var(--color-border, #3a3a3a);
-  border-radius: 8px;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .radio-label:hover {
-  border-color: var(--color-gold, #FFD700);
+  border-color: var(--primary);
 }
 
 .radio-label input[type="radio"] {
   margin-top: 0.25rem;
-  accent-color: var(--color-gold, #FFD700);
+  accent-color: var(--primary);
 }
 
 .radio-text {
@@ -374,29 +374,29 @@
 }
 
 .radio-text strong {
-  color: var(--color-text-primary, #fff);
+  color: var(--text-1);
 }
 
 .radio-text small {
-  color: var(--color-text-secondary, #aaa);
+  color: var(--text-2);
 }
 
 /* Form Actions */
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: var(--ui-form-gap);
+  margin-top: var(--ui-section-gap);
   padding-top: 1.5rem;
-  border-top: 1px solid var(--color-border, #3a3a3a);
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn-save {
   background: var(--gradient-gold, linear-gradient(135deg, #FFD700, #FFA500));
   border: none;
   color: #1a1a1a;
-  padding: 0.75rem 2rem;
-  border-radius: 8px;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -413,14 +413,14 @@
 }
 
 .form-actions .btn-cancel {
-  padding: 0.75rem 1.5rem;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .news-verwaltung,
   .news-formular {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .news-header {
@@ -448,23 +448,23 @@
 
 /* News in MitgliedDetailShared - Nachrichten Tab */
 .news-section {
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-section-gap);
 }
 
 .news-section-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
-  color: var(--color-text-primary, #fff);
-  font-size: 1.1rem;
+  margin-bottom: var(--ui-header-padding-b);
+  color: var(--text-1);
+  font-size: var(--ui-section-title);
   font-weight: 600;
 }
 
 .news-item {
-  background: var(--color-bg-tertiary, #2a2a2a);
-  border: 1px solid var(--color-border, #3a3a3a);
-  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-md);
   padding: 1rem;
   margin-bottom: 0.75rem;
 }
@@ -478,18 +478,18 @@
 
 .news-item-title {
   margin: 0;
-  color: var(--color-text-primary, #fff);
-  font-size: 1rem;
+  color: var(--text-1);
+  font-size: var(--ui-card-body);
 }
 
 .news-item-date {
-  color: var(--color-text-tertiary, #666);
-  font-size: 0.8rem;
+  color: var(--text-4);
+  font-size: var(--ui-badge-size-sm);
 }
 
 .news-item-content {
-  color: var(--color-text-secondary, #aaa);
-  font-size: 0.9rem;
+  color: var(--text-2);
+  font-size: var(--ui-card-body);
   line-height: 1.5;
 }
 
@@ -501,8 +501,8 @@
 }
 
 .news-read-more {
-  color: var(--color-gold, #FFD700);
-  font-size: 0.85rem;
+  color: var(--primary);
+  font-size: var(--ui-form-hint);
   cursor: pointer;
   margin-top: 0.5rem;
   display: inline-block;

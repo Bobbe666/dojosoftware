@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart3, TrendingUp, Target, Award, Calendar, Clock, Trophy, X } from 'lucide-react';
-import MemberHeader from './MemberHeader.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { fetchWithAuth } from '../utils/fetchWithAuth';
+import MemberHeader from './MemberHeader.jsx';
 import '../styles/components.css';
 import '../styles/MemberStats.css';
 import config from '../config/config.js';
@@ -16,12 +17,14 @@ const MemberStats = () => {
   const [comparisonData, setComparisonData] = useState(null);
   const [memberData, setMemberData] = useState(null);
 
+  const API_BASE = config.apiBaseUrl;
+
   const loadMonthDetails = async (month, year, mitgliedId) => {
     try {
       console.log(`Lade Monatsdetails für Monat ${month}/${year}, Mitglied-ID: ${mitgliedId}`);
 
       // Lade die Anwesenheitsdaten für das Mitglied
-      const response = await fetch(`/anwesenheit/${mitgliedId}`);
+      const response = await fetchWithAuth(`${API_BASE}/anwesenheit/${mitgliedId}`);
 
       if (response.ok) {
         const allData = await response.json();
@@ -49,11 +52,7 @@ const MemberStats = () => {
   // Lade Vergleichsdaten mit anderen Mitgliedern
   const loadComparisonData = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/mitglieder/comparison-stats`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+      const response = await fetchWithAuth(`${API_BASE}/mitglieder/comparison-stats`);
 
       if (response.ok) {
         const data = await response.json();
@@ -75,11 +74,13 @@ const MemberStats = () => {
   const loadStats = async () => {
     setLoading(true);
     try {
-      // Lade Mitgliedsdaten über Email (wie in MemberDashboard)
-      const userEmail = user?.email || 'tom@example.com';
-      console.log('MemberStats: Lade Mitgliedsdaten für Email:', userEmail);
+      const mitgliedId = user?.mitglied_id;
+      if (!mitgliedId) {
+        throw new Error('Keine Mitglieds-ID gefunden');
+      }
+      console.log('MemberStats: Lade Mitgliedsdaten für ID:', mitgliedId);
 
-      const memberResponse = await fetch(`/mitglieder/by-email/${encodeURIComponent(userEmail)}`);
+      const memberResponse = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}`);
 
       if (!memberResponse.ok) {
         throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);
@@ -90,28 +91,101 @@ const MemberStats = () => {
       setMemberData(memberData);
 
       // Lade Anwesenheitsdaten
-      const attendanceResponse = await fetch(`/anwesenheit/${memberData.mitglied_id}`);
+      const attendanceResponse = await fetchWithAuth(`${API_BASE}/anwesenheit/${mitgliedId}`);
       let attendanceData = [];
       if (attendanceResponse.ok) {
         attendanceData = await attendanceResponse.json();
       }
 
-      // Berechne Statistiken aus echten Daten
-      const totalAttendance = Array.isArray(attendanceData) ? attendanceData.length : 0;
+      // Tatsächlich besuchte Trainings
       const totalAnwesend = Array.isArray(attendanceData)
         ? attendanceData.filter(a => a.anwesend === 1 || a.anwesend === true).length
         : 0;
-      const attendancePercentage = totalAttendance > 0
-        ? Math.round((totalAnwesend / totalAttendance) * 100)
-        : 0;
+
+      // Kurse des Mitglieds laden (für Stundenplan-basierte Anwesenheitsberechnung)
+      let memberKurse = [];
+      try {
+        const kurseResponse = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}/kurse`);
+        if (kurseResponse.ok) {
+          const kurseData = await kurseResponse.json();
+          memberKurse = Array.isArray(kurseData) ? kurseData : (kurseData.kurse || []);
+        }
+      } catch (e) {
+        console.warn('Kurse nicht ladbar:', e);
+      }
+
+      // Mögliche Trainings seit Eintrittsdatum (Stundenplan-basiert, wie MemberDashboard)
+      const wochentagMap = {
+        'Montag': 1, 'Dienstag': 2, 'Mittwoch': 3, 'Donnerstag': 4,
+        'Freitag': 5, 'Samstag': 6, 'Sonntag': 0
+      };
+      const eintrittsdatum = memberData.eintrittsdatum ? new Date(memberData.eintrittsdatum) : null;
+      const heute = new Date();
+      heute.setHours(23, 59, 59, 0);
+      let moeglich = 0;
+      if (eintrittsdatum && memberKurse.length > 0) {
+        memberKurse.forEach(kurs => {
+          if (!kurs.wochentag) return;
+          const zielTag = wochentagMap[kurs.wochentag];
+          if (zielTag === undefined) return;
+          const start = new Date(eintrittsdatum);
+          start.setHours(0, 0, 0, 0);
+          const tageOffset = (zielTag - start.getDay() + 7) % 7;
+          start.setDate(start.getDate() + tageOffset);
+          if (start <= heute) {
+            const diffMs = heute - start;
+            const diffTage = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            moeglich += Math.floor(diffTage / 7) + 1;
+          }
+        });
+      }
+      const attendancePercentage = moeglich > 0
+        ? Math.round((totalAnwesend / moeglich) * 100)
+        : null;
 
       // Berechne Monatsdaten aus Anwesenheit
       const monthlyData = calculateMonthlyData(attendanceData);
 
+      // Lade Stile mit Graduierungen + aktuelle Graduierung je Stil
+      let aktuellerGürtel = '—';
+      let naechsterGuertel = '—';
+      try {
+        const stileRes = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}/stile`);
+        if (stileRes.ok) {
+          const stileResult = await stileRes.json();
+          const memberStile = stileResult.success ? stileResult.stile : stileResult;
+          if (Array.isArray(memberStile) && memberStile.length > 0) {
+            // Ersten Stil nehmen (oder alle kombinieren)
+            const belts = [];
+            const nextBelts = [];
+            for (const stil of memberStile) {
+              const stilDataRes = await fetchWithAuth(`${API_BASE}/mitglieder/${mitgliedId}/stil/${stil.stil_id}/data`);
+              if (!stilDataRes.ok) continue;
+              const stilData = await stilDataRes.json();
+              const grads = stil.graduierungen || [];
+              const currentIdx = grads.findIndex(g => g.graduierung_id === stilData?.data?.current_graduierung_id);
+              if (currentIdx !== -1) {
+                belts.push(grads[currentIdx].name);
+                if (currentIdx + 1 < grads.length) {
+                  nextBelts.push(grads[currentIdx + 1].name);
+                }
+              } else if (grads.length > 0) {
+                belts.push(grads[0].name);
+                if (grads.length > 1) nextBelts.push(grads[1].name);
+              }
+            }
+            if (belts.length > 0) aktuellerGürtel = belts.join(', ');
+            if (nextBelts.length > 0) naechsterGuertel = nextBelts.join(', ');
+          }
+        }
+      } catch (e) {
+        console.warn('Stil/Gürtel nicht ladbar:', e);
+      }
+
       // Lade Ziele
       let ziele = [];
       try {
-        const zieleResponse = await fetch(`/fortschritt/mitglied/${memberData.mitglied_id}/ziele`);
+        const zieleResponse = await fetchWithAuth(`${API_BASE}/fortschritt/mitglied/${mitgliedId}/ziele`);
         if (zieleResponse.ok) {
           ziele = await zieleResponse.json();
         }
@@ -120,15 +194,12 @@ const MemberStats = () => {
       }
 
       setStats({
-        trainingsstunden: totalAttendance,
+        trainingsstunden: totalAnwesend,
         anwesenheit: attendancePercentage,
-        aktuellerGürtel: memberData.gurtfarbe || 'Weißgurt',
-        naechsterGuertel: getNextBelt(memberData.gurtfarbe),
-        trainingswochen: Math.floor(totalAttendance / 2), // Annahme: ~2 Trainings pro Woche
-        durchschnittlicheStunden: totalAttendance > 0 ? Math.round(totalAttendance / 6) : 0,
-        laengsteSerie: 8, // TODO: Aus Daten berechnen
-        aktuelleSerie: 3, // TODO: Aus Daten berechnen
-        pruefungen: [], // TODO: Prüfungsdaten laden
+        anwesenheitAnwesend: totalAnwesend,
+        anwesenheitMoeglich: moeglich,
+        aktuellerGürtel,
+        naechsterGuertel,
         monatsDaten: monthlyData,
         ziele: ziele
       });
@@ -155,16 +226,6 @@ const MemberStats = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Hilfsfunktion: Nächsten Gürtel bestimmen
-  const getNextBelt = (currentBelt) => {
-    const beltOrder = ['Weißgurt', 'Gelbgurt', 'Orangegurt', 'Grüngurt', 'Blaugurt', 'Braungurt', 'Schwarzgurt'];
-    const currentIndex = beltOrder.findIndex(b => b.toLowerCase() === (currentBelt || '').toLowerCase());
-    if (currentIndex >= 0 && currentIndex < beltOrder.length - 1) {
-      return beltOrder[currentIndex + 1];
-    }
-    return 'Schwarzgurt';
   };
 
   // Hilfsfunktion: Monatsdaten aus Anwesenheit berechnen
@@ -204,7 +265,6 @@ const MemberStats = () => {
   if (loading) {
     return (
       <div className="dashboard-container">
-        <MemberHeader />
         <div className="dashboard-content">
           <div className="member-stats-loading">
             <div className="loading-spinner"></div>
@@ -246,9 +306,11 @@ const MemberStats = () => {
                 <TrendingUp size={24} />
               </div>
               <div className="stat-content">
-                <div className="stat-number">{stats.anwesenheit}%</div>
+                <div className="stat-number">{stats.anwesenheit !== null ? `${stats.anwesenheit}%` : '—'}</div>
                 <div className="stat-label">Anwesenheit</div>
-                <div className="stat-trend">Sehr gut!</div>
+                {stats.anwesenheitMoeglich > 0 && (
+                  <div className="stat-trend">{stats.anwesenheitAnwesend} / {stats.anwesenheitMoeglich}</div>
+                )}
               </div>
             </div>
 
@@ -291,11 +353,11 @@ const MemberStats = () => {
                   };
                   
                   const getPerformanceLevel = (percentile) => {
-                    if (percentile >= 90) return { level: 'Top 10%', color: '#10B981', icon: '🥇' };
-                    if (percentile >= 75) return { level: 'Sehr gut', color: '#3B82F6', icon: '🥈' };
+                    if (percentile >= 90) return { level: 'Top 10%', color: 'var(--success)', icon: '🥇' };
+                    if (percentile >= 75) return { level: 'Sehr gut', color: 'var(--info)', icon: '🥈' };
                     if (percentile >= 50) return { level: 'Überdurchschnittlich', color: '#8B5CF6', icon: '🥉' };
-                    if (percentile >= 25) return { level: 'Durchschnittlich', color: '#F59E0B', icon: '📊' };
-                    return { level: 'Verbesserung möglich', color: '#EF4444', icon: '📈' };
+                    if (percentile >= 25) return { level: 'Durchschnittlich', color: 'var(--warning)', icon: '📊' };
+                    return { level: 'Verbesserung möglich', color: 'var(--error)', icon: '📈' };
                   };
                   
                   const performance = getPerformanceLevel(data.percentile);
@@ -304,7 +366,7 @@ const MemberStats = () => {
                     <div key={key} className="comparison-card">
                       <div className="comparison-header">
                         <h3>{labels[key]}</h3>
-                        <div className="performance-badge" style={{ color: performance.color }}>
+                        <div className="performance-badge" style={{ '--perf-color': performance.color }}>
                           <span>{performance.icon}</span>
                           <span>{performance.level}</span>
                         </div>
@@ -328,7 +390,7 @@ const MemberStats = () => {
                       <div className="comparison-bar">
                         <div className="bar-container">
                           <div className="bar-average" style={{ width: `${(data.durchschnitt / data.top10Prozent) * 100}%` }}></div>
-                          <div className="bar-top" style={{ width: '100%' }}></div>
+                          <div className="bar-top"></div>
                           <div className="bar-your" style={{ width: `${(data.deinWert / data.top10Prozent) * 100}%` }}></div>
                         </div>
                         <div className="bar-labels">
@@ -378,7 +440,7 @@ const MemberStats = () => {
             </h2>
             <div className="training-chart-wrapper">
               {/* Balkendiagramm */}
-              <div className="training-chart" style={{ position: 'relative', zIndex: 1 }}>
+              <div className="training-chart training-chart-positioned">
                 {stats.monatsDaten?.map((monat, index) => {
                   const maxStunden = Math.max(...stats.monatsDaten.map(m => m.stunden));
                   const avgStunden = stats.monatsDaten.reduce((sum, m) => sum + m.stunden, 0) / stats.monatsDaten.length;
@@ -397,12 +459,10 @@ const MemberStats = () => {
                   return (
                     <div
                       key={index}
-                      className="chart-bar"
-                      style={{ cursor: 'pointer' }}
+                      className="chart-bar chart-bar-clickable"
                     >
                       <div
-                        className="bar-container"
-                        style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+                        className="bar-container bar-container-col"
                         onClick={() => {
                           console.log('Balken geklickt, Monat:', monat);
                           setSelectedMonth(monat);
@@ -415,12 +475,9 @@ const MemberStats = () => {
                       >
                         <div
                           className={`bar-fill ${barClass}`}
-                          style={{
-                            height: `${Math.max(barHeight, 10)}%`,
-                            width: '100%'
-                          }}
+                          style={{ height: `${Math.max(barHeight, 10)}%` }}
                         >
-                          <span style={{ fontSize: '0.75rem', fontWeight: '600' }}>{monat.stunden}h</span>
+                          <span className="bar-fill-label">{monat.stunden}h</span>
                         </div>
                       </div>
                       <div className="bar-label">{monat.monat}</div>

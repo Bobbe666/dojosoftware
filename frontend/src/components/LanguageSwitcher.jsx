@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import '../styles/LanguageSwitcher.css';
 import { useTranslation } from 'react-i18next';
 import { Globe, ChevronDown } from 'lucide-react';
 
@@ -39,7 +40,7 @@ const LanguageSwitcher = ({ compact = false, showLabel = true }) => {
     background: 'rgba(255, 255, 255, 0.08)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     cursor: 'pointer',
     fontSize: compact ? '0.8rem' : '0.875rem',
     transition: 'all 0.2s ease'
@@ -75,7 +76,7 @@ const LanguageSwitcher = ({ compact = false, showLabel = true }) => {
   });
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative' }}>
+    <div ref={dropdownRef} className="ls-wrapper">
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={buttonStyle}
@@ -88,13 +89,10 @@ const LanguageSwitcher = ({ compact = false, showLabel = true }) => {
           e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
         }}
       >
-        <span style={{ fontSize: compact ? '1rem' : '1.1rem' }}>{currentLang.flag}</span>
+        <span className={compact ? 'ls-flag ls-flag--compact' : 'ls-flag'}>{currentLang.flag}</span>
         {showLabel && !compact && <span>{currentLang.name}</span>}
         {showLabel && compact && <span>{currentLang.code.toUpperCase()}</span>}
-        <ChevronDown size={14} style={{
-          transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s ease'
-        }} />
+        <ChevronDown size={14} className={isOpen ? 'ls-chevron ls-chevron--open' : 'ls-chevron'} />
       </button>
 
       {isOpen && (
@@ -115,7 +113,7 @@ const LanguageSwitcher = ({ compact = false, showLabel = true }) => {
                 }
               }}
             >
-              <span style={{ fontSize: '1.2rem' }}>{lang.flag}</span>
+              <span className="ls-flag-lg">{lang.flag}</span>
               <span>{lang.name}</span>
             </button>
           ))}

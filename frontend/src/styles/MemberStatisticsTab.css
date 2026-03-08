@@ -1,0 +1,360 @@
+/* ============================================================
+   MemberStatisticsTab — extracted inline styles (mst- prefix)
+   ============================================================ */
+
+/* Outer container */
+.mst-content {
+  padding: 1rem;
+  background: transparent;
+}
+
+/* Stats grid — 4-column layout */
+.mst-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Shared card base (replaces JS cardStyle object) */
+.mst-card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+/* Accent bar base (replaces JS accentBar() function) */
+.mst-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Accent bar color variants */
+.mst-accent-green       { background: linear-gradient(90deg, #28a745, #20c997); }
+.mst-accent-blue-purple { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+.mst-accent-orange-red  { background: linear-gradient(90deg, #f59e0b, #ef4444); }
+.mst-accent-teal        { background: linear-gradient(90deg, #10b981, #14b8a6); }
+.mst-accent-purple      { background: linear-gradient(90deg, #8b5cf6, #d946ef); }
+.mst-accent-cyan        { background: linear-gradient(90deg, #06b6d4, #3b82f6); }
+.mst-accent-amber       { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.mst-accent-emerald     { background: linear-gradient(90deg, #10b981, #059669); }
+.mst-accent-red         { background: linear-gradient(90deg, #ef4444, #dc2626); }
+.mst-accent-gold        { background: linear-gradient(90deg, #ffd700, #f59e0b); }
+.mst-accent-violet      { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+
+/* Quote progress bar track */
+.mst-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  overflow: hidden;
+}
+
+.mst-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Monthly / section chart card */
+.mst-chart-section {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.mst-chart-section-mt {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Chart heading */
+.mst-chart-heading {
+  font-size: 0.9rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+/* Monthly bar chart container */
+.mst-bar-chart-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+  position: relative;
+}
+
+/* Each bar column */
+.mst-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 0.25rem;
+}
+
+/* Bar count label */
+.mst-bar-count {
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-height: 16px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.mst-bar-count--active { color: rgba(255, 255, 255, 0.9); }
+
+/* Month label below bar */
+.mst-bar-month {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Info cards auto-fit grid */
+.mst-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* Info card base */
+.mst-info-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 10px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Info card label */
+.mst-info-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* Info card value sizes */
+.mst-info-value-lg { color: var(--text-primary); font-size: 1.3rem; font-weight: 700; }
+.mst-info-value-md { color: var(--text-primary); font-size: 1.1rem; font-weight: 600; }
+.mst-info-value-success { color: var(--success); font-size: 1.3rem; font-weight: 700; }
+
+/* Info card sub line */
+.mst-info-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* Graduation row */
+.mst-grad-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mst-grad-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.mst-grad-value {
+  font-size: 0.85rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* No-stile fallback */
+.mst-no-stile {
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Status divider line */
+.mst-status-divider {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mst-status-divider--aktiv   { color: #10b981; }
+.mst-status-divider--inaktiv { color: #ef4444; }
+
+/* Weekday heat-map row */
+.mst-weekday-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.mst-weekday-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mst-weekday-count {
+  font-size: 0.7rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Weekday square tile */
+.mst-weekday-tile {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  background: var(--tile-color, rgba(255, 255, 255, 0.1));
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.mst-weekday-tile--active {
+  color: #ffffff;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--tile-color, rgba(255,255,255,0.1)) 37.5%, transparent);
+}
+
+/* Yearly comparison bar row */
+.mst-year-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  height: 100px;
+}
+
+.mst-year-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.mst-year-count {
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+/* Insights grid */
+.mst-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+/* Insight card coloured border variants */
+.mst-insight-card-green  { border: 1px solid rgba(16, 185, 129, 0.3); }
+.mst-insight-card-purple { border: 1px solid rgba(139, 92, 246, 0.3); }
+.mst-insight-card-red    { border: 1px solid rgba(239, 68, 68, 0.3); }
+.mst-insight-card-gold   { border: 1px solid rgba(255, 215, 0, 0.3); }
+
+/* Insight value colour variants */
+.mst-val-success { color: var(--success); font-size: 1.2rem; font-weight: 700; }
+.mst-val-purple  { color: #8b5cf6; font-size: 1.5rem; font-weight: 700; }
+.mst-val-error   { color: var(--error); font-size: 1.5rem; font-weight: 700; }
+.mst-val-primary { color: var(--primary); font-size: 1.5rem; font-weight: 700; }
+
+/* Kontostand value */
+.mst-kontostand-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.mst-kontostand-value--pos { color: #10b981; }
+.mst-kontostand-value--neg { color: #ef4444; }
+
+/* Monthly bar fill */
+.mst-bar-fill {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  min-height: 8px;
+  transition: all 0.3s ease;
+  background: linear-gradient(180deg, var(--bar-c1, #3b82f6), var(--bar-c2, #2563eb));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--bar-c1, #3b82f6) 25%, transparent);
+}
+
+.mst-bar-fill--empty {
+  min-height: 2px;
+  box-shadow: none;
+  background: var(--bar-c1, rgba(255, 255, 255, 0.1));
+}
+
+/* Year bar */
+.mst-year-bar {
+  width: 100%;
+  border-radius: 8px 8px 0 0;
+  min-height: 8px;
+  transition: all 0.3s ease;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+}
+
+.mst-year-bar--current {
+  background: linear-gradient(180deg, #ffd700, #f59e0b);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+}
+
+/* Year label */
+.mst-year-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+.mst-year-label--current {
+  color: #ffd700;
+  font-weight: 700;
+}
+
+/* Badge wrapper */
+.mst-badge-wrapper {
+  margin-top: 1rem;
+}
+
+/* Responsive grid breakpoint */
+@media (max-width: 640px) {
+  .mst-stats-grid,
+  .mst-insights-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

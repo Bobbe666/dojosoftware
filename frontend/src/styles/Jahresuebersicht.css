@@ -1,0 +1,441 @@
+/* Jahresuebersicht Component Styles */
+
+/* Layout */
+.ju-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ju-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ju-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.ju-subtitle {
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.ju-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ju-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Table headers */
+.ju-th-right {
+  padding: 0.625rem 0.75rem;
+  text-align: right;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ju-th-left {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ju-th-result {
+  padding: 0.625rem 1rem;
+  text-align: right;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Table cells */
+.ju-td-month {
+  padding: 0.5rem 1rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.ju-td-income {
+  padding: 0.5rem 0.75rem;
+  text-align: right;
+  color: var(--success);
+}
+
+.ju-td-expense {
+  padding: 0.5rem 0.75rem;
+  text-align: right;
+  color: var(--error);
+}
+
+.ju-td-total-label {
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+}
+
+.ju-td-total-income {
+  padding: 0.75rem 0.75rem;
+  text-align: right;
+  color: var(--success);
+}
+
+.ju-td-total-expense {
+  padding: 0.75rem 0.75rem;
+  text-align: right;
+  color: var(--error);
+}
+
+/* Dynamic-color result cells (color set inline) */
+.ju-td-result {
+  padding: 0.5rem 1rem;
+  text-align: right;
+  font-weight: 600;
+}
+
+.ju-td-total-result {
+  padding: 0.75rem 1rem;
+  text-align: right;
+}
+
+/* Section card headers */
+.ju-card-section-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Table wrapper */
+.ju-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+/* Padding misc */
+.ju-pad075 {
+  padding: 0.75rem;
+}
+
+/* KPI card label */
+.ju-kpi-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* KPI subtext */
+.ju-kpi-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Year nav */
+.ju-year-display {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  min-width: 3.5rem;
+  text-align: center;
+}
+
+/* Section sub-heading */
+.ju-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 1.25rem;
+}
+
+/* Text small */
+.ju-text-sm {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Progress bar track */
+.ju-bar-track {
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Empty state */
+.ju-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.ju-empty-sm {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* mb helpers */
+.ju-mb075 {
+  margin-bottom: 0.75rem;
+}
+
+.ju-mt05 {
+  margin-top: 0.5rem;
+}
+
+/* Bold heading */
+.ju-bold-heading {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Comparison labels */
+.ju-compare-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* KPI card box */
+.ju-kpi-card {
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+}
+
+/* KPI value sub-line */
+.ju-kpi-value-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.375rem;
+}
+
+/* Tooltip box */
+.ju-tooltip-box {
+  background: var(--bg-primary, #111);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+  min-width: 180px;
+}
+
+/* Tooltip row (income / expense) */
+.ju-tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 2px;
+}
+
+.ju-tooltip-row-expense {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 4px;
+}
+
+/* Tooltip value (income) */
+.ju-tooltip-val-income {
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Tooltip value (expense) */
+.ju-tooltip-val-expense {
+  color: var(--error);
+  font-weight: 600;
+}
+
+/* Tooltip divider row */
+.ju-tooltip-divider-row {
+  border-top: 1px solid var(--border-color);
+  padding-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+/* Year nav buttons */
+.ju-btn-year-nav {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+}
+
+/* Import button */
+.ju-btn-import {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+/* Error box */
+.ju-error-box {
+  background: #ef444420;
+  border: 1px solid #ef444440;
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--error);
+  margin-bottom: 1rem;
+}
+
+/* Chart card wrapper */
+.ju-chart-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Table/category card wrapper */
+.ju-table-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Table header row */
+.ju-tr-header {
+  background: var(--bg-tertiary, #111);
+}
+
+/* Table total row */
+.ju-tr-total {
+  border-top: 2px solid var(--border-color);
+  background: var(--bg-tertiary, #111);
+  font-weight: 700;
+}
+
+/* Kategorie progress row */
+.ju-kategorie-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 0.8125rem;
+}
+
+/* Kategorie value span */
+.ju-kategorie-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Kategorie percentage span */
+.ju-kategorie-pct {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* Vorjahr comparison card */
+.ju-vorjahr-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: 1rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Delta span (positive/negative indicator) */
+.ju-delta-span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.ju-delta-span--pos { color: #10b981; }
+.ju-delta-span--neg { color: #ef4444; }
+
+/* KPI value (dynamic color via CSS var) */
+.ju-kpi-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--kpi-color, var(--text-primary));
+  line-height: 1;
+}
+
+/* Tooltip gewinn span */
+.ju-tooltip-gewinn {
+  font-weight: 700;
+}
+.ju-tooltip-gewinn--pos { color: #10b981; }
+.ju-tooltip-gewinn--neg { color: #ef4444; }
+
+/* Year nav button: dim when disabled */
+.ju-btn-year-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Table data row */
+.ju-tr-data {
+  border-bottom: 1px solid var(--border-color);
+}
+.ju-tr-data--empty {
+  opacity: 0.4;
+}
+
+/* Result cell color modifiers */
+.ju-td-result--pos { color: #10b981; }
+.ju-td-result--neg { color: #ef4444; }
+.ju-td-total-result--pos { color: #10b981; }
+.ju-td-total-result--neg { color: #ef4444; }
+
+/* Bar fill (width set inline, rest in CSS) */
+.ju-bar-fill {
+  height: 100%;
+  background: #ef4444;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Vorjahr gewinn strong */
+.ju-gewinn-strong--pos { color: #10b981; }
+.ju-gewinn-strong--neg { color: #ef4444; }

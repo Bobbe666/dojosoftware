@@ -1,0 +1,32 @@
+/* FeatureBoard.css — extracted utility classes */
+
+.fb-mb-1 {
+  margin-bottom: 1rem;
+}
+
+.fb-mb-15 {
+  margin-bottom: 1.5rem;
+}
+
+.fb-loading-text {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-muted);
+}
+
+.fb-flex-gap {
+  display: flex;
+  gap: 1rem;
+}
+
+.fb-field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--color-midnight-300);
+  font-size: 0.85rem;
+}
+
+.fb-error-msg {
+  color: var(--error);
+  margin-bottom: 1rem;
+}

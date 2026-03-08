@@ -1,0 +1,97 @@
+/* AgbStatusWidget.css — prefix: agb- */
+
+.agb-loading-msg {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.agb-error-msg {
+  padding: 1rem;
+  color: #FCA5A5;
+}
+
+.agb-icon-ok {
+  color: #86EFAC;
+}
+
+.agb-icon-warn {
+  color: var(--color-gold-400);
+}
+
+.agb-all-good {
+  color: #86EFAC;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agb-pending-header {
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+
+.agb-stat-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.agb-icon-dsgvo {
+  color: var(--color-info-400);
+}
+
+.agb-icon-regeln {
+  color: #34D399;
+}
+
+.agb-icon-haus {
+  color: #F472B6;
+}
+
+.agb-member-link {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.agb-badge-row {
+  display: flex;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.agb-badge-agb {
+  color: var(--color-gold-400);
+  padding: 0 0.25rem;
+  background: rgba(251, 191, 36, 0.1);
+  border-radius: 3px;
+}
+
+.agb-badge-dsgvo {
+  color: var(--color-info-400);
+  padding: 0 0.25rem;
+  background: rgba(96, 165, 250, 0.1);
+  border-radius: 3px;
+}
+
+.agb-badge-regeln {
+  color: #34D399;
+  padding: 0 0.25rem;
+  background: rgba(52, 211, 153, 0.1);
+  border-radius: 3px;
+}
+
+.agb-badge-haus {
+  color: #F472B6;
+  padding: 0 0.25rem;
+  background: rgba(244, 114, 182, 0.1);
+  border-radius: 3px;
+}
+
+.agb-more-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}

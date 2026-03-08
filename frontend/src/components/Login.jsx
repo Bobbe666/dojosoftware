@@ -21,8 +21,17 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
-  const { login, isAuthenticated, loading: authLoading } = useAuth();
+  const { login, logout, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Bei wrong_dojo-Fehler: stale Token sofort lÃ¶schen (bricht Redirect-Schleife)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'wrong_dojo') {
+      logout(true); // silent logout - lÃ¶scht localStorage ohne API-Call
+      setError('Ihr Konto ist einem anderen Dojo zugeordnet. Bitte melden Sie sich mit Ihrem Dojo-Konto an.');
+    }
+  }, []);
 
   // Redirect wenn bereits eingeloggt - basierend auf Rolle
   const { user } = useAuth();
@@ -50,7 +59,7 @@ const Login = () => {
       detectLoginType(value);
     }
 
-    // Error und Success-Messages zurücksetzen bei Eingabe
+    // Error und Success-Messages zurï¿½cksetzen bei Eingabe
     if (error) setError('');
     if (successMessage) setSuccessMessage('');
   };
@@ -89,22 +98,22 @@ const Login = () => {
 
       const userData = await login(loginData);
       
-      setSuccessMessage(`Willkommen zurück, ${userData.username}!`);
+      setSuccessMessage(`Willkommen zurï¿½ck, ${userData.username}!`);
 
-      // Weiterleitung zu Dashboard (funktioniert für Admin und Mitglieder)
+      // Weiterleitung zu Dashboard (funktioniert fï¿½r Admin und Mitglieder)
       navigate('/dashboard', { replace: true });
       
     } catch (err) {
       console.error('? Login-Fehler:', err);
       
       if (err.response?.status === 401) {
-        setError('Ungültige Anmeldedaten. Bitte prüfen Sie Username/Email und Passwort.');
+        setError('Ungï¿½ltige Anmeldedaten. Bitte prï¿½fen Sie Username/Email und Passwort.');
       } else if (err.response?.status === 400) {
-        setError('Bitte füllen Sie alle Felder korrekt aus.');
+        setError('Bitte fï¿½llen Sie alle Felder korrekt aus.');
       } else if (err.response?.status === 500) {
-        setError('Server-Fehler. Bitte versuchen Sie es später erneut.');
+        setError('Server-Fehler. Bitte versuchen Sie es spï¿½ter erneut.');
       } else if (err.code === 'ERR_NETWORK') {
-        setError('Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Internetverbindung.');
+        setError('Verbindung zum Server fehlgeschlagen. Prï¿½fen Sie Ihre Internetverbindung.');
       } else {
         setError(err.response?.data?.message || 'Ein unbekannter Fehler ist aufgetreten.');
       }
@@ -135,7 +144,7 @@ const Login = () => {
           </div>
           <div className="security-badge">
             <Shield size={16} />
-            <span>Sicher verschlüsselt</span>
+            <span>Sicher verschlï¿½sselt</span>
           </div>
         </div>
 
@@ -167,7 +176,7 @@ const Login = () => {
             />
             <small className="input-hint">
               <Info size={12} />
-              Sie können sich mit E-Mail oder Benutzername anmelden
+              Sie kï¿½nnen sich mit E-Mail oder Benutzername anmelden
             </small>
           </div>
 
@@ -248,7 +257,7 @@ const Login = () => {
             onClick={() => navigate('/password-reset')}
             disabled={loading}
           >
-            Passwort vergessen? Passwort zurücksetzen
+            Passwort vergessen? Passwort zurï¿½cksetzen
           </button>
         </div>
 
@@ -268,18 +277,18 @@ const Login = () => {
           </button>
           <p className="registration-info">
             <Info size={12} />
-            Vollständige Registrierung inkl. Vertrag erforderlich
+            Vollstï¿½ndige Registrierung inkl. Vertrag erforderlich
           </p>
         </div>
 
         {/* Footer */}
         <div className="login-footer">
           <p className="version-info">
-            DojoSoftware v2.0 | © 2024-2025
+            DojoSoftware v2.0 | ï¿½ 2024-2025
           </p>
           <div className="security-info">
             <Shield size={12} />
-            <span>JWT-Authentication | bcrypt-Verschlüsselung</span>
+            <span>JWT-Authentication | bcrypt-Verschlï¿½sselung</span>
           </div>
         </div>
       </div>
@@ -292,7 +301,7 @@ const Login = () => {
           onRegistrationComplete={(success) => {
             if (success) {
               setShowRegistrationModal(false);
-              setSuccessMessage('Registrierung erfolgreich abgeschlossen! Sie können sich jetzt anmelden.');
+              setSuccessMessage('Registrierung erfolgreich abgeschlossen! Sie kï¿½nnen sich jetzt anmelden.');
             }
           }}
         />

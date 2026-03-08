@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import SuperAdminFinanzen from './SuperAdminFinanzen';
 import AutoLastschriftTab from './AutoLastschriftTab';
+import '../styles/FinanzenTab.css';
 
 const FinanzenTab = ({ token }) => {
   const [activeSubTab, setActiveSubTab] = useState('uebersicht');
@@ -29,32 +30,14 @@ const FinanzenTab = ({ token }) => {
   return (
     <div className="finanzen-tab">
       {/* Sub-Tab Navigation */}
-      <div style={{
-        display: 'flex',
-        gap: '0.5rem',
-        marginBottom: '1.5rem',
-        borderBottom: '1px solid var(--border-default)',
-        paddingBottom: '1rem'
-      }}>
+      <div className="fzt-subnav">
         {subTabs.map(tab => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.25rem',
-                background: activeSubTab === tab.id ? 'var(--primary)' : 'var(--bg-secondary)',
-                color: activeSubTab === tab.id ? '#000' : 'var(--text-primary)',
-                border: activeSubTab === tab.id ? 'none' : '1px solid var(--border-default)',
-                borderRadius: '8px',
-                fontWeight: activeSubTab === tab.id ? '600' : '400',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className={`fzt-subtab-btn${activeSubTab === tab.id ? ' fzt-subtab-btn--active' : ''}`}
             >
               <Icon size={18} />
               {tab.label}
@@ -122,9 +105,9 @@ const FehlendeMandateTab = ({ token }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
+      <div className="ft-loading-center">
         <Loader size={32} className="spin" />
-        <span style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>Lade fehlende Mandate...</span>
+        <span className="ft-loading-label">Lade fehlende Mandate...</span>
       </div>
     );
   }
@@ -134,145 +117,112 @@ const FehlendeMandateTab = ({ token }) => {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ margin: 0, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="ft-mb">
+        <h2 className="ft-h2-gold">
           <AlertCircle size={24} /> Fehlende SEPA-Mandate
         </h2>
-        <p style={{ margin: '0.5rem 0 0', color: 'var(--text-secondary)' }}>
+        <p className="ft-subtitle">
           Mitglieder und Dojos ohne aktives SEPA-Mandat
         </p>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(251,191,36,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+      <div className="ft-stats-grid">
+        <div className="ft-card">
+          <div className="u-flex-row-md">
+            <div className="fzt-icon-gold">
               <AlertCircle size={20} color="#fbbf24" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Gesamt fehlend</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fbbf24' }}>{totalMissing}</div>
+              <div className="u-text-secondary-sm">Gesamt fehlend</div>
+              <div className="ft-stat-value-gold">{totalMissing}</div>
             </div>
           </div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(16,185,129,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+        <div className="ft-card">
+          <div className="u-flex-row-md">
+            <div className="fzt-icon-green">
               <Users size={20} color="#10b981" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Mitglieder</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>{missingMitglieder.length}</div>
+              <div className="u-text-secondary-sm">Mitglieder</div>
+              <div className="ft-stat-value-success">{missingMitglieder.length}</div>
             </div>
           </div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ background: 'rgba(59,130,246,0.2)', padding: '0.75rem', borderRadius: '8px' }}>
+        <div className="ft-card">
+          <div className="u-flex-row-md">
+            <div className="fzt-icon-blue">
               <Building2 size={20} color="#3b82f6" />
             </div>
             <div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Dojos</div>
-              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>{missingDojos.length}</div>
+              <div className="u-text-secondary-sm">Dojos</div>
+              <div className="ft-stat-value-info">{missingDojos.length}</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Refresh Button */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div className="ft-mb">
         <button
           onClick={loadData}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.5rem 1rem', background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-default)', borderRadius: '6px',
-            color: 'var(--text-primary)', cursor: 'pointer'
-          }}
+          className="fzt-btn-refresh"
         >
           <RefreshCw size={16} /> Aktualisieren
         </button>
       </div>
 
       {totalMissing === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          background: 'rgba(16,185,129,0.1)',
-          border: '1px solid rgba(16,185,129,0.3)',
-          borderRadius: '12px'
-        }}>
-          <CheckCircle size={48} color="#10b981" style={{ marginBottom: '1rem' }} />
-          <p style={{ color: '#10b981', fontSize: '1.1rem', fontWeight: '600' }}>Alle Mandate vorhanden!</p>
-          <p style={{ color: 'var(--text-secondary)' }}>Es gibt keine fehlenden SEPA-Mandate.</p>
+        <div className="fzt-all-good-box">
+          <CheckCircle size={48} color="#10b981" className="ft-icon-plain" />
+          <p className="ft-success-text">Alle Mandate vorhanden!</p>
+          <p className="u-text-secondary">Es gibt keine fehlenden SEPA-Mandate.</p>
         </div>
       ) : (
         <>
           {/* Mitglieder ohne Mandat */}
           {missingMitglieder.length > 0 && (
-            <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ marginBottom: '1rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="ft-section-mb2">
+              <h3 className="ft-h3-success">
                 <Users size={20} /> Mitglieder ohne SEPA-Mandat ({missingMitglieder.length})
               </h3>
-              <div style={{
-                background: 'var(--bg-secondary)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-default)',
-                overflow: 'hidden'
-              }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="fzt-table-wrapper">
+                <table className="ft-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Name</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>E-Mail</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Telefon</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Verträge</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Aktion</th>
+                    <tr className="ft-border-bottom">
+                      <th className="u-td-secondary">Name</th>
+                      <th className="u-td-secondary">E-Mail</th>
+                      <th className="u-td-secondary">Telefon</th>
+                      <th className="ft-td-center-muted-sm">Verträge</th>
+                      <th className="ft-td-center-muted-sm">Aktion</th>
                     </tr>
                   </thead>
                   <tbody>
                     {missingMitglieder.map((member, idx) => (
-                      <tr key={member.mitglied_id} style={{ borderBottom: idx < missingMitglieder.length - 1 ? '1px solid var(--border-default)' : 'none' }}>
-                        <td style={{ padding: '0.75rem' }}>
+                      <tr key={member.mitglied_id} className={idx < missingMitglieder.length - 1 ? 'ft-border-bottom' : ''}>
+                        <td className="ft-td">
                           <strong>{member.vorname} {member.nachname}</strong>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {member.mitglied_id}</div>
+                          <div className="ft-text-muted-sm">ID: {member.mitglied_id}</div>
                         </td>
-                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{member.email || '-'}</td>
-                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{member.telefon || '-'}</td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                          <span style={{
-                            padding: '0.25rem 0.5rem',
-                            background: 'rgba(251,191,36,0.2)',
-                            color: '#fbbf24',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem'
-                          }}>
+                        <td className="ft-td-muted">{member.email || '-'}</td>
+                        <td className="ft-td-muted">{member.telefon || '-'}</td>
+                        <td className="ft-td-center">
+                          <span className="fzt-badge-gold">
                             {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege !== 1 ? 'e' : ''}
                           </span>
                           {member.vertrag_namen && (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                            <div className="ft-text-muted-sm">
                               {member.vertrag_namen}
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <td className="ft-td-center">
                           <a
                             href={`/dashboard/mitglieder/${member.mitglied_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                              padding: '0.35rem 0.75rem',
-                              background: 'var(--primary)',
-                              color: '#000',
-                              borderRadius: '6px',
-                              fontSize: '0.8rem',
-                              fontWeight: '500',
-                              textDecoration: 'none'
-                            }}
+                            className="fzt-link-btn-primary"
                           >
                             <Eye size={14} />
                             Details
@@ -289,64 +239,42 @@ const FehlendeMandateTab = ({ token }) => {
           {/* Dojos ohne Mandat */}
           {missingDojos.length > 0 && (
             <div>
-              <h3 style={{ marginBottom: '1rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <h3 className="ft-h3-info">
                 <Building2 size={20} /> Dojos ohne SEPA-Mandat ({missingDojos.length})
               </h3>
-              <div style={{
-                background: 'var(--bg-secondary)',
-                borderRadius: '12px',
-                border: '1px solid var(--border-default)',
-                overflow: 'hidden'
-              }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <div className="fzt-table-wrapper">
+                <table className="ft-table">
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Dojo</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Plan</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Monatsbeitrag</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Zahlungsart</th>
-                      <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Aktion</th>
+                    <tr className="ft-border-bottom">
+                      <th className="u-td-secondary">Dojo</th>
+                      <th className="u-td-secondary">Plan</th>
+                      <th className="ft-th-right">Monatsbeitrag</th>
+                      <th className="ft-td-center-muted-sm">Zahlungsart</th>
+                      <th className="ft-td-center-muted-sm">Aktion</th>
                     </tr>
                   </thead>
                   <tbody>
                     {missingDojos.map((dojo, idx) => (
-                      <tr key={dojo.id} style={{ borderBottom: idx < missingDojos.length - 1 ? '1px solid var(--border-default)' : 'none' }}>
-                        <td style={{ padding: '0.75rem' }}>
+                      <tr key={dojo.id} className={idx < missingDojos.length - 1 ? 'ft-border-bottom' : ''}>
+                        <td className="ft-td">
                           <strong>{dojo.dojoname}</strong>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {dojo.id}</div>
+                          <div className="ft-text-muted-sm">ID: {dojo.id}</div>
                         </td>
-                        <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>{dojo.plan_type || '-'}</td>
-                        <td style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--primary)', fontWeight: '600' }}>
+                        <td className="ft-td-muted">{dojo.plan_type || '-'}</td>
+                        <td className="ft-td-amount">
                           {formatCurrency(dojo.monthly_price)}
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                          <span style={{
-                            padding: '0.25rem 0.5rem',
-                            background: 'var(--bg-tertiary)',
-                            color: 'var(--text-secondary)',
-                            borderRadius: '4px',
-                            fontSize: '0.8rem'
-                          }}>
+                        <td className="ft-td-center">
+                          <span className="fzt-badge-secondary">
                             {dojo.zahlungsart || 'Nicht festgelegt'}
                           </span>
                         </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                        <td className="ft-td-center">
                           <a
                             href={`/dashboard/dojos/${dojo.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                              padding: '0.35rem 0.75rem',
-                              background: '#3b82f6',
-                              color: '#fff',
-                              borderRadius: '6px',
-                              fontSize: '0.8rem',
-                              fontWeight: '500',
-                              textDecoration: 'none'
-                            }}
+                            className="fzt-link-btn-info"
                           >
                             <Eye size={14} />
                             Details
@@ -483,7 +411,7 @@ const LastschriftTab = ({ token }) => {
       title: 'Dojo-Mitglieder',
       subtitle: 'Mitglieder von TDA International',
       icon: Users,
-      color: '#10b981',
+      color: 'var(--success)',
       bgColor: 'rgba(16, 185, 129, 0.15)',
       data: dojoMitgliederData
     },
@@ -492,7 +420,7 @@ const LastschriftTab = ({ token }) => {
       title: 'Software-Kunden',
       subtitle: 'Dojos mit Software-Abo',
       icon: Building2,
-      color: '#3b82f6',
+      color: 'var(--info)',
       bgColor: 'rgba(59, 130, 246, 0.15)',
       data: softwareKundenData
     },
@@ -510,7 +438,7 @@ const LastschriftTab = ({ token }) => {
       title: 'Gesamt',
       subtitle: 'Alle Lastschriften zusammen',
       icon: Euro,
-      color: '#f59e0b',
+      color: 'var(--warning)',
       bgColor: 'rgba(245, 158, 11, 0.15)',
       data: getGesamtData()
     }
@@ -518,9 +446,9 @@ const LastschriftTab = ({ token }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem' }}>
+      <div className="ft-loading-center">
         <Loader size={32} className="spin" />
-        <span style={{ marginLeft: '1rem', color: 'var(--text-secondary)' }}>Lade Lastschrift-Daten...</span>
+        <span className="ft-loading-label">Lade Lastschrift-Daten...</span>
       </div>
     );
   }
@@ -548,32 +476,23 @@ const LastschriftTab = ({ token }) => {
   return (
     <div>
       {/* Header */}
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="ft-mb">
+        <h2 className="ft-h2-primary">
           <CreditCard size={24} /> Lastschrift-Verwaltung
         </h2>
-        <p style={{ margin: '0.5rem 0 0', color: 'var(--text-secondary)' }}>
+        <p className="ft-subtitle">
           Wähle eine Kategorie zum Einziehen
         </p>
       </div>
 
       {/* Month/Year Selection */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        marginBottom: '1.5rem',
-        padding: '1rem',
-        background: 'var(--bg-secondary)',
-        borderRadius: '12px',
-        border: '1px solid var(--border-default)',
-        alignItems: 'center'
-      }}>
+      <div className="ft-month-panel">
         <Calendar size={20} color="var(--text-secondary)" />
-        <span style={{ color: 'var(--text-secondary)' }}>Abrechnungsmonat:</span>
+        <span className="u-text-secondary">Abrechnungsmonat:</span>
         <select
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-          style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '6px', color: 'var(--text-primary)' }}
+          className="ft-input"
         >
           {['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'].map((month, i) => (
             <option key={i + 1} value={i + 1}>{month}</option>
@@ -582,7 +501,7 @@ const LastschriftTab = ({ token }) => {
         <select
           value={selectedYear}
           onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-          style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '6px', color: 'var(--text-primary)' }}
+          className="ft-input"
         >
           <option value={2024}>2024</option>
           <option value={2025}>2025</option>
@@ -590,39 +509,22 @@ const LastschriftTab = ({ token }) => {
         </select>
         <button
           onClick={loadAllData}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            padding: '0.5rem 1rem', background: 'var(--bg-tertiary)',
-            border: '1px solid var(--border-default)', borderRadius: '6px',
-            color: 'var(--text-primary)', cursor: 'pointer', marginLeft: 'auto'
-          }}
+          className="fzt-btn-refresh-auto"
         >
           <RefreshCw size={16} /> Aktualisieren
         </button>
       </div>
 
       {/* Category Cards Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: '1.5rem'
-      }}>
+      <div className="ft-cat-grid">
         {categories.map(cat => {
           const Icon = cat.icon;
           return (
             <div
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              style={{
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-default)',
-                borderRadius: '16px',
-                padding: '1.5rem',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
+              className="fzt-cat-card"
+              style={{ '--cat-color': cat.color, '--cat-bgcolor': cat.bgColor }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = cat.color;
                 e.currentTarget.style.transform = 'translateY(-2px)';
@@ -635,72 +537,45 @@ const LastschriftTab = ({ token }) => {
               }}
             >
               {/* Background accent */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: '120px',
-                height: '120px',
-                background: cat.bgColor,
-                borderRadius: '0 0 0 100%',
-                opacity: 0.5
-              }} />
+              <div className="fzt-cat-accent" />
 
               {/* Content */}
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                  <div style={{
-                    background: cat.bgColor,
-                    padding: '0.75rem',
-                    borderRadius: '12px'
-                  }}>
+              <div className="ft-relative-z1">
+                <div className="ft-card-icon-row">
+                  <div className="fzt-cat-icon-box">
                     <Icon size={28} color={cat.color} />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                    <h3 className="ft-h3-plain">
                       {cat.title}
                     </h3>
-                    <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    <p className="ft-p-plain">
                       {cat.subtitle}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div className="fzt-cat-bottom-row">
                   <div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                    <div className="ft-sub-label">
                       {cat.id === 'dojo-mitglieder' ? 'Mitglieder' : cat.id === 'gesamt' ? 'Einträge' : 'Dojos'}
                     </div>
-                    <div style={{ fontSize: '2rem', fontWeight: '700', color: cat.color }}>
+                    <div className="fzt-cat-count">
                       {cat.data.count}
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
+                  <div className="ft-text-right">
+                    <div className="ft-sub-label">
                       Fälliger Betrag
                     </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)' }}>
+                    <div className="ft-stat-value-primary">
                       {formatCurrency(cat.data.amount)}
                     </div>
                   </div>
                 </div>
 
                 <button
-                  style={{
-                    width: '100%',
-                    marginTop: '1.25rem',
-                    padding: '0.75rem',
-                    background: cat.color,
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.5rem'
-                  }}
+                  className="fzt-cat-action-btn"
                 >
                   <Zap size={18} />
                   Einziehen
@@ -908,72 +783,55 @@ const CategoryDetailView = ({
   const Icon = category.icon;
 
   return (
-    <div>
+    <div style={{ '--cat-color': category.color, '--cat-bgcolor': category.bgColor }}>
       {/* Header with back button */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div className="ft-mb">
         <button
           onClick={onBack}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.5rem 1rem',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-default)',
-            borderRadius: '8px',
-            color: 'var(--text-primary)',
-            cursor: 'pointer',
-            marginBottom: '1rem'
-          }}
+          className="fzt-btn-back"
         >
           <ArrowLeft size={18} />
           Zurück zur Übersicht
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: category.bgColor, padding: '0.75rem', borderRadius: '12px' }}>
+        <div className="u-flex-row-lg">
+          <div className="fzt-cat-icon-box">
             <Icon size={28} color={category.color} />
           </div>
           <div>
-            <h2 style={{ margin: 0, color: category.color }}>{category.title}</h2>
-            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-secondary)' }}>{category.subtitle}</p>
+            <h2 className="fzt-cat-detail-title">{category.title}</h2>
+            <p className="ft-subtitle-small">{category.subtitle}</p>
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Einträge</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: category.color }}>{category.data.count}</div>
+      <div className="ft-stats-grid">
+        <div className="ft-card">
+          <div className="u-text-secondary-sm">Einträge</div>
+          <div className="fzt-cat-detail-count">{category.data.count}</div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Gesamtbetrag</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary)' }}>{formatCurrency(category.data.amount)}</div>
+        <div className="ft-card">
+          <div className="u-text-secondary-sm">Gesamtbetrag</div>
+          <div className="ft-stat-value-primary">{formatCurrency(category.data.amount)}</div>
         </div>
-        <div style={{ background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--border-default)' }}>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Abrechnungsmonat</div>
-          <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#fbbf24' }}>{getMonthName(selectedMonth)} {selectedYear}</div>
+        <div className="ft-card">
+          <div className="u-text-secondary-sm">Abrechnungsmonat</div>
+          <div className="ft-stat-value-gold">{getMonthName(selectedMonth)} {selectedYear}</div>
         </div>
       </div>
 
       {/* Actions */}
-      <div style={{
-        background: 'var(--bg-secondary)',
-        borderRadius: '12px',
-        border: '1px solid var(--border-default)',
-        padding: '1.25rem',
-        marginBottom: '1.5rem'
-      }}>
-        <h3 style={{ margin: '0 0 1rem', fontSize: '1rem' }}>Aktionen</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+      <div className="ft-card-section-pad">
+        <h3 className="ft-actions-title">Aktionen</h3>
+        <div className="ft-actions-row">
           {/* Month/Year Selection */}
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Monat</label>
+            <label className="ft-label">Monat</label>
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '6px', color: 'var(--text-primary)' }}
+              className="ft-input"
             >
               {['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'].map((month, i) => (
                 <option key={i + 1} value={i + 1}>{month}</option>
@@ -981,11 +839,11 @@ const CategoryDetailView = ({
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Jahr</label>
+            <label className="ft-label">Jahr</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '6px', color: 'var(--text-primary)' }}
+              className="ft-input"
             >
               <option value={2024}>2024</option>
               <option value={2025}>2025</option>
@@ -997,22 +855,22 @@ const CategoryDetailView = ({
           {(category.id === 'dojo-mitglieder' || category.id === 'gesamt') && (
             <>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Format</label>
+                <label className="ft-label">Format</label>
                 <select
                   value={selectedFormat}
                   onChange={(e) => setSelectedFormat(e.target.value)}
-                  style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '6px', color: 'var(--text-primary)' }}
+                  className="ft-input"
                 >
                   <option value="xml">SEPA XML</option>
                   <option value="csv">CSV</option>
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Einzugsbank</label>
+                <label className="ft-label">Einzugsbank</label>
                 <select
                   value={selectedBank || ''}
                   onChange={(e) => setSelectedBank(parseInt(e.target.value))}
-                  style={{ padding: '0.5rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border-default)', borderRadius: '6px', color: 'var(--text-primary)', minWidth: '180px' }}
+                  className="ft-input ft-input-wide"
                 >
                   {availableBanks.length === 0 ? (
                     <option value="">Keine Bankkonten</option>
@@ -1029,12 +887,7 @@ const CategoryDetailView = ({
               <button
                 onClick={handleExport}
                 disabled={processing || items.length === 0}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  padding: '0.5rem 1rem', background: 'rgba(59,130,246,0.2)',
-                  border: '1px solid #3b82f6', borderRadius: '6px',
-                  color: '#3b82f6', cursor: 'pointer'
-                }}
+                className="fzt-btn-export"
               >
                 <Download size={16} /> Export
               </button>
@@ -1043,12 +896,7 @@ const CategoryDetailView = ({
                 <button
                   onClick={handleStripeExecute}
                   disabled={processing || items.length === 0}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    padding: '0.5rem 1rem', background: category.color,
-                    border: 'none', borderRadius: '6px',
-                    color: '#fff', fontWeight: '600', cursor: 'pointer'
-                  }}
+                  className="fzt-action-btn"
                 >
                   {processing ? <Loader size={16} /> : <Zap size={16} />}
                   Mit Stripe einziehen
@@ -1062,12 +910,7 @@ const CategoryDetailView = ({
             <button
               onClick={handleCreateSepaBatch}
               disabled={processing || items.length === 0}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                padding: '0.5rem 1rem', background: category.color,
-                border: 'none', borderRadius: '6px',
-                color: '#fff', fontWeight: '600', cursor: 'pointer'
-              }}
+              className="fzt-action-btn"
             >
               {processing ? <Loader size={16} /> : <FileText size={16} />}
               SEPA-Batch erstellen
@@ -1076,12 +919,7 @@ const CategoryDetailView = ({
 
           <button
             onClick={onRefresh}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem 1rem', background: 'var(--bg-tertiary)',
-              border: '1px solid var(--border-default)', borderRadius: '6px',
-              color: 'var(--text-primary)', cursor: 'pointer', marginLeft: 'auto'
-            }}
+            className="fzt-btn-refresh-auto"
           >
             <RefreshCw size={16} /> Aktualisieren
           </button>
@@ -1089,98 +927,73 @@ const CategoryDetailView = ({
 
         {/* Result message */}
         {result && (
-          <div style={{
-            marginTop: '1rem', padding: '0.75rem', borderRadius: '8px',
-            background: result.status === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
-            border: `1px solid ${result.status === 'success' ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className={`fzt-result-box fzt-result-box--${result.status}`}>
+            <div className="u-flex-row-sm">
               {result.status === 'success' ? <CheckCircle size={16} color="#10b981" /> : <XCircle size={16} color="#ef4444" />}
               <span>{result.message}</span>
-              <button onClick={() => setResult(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>×</button>
+              <button onClick={() => setResult(null)} className="ft-btn-dismiss">×</button>
             </div>
           </div>
         )}
       </div>
 
       {/* Table */}
-      <div style={{
-        background: 'var(--bg-secondary)',
-        borderRadius: '12px',
-        border: '1px solid var(--border-default)',
-        overflow: 'hidden'
-      }}>
-        <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border-default)' }}>
-          <h3 style={{ margin: 0 }}>Einträge ({items.length})</h3>
+      <div className="ft-card-section">
+        <div className="ft-table-header">
+          <h3 className="fzt-h3-no-margin">Einträge ({items.length})</h3>
         </div>
 
         {items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-            <Icon size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
+          <div className="ft-table-empty">
+            <Icon size={48} className="ft-icon-mb" />
             <p>Keine Einträge für diese Kategorie</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="ft-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
+              <tr className="ft-border-bottom">
                 {category.id === 'gesamt' && (
-                  <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Kategorie</th>
+                  <th className="u-td-secondary">Kategorie</th>
                 )}
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                <th className="u-td-secondary">
                   {category.id === 'dojo-mitglieder' ? 'Mitglied' : 'Dojo'}
                 </th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>IBAN</th>
+                <th className="u-td-secondary">IBAN</th>
                 {category.id !== 'dojo-mitglieder' && (
-                  <th style={{ padding: '0.75rem', textAlign: 'left', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Plan</th>
+                  <th className="u-td-secondary">Plan</th>
                 )}
-                <th style={{ padding: '0.75rem', textAlign: 'right', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Betrag</th>
-                <th style={{ padding: '0.75rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>Status</th>
+                <th className="ft-th-right">Betrag</th>
+                <th className="ft-td-center-muted-sm">Status</th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={item.mitglied_id || item.id || index} style={{ borderBottom: '1px solid var(--border-default)' }}>
+                <tr key={item.mitglied_id || item.id || index} className="ft-border-bottom">
                   {category.id === 'gesamt' && (
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={{
-                        padding: '0.25rem 0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.75rem',
-                        background: item._category === 'dojo-mitglieder' ? 'rgba(16,185,129,0.2)' :
-                                   item._category === 'software-kunden' ? 'rgba(59,130,246,0.2)' : 'rgba(139,92,246,0.2)',
-                        color: item._category === 'dojo-mitglieder' ? '#10b981' :
-                               item._category === 'software-kunden' ? '#3b82f6' : '#8b5cf6'
-                      }}>
+                    <td className="ft-td">
+                      <span className={`fzt-category-badge fzt-category-badge--${item._category === 'dojo-mitglieder' ? 'dojo' : item._category === 'software-kunden' ? 'software' : 'verband'}`}>
                         {item._category === 'dojo-mitglieder' ? 'Mitglied' :
                          item._category === 'software-kunden' ? 'Software' : 'Verband'}
                       </span>
                     </td>
                   )}
-                  <td style={{ padding: '0.75rem' }}>
+                  <td className="ft-td">
                     <strong>{item.name || item.dojoname}</strong>
-                    {item.mitglied_id && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>ID: {item.mitglied_id}</div>}
+                    {item.mitglied_id && <div className="ft-text-muted-sm">ID: {item.mitglied_id}</div>}
                   </td>
-                  <td style={{ padding: '0.75rem', fontFamily: 'monospace', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <td className="ft-td-iban">
                     {item.iban || '-'}
                   </td>
                   {category.id !== 'dojo-mitglieder' && (
-                    <td style={{ padding: '0.75rem', color: 'var(--text-secondary)' }}>
+                    <td className="ft-td-muted">
                       {item.plan_type || '-'}
                     </td>
                   )}
-                  <td style={{ padding: '0.75rem', textAlign: 'right', fontWeight: '600', color: 'var(--primary)' }}>
+                  <td className="ft-td-amount">
                     {formatCurrency(item.betrag || item.monthly_price)}
                   </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                    <span style={{
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      background: (item.mandatsreferenz && item.mandatsreferenz !== 'KEIN MANDAT') || item.status === 'aktiv'
-                        ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
-                      color: (item.mandatsreferenz && item.mandatsreferenz !== 'KEIN MANDAT') || item.status === 'aktiv'
-                        ? '#10b981' : '#ef4444'
-                    }}>
+                  <td className="ft-td-center">
+                    <span className={`fzt-mandate-badge${((item.mandatsreferenz && item.mandatsreferenz !== 'KEIN MANDAT') || item.status === 'aktiv') ? ' fzt-mandate-badge--ok' : ' fzt-mandate-badge--error'}`}>
                       {item.mandatsreferenz || item.status || 'Bereit'}
                     </span>
                   </td>

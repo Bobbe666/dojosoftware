@@ -4,9 +4,8 @@
 .stundenplan-container-modern {
   min-height: 100vh;
   background: var(--bg-body);
-  padding: 2rem;
+  padding: var(--ui-page-padding);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Header Section */
@@ -45,11 +44,11 @@
   background: rgba(255, 69, 0, 0.1);
   border: 2px solid var(--error);
   border-radius: 15px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  padding: var(--ui-section-gap-sm);
+  margin-bottom: var(--ui-section-gap);
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--ui-page-padding-sm);
   animation: fadeInUp 0.6s ease-out;
 }
 
@@ -93,9 +92,9 @@
 }
 
 .accordion-tab {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -110,7 +109,7 @@
 
 .accordion-tab:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: var(--primary-alpha-40);
+  border-color: rgba(255,215,0,0.4);
   transform: translateY(-2px);
 }
 
@@ -129,7 +128,7 @@
 .tab-count {
   background: rgba(255, 255, 255, 0.2);
   padding: 0.2rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -155,7 +154,7 @@
 }
 
 .modal-content {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
@@ -172,7 +171,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  padding: var(--ui-section-gap-sm) var(--ui-card-padding);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -199,15 +198,15 @@
 }
 
 .modal-body {
-  padding: 2rem;
+  padding: var(--ui-card-padding);
 }
 
 .course-preview {
-  background: var(--primary-alpha-10);
-  border: 1px solid var(--primary-alpha-30);
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 2rem;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: var(--comp-radius-lg);
+  padding: var(--ui-page-padding-sm);
+  margin-bottom: var(--ui-section-gap);
 }
 
 .course-preview h4 {
@@ -250,9 +249,9 @@
 
 .form-group input,
 .form-group select {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 0.8rem;
   color: var(--text-primary);
   font-size: 1rem;
@@ -263,8 +262,8 @@
 .form-group select:focus {
   outline: none;
   border-color: var(--primary);
-  background: var(--primary-alpha-10);
-  box-shadow: 0 0 15px var(--primary-alpha-30);
+  background: rgba(255,215,0,0.1);
+  box-shadow: 0 0 15px rgba(255,215,0,0.3);
 }
 
 .form-group option {
@@ -275,15 +274,15 @@
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.5rem 2rem;
+  gap: var(--ui-page-padding-sm);
+  padding: var(--ui-section-gap-sm) var(--ui-card-padding);
   border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .btn-primary,
 .btn-secondary {
   padding: 0.8rem 1.5rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -299,11 +298,11 @@
 .btn-primary:hover {
   background: linear-gradient(135deg, var(--color-orange), var(--primary));
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px var(--primary-alpha-40);
+  box-shadow: 0 5px 15px rgba(255,215,0,0.4);
 }
 
 .btn-secondary {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
@@ -317,7 +316,7 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  padding: 2rem;
+  padding: var(--ui-card-padding);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   backdrop-filter: var(--glass-blur);
 }
@@ -330,13 +329,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
+  margin-bottom: var(--ui-section-gap);
+  padding-bottom: var(--ui-page-padding-sm);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .expanded-header h3 {
-  font-size: 2rem;
+  font-size: var(--ui-page-title);
   font-weight: 700;
   color: var(--primary);
   margin: 0;
@@ -389,7 +388,7 @@
 }
 
 .time-slot-expanded {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
   padding: 1.5rem;
@@ -404,7 +403,7 @@
 .time-slot-expanded:hover {
   transform: translateX(5px);
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-  border-color: var(--primary-alpha-40);
+  border-color: rgba(255,215,0,0.4);
 }
 
 .time-slot-expanded.overlap {
@@ -423,9 +422,9 @@
   font-family: 'Courier New', monospace;
   font-size: 1.4rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   padding: 0.5rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   text-align: center;
 }
 
@@ -452,13 +451,13 @@
 }
 
 .course-style-big, .course-trainer-big {
-  background: var(--primary-alpha-15);
+  background: rgba(255,215,0,0.15);
   color: var(--primary);
   padding: 0.4rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   font-size: 1rem;
   font-weight: 600;
-  border: 1px solid var(--primary-alpha-30);
+  border: 1px solid rgba(255,215,0,0.3);
 }
 
 .slot-right {
@@ -475,11 +474,11 @@
 }
 
 .edit-btn-big, .delete-btn-big, .save-btn-big, .cancel-btn-big {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: rgba(255, 255, 255, 0.9);
   padding: 0.8rem 1.2rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
@@ -519,7 +518,7 @@
   background: var(--error);
   color: white;
   padding: 0.4rem 0.8rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.9rem;
   font-weight: 600;
   text-align: center;
@@ -536,7 +535,7 @@
 .time-slot {
   background: var(--bg-surface);
   border: 1px solid var(--border-default);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   padding: 1rem;
   margin-bottom: 0.8rem;
   transition: all 0.3s ease;
@@ -583,7 +582,7 @@
   background: var(--bg-elevated);
   color: var(--text-secondary);
   padding: 0.2rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.8rem;
   font-weight: 500;
 }
@@ -598,7 +597,7 @@
   background: none;
   border: 1px solid var(--border-default);
   padding: 0.4rem 0.6rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   cursor: pointer;
   font-size: 1rem;
   transition: all 0.2s ease;
@@ -687,7 +686,7 @@
   }
 
   .accordion-content {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .time-range-big {
@@ -711,8 +710,8 @@
   background: linear-gradient(135deg, var(--secondary), var(--color-orange));
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: var(--comp-radius-xl);
+  padding: 0.75rem var(--ui-card-padding);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -731,18 +730,18 @@
 /* Statistics Cards */
 .stundenplan-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: var(--ui-stats-cols);
+  gap: var(--ui-stats-gap);
   margin-bottom: 0.5rem;
   margin-top: 0.3rem;
   animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
 .stundenplan-container-modern .stat-card {
-  background: var(--glass-bg) !important;
+  background: var(--surface-3) !important;
   backdrop-filter: var(--glass-blur) !important;
-  border-radius: 8px !important;
-  border: 1px solid var(--primary-alpha-20) !important;
+  border-radius: var(--comp-radius-md) !important;
+  border: 1px solid rgba(255,215,0,0.2) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
   padding: 0.5rem !important;
   text-align: center !important;
@@ -759,15 +758,15 @@
 
 .stundenplan-container-modern .stat-card:hover {
   transform: translateY(-4px) !important;
-  box-shadow: 0 8px 25px var(--primary-alpha-30) !important;
-  border-color: var(--primary-alpha-50) !important;
+  box-shadow: 0 8px 25px rgba(255,215,0,0.3) !important;
+  border-color: rgba(255,215,0,0.5) !important;
 }
 
 .stundenplan-container-modern .stat-icon {
   font-size: 1.2rem;
   display: inline;
   margin-right: 0.5rem;
-  filter: drop-shadow(0 0 6px var(--primary-alpha-50));
+  filter: drop-shadow(0 0 6px rgba(255,215,0,0.5));
 }
 
 .stundenplan-container-modern .stat-content {
@@ -799,7 +798,7 @@
 .stundenplan-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
+  gap: var(--ui-section-gap-sm);
   margin-bottom: 3rem;
 }
 
@@ -821,7 +820,7 @@
 
 .stundenplan-card-header {
   background: linear-gradient(135deg, var(--primary), var(--secondary));
-  padding: 1rem 1.5rem;
+  padding: var(--ui-page-padding-sm) var(--ui-section-gap-sm);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -844,7 +843,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   background: rgba(255, 255, 255, 0.2);
   color: white;
   cursor: pointer;
@@ -862,14 +861,14 @@
 
 .save-btn:hover { background: rgba(0, 255, 0, 0.3); }
 .cancel-btn:hover { background: rgba(255, 0, 0, 0.3); }
-.edit-btn:hover { background: var(--primary-alpha-30); }
+.edit-btn:hover { background: rgba(255,215,0,0.3); }
 .delete-btn:hover { background: rgba(255, 0, 0, 0.3); }
 
 .stundenplan-card-content {
-  padding: 1.5rem;
+  padding: var(--ui-section-gap-sm);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--ui-page-padding-sm);
 }
 
 .stundenplan-field {
@@ -904,9 +903,9 @@
 }
 
 .time-value {
-  background: var(--primary-alpha-20);
+  background: rgba(255,215,0,0.2);
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-weight: 700;
   color: var(--text-primary);
   font-family: monospace;
@@ -923,7 +922,7 @@
   background: var(--success);
   color: white;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 0.7rem; /* KLEINER - Stil wie "Enso Karate" */
   font-weight: 600;
   display: inline-block;
@@ -941,8 +940,8 @@
 .edit-input-small {
   padding: 6px 10px;
   background: rgba(255, 255, 255, 0.2);
-  border: 2px solid var(--primary-alpha-50);
-  border-radius: 8px;
+  border: 2px solid rgba(255,215,0,0.5);
+  border-radius: var(--comp-radius-md);
   color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 600;
@@ -962,7 +961,7 @@
 .edit-input-small:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
   background: var(--bg-card-hover);
 }
 
@@ -978,8 +977,8 @@
 .neuer-stundenplan-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(15px);
-  border: 1px solid var(--primary-alpha-15);
-  border-radius: 12px;
+  border: 1px solid rgba(255,215,0,0.15);
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out both;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
@@ -987,8 +986,8 @@
 }
 
 .card-header {
-  background: var(--glass-bg);
-  border-bottom: 1px solid var(--primary-alpha-20);
+  background: var(--surface-3);
+  border-bottom: 1px solid rgba(255,215,0,0.2);
   padding: 0.8rem 1.2rem;
 }
 
@@ -1007,9 +1006,9 @@
 }
 
 .stundenplan-form-modern {
-  padding: 1rem 1.2rem;
+  padding: var(--ui-page-padding-sm) 1.2rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: var(--ui-stats-cols);
   gap: 0.8rem;
   align-items: end;
 }
@@ -1032,9 +1031,9 @@
 .stundenplan-container-modern .form-input,
 .stundenplan-container-modern .form-select {
   padding: 8px 12px;
-  background: var(--glass-bg);
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 8px;
+  background: var(--surface-3);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: var(--comp-radius-md);
   color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 400;
@@ -1045,7 +1044,7 @@
 .stundenplan-container-modern .form-select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-alpha-15);
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.15);
   background: rgba(255, 255, 255, 0.15);
 }
 
@@ -1064,8 +1063,8 @@
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: var(--bg-secondary);
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: var(--comp-radius-xl);
+  padding: 0.75rem var(--ui-card-padding);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -1074,7 +1073,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 15px var(--primary-alpha-30);
+  box-shadow: 0 4px 15px rgba(255,215,0,0.3);
   grid-column: span 2;
   max-width: 300px;
   justify-self: center;
@@ -1082,7 +1081,7 @@
 
 .add-button-modern:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 25px var(--primary-alpha-50);
+  box-shadow: 0 8px 25px rgba(255,215,0,0.5);
 }
 
 .btn-icon {
@@ -1157,7 +1156,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .stundenplan-container-modern {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .stundenplan-header h2 {
@@ -1174,7 +1173,7 @@
 
   .stundenplan-form-modern {
     grid-template-columns: 1fr;
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .add-button-modern {
@@ -1185,7 +1184,7 @@
 
   .card-header {
     padding: 1rem;
-    background: var(--glass-bg) !important;
+    background: var(--surface-3) !important;
   }
 
   .card-header h3 {
@@ -1234,8 +1233,8 @@
 .weekly-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
+  gap: var(--ui-page-padding-sm);
+  margin-top: var(--ui-page-padding-sm);
 }
 
 .day-column {
@@ -1243,7 +1242,7 @@
   backdrop-filter: var(--glass-blur);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 15px;
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
   animation: slideInUp 0.6s ease-out both;
   transition: all 0.3s ease;
   overflow: hidden;
@@ -1254,8 +1253,8 @@
 
 .day-column:hover {
   transform: translateY(-3px);
-  background: var(--glass-bg);
-  border-color: var(--primary-alpha-30);
+  background: var(--surface-3);
+  border-color: rgba(255,215,0,0.3);
 }
 
 .day-header {
@@ -1271,7 +1270,7 @@
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 0.3rem;
-  text-shadow: 0 0 10px var(--primary-alpha-50);
+  text-shadow: 0 0 10px rgba(255,215,0,0.5);
 }
 
 .day-count {
@@ -1298,16 +1297,16 @@
 
 .mini-class-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: var(--comp-radius-md);
   padding: 0.5rem;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .mini-class-card:hover {
-  background: var(--primary-alpha-10);
-  border-color: var(--primary-alpha-30);
+  background: rgba(255,215,0,0.1);
+  border-color: rgba(255,215,0,0.3);
   transform: translateX(3px);
 }
 
@@ -1317,7 +1316,7 @@
   color: var(--primary);
   font-family: 'Courier New', monospace;
   margin-bottom: 0.3rem;
-  text-shadow: 0 0 5px var(--primary-alpha-30);
+  text-shadow: 0 0 5px rgba(255,215,0,0.3);
 }
 
 .mini-name {
@@ -1337,10 +1336,10 @@
 
 .mini-raum {
   font-size: 0.7rem;
-  color: var(--primary-alpha-80);
+  color: rgba(255,215,0,0.8);
   font-weight: 500;
   margin-top: 0.2rem;
-  text-shadow: 0 0 5px var(--primary-alpha-30);
+  text-shadow: 0 0 5px rgba(255,215,0,0.3);
 }
 
 /* Responsive Wochenübersicht */
@@ -1378,4 +1377,127 @@
 .stundenplan-container-modern .empty-state p {
   color: var(--text-primary) !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ===== Refactored inline style classes (prefix: sp-) ===== */
+
+/* Error box */
+.sp-error-box {
+  padding: 2rem;
+  margin: 2rem;
+  background: rgba(255, 107, 53, 0.1);
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  border-radius: 15px;
+  text-align: center;
+}
+
+/* Error heading */
+.sp-error-h3 {
+  color: var(--secondary);
+  margin-bottom: 1rem;
+}
+
+/* Retry button */
+.sp-retry-btn {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  border: none;
+  border-radius: 10px;
+  color: var(--bg-secondary);
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+/* Standort badge – mini (inside mini-class-card) */
+.sp-standort-badge {
+  color: white;
+  background: var(--standort-color, #4F46E5);
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Standort pin emoji in mini badge */
+.sp-standort-pin {
+  font-size: 0.75rem;
+}
+
+/* Standort badge – large (inside course-details-expanded) */
+.sp-standort-badge-lg {
+  color: white;
+  background: var(--standort-color, #4F46E5);
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Hidden helper (replaces style={{display:'none'}}) */
+.sp-hidden {
+  display: none;
+}
+
+/* Time edit row inside card (replaces inline flex row) */
+.sp-time-edit-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* "bis" span in time edit row */
+.sp-bis-label {
+  color: var(--text-primary);
+}
+
+/* Form card overrides (static part of neuer-stundenplan-card) */
+.sp-form-card-overrides {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: rgba(30, 30, 50, 0.95);
+}
+
+/* Form card h3 overrides */
+.sp-form-header-h3 {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  filter: none;
+  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+/* Stat row: flex centered with small gap and bottom margin */
+.sp-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.1rem;
+}
+
+/* Stat value: bold primary-colored number */
+.sp-stat-value {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+/* Stat emoji icon */
+.sp-stat-emoji {
+  font-size: 1.2rem;
+}
+
+/* Stat label: tiny uppercase muted text */
+.sp-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }

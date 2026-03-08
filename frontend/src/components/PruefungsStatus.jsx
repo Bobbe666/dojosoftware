@@ -11,6 +11,12 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
   const [anmerkungen, setAnmerkungen] = useState('');
   const [tempAnmerkungen, setTempAnmerkungen] = useState('');
 
+  // Teilnahme-Bestätigung Modal State
+  const [showTeilnahmeModal, setShowTeilnahmeModal] = useState(false);
+  const [selectedPruefung, setSelectedPruefung] = useState(null);
+  const [teilnahmeBedingungAkzeptiert, setTeilnahmeBedingungAkzeptiert] = useState(false);
+  const [teilnahmeLoading, setTeilnahmeLoading] = useState(false);
+
   // Historische Prüfung Modal State (einfache Freitextfelder)
   const [showHistorischModal, setShowHistorischModal] = useState(false);
   const [historischForm, setHistorischForm] = useState({
@@ -195,6 +201,31 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
     }
   };
 
+  // Teilnahme bestätigen
+  const openTeilnahmeModal = (pruefung) => {
+    setSelectedPruefung(pruefung);
+    setTeilnahmeBedingungAkzeptiert(false);
+    setShowTeilnahmeModal(true);
+  };
+
+  const handleTeilnahmeBestaetigen = async () => {
+    if (!selectedPruefung || !teilnahmeBedingungAkzeptiert) return;
+    setTeilnahmeLoading(true);
+    try {
+      await axios.post(`/pruefungen/${selectedPruefung.pruefung_id}/teilnahme-bestaetigen`, {
+        mitglied_id: mitgliedId
+      });
+      setShowTeilnahmeModal(false);
+      setSelectedPruefung(null);
+      loadPruefungsdaten();
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Fehler beim Bestätigen';
+      alert('❌ ' + msg);
+    } finally {
+      setTeilnahmeLoading(false);
+    }
+  };
+
   // Öffne Modal für historische Prüfung
   const openHistorischModal = () => {
     setHistorischForm({
@@ -267,7 +298,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
         <div className="grid-container">
           <div className="field-group card">
             <h3>🎓 Prüfungsstatus</h3>
-            <p style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>
+            <p className="ps-no-data">
               {readOnly
                 ? 'Ihnen wurden noch keine Stile zugewiesen.'
                 : 'Diesem Mitglied wurden noch keine Stile zugewiesen. Weisen Sie im Tab "Stile" einen Stil zu.'}
@@ -279,7 +310,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
           <div key={stilDaten.stil_id} className="stil-pruefung-section">
             {/* Stil Überschrift */}
             <div className="stil-titel-header">
-              <h2 style={{ color: '#FFD700', fontSize: '1.5rem', marginBottom: '1.5rem' }}>
+              <h2 className="ps-stil-title">
                 🥋 {stilDaten.stil_name}
               </h2>
             </div>
@@ -292,18 +323,12 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                 <h3>🎖️ Aktuelle Graduierung</h3>
                 <div>
                   <label>Gurtfarbe:</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                  <div className="ps-gurt-row">
                     <div
-                      style={{
-                        width: '80px',
-                        height: '24px',
-                        backgroundColor: stilDaten.graduierungFarbe,
-                        borderRadius: '4px',
-                        border: '2px solid rgba(255, 255, 255, 0.2)',
-                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-                      }}
+                      className="ps-gurt-swatch"
+                      style={{ '--gurt-farbe': stilDaten.graduierungFarbe }}
                     />
-                    <span style={{ fontSize: '1rem', fontWeight: '600', color: '#fff' }}>
+                    <span className="ps-gurt-label">
                       {stilDaten.aktuelleGraduierung}
                     </span>
                   </div>
@@ -317,19 +342,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                     <button
                       className="download-urkunde-btn"
                       onClick={() => handleUrkundeDownload(stilDaten.letztePruefung.pruefung_id)}
-                      style={{
-                        background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                        border: 'none',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        color: '#000',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        marginTop: '0.5rem'
-                      }}
+                      className="ps-btn-urkunde-main"
                     >
                       <Download size={16} />
                       Urkunde herunterladen
@@ -343,20 +356,20 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                 <h3>📊 Trainingsstunden</h3>
                 <div>
                   <label>Absolviert:</label>
-                  <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#22c55e' }}>
+                  <span className="ps-stat-success">
                     {stilDaten.trainingsstunden?.anwesend_stunden ||
                      stilDaten.trainingsstunden?.total_stunden || 0} Stunden
                   </span>
                 </div>
                 <div>
                   <label>Benötigt für nächste Prüfung:</label>
-                  <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#3b82f6' }}>
+                  <span className="ps-stat-info">
                     {stilDaten.trainingsstunden?.requirements?.min_stunden || 20} Stunden
                   </span>
                 </div>
                 <div>
                   <label>Noch benötigt:</label>
-                  <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#ef4444' }}>
+                  <span className="ps-stat-error">
                     {Math.max(0,
                       (stilDaten.trainingsstunden?.requirements?.min_stunden || 20) -
                       (parseInt(stilDaten.trainingsstunden?.anwesend_stunden ||
@@ -366,49 +379,19 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                 </div>
 
                 {/* Fortschrittsbalken */}
-                <div style={{ marginTop: '1rem' }}>
+                <div className="ps-mt-1">
                   <label>Fortschritt:</label>
-                  <div style={{
-                    width: '100%',
-                    height: '24px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    position: 'relative',
-                    marginTop: '0.5rem'
-                  }}>
-                    <div style={{
-                      height: '100%',
-                      width: `${getFortschrittsProzent(stilDaten)}%`,
-                      background: getFortschrittsProzent(stilDaten) >= 80
-                        ? 'linear-gradient(90deg, #22c55e, #16a34a)'
-                        : getFortschrittsProzent(stilDaten) >= 60
-                        ? 'linear-gradient(90deg, #f59e0b, #d97706)'
-                        : 'linear-gradient(90deg, #ef4444, #dc2626)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'width 0.3s ease',
-                      minWidth: '40px'
-                    }}>
-                      <span style={{
-                        color: '#fff',
-                        fontWeight: '700',
-                        fontSize: '0.85rem',
-                        textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)'
-                      }}>
+                  <div className="ps-progress-track">
+                    <div
+                      className={`ps-progress-fill${getFortschrittsProzent(stilDaten) >= 80 ? ' ps-progress-fill--high' : getFortschrittsProzent(stilDaten) >= 60 ? ' ps-progress-fill--mid' : ' ps-progress-fill--low'}`}
+                      style={{ width: `${getFortschrittsProzent(stilDaten)}%` }}
+                    >
+                      <span className="ps-progress-text">
                         {getFortschrittsProzent(stilDaten)}%
                       </span>
                     </div>
                   </div>
-                  <div style={{
-                    textAlign: 'center',
-                    marginTop: '0.5rem',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    color: '#FFD700'
-                  }}>
+                  <div className="ps-progress-label">
                     {getFortschrittsStatus(getFortschrittsProzent(stilDaten))}
                   </div>
                 </div>
@@ -419,7 +402,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                 <h3>📅 Nächste Prüfung</h3>
                 <div>
                   <label>Geplantes Datum:</label>
-                  <span style={{ fontSize: '1rem', fontWeight: '600' }}>
+                  <span className="ps-stat-label">
                     {formatDatum(stilDaten.naechstePruefung?.pruefungsdatum) || 'Keine Prüfung geplant'}
                   </span>
                 </div>
@@ -427,119 +410,79 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                   <>
                     <div>
                       <label>Ziel-Graduierung:</label>
-                      <span>{stilDaten.naechstePruefung?.graduierung || '-'}</span>
+                      <span>{stilDaten.naechstePruefung?.graduierung_nachher || stilDaten.naechstePruefung?.graduierung || '-'}</span>
                     </div>
-                    <div>
-                      <button
-                        className="edit-pruefung-btn"
-                        onClick={() => setShowPruefungModal(true)}
-                        style={{
-                          background: 'rgba(255, 215, 0, 0.2)',
-                          border: '1px solid #FFD700',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '6px',
-                          color: '#FFD700',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          marginTop: '0.5rem'
-                        }}
-                      >
-                        <Edit3 size={16} />
-                        Prüfung bearbeiten
-                      </button>
+                    {stilDaten.naechstePruefung.pruefungsort && (
+                      <div>
+                        <label>Ort:</label>
+                        <span>{stilDaten.naechstePruefung.pruefungsort}</span>
+                      </div>
+                    )}
+                    <div className="ps-mt-075">
+                      {stilDaten.naechstePruefung.teilnahme_bestaetigt ? (
+                        <div className="ps-teilnahme-confirmed">
+                          <CheckCircle size={16} />
+                          Teilnahme bestätigt
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => openTeilnahmeModal(stilDaten.naechstePruefung)}
+                          className="ps-btn-teilnahme"
+                        >
+                          <CheckCircle size={16} />
+                          Teilnahme bestätigen
+                        </button>
+                      )}
                     </div>
                   </>
                 )}
               </div>
 
               {/* Karte 4: Prüfungshistorie */}
-              <div className="field-group card" style={{ gridColumn: '1 / -1' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3 style={{ margin: 0 }}>📋 Prüfungshistorie</h3>
+              <div className="field-group card ps-full-col">
+                <div className="ps-section-header">
+                  <h3>📋 Prüfungshistorie</h3>
                   {!readOnly && (
                     <button
                       onClick={() => openHistorischModal()}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: '#fff',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer'
-                      }}
+                      className="ps-btn-add-historic"
                     >
                       + Historische Prüfung
                     </button>
                   )}
                 </div>
                 {stilDaten.historie.length > 0 ? (
-                  <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-                    <table style={{
-                      width: '100%',
-                      borderCollapse: 'collapse',
-                      fontSize: '0.9rem'
-                    }}>
+                  <div className="ps-table-scroll">
+                    <table className="ps-table">
                       <thead>
-                        <tr style={{
-                          borderBottom: '2px solid rgba(255, 215, 0, 0.3)',
-                          backgroundColor: 'rgba(255, 255, 255, 0.02)'
-                        }}>
-                          <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Datum</th>
-                          <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Graduierung</th>
-                          <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Status</th>
-                          <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Punkte</th>
-                          <th style={{ padding: '0.75rem', textAlign: 'center', color: '#FFD700' }}>Aktion</th>
+                        <tr className="ps-thead-row">
+                          <th className="ps-th-left">Datum</th>
+                          <th className="ps-th-left">Graduierung</th>
+                          <th className="ps-th-left">Status</th>
+                          <th className="ps-th-left">Punkte</th>
+                          <th className="ps-th-center">Aktion</th>
                         </tr>
                       </thead>
                       <tbody>
                         {stilDaten.historie.map((pruefung, index) => (
-                          <tr key={pruefung.pruefung_id} style={{
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                            backgroundColor: index % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.02)'
-                          }}>
-                            <td style={{ padding: '0.75rem' }}>{formatDatum(pruefung.pruefungsdatum)}</td>
-                            <td style={{ padding: '0.75rem' }}>{pruefung.graduierung_nachher}</td>
-                            <td style={{ padding: '0.75rem' }}>
-                              <span style={{
-                                padding: '0.25rem 0.75rem',
-                                borderRadius: '12px',
-                                fontSize: '0.8rem',
-                                fontWeight: '600',
-                                background: pruefung.status === 'bestanden'
-                                  ? 'rgba(34, 197, 94, 0.2)'
-                                  : pruefung.status === 'geplant'
-                                  ? 'rgba(59, 130, 246, 0.2)'
-                                  : 'rgba(239, 68, 68, 0.2)',
-                                color: pruefung.status === 'bestanden'
-                                  ? '#22c55e'
-                                  : pruefung.status === 'geplant'
-                                  ? '#3b82f6'
-                                  : '#ef4444'
-                              }}>
+                          <tr key={pruefung.pruefung_id} className="ps-histoire-row">
+                            <td className="ps-td">{formatDatum(pruefung.pruefungsdatum)}</td>
+                            <td className="ps-td">{pruefung.graduierung_nachher}</td>
+                            <td className="ps-td">
+                              <span
+                                className={`ps-pruefung-badge${pruefung.status === 'bestanden' ? ' ps-pruefung-badge--bestanden' : pruefung.status === 'geplant' ? ' ps-pruefung-badge--geplant' : ' ps-pruefung-badge--nicht-bestanden'}`}
+                              >
                                 {pruefung.status}
                                 {pruefung.ist_historisch && ' (hist.)'}
                               </span>
                             </td>
-                            <td style={{ padding: '0.75rem' }}>{pruefung.punktzahl || '-'}</td>
-                            <td style={{ padding: '0.75rem', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                            <td className="ps-td">{pruefung.punktzahl || '-'}</td>
+                            <td className="ps-td-center">
+                              <div className="ps-td-actions">
                                 {pruefung.status === 'bestanden' && !pruefung.ist_historisch && (
                                   <button
                                     onClick={() => handleUrkundeDownload(pruefung.pruefung_id)}
-                                    style={{
-                                      background: 'rgba(255, 215, 0, 0.2)',
-                                      border: '1px solid #FFD700',
-                                      padding: '0.25rem 0.5rem',
-                                      borderRadius: '4px',
-                                      color: '#FFD700',
-                                      cursor: 'pointer',
-                                      fontSize: '0.8rem'
-                                    }}
+                                    className="ps-btn-urkunde"
                                     title="Urkunde herunterladen"
                                   >
                                     <Download size={14} />
@@ -548,15 +491,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                                 {pruefung.ist_historisch && !readOnly && (
                                   <button
                                     onClick={() => handleDeleteHistorisch(pruefung.pruefung_id)}
-                                    style={{
-                                      background: 'rgba(239, 68, 68, 0.2)',
-                                      border: '1px solid #ef4444',
-                                      padding: '0.25rem 0.5rem',
-                                      borderRadius: '4px',
-                                      color: '#ef4444',
-                                      cursor: 'pointer',
-                                      fontSize: '0.8rem'
-                                    }}
+                                    className="ps-btn-delete-sm"
                                     title="Historische Prüfung löschen"
                                   >
                                     <X size={14} />
@@ -570,7 +505,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                     </table>
                   </div>
                 ) : (
-                  <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '1rem' }}>
+                  <p className="ps-empty">
                     Noch keine Prüfungen dokumentiert. Klicken Sie auf "+ Historische Prüfung" um vergangene Prüfungen zu erfassen.
                   </p>
                 )}
@@ -585,7 +520,7 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       {showAnmerkungenModal && (
         <div className="modal-overlay" onClick={() => setShowAnmerkungenModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255, 215, 0, 0.2)" }}>
+            <div className="ps-modal-header">
               <h3>Prüfungsanmerkungen bearbeiten</h3>
               <button className="close-btn" onClick={() => setShowAnmerkungenModal(false)}>
                 <X size={20} />
@@ -614,18 +549,18 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
 
 {/* Historische Prüfung Modal - Einfache Freitextfelder */}
       {showHistorischModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }} onClick={() => setShowHistorischModal(false)}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)", borderRadius: "16px", width: "90%", maxWidth: "450px", maxHeight: "80vh", overflowY: "auto", border: "1px solid rgba(255, 215, 0, 0.3)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 1.5rem", borderBottom: "1px solid rgba(255, 215, 0, 0.2)" }}>
-              <h3 style={{ color: '#FFD700' }}>📜 Historische Prüfung</h3>
-              <button onClick={() => setShowHistorischModal(false)} style={{ background: "transparent", border: "none", color: "#fff", cursor: "pointer", padding: "0.5rem" }}>
+        <div className="ps-modal-overlay" onClick={() => setShowHistorischModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="ps-modal-dialog">
+            <div className="ps-modal-header">
+              <h3 className="u-text-accent">📜 Historische Prüfung</h3>
+              <button onClick={() => setShowHistorischModal(false)} className="ps-btn-close">
                 <X size={20} />
               </button>
             </div>
-            <div className="modal-body" style={{ padding: '1.5rem' }}>
+            <div className="modal-body ps-modal-body">
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="ps-form-field">
+                <label className="u-form-label-secondary">
                   Stil *
                 </label>
                 <input
@@ -633,19 +568,12 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                   value={historischForm.stil_name}
                   onChange={(e) => setHistorischForm({...historischForm, stil_name: e.target.value})}
                   placeholder="z.B. Karate, Judo, Taekwondo..."
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="ps-input"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="ps-form-field">
+                <label className="u-form-label-secondary">
                   Graduierung *
                 </label>
                 <input
@@ -653,38 +581,24 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                   value={historischForm.graduierung_name}
                   onChange={(e) => setHistorischForm({...historischForm, graduierung_name: e.target.value})}
                   placeholder="z.B. Gelbgurt, 5. Kyu, 1. Dan..."
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="ps-input"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="ps-form-field">
+                <label className="u-form-label-secondary">
                   Datum *
                 </label>
                 <input
                   type="date"
                   value={historischForm.pruefungsdatum}
                   onChange={(e) => setHistorischForm({...historischForm, pruefungsdatum: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="ps-input"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="ps-form-field">
+                <label className="u-form-label-secondary">
                   Bemerkung (optional)
                 </label>
                 <input
@@ -692,43 +606,21 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
                   value={historischForm.bemerkung}
                   onChange={(e) => setHistorischForm({...historischForm, bemerkung: e.target.value})}
                   placeholder="Optional..."
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="ps-input"
                 />
               </div>
 
             </div>
-            <div className="modal-footer" style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', padding: '1rem 1.5rem' }}>
+            <div className="modal-footer ps-modal-footer">
               <button
                 onClick={() => setShowHistorischModal(false)}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer'
-                }}
+                className="ps-btn-cancel"
               >
                 Abbrechen
               </button>
               <button
                 onClick={handleSaveHistorisch}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#000',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="ps-btn-save"
               >
                 Speichern
               </button>
@@ -738,40 +630,109 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
       )}
 
       {/* Historische Prüfungen Liste */}
+      {/* Teilnahme-Bestätigung Modal */}
+      {showTeilnahmeModal && selectedPruefung && (
+        <div className="ps-modal-overlay" onClick={() => setShowTeilnahmeModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="ps-modal-dialog-purple">
+            <div className="ps-modal-header-purple">
+              <h3 className="ps-modal-title-purple">🎓 Prüfungsanmeldung bestätigen</h3>
+              <button onClick={() => setShowTeilnahmeModal(false)} className="ps-btn-close-light">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="ps-modal-body">
+              {/* Prüfungsdetails */}
+              <div className="ps-detail-card">
+                <div className="ps-detail-label">Stil</div>
+                <div className="ps-detail-value-lg">{selectedPruefung.stil_name}</div>
+                <div className="ps-detail-label">Ziel-Graduierung</div>
+                <div className="ps-detail-value-accent">{selectedPruefung.graduierung_nachher || selectedPruefung.graduierung || '-'}</div>
+                {selectedPruefung.pruefungsdatum && (
+                  <>
+                    <div className="ps-detail-label">Datum</div>
+                    <div className="ps-detail-value">
+                      📅 {new Date(selectedPruefung.pruefungsdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      {selectedPruefung.pruefungszeit && ` um ${selectedPruefung.pruefungszeit} Uhr`}
+                    </div>
+                  </>
+                )}
+                {selectedPruefung.pruefungsort && (
+                  <>
+                    <div className="ps-detail-label">Ort</div>
+                    <div className="ps-detail-value">📍 {selectedPruefung.pruefungsort}</div>
+                  </>
+                )}
+                {selectedPruefung.pruefungsgebuehr && (
+                  <>
+                    <div className="ps-detail-label">Prüfungsgebühr</div>
+                    <div className="ps-detail-value-price">💰 {parseFloat(selectedPruefung.pruefungsgebuehr).toFixed(2)} €</div>
+                  </>
+                )}
+              </div>
+              {/* Teilnahmebedingungen */}
+              {selectedPruefung.teilnahmebedingungen && (
+                <div className="ps-bedingungen-box">
+                  <div className="ps-bedingungen-title">📋 Teilnahmebedingungen</div>
+                  {selectedPruefung.teilnahmebedingungen}
+                </div>
+              )}
+              {/* Checkbox */}
+              <label className="ps-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={teilnahmeBedingungAkzeptiert}
+                  onChange={e => setTeilnahmeBedingungAkzeptiert(e.target.checked)}
+                  className="ps-checkbox"
+                />
+                <span>Ich bestätige meine Teilnahme an der Prüfung und akzeptiere die Teilnahmebedingungen. Mir ist bewusst, dass die Prüfungsgebühr fällig wird.</span>
+              </label>
+              {/* Buttons */}
+              <div className="ps-btn-row">
+                <button
+                  onClick={() => setShowTeilnahmeModal(false)}
+                  className="ps-btn-cancel-flex"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  onClick={handleTeilnahmeBestaetigen}
+                  disabled={!teilnahmeBedingungAkzeptiert || teilnahmeLoading}
+                  className={`ps-btn-confirm${teilnahmeBedingungAkzeptiert ? ' ps-btn-confirm--active' : ''}`}
+                >
+                  {teilnahmeLoading ? '...' : '✅ Jetzt anmelden'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {historischePruefungen.length > 0 && (
-        <div className="field-group card" style={{ marginTop: '1rem' }}>
+        <div className="field-group card ps-mt-1">
           <h3>📜 Vergangene Prüfungen (vor Systemeinführung)</h3>
-          <div style={{ overflowX: 'auto', marginTop: '1rem' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+          <div className="ps-table-scroll">
+            <table className="ps-table">
               <thead>
-                <tr style={{ borderBottom: '2px solid rgba(255, 215, 0, 0.3)' }}>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Datum</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Stil</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Graduierung</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Bemerkung</th>
-                  <th style={{ padding: '0.75rem', textAlign: 'center', color: '#FFD700' }}>Aktion</th>
+                <tr className="ps-thead-row">
+                  <th className="ps-th-left">Datum</th>
+                  <th className="ps-th-left">Stil</th>
+                  <th className="ps-th-left">Graduierung</th>
+                  <th className="ps-th-left">Bemerkung</th>
+                  <th className="ps-th-center">Aktion</th>
                 </tr>
               </thead>
               <tbody>
                 {historischePruefungen.map((p) => (
-                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <td style={{ padding: '0.75rem' }}>{new Date(p.pruefungsdatum).toLocaleDateString('de-DE')}</td>
-                    <td style={{ padding: '0.75rem' }}>{p.stil_name}</td>
-                    <td style={{ padding: '0.75rem' }}>{p.graduierung_name}</td>
-                    <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>{p.bemerkung || '-'}</td>
-                    <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                  <tr key={p.id} className="ps-tbody-row">
+                    <td className="ps-td">{new Date(p.pruefungsdatum).toLocaleDateString('de-DE')}</td>
+                    <td className="ps-td">{p.stil_name}</td>
+                    <td className="ps-td">{p.graduierung_name}</td>
+                    <td className="ps-td-muted">{p.bemerkung || '-'}</td>
+                    <td className="ps-td-center">
                       {!readOnly && (
                         <button
                           onClick={() => handleDeleteHistorisch(p.id)}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.2)',
-                            border: '1px solid #ef4444',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem'
-                          }}
+                          className="ps-btn-delete-sm"
                         >
                           <X size={14} />
                         </button>

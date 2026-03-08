@@ -1,0 +1,1239 @@
+/* MemberDashboard.css - Migrated from inline styles to design-system variables */
+
+/* =============================================
+   ALERT / ZAHLUNGSHINWEIS BANNER
+   ============================================= */
+
+.member-alert-banner {
+  background: var(--color-error-500-alpha-10);
+  border-bottom: 2px solid var(--error);
+  padding: 0.875rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--error);
+}
+
+.member-alert-icon { font-size: 1.25rem; }
+.member-alert-content { flex: 1; }
+.member-alert-title { display: block; font-size: 0.9375rem; }
+.member-alert-text { font-size: 0.8125rem; opacity: 0.85; }
+
+.member-alert-link {
+  background: var(--error);
+  color: #fff;
+  padding: 0.375rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* =============================================
+   WELCOME HEADER (Karate-Stil)
+   ============================================= */
+
+.member-welcome-wrap {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.member-welcome-dojo {
+  font-size: 0.75rem;
+  color: var(--primary);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.member-welcome-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0 0 0.3rem 0;
+}
+
+.member-welcome-kanji {
+  font-size: 1.5rem;
+  color: var(--primary);
+  opacity: 0.6;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.member-welcome-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, var(--primary) 0%, #ffaa00 50%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  line-height: 1.1;
+}
+
+.member-welcome-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* =============================================
+   STAT CARDS (Linke/Rechte Spalte)
+   ============================================= */
+
+.member-stat-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.member-stat-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+}
+
+.member-stat-icon {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-bottom: 0.3rem;
+}
+
+.member-stat-label {
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.member-stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.member-stat-value.sm {
+  font-size: 1.2rem;
+}
+
+.member-stat-sublabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* =============================================
+   NAVIGATION CTA TILES
+   ============================================= */
+
+.cta-tile-nav {
+  padding: 1rem;
+  min-height: 80px;
+}
+
+.cta-tile-nav-label {
+  font-size: 0.9rem;
+}
+
+/* =============================================
+   QUICK ACTION TILES
+   ============================================= */
+
+.member-quick-actions-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.8rem;
+}
+
+.cta-tile-quick {
+  cursor: pointer;
+  padding: 0.8rem;
+  min-height: 60px;
+  position: relative;
+}
+
+.cta-tile-quick-label {
+  font-size: 0.85rem;
+}
+
+.cta-tile-qr {
+  background: linear-gradient(135deg, var(--primary-alpha-15), var(--secondary-alpha-10));
+  border: 1px solid var(--primary-alpha-30);
+}
+
+.cta-tile-install {
+  background: linear-gradient(135deg, var(--primary-alpha-15), rgba(255, 237, 78, 0.15));
+  border: 1px solid var(--primary-alpha-30);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+/* Notification badge im Quick Action Tile */
+.member-notif-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: var(--error);
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+/* =============================================
+   EVENTS WIDGET
+   ============================================= */
+
+.member-events-wrap {
+  margin-top: 1.2rem;
+}
+
+.member-events-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.member-events-title {
+  margin: 0;
+  color: var(--primary);
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.member-events-link {
+  color: var(--primary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.member-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.member-event-date {
+  text-align: center;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+
+.member-event-weekday {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.member-event-day {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.member-event-month {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+}
+
+.member-event-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-event-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-event-location {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.member-event-badge {
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.member-event-badge.registered {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.member-event-badge.register {
+  background: var(--primary-alpha-10);
+  color: var(--primary);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+}
+
+/* =============================================
+   REFERRAL WIDGET
+   ============================================= */
+
+.member-referral-wrap {
+  margin-top: 1.2rem;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.14) 0%, rgba(255, 215, 0, 0.08) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  border-radius: 16px;
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.member-referral-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.member-referral-icon { font-size: 2rem; }
+
+.member-referral-title {
+  color: #f97316;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+}
+
+.member-referral-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+/* ─── Inline-style utility classes (mb- prefix) ─────────────────────────── */
+
+/* 9x  fontSize: '1.5rem' */
+.mb-icon-lg {
+  font-size: 1.5rem;
+}
+
+/* 6x  fontSize: '0.75rem', color: var(--text-secondary), marginBottom: '0.3rem' */
+.mb-label-xs {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+}
+
+/* 6x  color: var(--primary), marginBottom: '0.3rem', fontSize: '0.9rem' */
+.mb-value-primary {
+  color: var(--primary);
+  margin-bottom: 0.3rem;
+  font-size: 0.9rem;
+}
+
+/* 4x  display: 'flex', alignItems: 'center', gap: '0.8rem' */
+.mb-flex-center-gap {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+/* 3x  color: var(--text-secondary), marginBottom: '0.3rem', fontSize: '0.85rem' */
+.mb-label-sm {
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+}
+
+/* =============================================
+   STATS GRID (Ausweis + Stats)
+   ============================================= */
+
+.md-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+
+/* =============================================
+   NAVIGATION GRID OVERRIDE
+   ============================================= */
+
+.md-navigation-grid {
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+/* =============================================
+   REFERRAL — PRAEMIE BOX
+   ============================================= */
+
+.md-referral-praemie {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+
+.md-referral-praemie-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.md-referral-praemie-amount {
+  color: var(--primary);
+  font-weight: 900;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.md-referral-praemie-sub {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
+}
+
+/* =============================================
+   REFERRAL — EXPLANATION BOX
+   ============================================= */
+
+.md-referral-explanation {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.85rem;
+  line-height: 1.65;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+
+/* =============================================
+   REFERRAL — CODE BOX
+   ============================================= */
+
+.md-referral-code-label {
+  color: var(--text-muted);
+  font-size: 0.73rem;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.md-referral-code-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed rgba(249, 115, 22, 0.55);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.md-referral-code-value {
+  font-family: monospace;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 5px;
+  color: var(--primary);
+}
+
+/* =============================================
+   REFERRAL — ANMELDE-LINK
+   ============================================= */
+
+.md-referral-link-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.md-referral-link-label {
+  color: var(--text-muted);
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.md-referral-link-url {
+  color: rgba(255, 200, 100, 0.8);
+  font-size: 0.82rem;
+  font-family: monospace;
+}
+
+/* =============================================
+   PERSONAL INFO SECTION
+   ============================================= */
+
+.md-info-section {
+  margin-top: 1.5rem;
+}
+
+.md-info-section-title {
+  margin-bottom: 0.8rem;
+  color: var(--primary);
+  font-size: 1.2rem;
+}
+
+.md-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* Shared info card pattern */
+.md-info-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  gap: 0.8rem;
+}
+
+/* Variant: column layout for card body */
+.md-info-card-col {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* Approved exams purple card variant */
+.md-info-card-purple {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* =============================================
+   EXAM COUNTDOWN & PROGRESS BADGES
+   ============================================= */
+
+.md-exam-date-text {
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.md-countdown-badge {
+  color: var(--success);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+/* =============================================
+   TRAINING PROGRESS TRACKER
+   ============================================= */
+
+.md-progress-row {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.md-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+
+.md-progress-stil-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.md-hours-needed {
+  color: var(--secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.md-hours-ready {
+  color: var(--success);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.md-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.md-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.md-hint-text {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* =============================================
+   STIL ROW (Stile & Gürtel)
+   ============================================= */
+
+.md-stil-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.md-stil-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.md-graduation-badge {
+  color: var(--primary);
+  font-weight: 600;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.md-last-exam-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+/* =============================================
+   APPROVED EXAMS — CARD INTERNALS
+   ============================================= */
+
+.md-exam-card-purple {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+
+.md-exam-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.3rem;
+}
+
+.md-exam-name-purple {
+  font-weight: bold;
+  color: #8b5cf6;
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+
+.md-exam-sub-text {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.md-exam-date-text-sm {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-bottom: 0.2rem;
+}
+
+.md-exam-countdown {
+  color: var(--success);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 0.3rem;
+}
+
+.md-exam-register-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.md-exam-confirmed-badge {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: var(--success);
+  text-align: center;
+}
+
+/* Section heading purple */
+.md-section-heading-purple {
+  color: #8b5cf6;
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+/* Count badge (purple) */
+.md-count-badge-purple {
+  margin-left: 0.5rem;
+  background: #8b5cf6;
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+/* Count badge (red) */
+.md-count-badge-red {
+  margin-left: 0.5rem;
+  background: #ef4444;
+  color: white;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+/* Section heading primary */
+.md-section-heading-primary {
+  color: var(--primary);
+  margin-bottom: 0.2rem;
+  font-size: 0.9rem;
+}
+
+/* =============================================
+   EXAM RESULTS — CARD INTERNALS
+   ============================================= */
+
+.md-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.3rem;
+}
+
+.md-result-sub-text {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.md-result-emoji {
+  font-size: 1.2rem;
+}
+
+.md-result-date-text {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.md-result-score-text {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  margin-top: 0.2rem;
+}
+
+.md-more-items-hint {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 0.2rem;
+}
+
+/* =============================================
+   NOTIFICATIONS — INTERNALS
+   ============================================= */
+
+.md-notif-message {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+
+.md-notif-timestamp {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.md-notif-confirm-btn {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: linear-gradient(135deg, #22c55e, #10b981);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+
+.md-notif-confirmed-badge {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  color: var(--success);
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.md-notif-empty {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0;
+}
+
+/* =============================================
+   MODAL OVERLAY & BOX
+   ============================================= */
+
+.md-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.md-modal-box {
+  background: #1a1a2e;
+  border: 2px solid rgba(139, 92, 246, 0.4);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: white;
+}
+
+.md-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+.md-modal-icon {
+  font-size: 2rem;
+}
+
+.md-modal-title {
+  margin: 0;
+  color: #8b5cf6;
+  font-size: 1.5rem;
+}
+
+.md-modal-subtitle {
+  margin: 0.2rem 0 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.md-modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  line-height: 1;
+}
+
+/* =============================================
+   MODAL — EXAM DETAILS
+   ============================================= */
+
+.md-modal-details {
+  margin-bottom: 1.5rem;
+}
+
+.md-modal-stil-card {
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.md-modal-stil-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.md-modal-field-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+}
+
+.md-modal-stil-name {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #8b5cf6;
+  margin-bottom: 0.5rem;
+}
+
+.md-modal-pruefung-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+.md-modal-pruefung-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.md-modal-termin-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.md-modal-info-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.md-modal-info-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.md-modal-info-value-sm {
+  font-size: 0.95rem;
+  color: white;
+}
+
+.md-modal-time-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+.md-modal-fee-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.md-modal-fee-card {
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.md-modal-fee-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.md-modal-frist-card {
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.md-modal-frist-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--error);
+}
+
+.md-modal-belt-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.md-modal-remarks-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+.md-modal-remarks-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  white-space: pre-line;
+}
+
+.md-modal-conditions-card {
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  margin-bottom: 1rem;
+}
+
+.md-modal-conditions-title {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--color-midnight-500);
+  margin-bottom: 0.5rem;
+}
+
+.md-modal-conditions-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  white-space: pre-line;
+}
+
+/* =============================================
+   MODAL — CHECKBOX & ACTIONS
+   ============================================= */
+
+.md-modal-checkbox-wrap {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.md-modal-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.md-modal-checkbox-input {
+  margin-top: 0.2rem;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.md-modal-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.md-modal-cancel-btn {
+  flex: 1;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* === Migrated from inline styles === */
+
+/* Stat value color based on open fees */
+.md-stat-value--error   { color: var(--error); }
+.md-stat-value--success { color: var(--success); }
+
+/* Event card – angemeldet vs. not */
+.md-event-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,215,0,0.15);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+}
+.md-event-card--registered {
+  background: rgba(16,185,129,0.08);
+  border-color: rgba(16,185,129,0.25);
+}
+
+/* Referral copy button */
+.md-referral-copy-btn {
+  background: rgba(249,115,22,0.2);
+  border: 1px solid rgba(249,115,22,0.5);
+  border-radius: 8px;
+  color: #f97316;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.md-referral-copy-btn--copied {
+  background: rgba(16,185,129,0.2);
+  border-color: rgba(16,185,129,0.5);
+  color: #10b981;
+}
+
+/* Stil item separator (last item has no border) */
+.md-stil-item {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,215,0,0.1);
+}
+.md-stil-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Belt color dot (dynamic background via CSS var) */
+.md-belt-dot {
+  border-radius: 50%;
+  background-color: var(--belt-color, rgba(255,255,255,0.2));
+  border: 2px solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+.md-belt-dot--sm { width: 20px; height: 20px; }
+.md-belt-dot--lg { width: 50px; height: 50px; border-width: 3px; }
+
+/* Exam result card */
+.md-exam-result-card {
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+.md-exam-result-card--pass { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
+.md-exam-result-card--fail { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3); }
+
+/* Exam result stil name */
+.md-exam-result-stil {
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+.md-exam-result-stil--pass { color: #10b981; }
+.md-exam-result-stil--fail { color: #ef4444; }
+
+/* Notification item */
+.md-notif-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+.md-notif-item--unread {
+  background: rgba(255,215,0,0.1);
+  border-color: rgba(255,215,0,0.3);
+}
+
+/* Notification title */
+.md-notif-title {
+  font-weight: normal;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+  margin-bottom: 0.2rem;
+}
+.md-notif-title--unread {
+  font-weight: bold;
+  color: #ffd700;
+}
+
+/* Exam registration confirm button */
+.md-exam-confirm-btn {
+  flex: 1;
+  padding: 0.8rem;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.md-exam-confirm-btn:disabled {
+  background: rgba(139,92,246,0.3);
+  color: rgba(255,255,255,0.4);
+  cursor: not-allowed;
+}

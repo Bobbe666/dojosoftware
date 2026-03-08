@@ -14,6 +14,7 @@ import { useDojoContext } from '../context/DojoContext';
 import { getAuthToken } from '../utils/fetchWithAuth';
 import '../styles/themes.css';
 import '../styles/components.css';
+import './BadgeAdminOverview.css';
 
 // Icon-Mapping
 const iconMap = {
@@ -278,15 +279,15 @@ const BadgeAdminOverview = () => {
   );
 
   if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>Lade Daten...</div>;
+    return <div className="ba-loading">Lade Daten...</div>;
   }
 
   if (error) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ color: '#ef4444', marginBottom: '1rem' }}>Fehler: {error}</div>
+      <div className="ba-error-wrap">
+        <div className="ba-error-text">Fehler: {error}</div>
         <button onClick={() => window.location.href = '/login'}
-          style={{ background: '#ffd700', color: '#1a1a1a', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+          className="ba-btn-login">
           Zum Login
         </button>
       </div>
@@ -294,66 +295,51 @@ const BadgeAdminOverview = () => {
   }
 
   return (
-    <div style={{ padding: '1rem' }}>
+    <div className="ba-page">
       {/* Header mit Tabs */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="ba-page-header">
         <div>
-          <h2 style={{ color: '#ffd700', margin: 0, fontSize: '1.25rem' }}>
-            <Trophy size={24} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+          <h2 className="ba-page-title">
+            <Trophy size={24} className="ba-icon-inline" />
             Badge-Verwaltung
           </h2>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="u-flex-gap-sm">
           <button onClick={() => setActiveTab('vergeben')}
-            style={{
-              background: activeTab === 'vergeben' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255,255,255,0.1)',
-              border: `1px solid ${activeTab === 'vergeben' ? 'rgba(255, 215, 0, 0.5)' : 'rgba(255,255,255,0.2)'}`,
-              color: activeTab === 'vergeben' ? '#ffd700' : 'rgba(255,255,255,0.7)',
-              padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500
-            }}>
-            <Award size={16} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            className={`bao-tab-btn${activeTab === 'vergeben' ? ' bao-tab-btn--active' : ''}`}>
+            <Award size={16} className="ba-icon-inline" />
             Vergeben
           </button>
           <button onClick={() => setActiveTab('verliehen')}
-            style={{
-              background: activeTab === 'verliehen' ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255,255,255,0.1)',
-              border: `1px solid ${activeTab === 'verliehen' ? 'rgba(34, 197, 94, 0.5)' : 'rgba(255,255,255,0.2)'}`,
-              color: activeTab === 'verliehen' ? '#22c55e' : 'rgba(255,255,255,0.7)',
-              padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500
-            }}>
-            <Check size={16} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            className={`bao-tab-btn bao-tab-btn--green${activeTab === 'verliehen' ? ' bao-tab-btn--green-active' : ''}`}>
+            <Check size={16} className="ba-icon-inline" />
             Verliehen
           </button>
           <button onClick={() => setActiveTab('verwalten')}
-            style={{
-              background: activeTab === 'verwalten' ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255,255,255,0.1)',
-              border: `1px solid ${activeTab === 'verwalten' ? 'rgba(255, 215, 0, 0.5)' : 'rgba(255,255,255,0.2)'}`,
-              color: activeTab === 'verwalten' ? '#ffd700' : 'rgba(255,255,255,0.7)',
-              padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 500
-            }}>
-            <Settings size={16} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            className={`bao-tab-btn${activeTab === 'verwalten' ? ' bao-tab-btn--active' : ''}`}>
+            <Settings size={16} className="ba-icon-inline" />
             Verwalten
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(255, 215, 0, 0.2)', textAlign: 'center' }}>
-          <div style={{ color: '#ffd700', fontSize: '2rem', fontWeight: 700 }}>{data.summary.total_members || 0}</div>
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Aktive Mitglieder</div>
+      <div className="ba-stats-grid">
+        <div className="ba-stat-card ba-stat-card--gold">
+          <div className="ba-stat-value ba-stat-value--primary">{data.summary.total_members || 0}</div>
+          <div className="ba-text-sm-muted">Aktive Mitglieder</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(59, 130, 246, 0.3)', textAlign: 'center' }}>
-          <div style={{ color: '#3b82f6', fontSize: '2rem', fontWeight: 700 }}>{data.badges.length}</div>
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Verfuegbare Badges</div>
+        <div className="ba-stat-card ba-stat-card--blue">
+          <div className="ba-stat-value ba-stat-value--info">{data.badges.length}</div>
+          <div className="ba-text-sm-muted">Verfuegbare Badges</div>
         </div>
-        <div style={{ background: 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.05))', borderRadius: '10px', padding: '1rem', border: '2px solid rgba(249, 115, 22, 0.4)', textAlign: 'center' }}>
-          <div style={{ color: '#f97316', fontSize: '2rem', fontWeight: 700 }}>{data.summary.pending_awards || 0}</div>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600 }}>Ausstehende Badges</div>
+        <div className="ba-stat-card ba-stat-card--orange">
+          <div className="ba-stat-value ba-stat-value--secondary">{data.summary.pending_awards || 0}</div>
+          <div className="ba-stat-label--pending">Ausstehende Badges</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '10px', padding: '1rem', border: '1px solid rgba(34, 197, 94, 0.3)', textAlign: 'center' }}>
-          <div style={{ color: '#22c55e', fontSize: '2rem', fontWeight: 700 }}>{awardedBadges.length}</div>
-          <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>Verliehene Badges</div>
+        <div className="ba-stat-card ba-stat-card--green">
+          <div className="ba-stat-value ba-stat-value--success">{awardedBadges.length}</div>
+          <div className="ba-text-sm-muted">Verliehene Badges</div>
         </div>
       </div>
 
@@ -361,53 +347,53 @@ const BadgeAdminOverview = () => {
       {activeTab === 'vergeben' && (
         <>
           {/* Buttons */}
-          <div style={{ marginBottom: '1rem' }}>
+          <div className="ba-mb-1">
             <button onClick={() => setShowManualModal(true)}
-              style={{ background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1))', border: '1px solid rgba(255, 215, 0, 0.4)', color: '#ffd700', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+              className="ba-btn-manual-award">
               <Plus size={18} /> Manuell verleihen
             </button>
           </div>
 
           {/* Pending Awards */}
           {data.pendingAwards.length > 0 && (
-            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(249, 115, 22, 0.3)', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ color: '#f97316', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="ba-section-card ba-section-card--orange">
+              <div className="ba-flex-header">
+                <h3 className="ba-section-heading--orange">
                   <Clock size={18} /> Verdiente Badges zum Verleihen
                 </h3>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <div style={{ position: 'relative' }}>
-                    <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+                <div className="u-flex-gap-sm">
+                  <div className="ba-relative">
+                    <Search size={16} className="ba-input-icon" />
                     <input type="text" placeholder="Suchen..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.75rem 0.4rem 2rem', color: 'white', fontSize: '0.85rem', width: '180px' }} />
+                      className="ba-pending-input" />
                   </div>
-                  <button onClick={handleSelectAllPending} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', padding: '0.4rem 0.75rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  <button onClick={handleSelectAllPending} className="ba-btn-select-all">
                     {selectedPending.length === data.pendingAwards.length ? 'Keine' : 'Alle'} auswaehlen
                   </button>
                   {selectedPending.length > 0 && (
-                    <button onClick={handleAwardSelected} style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: 'white', padding: '0.4rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button onClick={handleAwardSelected} className="ba-btn-award">
                       <Check size={16} /> {selectedPending.length} verleihen
                     </button>
                   )}
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem', maxHeight: '400px', overflowY: 'auto' }}>
+              <div className="ba-pending-grid">
                 {filteredPending.map((award, idx) => {
                   const key = `${award.mitglied_id}_${award.badge_id}`;
                   const isSelected = selectedPending.includes(key);
                   const Icon = getIcon(award.badge_icon);
                   return (
                     <div key={idx} onClick={() => handleSelectPending(award)}
-                      style={{ background: isSelected ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.75rem', border: isSelected ? '2px solid #22c55e' : '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.75rem', transition: 'all 0.2s ease' }}>
-                      <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: `linear-gradient(135deg, ${award.badge_farbe}40, ${award.badge_farbe}20)`, border: `2px solid ${award.badge_farbe}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      className={`bao-pending-item${isSelected ? ' bao-pending-item--selected' : ''}`}>
+                      <div className="bao-badge-circle bao-badge-circle--40" style={{ '--bc': award.badge_farbe, '--bc1': `${award.badge_farbe}40`, '--bc2': `${award.badge_farbe}20` }}>
                         <Icon size={20} color={award.badge_farbe} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)', fontSize: '0.9rem' }}>{award.vorname} {award.nachname}</div>
-                        <div style={{ color: award.badge_farbe, fontSize: '0.8rem', fontWeight: 500 }}>{award.badge_name}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem' }}>{award.aktueller_wert} {award.kriterium}</div>
+                      <div className="u-flex-1-min0">
+                        <div className="ba-label-bold">{award.vorname} {award.nachname}</div>
+                        <div className="bao-badge-name" style={{ '--bc': award.badge_farbe }}>{award.badge_name}</div>
+                        <div className="ba-badge-kriterium">{award.aktueller_wert} {award.kriterium}</div>
                       </div>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '4px', border: isSelected ? '2px solid #22c55e' : '2px solid rgba(255,255,255,0.2)', background: isSelected ? '#22c55e' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className={`bao-select-indicator${isSelected ? ' bao-select-indicator--selected' : ''}`}>
                         {isSelected && <Check size={16} color="white" />}
                       </div>
                     </div>
@@ -421,22 +407,22 @@ const BadgeAdminOverview = () => {
 
       {/* TAB: VERLIEHEN */}
       {activeTab === 'verliehen' && (
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <h3 style={{ color: '#22c55e', margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="ba-section-card ba-section-card--green">
+          <div className="ba-filters-row">
+            <h3 className="ba-section-heading--green">
               <Check size={18} /> Verliehene Badges
-              <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>({awardedBadges.length} gesamt)</span>
+              <span className="u-text-secondary-sm">({awardedBadges.length} gesamt)</span>
             </h3>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="ba-filters-inner">
               {/* Namenssuche */}
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'rgba(255,255,255,0.4)' }} />
+              <div className="ba-relative">
+                <Search size={16} className="ba-input-icon" />
                 <input type="text" placeholder="Name suchen..." value={awardedSearchTerm} onChange={(e) => setAwardedSearchTerm(e.target.value)}
-                  style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.75rem 0.4rem 2rem', color: 'white', fontSize: '0.85rem', width: '150px' }} />
+                  className="ba-awarded-input" />
               </div>
               {/* Kategorie Filter */}
               <select value={awardedFilterKategorie} onChange={(e) => setAwardedFilterKategorie(e.target.value)}
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.5rem', color: 'white', fontSize: '0.85rem', cursor: 'pointer' }}>
+                className="ba-btn-subtle">
                 <option value="">Alle Kategorien</option>
                 <option value="training">Training</option>
                 <option value="pruefung">Pruefung</option>
@@ -445,13 +431,13 @@ const BadgeAdminOverview = () => {
               </select>
               {/* Badge Filter */}
               <select value={awardedFilterBadge} onChange={(e) => setAwardedFilterBadge(e.target.value)}
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.5rem', color: 'white', fontSize: '0.85rem', cursor: 'pointer', maxWidth: '150px' }}>
+                className="ba-badge-filter-select">
                 <option value="">Alle Badges</option>
                 {data.badges?.map(b => <option key={b.badge_id} value={b.badge_id}>{b.name}</option>)}
               </select>
               {/* Zeitraum Filter */}
               <select value={awardedFilterZeitraum} onChange={(e) => setAwardedFilterZeitraum(e.target.value)}
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.4rem 0.5rem', color: 'white', fontSize: '0.85rem', cursor: 'pointer' }}>
+                className="ba-btn-subtle">
                 <option value="">Alle Zeitraeume</option>
                 <option value="7">Letzte 7 Tage</option>
                 <option value="30">Letzte 30 Tage</option>
@@ -461,7 +447,7 @@ const BadgeAdminOverview = () => {
               {/* Reset Filter */}
               {(awardedSearchTerm || awardedFilterKategorie || awardedFilterBadge || awardedFilterZeitraum) && (
                 <button onClick={() => { setAwardedSearchTerm(''); setAwardedFilterKategorie(''); setAwardedFilterBadge(''); setAwardedFilterZeitraum(''); }}
-                  style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444', padding: '0.4rem 0.6rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  className="ba-btn-reset">
                   <X size={14} />
                 </button>
               )}
@@ -469,11 +455,11 @@ const BadgeAdminOverview = () => {
           </div>
 
           {loadingAwarded ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,255,255,0.5)' }}>Lade verliehene Badges...</div>
+            <div className="ba-empty-state">Lade verliehene Badges...</div>
           ) : awardedBadges.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255,255,255,0.5)' }}>Noch keine Badges verliehen</div>
+            <div className="ba-empty-state">Noch keine Badges verliehen</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.75rem', maxHeight: '500px', overflowY: 'auto' }}>
+            <div className="ba-awarded-grid">
               {awardedBadges
                 .filter(a => {
                   // Namenssuche
@@ -498,19 +484,19 @@ const BadgeAdminOverview = () => {
                   const Icon = getIcon(award.badge_icon);
                   return (
                     <div key={idx}
-                      style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.75rem', border: '1px solid rgba(34, 197, 94, 0.2)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div style={{ width: '45px', height: '45px', borderRadius: '50%', background: `linear-gradient(135deg, ${award.badge_farbe}40, ${award.badge_farbe}20)`, border: `2px solid ${award.badge_farbe}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      className="ba-awarded-card">
+                      <div className="bao-badge-circle bao-badge-circle--45" style={{ '--bc': award.badge_farbe, '--bc1': `${award.badge_farbe}40`, '--bc2': `${award.badge_farbe}20` }}>
                         <Icon size={22} color={award.badge_farbe} />
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)', fontSize: '0.9rem' }}>{award.vorname} {award.nachname}</div>
-                        <div style={{ color: award.badge_farbe, fontSize: '0.8rem', fontWeight: 500 }}>{award.badge_name}</div>
-                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.7rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <div className="u-flex-1-min0">
+                        <div className="ba-label-bold">{award.vorname} {award.nachname}</div>
+                        <div className="bao-badge-name" style={{ '--bc': award.badge_farbe }}>{award.badge_name}</div>
+                        <div className="ba-awarded-meta">
                           <span>{new Date(award.verliehen_am).toLocaleDateString('de-DE')}</span>
                           {award.verliehen_von_name && <span>von {award.verliehen_von_name}</span>}
                         </div>
                       </div>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.2)', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="ba-check-badge">
                         <Check size={14} color="#22c55e" />
                       </div>
                     </div>
@@ -523,37 +509,37 @@ const BadgeAdminOverview = () => {
 
       {/* TAB: VERWALTEN */}
       {activeTab === 'verwalten' && (
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1.25rem', border: '1px solid rgba(255, 215, 0, 0.2)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ color: '#ffd700', margin: 0, fontSize: '1rem' }}>Badge-Definitionen</h3>
+        <div className="ba-section-card ba-section-card--gold">
+          <div className="ba-flex-header">
+            <h3 className="ba-section-heading--primary">Badge-Definitionen</h3>
             <button onClick={() => { setEditingBadge({ name: '', beschreibung: '', icon: 'award', farbe: '#FFD700', kategorie: 'special', kriterium_typ: '', kriterium_wert: null, aktiv: true }); setShowBadgeModal(true); }}
-              style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
+              className="ba-btn-new-badge">
               <Plus size={16} /> Neuer Badge
             </button>
           </div>
 
-          <div style={{ display: 'grid', gap: '0.75rem' }}>
+          <div className="ba-badge-list">
             {data.badges.map(badge => {
               const Icon = getIcon(badge.icon);
               return (
-                <div key={badge.badge_id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '0.75rem', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: `linear-gradient(135deg, ${badge.farbe}40, ${badge.farbe}20)`, border: `2px solid ${badge.farbe}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div key={badge.badge_id} className="ba-badge-item">
+                  <div className="bao-badge-circle bao-badge-circle--50" style={{ '--bc': badge.farbe, '--bc1': `${badge.farbe}40`, '--bc2': `${badge.farbe}20` }}>
                     <Icon size={24} color={badge.farbe} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, color: badge.farbe, fontSize: '1rem' }}>{badge.name}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{badge.beschreibung || 'Keine Beschreibung'}</div>
-                    <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  <div className="u-flex-1">
+                    <div className="bao-badge-title" style={{ '--bc': badge.farbe }}>{badge.name}</div>
+                    <div className="ba-text-sm-muted">{badge.beschreibung || 'Keine Beschreibung'}</div>
+                    <div className="ba-badge-meta">
                       {badge.kategorie.toUpperCase()} | {badge.kriterium_typ ? `${badge.kriterium_wert} ${badge.kriterium_typ.replace('_', ' ')}` : 'Manuell'}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div className="u-flex-gap-sm">
                     <button onClick={() => { setEditingBadge(badge); setShowBadgeModal(true); }}
-                      style={{ background: 'rgba(59, 130, 246, 0.2)', border: '1px solid rgba(59, 130, 246, 0.4)', color: '#3b82f6', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer' }}>
+                      className="ba-btn-edit">
                       <Edit2 size={16} />
                     </button>
                     <button onClick={() => handleDeleteBadge(badge.badge_id)}
-                      style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#ef4444', padding: '0.4rem', borderRadius: '6px', cursor: 'pointer' }}>
+                      className="ba-btn-delete">
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -566,34 +552,34 @@ const BadgeAdminOverview = () => {
 
       {/* Modal: Manuell verleihen */}
       {showManualModal && (
-        <div onClick={() => setShowManualModal(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '1.5rem', width: '400px', maxWidth: '90%', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-            <h3 style={{ color: '#ffd700', margin: '0 0 1rem 0' }}>Badge manuell verleihen</h3>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Mitglied ({data.members?.length || 0} verfuegbar)</label>
+        <div onClick={() => setShowManualModal(false)} className="ba-modal-overlay">
+          <div onClick={(e) => e.stopPropagation()} className="ba-modal-card">
+            <h3 className="ba-heading-primary">Badge manuell verleihen</h3>
+            <div className="ba-mb-1">
+              <label className="ba-field-label">Mitglied ({data.members?.length || 0} verfuegbar)</label>
               <select value={manualBadge.mitglied_id || ''} onChange={(e) => setManualBadge({ ...manualBadge, mitglied_id: e.target.value })}
-                style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}>
+                className="ba-input-pointer">
                 <option value="">Mitglied waehlen...</option>
                 {data.members?.slice().sort((a, b) => `${a.nachname} ${a.vorname}`.localeCompare(`${b.nachname} ${b.vorname}`)).map(m => <option key={m.mitglied_id} value={m.mitglied_id}>{m.nachname}, {m.vorname}</option>)}
               </select>
             </div>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Badge</label>
+            <div className="ba-mb-1">
+              <label className="ba-field-label">Badge</label>
               <select value={manualBadge.badge_id || ''} onChange={(e) => setManualBadge({ ...manualBadge, badge_id: e.target.value })}
-                style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem', cursor: 'pointer' }}>
+                className="ba-input-pointer">
                 <option value="">Badge waehlen...</option>
                 {data.badges?.map(b => <option key={b.badge_id} value={b.badge_id}>{b.name} ({b.kategorie})</option>)}
               </select>
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Kommentar (optional)</label>
+            <div className="ba-mb-15">
+              <label className="ba-field-label">Kommentar (optional)</label>
               <input type="text" value={manualBadge.kommentar || ''} onChange={(e) => setManualBadge({ ...manualBadge, kommentar: e.target.value })} placeholder="Grund fuer die Auszeichnung..."
-                style={{ width: '100%', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem' }} />
+                className="ba-input-light" />
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowManualModal(false)} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>Abbrechen</button>
+            <div className="ba-flex-actions">
+              <button onClick={() => setShowManualModal(false)} className="ba-btn-ghost">Abbrechen</button>
               <button onClick={handleManualAward} disabled={!manualBadge.mitglied_id || !manualBadge.badge_id}
-                style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600, opacity: (!manualBadge.mitglied_id || !manualBadge.badge_id) ? 0.5 : 1 }}>Verleihen</button>
+                className="ba-btn-save-green">Verleihen</button>
             </div>
           </div>
         </div>
@@ -601,78 +587,78 @@ const BadgeAdminOverview = () => {
 
       {/* Modal: Badge erstellen/bearbeiten */}
       {showBadgeModal && editingBadge && (
-        <div onClick={() => setShowBadgeModal(false)} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a1a', borderRadius: '12px', padding: '1.5rem', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid rgba(255, 215, 0, 0.3)' }}>
-            <h3 style={{ color: '#ffd700', margin: '0 0 1rem 0' }}>{editingBadge.badge_id ? 'Badge bearbeiten' : 'Neuer Badge'}</h3>
+        <div onClick={() => setShowBadgeModal(false)} className="ba-modal-overlay">
+          <div onClick={(e) => e.stopPropagation()} className="ba-modal-card--wide">
+            <h3 className="ba-heading-primary">{editingBadge.badge_id ? 'Badge bearbeiten' : 'Neuer Badge'}</h3>
 
             {/* Vorschau */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: `linear-gradient(135deg, ${editingBadge.farbe}40, ${editingBadge.farbe}20)`, border: `3px solid ${editingBadge.farbe}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="ba-modal-preview">
+              <div className="bao-badge-circle bao-badge-circle--80" style={{ '--bc': editingBadge.farbe, '--bc1': `${editingBadge.farbe}40`, '--bc2': `${editingBadge.farbe}20` }}>
                 {React.createElement(getIcon(editingBadge.icon), { size: 40, color: editingBadge.farbe })}
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="u-grid-2col">
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Name *</label>
+                <label className="ba-field-label">Name *</label>
                 <input type="text" value={editingBadge.name} onChange={(e) => setEditingBadge({ ...editingBadge, name: e.target.value })}
-                  style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem' }} />
+                  className="ba-input" />
               </div>
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Kategorie *</label>
+                <label className="ba-field-label">Kategorie *</label>
                 <select value={editingBadge.kategorie} onChange={(e) => setEditingBadge({ ...editingBadge, kategorie: e.target.value })}
-                  style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem' }}>
+                  className="ba-input">
                   {kategorieOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             </div>
 
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Beschreibung</label>
+            <div className="ba-mb-1">
+              <label className="ba-field-label">Beschreibung</label>
               <textarea value={editingBadge.beschreibung || ''} onChange={(e) => setEditingBadge({ ...editingBadge, beschreibung: e.target.value })} rows={2}
-                style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem', resize: 'vertical' }} />
+                className="ba-textarea" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div className="u-grid-2col">
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Icon *</label>
+                <label className="ba-field-label">Icon *</label>
                 <select value={editingBadge.icon} onChange={(e) => setEditingBadge({ ...editingBadge, icon: e.target.value })}
-                  style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem' }}>
+                  className="ba-input">
                   {iconOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Farbe *</label>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <label className="ba-field-label">Farbe *</label>
+                <div className="u-flex-wrap-gap">
                   {farbeOptions.map(c => (
                     <div key={c} onClick={() => setEditingBadge({ ...editingBadge, farbe: c })}
-                      style={{ width: '28px', height: '28px', borderRadius: '50%', background: c, cursor: 'pointer', border: editingBadge.farbe === c ? '3px solid white' : '2px solid rgba(255,255,255,0.2)' }} />
+                      className={`bao-color-swatch${editingBadge.farbe === c ? ' bao-color-swatch--selected' : ''}`} style={{ '--swatch-color': c }} />
                   ))}
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="ba-grid-2col-mb">
               <div>
-                <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Kriterium</label>
+                <label className="ba-field-label">Kriterium</label>
                 <select value={editingBadge.kriterium_typ || ''} onChange={(e) => setEditingBadge({ ...editingBadge, kriterium_typ: e.target.value || null })}
-                  style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem' }}>
+                  className="ba-input">
                   {kriteriumOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
               {editingBadge.kriterium_typ && (
                 <div>
-                  <label style={{ display: 'block', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Wert</label>
+                  <label className="ba-field-label">Wert</label>
                   <input type="number" value={editingBadge.kriterium_wert || ''} onChange={(e) => setEditingBadge({ ...editingBadge, kriterium_wert: parseInt(e.target.value) || null })}
-                    style={{ width: '100%', background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '0.6rem', color: 'white', fontSize: '0.9rem' }} />
+                    className="ba-input" />
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowBadgeModal(false); setEditingBadge(null); }} style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.7)', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>Abbrechen</button>
+            <div className="ba-flex-actions">
+              <button onClick={() => { setShowBadgeModal(false); setEditingBadge(null); }} className="ba-btn-ghost">Abbrechen</button>
               <button onClick={handleSaveBadge}
-                style={{ background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>Speichern</button>
+                className="ba-btn-save-green">Speichern</button>
             </div>
           </div>
         </div>

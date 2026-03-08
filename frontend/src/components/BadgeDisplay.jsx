@@ -9,6 +9,7 @@ import {
   Award, Star, Trophy, Medal, Crown, Flame, Target, Heart,
   Users, Swords, Zap, TrendingUp, Footprints, Layers, Brain, Shield
 } from 'lucide-react';
+import '../styles/BadgeDisplay.css';
 
 // Icon-Mapping
 const iconMap = {
@@ -66,7 +67,7 @@ const BadgeDisplay = ({ mitgliedId, compact = false }) => {
 
   if (loading) {
     return (
-      <div style={{ padding: '1rem', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>
+      <div className="badge-display__loading">
         Lade Badges...
       </div>
     );
@@ -74,14 +75,7 @@ const BadgeDisplay = ({ mitgliedId, compact = false }) => {
 
   if (badges.length === 0) {
     return compact ? null : (
-      <div style={{
-        padding: '1rem',
-        textAlign: 'center',
-        color: 'rgba(255,255,255,0.5)',
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: '8px',
-        border: '1px dashed rgba(255,255,255,0.1)'
-      }}>
+      <div className="badge-display__empty">
         Noch keine Auszeichnungen erhalten
       </div>
     );
@@ -90,50 +84,22 @@ const BadgeDisplay = ({ mitgliedId, compact = false }) => {
   if (compact) {
     // Kompakte Ansicht - nur Icons
     return (
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div className="u-flex-wrap-gap">
         {badges.slice(0, 6).map((badge) => {
           const Icon = getIcon(badge.icon);
           return (
             <div
               key={badge.id}
               title={`${badge.name}: ${badge.beschreibung || ''}`}
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${badge.farbe}40, ${badge.farbe}20)`,
-                border: `2px solid ${badge.farbe}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.1)';
-                e.currentTarget.style.boxShadow = `0 0 12px ${badge.farbe}60`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              className="badge-display__compact-icon"
+              style={{ '--badge-farbe': badge.farbe }}
             >
               <Icon size={16} color={badge.farbe} />
             </div>
           );
         })}
         {badges.length > 6 && (
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.7rem',
-            color: 'rgba(255,255,255,0.7)'
-          }}>
+          <div className="badge-display__compact-more">
             +{badges.length - 6}
           </div>
         )}
@@ -143,81 +109,28 @@ const BadgeDisplay = ({ mitgliedId, compact = false }) => {
 
   // Vollstaendige Ansicht
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.05)',
-      borderRadius: '12px',
-      padding: '1rem',
-      border: '1px solid rgba(255, 215, 0, 0.2)'
-    }}>
-      <h3 style={{
-        fontSize: '0.9rem',
-        color: '#ffd700',
-        marginBottom: '1rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem'
-      }}>
+    <div className="badge-display__container">
+      <h3 className="badge-display__title">
         <Trophy size={18} />
         Auszeichnungen ({badges.length})
       </h3>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-        gap: '0.75rem'
-      }}>
+      <div className="badge-display__grid">
         {badges.map((badge) => {
           const Icon = getIcon(badge.icon);
           return (
             <div
               key={badge.id}
-              style={{
-                background: `linear-gradient(135deg, ${badge.farbe}15, transparent)`,
-                borderRadius: '10px',
-                padding: '0.75rem',
-                border: `1px solid ${badge.farbe}40`,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '0.5rem',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                cursor: 'default'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = `0 4px 16px ${badge.farbe}30`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
+              className="badge-display__card"
+              style={{ '--badge-farbe': badge.farbe }}
             >
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: `linear-gradient(135deg, ${badge.farbe}40, ${badge.farbe}20)`,
-                border: `2px solid ${badge.farbe}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: `0 0 16px ${badge.farbe}40`
-              }}>
+              <div className="badge-display__card-icon">
                 <Icon size={24} color={badge.farbe} />
               </div>
-              <div style={{
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                color: 'rgba(255,255,255,0.9)',
-                textAlign: 'center'
-              }}>
+              <div className="badge-display__card-name">
                 {badge.name}
               </div>
-              <div style={{
-                fontSize: '0.65rem',
-                color: 'rgba(255,255,255,0.5)',
-                textAlign: 'center'
-              }}>
+              <div className="badge-display__card-date">
                 {new Date(badge.verliehen_am).toLocaleDateString('de-DE')}
               </div>
             </div>

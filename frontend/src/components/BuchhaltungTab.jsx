@@ -1002,10 +1002,10 @@ const BuchhaltungTab = ({ token }) => {
                           <tr
                             className="kategorie-row clickable"
                             onClick={() => setExpandedKategorien(prev => ({ ...prev, [`ein_${kat}`]: !prev[`ein_${kat}`] }))}
-                            style={{ cursor: 'pointer' }}
+                            className="bt-cursor-pointer"
                           >
                             <td colSpan="2">
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span className="u-flex-row-sm">
                                 {expandedKategorien[`ein_${kat}`] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                 <strong>{getKategorieName(kat)}</strong>
                               </span>
@@ -1015,16 +1015,15 @@ const BuchhaltungTab = ({ token }) => {
                           {expandedKategorien[`ein_${kat}`] && data.details?.map((detail, idx) => (
                             <React.Fragment key={`${kat}-${idx}`}>
                               <tr
-                                className="detail-row clickable"
+                                className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' clickable' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setExpandedKategorien(prev => ({ ...prev, [`ein_${kat}_${idx}`]: !prev[`ein_${kat}_${idx}`] }));
                                 }}
-                                style={{ cursor: detail.einzelbuchungen?.length > 0 ? 'pointer' : 'default' }}
                               >
                                 <td></td>
                                 <td>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span className="bt-flex-icon">
                                     {detail.einzelbuchungen?.length > 0 && (
                                       expandedKategorien[`ein_${kat}_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />
                                     )}
@@ -1036,10 +1035,10 @@ const BuchhaltungTab = ({ token }) => {
                               {expandedKategorien[`ein_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
                                 <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
                                   <td></td>
-                                  <td style={{ paddingLeft: '2rem', fontSize: '0.85em', color: '#fff' }}>
+                                  <td className="bt-cell-sub">
                                     {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
                                   </td>
-                                  <td className="right" style={{ fontSize: '0.85em', color: '#fff' }}>{formatCurrency(buchung.betrag)}</td>
+                                  <td className="right bt-cell-sub-right">{formatCurrency(buchung.betrag)}</td>
                                 </tr>
                               ))}
                             </React.Fragment>
@@ -1073,10 +1072,10 @@ const BuchhaltungTab = ({ token }) => {
                           <tr
                             className="kategorie-row clickable"
                             onClick={() => setExpandedKategorien(prev => ({ ...prev, [`aus_${kat}`]: !prev[`aus_${kat}`] }))}
-                            style={{ cursor: 'pointer' }}
+                            className="bt-cursor-pointer"
                           >
                             <td colSpan="2">
-                              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span className="u-flex-row-sm">
                                 {expandedKategorien[`aus_${kat}`] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                 <strong>{getKategorieName(kat)}</strong>
                               </span>
@@ -1086,16 +1085,15 @@ const BuchhaltungTab = ({ token }) => {
                           {expandedKategorien[`aus_${kat}`] && data.details?.map((detail, idx) => (
                             <React.Fragment key={`${kat}-${idx}`}>
                               <tr
-                                className="detail-row clickable"
+                                className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' clickable' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setExpandedKategorien(prev => ({ ...prev, [`aus_${kat}_${idx}`]: !prev[`aus_${kat}_${idx}`] }));
                                 }}
-                                style={{ cursor: detail.einzelbuchungen?.length > 0 ? 'pointer' : 'default' }}
                               >
                                 <td></td>
                                 <td>
-                                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                  <span className="bt-flex-icon">
                                     {detail.einzelbuchungen?.length > 0 && (
                                       expandedKategorien[`aus_${kat}_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />
                                     )}
@@ -1107,10 +1105,10 @@ const BuchhaltungTab = ({ token }) => {
                               {expandedKategorien[`aus_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
                                 <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
                                   <td></td>
-                                  <td style={{ paddingLeft: '2rem', fontSize: '0.85em', color: '#fff' }}>
+                                  <td className="bt-cell-sub">
                                     {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
                                   </td>
-                                  <td className="right" style={{ fontSize: '0.85em', color: '#fff' }}>{formatCurrency(buchung.betrag)}</td>
+                                  <td className="right bt-cell-sub-right">{formatCurrency(buchung.betrag)}</td>
                                 </tr>
                               ))}
                             </React.Fragment>
@@ -1170,9 +1168,9 @@ const BuchhaltungTab = ({ token }) => {
                     <tr
                       className="clickable"
                       onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_umsatz': !prev['guv_umsatz'] }))}
-                      style={{ cursor: 'pointer' }}
+                      className="bt-cursor-pointer"
                     >
-                      <td style={{ paddingLeft: '2rem' }}>
+                      <td className="bt-pl-2">
                         {expandedKategorien['guv_umsatz'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         {' '}Umsatzerlöse
                       </td>
@@ -1180,7 +1178,7 @@ const BuchhaltungTab = ({ token }) => {
                     </tr>
                     {expandedKategorien['guv_umsatz'] && guvDetails.umsatzerloese.details.map((detail, idx) => (
                       <tr key={idx} className="detail-row">
-                        <td style={{ paddingLeft: '4rem' }}>{detail.quelle}</td>
+                        <td className="bt-pl-4">{detail.quelle}</td>
                         <td className="right">{formatCurrency(detail.betrag)}</td>
                       </tr>
                     ))}
@@ -1190,11 +1188,10 @@ const BuchhaltungTab = ({ token }) => {
                       <td colSpan="2"><strong>2. Materialaufwand</strong></td>
                     </tr>
                     <tr
-                      className="clickable"
+                      className={guvDetails.materialaufwand.details.length > 0 ? 'clickable' : ''}
                       onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_material': !prev['guv_material'] }))}
-                      style={{ cursor: guvDetails.materialaufwand.details.length > 0 ? 'pointer' : 'default' }}
                     >
-                      <td style={{ paddingLeft: '2rem' }}>
+                      <td className="bt-pl-2">
                         {guvDetails.materialaufwand.details.length > 0 && (expandedKategorien['guv_material'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
                         {' '}Materialaufwand
                       </td>
@@ -1202,7 +1199,7 @@ const BuchhaltungTab = ({ token }) => {
                     </tr>
                     {expandedKategorien['guv_material'] && guvDetails.materialaufwand.details.map((detail, idx) => (
                       <tr key={idx} className="detail-row">
-                        <td style={{ paddingLeft: '4rem' }}>{detail.quelle}</td>
+                        <td className="bt-pl-4">{detail.quelle}</td>
                         <td className="right negative">-{formatCurrency(detail.betrag)}</td>
                       </tr>
                     ))}
@@ -1212,11 +1209,10 @@ const BuchhaltungTab = ({ token }) => {
                       <td colSpan="2"><strong>3. Personalaufwand</strong></td>
                     </tr>
                     <tr
-                      className="clickable"
+                      className={guvDetails.personalaufwand.details.length > 0 ? 'clickable' : ''}
                       onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_personal': !prev['guv_personal'] }))}
-                      style={{ cursor: guvDetails.personalaufwand.details.length > 0 ? 'pointer' : 'default' }}
                     >
-                      <td style={{ paddingLeft: '2rem' }}>
+                      <td className="bt-pl-2">
                         {guvDetails.personalaufwand.details.length > 0 && (expandedKategorien['guv_personal'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
                         {' '}Personalaufwand
                       </td>
@@ -1224,7 +1220,7 @@ const BuchhaltungTab = ({ token }) => {
                     </tr>
                     {expandedKategorien['guv_personal'] && guvDetails.personalaufwand.details.map((detail, idx) => (
                       <tr key={idx} className="detail-row">
-                        <td style={{ paddingLeft: '4rem' }}>{detail.quelle}</td>
+                        <td className="bt-pl-4">{detail.quelle}</td>
                         <td className="right negative">-{formatCurrency(detail.betrag)}</td>
                       </tr>
                     ))}
@@ -1234,7 +1230,7 @@ const BuchhaltungTab = ({ token }) => {
                       <td colSpan="2"><strong>4. Abschreibungen</strong></td>
                     </tr>
                     <tr>
-                      <td style={{ paddingLeft: '2rem' }}>Abschreibungen auf Sachanlagen</td>
+                      <td className="bt-pl-2">Abschreibungen auf Sachanlagen</td>
                       <td className="right negative">-{formatCurrency(guvDetails.abschreibungen.gesamt)}</td>
                     </tr>
 
@@ -1243,11 +1239,10 @@ const BuchhaltungTab = ({ token }) => {
                       <td colSpan="2"><strong>5. Sonstige betriebliche Aufwendungen</strong></td>
                     </tr>
                     <tr
-                      className="clickable"
+                      className={guvDetails.sonstige_aufwendungen.details.length > 0 ? 'clickable' : ''}
                       onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_sonstige': !prev['guv_sonstige'] }))}
-                      style={{ cursor: guvDetails.sonstige_aufwendungen.details.length > 0 ? 'pointer' : 'default' }}
                     >
-                      <td style={{ paddingLeft: '2rem' }}>
+                      <td className="bt-pl-2">
                         {guvDetails.sonstige_aufwendungen.details.length > 0 && (expandedKategorien['guv_sonstige'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
                         {' '}Sonstige Aufwendungen
                       </td>
@@ -1255,7 +1250,7 @@ const BuchhaltungTab = ({ token }) => {
                     </tr>
                     {expandedKategorien['guv_sonstige'] && guvDetails.sonstige_aufwendungen.details.map((detail, idx) => (
                       <tr key={idx} className="detail-row">
-                        <td style={{ paddingLeft: '4rem' }}>{detail.kategorie} ({detail.quelle})</td>
+                        <td className="bt-pl-4">{detail.kategorie} ({detail.quelle})</td>
                         <td className="right negative">-{formatCurrency(detail.betrag)}</td>
                       </tr>
                     ))}
@@ -1312,11 +1307,11 @@ const BuchhaltungTab = ({ token }) => {
                           <td className="right"></td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Sachanlagen</td>
+                          <td className="bt-pl-2">Sachanlagen</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.sachanlagen)}</td>
                         </tr>
                         <tr className="subtotal-row">
-                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Anlagevermögen</strong></td>
+                          <td className="bt-pl-1"><strong>Summe Anlagevermögen</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.aktiva.anlagevermoegen.gesamt)}</strong></td>
                         </tr>
 
@@ -1325,19 +1320,19 @@ const BuchhaltungTab = ({ token }) => {
                           <td className="right"></td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Bankguthaben</td>
+                          <td className="bt-pl-2">Bankguthaben</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.bank_guthaben)}</td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Kassenbestand</td>
+                          <td className="bt-pl-2">Kassenbestand</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.kassenbestand)}</td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Forderungen</td>
+                          <td className="bt-pl-2">Forderungen</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.forderungen)}</td>
                         </tr>
                         <tr className="subtotal-row">
-                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Umlaufvermögen</strong></td>
+                          <td className="bt-pl-1"><strong>Summe Umlaufvermögen</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.aktiva.umlaufvermoegen.gesamt)}</strong></td>
                         </tr>
 
@@ -1359,15 +1354,15 @@ const BuchhaltungTab = ({ token }) => {
                           <td className="right"></td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Anfangsbestand</td>
+                          <td className="bt-pl-2">Anfangsbestand</td>
                           <td className="right">{formatCurrency(bilanzData.passiva.eigenkapital.anfangsbestand)}</td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Kumulierter Gewinn</td>
+                          <td className="bt-pl-2">Kumulierter Gewinn</td>
                           <td className="right">{formatCurrency(bilanzData.passiva.eigenkapital.kumulierter_gewinn)}</td>
                         </tr>
                         <tr className="subtotal-row">
-                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Eigenkapital</strong></td>
+                          <td className="bt-pl-1"><strong>Summe Eigenkapital</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.passiva.eigenkapital.gesamt)}</strong></td>
                         </tr>
 
@@ -1376,11 +1371,11 @@ const BuchhaltungTab = ({ token }) => {
                           <td className="right"></td>
                         </tr>
                         <tr>
-                          <td style={{ paddingLeft: '2rem' }}>Darlehen</td>
+                          <td className="bt-pl-2">Darlehen</td>
                           <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.darlehen)}</td>
                         </tr>
                         <tr className="subtotal-row">
-                          <td style={{ paddingLeft: '1rem' }}><strong>Summe Verbindlichkeiten</strong></td>
+                          <td className="bt-pl-1"><strong>Summe Verbindlichkeiten</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.passiva.verbindlichkeiten.gesamt)}</strong></td>
                         </tr>
 
@@ -2539,42 +2534,26 @@ const BuchhaltungTab = ({ token }) => {
               <h4 className="neue-kategorie-title">Offene Rechnungen:</h4>
 
               {offeneRechnungen.length === 0 ? (
-                <p style={{ color: 'rgba(255,255,255,0.6)', textAlign: 'center', padding: '1rem' }}>
+                <p className="bt-empty-text">
                   Keine offenen Verbandsrechnungen vorhanden
                 </p>
               ) : (
-                <div className="rechnungen-liste" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                <div className="rechnungen-liste bt-rechnungen-list">
                   {offeneRechnungen.map(re => (
                     <div
                       key={re.id}
-                      className="rechnung-item"
+                      className={`rechnung-item${Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01 ? ' rechnung-item--match' : ''}`}
                       onClick={() => verknuepfeMitRechnung(re.id)}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '0.75rem 1rem',
-                        background: Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01
-                          ? 'rgba(34, 197, 94, 0.15)'
-                          : 'rgba(255, 255, 255, 0.05)',
-                        border: Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01
-                          ? '1px solid rgba(34, 197, 94, 0.4)'
-                          : '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        marginBottom: '0.5rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
                     >
                       <div>
-                        <div style={{ fontWeight: '600', color: '#fff' }}>{re.rechnungsnummer}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>{re.empfaenger_name}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{formatDate(re.rechnungsdatum)}</div>
+                        <div className="bt-re-nummer">{re.rechnungsnummer}</div>
+                        <div className="u-text-secondary-sm">{re.empfaenger_name}</div>
+                        <div className="bt-re-date">{formatDate(re.rechnungsdatum)}</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontWeight: '600', color: '#22c55e' }}>{formatCurrency(re.summe_brutto)}</div>
+                      <div className="bt-text-right">
+                        <div className="bt-re-summe">{formatCurrency(re.summe_brutto)}</div>
                         {Math.abs(rechnungTx.betrag - re.summe_brutto) < 0.01 && (
-                          <div style={{ fontSize: '0.75rem', color: '#22c55e' }}>✓ Betrag stimmt</div>
+                          <div className="bt-re-match">✓ Betrag stimmt</div>
                         )}
                       </div>
                     </div>
@@ -2582,7 +2561,7 @@ const BuchhaltungTab = ({ token }) => {
                 </div>
               )}
 
-              <p style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '1rem', fontStyle: 'italic' }}>
+              <p className="bt-note-text">
                 Hinweis: Die Verknüpfung markiert die Rechnung als bezahlt. Die EÜR-Buchung erfolgt über die Bank-Transaktion.
               </p>
             </div>

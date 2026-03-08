@@ -1,0 +1,251 @@
+/* MemberPayments.css — prefix: mp- */
+
+/* ── Loading state ─────────────────────────────── */
+.mp-loading-wrapper {
+  text-align: center;
+  padding: 3rem;
+  color: var(--primary);
+}
+
+.mp-loading-spinner {
+  margin: 0 auto 1rem;
+  border: 3px solid rgba(255, 215, 0, 0.3);
+  border-top-color: #ffd700;
+  width: 40px;
+  height: 40px;
+}
+
+/* ── Page layout ───────────────────────────────── */
+.mp-content-padding {
+  padding: 2rem;
+}
+
+.mp-content-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Page header ───────────────────────────────── */
+.mp-page-header {
+  margin-bottom: 2rem;
+}
+
+.mp-page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mp-page-title {
+  color: var(--primary);
+  margin: 0;
+}
+
+.mp-page-subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ── Stats grid ────────────────────────────────── */
+.mp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+/* ── Stat card ─────────────────────────────────── */
+.mp-stat-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+/* Stat card label: small muted text above value */
+.mp-stat-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Stat card icon area */
+.mp-stat-icon {
+  font-size: 2.5rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Stat card primary value (large amount) */
+.mp-stat-value-lg {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Zahlungsart card value (slightly smaller than mp-stat-value-lg) */
+.mp-stat-value-md {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+/* Stat card heading (h3 inside stat card) */
+.mp-card-title {
+  color: var(--text-primary);
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Detail field value: normal text weight */
+.mp-field-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ── Section heading ───────────────────────────── */
+.mp-section-title {
+  color: var(--primary);
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+/* ── Empty state ───────────────────────────────── */
+.mp-empty-state {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 16px;
+  padding: 3rem;
+  text-align: center;
+}
+
+.mp-empty-icon {
+  color: var(--primary);
+  margin: 0 auto 1rem;
+}
+
+.mp-empty-title {
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Contracts list ────────────────────────────── */
+.mp-contract-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Contract card ─────────────────────────────── */
+.mp-contract-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+.mp-contract-card--aktiv { border-color: rgba(255, 215, 0, 0.2); }
+.mp-contract-card:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, 0.3); }
+.mp-contract-card--aktiv:hover { border-color: #ffd700; }
+
+.mp-contract-card-inner {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* Icon box */
+.mp-contract-icon-box {
+  font-size: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: var(--status-bg, rgba(255, 255, 255, 0.1));
+}
+
+/* Status icon and badge */
+.mp-contract-status-icon { color: var(--status-color, #fff); }
+.mp-contract-status-badge {
+  padding: 0.25rem 0.75rem;
+  background: var(--status-bg, rgba(255, 255, 255, 0.1));
+  color: var(--status-color, #fff);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* ── Contract header row ───────────────────────── */
+.mp-contract-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.mp-contract-title {
+  color: var(--primary);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+}
+
+/* ── Amount block ──────────────────────────────── */
+.mp-amount-block {
+  text-align: right;
+}
+
+.mp-amount-value {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.mp-amount-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* ── Details grid inside contract card ────────── */
+.mp-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+/* Next-payment value */
+.mp-next-payment-value {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+/* Zahlungsart field value (capitalize) */
+.mp-zahlungsart-value {
+  color: var(--text-primary);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* ── Spinner animation ─────────────────────────── */
+.loading-spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top: 3px solid #ffd700;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0%  { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

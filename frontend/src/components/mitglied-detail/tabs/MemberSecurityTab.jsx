@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import '../../../styles/MemberSecurityTab.css';
 
 // Security Questions (könnte auch aus Config kommen)
 const SECURITY_QUESTIONS = [
@@ -122,16 +123,13 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
 
   return (
     <div className="grid-container">
-      <div className="field-group card mitglied-detail-card" style={{
-        borderRadius: '16px',
-        padding: '2rem'
-      }}>
+      <div className="field-group card mitglied-detail-card mst-card">
         <h3>Passwort & Sicherheitsfrage</h3>
 
         {/* Aktuelles Passwort */}
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div className="mst-field-group">
           <label>Aktuelles Passwort:</label>
-          <div className="password-wrapper" style={{ position: 'relative' }}>
+          <div className="password-wrapper mst-password-wrapper">
             <input
               className="mitglied-detail-input"
               type={showCurrentPassword ? 'text' : 'password'}
@@ -151,9 +149,9 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
         </div>
 
         {/* Neues Passwort */}
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div className="mst-field-group">
           <label>Neues Passwort:</label>
-          <div className="password-wrapper" style={{ position: 'relative' }}>
+          <div className="password-wrapper mst-password-wrapper">
             <input
               className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
               type={showNewPassword ? 'text' : 'password'}
@@ -181,9 +179,9 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
         </div>
 
         {/* Neues Passwort bestätigen */}
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div className="mst-field-group">
           <label>Neues Passwort bestätigen:</label>
-          <div className="password-wrapper" style={{ position: 'relative' }}>
+          <div className="password-wrapper mst-password-wrapper">
             <input
               className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
               type={showConfirmPassword ? 'text' : 'password'}
@@ -203,7 +201,7 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
         </div>
 
         {/* Sicherheitsfrage */}
-        <div style={{ marginBottom: '1.25rem' }}>
+        <div className="mst-field-group">
           <label>Sicherheitsfrage:</label>
           <SelectComponent
             value={securityQuestion}
@@ -212,7 +210,7 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
           />
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div className="mst-field-group-lg">
           <label>Antwort auf Sicherheitsfrage:</label>
           <input
             className="mitglied-detail-input"
@@ -225,7 +223,7 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
         </div>
 
         {/* ACTION BUTTONS */}
-        <div className="mitglied-detail-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.5rem' }}>
+        <div className="mitglied-detail-actions mst-actions">
           <button
             className={`mitglied-detail-btn mitglied-detail-btn-primary ${(!currentPassword || !newPassword || !confirmPassword || loading) ? 'disabled' : ''}`}
             onClick={handleChangePassword}
@@ -245,16 +243,8 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
 
         {/* SUCCESS/ERROR MESSAGES */}
         {message && (
-          <div className={`mitglied-detail-message ${message.type === 'error' ? 'error' : 'success'}`} style={{
-            marginTop: '1.25rem',
-            padding: '1rem',
-            borderRadius: '10px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            fontSize: '0.95rem'
-          }}>
-            <span style={{ fontSize: '1.2rem' }}>
+          <div className={`mitglied-detail-message mst-message ${message.type === 'error' ? 'error' : 'success'}`}>
+            <span className="mst-message-icon">
               {message.type === 'error' ? '❌' : '✅'}
             </span>
             {message.text}

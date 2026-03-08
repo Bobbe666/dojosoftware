@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ThumbsUp, Plus, Filter, MessageSquare, CheckCircle, Clock, Lightbulb, X, Edit3, Trash2, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import '../styles/FeatureBoard.css';
 import config from '../config/config';
 
 const FeatureBoard = ({ compact = false, adminMode = false }) => {
@@ -154,12 +155,12 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
   };
 
   const statusConfig = {
-    neu: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', label: 'Neu', icon: Lightbulb },
-    geprueft: { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', label: 'Geprueft', icon: CheckCircle },
+    neu: { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', label: 'Neu', icon: Lightbulb },
+    geprueft: { color: 'var(--info)', bg: 'rgba(59, 130, 246, 0.15)', label: 'Geprueft', icon: CheckCircle },
     geplant: { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', label: 'Geplant', icon: Clock },
     in_arbeit: { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', label: 'In Arbeit', icon: Clock },
-    umgesetzt: { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', label: 'Umgesetzt', icon: CheckCircle },
-    abgelehnt: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.15)', label: 'Abgelehnt', icon: X }
+    umgesetzt: { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', label: 'Umgesetzt', icon: CheckCircle },
+    abgelehnt: { color: 'var(--text-muted)', bg: 'rgba(107, 114, 128, 0.15)', label: 'Abgelehnt', icon: X }
   };
 
   const kategorieLabels = {
@@ -172,84 +173,41 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
 
   if (compact) {
     return (
-      <div style={{
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        border: '1px solid rgba(255,255,255,0.1)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ color: '#ffd700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="fb-compact-card">
+        <div className="fb-compact-header">
+          <h3 className="fb-compact-title">
             <Lightbulb size={20} /> Feature-Wuensche
           </h3>
           <button
             onClick={() => setShowNewForm(true)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: '#ffd700',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#000',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              fontSize: '0.85rem'
-            }}
+            className="fb-btn-add-compact"
           >
             <Plus size={16} /> Idee
           </button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,255,255,0.5)' }}>Laden...</div>
+          <div className="fb-loading-text">Laden...</div>
         ) : requests.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '1rem', color: 'rgba(255,255,255,0.5)' }}>
+          <div className="fb-loading-text">
             Noch keine Wuensche - sei der Erste!
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="u-flex-col-md">
             {requests.slice(0, 5).map(req => (
-              <div key={req.id} style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: '8px'
-              }}>
+              <div key={req.id} className="fb-compact-item">
                 <button
                   onClick={() => handleVote(req.id)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '0.5rem',
-                    background: req.user_voted ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255,255,255,0.05)',
-                    border: req.user_voted ? '1px solid #ffd700' : '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '8px',
-                    color: req.user_voted ? '#ffd700' : 'rgba(255,255,255,0.7)',
-                    cursor: 'pointer',
-                    minWidth: '50px'
-                  }}
+                  className={`fb-vote-btn-compact${req.user_voted ? ' fb-vote-btn-compact--voted' : ''}`}
                 >
                   <ThumbsUp size={16} />
-                  <span style={{ fontSize: '0.85rem', fontWeight: '600' }}>{req.votes_count}</span>
+                  <span className="fb-vote-count-sm">{req.votes_count}</span>
                 </button>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ color: '#fff', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div className="u-flex-1-min0">
+                  <div className="fb-item-title">
                     {req.titel}
                   </div>
-                  <div style={{
-                    display: 'inline-block',
-                    padding: '0.15rem 0.5rem',
-                    background: statusConfig[req.status]?.bg,
-                    color: statusConfig[req.status]?.color,
-                    borderRadius: '4px',
-                    fontSize: '0.7rem',
-                    marginTop: '0.25rem'
-                  }}>
+                  <div className={`fb-status-badge-sm fb-status-badge-sm--${req.status}`}>
                     {statusConfig[req.status]?.label}
                   </div>
                 </div>
@@ -260,55 +218,26 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
 
         {/* Neuer Request Modal */}
         {showNewForm && (
-          <div style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999
-          }}>
-            <div style={{
-              background: '#1a1a2e',
-              borderRadius: '16px',
-              padding: '2rem',
-              width: '90%',
-              maxWidth: '500px',
-              border: '1px solid rgba(255,215,0,0.3)'
-            }}>
-              <h3 style={{ color: '#ffd700', marginTop: 0 }}>Neuer Feature-Wunsch</h3>
+          <div className="fb-modal-overlay">
+            <div className="fb-modal-box">
+              <h3 className="fb-modal-title">Neuer Feature-Wunsch</h3>
               <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Titel *</label>
+                <div className="fb-mb-1">
+                  <label className="u-form-label-secondary">Titel *</label>
                   <input
                     type="text"
                     value={newRequest.titel}
                     onChange={(e) => setNewRequest({ ...newRequest, titel: e.target.value })}
                     placeholder="Was wuenschst du dir?"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
+                    className="fb-form-input"
                   />
                 </div>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Kategorie</label>
+                <div className="fb-mb-1">
+                  <label className="u-form-label-secondary">Kategorie</label>
                   <select
                     value={newRequest.kategorie}
                     onChange={(e) => setNewRequest({ ...newRequest, kategorie: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
+                    className="fb-form-input"
                   >
                     <option value="funktion">Neue Funktion</option>
                     <option value="verbesserung">Verbesserung</option>
@@ -317,55 +246,29 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
                     <option value="sonstiges">Sonstiges</option>
                   </select>
                 </div>
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Beschreibung</label>
+                <div className="fb-mb-15">
+                  <label className="u-form-label-secondary">Beschreibung</label>
                   <textarea
                     value={newRequest.beschreibung}
                     onChange={(e) => setNewRequest({ ...newRequest, beschreibung: e.target.value })}
                     placeholder="Beschreibe deinen Wunsch genauer..."
                     rows={4}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      color: '#fff',
-                      resize: 'vertical'
-                    }}
+                    className="fb-form-textarea"
                   />
                 </div>
-                {error && <div style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</div>}
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                {error && <div className="fb-error-msg">{error}</div>}
+                <div className="fb-flex-gap">
                   <button
                     type="button"
                     onClick={() => { setShowNewForm(false); setError(''); }}
-                    style={{
-                      flex: 1,
-                      padding: '0.75rem',
-                      background: 'rgba(255,255,255,0.1)',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      color: '#fff',
-                      cursor: 'pointer'
-                    }}
+                    className="fb-btn-cancel"
                   >
                     Abbrechen
                   </button>
                   <button
                     type="submit"
                     disabled={submitting}
-                    style={{
-                      flex: 1,
-                      padding: '0.75rem',
-                      background: '#ffd700',
-                      border: 'none',
-                      borderRadius: '8px',
-                      color: '#000',
-                      fontWeight: '600',
-                      cursor: submitting ? 'not-allowed' : 'pointer',
-                      opacity: submitting ? 0.7 : 1
-                    }}
+                    className="fb-btn-submit"
                   >
                     {submitting ? 'Wird eingereicht...' : 'Einreichen'}
                   </button>
@@ -380,27 +283,21 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
 
   // Vollansicht
   return (
-    <div style={{ padding: '1rem' }}>
+    <div className="fb-page-wrapper">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="fb-page-header">
         <div>
-          <h2 style={{ color: adminMode ? '#a5b4fc' : '#ffd700', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h2
+            className={`fb-page-title${adminMode ? ' fb-page-title--admin' : ''}`}
+          >
             <Lightbulb size={28} /> Feature-Wuensche
             {adminMode && (
-              <span style={{
-                padding: '0.25rem 0.75rem',
-                background: 'rgba(99, 102, 241, 0.2)',
-                border: '1px solid rgba(99, 102, 241, 0.4)',
-                borderRadius: '20px',
-                fontSize: '0.75rem',
-                color: '#a5b4fc',
-                fontWeight: '500'
-              }}>
+              <span className="fb-admin-badge">
                 Admin-Modus
               </span>
             )}
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.6)', margin: '0.5rem 0 0' }}>
+          <p className="fb-page-subtitle">
             {adminMode
               ? 'Bearbeite Feature-Wuensche der Kunden - Status aendern und kommentieren'
               : 'Stimme fuer Features ab oder reiche eigene Wuensche ein'}
@@ -408,70 +305,34 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
         </div>
         <button
           onClick={() => setShowNewForm(true)}
-          style={{
-            padding: '0.75rem 1.5rem',
-            background: '#ffd700',
-            border: 'none',
-            borderRadius: '8px',
-            color: '#000',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
+          className="fb-btn-add-primary"
         >
           <Plus size={20} /> Neue Idee einreichen
         </button>
       </div>
 
       {/* Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-        gap: '1rem',
-        marginBottom: '1.5rem'
-      }}>
+      <div className="fb-stats-grid">
         {[
-          { label: 'Gesamt', value: stats.gesamt || 0, color: '#fff' },
-          { label: 'Neu', value: stats.neu || 0, color: '#f59e0b' },
+          { label: 'Gesamt', value: stats.gesamt || 0, color: 'var(--text-primary)' },
+          { label: 'Neu', value: stats.neu || 0, color: 'var(--warning)' },
           { label: 'Geplant', value: stats.geplant || 0, color: '#8b5cf6' },
           { label: 'In Arbeit', value: stats.in_arbeit || 0, color: '#ec4899' },
-          { label: 'Umgesetzt', value: stats.umgesetzt || 0, color: '#10b981' }
+          { label: 'Umgesetzt', value: stats.umgesetzt || 0, color: 'var(--success)' }
         ].map(stat => (
-          <div key={stat.label} style={{
-            background: 'rgba(255,255,255,0.03)',
-            borderRadius: '12px',
-            padding: '1rem',
-            textAlign: 'center',
-            border: '1px solid rgba(255,255,255,0.1)'
-          }}>
-            <div style={{ fontSize: '1.75rem', fontWeight: '700', color: stat.color }}>{stat.value}</div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>{stat.label}</div>
+          <div key={stat.label} className="fb-stat-card" style={{ '--stat-color': stat.color }}>
+            <div className="fb-stat-value">{stat.value}</div>
+            <div className="u-text-secondary-sm">{stat.label}</div>
           </div>
         ))}
       </div>
 
       {/* Filter */}
-      <div style={{
-        display: 'flex',
-        gap: '1rem',
-        marginBottom: '1.5rem',
-        flexWrap: 'wrap',
-        padding: '1rem',
-        background: 'rgba(255,255,255,0.03)',
-        borderRadius: '12px'
-      }}>
+      <div className="fb-filter-bar">
         <select
           value={filter.status}
           onChange={(e) => setFilter({ ...filter, status: e.target.value })}
-          style={{
-            padding: '0.5rem 1rem',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
+          className="fb-filter-select"
         >
           <option value="alle">Alle Status</option>
           <option value="neu">Neu</option>
@@ -484,13 +345,7 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
         <select
           value={filter.kategorie}
           onChange={(e) => setFilter({ ...filter, kategorie: e.target.value })}
-          style={{
-            padding: '0.5rem 1rem',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
+          className="fb-filter-select"
         >
           <option value="alle">Alle Kategorien</option>
           <option value="funktion">Neue Funktion</option>
@@ -502,13 +357,7 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
         <select
           value={filter.sortBy}
           onChange={(e) => setFilter({ ...filter, sortBy: e.target.value })}
-          style={{
-            padding: '0.5rem 1rem',
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            color: '#fff'
-          }}
+          className="fb-filter-select"
         >
           <option value="votes">Meiste Stimmen</option>
           <option value="newest">Neueste</option>
@@ -518,121 +367,60 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
 
       {/* Liste */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.5)' }}>Laden...</div>
+        <div className="fb-loading-full">Laden...</div>
       ) : requests.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          background: 'rgba(255,255,255,0.03)',
-          borderRadius: '12px',
-          color: 'rgba(255,255,255,0.5)'
-        }}>
+        <div className="fb-empty-card">
           Keine Feature-Wuensche gefunden. Sei der Erste und reiche eine Idee ein!
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="fb-request-list">
           {requests.map(req => {
             const StatusIcon = statusConfig[req.status]?.icon || Lightbulb;
             return (
-              <div key={req.id} style={{
-                display: 'flex',
-                gap: '1rem',
-                padding: '1.25rem',
-                background: 'rgba(255,255,255,0.03)',
-                borderRadius: '12px',
-                border: '1px solid rgba(255,255,255,0.1)'
-              }}>
+              <div key={req.id} className="fb-request-card">
                 {/* Vote Button */}
                 <button
                   onClick={() => handleVote(req.id)}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0.75rem',
-                    background: req.user_voted ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255,255,255,0.05)',
-                    border: req.user_voted ? '2px solid #ffd700' : '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '12px',
-                    color: req.user_voted ? '#ffd700' : 'rgba(255,255,255,0.7)',
-                    cursor: 'pointer',
-                    minWidth: '70px',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`fb-vote-btn${req.user_voted ? ' fb-vote-btn--voted' : ''}`}
                 >
                   <ThumbsUp size={24} fill={req.user_voted ? '#ffd700' : 'none'} />
-                  <span style={{ fontSize: '1.25rem', fontWeight: '700', marginTop: '0.25rem' }}>{req.votes_count}</span>
+                  <span className="fb-vote-count">{req.votes_count}</span>
                 </button>
 
                 {/* Content */}
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                    <h4 style={{ color: '#fff', margin: 0, fontSize: '1.1rem' }}>{req.titel}</h4>
-                    <span style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      padding: '0.25rem 0.75rem',
-                      background: statusConfig[req.status]?.bg,
-                      color: statusConfig[req.status]?.color,
-                      borderRadius: '20px',
-                      fontSize: '0.8rem',
-                      fontWeight: '500'
-                    }}>
+                <div className="u-flex-1">
+                  <div className="fb-title-row">
+                    <h4 className="fb-request-title">{req.titel}</h4>
+                    <span className={`fb-status-badge fb-status-badge--${req.status}`}>
                       <StatusIcon size={14} />
                       {statusConfig[req.status]?.label}
                     </span>
-                    <span style={{
-                      padding: '0.2rem 0.5rem',
-                      background: 'rgba(255,255,255,0.1)',
-                      borderRadius: '4px',
-                      fontSize: '0.75rem',
-                      color: 'rgba(255,255,255,0.6)'
-                    }}>
+                    <span className="fb-category-badge">
                       {kategorieLabels[req.kategorie] || req.kategorie}
                     </span>
                   </div>
                   {req.beschreibung && (
-                    <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0.5rem 0', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                    <p className="fb-description">
                       {req.beschreibung}
                     </p>
                   )}
                   {req.admin_kommentar && editingId !== req.id && (
-                    <div style={{
-                      marginTop: '0.75rem',
-                      padding: '0.75rem',
-                      background: 'rgba(59, 130, 246, 0.1)',
-                      borderRadius: '8px',
-                      borderLeft: '3px solid #3b82f6'
-                    }}>
-                      <div style={{ fontSize: '0.8rem', color: '#60a5fa', marginBottom: '0.25rem' }}>Admin-Kommentar:</div>
-                      <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>{req.admin_kommentar}</div>
+                    <div className="fb-admin-comment-box">
+                      <div className="fb-admin-comment-label">Admin-Kommentar:</div>
+                      <div className="fb-admin-comment-text">{req.admin_kommentar}</div>
                     </div>
                   )}
 
                   {/* Admin Edit Form */}
                   {adminMode && editingId === req.id && (
-                    <div style={{
-                      marginTop: '1rem',
-                      padding: '1rem',
-                      background: 'rgba(99, 102, 241, 0.1)',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(99, 102, 241, 0.3)'
-                    }}>
-                      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                        <div style={{ flex: 1, minWidth: '150px' }}>
-                          <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a5b4fc', fontSize: '0.85rem' }}>Status</label>
+                    <div className="fb-admin-edit-panel">
+                      <div className="fb-admin-edit-row">
+                        <div className="fb-admin-edit-field">
+                          <label className="fb-field-label">Status</label>
                           <select
                             value={editStatus}
                             onChange={(e) => setEditStatus(e.target.value)}
-                            style={{
-                              width: '100%',
-                              padding: '0.5rem',
-                              background: 'rgba(255,255,255,0.1)',
-                              border: '1px solid rgba(255,255,255,0.2)',
-                              borderRadius: '6px',
-                              color: '#fff'
-                            }}
+                            className="fb-admin-input"
                           >
                             <option value="neu">Neu</option>
                             <option value="geprueft">Geprueft</option>
@@ -643,54 +431,27 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
                           </select>
                         </div>
                       </div>
-                      <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a5b4fc', fontSize: '0.85rem' }}>Admin-Kommentar</label>
+                      <div className="fb-mb-1">
+                        <label className="fb-field-label">Admin-Kommentar</label>
                         <textarea
                           value={editComment}
                           onChange={(e) => setEditComment(e.target.value)}
                           placeholder="Kommentar fuer den Kunden..."
                           rows={2}
-                          style={{
-                            width: '100%',
-                            padding: '0.5rem',
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            resize: 'vertical'
-                          }}
+                          className="fb-admin-textarea"
                         />
                       </div>
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="u-flex-gap-sm">
                         <button
                           onClick={() => handleStatusChange(req.id)}
                           disabled={saving}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: '#6366f1',
-                            border: 'none',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            fontSize: '0.85rem'
-                          }}
+                          className="fb-btn-save"
                         >
                           <Save size={16} /> {saving ? 'Speichern...' : 'Speichern'}
                         </button>
                         <button
                           onClick={() => { setEditingId(null); setEditStatus(''); setEditComment(''); }}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '6px',
-                            color: '#fff',
-                            cursor: 'pointer',
-                            fontSize: '0.85rem'
-                          }}
+                          className="fb-btn-cancel-sm"
                         >
                           Abbrechen
                         </button>
@@ -698,46 +459,24 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
                     </div>
                   )}
 
-                  <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>
-                      von {req.ersteller_name} • {new Date(req.created_at).toLocaleDateString('de-DE')}
-                      {req.dojo_id && <span> • Dojo #{req.dojo_id}</span>}
+                  <div className="fb-footer-row">
+                    <div className="fb-meta-text">
+                      von {req.ersteller_name} &bull; {new Date(req.created_at).toLocaleDateString('de-DE')}
+                      {req.dojo_id && <span> &bull; Dojo #{req.dojo_id}</span>}
                     </div>
 
                     {/* Admin Actions */}
                     {adminMode && editingId !== req.id && (
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <div className="u-flex-gap-sm">
                         <button
                           onClick={() => startEditing(req)}
-                          style={{
-                            padding: '0.4rem 0.75rem',
-                            background: 'rgba(99, 102, 241, 0.2)',
-                            border: '1px solid rgba(99, 102, 241, 0.4)',
-                            borderRadius: '6px',
-                            color: '#a5b4fc',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            fontSize: '0.8rem'
-                          }}
+                          className="fb-btn-edit"
                         >
                           <Edit3 size={14} /> Bearbeiten
                         </button>
                         <button
                           onClick={() => handleDelete(req.id, req.titel)}
-                          style={{
-                            padding: '0.4rem 0.75rem',
-                            background: 'rgba(239, 68, 68, 0.2)',
-                            border: '1px solid rgba(239, 68, 68, 0.4)',
-                            borderRadius: '6px',
-                            color: '#f87171',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem',
-                            fontSize: '0.8rem'
-                          }}
+                          className="fb-btn-delete"
                         >
                           <Trash2 size={14} /> Loeschen
                         </button>
@@ -753,57 +492,28 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
 
       {/* Neuer Request Modal */}
       {showNewForm && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0,0,0,0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: '#1a1a2e',
-            borderRadius: '16px',
-            padding: '2rem',
-            width: '90%',
-            maxWidth: '500px',
-            border: '1px solid rgba(255,215,0,0.3)'
-          }}>
-            <h3 style={{ color: '#ffd700', marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="fb-modal-overlay">
+          <div className="fb-modal-box">
+            <h3 className="fb-modal-title-flex">
               <Lightbulb size={24} /> Neuer Feature-Wunsch
             </h3>
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Titel *</label>
+              <div className="fb-mb-1">
+                <label className="u-form-label-secondary">Titel *</label>
                 <input
                   type="text"
                   value={newRequest.titel}
                   onChange={(e) => setNewRequest({ ...newRequest, titel: e.target.value })}
                   placeholder="Was wuenschst du dir?"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="fb-form-input"
                 />
               </div>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Kategorie</label>
+              <div className="fb-mb-1">
+                <label className="u-form-label-secondary">Kategorie</label>
                 <select
                   value={newRequest.kategorie}
                   onChange={(e) => setNewRequest({ ...newRequest, kategorie: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="fb-form-input"
                 >
                   <option value="funktion">Neue Funktion</option>
                   <option value="verbesserung">Verbesserung</option>
@@ -812,55 +522,29 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
                   <option value="sonstiges">Sonstiges</option>
                 </select>
               </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>Beschreibung</label>
+              <div className="fb-mb-15">
+                <label className="u-form-label-secondary">Beschreibung</label>
                 <textarea
                   value={newRequest.beschreibung}
                   onChange={(e) => setNewRequest({ ...newRequest, beschreibung: e.target.value })}
                   placeholder="Beschreibe deinen Wunsch genauer..."
                   rows={4}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    resize: 'vertical'
-                  }}
+                  className="fb-form-textarea"
                 />
               </div>
-              {error && <div style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</div>}
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              {error && <div className="fb-error-msg">{error}</div>}
+              <div className="fb-flex-gap">
                 <button
                   type="button"
                   onClick={() => { setShowNewForm(false); setError(''); }}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    color: '#fff',
-                    cursor: 'pointer'
-                  }}
+                  className="fb-btn-cancel"
                 >
                   Abbrechen
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    flex: 1,
-                    padding: '0.75rem',
-                    background: '#ffd700',
-                    border: 'none',
-                    borderRadius: '8px',
-                    color: '#000',
-                    fontWeight: '600',
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    opacity: submitting ? 0.7 : 1
-                  }}
+                  className="fb-btn-submit"
                 >
                   {submitting ? 'Wird eingereicht...' : 'Einreichen'}
                 </button>

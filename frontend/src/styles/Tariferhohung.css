@@ -1,0 +1,484 @@
+/* Tariferhöhung — extracted inline styles (prefix: te-) */
+
+/* ── Loading center container ── */
+.te-loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+/* ── Spinner element ── */
+.te-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-default, rgba(255,255,255,0.1));
+  border-top: 3px solid var(--color-gold, #f59e0b);
+  border-radius: 50%;
+  animation: te-spin 1s linear infinite;
+}
+
+/* ── Loading text below spinner ── */
+.te-loading-text {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+}
+
+/* ── Page padding wrapper ── */
+.te-page-pad {
+  padding: 2rem;
+}
+
+/* ── Header row (back button + title) ── */
+.te-header-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* ── Back button ── */
+.te-back-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+}
+
+/* ── Page title ── */
+.te-page-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Title icon ── */
+.te-title-icon {
+  vertical-align: middle;
+  margin-right: 0.5rem;
+  color: var(--color-gold, #f59e0b);
+}
+
+/* ── Page subtitle ── */
+.te-page-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-muted);
+}
+
+/* ── Summary cards grid ── */
+.te-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* ── Summary card ── */
+.te-summary-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-default, var(--border-primary));
+  box-shadow: var(--shadow-sm, none);
+}
+
+/* ── Card stat value — primary ── */
+.te-stat-primary {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Card stat value — bamboo/green ── */
+.te-stat-bamboo {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-bamboo, #10b981);
+}
+
+/* ── Card stat value — indigo/purple ── */
+.te-stat-indigo {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-indigo, #8b5cf6);
+}
+
+/* ── Quick-increase card ── */
+.te-quick-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border-default, var(--border-primary));
+  box-shadow: var(--shadow-sm, none);
+}
+
+/* ── Quick-increase card heading ── */
+.te-quick-title {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+/* ── Quick-increase controls row ── */
+.te-quick-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-end;
+}
+
+/* ── Small number input ── */
+.te-input-number {
+  width: 80px;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-default, var(--border-primary));
+  background: var(--input-bg, var(--bg-input));
+  color: var(--text-primary);
+  text-align: right;
+  font-family: monospace;
+}
+
+/* ── Apply-percentage button ── */
+.te-btn-indigo {
+  background: var(--color-indigo, #3b82f6);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Apply-fixed button ── */
+.te-btn-vermillion {
+  background: var(--color-vermillion, #8b5cf6);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Set-to-tarifpreis button ── */
+.te-btn-bamboo {
+  background: var(--color-bamboo, #10b981);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Italic hint below quick-increase row ── */
+.te-quick-hint {
+  margin: 1rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── Success alert banner ── */
+.te-alert-success {
+  background: var(--alert-success-bg, rgba(16, 185, 129, 0.15));
+  border: var(--alert-success-border, 1px solid rgba(16, 185, 129, 0.3));
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-bamboo, #10b981);
+}
+
+/* ── Error alert banner ── */
+.te-alert-error {
+  background: var(--alert-error-bg, rgba(239, 68, 68, 0.15));
+  border: var(--alert-error-border, 1px solid rgba(239, 68, 68, 0.3));
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-vermillion, #ef4444);
+}
+
+/* ── Action buttons row ── */
+.te-action-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ── Transparent border button (select all / deselect) ── */
+.te-btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-default, var(--border-primary));
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* ── "Alle erhöhen" gold button ── */
+.te-btn-gold {
+  background: var(--color-gold, #f59e0b);
+  border: none;
+  color: var(--color-sumi, #000);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Table outer card ── */
+.te-table-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--border-default, var(--border-primary));
+  overflow: hidden;
+  box-shadow: var(--shadow-sm, none);
+}
+
+/* ── Table scroll wrapper ── */
+.te-table-scroll {
+  overflow-x: auto;
+}
+
+/* ── Table ── */
+.te-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* ── Table header row ── */
+.te-thead-row {
+  background: var(--table-header-bg, rgba(255,255,255,0.05));
+}
+
+/* ── Checkbox header cell ── */
+.te-th-check {
+  padding: 1rem;
+  text-align: center;
+  width: 50px;
+}
+
+/* ── Table header cell (right-aligned) ── */
+.te-th-right {
+  padding: 1rem;
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Table cell: center ── */
+.te-td-center {
+  padding: 1rem;
+  text-align: center;
+}
+
+/* ── Small muted hint text ── */
+.te-text-muted-sm {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* ── Flex row with gap + bottom margin ── */
+.te-flex-row-mb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Muted small text (alternate order) ── */
+.te-muted-sm {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ── Checkbox / icon size ── */
+.te-icon-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+/* ── Padding-only cell ── */
+.te-td-pad {
+  padding: 1rem;
+}
+
+/* ── Table header cell (left-aligned) ── */
+.te-th-left {
+  padding: 1rem;
+  text-align: left;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Flex row small gap ── */
+.te-flex-gap-sm {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── "Neuer Beitrag" column header ── */
+.te-th-neuer-beitrag {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  width: 140px;
+}
+
+/* ── "Aktion" column header ── */
+.te-th-aktion {
+  padding: 1rem;
+  text-align: center;
+  width: 100px;
+}
+
+/* ── Member name strong ── */
+.te-member-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Member email sub-line ── */
+.te-member-email {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Tarif badge ── */
+.te-tarif-badge {
+  background: var(--badge-primary-bg, rgba(139, 92, 246, 0.2));
+  color: var(--badge-primary-text, #a78bfa);
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* ── Monospace right-aligned cell — primary color ── */
+.te-td-mono-primary {
+  padding: 1rem;
+  text-align: right;
+  font-family: monospace;
+  color: var(--text-primary);
+}
+
+/* ── Monospace right-aligned cell — bamboo/green ── */
+.te-td-mono-bamboo {
+  padding: 1rem;
+  text-align: right;
+  font-family: monospace;
+  color: var(--color-bamboo, #10b981);
+}
+
+/* ── Monospace right-aligned cell — vermillion/red ── */
+.te-td-mono-vermillion {
+  padding: 1rem;
+  text-align: right;
+  font-family: monospace;
+  color: var(--color-vermillion, #ef4444);
+}
+
+/* ── New-amount number input ── */
+.te-input-amount {
+  width: 100px;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-default, var(--border-primary));
+  background: var(--input-bg, var(--bg-input));
+  color: var(--text-primary);
+  text-align: right;
+  font-family: monospace;
+}
+
+/* ── Single-row "Erhöhen" button ── */
+.te-btn-row-bamboo {
+  background: var(--color-bamboo, #10b981);
+  border: none;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ── Empty-state card ── */
+.te-empty-card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 3rem;
+  text-align: center;
+  border: 1px solid var(--border-default, var(--border-primary));
+  box-shadow: var(--shadow-sm, none);
+}
+
+/* ── Empty-state icon ── */
+.te-empty-icon {
+  color: var(--color-bamboo, #10b981);
+  margin-bottom: 1rem;
+}
+
+/* ── Empty-state heading ── */
+.te-empty-title {
+  margin: 0 0 0.5rem;
+  color: var(--text-primary);
+}
+
+/* ── Empty-state text ── */
+.te-empty-text {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+
+/* ── Icon color: gold ── */
+.te-icon-gold {
+  color: var(--color-gold, #f59e0b);
+}
+
+/* ── Icon color: bamboo/green ── */
+.te-icon-bamboo {
+  color: var(--color-bamboo, #10b981);
+}
+
+/* ── Icon color: indigo/purple ── */
+.te-icon-indigo {
+  color: var(--color-indigo, #8b5cf6);
+}
+
+@keyframes te-spin {
+  to { transform: rotate(360deg); }
+}

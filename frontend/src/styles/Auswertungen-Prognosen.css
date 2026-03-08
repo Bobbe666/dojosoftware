@@ -1,0 +1,303 @@
+/* ===== PROGNOSEN TAB – PROFESSIONAL REDESIGN ===== */
+
+.fc-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-section-gap);
+}
+
+/* ── Prognose-Timeline (4 Stufen) ── */
+.fc-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.fc-stage {
+  padding: var(--ui-card-padding);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  transition: background 0.2s;
+}
+
+.fc-stage:last-child { border-right: none; }
+.fc-stage:hover { background: rgba(255, 255, 255, 0.03); }
+
+/* Verbindungspfeil zwischen Stufen */
+.fc-stage::after {
+  content: '›';
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 1.25rem;
+  z-index: 1;
+}
+.fc-stage:last-child::after { display: none; }
+
+.fc-stage--current {
+  background: rgba(255, 215, 0, 0.05);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+}
+
+.fc-stage-period {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.6rem;
+}
+
+.fc-stage--current .fc-stage-period { color: rgba(255, 215, 0, 0.7); }
+
+.fc-stage-members {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-stage--current .fc-stage-members {
+  color: var(--primary);
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.fc-stage-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--status-success);
+}
+
+.fc-stage-delta::before { content: '+'; }
+
+.fc-stage-revenue {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-stage-revenue strong {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ── Zwei-Spalten für Wachstum + Vergleich ── */
+.fc-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ui-section-gap-sm);
+  align-items: start;
+}
+
+/* ── Card ── */
+.fc-card {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.fc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fc-card-title {
+  font-size: var(--ui-card-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.fc-card-badge {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 700;
+}
+
+.fc-card-badge--green  { background: rgba(16,185,129,0.15); color: var(--status-success); }
+.fc-card-badge--yellow { background: rgba(255,215,0,0.12);  color: var(--primary); }
+.fc-card-badge--red    { background: rgba(239,68,68,0.15);  color: var(--status-error); }
+
+/* ── Wachstumsrate-Anzeige ── */
+.fc-rate-display {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.fc-rate-big {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.fc-rate-big--positive { color: var(--status-success); text-shadow: 0 0 20px rgba(16,185,129,0.3); }
+.fc-rate-big--negative { color: var(--status-error); }
+.fc-rate-big--neutral  { color: var(--text-3); }
+
+.fc-rate-info { flex: 1; }
+
+.fc-rate-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 0.5rem;
+}
+
+.fc-basis {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+  margin-top: 0.4rem;
+}
+
+/* Vorjahresvergleich Rows */
+.fc-compare-list {
+  padding: 0.5rem 0;
+}
+
+.fc-compare-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fc-compare-row:last-child { border-bottom: none; }
+
+.fc-compare-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.fc-compare-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fc-compare-delta {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fc-compare-delta--positive { color: var(--status-success); }
+.fc-compare-delta--negative { color: var(--status-error); }
+
+/* ── Empfehlungen (volle Breite) ── */
+.fc-recs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 0.75rem;
+}
+
+.fc-rec {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--comp-radius-xl);
+  border-left: 3px solid;
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.15s;
+}
+
+.fc-rec:hover { background: rgba(255, 255, 255, 0.05); }
+
+.fc-rec--success {
+  border-left-color: var(--status-success);
+  background: rgba(16, 185, 129, 0.04);
+}
+
+.fc-rec--warning {
+  border-left-color: var(--status-warning);
+  background: rgba(245, 158, 11, 0.04);
+}
+
+.fc-rec--info {
+  border-left-color: rgba(99, 179, 237, 0.5);
+  background: rgba(99, 179, 237, 0.03);
+}
+
+.fc-rec-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.fc-rec--success .fc-rec-icon { background: rgba(16,185,129,0.15); }
+.fc-rec--warning .fc-rec-icon { background: rgba(245,158,11,0.15); }
+.fc-rec--info    .fc-rec-icon { background: rgba(99,179,237,0.12); }
+
+.fc-rec-body strong {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-1);
+  margin-bottom: 0.3rem;
+}
+
+.fc-rec-body p {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Section header */
+.fc-section-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .fc-timeline {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .fc-stage::after { display: none; }
+  .fc-stage:nth-child(2) { border-right: none; }
+  .fc-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 500px) {
+  .fc-timeline { grid-template-columns: 1fr; }
+  .fc-stage { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .fc-stage:last-child { border-bottom: none; }
+}

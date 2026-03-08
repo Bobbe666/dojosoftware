@@ -1,0 +1,279 @@
+/* ===========================================
+   DESIGN SYSTEM — INPUT / FORM COMPONENT
+   Einheitliche Formular-Elemente
+   =========================================== */
+
+/* ========== FORM GROUP (Label + Input + Error) ========== */
+
+.ds-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* ========== LABEL ========== */
+
+.ds-label {
+  font-size: var(--ui-form-label);
+  font-weight: 500;
+  color: var(--text-3);
+  display: block;
+  user-select: none;
+}
+
+.ds-label--required::after {
+  content: ' *';
+  color: var(--status-error);
+}
+
+.ds-label--uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.63rem;
+  color: var(--text-5);
+}
+
+/* ========== INPUT / TEXTAREA / SELECT ========== */
+
+.ds-input,
+.ds-select,
+.ds-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--comp-radius-sm);
+  padding: 0.55rem 0.8rem;
+  font-size: var(--ui-form-input);
+  font-family: inherit;
+  color: var(--text-1);
+  transition: background var(--transition-fast),
+              border-color var(--transition-fast);
+  box-sizing: border-box;
+  appearance: none;
+}
+
+.ds-input::placeholder,
+.ds-textarea::placeholder {
+  color: var(--text-4);
+}
+
+.ds-input:hover:not(:disabled),
+.ds-select:hover:not(:disabled),
+.ds-textarea:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ds-input:focus,
+.ds-select:focus,
+.ds-textarea:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.ds-input:disabled,
+.ds-select:disabled,
+.ds-textarea:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ========== GRÖSSEN ========== */
+
+.ds-input--sm, .ds-select--sm { padding: 0.35rem 0.65rem; font-size: var(--ui-btn-font-sm); }
+.ds-input--lg, .ds-select--lg { padding: 0.75rem 1rem; font-size: 1rem; }
+
+/* ========== TEXTAREA ========== */
+
+.ds-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* ========== SELECT (mit Pfeil) ========== */
+
+.ds-select {
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='rgba(255,255,255,0.4)' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  cursor: pointer;
+}
+
+/* ========== VALIDIERUNGS-ZUSTÄNDE ========== */
+
+.ds-input--valid,
+.ds-select--valid,
+.ds-textarea--valid {
+  border-color: var(--status-success-border);
+}
+
+.ds-input--invalid,
+.ds-select--invalid,
+.ds-textarea--invalid {
+  border-color: var(--status-error-border);
+}
+
+.ds-form-error {
+  font-size: var(--ui-form-hint);
+  color: var(--status-error);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ds-form-hint {
+  font-size: var(--ui-form-hint);
+  color: var(--text-4);
+  line-height: 1.4;
+}
+
+/* ========== INPUT MIT PREFIX / SUFFIX ========== */
+
+.ds-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ds-input-prefix,
+.ds-input-suffix {
+  position: absolute;
+  font-size: 0.82rem;
+  color: var(--text-4);
+  pointer-events: none;
+  user-select: none;
+}
+
+.ds-input-prefix {
+  left: 0.75rem;
+}
+
+.ds-input-suffix {
+  right: 0.75rem;
+}
+
+.ds-input-wrapper .ds-input--has-prefix {
+  padding-left: 2rem;
+}
+
+.ds-input-wrapper .ds-input--has-suffix {
+  padding-right: 2rem;
+}
+
+/* ========== CURRENCY INPUT ========== */
+
+.ds-input--currency {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ========== TOGGLE / SWITCH ========== */
+
+.ds-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ds-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background var(--transition-normal);
+  flex-shrink: 0;
+}
+
+.ds-toggle--on {
+  background: rgba(74, 222, 128, 0.25);
+  border-color: var(--status-success-border);
+}
+
+.ds-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: var(--comp-radius-circle);
+  transition: left var(--transition-normal), background var(--transition-normal);
+}
+
+.ds-toggle--on .ds-toggle-knob {
+  left: 18px;
+  background: var(--status-success);
+}
+
+.ds-toggle-label {
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+/* ========== CHECKBOX / RADIO ========== */
+
+.ds-checkbox,
+.ds-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ds-checkbox input[type="checkbox"],
+.ds-radio input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--status-success);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ds-checkbox-label,
+.ds-radio-label {
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+/* ========== NUMBER INPUT MIT STEPPER ========== */
+
+.ds-number-input {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--comp-radius-sm);
+  overflow: hidden;
+}
+
+.ds-number-input .ds-input {
+  background: transparent;
+  border: none;
+  text-align: center;
+  border-radius: 0;
+  flex: 1;
+}
+
+.ds-number-btn {
+  padding: 0.4rem 0.6rem;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 0.9rem;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.ds-number-btn:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}

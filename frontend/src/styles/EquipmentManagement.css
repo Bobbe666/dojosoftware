@@ -1,6 +1,6 @@
 /* Equipment Management */
 .equipment-management {
-  padding: 2rem;
+  padding: var(--ui-page-padding);
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-header-margin-b);
   padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255, 215, 0, 0.2);
 }
@@ -17,7 +17,7 @@
 .equipment-management .header-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .equipment-management .header-content svg {
@@ -32,7 +32,7 @@
 }
 
 .equipment-management .header-content p {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   margin: 0;
   font-size: 0.9rem;
 }
@@ -40,7 +40,7 @@
 .equipment-management .add-button {
   background: var(--gradient-gold);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 0.8rem 1.2rem;
   color: #000;
   font-weight: 600;
@@ -63,15 +63,15 @@
 }
 
 .equipment-management .equipment-card {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.18);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   transition: all 0.3s ease;
 }
 
 .equipment-management .equipment-card:hover {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -81,7 +81,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .equipment-management .equipment-info {
@@ -98,9 +98,9 @@
 }
 
 .equipment-management .equipment-header h3 {
-  color: #ffffff;
+  color: var(--text-1);
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--ui-card-title);
   font-weight: 600;
 }
 
@@ -112,16 +112,16 @@
 
 .equipment-management .badge {
   padding: 0.2rem 0.6rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
 }
 
 .equipment-management .badge.required {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  border: 1px solid var(--status-error-border);
 }
 
 .equipment-management .badge.category {
@@ -131,7 +131,7 @@
 }
 
 .equipment-management .equipment-description {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
   line-height: 1.5;
@@ -143,7 +143,7 @@
 
 .equipment-management .assigned-courses strong {
   color: var(--primary);
-  font-size: 0.8rem;
+  font-size: var(--ui-card-label);
   display: block;
   margin-bottom: 0.5rem;
 }
@@ -157,10 +157,10 @@
 .equipment-management .course-tag {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.2rem 0.5rem;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
 }
 
 .equipment-management .equipment-actions {
@@ -172,9 +172,9 @@
 .equipment-management .action-button {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -184,14 +184,14 @@
 
 .equipment-management .action-button:hover {
   background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  color: var(--text-1);
   transform: scale(1.05);
 }
 
 .equipment-management .action-button.delete:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+  color: var(--status-error);
 }
 
 /* Modal Styles */
@@ -201,7 +201,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--modal-overlay);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -211,9 +211,9 @@
 }
 
 .equipment-management .modal-content {
-  background: linear-gradient(135deg, rgba(30, 30, 35, 0.95), rgba(45, 45, 50, 0.95));
+  background: var(--modal-bg-dark);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 16px;
+  border-radius: var(--comp-radius-xl);
   max-width: 600px;
   width: 90%;
   max-height: 80vh;
@@ -222,8 +222,8 @@
 }
 
 .equipment-management .modal-header {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: #ffffff;
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
   padding: 1rem 1.5rem;
   display: flex;
   justify-content: space-between;
@@ -235,13 +235,13 @@
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-1);
 }
 
 .equipment-management .close-button {
   background: rgba(0, 0, 0, 0.2);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.4rem;
   color: #000;
   cursor: pointer;
@@ -277,9 +277,9 @@
   width: 100%;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 0.8rem;
-  color: #ffffff;
+  color: var(--text-1);
   font-size: 0.9rem;
   transition: all 0.2s ease;
 }
@@ -295,7 +295,7 @@
 
 .equipment-management .form-group input::placeholder,
 .equipment-management .form-group textarea::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-4);
 }
 
 .equipment-management .form-group input[type="checkbox"] {
@@ -315,16 +315,16 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-size: 0.85rem;
   cursor: pointer;
   padding: 0.3rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   transition: all 0.2s ease;
 }
 
 .equipment-management .checkbox-label:hover {
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
 }
 
 .equipment-management .modal-footer {
@@ -332,13 +332,13 @@
   border-top: 1px solid rgba(255, 215, 0, 0.2);
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .equipment-management .btn {
   padding: 0.8rem 1.5rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -349,13 +349,13 @@
 
 .equipment-management .btn-secondary {
   background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .equipment-management .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  color: var(--text-1);
 }
 
 .equipment-management .btn-primary {
@@ -410,7 +410,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .equipment-management {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
   
   .equipment-management .equipment-header {

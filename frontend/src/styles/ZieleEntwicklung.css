@@ -5,8 +5,8 @@
 .ziele-entwicklung {
   background: linear-gradient(145deg, #1a1a2e 0%, #16162a 100%);
   border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding: var(--ui-section-gap);
+  margin-bottom: var(--ui-section-gap);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -33,8 +33,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: var(--ui-header-margin-b);
+  padding-bottom: var(--ui-header-padding-b);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -57,7 +57,7 @@
 }
 
 .bereich-subtitel {
-  font-size: 0.8rem;
+  font-size: var(--ui-card-label);
   color: #a0a0b0;
   margin-top: 2px;
 }
@@ -81,7 +81,7 @@
   padding: 0.4rem 0.75rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #a0a0b0;
   font-size: 0.8rem;
   cursor: pointer;
@@ -108,7 +108,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -147,7 +147,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1rem;
   font-size: 0.875rem;
 }
@@ -167,7 +167,7 @@
 /* Sections */
 .ziele-section {
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 1rem;
   overflow: hidden;
 }
@@ -176,7 +176,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
+  padding: var(--ui-page-padding-sm) var(--ui-header-padding-b);
   background: rgba(255, 255, 255, 0.03);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -276,7 +276,7 @@
   padding: 0.4rem 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #fff;
   text-align: center;
   font-size: 0.875rem;
@@ -304,7 +304,7 @@
   font-size: 0.65rem;
   font-weight: 600;
   padding: 0.15rem 0.4rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
 }
 
 .mini-badge.up {
@@ -328,13 +328,13 @@
   width: 100%;
   height: 24px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
 
 .progress-bar {
   height: 100%;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   transition: width 0.3s ease;
 }
 
@@ -351,13 +351,13 @@
 
 /* Finanz-Rechner */
 .finanz-rechner {
-  padding: 1.25rem;
+  padding: var(--ui-header-padding-b);
 }
 
 .rechner-eingabe {
   display: grid;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
+  gap: var(--ui-section-gap);
+  margin-bottom: var(--ui-section-gap);
 }
 
 .eingabe-gruppe.full-width {
@@ -388,7 +388,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: #fff;
   cursor: pointer;
   transition: all 0.2s;
@@ -404,7 +404,7 @@
   padding: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: #fff;
   text-align: center;
   font-size: 1rem;
@@ -432,7 +432,7 @@
   gap: 1rem;
   padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
 }
 
 .gruppe-name {
@@ -459,7 +459,7 @@
   font-size: 0.85rem;
   background: rgba(99, 102, 241, 0.1);
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
 }
 
 .gruppe-inputs {
@@ -484,7 +484,7 @@
   padding: 0.4rem 0.5rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #fff;
   text-align: right;
   font-size: 0.875rem;
@@ -504,7 +504,7 @@
 .rechner-ergebnis {
   background: rgba(99, 102, 241, 0.05);
   border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1.25rem;
 }
 
@@ -531,7 +531,7 @@
   gap: 0.75rem;
   padding: 0.5rem 0.75rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.875rem;
 }
 
@@ -568,7 +568,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   text-align: center;
 }
 
@@ -614,7 +614,7 @@
 .vergleich-card {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem;
   transition: all 0.2s;
 }
@@ -793,7 +793,7 @@
 
 .prozent-badge {
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -831,7 +831,7 @@
   gap: 0.4rem;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   min-width: 90px;
 }
 
@@ -855,7 +855,7 @@
   padding: 0.4rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #fff;
   text-align: center;
   font-size: 0.875rem;
@@ -873,7 +873,7 @@
 
 .prognose-tabelle {
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   margin-top: 1rem;
 }
@@ -998,7 +998,7 @@
 /* Responsive */
 @media (max-width: 768px) {
   .ziele-entwicklung {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .ziele-header {
@@ -1049,7 +1049,7 @@
 
   .vergleich-grid {
     grid-template-columns: 1fr;
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .vergleich-werte {
@@ -1074,4 +1074,351 @@
   .prognose-tabelle td {
     padding: 0.5rem;
   }
+}
+
+/* ── Umsatzziel-Planung ─────────────────────────────────────────────────── */
+
+.umsatzplanung-container {
+  padding: var(--ui-header-padding-b);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-form-gap);
+}
+
+/* Info-Leiste */
+.umsatz-info-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--comp-radius-lg);
+  padding: var(--ui-header-gap) var(--ui-header-padding-b);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.umsatz-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.umsatz-info-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+}
+
+.umsatz-info-wert {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+}
+
+.umsatz-info-wert.highlight {
+  color: #f59e0b;
+  font-size: 1rem;
+}
+
+/* Tabellen-Wrapper */
+.umsatz-tabelle-wrap {
+  overflow-x: auto;
+}
+
+.umsatz-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.umsatz-tabelle th {
+  padding: 0.65rem 0.85rem;
+  text-align: right;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.45);
+  border-bottom: 2px solid rgba(255,255,255,0.08);
+  white-space: nowrap;
+}
+
+.umsatz-tabelle th.row-label-col,
+.umsatz-tabelle th.ist-col-up {
+  text-align: left;
+}
+
+.umsatz-tabelle th.current-year {
+  color: #f59e0b;
+}
+
+.umsatz-tabelle td {
+  padding: 0.6rem 0.85rem;
+  text-align: right;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.umsatz-tabelle .row-label-col,
+.umsatz-tabelle .ist-col-val {
+  text-align: left;
+}
+
+/* Zeilenstyles */
+.row-label {
+  min-width: 140px;
+}
+
+.kennzahl-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+}
+
+.row-hint {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.35);
+  margin-top: 2px;
+  padding-left: 1.4rem;
+}
+
+.ist-wert {
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+}
+
+.ist-wert.dim {
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+}
+
+.ist-wert.highlight-green {
+  color: #22c55e;
+}
+
+/* Zielumsatz-Zeile */
+.row-zielumsatz td {
+  background: rgba(245,158,11,0.04);
+}
+
+.editable-cell {
+  min-width: 110px;
+}
+
+.umsatz-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.umsatz-input {
+  width: 80px;
+  padding: 0.3rem 0.45rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(245,158,11,0.35);
+  border-radius: var(--comp-radius-sm);
+  color: #f59e0b;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: right;
+  font-family: inherit;
+}
+
+.umsatz-input:focus {
+  outline: none;
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.1);
+}
+
+.input-unit {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.35);
+}
+
+.input-kilo {
+  font-size: 0.7rem;
+  color: rgba(245,158,11,0.6);
+  margin-top: 2px;
+  text-align: right;
+}
+
+/* Benötigte Mitglieder */
+.row-benoetigt td {
+  background: rgba(96,165,250,0.03);
+}
+
+.berechnet-wert {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #60a5fa;
+}
+
+.berechnet-leer {
+  color: rgba(255,255,255,0.2);
+}
+
+/* IST-Zeile */
+.row-ist td {
+  background: rgba(34,197,94,0.03);
+}
+
+.ist-ref {
+  color: rgba(34,197,94,0.7);
+  font-weight: 600;
+}
+
+/* Differenz-Zeile */
+.row-differenz td {
+  background: rgba(167,139,250,0.03);
+}
+
+.diff-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.diff-zahl {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.diff-cell.diff-ok .diff-zahl { color: #22c55e; }
+.diff-cell.diff-fehlt .diff-zahl { color: #ef4444; }
+
+.diff-label {
+  font-size: 0.67rem;
+  color: rgba(255,255,255,0.35);
+}
+
+/* Erreichbarer Umsatz */
+.row-erreichbar td {
+  background: rgba(52,211,153,0.03);
+}
+
+.erreichbar-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.erreichbar-wert {
+  font-weight: 600;
+  color: #34d399;
+}
+
+.erreichbar-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.erreichbar-bar-bg {
+  width: 52px;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.erreichbar-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.erreichbar-pct {
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Hinweis */
+.umsatz-hinweis {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.3);
+  padding: 0.6rem 0.75rem;
+  background: rgba(255,255,255,0.02);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.umsatz-hinweis svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Current year highlight */
+.umsatz-tabelle td.current-year,
+.umsatz-tabelle th.current-year {
+  background: rgba(245,158,11,0.05);
+}
+
+@media (max-width: 768px) {
+  .umsatz-info-bar {
+    gap: 1rem;
+  }
+
+  .umsatz-tabelle {
+    font-size: 0.78rem;
+  }
+
+  .umsatz-input {
+    width: 65px;
+  }
+}
+
+/* ── ze- utility classes (extracted from inline styles) ── */
+
+/* Icon colour helpers */
+.ze-icon-info   { color: var(--color-info-400); }
+.ze-icon-purple { color: #a78bfa; }
+.ze-icon-green  { color: #34d399; }
+
+/* .umsatz-info-wert modifier: smaller dim text */
+.ze-umsatz-info-wert--dim {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ── inline-style replacements (2026-03-07) ── */
+
+/* Bereich icon (color from CSS var --config-color on parent .ziele-title) */
+.ze-bereich-icon {
+  color: var(--config-color, var(--color-midnight-500));
+  flex-shrink: 0;
+}
+
+/* Typ icon (color from CSS var --typ-color on parent vergleich-card or tr) */
+.ze-typ-icon {
+  color: var(--typ-color, var(--text-secondary));
+  flex-shrink: 0;
+}
+
+/* Erreichbar bar fill modifiers (width stays inline) */
+.ze-erreichbar-fill--full { background: #22c55e; }
+.ze-erreichbar-fill--mid  { background: #f59e0b; }
+.ze-erreichbar-fill--low  { background: #ef4444; }
+
+/* Erreichbar percent modifiers */
+.ze-erreichbar-pct--full { color: #22c55e; }
+.ze-erreichbar-pct--mid  { color: #f59e0b; }
+.ze-erreichbar-pct--low  { color: #ef4444; }
+
+/* .ist-wert modifier: planning-row sizing */
+.ze-ist-wert--planning {
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
 }

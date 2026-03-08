@@ -11,6 +11,7 @@ import {
   CheckCircle, AlertCircle, Clock, RefreshCw, Info
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
+import '../styles/DatevExport.css';
 
 const DatevExport = () => {
   const { activeDojo } = useDojoContext();
@@ -113,30 +114,30 @@ const DatevExport = () => {
 
   if (checkingConfig) {
     return (
-      <div style={styles.container}>
-        <div style={styles.loading}>Prüfe Konfiguration...</div>
+      <div className="datev-export-container">
+        <div className="datev-export-loading">Prüfe Konfiguration...</div>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
+    <div className="datev-export-container">
       {/* Header */}
-      <div style={styles.header}>
+      <div className="datev-export-header">
         <Calculator size={32} color="#006633" />
         <div>
-          <h2 style={styles.title}>DATEV Export</h2>
-          <p style={styles.subtitle}>Exportiere Buchungsdaten im DATEV-Format</p>
+          <h2 className="datev-export-title">DATEV Export</h2>
+          <p className="datev-export-subtitle">Exportiere Buchungsdaten im DATEV-Format</p>
         </div>
       </div>
 
       {/* Config Warning */}
       {!configOk && (
-        <div style={styles.warningBox}>
+        <div className="datev-export-warning-box">
           <AlertCircle size={24} />
           <div>
             <strong>DATEV nicht konfiguriert</strong>
-            <p style={{ margin: '4px 0 0 0' }}>
+            <p>
               Bitte konfiguriere zuerst die Beraternummer und Mandantennummer in den
               Integration-Einstellungen.
             </p>
@@ -145,30 +146,23 @@ const DatevExport = () => {
       )}
 
       {/* Export Type Selection */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>1. Export-Typ wählen</h3>
-        <div style={styles.exportTypeGrid}>
+      <div className="datev-export-section">
+        <h3 className="datev-export-section-title">1. Export-Typ wählen</h3>
+        <div className="datev-export-type-grid">
           {exportTypes.map(type => (
             <button
               key={type.key}
-              style={{
-                ...styles.exportTypeCard,
-                borderColor: exportType === type.key ? '#ffd700' : 'rgba(255, 255, 255, 0.1)',
-                background: exportType === type.key ? 'rgba(255, 215, 0, 0.1)' : 'rgba(255, 255, 255, 0.05)'
-              }}
+              className={`datev-export-type-card${exportType === type.key ? ' datev-export-type-card--active' : ''}`}
               onClick={() => setExportType(type.key)}
             >
-              <div style={{
-                ...styles.exportTypeIcon,
-                color: exportType === type.key ? '#ffd700' : '#888'
-              }}>
+              <div className={`datev-export-type-icon${exportType === type.key ? ' datev-export-type-icon--active' : ''}`}>
                 {type.icon}
               </div>
-              <div style={styles.exportTypeInfo}>
-                <strong style={{ color: exportType === type.key ? '#ffd700' : '#fff' }}>
+              <div className="datev-export-type-info">
+                <strong>
                   {type.title}
                 </strong>
-                <span style={{ color: '#888', fontSize: '12px' }}>
+                <span>
                   {type.description}
                 </span>
               </div>
@@ -181,30 +175,30 @@ const DatevExport = () => {
       </div>
 
       {/* Date Range */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>2. Zeitraum wählen</h3>
-        <div style={styles.dateRangeRow}>
-          <div style={styles.dateGroup}>
-            <label style={styles.label}>Von</label>
+      <div className="datev-export-section">
+        <h3 className="datev-export-section-title">2. Zeitraum wählen</h3>
+        <div className="datev-export-date-range-row">
+          <div className="datev-export-date-group">
+            <label className="datev-export-label">Von</label>
             <input
               type="date"
               value={dateRange.start}
               onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
-              style={styles.dateInput}
+              className="datev-export-date-input"
             />
           </div>
-          <div style={styles.dateGroup}>
-            <label style={styles.label}>Bis</label>
+          <div className="datev-export-date-group">
+            <label className="datev-export-label">Bis</label>
             <input
               type="date"
               value={dateRange.end}
               onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
-              style={styles.dateInput}
+              className="datev-export-date-input"
             />
           </div>
-          <div style={styles.presetButtons}>
+          <div className="datev-export-preset-buttons">
             <button
-              style={styles.presetButton}
+              className="datev-export-preset-button"
               onClick={() => {
                 const now = new Date();
                 const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -217,7 +211,7 @@ const DatevExport = () => {
               Dieser Monat
             </button>
             <button
-              style={styles.presetButton}
+              className="datev-export-preset-button"
               onClick={() => {
                 const now = new Date();
                 const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -231,7 +225,7 @@ const DatevExport = () => {
               Letzter Monat
             </button>
             <button
-              style={styles.presetButton}
+              className="datev-export-preset-button"
               onClick={() => {
                 const now = new Date();
                 const start = new Date(now.getFullYear(), 0, 1);
@@ -248,9 +242,9 @@ const DatevExport = () => {
       </div>
 
       {/* Export Button */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>3. Export starten</h3>
-        <div style={styles.exportInfo}>
+      <div className="datev-export-section">
+        <h3 className="datev-export-section-title">3. Export starten</h3>
+        <div className="datev-export-info-box">
           <Info size={20} />
           <p>
             Der Export wird im DATEV-EXTF-Format (ASCII) erstellt und kann direkt
@@ -258,10 +252,7 @@ const DatevExport = () => {
           </p>
         </div>
         <button
-          style={{
-            ...styles.exportButton,
-            opacity: !configOk || loading ? 0.5 : 1
-          }}
+          className="datev-export-button"
           onClick={handleExport}
           disabled={!configOk || loading}
         >
@@ -274,32 +265,32 @@ const DatevExport = () => {
       </div>
 
       {/* Export History */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Letzte Exporte</h3>
+      <div className="datev-export-section">
+        <h3 className="datev-export-section-title">Letzte Exporte</h3>
         {exports.length === 0 ? (
-          <p style={{ color: '#888', textAlign: 'center', padding: '20px' }}>
+          <p className="datev-export-history-empty">
             Noch keine Exporte durchgeführt
           </p>
         ) : (
-          <div style={styles.historyList}>
+          <div className="datev-export-history-list">
             {exports.slice(0, 10).map((exp, index) => (
-              <div key={index} style={styles.historyItem}>
-                <div style={styles.historyIcon}>
+              <div key={index} className="datev-export-history-item">
+                <div className="datev-export-history-icon">
                   {exp.export_type === 'invoices' && <FileText size={18} />}
                   {exp.export_type === 'payments' && <CreditCard size={18} />}
                   {exp.export_type === 'debitoren' && <Users size={18} />}
                 </div>
-                <div style={styles.historyInfo}>
-                  <strong style={{ color: '#fff' }}>
+                <div className="datev-export-history-info">
+                  <strong className="u-text-primary">
                     {exp.export_type === 'invoices' && 'Rechnungen'}
                     {exp.export_type === 'payments' && 'Zahlungen'}
                     {exp.export_type === 'debitoren' && 'Debitoren'}
                   </strong>
-                  <span style={{ color: '#888', fontSize: '12px' }}>
+                  <span>
                     {exp.record_count} Datensätze | {exp.start_date} - {exp.end_date}
                   </span>
                 </div>
-                <div style={styles.historyDate}>
+                <div className="datev-export-history-date">
                   <Clock size={14} />
                   <span>{new Date(exp.created_at).toLocaleDateString('de-DE')}</span>
                 </div>
@@ -310,9 +301,9 @@ const DatevExport = () => {
       </div>
 
       {/* Help Section */}
-      <div style={styles.helpSection}>
-        <h4 style={{ color: '#ffd700', margin: '0 0 12px 0' }}>DATEV Import-Anleitung</h4>
-        <ol style={{ margin: 0, paddingLeft: '20px', color: '#aaa', lineHeight: 1.8 }}>
+      <div className="datev-export-help-section">
+        <h4>DATEV Import-Anleitung</h4>
+        <ol>
           <li>Exportiere die gewünschten Daten als CSV-Datei</li>
           <li>Öffne DATEV Unternehmen Online oder Kanzlei-Rechnungswesen</li>
           <li>Gehe zu "Stapelverarbeitung" → "ASCII-Import"</li>
@@ -324,187 +315,5 @@ const DatevExport = () => {
   );
 };
 
-const styles = {
-  container: {
-    padding: '24px',
-    maxWidth: '900px',
-    margin: '0 auto'
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    marginBottom: '32px'
-  },
-  title: {
-    color: '#006633',
-    margin: 0,
-    fontSize: '24px'
-  },
-  subtitle: {
-    color: '#aaa',
-    margin: '4px 0 0 0',
-    fontSize: '14px'
-  },
-  warningBox: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '16px',
-    background: 'rgba(239, 68, 68, 0.1)',
-    border: '1px solid rgba(239, 68, 68, 0.3)',
-    borderRadius: '12px',
-    padding: '20px',
-    marginBottom: '24px',
-    color: '#ef4444'
-  },
-  section: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 215, 0, 0.2)',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '20px'
-  },
-  sectionTitle: {
-    color: '#ffd700',
-    margin: '0 0 16px 0',
-    fontSize: '16px'
-  },
-  exportTypeGrid: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px'
-  },
-  exportTypeCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    padding: '16px 20px',
-    background: 'transparent',
-    border: '2px solid',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    textAlign: 'left',
-    transition: 'all 0.2s'
-  },
-  exportTypeIcon: {
-    width: '48px',
-    height: '48px',
-    background: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: '8px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  exportTypeInfo: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px'
-  },
-  dateRangeRow: {
-    display: 'flex',
-    alignItems: 'flex-end',
-    gap: '16px',
-    flexWrap: 'wrap'
-  },
-  dateGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-  label: {
-    color: '#888',
-    fontSize: '13px'
-  },
-  dateInput: {
-    padding: '12px 16px',
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid rgba(255, 215, 0, 0.3)',
-    borderRadius: '8px',
-    color: '#fff',
-    fontSize: '14px'
-  },
-  presetButtons: {
-    display: 'flex',
-    gap: '8px',
-    marginLeft: 'auto'
-  },
-  presetButton: {
-    padding: '10px 16px',
-    background: 'rgba(255, 255, 255, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '8px',
-    color: '#fff',
-    fontSize: '13px',
-    cursor: 'pointer'
-  },
-  exportInfo: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '12px',
-    background: 'rgba(59, 130, 246, 0.1)',
-    border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '20px',
-    color: '#aaa',
-    fontSize: '14px'
-  },
-  exportButton: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '12px',
-    width: '100%',
-    padding: '16px 24px',
-    background: '#006633',
-    border: 'none',
-    borderRadius: '12px',
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    cursor: 'pointer'
-  },
-  historyList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  },
-  historyItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '12px 16px',
-    background: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: '8px'
-  },
-  historyIcon: {
-    color: '#888'
-  },
-  historyInfo: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px'
-  },
-  historyDate: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    color: '#888',
-    fontSize: '12px'
-  },
-  helpSection: {
-    background: 'rgba(0, 102, 51, 0.1)',
-    border: '1px solid rgba(0, 102, 51, 0.3)',
-    borderRadius: '12px',
-    padding: '20px'
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '60px',
-    color: '#888'
-  }
-};
 
 export default DatevExport;

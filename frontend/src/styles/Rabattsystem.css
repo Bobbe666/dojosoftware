@@ -1,0 +1,148 @@
+/* Rabattsystem.css — rs- prefix */
+
+/* ── Layout helpers ── */
+.rs-mb-1 {
+  margin-bottom: 1rem;
+}
+
+.rs-p-15 {
+  padding: 1.5rem;
+}
+
+.rs-max-600 {
+  max-width: 600px;
+}
+
+/* ── Flex helpers ── */
+.rs-flex-gap-1 {
+  display: flex;
+  gap: 1rem;
+}
+
+.rs-flex-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Label / radio-checkbox rows ── */
+.rs-label-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.rs-label-check-sm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.rs-label-check-sm-mb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Muted hint text inside labels ── */
+.rs-hint {
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+/* ── Value row with icon ── */
+.rs-value-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ── Familien-Rabatt info box ── */
+.rs-familien-box {
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--background-secondary, #f3f4f6);
+  border-radius: 0.5rem;
+}
+
+/* ── Familien position grid ── */
+.rs-familien-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+/* ── Modal footer action row ── */
+.rs-modal-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-default, #e5e7eb);
+  padding-top: 1rem;
+}
+
+/* ── Standard modal button size ── */
+.rs-btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* ── Primary modal action button (with icon) ── */
+.rs-btn-sm-icon {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Icon-only close button ── */
+.rs-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+/* ── Icon color inside close button ── */
+.rs-icon-primary {
+  color: var(--text-primary, #f8fafc);
+}
+
+/* ── Badge variants ── */
+.rs-badge-purple {
+  background: #8b5cf6;
+}
+
+.rs-badge-gray {
+  background: #6b7280;
+}
+
+/* ── Inaktiv card ── */
+.rs-card-inactive {
+  opacity: 0.7;
+  border: 2px solid #6b7280;
+}
+
+/* ── Inaktiv section header ── */
+.rs-section-header-inactive {
+  background: rgba(107, 114, 128, 0.1);
+  border-left: 4px solid #6b7280;
+}
+
+/* ── Full-width detail item in grid ── */
+.rs-detail-full {
+  grid-column: 1 / -1;
+}
+
+/* ── Margin-right tiny ── */
+.rs-mr-025 {
+  margin-right: 0.25rem;
+}

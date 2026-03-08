@@ -1,26 +1,32 @@
 /*
 ================================================================================
-FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
+FINANZCOCKPIT – DESIGN-SYSTEM-KONFORM
+Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
+             --comp-radius-*, --glass-blur, --glass-border
 ================================================================================
 */
 
+/* ============================================================
+   CONTAINER
+   ============================================================ */
 .finanzcockpit {
   min-height: 100vh;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  padding: var(--spacing-lg);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-1);
+  padding: var(--ui-page-padding);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
+  gap: var(--ui-section-gap);
   animation: fadeIn var(--transition-base);
 }
 
+/* ============================================================
+   BASIS-KARTE (nav-card Stil aus components.css)
+   ============================================================ */
 .finanzcockpit-card {
-  background: var(--bg-card);
-  backdrop-filter: var(--glass-backdrop);
+  background: var(--surface-3);
+  backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
-  border-radius: var(--border-radius);
+  border-radius: var(--comp-radius-pill);
   box-shadow: var(--shadow-card);
   padding: var(--spacing-md);
   position: relative;
@@ -28,25 +34,37 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
 }
 
-.finanzcockpit-card::after {
+/* Shimmer-Linie oben (wie nav-card) */
+.finanzcockpit-card::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at top right, rgba(255, 215, 0, 0.18), transparent 55%);
-  opacity: 0.25;
-  pointer-events: none;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--gradient-gold);
+  opacity: 0.6;
+  border-radius: var(--comp-radius-pill) var(--comp-radius-pill) 0 0;
+  transition: opacity var(--transition-base);
 }
 
 .finanzcockpit-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-gold-hover);
-  border-color: var(--border-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(255, 215, 0, 0.15);
+  border-color: var(--border-accent-hover);
 }
 
+.finanzcockpit-card:hover::before {
+  opacity: 1;
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 .finanzcockpit__header {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-sm);
 }
 
 .finanzcockpit__header-top {
@@ -60,7 +78,7 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
 .finanzcockpit__headline {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xs);
+  gap: 0.35rem;
   max-width: 520px;
 }
 
@@ -68,7 +86,7 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   text-transform: uppercase;
   letter-spacing: 0.22em;
   font-size: var(--font-size-xs);
-  color: var(--text-muted);
+  color: var(--text-3);
   font-weight: 600;
 }
 
@@ -82,27 +100,26 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
 .finanzcockpit__title {
   font-size: var(--font-size-3xl);
   margin: 0;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .finanzcockpit__badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.8rem;
-  border-radius: var(--border-radius-sm);
-  background: rgba(255, 215, 0, 0.18);
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  color: var(--text-accent);
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--comp-radius-pill);
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid var(--border-accent);
+  color: var(--text-accent, #ffd700);
   font-size: var(--font-size-xs);
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
 }
 
 .finanzcockpit__subtitle {
   margin: 0;
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: var(--font-size-sm);
   line-height: 1.6;
 }
@@ -111,56 +128,58 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   min-width: 220px;
 }
 
+/* Period-Selector */
 .finanzcockpit__period-selector {
   display: inline-flex;
-  gap: 0.35rem;
+  gap: 0.25rem;
   align-items: center;
-  padding: 0.35rem;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: var(--border-radius-sm);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  padding: 0.3rem;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-pill);
+  border: 1px solid var(--border-accent);
 }
 
 .finanzcockpit__period-selector button {
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: var(--font-size-sm);
   font-weight: 600;
-  padding: 0.45rem 0.9rem;
-  border-radius: calc(var(--border-radius-sm) - 2px);
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--comp-radius-pill);
   cursor: pointer;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .finanzcockpit__period-selector button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
+  background: var(--surface-4);
+  color: var(--text-1);
 }
 
 .finanzcockpit__period-selector button.is-active {
-  background: rgba(255, 215, 0, 0.18);
-  color: var(--text-accent);
-  box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.25) inset;
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--text-accent, #ffd700);
+  box-shadow: 0 0 0 1px var(--border-accent) inset;
 }
 
 .finanzcockpit__period-info {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: var(--font-size-sm);
-  padding: 0.35rem 0.6rem;
-  border-radius: var(--border-radius-sm);
-  background: rgba(255, 255, 255, 0.05);
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--comp-radius-lg);
+  background: var(--surface-2);
+  border: 1px solid var(--border-secondary);
 }
 
 .finanzcockpit__period-info svg {
-  color: var(--text-accent);
+  color: var(--text-accent, #ffd700);
 }
 
 /* Dojo-Selektor */
@@ -168,27 +187,23 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.35rem 0.65rem;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: var(--border-radius-sm);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  color: var(--text-accent);
+  padding: 0.35rem 0.7rem;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-pill);
+  border: 1px solid var(--border-accent);
+  color: var(--text-accent, #ffd700);
 }
 
-.finanzcockpit__dojo-selector svg {
-  flex-shrink: 0;
-  color: var(--text-accent);
-}
+.finanzcockpit__dojo-selector svg { flex-shrink: 0; }
 
 .finanzcockpit__dojo-select {
   background: transparent;
   border: none;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  padding-right: 1.5rem;
+  padding: 0.2rem 1.5rem 0.2rem 0.25rem;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23ffd700' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -196,123 +211,183 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   min-width: 140px;
 }
 
-.finanzcockpit__dojo-select:focus {
-  outline: none;
-}
+.finanzcockpit__dojo-select:focus { outline: none; }
 
 .finanzcockpit__dojo-select option {
-  background: var(--bg-modal);
-  color: var(--text-primary);
-  padding: 0.5rem;
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
 }
 
+/* ============================================================
+   KPI-GRID (stat-card Stil)
+   ============================================================ */
 .finanzcockpit__kpi-grid {
   display: grid;
-  gap: var(--spacing-sm);
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--ui-stats-gap);
+  grid-template-columns: var(--ui-stats-cols);
 }
 
 .finanzcockpit__kpi-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--spacing-sm);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  align-items: flex-start;
-  padding: var(--spacing-sm);
+  gap: 0.35rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
-.finanzcockpit__kpi-card::after {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), transparent 55%);
-  opacity: 0.35;
+.finanzcockpit__kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient-gold);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.finanzcockpit__kpi-card--clickable {
+  cursor: pointer;
+}
+
+.finanzcockpit__kpi-card--clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.15);
+  border-color: var(--border-accent-hover);
+}
+
+.finanzcockpit__kpi-card--clickable:hover::before {
+  opacity: 1;
 }
 
 .finanzcockpit__kpi-meta {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  width: 100%;
 }
 
 .finanzcockpit__kpi-icon {
-  width: 38px;
-  height: 38px;
+  width: 2.2rem;
+  height: 2.2rem;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.18);
+  background: rgba(255, 215, 0, 0.1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-accent);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+  color: var(--text-accent, #ffd700);
+  flex-shrink: 0;
 }
 
 .finanzcockpit__kpi-label {
   font-size: var(--font-size-xs);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  flex: 1;
+}
+
+.finanzcockpit__kpi-arrow {
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.finanzcockpit__kpi-card--clickable:hover .finanzcockpit__kpi-arrow {
+  transform: translateX(3px);
+  color: var(--text-accent, #ffd700);
 }
 
 .finanzcockpit__kpi-value {
-  font-size: 1.75rem;
+  font-size: var(--ui-kpi-value);
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
   line-height: 1.2;
 }
 
 .finanzcockpit__kpi-detail {
   font-size: var(--font-size-xs);
-  color: var(--text-secondary);
-  letter-spacing: 0.04em;
+  color: var(--text-3);
 }
 
-.finanzcockpit__kpi-card--positive .finanzcockpit__kpi-icon {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+.finanzcockpit__kpi-card--positive .finanzcockpit__kpi-icon { color: #34d399; background: rgba(52, 211, 153, 0.12); }
+.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon { color: #ef4444; background: rgba(239, 68, 68, 0.12); }
+.finanzcockpit__kpi-card--warning  .finanzcockpit__kpi-icon { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+
+/* ============================================================
+   ALERT-SEKTION
+   ============================================================ */
+.fc__alerts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
 }
 
-.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+.fc__alert-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1rem;
+  border-radius: var(--comp-radius-lg);
+  border-left: 3px solid transparent;
+  background: var(--surface-2);
+  border: 1px solid var(--border-secondary);
+  border-left-width: 3px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-1);
+  transition: transform var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
 }
 
-.finanzcockpit__kpi-card--warning .finanzcockpit__kpi-icon {
-  background: rgba(249, 115, 22, 0.15);
-  color: #fb923c;
-}
+.fc__alert-card:hover { transform: translateX(2px); background: var(--surface-3); }
+.fc__alert-card--error  { border-left-color: #ef4444; }
+.fc__alert-card--error svg:first-child  { color: #ef4444; }
+.fc__alert-card--warning { border-left-color: #f97316; }
+.fc__alert-card--warning svg:first-child { color: #f97316; }
+.fc__alert-card--invoice { border-left-color: #f59e0b; }
+.fc__alert-card--invoice svg:first-child { color: #f59e0b; }
 
-.finanzcockpit__layout {
+.fc__alert-count { font-size: 1rem; font-weight: 700; }
+.fc__alert-label { color: var(--text-2); }
+.fc__alert-arrow { margin-left: 0.25rem; color: var(--text-3); }
+
+/* ============================================================
+   MAIN GRID: Charts (links) + Aktionen (rechts)
+   ============================================================ */
+.fc__main-grid {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-  gap: var(--spacing-lg);
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: var(--spacing-md);
+  align-items: start;
 }
 
-.finanzcockpit__main {
+.fc__charts-col {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
 }
 
-.finanzcockpit__dual-grid {
-  display: grid;
-  gap: var(--spacing-sm);
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-}
-
-.finanzcockpit__chart-card {
-  padding: var(--spacing-sm);
-}
-
+/* ============================================================
+   CHART TABS
+   ============================================================ */
 .finanzcockpit__card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-sm);
 }
 
 .finanzcockpit__card-header h3 {
   margin: 0;
-  font-size: var(--font-size-xl);
-  color: var(--text-primary);
+  font-size: var(--font-size-lg);
+  color: var(--text-1);
 }
 
 .finanzcockpit__card-eyebrow {
@@ -320,64 +395,242 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   font-size: var(--font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.16em;
-  color: var(--text-muted);
-  margin-bottom: 0.25rem;
+  color: var(--text-3);
+  margin-bottom: 0.2rem;
+  font-weight: 600;
 }
 
-.finanzcockpit__sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+.fc__chart-tabs {
+  display: inline-flex;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-pill);
+  border: 1px solid var(--border-secondary);
+  flex-shrink: 0;
 }
 
+.fc__chart-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border-radius: var(--comp-radius-pill);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.fc__chart-tabs button:hover { color: var(--text-1); background: var(--surface-4); }
+.fc__chart-tabs button.is-active { background: rgba(255, 215, 0, 0.15); color: var(--text-accent, #ffd700); }
+
+/* ============================================================
+   INSIGHTS
+   ============================================================ */
 .finanzcockpit__insight-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .finanzcockpit__insight-list li {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: 0.75rem;
   align-items: flex-start;
-  padding: 0.75rem;
-  border-radius: var(--border-radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.08);
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--comp-radius-lg);
+  background: var(--surface-2);
+  border: 1px solid var(--border-secondary);
 }
 
 .finanzcockpit__insight-icon {
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.12);
+  background: rgba(255, 215, 0, 0.1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-accent);
+  color: var(--text-accent, #ffd700);
   flex-shrink: 0;
 }
 
 .finanzcockpit__insight-title {
   margin: 0;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: var(--font-size-sm);
 }
 
 .finanzcockpit__insight-description {
-  margin: 0.25rem 0 0 0;
-  color: var(--text-secondary);
+  margin: 0.15rem 0 0 0;
+  color: var(--text-2);
   font-size: var(--font-size-sm);
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
+/* ============================================================
+   AKTIONEN-SPALTE
+   ============================================================ */
+.fc__actions-col {
+  position: sticky;
+  top: var(--spacing-sm);
+}
+
+.fc__action-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  background: var(--surface-3);
+  backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--comp-radius-pill);
+  padding: var(--spacing-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.fc__action-groups::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--gradient-gold);
+  border-radius: var(--comp-radius-pill) var(--comp-radius-pill) 0 0;
+}
+
+.fc__action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.fc__action-group + .fc__action-group {
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--border-secondary);
+}
+
+.fc__action-group-title {
+  margin: 0 0 0.4rem 0;
+  font-size: var(--ui-card-label);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+}
+
+.fc__action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Action Card */
+.fc__action-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--comp-radius-lg);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  position: relative;
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.fc__action-card:hover {
+  background: var(--surface-4);
+  border-color: var(--border-accent-hover);
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
+}
+
+.fc__action-card-icon {
+  width: var(--ui-btn-height);
+  height: var(--ui-btn-height);
+  border-radius: var(--comp-radius-md);
+  background: var(--surface-3);
+  color: var(--icon-color, var(--primary));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.fc__action-card:hover .fc__action-card-icon {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.fc__action-card-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+.fc__action-card-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc__action-card-desc {
+  font-size: var(--ui-card-body);
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc__action-card-arrow {
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.fc__action-card:hover .fc__action-card-arrow {
+  transform: translateX(3px);
+  color: var(--text-accent, #ffd700);
+}
+
+.fc__action-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  min-width: 1rem;
+  height: 1rem;
+  border-radius: 0.5rem;
+  background: #ef4444;
+  color: white;
+  font-size: var(--ui-badge-size-sm);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.2rem;
+}
+
+/* ============================================================
+   DETAIL-KARTEN
+   ============================================================ */
 .finanzcockpit__details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--spacing-sm);
 }
 
@@ -385,35 +638,33 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   padding: var(--spacing-sm);
 }
 
-.finanzcockpit__detail-card::after {
-  opacity: 0.22;
-}
-
 .finanzcockpit__detail-header {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 0.75rem;
   margin-bottom: var(--spacing-sm);
+  color: var(--text-accent, #ffd700);
 }
 
 .finanzcockpit__detail-header h3 {
   margin: 0;
-  font-size: var(--font-size-lg);
-  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  color: var(--text-1);
+  font-weight: 600;
 }
 
 .finanzcockpit__detail-header p {
-  margin: 0.2rem 0 0 0;
-  color: var(--text-secondary);
+  margin: 0.1rem 0 0 0;
+  color: var(--text-3);
   font-size: var(--font-size-xs);
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
 }
 
 .finanzcockpit__metrics-list {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0;
 }
 
 .finanzcockpit__metric-row {
@@ -421,98 +672,43 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
   justify-content: space-between;
   align-items: center;
   gap: var(--spacing-xs);
-  padding: 0.6rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-secondary);
 }
 
-.finanzcockpit__metric-row:last-child {
-  border-bottom: none;
-}
+.finanzcockpit__metric-row:last-child { border-bottom: none; }
 
 .finanzcockpit__metric-label {
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-weight: 500;
 }
 
 .finanzcockpit__metric-value {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: var(--font-size-sm);
   text-align: right;
 }
 
 .finanzcockpit__metric-value small {
   display: block;
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  font-weight: 500;
+  font-size: var(--ui-form-hint);
+  color: var(--text-3);
+  font-weight: 400;
   line-height: 1.2;
 }
 
-.finanzcockpit__metric-value svg {
-  flex-shrink: 0;
-}
+.finanzcockpit__metric-value.is-positive { color: #34d399; }
+.finanzcockpit__metric-value.is-negative  { color: #ef4444; }
+.finanzcockpit__metric-value.is-warning   { color: #f59e0b; }
 
-.finanzcockpit__metric-value.is-positive {
-  color: #34d399;
-}
-
-.finanzcockpit__metric-value.is-negative {
-  color: #f87171;
-}
-
-.finanzcockpit__metric-value.is-warning {
-  color: #fb923c;
-}
-
-.finanzcockpit__actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-}
-
-.finanzcockpit__actions h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  color: var(--text-primary);
-}
-
-.finanzcockpit__actions-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
-}
-
-.finanzcockpit__action-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1.45rem;
-  border-radius: var(--border-radius-sm);
-  border: 1px solid rgba(255, 215, 0, 0.18);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary);
-  font-weight: 600;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: transform var(--transition-base), box-shadow var(--transition-base), border-color var(--transition-base);
-}
-
-.finanzcockpit__action-button:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 215, 0, 0.5);
-  box-shadow: 0 14px 30px rgba(255, 215, 0, 0.18);
-  color: var(--text-accent);
-}
-
-.finanzcockpit__action-button svg {
-  flex-shrink: 0;
-}
-
+/* ============================================================
+   LOADING / ERROR STATES
+   ============================================================ */
 .finanzcockpit__state {
   display: flex;
   flex-direction: column;
@@ -524,41 +720,39 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
 }
 
 .finanzcockpit__spinner {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 215, 0, 0.2);
-  border-top-color: rgba(255, 215, 0, 0.85);
+  border: 3px solid rgba(255, 215, 0, 0.15);
+  border-top-color: rgba(255, 215, 0, 0.8);
   animation: spin 0.9s linear infinite;
 }
 
-.finanzcockpit__state p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-}
+.finanzcockpit__state p { margin: 0; color: var(--text-2); font-size: var(--font-size-sm); }
+.finanzcockpit__state.is-error { color: #ef4444; }
 
-.finanzcockpit__state.is-error {
-  color: #f87171;
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.finanzcockpit__state.is-error p {
-  color: var(--text-secondary);
-}
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1100px) {
+  .fc__main-grid {
+    grid-template-columns: 1fr;
+  }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  .fc__actions-col {
+    position: static;
+  }
+
+  .fc__action-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
   .finanzcockpit {
     padding: var(--spacing-md);
-  }
-
-  .finanzcockpit__layout {
-    grid-template-columns: 1fr;
   }
 
   .finanzcockpit__controls {
@@ -566,27 +760,21 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
     align-items: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: var(--spacing-sm);
-  }
-
-  .finanzcockpit__dojo-selector {
-    order: -1;
   }
 
   .finanzcockpit__period-selector {
     flex: 1;
-    justify-content: space-between;
-  }
-
-  .finanzcockpit__period-selector button {
-    flex: 1;
-    text-align: center;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   .finanzcockpit {
     padding: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
+
+  .finanzcockpit__kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .finanzcockpit__controls {
@@ -597,17 +785,67 @@ FINANZCOCKPIT – MODERNES GLASSMORPHISM-DASHBOARD
     width: 100%;
   }
 
-  .finanzcockpit__dojo-select {
-    flex: 1;
-  }
-
-  .finanzcockpit__actions-grid {
-    flex-direction: column;
-  }
-
-  .finanzcockpit__action-button {
-    width: 100%;
-    justify-content: center;
+  .finanzcockpit__details {
+    grid-template-columns: 1fr;
   }
 }
 
+
+/* ============================================================
+   CUSTOM TOOLTIP (migrated from inline styles)
+   ============================================================ */
+
+.fc__tooltip {
+  background-color: var(--bg-modal);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  color: var(--text-primary);
+  padding: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.fc__tooltip-title {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.fc__tooltip-breakdown {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 8px;
+  margin-top: 4px;
+}
+
+.fc__tooltip-breakdown-heading {
+  margin: 0 0 6px 0;
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.fc__tooltip-row {
+  font-size: 0.75rem;
+  padding: 3px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.fc__tooltip-row-value {
+  color: var(--success);
+  font-weight: 500;
+}
+
+/* Chart axis font size applied via className on recharts wrappers */
+.fc__chart-axis-label {
+  font-size: 0.72rem;
+}
+
+/* No-data message */
+.fc__no-data {
+  color: var(--text-3);
+  text-align: center;
+  padding: 2rem 0;
+  margin: 0;
+}

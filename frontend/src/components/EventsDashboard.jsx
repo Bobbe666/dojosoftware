@@ -9,10 +9,16 @@ import { useDojoContext } from '../context/DojoContext';
 import config from '../config/config';
 import {
   Calendar, Users, CreditCard, Clock, AlertTriangle,
-  Download, Mail, RefreshCw, ChevronRight, TrendingUp,
-  CheckCircle, XCircle, FileText
+  Download, Mail, RefreshCw, TrendingUp,
+  CheckCircle, XCircle, FileText, Euro, MapPin,
+  ChevronRight, Zap, Award, BarChart3
 } from 'lucide-react';
 import '../styles/Events.css';
+import '../styles/EventsDashboard.css';
+
+const fmt = (n) => parseFloat(n || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+const fmtDate = (d) => new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' });
+const daysUntil = (d) => Math.ceil((new Date(d) - new Date()) / 86400000);
 
 const EventsDashboard = () => {
   const { token } = useAuth();
@@ -21,27 +27,30 @@ const EventsDashboard = () => {
   const [stats, setStats] = useState(null);
   const [topEvents, setTopEvents] = useState([]);
   const [sendingReminder, setSendingReminder] = useState({});
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (activeDojo?.id) {
-      loadDashboard();
-    }
-  }, [activeDojo?.id]);
+    if (activeDojo) loadDashboard();
+  }, [activeDojo]);
 
   const loadDashboard = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const response = await axios.get(
-        `${config.apiBaseUrl}/events/stats/dashboard?dojo_id=${activeDojo?.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        setStats(response.data.stats);
+      const dojoId = activeDojo?.id;
+      // WICHTIG: Kein config.apiBaseUrl-Prefix — Axios hat bereits baseURL: '/api' global gesetzt
+      const url = dojoId
+        ? `/events/stats/dashboard?dojo_id=${dojoId}`
+        : `/events/stats/dashboard`;
+      const response = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (response.data) {
+        setStats(response.data.stats || null);
         setTopEvents(response.data.top_events || []);
       }
     } catch (err) {
       console.error('Fehler beim Laden des Dashboards:', err);
+      const raw = err.response?.data?.error || err.message || 'Unbekannter Fehler';
+      setError(typeof raw === 'string' ? raw : JSON.stringify(raw));
     } finally {
       setLoading(false);
     }
@@ -51,8 +60,7 @@ const EventsDashboard = () => {
     setSendingReminder(prev => ({ ...prev, [eventId]: true }));
     try {
       const response = await axios.post(
-        `${config.apiBaseUrl}/events/${eventId}/send-reminder`,
-        {},
+        `/events/${eventId}/send-reminder`, {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert(response.data.message || 'Erinnerungen gesendet');
@@ -65,14 +73,8 @@ const EventsDashboard = () => {
 
   const exportCSV = async (eventId) => {
     try {
-      const response = await axios.get(
-        `${config.apiBaseUrl}/events/${eventId}/export/csv`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob'
-        }
-      );
-
+      const response = await axios.get(`/events/${eventId}/export/csv`,
+        { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -80,22 +82,13 @@ const EventsDashboard = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
-      console.error('Export-Fehler:', err);
-      alert('Fehler beim Export');
-    }
+    } catch { alert('Fehler beim Export'); }
   };
 
   const exportPDF = async (eventId) => {
     try {
-      const response = await axios.get(
-        `${config.apiBaseUrl}/events/${eventId}/export/pdf`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          responseType: 'blob'
-        }
-      );
-
+      const response = await axios.get(`/events/${eventId}/export/pdf`,
+        { headers: { Authorization: `Bearer ${token}` }, responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
@@ -103,199 +96,313 @@ const EventsDashboard = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-    } catch (err) {
-      console.error('Export-Fehler:', err);
-      alert('Fehler beim Export');
-    }
+    } catch { alert('Fehler beim Export'); }
   };
 
   if (loading) {
     return (
-      <div className="events-container">
-        <div className="events-loading">
-          <RefreshCw size={32} className="spin" />
-          <p>Lade Dashboard...</p>
-        </div>
+      <div className="ed-loading-wrap">
+        <RefreshCw size={32} className="spin" />
+        <p>Lade Dashboard...</p>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="ed-error-banner">
+        <div className="ed-error-title">⚠️ Fehler beim Laden</div>
+        <div className="u-text-secondary-sm">{error}</div>
+        <button onClick={loadDashboard} className="ed-error-retry-btn">
+          Erneut versuchen
+        </button>
+      </div>
+    );
+  }
+
+  const kpis = [
+    {
+      label: 'Aktive Events',
+      value: stats?.aktive_events ?? 0,
+      icon: Calendar,
+      color: 'var(--color-midnight-500)',
+      bg: 'rgba(99,102,241,0.12)',
+      border: 'rgba(99,102,241,0.25)'
+    },
+    {
+      label: 'Anmeldungen gesamt',
+      value: stats?.gesamt_anmeldungen ?? 0,
+      icon: Users,
+      color: 'var(--success)',
+      bg: 'rgba(34,197,94,0.12)',
+      border: 'rgba(34,197,94,0.25)'
+    },
+    {
+      label: 'Neue Anmeldungen (7 T.)',
+      value: stats?.anmeldungen_woche ?? 0,
+      icon: Zap,
+      color: 'var(--warning)',
+      bg: 'rgba(245,158,11,0.12)',
+      border: 'rgba(245,158,11,0.25)'
+    },
+    {
+      label: 'Einnahmen',
+      value: fmt(stats?.einnahmen_gesamt),
+      icon: Euro,
+      color: 'var(--success)',
+      bg: 'rgba(16,185,129,0.12)',
+      border: 'rgba(16,185,129,0.25)',
+      isText: true
+    },
+    {
+      label: 'Offener Betrag',
+      value: fmt(stats?.offene_summe),
+      icon: AlertTriangle,
+      color: 'var(--error)',
+      bg: 'rgba(239,68,68,0.12)',
+      border: 'rgba(239,68,68,0.25)',
+      isText: true,
+      sub: `${stats?.offene_zahlungen ?? 0} offene Zahlungen`
+    },
+    {
+      label: 'Warteliste',
+      value: stats?.warteliste ?? 0,
+      icon: Clock,
+      color: '#8b5cf6',
+      bg: 'rgba(139,92,246,0.12)',
+      border: 'rgba(139,92,246,0.25)'
+    },
+  ];
+
+  const next = stats?.naechstes_event;
+  const nextDays = next ? daysUntil(next.datum) : null;
+
   return (
-    <div className="events-container">
-      {/* Header */}
-      <div className="events-header">
+    <div className="ed-main-col">
+
+      {/* ── Header ── */}
+      <div className="ed-header-row">
         <div>
-          <h1>
-            <TrendingUp size={28} />
-            Event-Dashboard
-          </h1>
-          <p>Übersicht über Events, Anmeldungen und Zahlungen</p>
+          <div className="ed-header-title-wrap">
+            <BarChart3 size={22} color="#ffd700" />
+            <h2 className="ed-h2">
+              Event-Dashboard
+            </h2>
+          </div>
+          <p className="ed-subtitle">
+            Übersicht · Anmeldungen · Zahlungen
+          </p>
         </div>
-        <button onClick={loadDashboard} className="btn-refresh">
-          <RefreshCw size={16} />
-          Aktualisieren
+        <button
+          onClick={loadDashboard}
+          className="edb-refresh-btn"
+        >
+          <RefreshCw size={14} /> Aktualisieren
         </button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="events-stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(99, 102, 241, 0.2)', color: '#6366f1' }}>
-            <Calendar size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats?.aktive_events || 0}</span>
-            <span className="stat-label">Aktive Events</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>
-            <CreditCard size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats?.offene_zahlungen || 0}</span>
-            <span className="stat-label">Offene Zahlungen</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>
-            <AlertTriangle size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">
-              {(stats?.offene_summe || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-            </span>
-            <span className="stat-label">Offener Betrag</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(34, 197, 94, 0.2)', color: '#22c55e' }}>
-            <Users size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats?.anmeldungen_woche || 0}</span>
-            <span className="stat-label">Anmeldungen (7 Tage)</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' }}>
-            <Clock size={24} />
-          </div>
-          <div className="stat-content">
-            <span className="stat-value">{stats?.warteliste || 0}</span>
-            <span className="stat-label">Auf Warteliste</span>
-          </div>
-        </div>
+      {/* ── KPI Grid ── */}
+      <div className="edb-kpi-grid">
+        {kpis.map((k) => {
+          const Icon = k.icon;
+          return (
+            <div
+              key={k.label}
+              className="edb-kpi-card"
+              style={{ '--kpi-bg': k.bg, '--kpi-border': k.border, '--kpi-color': k.color }}
+            >
+              <div className="edb-kpi-icon-box">
+                <Icon size={18} color={k.color} />
+              </div>
+              <div className="ed-min-w-0">
+                <div className={`edb-kpi-value${k.isText ? ' edb-kpi-value--text' : ''}`}>
+                  {k.value}
+                </div>
+                <div className="edb-kpi-label">
+                  {k.label}
+                </div>
+                {k.sub && (
+                  <div className="edb-kpi-sub">
+                    {k.sub}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Events Table */}
-      <div className="events-section">
-        <h2>Kommende Events mit Anmeldungen</h2>
-
-        <div className="events-table-container">
-          <table className="events-table">
-            <thead>
-              <tr>
-                <th>Event</th>
-                <th>Datum</th>
-                <th>Teilnehmer</th>
-                <th>Bezahlt</th>
-                <th>Offen</th>
-                <th>Aktionen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {topEvents.length === 0 ? (
-                <tr>
-                  <td colSpan="6" className="no-data">
-                    Keine aktiven Events
-                  </td>
-                </tr>
-              ) : (
-                topEvents.map(event => (
-                  <tr key={event.event_id}>
-                    <td>
-                      <strong>{event.titel}</strong>
-                      {event.teilnahmegebuehr > 0 && (
-                        <span className="fee-badge">
-                          {parseFloat(event.teilnahmegebuehr).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                        </span>
-                      )}
-                    </td>
-                    <td>{new Date(event.datum).toLocaleDateString('de-DE')}</td>
-                    <td>
-                      <span className="count-badge">
-                        {event.anmeldungen}
-                        {event.max_teilnehmer && ` / ${event.max_teilnehmer}`}
-                      </span>
-                    </td>
-                    <td>
-                      <span className="status-badge success">
-                        <CheckCircle size={12} />
-                        {event.bezahlt || 0}
-                      </span>
-                    </td>
-                    <td>
-                      {event.offen_summe > 0 ? (
-                        <span className="status-badge warning">
-                          <XCircle size={12} />
-                          {parseFloat(event.offen_summe).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                        </span>
-                      ) : (
-                        <span className="status-badge success">-</span>
-                      )}
-                    </td>
-                    <td className="actions-cell">
-                      {event.offen_summe > 0 && (
-                        <button
-                          onClick={() => sendReminder(event.event_id)}
-                          disabled={sendingReminder[event.event_id]}
-                          className="btn-action"
-                          title="Zahlungserinnerung senden"
-                        >
-                          {sendingReminder[event.event_id] ? (
-                            <RefreshCw size={14} className="spin" />
-                          ) : (
-                            <Mail size={14} />
-                          )}
-                        </button>
-                      )}
-                      <button
-                        onClick={() => exportCSV(event.event_id)}
-                        className="btn-action"
-                        title="CSV exportieren"
-                      >
-                        <Download size={14} />
-                      </button>
-                      <button
-                        onClick={() => exportPDF(event.event_id)}
-                        className="btn-action"
-                        title="PDF exportieren"
-                      >
-                        <FileText size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+      {/* ── Nächstes Event Hero ── */}
+      {next && (
+        <div className="edb-next-event-hero">
+          <div className="edb-next-event-counter">
+            <div className="ed-stat-big">
+              {nextDays}
+            </div>
+            <div className="ed-stat-label-upper">
+              {nextDays === 1 ? 'Tag' : 'Tage'}
+            </div>
+          </div>
+          <div className="u-flex-1-min0">
+            <div className="ed-next-label">
+              Nächstes Event
+            </div>
+            <div className="ed-event-name-truncated">
+              {next.titel}
+            </div>
+            <div className="ed-event-muted-meta">
+              <span>📅 {fmtDate(next.datum)}{next.uhrzeit_beginn ? ` · ${next.uhrzeit_beginn}` : ''}</span>
+              {next.anmeldungen > 0 && (
+                <span>👥 {next.anmeldungen}{next.max_teilnehmer ? `/${next.max_teilnehmer}` : ''} Anmeldungen</span>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
+          {next.max_teilnehmer > 0 && (
+            <div className="ed-auslastung-col">
+              <div className="ed-auslastung-value">
+                {Math.round((next.anmeldungen / next.max_teilnehmer) * 100)}%
+              </div>
+              <div className="ed-auslastung-label">Auslastung</div>
+              <div className="ed-capacity-color-bar">
+                <div
+                  className="ed-capacity-fill"
+                  style={{ width: `${Math.min(100, Math.round((next.anmeldungen / next.max_teilnehmer) * 100))}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Events Liste ── */}
+      <div>
+        <h3 className="ed-section-heading">
+          Kommende Events
+        </h3>
+
+        <div className="ed-events-col">
+          {topEvents.length === 0 ? (
+            <div className="ed-empty-state">
+              <Calendar size={36} className="edb-empty-icon" />
+              <p className="ed-empty-p">Keine aktiven Events</p>
+            </div>
+          ) : topEvents.map(event => {
+            const fillRate = event.max_teilnehmer > 0
+              ? Math.min(100, Math.round((event.anmeldungen / event.max_teilnehmer) * 100))
+              : null;
+            const isFull = fillRate >= 100;
+            const days = daysUntil(event.datum);
+
+            return (
+              <div key={event.event_id} className="edb-event-card">
+                {/* Left: Info */}
+                <div className="ed-min-w-0">
+                  <div className="ed-event-title-row">
+                    <span className="ed-event-title">{event.titel}</span>
+                    {isFull && (
+                      <span className="ed-badge-overbooked">
+                        AUSGEBUCHT
+                      </span>
+                    )}
+                    {event.warteliste > 0 && (
+                      <span className="ed-badge-warning">
+                        +{event.warteliste} Warteliste
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="ed-event-meta-row">
+                    <span>📅 {fmtDate(event.datum)}{event.uhrzeit_beginn ? ` · ${event.uhrzeit_beginn}` : ''}</span>
+                    {event.ort && <span><MapPin size={11} className="edb-mappin-inline" />{event.ort}</span>}
+                    <span className={days <= 3 ? 'edb-days-text--urgent' : days <= 7 ? 'edb-days-text--warning' : 'edb-days-text--normal'}>
+                      in {days} {days === 1 ? 'Tag' : 'Tagen'}
+                    </span>
+                  </div>
+
+                  {/* Progress + Stats Row */}
+                  <div className="ed-event-stats-row">
+                    {/* Teilnehmer */}
+                    <div className="ed-capacity-bar-wrap">
+                      <div className="ed-capacity-label-row">
+                        <span>👥 Teilnehmer</span>
+                        <span className={`edb-participant-count${isFull ? ' edb-participant-count--full' : ''}`}>
+                          {event.anmeldungen}{event.max_teilnehmer ? `/${event.max_teilnehmer}` : ''}
+                        </span>
+                      </div>
+                      {fillRate !== null && (
+                        <div className="ed-progress-track">
+                          <div
+                            className={`edb-fill${fillRate >= 90 ? ' edb-fill--high' : fillRate >= 70 ? ' edb-fill--medium' : ' edb-fill--low'}`}
+                            style={{ width: `${fillRate}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Zahlungsstatus */}
+                    {event.teilnahmegebuehr > 0 && (
+                      <>
+                        <div className="ed-info-item">
+                          <CheckCircle size={12} color="#22c55e" />
+                          <span className="u-text-success">{fmt(event.einnahmen)}</span>
+                          <span className="u-text-muted">eingenommen</span>
+                        </div>
+                        {event.offen_summe > 0 && (
+                          <div className="ed-info-item">
+                            <XCircle size={12} color="#ef4444" />
+                            <span className="u-text-error">{fmt(event.offen_summe)}</span>
+                            <span className="u-text-muted">offen</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right: Actions */}
+                <div className="ed-action-group">
+                  {event.offen_summe > 0 && (
+                    <button
+                      onClick={() => sendReminder(event.event_id)}
+                      disabled={sendingReminder[event.event_id]}
+                      title="Zahlungserinnerung senden"
+                      className="edb-icon-btn edb-icon-btn--reminder"
+                    >
+                      {sendingReminder[event.event_id] ? <RefreshCw size={13} className="spin" /> : <Mail size={13} />}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => exportCSV(event.event_id)}
+                    title="CSV exportieren"
+                    className="edb-icon-btn edb-icon-btn--default"
+                  >
+                    <Download size={13} />
+                  </button>
+                  <button
+                    onClick={() => exportPDF(event.event_id)}
+                    title="PDF exportieren"
+                    className="edb-icon-btn edb-icon-btn--default"
+                  >
+                    <FileText size={13} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Quick Info */}
-      <div className="events-info-box">
-        <h3>Hinweise</h3>
-        <ul>
-          <li><strong>Zahlungserinnerungen:</strong> Sendet eine Email an alle Teilnehmer mit offenen Zahlungen.</li>
-          <li><strong>CSV Export:</strong> Exportiert die Teilnehmerliste mit allen Details.</li>
-          <li><strong>PDF Export:</strong> Erstellt eine druckbare Liste mit Unterschriftenfeldern.</li>
-          <li><strong>Warteliste:</strong> Wenn ein Teilnehmer absagt, rückt automatisch der nächste von der Warteliste nach.</li>
-        </ul>
+      {/* ── Legende ── */}
+      <div className="edb-legend-container">
+        {[
+          { icon: <Mail size={13} color="#f59e0b" />, text: 'Zahlungserinnerung per E-Mail' },
+          { icon: <Download size={13} color="rgba(255,255,255,0.5)" />, text: 'Teilnehmerliste als CSV' },
+          { icon: <FileText size={13} color="rgba(255,255,255,0.5)" />, text: 'Druckbare Liste als PDF' },
+        ].map((h, i) => (
+          <div key={i} className="ed-legend-row">
+            {h.icon} {h.text}
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,0 +1,193 @@
+/* TemplateEditor component styles */
+
+/* === Inline-style replacements (auto-generated) === */
+.te-form-label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.te-dark-input {
+  background: #2d2d2d;
+  color: var(--text-primary);
+  border: 1px solid #444;
+}
+
+/* === Additional inline-style replacements === */
+
+/* Outer page wrapper */
+.te-page-wrapper {
+  padding: 20px;
+  background: #1e1e1e;
+  min-height: 100vh;
+}
+
+/* Header bar */
+.te-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  color: var(--text-primary);
+}
+
+.te-header-bar h2 {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.te-header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Template info grid */
+.te-info-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Placeholder help box */
+.te-placeholder-box {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #2d2d2d;
+  border-radius: 8px;
+  border: 1px solid #4a90e2;
+  position: relative;
+}
+
+.te-placeholder-toggle-icon {
+  font-size: 1em;
+  margin-left: 10px;
+}
+
+/* Placeholder categories grid */
+.te-placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.te-placeholder-category-label {
+  color: #90caf9;
+}
+
+.te-placeholder-items {
+  font-size: 0.85rem;
+  margin-top: 5px;
+}
+
+/* Placeholder clickable item */
+.te-placeholder-item {
+  cursor: pointer;
+  padding: 2px 5px;
+  background: #3a3a3a;
+  margin: 2px 0;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+/* Placeholder tip text */
+.te-placeholder-tip {
+  margin-top: 10px;
+  margin-bottom: 0;
+  font-size: 0.9rem;
+  color: #90caf9;
+}
+
+/* GrapesJS editor container */
+.te-editor-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Preview overlay */
+.te-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+}
+
+/* Preview dialog */
+.te-preview-dialog {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+/* Preview header */
+.te-preview-header {
+  padding: 15px 20px;
+  background: #2d2d2d;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.te-preview-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+/* Preview close button */
+.te-preview-close-btn {
+  background: #f44336;
+  border: none;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: all 0.2s;
+}
+
+.te-preview-close-btn:hover {
+  background: #d32f2f;
+}
+
+/* Preview iframe */
+.te-preview-iframe {
+  flex: 1;
+  border: none;
+  width: 100%;
+}
+
+/* Placeholder toggle h4 (marginBottom is dynamic, set inline) */
+.te-placeholder-h4 {
+  margin-top: 0;
+  margin-bottom: 0;
+  color: #64b5f6;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  position: relative;
+}
+.te-placeholder-h4--open { margin-bottom: 1rem; }

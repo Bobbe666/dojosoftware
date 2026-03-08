@@ -135,7 +135,7 @@ const ContractsTab = ({ token }) => {
               <YAxis stroke="#fff" />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px' }}
-                labelStyle={{ color: '#FFD700' }}
+                labelStyle={{ color: 'var(--primary)' }}
               />
               <Legend />
               <Bar dataKey="aktiv" fill="#4ECDC4" name="Aktiv" />

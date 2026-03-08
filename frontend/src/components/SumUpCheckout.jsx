@@ -270,7 +270,7 @@ const styles = {
     marginBottom: '20px'
   },
   title: {
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '18px',
     fontWeight: '600'
   },
@@ -284,11 +284,11 @@ const styles = {
     marginBottom: '20px'
   },
   amountLabel: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '14px'
   },
   amountValue: {
-    color: '#ffd700',
+    color: 'var(--primary)',
     fontSize: '24px',
     fontWeight: 'bold'
   },
@@ -302,7 +302,7 @@ const styles = {
     background: '#00b5ad',
     border: 'none',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '16px',
     fontWeight: '600',
     cursor: 'pointer'
@@ -323,7 +323,7 @@ const styles = {
     color: '#00b5ad'
   },
   statusText: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '14px'
   },
   pendingBox: {
@@ -342,7 +342,7 @@ const styles = {
     borderRadius: '12px'
   },
     qrHint: {
-    color: '#666',
+    color: 'var(--text-muted)',
     fontSize: '12px',
     textAlign: 'center'
   },
@@ -365,7 +365,7 @@ const styles = {
     padding: '12px 16px',
     background: 'rgba(255, 255, 255, 0.05)',
     borderRadius: '8px',
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '14px'
   },
   secondaryButton: {
@@ -376,7 +376,7 @@ const styles = {
     background: 'rgba(255, 255, 255, 0.1)',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '8px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     fontSize: '14px',
     cursor: 'pointer'
   },
@@ -385,7 +385,7 @@ const styles = {
     background: 'transparent',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     borderRadius: '8px',
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '14px',
     cursor: 'pointer'
   },
@@ -397,12 +397,12 @@ const styles = {
     padding: '24px'
   },
   successText: {
-    color: '#22c55e',
+    color: 'var(--success)',
     fontSize: '18px',
     fontWeight: '600'
   },
   transactionId: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '12px'
   },
   errorBox: {
@@ -413,12 +413,12 @@ const styles = {
     padding: '24px'
   },
   errorText: {
-    color: '#ef4444',
+    color: 'var(--error)',
     fontSize: '18px',
     fontWeight: '600'
   },
   errorDetail: {
-    color: '#aaa',
+    color: 'var(--text-secondary)',
     fontSize: '14px',
     textAlign: 'center'
   },
@@ -430,7 +430,7 @@ const styles = {
     background: 'rgba(239, 68, 68, 0.2)',
     border: '1px solid #ef4444',
     borderRadius: '8px',
-    color: '#ef4444',
+    color: 'var(--error)',
     fontSize: '14px',
     cursor: 'pointer',
     marginTop: '8px'

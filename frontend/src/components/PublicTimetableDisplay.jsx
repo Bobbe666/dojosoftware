@@ -396,42 +396,11 @@ const PublicTimetableDisplay = () => {
 
       {/* Error Display */}
       {error && (
-        <div className="error-display" style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '4rem 2rem',
-          minHeight: '400px',
-          background: 'rgba(255, 107, 53, 0.1)',
-          border: '3px solid rgba(255, 107, 53, 0.4)',
-          borderRadius: '20px',
-          margin: '2rem',
-          animation: 'fadeIn 0.5s ease-out'
-        }}>
-          <div style={{
-            fontSize: '6rem',
-            marginBottom: '2rem',
-            animation: 'bounce 2s infinite'
-          }}>⚔️</div>
-          <h2 style={{
-            color: '#ff6b35',
-            fontSize: '2rem',
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-            fontWeight: 'bold'
-          }}>{error}</h2>
-          <p style={{
-            color: '#ccc',
-            fontSize: '1.2rem',
-            marginBottom: '2rem',
-            textAlign: 'center'
-          }}>Der Stundenplan wird automatisch alle 30 Sekunden aktualisiert.</p>
-          <div style={{
-            color: '#999',
-            fontSize: '0.9rem',
-            marginTop: '1rem'
-          }}>🔄 Nächste Aktualisierung läuft...</div>
+        <div className="error-display">
+          <div className="error-display-icon">⚔️</div>
+          <h2 className="error-display-title">{error}</h2>
+          <p className="error-display-subtitle">Der Stundenplan wird automatisch alle 30 Sekunden aktualisiert.</p>
+          <div className="error-display-hint">🔄 Nächste Aktualisierung läuft...</div>
         </div>
       )}
 

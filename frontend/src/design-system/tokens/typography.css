@@ -69,9 +69,107 @@
   --text-transform-uppercase: uppercase;
   --text-transform-lowercase: lowercase;
   --text-transform-capitalize: capitalize;
+
+  /* ========================================================
+     UI COMPONENT SIZES — Dashboard-Seiten
+     Einmal hier ändern = in allen Komponenten aktiv
+     ======================================================== */
+
+  /* Seiten-Header */
+  --ui-page-title:    1.4rem;       /* h1 auf Dashboard-Seiten */
+  --ui-page-subtitle: 0.95rem;      /* Beschreibung unter h1 */
+
+  /* Abschnitts-Überschriften */
+  --ui-section-title: 1.1rem;       /* Sektions-h2, Card-Titel */
+
+  /* Stat / KPI Cards (große Kennzahlen oben auf Seiten) */
+  --ui-stat-label:      0.82rem;    /* Uppercase-Label über Zahl */
+  --ui-stat-value:      2.4rem;     /* Die große Kennzahl (3-4 Cards / Reihe) */
+  --ui-stat-trend:      0.88rem;    /* Trend-Text unter Zahl */
+  --ui-stat-icon-size:  3.65rem;    /* Icon-Box (width + height) — px/17 */
+  --ui-stat-icon-svg:   1.76rem;    /* SVG innerhalb Icon-Box */
+  --ui-kpi-value:       1.6rem;     /* Kompakte KPI-Karten (5-6 Cards / Reihe) */
+
+  /* Inhalts-Karten */
+  --ui-card-title: 1.1rem;          /* Karten-Titel */
+  --ui-card-body:  0.92rem;         /* Beschreibungstext */
+  --ui-card-label: 0.8rem;          /* Kleine Beschriftungen */
+
+  /* Preis-Anzeige (Tarife, Produkte) */
+  --ui-price-value:  2.2rem;        /* Hauptpreis */
+  --ui-price-period: 0.95rem;       /* "/Monat" Zusatz */
+
+  /* Detail-Grids (2-Spalten Label/Wert-Raster) */
+  --ui-detail-label: 0.82rem;       /* Feld-Bezeichnung */
+  --ui-detail-value: 1rem;          /* Feld-Inhalt */
+
+  /* Badges & Status-Tags */
+  --ui-badge-size:    0.82rem;      /* Standard-Badge */
+  --ui-badge-size-sm: 0.75rem;      /* Kleines Badge (in engen Kontexten) */
+
+  /* Buttons */
+  --ui-btn-font:      0.92rem;      /* Standard Button-Schrift */
+  --ui-btn-font-sm:   0.84rem;      /* Kleiner Button */
+  --ui-btn-pad-y:     0.6rem;       /* Vertikaler Innenabstand */
+  --ui-btn-pad-x:     1.2rem;       /* Horizontaler Innenabstand */
+  --ui-btn-height:    2.35rem;      /* Mindesthöhe Standard */
+  --ui-btn-height-sm: 2rem;         /* Mindesthöhe klein */
+
+  /* Formular-Elemente */
+  --ui-form-label: 0.82rem;         /* Label über Inputs */
+  --ui-form-input: 0.95rem;         /* Input-Schriftgröße */
+  --ui-form-hint:  0.75rem;         /* Hinweis-/Fehlertext */
+
+  /* ========================================================
+     UI LAYOUT TOKENS — Dashboard-Seiten
+     Abstände, Spalten, Innenpaddinge
+     Einmal hier ändern = in allen Komponenten aktiv
+     ======================================================== */
+
+  /* Seiten-Container */
+  --ui-page-padding:       2rem;        /* Außen-Padding aller Haupt-Container */
+  --ui-page-padding-sm:    1rem;        /* Mobile Außen-Padding */
+
+  /* Seiten-Header (Icon + Titel-Block + Trennlinie) */
+  --ui-header-icon-size:   2rem;        /* Icon-Box Breite + Höhe (38px ÷ 19px) */
+  --ui-header-gap:         0.9rem;      /* Abstand Icon ↔ Titel */
+  --ui-header-padding-b:   1.25rem;     /* Padding-Bottom bis Trennlinie */
+  --ui-header-margin-b:    2rem;        /* Abstand Header → ersten Content */
+
+  /* Abstände zwischen Sektionen */
+  --ui-section-gap:        2rem;        /* Großer Abstand zwischen Haupt-Blöcken */
+  --ui-section-gap-sm:     1.25rem;     /* Kleiner Abstand innerhalb Blöcken */
+
+  /* Stats / KPI Grid */
+  --ui-stats-cols:         repeat(auto-fit, minmax(220px, 1fr));
+  --ui-stats-gap:          0.85rem;     /* Abstand zwischen Stat-Cards */
+  --ui-stats-margin-b:     2rem;        /* Abstand Stats-Grid → nächste Sektion */
+
+  /* Stat Card — Interna */
+  --ui-stat-card-padding:  1.2rem 1.4rem;
+  --ui-stat-card-gap:      1rem;        /* Abstand Icon ↔ Info-Block */
+
+  /* Content / Management Grid */
+  --ui-grid-cols:          repeat(auto-fill, minmax(240px, 1fr));
+  --ui-grid-gap:           0.85rem;
+  --ui-grid-margin-b:      2rem;
+
+  /* Inhalts-Karten — Interna */
+  --ui-card-padding:       1.4rem 1.5rem;
+  --ui-card-icon-size:     2.6rem;      /* Icon-Box (42px ÷ 16 ≈ 2.6rem) */
+  --ui-card-icon-svg:      1.25rem;     /* SVG in Icon-Box (20px ÷ 16) */
+  --ui-card-icon-margin-b: 0.9rem;      /* Abstand Icon → Text-Block */
+
+  /* Button — Icon-Text-Abstand */
+  --ui-btn-gap:            0.45rem;
+
+  /* Formular */
+  --ui-form-gap:           1rem;        /* Abstand zwischen Form-Groups */
+  --ui-form-group-gap:     0.35rem;     /* Label ↔ Input */
 }
 
 /* ========== BASE TYPOGRAPHY STYLES ========== */
+/* Basisgröße (html font-size) wird in theme-base.css gesetzt */
 
 body {
   font-family: var(--font-family-sans);

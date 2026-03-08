@@ -3,6 +3,7 @@ import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import gjsPresetWebpage from 'grapesjs-preset-webpage';
 import axios from 'axios';
+import '../styles/TemplateEditor.css';
 
 const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
   const editorRef = useRef(null);
@@ -984,21 +985,11 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
   };
 
   return (
-    <div style={{ padding: '20px', background: '#1e1e1e', minHeight: '100vh' }}>
+    <div className="te-page-wrapper">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-        padding: '20px',
-        background: '#2d2d2d',
-        borderRadius: '8px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-        color: '#e0e0e0'
-      }}>
-        <h2 style={{ color: '#e0e0e0', margin: 0 }}>📝 Vertragsvorlage bearbeiten</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
+      <div className="te-header-bar">
+        <h2>📝 Vertragsvorlage bearbeiten</h2>
+        <div className="te-header-actions">
           <button
             className="btn btn-secondary"
             onClick={onClose}
@@ -1023,14 +1014,9 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
       </div>
 
       {/* Template Info */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gap: '15px',
-        marginBottom: '20px'
-      }}>
+      <div className="te-info-grid">
         <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#e0e0e0' }}>
+          <label className="te-form-label">
             Vorlagen-Name:
           </label>
           <input
@@ -1039,18 +1025,17 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
             placeholder="z.B. Standard Mitgliedsvertrag"
-            style={{ background: '#2d2d2d', color: '#e0e0e0', border: '1px solid #444' }}
+            className="te-dark-input"
           />
         </div>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', color: '#e0e0e0' }}>
+          <label className="te-form-label">
             Typ:
           </label>
           <select
-            className="form-control"
+            className="form-control te-dark-input"
             value={templateType}
             onChange={(e) => setTemplateType(e.target.value)}
-            style={{ background: '#2d2d2d', color: '#e0e0e0', border: '1px solid #444' }}
           >
             <option value="vertrag">Vertrag (Neumitglied)</option>
             <option value="sepa">SEPA-Mandat</option>
@@ -1063,50 +1048,25 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
       </div>
 
       {/* Platzhalter-Hilfe */}
-      <div style={{
-        marginBottom: '20px',
-        padding: '15px',
-        background: '#2d2d2d',
-        borderRadius: '8px',
-        border: '1px solid #4a90e2',
-        position: 'relative'
-      }}>
+      <div className="te-placeholder-box">
         <h4
           onClick={() => setShowPlaceholders(!showPlaceholders)}
-          style={{
-            marginTop: 0,
-            marginBottom: showPlaceholders ? '1rem' : 0,
-            color: '#64b5f6',
-            cursor: 'pointer',
-            userSelect: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: 0,
-            position: 'relative'
-          }}
+          className={`te-placeholder-h4${showPlaceholders ? ' te-placeholder-h4--open' : ''}`}
         >
           <span>💡 Verfügbare Platzhalter</span>
-          <span style={{ fontSize: '1em', marginLeft: '10px' }}>{showPlaceholders ? '▼' : '▶'}</span>
+          <span className="te-placeholder-toggle-icon">{showPlaceholders ? '▼' : '▶'}</span>
         </h4>
         {showPlaceholders && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+            <div className="te-placeholder-grid">
               {Object.entries(placeholders).map(([category, items]) => (
                 <div key={category}>
-                  <strong style={{ color: '#90caf9' }}>{category.charAt(0).toUpperCase() + category.slice(1)}:</strong>
-                  <div style={{ fontSize: '0.85rem', marginTop: '5px' }}>
+                  <strong className="te-placeholder-category-label">{category.charAt(0).toUpperCase() + category.slice(1)}:</strong>
+                  <div className="te-placeholder-items">
                     {items.map((item, idx) => (
                       <div
                         key={idx}
-                        style={{
-                          cursor: 'pointer',
-                          padding: '2px 5px',
-                          background: '#3a3a3a',
-                          margin: '2px 0',
-                          borderRadius: '4px',
-                          color: '#e0e0e0'
-                        }}
+                        className="te-placeholder-item"
                         onClick={() => insertPlaceholder(item.value)}
                         title={`Klicken um ${item.value} einzufügen`}
                       >
@@ -1117,7 +1077,7 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
                 </div>
               ))}
             </div>
-            <p style={{ marginTop: '10px', marginBottom: 0, fontSize: '0.9rem', color: '#90caf9' }}>
+            <p className="te-placeholder-tip">
               <strong>Tipps:</strong><br/>
               • Ziehen Sie die vorgefertigten Blöcke aus der rechten Sidebar<br/>
               • Klicken Sie auf einen Platzhalter, um ihn einzufügen<br/>
@@ -1129,75 +1089,30 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
       </div>
 
       {/* GrapesJS Editor */}
-      <div ref={editorRef} style={{
-        borderRadius: '8px',
-        overflow: 'hidden',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-      }} />
+      <div ref={editorRef} className="te-editor-container" />
 
       {/* Vorschau Modal */}
       {previewUrl && (
         <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '20px'
-          }}
+          className="te-preview-overlay"
           onClick={() => {
             URL.revokeObjectURL(previewUrl);
             setPreviewUrl(null);
           }}
         >
           <div
-            style={{
-              background: 'white',
-              borderRadius: '8px',
-              width: '90%',
-              height: '90%',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
-            }}
+            className="te-preview-dialog"
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{
-              padding: '15px 20px',
-              background: '#2d2d2d',
-              color: 'white',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>👁️ Vorschau</h3>
+            <div className="te-preview-header">
+              <h3>👁️ Vorschau</h3>
               <button
                 className="btn btn-danger"
                 onClick={() => {
                   URL.revokeObjectURL(previewUrl);
                   setPreviewUrl(null);
                 }}
-                style={{
-                  background: '#f44336',
-                  border: 'none',
-                  color: 'white',
-                  padding: '12px 24px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.background = '#d32f2f'}
-                onMouseLeave={(e) => e.target.style.background = '#f44336'}
+                className="te-preview-close-btn"
               >
                 ✕ Schließen
               </button>
@@ -1205,11 +1120,7 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
             <iframe
               src={previewUrl}
               title="Vorschau"
-              style={{
-                flex: 1,
-                border: 'none',
-                width: '100%'
-              }}
+              className="te-preview-iframe"
             />
           </div>
         </div>

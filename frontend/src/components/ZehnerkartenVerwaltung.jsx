@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Clock, CreditCard, CheckCircle, XCircle, Calendar, Plus, Trash2, FileText } from 'lucide-react';
 import '../styles/MitgliedDetail.css';
+import '../styles/ZehnerkartenVerwaltung.css';
 
 /**
  * ZehnerkartenVerwaltung - Verwaltung von 10er-Karten im Mitglied-Detail
@@ -242,7 +243,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <div className="zk-loading">
         <div className="loading-spinner"></div>
         <p>Lade 10er-Karten...</p>
       </div>
@@ -250,32 +251,10 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
   }
 
   return (
-    <div style={{
-      marginBottom: '2rem',
-      background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%)',
-      borderRadius: '16px',
-      padding: '2rem',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-      border: '1px solid rgba(255, 255, 255, 0.05)'
-    }}>
+    <div className="zk-container">
       {/* HEADER */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '2rem',
-        paddingBottom: '1rem',
-        borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
-      }}>
-        <h3 style={{
-          margin: 0,
-          fontSize: '1.8rem',
-          fontWeight: '700',
-          background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text'
-        }}>
+      <div className="zk-header">
+        <h3 className="zk-title">
           10er-Karten Verwaltung
         </h3>
 
@@ -291,34 +270,20 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
 
       {/* NEUE 10ER-KARTE FORMULAR */}
       {showNewKarte && isAdmin && (
-        <div style={{
-          background: 'rgba(16, 185, 129, 0.08)',
-          border: '2px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: '12px',
-          padding: '1.5rem',
-          marginBottom: '2rem'
-        }}>
-          <h4 style={{ color: '#10B981', marginTop: 0, marginBottom: '1rem' }}>
+        <div className="zk-form-box">
+          <h4 className="zk-form-heading">
             Neue 10er-Karte erstellen
           </h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+          <div className="zk-form-grid">
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <label className="zk-label">
                 Tarif *
               </label>
               <select
                 value={newKarte.tarif_id}
                 onChange={(e) => setNewKarte({ ...newKarte, tarif_id: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="zk-field"
               >
                 <option value="">Tarif auswählen</option>
                 {tarife.map(tarif => (
@@ -330,27 +295,19 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <label className="zk-label">
                 Kaufdatum
               </label>
               <input
                 type="date"
                 value={newKarte.gekauft_am}
                 onChange={(e) => setNewKarte({ ...newKarte, gekauft_am: e.target.value })}
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="zk-field"
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <label className="zk-label">
                 Anzahl Einheiten
               </label>
               <input
@@ -358,47 +315,21 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                 value={newKarte.einheiten_gesamt}
                 onChange={(e) => setNewKarte({ ...newKarte, einheiten_gesamt: parseInt(e.target.value) || 10 })}
                 min="1"
-                style={{
-                  width: '100%',
-                  padding: '0.5rem',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: 'white',
-                  fontSize: '0.9rem'
-                }}
+                className="zk-field"
               />
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <div className="zk-btn-row">
             <button
               onClick={handleCreateKarte}
-              style={{
-                background: '#10B981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
+              className="zk-btn-primary"
             >
               Erstellen
             </button>
             <button
               onClick={() => setShowNewKarte(false)}
-              style={{
-                background: 'transparent',
-                color: '#ef4444',
-                border: '1px solid #ef4444',
-                borderRadius: '8px',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                cursor: 'pointer'
-              }}
+              className="zk-btn-secondary"
             >
               Abbrechen
             </button>
@@ -408,21 +339,17 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
 
       {/* 10ER-KARTEN LISTE */}
       {zehnerkarten.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          color: 'rgba(255, 255, 255, 0.6)'
-        }}>
-          <CreditCard size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-          <p style={{ fontSize: '1.1rem', margin: 0 }}>Keine 10er-Karten vorhanden</p>
+        <div className="zk-empty">
+          <CreditCard size={64} className="zk-empty-icon" />
+          <p className="zk-empty-heading">Keine 10er-Karten vorhanden</p>
           {isAdmin && (
-            <p style={{ fontSize: '0.9rem', marginTop: '0.5rem' }}>
+            <p className="zk-empty-sub">
               Klicken Sie auf "Neue 10er-Karte", um eine zu erstellen
             </p>
           )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div className="zk-cards-grid">
           {zehnerkarten.map(karte => {
             const fortschritt = ((karte.einheiten_gesamt - karte.einheiten_verbleibend) / karte.einheiten_gesamt) * 100;
             const isExpired = new Date(karte.gueltig_bis) < new Date();
@@ -431,52 +358,24 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
             return (
               <div
                 key={karte.id}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: `2px solid ${getStatusColor(karte.status)}`,
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  transition: 'all 0.3s ease'
-                }}
+                className={`zk-card zk-card--${karte.status || 'default'}`}
               >
                 {/* KARTEN-HEADER */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '1rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div className="zk-card-header">
+                  <div className="u-flex-row-lg">
                     {getStatusIcon(karte.status)}
                     <div>
-                      <h4 style={{
-                        margin: 0,
-                        fontSize: '1.2rem',
-                        color: '#10B981',
-                        fontWeight: '700'
-                      }}>
+                      <h4 className="zk-card-title">
                         {karte.tarif_name || 'Unbekannter Tarif'}
                       </h4>
-                      <p style={{
-                        margin: '0.25rem 0 0 0',
-                        fontSize: '0.85rem',
-                        color: 'rgba(255, 255, 255, 0.6)'
-                      }}>
+                      <p className="zk-card-subtitle">
                         Gekauft am {formatDate(karte.gekauft_am)} • Gültig bis {formatDate(karte.gueltig_bis)}
                       </p>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <span style={{
-                      padding: '0.4rem 1rem',
-                      borderRadius: '20px',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      background: `${getStatusColor(karte.status)}20`,
-                      color: getStatusColor(karte.status),
-                      border: `1px solid ${getStatusColor(karte.status)}`
-                    }}>
+                  <div className="u-flex-row-md">
+                    <span className={`zk-status-badge zk-status-badge--${karte.status || 'default'}`}>
                       {karte.status.toUpperCase()}
                     </span>
 
@@ -484,19 +383,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                       <button
                         onClick={() => handleCheckin(karte.id)}
                         title="Check-in durchführen"
-                        style={{
-                          background: '#10B981',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          padding: '0.5rem 1rem',
-                          fontSize: '0.85rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
+                        className="zk-btn-checkin"
                       >
                         <CheckCircle size={16} />
                         Check-in
@@ -505,19 +392,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
 
                     <button
                       onClick={() => handleViewDetails(karte.id)}
-                      style={{
-                        background: 'transparent',
-                        color: '#10B981',
-                        border: '1px solid #10B981',
-                        borderRadius: '8px',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}
+                      className="zk-btn-details"
                     >
                       <FileText size={16} />
                       {isSelected ? 'Verbergen' : 'Historie'}
@@ -527,14 +402,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                       <button
                         onClick={() => handleDeleteKarte(karte.id)}
                         title="Löschen"
-                        style={{
-                          background: 'transparent',
-                          color: '#ef4444',
-                          border: '1px solid #ef4444',
-                          borderRadius: '8px',
-                          padding: '0.5rem',
-                          cursor: 'pointer'
-                        }}
+                        className="zk-btn-delete"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -543,113 +411,54 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                 </div>
 
                 {/* FORTSCHRITTSBALKEN */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                <div className="zk-progress-section">
+                  <div className="zk-progress-labels">
+                    <span className="zk-progress-label">
                       Verbleibend: {karte.einheiten_verbleibend} / {karte.einheiten_gesamt}
                     </span>
-                    <span style={{ fontSize: '0.9rem', color: '#10B981', fontWeight: '600' }}>
+                    <span className="zk-progress-pct">
                       {Math.round(fortschritt)}% genutzt
                     </span>
                   </div>
-                  <div style={{
-                    width: '100%',
-                    height: '12px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '6px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{
-                      width: `${fortschritt}%`,
-                      height: '100%',
-                      background: karte.status === 'aktiv'
-                        ? 'linear-gradient(90deg, #10B981 0%, #34D399 100%)'
-                        : karte.status === 'aufgebraucht'
-                        ? 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)'
-                        : 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)',
-                      transition: 'width 0.5s ease',
-                      borderRadius: '6px'
-                    }} />
+                  <div className="zk-progress-track">
+                    <div className={`zk-progress-fill zk-progress-fill--${karte.status || 'abgelaufen'}`} style={{ width: `${fortschritt}%` }} />
                   </div>
                 </div>
 
                 {/* BUCHUNGSHISTORIE */}
                 {isSelected && (
-                  <div style={{
-                    marginTop: '1.5rem',
-                    paddingTop: '1.5rem',
-                    borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-                  }}>
-                    <h5 style={{
-                      margin: '0 0 1rem 0',
-                      fontSize: '1rem',
-                      color: '#10B981',
-                      fontWeight: '600'
-                    }}>
+                  <div className="zk-history-section">
+                    <h5 className="zk-history-heading">
                       📅 Check-in Historie
                     </h5>
 
                     {loadingBuchungen ? (
-                      <div style={{ textAlign: 'center', padding: '1rem' }}>
+                      <div className="zk-history-loading">
                         Lade Buchungen...
                       </div>
                     ) : buchungen.length === 0 ? (
-                      <div style={{
-                        textAlign: 'center',
-                        padding: '1rem',
-                        color: 'rgba(255, 255, 255, 0.6)',
-                        fontSize: '0.9rem'
-                      }}>
+                      <div className="zk-history-empty">
                         Noch keine Check-ins durchgeführt
                       </div>
                     ) : (
-                      <div style={{
-                        maxHeight: '300px',
-                        overflowY: 'auto',
-                        background: 'rgba(0, 0, 0, 0.2)',
-                        borderRadius: '8px',
-                        padding: '0.5rem'
-                      }}>
+                      <div className="zk-history-list">
                         {buchungen.map((buchung, index) => (
                           <div
                             key={buchung.id}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              padding: '0.75rem',
-                              background: index % 2 === 0 ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
-                              borderRadius: '6px',
-                              fontSize: '0.9rem'
-                            }}
+                            className="zk-history-entry"
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div className="u-flex-row-md">
                               <Calendar size={16} color="#10B981" />
-                              <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                              <span className="u-text-primary">
                                 {formatDate(buchung.buchungsdatum)}
                               </span>
                               {buchung.notiz && (
-                                <span style={{
-                                  fontSize: '0.8rem',
-                                  color: 'rgba(255, 255, 255, 0.6)',
-                                  fontStyle: 'italic'
-                                }}>
+                                <span className="zk-history-nota">
                                   ({buchung.notiz})
                                 </span>
                               )}
                             </div>
-                            <span style={{
-                              padding: '0.25rem 0.75rem',
-                              borderRadius: '12px',
-                              background: 'rgba(16, 185, 129, 0.2)',
-                              color: '#10B981',
-                              fontSize: '0.8rem',
-                              fontWeight: '600'
-                            }}>
+                            <span className="zk-history-badge">
                               -{buchung.einheiten} Einheit
                             </span>
                           </div>
@@ -666,74 +475,26 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
 
       {/* NACHKAUF MODAL - Frage ob weitere 10er-Karte gewünscht */}
       {showNachkaufModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
-            borderRadius: '16px',
-            padding: '2.5rem',
-            maxWidth: '500px',
-            width: '90%',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-            border: '2px solid rgba(16, 185, 129, 0.3)',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              fontSize: '4rem',
-              marginBottom: '1rem'
-            }}>
+        <div className="zk-modal-overlay">
+          <div className="zk-modal-box">
+            <div className="zk-modal-emoji">
               🎫
             </div>
-            <h2 style={{
-              color: '#10B981',
-              fontSize: '1.8rem',
-              marginBottom: '1rem',
-              fontWeight: '700'
-            }}>
+            <h2 className="zk-modal-heading">
               10er-Karte aufgebraucht!
             </h2>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: '1.1rem',
-              marginBottom: '2rem',
-              lineHeight: '1.6'
-            }}>
+            <p className="zk-modal-body">
               Ihre 10er-Karte ist nun vollständig verbraucht.<br />
               Möchten Sie eine neue 10er-Karte kaufen?
             </p>
 
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'center'
-            }}>
+            <div className="zk-modal-btn-row">
               <button
                 onClick={() => {
                   setShowNachkaufModal(false);
                   setShowZahlungsModal(true);
                 }}
-                style={{
-                  background: 'linear-gradient(135deg, #10B981 0%, #34D399 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '1rem 2.5rem',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
-                  transition: 'all 0.3s ease'
-                }}
+                className="zk-modal-btn-primary"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = 'translateY(-2px)';
                   e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
@@ -750,17 +511,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                   setShowNachkaufModal(false);
                   setNachkaufTarifId(null);
                 }}
-                style={{
-                  background: 'transparent',
-                  color: '#ef4444',
-                  border: '2px solid #ef4444',
-                  borderRadius: '12px',
-                  padding: '1rem 2.5rem',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
+                className="zk-modal-btn-cancel"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#ef4444';
                   e.currentTarget.style.color = 'white';
@@ -779,84 +530,25 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
 
       {/* ZAHLUNGSAUSWAHL MODAL */}
       {showZahlungsModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10001
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
-            borderRadius: '16px',
-            padding: '2.5rem',
-            maxWidth: '600px',
-            width: '90%',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-            border: '2px solid rgba(16, 185, 129, 0.3)'
-          }}>
-            <h2 style={{
-              color: '#10B981',
-              fontSize: '1.8rem',
-              marginBottom: '1.5rem',
-              fontWeight: '700',
-              textAlign: 'center'
-            }}>
+        <div className="zk-modal-overlay--payment">
+          <div className="zk-modal-box--wide">
+            <h2 className="zk-modal-heading--center">
               💳 Zahlungsart wählen
             </h2>
 
-            <div style={{
-              display: 'grid',
-              gap: '1rem',
-              marginBottom: '2rem'
-            }}>
+            <div className="zk-payment-grid">
               {/* Barzahlung */}
               <div
                 onClick={() => setSelectedZahlungsart('bar')}
-                style={{
-                  background: selectedZahlungsart === 'bar'
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)'
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: selectedZahlungsart === 'bar'
-                    ? '2px solid #10B981'
-                    : '2px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedZahlungsart !== 'bar') {
-                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedZahlungsart !== 'bar') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  }
-                }}
+                className={`zk-payment-option${selectedZahlungsart === 'bar' ? ' zk-payment-option--selected' : ''}`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ fontSize: '2.5rem' }}>💵</div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      margin: 0,
-                      fontSize: '1.2rem',
-                      color: '#10B981',
-                      fontWeight: '700'
-                    }}>
+                <div className="u-flex-row-lg">
+                  <div className="zk-icon-lg">💵</div>
+                  <div className="u-flex-1">
+                    <h4 className="zk-payment-title">
                       Barzahlung
                     </h4>
-                    <p style={{
-                      margin: '0.5rem 0 0 0',
-                      fontSize: '0.9rem',
-                      color: 'rgba(255, 255, 255, 0.7)'
-                    }}>
+                    <p className="zk-payment-desc">
                       Der Admin wird informiert, dass Sie bar bezahlen möchten
                     </p>
                   </div>
@@ -869,45 +561,15 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
               {/* Lastschrift */}
               <div
                 onClick={() => setSelectedZahlungsart('lastschrift')}
-                style={{
-                  background: selectedZahlungsart === 'lastschrift'
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)'
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: selectedZahlungsart === 'lastschrift'
-                    ? '2px solid #10B981'
-                    : '2px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedZahlungsart !== 'lastschrift') {
-                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedZahlungsart !== 'lastschrift') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  }
-                }}
+                className={`zk-payment-option${selectedZahlungsart === 'lastschrift' ? ' zk-payment-option--selected' : ''}`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ fontSize: '2.5rem' }}>🏦</div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      margin: 0,
-                      fontSize: '1.2rem',
-                      color: '#10B981',
-                      fontWeight: '700'
-                    }}>
+                <div className="u-flex-row-lg">
+                  <div className="zk-icon-lg">🏦</div>
+                  <div className="u-flex-1">
+                    <h4 className="zk-payment-title">
                       SEPA-Lastschrift
                     </h4>
-                    <p style={{
-                      margin: '0.5rem 0 0 0',
-                      fontSize: '0.9rem',
-                      color: 'rgba(255, 255, 255, 0.7)'
-                    }}>
+                    <p className="zk-payment-desc">
                       Der Betrag wird bei der nächsten Lastschrift eingezogen
                     </p>
                   </div>
@@ -920,45 +582,15 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
               {/* Rechnung */}
               <div
                 onClick={() => setSelectedZahlungsart('rechnung')}
-                style={{
-                  background: selectedZahlungsart === 'rechnung'
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%)'
-                    : 'rgba(255, 255, 255, 0.03)',
-                  border: selectedZahlungsart === 'rechnung'
-                    ? '2px solid #10B981'
-                    : '2px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: '12px',
-                  padding: '1.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedZahlungsart !== 'rechnung') {
-                    e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.5)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedZahlungsart !== 'rechnung') {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  }
-                }}
+                className={`zk-payment-option${selectedZahlungsart === 'rechnung' ? ' zk-payment-option--selected' : ''}`}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ fontSize: '2.5rem' }}>📧</div>
-                  <div style={{ flex: 1 }}>
-                    <h4 style={{
-                      margin: 0,
-                      fontSize: '1.2rem',
-                      color: '#10B981',
-                      fontWeight: '700'
-                    }}>
+                <div className="u-flex-row-lg">
+                  <div className="zk-icon-lg">📧</div>
+                  <div className="u-flex-1">
+                    <h4 className="zk-payment-title">
                       Rechnung per E-Mail
                     </h4>
-                    <p style={{
-                      margin: '0.5rem 0 0 0',
-                      fontSize: '0.9rem',
-                      color: 'rgba(255, 255, 255, 0.7)'
-                    }}>
+                    <p className="zk-payment-desc">
                       Sie erhalten eine Rechnung per E-Mail
                     </p>
                   </div>
@@ -969,40 +601,11 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'center'
-            }}>
+            <div className="zk-modal-btn-row">
               <button
                 onClick={handleNachkauf}
                 disabled={!selectedZahlungsart}
-                style={{
-                  background: selectedZahlungsart
-                    ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)'
-                    : 'rgba(255, 255, 255, 0.1)',
-                  color: selectedZahlungsart ? 'white' : 'rgba(255, 255, 255, 0.5)',
-                  border: 'none',
-                  borderRadius: '12px',
-                  padding: '1rem 2.5rem',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  cursor: selectedZahlungsart ? 'pointer' : 'not-allowed',
-                  boxShadow: selectedZahlungsart ? '0 4px 15px rgba(16, 185, 129, 0.4)' : 'none',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedZahlungsart) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.5)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedZahlungsart) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.4)';
-                  }
-                }}
+                className="zk-modal-btn-nachkauf"
               >
                 ✅ Bestätigen
               </button>
@@ -1012,17 +615,7 @@ const ZehnerkartenVerwaltung = ({ mitgliedId, mitglied, isAdmin = false }) => {
                   setSelectedZahlungsart(null);
                   setNachkaufTarifId(null);
                 }}
-                style={{
-                  background: 'transparent',
-                  color: '#ef4444',
-                  border: '2px solid #ef4444',
-                  borderRadius: '12px',
-                  padding: '1rem 2.5rem',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
+                className="zk-modal-btn-cancel"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#ef4444';
                   e.currentTarget.style.color = 'white';

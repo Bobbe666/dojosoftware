@@ -5,6 +5,7 @@ import { useDojoContext } from '../context/DojoContext.jsx';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, UserPlus } from 'lucide-react';
 import "../styles/themes.css";
 import "../styles/components.css";
+import "../styles/InteressentenListe.css";
 
 const InteressentenListe = () => {
   const { getDojoFilterParam } = useDojoContext();
@@ -138,14 +139,7 @@ const InteressentenListe = () => {
     }
 
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: '0.5rem',
-        marginTop: '2rem',
-        flexWrap: 'wrap'
-      }}>
+      <div className="il-pagination-controls">
         <button
           onClick={() => goToPage(1)}
           disabled={pagination.page === 1}
@@ -163,7 +157,7 @@ const InteressentenListe = () => {
           <ChevronLeft size={18} />
         </button>
 
-        {startPage > 1 && <span style={{ color: 'rgba(255,255,255,0.5)' }}>...</span>}
+        {startPage > 1 && <span className="u-text-muted">...</span>}
 
         {pages.map(page => (
           <button
@@ -175,7 +169,7 @@ const InteressentenListe = () => {
           </button>
         ))}
 
-        {endPage < pagination.totalPages && <span style={{ color: 'rgba(255,255,255,0.5)' }}>...</span>}
+        {endPage < pagination.totalPages && <span className="u-text-muted">...</span>}
 
         <button
           onClick={() => goToPage(pagination.page + 1)}
@@ -207,13 +201,8 @@ const InteressentenListe = () => {
 
   return (
     <div className="dashboard-container">
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '2rem'
-      }}>
-        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="il-page-header">
+        <h1 className="il-page-title">
           <UserPlus size={28} />
           Interessenten
         </h1>
@@ -225,142 +214,83 @@ const InteressentenListe = () => {
         </button>
       </div>
 
-      <div style={{
-        marginBottom: '1.5rem',
-        display: 'flex',
-        gap: '1rem',
-        alignItems: 'center',
-        flexWrap: 'wrap'
-      }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '250px' }}>
-          <Search size={18} style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: 'rgba(255,255,255,0.5)'
-          }} />
+      <div className="il-filter-row">
+        <div className="il-search-wrap">
+          <Search size={18} className="il-search-icon" />
           <input
             type="text"
             placeholder="Suchen nach Name, Email..."
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '0.75rem 0.75rem 0.75rem 40px',
-              borderRadius: '6px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              background: 'rgba(31, 41, 55, 0.6)',
-              color: 'white'
-            }}
+            className="il-search-input"
           />
         </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          style={{
-            padding: '0.75rem',
-            borderRadius: '6px',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            background: 'rgba(31, 41, 55, 0.6)',
-            color: 'white',
-            minWidth: '200px'
-          }}
+          className="il-filter-select"
         >
-          <option value="" style={{ background: '#1f2937', color: 'white' }}>Alle Status</option>
-          <option value="neu" style={{ background: '#1f2937', color: 'white' }}>Neu</option>
-          <option value="kontaktiert" style={{ background: '#1f2937', color: 'white' }}>Kontaktiert</option>
-          <option value="probetraining_vereinbart" style={{ background: '#1f2937', color: 'white' }}>Probetraining vereinbart</option>
-          <option value="probetraining_absolviert" style={{ background: '#1f2937', color: 'white' }}>Probetraining absolviert</option>
-          <option value="angebot_gesendet" style={{ background: '#1f2937', color: 'white' }}>Angebot gesendet</option>
-          <option value="interessiert" style={{ background: '#1f2937', color: 'white' }}>Interessiert</option>
-          <option value="nicht_interessiert" style={{ background: '#1f2937', color: 'white' }}>Nicht interessiert</option>
-          <option value="konvertiert" style={{ background: '#1f2937', color: 'white' }}>Konvertiert</option>
+          <option value="" className="il-select-dark">Alle Status</option>
+          <option value="neu" className="il-select-dark">Neu</option>
+          <option value="kontaktiert" className="il-select-dark">Kontaktiert</option>
+          <option value="probetraining_vereinbart" className="il-select-dark">Probetraining vereinbart</option>
+          <option value="probetraining_absolviert" className="il-select-dark">Probetraining absolviert</option>
+          <option value="angebot_gesendet" className="il-select-dark">Angebot gesendet</option>
+          <option value="interessiert" className="il-select-dark">Interessiert</option>
+          <option value="nicht_interessiert" className="il-select-dark">Nicht interessiert</option>
+          <option value="konvertiert" className="il-select-dark">Konvertiert</option>
         </select>
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.7)',
-          background: 'rgba(31, 41, 55, 0.6)',
-          padding: '0.75rem 1rem',
-          borderRadius: '6px',
-          whiteSpace: 'nowrap'
-        }}>
+        <div className="il-count-badge">
           {loading ? '...' : `${pagination.total} Interessenten`}
           {pagination.totalPages > 1 && ` | Seite ${pagination.page}/${pagination.totalPages}`}
         </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255,255,255,0.7)' }}>
+        <div className="il-loading">
           Lade Interessenten...
         </div>
       ) : (
         <>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '1rem'
-          }}>
+          <div className="il-card-grid">
             {interessenten.length > 0 ? (
               interessenten.map((interessent) => (
                 <div
                   key={interessent.id}
-                  className="stat-card"
-                  style={{
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    borderLeft: `4px solid ${getStatusColor(interessent.status)}`
-                  }}
+                  className="stat-card il-card-base"
+                  style={{ '--status-color': getStatusColor(interessent.status) }}
                 >
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'start',
-                    marginBottom: '0.5rem'
-                  }}>
-                    <h3 style={{
-                      fontSize: '1.1rem',
-                      fontWeight: '600',
-                      margin: 0,
-                      color: '#ffd700'
-                    }}>
+                  <div className="il-card-header">
+                    <h3 className="il-card-name">
                       {interessent.nachname}, {interessent.vorname}
                     </h3>
-                    <span style={{
-                      fontSize: '0.7rem',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '4px',
-                      background: getStatusColor(interessent.status),
-                      color: 'white',
-                      fontWeight: '500'
-                    }}>
+                    <span className="il-status-badge">
                       {getStatusLabel(interessent.status)}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)', lineHeight: '1.6' }}>
+                  <div className="il-card-info">
                     {interessent.email && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="il-m-02">
                         <strong>Email:</strong> {interessent.email}
                       </p>
                     )}
                     {interessent.telefon && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="il-m-02">
                         <strong>Telefon:</strong> {interessent.telefon}
                       </p>
                     )}
                     {interessent.erstkontakt_datum && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="il-m-02">
                         <strong>Erstkontakt:</strong> {new Date(interessent.erstkontakt_datum).toLocaleDateString('de-DE')}
                       </p>
                     )}
                     {interessent.interessiert_an && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="il-m-02">
                         <strong>Interesse:</strong> {interessent.interessiert_an}
                       </p>
                     )}
                     {interessent.prioritaet && (
-                      <p style={{ margin: '0.2rem 0' }}>
+                      <p className="il-m-02">
                         <strong>Priorität:</strong> {interessent.prioritaet}
                       </p>
                     )}
@@ -368,13 +298,9 @@ const InteressentenListe = () => {
                 </div>
               ))
             ) : (
-              <div className="stat-card" style={{
-                gridColumn: '1 / -1',
-                padding: '2rem',
-                textAlign: 'center'
-              }}>
+              <div className="stat-card il-empty-card">
                 <h3>Keine Interessenten gefunden</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
+                <p className="u-text-secondary">
                   {searchTerm || filterStatus ? 'Keine Treffer für die Suche.' : 'Es sind noch keine Interessenten im System erfasst.'}
                 </p>
               </div>

@@ -10,7 +10,7 @@ import "../styles/themes.css";
 import "../styles/components.css";
 
 // Custom DateInput Component mit Auto-Advance
-const DateInputAutoAdvance = ({ value, onChange, name, id, required, style }) => {
+const DateInputAutoAdvance = ({ value, onChange, name, id, required }) => {
   // Parse existing value (YYYY-MM-DD format)
   const parseDate = (dateStr) => {
     if (!dateStr) return { day: '', month: '', year: '' };
@@ -67,21 +67,8 @@ const DateInputAutoAdvance = ({ value, onChange, name, id, required, style }) =>
     setDateParts(prev => ({ ...prev, year: val }));
   };
 
-  const inputStyle = {
-    padding: '0.4rem 0.3rem',
-    border: '2px solid var(--border-color)',
-    borderRadius: '6px',
-    fontSize: '0.85rem',
-    lineHeight: '1.3',
-    height: '32px',
-    textAlign: 'center',
-    background: 'rgba(255, 255, 255, 0.08)',
-    color: 'rgba(255, 255, 255, 0.95)',
-    ...style
-  };
-
   return (
-    <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+    <div className="nma-date-row">
       <input
         type="text"
         id={`${id}-day`}
@@ -89,10 +76,10 @@ const DateInputAutoAdvance = ({ value, onChange, name, id, required, style }) =>
         onChange={handleDayChange}
         placeholder="TT"
         maxLength={2}
-        style={{ ...inputStyle, width: '45px' }}
+        className="nma-date-input nma-date-input-day"
         required={required}
       />
-      <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>.</span>
+      <span className="u-text-muted">.</span>
       <input
         type="text"
         id={`${id}-month`}
@@ -100,10 +87,10 @@ const DateInputAutoAdvance = ({ value, onChange, name, id, required, style }) =>
         onChange={handleMonthChange}
         placeholder="MM"
         maxLength={2}
-        style={{ ...inputStyle, width: '45px' }}
+        className="nma-date-input nma-date-input-month"
         required={required}
       />
-      <span style={{ color: 'rgba(255, 255, 255, 0.5)' }}>.</span>
+      <span className="u-text-muted">.</span>
       <input
         type="text"
         id={`${id}-year`}
@@ -111,7 +98,7 @@ const DateInputAutoAdvance = ({ value, onChange, name, id, required, style }) =>
         onChange={handleYearChange}
         placeholder="JJJJ"
         maxLength={4}
-        style={{ ...inputStyle, width: '60px' }}
+        className="nma-date-input nma-date-input-year"
         required={required}
       />
     </div>
@@ -253,6 +240,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     nachname: '',
     geburtsdatum: '',
     geschlecht: '',
+    schueler_student: false,
     email: '',           // Optional - entweder E-Mail oder Benutzername
     benutzername: '',    // Optional - Alternative zu E-Mail
     tarif_id: '',        // Vertrag wird in Schritt 4 ausgewählt
@@ -500,6 +488,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       nachname: '',
       geburtsdatum: '',
       geschlecht: '',
+      schueler_student: false,
       email: '',
       benutzername: '',
       tarif_id: '',
@@ -641,26 +630,38 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   };
 
   // Tarife nach Alter filtern (Kids = unter 18, Erwachsene = 18+)
-  const getFilteredTarife = (geburtsdatum) => {
+  const getFilteredTarife = (geburtsdatum, isSchuelerStudent = false) => {
     const isKid = isFamilyMemberMinor(geburtsdatum);
     return (availableTarife || []).filter(tarif => {
       // Nur aktive Tarife anzeigen
       if (tarif.aktiv === false || tarif.aktiv === 0) return false;
 
       const tarifName = (tarif.name || '').toLowerCase();
+      const gruppe = (tarif.altersgruppe || '').toLowerCase();
 
       // Spezielle Tarife ausschließen die nicht für normale Mitglieder sind
       if (tarifName.includes('beitragsfrei') || tarifName.includes('anzug') ||
           tarifName.includes('10er karte') || tarifName.includes('familientarif') ||
           tarifName.includes('3.familienmitglied')) return false;
 
-      // Kids-Tarife erkennen
+      // Schüler/Studenten (erwachsen): Schüler- und Jugendtarife anzeigen
+      if (isSchuelerStudent && !isKid) {
+        if (gruppe.includes('schüler') || gruppe.includes('schueler') ||
+            gruppe.includes('student') || gruppe.includes('kind') ||
+            gruppe.includes('jugend')) return true;
+        if (!tarif.altersgruppe) return true;
+        return false;
+      }
+
+      // Kids-Tarife erkennen (Name oder altersgruppe)
       const isKidsTarif = tarifName.includes('kind') || tarifName.includes('kids') ||
                           tarifName.includes('jugend') || tarifName.includes('schüler') ||
-                          tarifName.includes('studenten');
+                          tarifName.includes('studenten') ||
+                          gruppe.includes('kind') || gruppe.includes('jugend') ||
+                          gruppe.includes('schüler') || gruppe.includes('student');
 
       // Erwachsenen-Tarife erkennen
-      const isAdultTarif = tarifName.includes('erwachsen');
+      const isAdultTarif = tarifName.includes('erwachsen') || gruppe.includes('erwachsen');
 
       if (isKid) {
         // Für Kinder: Kids-Tarife oder allgemeine Tarife (nicht explizit Erwachsene)
@@ -1154,35 +1155,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   const renderStep1 = () => {
     return (
     <div className="step-content">
-      <h3 style={{
-        color: 'var(--primary-color)',
-        marginTop: '2rem',
-        marginBottom: '1rem',
-        fontSize: '1.1rem',
-        borderBottom: '2px solid var(--primary-color)',
-        paddingBottom: '0.5rem',
-        backgroundColor: 'transparent',
-        padding: '0',
-        fontWeight: '600',
-        borderRadius: '0'
-      }}>Schritt 1: Grunddaten</h3>
+      <h3 className="nma-step-heading">Schritt 1: Grunddaten</h3>
 
-      <div className="input-container" style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '0.8rem 1rem',
-        marginBottom: '1rem'
-      }}>
-        <div className="input-group" style={{
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <label htmlFor="vorname" className="input-label" style={{
-            fontWeight: 600,
-            marginBottom: '0.4rem',
-            color: 'var(--text-color)',
-            fontSize: '0.85rem'
-          }}>Vorname *</label>
+      <div className="input-container">
+        <div className="input-group">
+          <label htmlFor="vorname" className="input-label">Vorname *</label>
           <input
             type="text"
             id="vorname"
@@ -1191,31 +1168,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             onChange={handleChange}
             className="input-field"
             data-cache-break={cacheBreak}
-            style={{
-              padding: '0.4rem 0.5rem',
-              border: '2px solid var(--border-color)',
-              borderRadius: '6px',
-              fontSize: '0.85rem',
-              lineHeight: '1.3',
-              height: '32px',
-              transition: 'all 0.3s ease',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: 'rgba(255, 255, 255, 0.95)'
-            }}
             required
           />
         </div>
 
-        <div className="input-group" style={{
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <label htmlFor="nachname" className="input-label" style={{
-            fontWeight: 600,
-            marginBottom: '0.4rem',
-            color: 'var(--text-color)',
-            fontSize: '0.85rem'
-          }}>Nachname *</label>
+        <div className="input-group">
+          <label htmlFor="nachname" className="input-label">Nachname *</label>
           <input
             type="text"
             id="nachname"
@@ -1223,31 +1181,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             value={memberData.nachname}
             onChange={handleChange}
             className="input-field"
-            style={{
-              padding: '0.4rem 0.5rem',
-              border: '2px solid var(--border-color)',
-              borderRadius: '6px',
-              fontSize: '0.85rem',
-              lineHeight: '1.3',
-              height: '32px',
-              transition: 'all 0.3s ease',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: 'rgba(255, 255, 255, 0.95)'
-            }}
             required
           />
         </div>
 
-        <div className="input-group" style={{
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <label htmlFor="geburtsdatum" className="input-label" style={{
-            fontWeight: 600,
-            marginBottom: '0.4rem',
-            color: 'var(--text-color)',
-            fontSize: '0.85rem'
-          }}>Geburtsdatum * (TT.MM.JJJJ)</label>
+        <div className="input-group">
+          <label htmlFor="geburtsdatum" className="input-label">Geburtsdatum * (TT.MM.JJJJ)</label>
           <DateInputAutoAdvance
             id="geburtsdatum"
             name="geburtsdatum"
@@ -1257,33 +1196,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           />
         </div>
 
-        <div className="input-group" style={{
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
-          <label htmlFor="geschlecht" className="input-label" style={{
-            fontWeight: 600,
-            marginBottom: '0.4rem',
-            color: 'var(--text-color)',
-            fontSize: '0.85rem'
-          }}>Geschlecht *</label>
+        <div className="input-group">
+          <label htmlFor="geschlecht" className="input-label">Geschlecht *</label>
           <select
             id="geschlecht"
             name="geschlecht"
             value={memberData.geschlecht}
             onChange={handleChange}
             className="input-field"
-            style={{
-              padding: '0.4rem 0.5rem',
-              border: '2px solid var(--border-color)',
-              borderRadius: '6px',
-              fontSize: '0.85rem',
-              lineHeight: '1.3',
-              height: '32px',
-              transition: 'all 0.3s ease',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: 'rgba(255, 255, 255, 0.95)'
-            }}
             required
           >
             <option value="">Bitte wählen</option>
@@ -1296,54 +1216,22 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       {/* Schüler/Student Checkbox - nur für Volljährige */}
       {!isMinor() && memberData.geburtsdatum && (
-        <div style={{
-          marginTop: '1.5rem',
-          padding: '1.25rem',
-          background: 'rgba(31, 41, 55, 0.8)',
-          border: '2px solid rgba(59, 130, 246, 0.5)',
-          borderRadius: '12px',
-          boxShadow: 'none'
-        }}>
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem',
-            cursor: 'pointer'
-          }}>
+        <div className="nma-schueler-box">
+          <label className="nma-schueler-label">
             <input
               type="checkbox"
               name="schueler_student"
               checked={memberData.schueler_student || false}
               onChange={handleChange}
-              style={{
-                width: '22px',
-                height: '22px',
-                cursor: 'pointer',
-                accentColor: '#3B82F6'
-              }}
+              className="nma-schueler-checkbox"
             />
-            <span style={{
-              fontSize: '1.05rem',
-              fontWeight: '700',
-              color: 'rgba(255, 255, 255, 0.95)',
-              letterSpacing: '0.01em'
-            }}>
+            <span className="nma-schueler-text">
               🎓 Ich bin Schüler/in oder Student/in
             </span>
           </label>
           {memberData.schueler_student && (
-            <div style={{
-              marginTop: '1rem',
-              padding: '1rem',
-              background: 'rgba(31, 41, 55, 0.8)',
-              border: '2px solid rgba(59, 130, 246, 0.5)',
-              borderRadius: '10px',
-              fontSize: '0.95rem',
-              color: 'rgba(255, 255, 255, 0.95)',
-              lineHeight: '1.6',
-              fontWeight: '500'
-            }}>
-              ℹ️ <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>Hinweis:</strong> Bitte laden Sie später einen gültigen Schülerausweis oder eine Immatrikulationsbescheinigung hoch. Der Upload kann nach der Registrierung im Mitgliederprofil erfolgen.
+            <div className="nma-schueler-info">
+              ℹ️ <strong className="u-text-primary">Hinweis:</strong> Bitte laden Sie später einen gültigen Schülerausweis oder eine Immatrikulationsbescheinigung hoch. Der Upload kann nach der Registrierung im Mitgliederprofil erfolgen.
             </div>
           )}
         </div>
@@ -1466,51 +1354,28 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
   // Familien-Schritt (nur für öffentliche Registrierung)
   const renderFamilyStep = () => (
     <div className="step-content">
-      <h3 style={{
-        color: 'var(--primary-color)',
-        marginTop: '1rem',
-        marginBottom: '1.5rem',
-        fontSize: '1.1rem',
-        borderBottom: '2px solid var(--primary-color)',
-        paddingBottom: '0.5rem'
-      }}>Schritt 3: Familien-Registrierung</h3>
+      <h3 className="nma-family-heading">Schritt 3: Familien-Registrierung</h3>
 
       {/* Wenn noch nicht entschieden */}
       {!familyMode && familyMembers.length === 0 && !existingMemberMode && (
-        <div style={{
-          padding: '1.5rem',
-          background: 'rgba(31, 41, 55, 0.8)',
-          borderRadius: '12px',
-          border: '2px solid rgba(59, 130, 246, 0.5)',
-          marginBottom: '1.5rem'
-        }}>
-          <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>
+        <div className="nma-family-choice-box">
+          <h4 className="nma-section-heading">
             Familien-Registrierung
           </h4>
-          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+          <p className="nma-family-desc">
             Familienmitglieder teilen Adresse und Bankverbindung, erhalten aber jeweils ein eigenes Konto
             und einen eigenen Vertrag. Ab dem 2. Familienmitglied gilt ein Familien-Rabatt.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className="u-flex-col-md">
             {/* Option 1: Weitere Mitglieder anmelden (Neukunde) */}
             <button
               type="button"
               onClick={startFamilySession}
-              style={{
-                padding: '1rem 1.5rem',
-                background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.95rem',
-                textAlign: 'left'
-              }}
+              className="nma-btn-family-primary"
             >
-              <span style={{ display: 'block', marginBottom: '0.25rem' }}>Ja, weitere Familienmitglieder anmelden</span>
-              <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'normal' }}>
+              <span className="nma-option-title">Ja, weitere Familienmitglieder anmelden</span>
+              <span className="nma-option-subtitle">
                 Ich bin neu und möchte mich zusammen mit meiner Familie anmelden
               </span>
             </button>
@@ -1519,20 +1384,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             <button
               type="button"
               onClick={() => setCurrentStep(4)}
-              style={{
-                padding: '1rem 1.5rem',
-                background: 'rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.95)',
-                border: '2px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.95rem',
-                textAlign: 'left'
-              }}
+              className="nma-btn-family-neutral"
             >
-              <span style={{ display: 'block', marginBottom: '0.25rem' }}>Nein, nur mich anmelden</span>
-              <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'normal' }}>
+              <span className="nma-option-title">Nein, nur mich anmelden</span>
+              <span className="nma-btn-subtitle-sm">
                 Ich möchte mich einzeln ohne weitere Familienmitglieder anmelden
               </span>
             </button>
@@ -1541,20 +1396,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             <button
               type="button"
               onClick={() => setExistingMemberMode(true)}
-              style={{
-                padding: '1rem 1.5rem',
-                background: 'linear-gradient(135deg, #10b981, #059669)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.95rem',
-                textAlign: 'left'
-              }}
+              className="nma-btn-family-green"
             >
-              <span style={{ display: 'block', marginBottom: '0.25rem' }}>Ich bin bereits Mitglied</span>
-              <span style={{ fontSize: '0.8rem', opacity: 0.9, fontWeight: 'normal' }}>
+              <span className="nma-option-title">Ich bin bereits Mitglied</span>
+              <span className="nma-option-subtitle">
                 Ich möchte ein Familienmitglied zu meiner bestehenden Mitgliedschaft hinzufügen
               </span>
             </button>
@@ -1564,29 +1409,18 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       {/* Login-Formular für bestehendes Mitglied */}
       {existingMemberMode && !existingMemberLogin.loggedIn && (
-        <div style={{
-          padding: '1.5rem',
-          background: 'rgba(16, 185, 129, 0.1)',
-          borderRadius: '12px',
-          border: '2px solid rgba(16, 185, 129, 0.5)',
-          marginBottom: '1.5rem'
-        }}>
-          <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '0.5rem' }}>
+        <div className="nma-existing-login-box">
+          <h4 className="nma-existing-login-heading">
             Anmelden als bestehendes Mitglied
           </h4>
-          <p style={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
+          <p className="nma-existing-login-desc">
             Bitte melden Sie sich mit Ihren Zugangsdaten an. Ihre Adresse und Bankdaten werden
             automatisch für das neue Familienmitglied übernommen.
           </p>
 
-          <div style={{ display: 'grid', gap: '1rem' }}>
+          <div className="nma-login-grid">
             <div>
-              <label style={{
-                display: 'block',
-                color: 'rgba(255, 255, 255, 0.9)',
-                marginBottom: '0.4rem',
-                fontSize: '0.85rem'
-              }}>
+              <label className="nma-login-label">
                 E-Mail-Adresse *
               </label>
               <input
@@ -1594,25 +1428,12 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 value={existingMemberLogin.email}
                 onChange={(e) => setExistingMemberLogin(prev => ({ ...prev, email: e.target.value, error: '' }))}
                 placeholder="Ihre E-Mail-Adresse"
-                style={{
-                  width: '100%',
-                  padding: '0.6rem',
-                  borderRadius: '6px',
-                  border: '2px solid rgba(255, 255, 255, 0.2)',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  fontSize: '0.9rem'
-                }}
+                className="nma-login-input"
               />
             </div>
 
             <div>
-              <label style={{
-                display: 'block',
-                color: 'rgba(255, 255, 255, 0.9)',
-                marginBottom: '0.4rem',
-                fontSize: '0.85rem'
-              }}>
+              <label className="nma-login-label">
                 Passwort *
               </label>
               <input
@@ -1621,47 +1442,23 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 onChange={(e) => setExistingMemberLogin(prev => ({ ...prev, passwort: e.target.value, error: '' }))}
                 placeholder="Ihr Passwort"
                 onKeyDown={(e) => e.key === 'Enter' && handleExistingMemberLogin()}
-                style={{
-                  width: '100%',
-                  padding: '0.6rem',
-                  borderRadius: '6px',
-                  border: '2px solid rgba(255, 255, 255, 0.2)',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  fontSize: '0.9rem'
-                }}
+                className="nma-login-input"
               />
             </div>
 
             {/* Fehlermeldung */}
             {existingMemberLogin.error && (
-              <div style={{
-                padding: '0.75rem',
-                background: 'rgba(239, 68, 68, 0.2)',
-                border: '1px solid rgba(239, 68, 68, 0.5)',
-                borderRadius: '6px',
-                color: '#ef4444',
-                fontSize: '0.85rem'
-              }}>
+              <div className="nma-login-error">
                 {existingMemberLogin.error}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+            <div className="nma-login-btn-row">
               <button
                 type="button"
                 onClick={handleExistingMemberLogin}
                 disabled={existingMemberLogin.loading}
-                style={{
-                  padding: '0.6rem 1.5rem',
-                  background: existingMemberLogin.loading ? 'rgba(16, 185, 129, 0.5)' : 'linear-gradient(135deg, #10b981, #059669)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: existingMemberLogin.loading ? 'wait' : 'pointer',
-                  fontWeight: '600',
-                  fontSize: '0.9rem'
-                }}
+                className="nma-btn-login-submit"
               >
                 {existingMemberLogin.loading ? 'Wird geprüft...' : 'Anmelden'}
               </button>
@@ -1671,15 +1468,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   setExistingMemberMode(false);
                   setExistingMemberLogin({ email: '', passwort: '', loading: false, error: '', loggedIn: false });
                 }}
-                style={{
-                  padding: '0.6rem 1.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem'
-                }}
+                className="nma-btn-login-cancel"
               >
                 Zurück
               </button>
@@ -1690,31 +1479,18 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       {/* Erfolgreich eingeloggt - Bestätigung */}
       {existingMemberMode && existingMemberLogin.loggedIn && existingMemberData && (
-        <div style={{
-          padding: '1rem',
-          background: 'rgba(16, 185, 129, 0.15)',
-          border: '2px solid rgba(16, 185, 129, 0.6)',
-          borderRadius: '10px',
-          marginBottom: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-            <span style={{
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: 'white',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '20px',
-              fontSize: '0.75rem',
-              fontWeight: '700'
-            }}>Bestehendes Mitglied</span>
-            <span style={{ color: '#10b981', fontSize: '0.85rem' }}>✓ Angemeldet</span>
+        <div className="nma-logged-in-box">
+          <div className="nma-member-header">
+            <span className="nma-badge-green">Bestehendes Mitglied</span>
+            <span className="nma-logged-in-status">✓ Angemeldet</span>
           </div>
-          <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+          <h4 className="nma-member-name">
             {existingMemberData.vorname} {existingMemberData.nachname}
           </h4>
-          <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+          <p className="nma-text-sm-muted">
             {existingMemberData.strasse} {existingMemberData.hausnummer}, {existingMemberData.plz} {existingMemberData.ort}
           </p>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0.5rem 0 0 0', fontSize: '0.8rem', fontStyle: 'italic' }}>
+          <p className="nma-note-italic">
             Adresse und Bankdaten werden für das neue Familienmitglied übernommen.
           </p>
         </div>
@@ -1726,53 +1502,27 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           {/* Hauptmitglied - unterschiedliche Anzeige je nach Modus */}
           {existingMemberMode && existingMemberData ? (
             /* Bestehendes Mitglied als Hauptmitglied */
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '2px solid rgba(16, 185, 129, 0.5)',
-              borderRadius: '10px',
-              marginBottom: '1rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <span style={{
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: 'white',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '20px',
-                  fontSize: '0.75rem',
-                  fontWeight: '700'
-                }}>Bestehendes Hauptmitglied</span>
+            <div className="nma-family-main-existing">
+              <div className="nma-member-header">
+                <span className="nma-badge-green">Bestehendes Hauptmitglied</span>
               </div>
-              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+              <h4 className="nma-member-name">
                 {existingMemberData.vorname} {existingMemberData.nachname}
               </h4>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+              <p className="nma-text-sm-muted">
                 Bestehender Vertrag - keine Änderung
               </p>
             </div>
           ) : (
             /* Neues Hauptmitglied (normale Registrierung) */
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '2px solid rgba(16, 185, 129, 0.5)',
-              borderRadius: '10px',
-              marginBottom: '1rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                <span style={{
-                  background: 'linear-gradient(135deg, #10b981, #059669)',
-                  color: 'white',
-                  padding: '0.25rem 0.75rem',
-                  borderRadius: '20px',
-                  fontSize: '0.75rem',
-                  fontWeight: '700'
-                }}>Hauptmitglied</span>
+            <div className="nma-family-main-new">
+              <div className="nma-member-header">
+                <span className="nma-badge-green">Hauptmitglied</span>
               </div>
-              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+              <h4 className="nma-member-name">
                 {memberData.vorname} {memberData.nachname}
               </h4>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+              <p className="nma-text-sm-muted">
                 Voller Beitrag
               </p>
             </div>
@@ -1780,58 +1530,30 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
           {/* Weitere Familienmitglieder */}
           {familyMembers.map((member, index) => (
-            <div key={index} style={{
-              padding: '1rem',
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '2px solid rgba(59, 130, 246, 0.5)',
-              borderRadius: '10px',
-              marginBottom: '1rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{
-                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    color: 'white',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '700'
-                  }}>{member.position}. Familienmitglied</span>
+            <div key={index} className="nma-family-member-item">
+              <div className="nma-family-member-header-row">
+                <div className="u-flex-row-md">
+                  <span className="nma-badge-blue">{member.position}. Familienmitglied</span>
                   {member.isMinor && (
-                    <span style={{
-                      background: 'rgba(245, 158, 11, 0.3)',
-                      color: '#fbbf24',
-                      padding: '0.25rem 0.5rem',
-                      borderRadius: '20px',
-                      fontSize: '0.7rem',
-                      fontWeight: '600'
-                    }}>Minderjährig</span>
+                    <span className="nma-badge-amber">Minderjährig</span>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => removeFamilyMember(index)}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.2)',
-                    color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.5)',
-                    borderRadius: '6px',
-                    padding: '0.25rem 0.5rem',
-                    cursor: 'pointer',
-                    fontSize: '0.75rem'
-                  }}
+                  className="nma-btn-remove"
                 >
                   Entfernen
                 </button>
               </div>
-              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 0.25rem 0' }}>
+              <h4 className="nma-member-name">
                 {member.vorname} {member.nachname}
               </h4>
-              <p style={{ color: 'rgba(255, 255, 255, 0.7)', margin: 0, fontSize: '0.85rem' }}>
+              <p className="nma-text-sm-muted">
                 Mit Familien-Rabatt • {member.email}
               </p>
               {member.isMinor && (
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', margin: '0.5rem 0 0 0', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                <p className="nma-note-italic">
                   {memberData.vorname} {memberData.nachname} wird als Erziehungsberechtigte/r hinterlegt.
                 </p>
               )}
@@ -1843,85 +1565,44 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             <button
               type="button"
               onClick={() => setAddingFamilyMember(true)}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '2px dashed rgba(255, 255, 255, 0.3)',
-                borderRadius: '10px',
-                color: 'rgba(255, 255, 255, 0.8)',
-                cursor: 'pointer',
-                fontSize: '0.95rem',
-                marginBottom: '1rem',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-                e.target.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-              }}
+              className="nma-btn-add-family"
             >
               + Weiteres Familienmitglied hinzufügen
             </button>
           ) : (
             /* Formular für neues Familienmitglied */
-            <div style={{
-              padding: '1.25rem',
-              background: 'rgba(31, 41, 55, 0.8)',
-              border: '2px solid rgba(59, 130, 246, 0.5)',
-              borderRadius: '12px',
-              marginBottom: '1rem'
-            }}>
-              <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>
+            <div className="nma-family-form-box">
+              <h4 className="nma-section-heading">
                 Familienmitglied {familyMembers.length + 2} hinzufügen
               </h4>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div className="u-grid-2col">
                 <div className="input-group">
-                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                  <label className="input-label">
                     Vorname *
                   </label>
                   <input
                     type="text"
                     value={newFamilyMember.vorname}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, vorname: e.target.value }))}
-                    className="input-field"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
+                    className="input-field nma-family-input"
                   />
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                  <label className="input-label">
                     Nachname *
                   </label>
                   <input
                     type="text"
                     value={newFamilyMember.nachname}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, nachname: e.target.value }))}
-                    className="input-field"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
+                    className="input-field nma-family-input"
                   />
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                  <label className="input-label">
                     Geburtsdatum * (TT.MM.JJJJ)
                   </label>
                   <DateInputAutoAdvance
@@ -1934,21 +1615,13 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                  <label className="input-label">
                     Geschlecht *
                   </label>
                   <select
                     value={newFamilyMember.geschlecht}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, geschlecht: e.target.value }))}
-                    className="input-field"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
+                    className="input-field nma-family-input"
                   >
                     <option value="">Bitte wählen</option>
                     <option value="m">Männlich</option>
@@ -1957,59 +1630,51 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                   </select>
                 </div>
 
-                {/* E-Mail ODER Benutzername */}
+                {/* Schüler/Student-Checkbox – nur für Erwachsene */}
+              {newFamilyMember.geburtsdatum && !isFamilyMemberMinor(newFamilyMember.geburtsdatum) && (
+                <div className="input-group nma-full-span">
+                  <label className="nma-checkbox-label-flex">
+                    <input
+                      type="checkbox"
+                      checked={newFamilyMember.schueler_student || false}
+                      onChange={(e) => setNewFamilyMember(prev => ({ ...prev, schueler_student: e.target.checked }))}
+                    />
+                    Schüler/Student (ermäßigter Tarif)
+                  </label>
+                </div>
+              )}
+
+              {/* E-Mail ODER Benutzername */}
                 <div className="input-group">
-                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                  <label className="input-label">
                     E-Mail-Adresse {!newFamilyMember.benutzername && '*'}
                   </label>
                   <input
                     type="email"
                     value={newFamilyMember.email}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, email: e.target.value }))}
-                    className="input-field"
+                    className="input-field nma-family-input"
                     placeholder="Optional wenn Benutzername"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
                   />
                 </div>
 
                 <div className="input-group">
-                  <label className="input-label" style={{ color: 'rgba(255, 255, 255, 0.9)', marginBottom: '0.4rem', display: 'block', fontSize: '0.85rem' }}>
+                  <label className="input-label">
                     Benutzername {!newFamilyMember.email && '*'}
                   </label>
                   <input
                     type="text"
                     value={newFamilyMember.benutzername}
                     onChange={(e) => setNewFamilyMember(prev => ({ ...prev, benutzername: e.target.value }))}
-                    className="input-field"
+                    className="input-field nma-family-input"
                     placeholder="Optional wenn E-Mail"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)'
-                    }}
                   />
                 </div>
               </div>
 
               {/* Info-Box */}
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(59, 130, 246, 0.1)',
-                borderRadius: '6px',
-                border: '1px solid rgba(59, 130, 246, 0.3)'
-              }}>
-                <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+              <div className="nma-family-info-box">
+                <p className="nma-text-sm-muted">
                   ℹ️ Adresse und Bankverbindung werden vom Hauptmitglied übernommen.<br/>
                   💡 E-Mail oder Benutzername - mindestens eines ist erforderlich.
                 </p>
@@ -2017,33 +1682,19 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
               {/* Minderjährig-Hinweis */}
               {newFamilyMember.geburtsdatum && isFamilyMemberMinor(newFamilyMember.geburtsdatum) && (
-                <div style={{
-                  marginTop: '0.75rem',
-                  padding: '0.75rem',
-                  background: 'rgba(245, 158, 11, 0.1)',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(245, 158, 11, 0.3)'
-                }}>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                <div className="nma-family-minor-box">
+                  <p className="nma-text-sm-muted">
                     👶 Dieses Mitglied ist minderjährig. {memberData.vorname} {memberData.nachname} wird als Erziehungsberechtigte/r hinterlegt.
                   </p>
                 </div>
               )}
 
               {/* Buttons */}
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+              <div className="nma-family-btn-row">
                 <button
                   type="button"
                   onClick={addFamilyMember}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
+                  className="nma-btn-family-confirm"
                 >
                   Hinzufügen
                 </button>
@@ -2056,6 +1707,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                       nachname: '',
                       geburtsdatum: '',
                       geschlecht: '',
+                      schueler_student: false,
                       email: '',
                       benutzername: '',
                       tarif_id: '',
@@ -2063,14 +1715,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                       tarif_preis: 0
                     });
                   }}
-                  style={{
-                    padding: '0.5rem 1rem',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    color: 'rgba(255, 255, 255, 0.8)',
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    borderRadius: '6px',
-                    cursor: 'pointer'
-                  }}
+                  className="nma-btn-family-cancel"
                 >
                   Abbrechen
                 </button>
@@ -2080,14 +1725,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
           {/* Info zum Familien-Rabatt */}
           {familyMembers.length > 0 && (
-            <div style={{
-              padding: '1rem',
-              background: 'rgba(16, 185, 129, 0.1)',
-              borderRadius: '8px',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              marginBottom: '1rem'
-            }}>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+            <div className="nma-family-discount-info">
+              <p className="nma-family-discount-text">
                 ✓ <strong>{familyMembers.length}</strong> weitere{familyMembers.length === 1 ? 's' : ''} Familienmitglied{familyMembers.length === 1 ? '' : 'er'} hinzugefügt<br/>
                 ✓ Familien-Rabatt wird automatisch angewendet<br/>
                 ✓ Jedes Mitglied erhält ein eigenes Konto und einen eigenen Vertrag
@@ -2407,51 +2046,23 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       {familyMembers.length > 0 && (
         existingMemberMode && existingMemberData ? (
           /* Bestehendes Mitglied - kein neuer Vertrag nötig */
-          <div style={{
-            padding: '0.75rem 1rem',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '2px solid rgba(16, 185, 129, 0.5)',
-            borderRadius: '8px',
-            marginBottom: '1rem'
-          }}>
-            <span style={{
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: 'white',
-              padding: '0.2rem 0.6rem',
-              borderRadius: '15px',
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              marginRight: '0.5rem'
-            }}>Bestehendes Hauptmitglied</span>
-            <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+          <div className="nma-s6-existing-box">
+            <span className="nma-s6-badge">Bestehendes Hauptmitglied</span>
+            <strong className="u-text-primary">
               {existingMemberData.vorname} {existingMemberData.nachname}
             </strong>
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
+            <span className="nma-tag-secondary">
               (bestehender Vertrag - keine Änderung)
             </span>
           </div>
         ) : (
           /* Neues Hauptmitglied */
-          <div style={{
-            padding: '0.75rem 1rem',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '2px solid rgba(16, 185, 129, 0.5)',
-            borderRadius: '8px',
-            marginBottom: '1rem'
-          }}>
-            <span style={{
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: 'white',
-              padding: '0.2rem 0.6rem',
-              borderRadius: '15px',
-              fontSize: '0.7rem',
-              fontWeight: '700',
-              marginRight: '0.5rem'
-            }}>Hauptmitglied</span>
-            <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+          <div className="nma-s6-existing-box">
+            <span className="nma-s6-badge">Hauptmitglied</span>
+            <strong className="u-text-primary">
               {memberData.vorname} {memberData.nachname}
             </strong>
-            <span style={{ color: 'rgba(255, 255, 255, 0.7)', marginLeft: '0.5rem', fontSize: '0.85rem' }}>
+            <span className="nma-tag-secondary">
               (voller Beitrag)
             </span>
           </div>
@@ -2512,18 +2123,13 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       {/* Familienmitglieder Verträge - nur wenn vorhanden */}
       {familyMembers.length > 0 && (
-        <div style={{ marginTop: existingMemberMode ? '0' : '2rem' }}>
-          <h4 style={{
-            color: 'var(--primary-color)',
-            borderBottom: '2px solid var(--primary-color)',
-            paddingBottom: '0.5rem',
-            marginBottom: '1rem'
-          }}>
+        <div className={existingMemberMode ? '' : 'nma-family-section-spacer'}>
+          <h4 className="nma-family-contracts-heading">
             Verträge für Familienmitglieder
           </h4>
 
           {familyMembers.map((member, index) => {
-            const filteredTarife = getFilteredTarife(member.geburtsdatum);
+            const filteredTarife = getFilteredTarife(member.geburtsdatum, member.schueler_student);
             const discount = getFamilyDiscount(member.position);
             const selectedTarif = (availableTarife || []).find(t => t.tarif_id === member.tarif_id);
             const originalPrice = selectedTarif ? selectedTarif.monatlicher_beitrag_cents : 0;
@@ -2531,61 +2137,27 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             const finalPrice = originalPrice - discountAmount;
 
             return (
-              <div key={index} style={{
-                padding: '1.25rem',
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '2px solid rgba(59, 130, 246, 0.5)',
-                borderRadius: '12px',
-                marginBottom: '1rem'
-              }}>
+              <div key={index} className="nma-s6-family-card">
                 {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                  <span style={{
-                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                    color: 'white',
-                    padding: '0.25rem 0.75rem',
-                    borderRadius: '20px',
-                    fontSize: '0.75rem',
-                    fontWeight: '700'
-                  }}>{member.position}. Familienmitglied</span>
-                  <strong style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+                <div className="nma-s6-card-header">
+                  <span className="nma-badge-blue">{member.position}. Familienmitglied</span>
+                  <strong className="u-text-primary">
                     {member.vorname} {member.nachname}
                   </strong>
                   {member.isMinor && (
-                    <span style={{
-                      background: 'rgba(245, 158, 11, 0.3)',
-                      color: '#fbbf24',
-                      padding: '0.2rem 0.5rem',
-                      borderRadius: '15px',
-                      fontSize: '0.7rem',
-                      fontWeight: '600'
-                    }}>Kind (unter 18)</span>
+                    <span className="nma-badge-amber">Kind (unter 18)</span>
                   )}
                 </div>
 
                 {/* Tarif-Auswahl */}
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{
-                    display: 'block',
-                    color: 'rgba(255, 255, 255, 0.9)',
-                    marginBottom: '0.4rem',
-                    fontSize: '0.85rem',
-                    fontWeight: '600'
-                  }}>
+                <div className="nma-s6-tarif-row">
+                  <label className="nma-s6-tarif-label">
                     Vertrag auswählen * {member.isMinor ? '(Kids-Tarife)' : '(Erwachsenen-Tarife)'}
                   </label>
                   <select
                     value={member.tarif_id || ''}
                     onChange={(e) => updateFamilyMemberTarif(index, e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem',
-                      borderRadius: '6px',
-                      border: '2px solid rgba(255, 255, 255, 0.2)',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      color: 'rgba(255, 255, 255, 0.95)',
-                      fontSize: '0.9rem'
-                    }}
+                    className="nma-s6-tarif-select"
                   >
                     <option value="">Bitte Tarif wählen...</option>
                     {filteredTarife.map(tarif => (
@@ -2599,50 +2171,27 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
                 {/* Preis-Berechnung mit Rabatt */}
                 {member.tarif_id && selectedTarif && (
-                  <div style={{
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
-                    borderRadius: '8px',
-                    padding: '1rem'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Regulärer Preis:</span>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <div className="nma-s6-price-box">
+                    <div className="nma-s6-price-row">
+                      <span className="u-text-secondary">Regulärer Preis:</span>
+                      <span className="u-text-primary">
                         {(originalPrice / 100).toFixed(2)} €/Monat
                       </span>
                     </div>
 
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '0.5rem',
-                      color: '#10b981'
-                    }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{
-                          background: 'rgba(16, 185, 129, 0.3)',
-                          padding: '0.15rem 0.4rem',
-                          borderRadius: '4px',
-                          fontSize: '0.75rem',
-                          fontWeight: '700'
-                        }}>-{discount.prozent}%</span>
+                    <div className="nma-s6-discount-row">
+                      <span className="u-flex-row-sm">
+                        <span className="nma-s6-discount-badge">-{discount.prozent}%</span>
                         {discount.name}:
                       </span>
-                      <span style={{ fontWeight: '600' }}>
+                      <span className="nma-s6-discount-amount">
                         -{(discountAmount / 100).toFixed(2)} €
                       </span>
                     </div>
 
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      paddingTop: '0.5rem',
-                      borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-                      fontWeight: '700',
-                      fontSize: '1.1rem'
-                    }}>
-                      <span style={{ color: 'rgba(255, 255, 255, 0.95)' }}>Endpreis:</span>
-                      <span style={{ color: '#10b981' }}>
+                    <div className="nma-s6-total-row">
+                      <span className="u-text-primary">Endpreis:</span>
+                      <span className="u-text-success">
                         {(finalPrice / 100).toFixed(2)} €/Monat
                       </span>
                     </div>
@@ -2651,14 +2200,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
                 {/* Warnung wenn kein Tarif ausgewählt */}
                 {!member.tarif_id && (
-                  <div style={{
-                    padding: '0.5rem',
-                    background: 'rgba(245, 158, 11, 0.1)',
-                    border: '1px solid rgba(245, 158, 11, 0.3)',
-                    borderRadius: '6px',
-                    fontSize: '0.85rem',
-                    color: '#fbbf24'
-                  }}>
+                  <div className="nma-s6-no-tarif-warning">
                     ⚠️ Bitte wählen Sie einen Tarif für dieses Familienmitglied
                   </div>
                 )}
@@ -2667,48 +2209,32 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           })}
 
           {/* Gesamtübersicht */}
-          <div style={{
-            marginTop: '1.5rem',
-            padding: '1.25rem',
-            background: 'rgba(31, 41, 55, 0.9)',
-            border: '2px solid rgba(59, 130, 246, 0.6)',
-            borderRadius: '12px'
-          }}>
-            <h5 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 1rem 0' }}>
+          <div className="nma-s6-summary-box">
+            <h5 className="nma-subsection-heading">
               {existingMemberMode ? 'Neue Mitglieder - Übersicht' : 'Gesamtübersicht Familie'}
             </h5>
 
             {/* Hauptmitglied - unterschiedlich je nach Modus */}
             {existingMemberMode && existingMemberData ? (
               /* Bestehendes Mitglied */
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0.5rem 0',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+              <div className="nma-s6-summary-row">
+                <span className="u-text-secondary">
                   {existingMemberData.vorname} {existingMemberData.nachname}
-                  <span style={{ color: '#10b981', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                  <span className="nma-badge-success">
                     (Bestehendes Mitglied)
                   </span>
                 </span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.6)', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                <span className="nma-s6-member-price-existing">
                   bereits Mitglied
                 </span>
               </div>
             ) : (
               /* Neues Hauptmitglied */
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0.5rem 0',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+              <div className="nma-s6-summary-row">
+                <span className="u-text-secondary">
                   {memberData.vorname} {memberData.nachname} (Hauptmitglied)
                 </span>
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                <span className="u-text-primary">
                   {memberData.vertrag_tarif_id ?
                     `${(((availableTarife || []).find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0) / 100).toFixed(2)} €` :
                     '-- €'}
@@ -2723,21 +2249,16 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               const finalPrice = originalPrice - Math.round(originalPrice * discount.prozent / 100);
 
               return (
-                <div key={index} style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '0.5rem 0',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-                }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+                <div key={index} className="nma-s6-summary-row">
+                  <span className="u-text-secondary">
                     {member.vorname || 'Vorname'} {member.nachname || 'Nachname'}
                     {discount.prozent > 0 && (
-                      <span style={{ color: '#10b981', marginLeft: '0.5rem', fontSize: '0.8rem' }}>
+                      <span className="nma-badge-success">
                         (-{discount.prozent}%)
                       </span>
                     )}
                   </span>
-                  <span style={{ color: member.tarif_id ? '#10b981' : 'rgba(255, 255, 255, 0.5)' }}>
+                  <span className={member.tarif_id ? 'nma-price-assigned' : 'nma-price-unassigned'}>
                     {member.tarif_id ? `${(finalPrice / 100).toFixed(2)} €` : '-- €'}
                   </span>
                 </div>
@@ -2745,18 +2266,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             })}
 
             {/* Gesamtsumme - unterschiedlich je nach Modus */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              padding: '1rem 0 0 0',
-              marginTop: '0.5rem',
-              fontWeight: '700',
-              fontSize: '1.1rem'
-            }}>
-              <span style={{ color: 'rgba(255, 255, 255, 0.95)' }}>
+            <div className="nma-s6-total-sum-row">
+              <span className="u-text-primary">
                 {existingMemberMode ? 'Neue Kosten pro Monat:' : 'Gesamt pro Monat:'}
               </span>
-              <span style={{ color: '#ffd700' }}>
+              <span className="u-text-accent">
                 {(() => {
                   // Bei existing member mode: nur Familienmitglieder-Preise
                   // Sonst: Hauptmitglied + Familienmitglieder
@@ -2775,118 +2289,68 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
           {/* AGB-Checkboxen für Familienmitglieder im existingMemberMode */}
           {existingMemberMode && (
-            <div style={{
-              marginTop: '1.5rem',
-              padding: '1.25rem',
-              background: 'rgba(31, 41, 55, 0.9)',
-              border: '2px solid rgba(245, 158, 11, 0.5)',
-              borderRadius: '12px'
-            }}>
-              <h5 style={{ color: 'rgba(255, 255, 255, 0.95)', margin: '0 0 1rem 0' }}>
+            <div className="nma-s6-agb-box">
+              <h5 className="nma-subsection-heading">
                 Rechtliche Bestätigungen für neue Familienmitglieder
               </h5>
 
               {/* AGB */}
-              <label style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                background: memberData.vertrag_agb_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                border: `1px solid ${memberData.vertrag_agb_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                marginBottom: '0.75rem'
-              }}>
+              <label className={`nma-legal-label${memberData.vertrag_agb_akzeptiert ? ' nma-legal-label--accepted' : ''}`}>
                 <input
                   type="checkbox"
                   name="vertrag_agb_akzeptiert"
                   checked={memberData.vertrag_agb_akzeptiert}
                   onChange={handleChange}
-                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                  className="nma-checkbox-scaled"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                <span className="nma-text-primary-sm">
                   Ich akzeptiere die <strong>Allgemeinen Geschäftsbedingungen (AGB)</strong> *
                 </span>
               </label>
 
               {/* Datenschutz */}
-              <label style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                background: memberData.vertrag_datenschutz_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                border: `1px solid ${memberData.vertrag_datenschutz_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                marginBottom: '0.75rem'
-              }}>
+              <label className={`nma-legal-label${memberData.vertrag_datenschutz_akzeptiert ? ' nma-legal-label--accepted' : ''}`}>
                 <input
                   type="checkbox"
                   name="vertrag_datenschutz_akzeptiert"
                   checked={memberData.vertrag_datenschutz_akzeptiert}
                   onChange={handleChange}
-                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                  className="nma-checkbox-scaled"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                <span className="nma-text-primary-sm">
                   Ich akzeptiere die <strong>Datenschutzerklärung</strong> *
                 </span>
               </label>
 
               {/* Dojo-Regeln */}
-              <label style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                background: memberData.vertrag_dojo_regeln_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                border: `1px solid ${memberData.vertrag_dojo_regeln_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                marginBottom: '0.75rem'
-              }}>
+              <label className={`nma-legal-label${memberData.vertrag_dojo_regeln_akzeptiert ? ' nma-legal-label--accepted' : ''}`}>
                 <input
                   type="checkbox"
                   name="vertrag_dojo_regeln_akzeptiert"
                   checked={memberData.vertrag_dojo_regeln_akzeptiert}
                   onChange={handleChange}
-                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                  className="nma-checkbox-scaled"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                <span className="nma-text-primary-sm">
                   Ich akzeptiere die <strong>Dojo-Regeln</strong> *
                 </span>
               </label>
 
               {/* Hausordnung */}
-              <label style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '0.75rem',
-                padding: '0.75rem',
-                background: memberData.vertrag_hausordnung_akzeptiert ? 'rgba(16, 185, 129, 0.1)' : 'rgba(255, 255, 255, 0.05)',
-                border: `1px solid ${memberData.vertrag_hausordnung_akzeptiert ? 'rgba(16, 185, 129, 0.5)' : 'rgba(255, 255, 255, 0.2)'}`,
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}>
+              <label className={`nma-legal-label${memberData.vertrag_hausordnung_akzeptiert ? ' nma-legal-label--accepted' : ''}`}>
                 <input
                   type="checkbox"
                   name="vertrag_hausordnung_akzeptiert"
                   checked={memberData.vertrag_hausordnung_akzeptiert}
                   onChange={handleChange}
-                  style={{ marginTop: '0.2rem', transform: 'scale(1.2)' }}
+                  className="nma-checkbox-scaled"
                 />
-                <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem' }}>
+                <span className="nma-text-primary-sm">
                   Ich akzeptiere die <strong>Hausordnung</strong> *
                 </span>
               </label>
 
-              <p style={{
-                color: 'rgba(255, 255, 255, 0.6)',
-                fontSize: '0.8rem',
-                marginTop: '0.75rem',
-                marginBottom: 0
-              }}>
+              <p className="nma-s6-agb-note">
                 * Pflichtfelder - Diese Bestätigungen gelten für alle neuen Familienmitglieder
               </p>
             </div>
@@ -2900,26 +2364,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     <div className="step-content">
       <h3>Schritt 6: Widerrufsrecht & Vertragsbeginn</h3>
 
-      <div style={{
-        padding: '1.5rem',
-        background: 'rgba(31, 41, 55, 0.8)',
-        borderRadius: '12px',
-        border: '2px solid rgba(59, 130, 246, 0.5)',
-        marginBottom: '2rem'
-      }}>
-        <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0 }}>⚖️ Wann möchten Sie mit dem Training beginnen?</h4>
+      <div className="nma-s7-box">
+        <h4 className="nma-s7-heading">⚖️ Wann möchten Sie mit dem Training beginnen?</h4>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{
-            display: 'block',
-            padding: '1rem',
-            background: memberData.vertragsbeginn_option === 'sofort' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.6)',
-            border: `2px solid ${memberData.vertragsbeginn_option === 'sofort' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.3)'}`,
-            borderRadius: '8px',
-            cursor: 'pointer',
-            marginBottom: '1rem',
-            color: 'rgba(255, 255, 255, 0.95)'
-          }}>
+        <div className="nma-s7-choices">
+          <label className={`nma-s7-choice-label${memberData.vertragsbeginn_option === 'sofort' ? ' nma-s7-choice-label--selected' : ''}`}>
             <input
               type="radio"
               name="vertragsbeginn_option"
@@ -2931,24 +2380,16 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 vertrag_sofortbeginn_zustimmung: false,
                 vertrag_widerrufsrecht_kenntnisnahme: false
               }))}
-              style={{ marginRight: '0.5rem' }}
+              className="nma-radio-input"
             />
-            <strong style={{ color: '#ffd700' }}>Sofortbeginn - Ich möchte sofort trainieren ✅</strong>
-            <div style={{ marginLeft: '1.5rem', marginTop: '0.5rem', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+            <strong className="u-text-accent">Sofortbeginn - Ich möchte sofort trainieren ✅</strong>
+            <div className="nma-indent-hint">
               Sie können sofort mit dem Training beginnen. Durch die ausdrückliche Zustimmung zum Sofortbeginn
               erlischt Ihr Widerrufsrecht anteilig bei Inanspruchnahme der Leistung.
             </div>
           </label>
 
-          <label style={{
-            display: 'block',
-            padding: '1rem',
-            background: memberData.vertragsbeginn_option === 'nach_widerruf' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(31, 41, 55, 0.6)',
-            border: `2px solid ${memberData.vertragsbeginn_option === 'nach_widerruf' ? 'rgba(59, 130, 246, 0.6)' : 'rgba(59, 130, 246, 0.3)'}`,
-            borderRadius: '8px',
-            cursor: 'pointer',
-            color: 'rgba(255, 255, 255, 0.95)'
-          }}>
+          <label className={`nma-s7-choice-label${memberData.vertragsbeginn_option === 'nach_widerruf' ? ' nma-s7-choice-label--selected' : ''}`}>
             <input
               type="radio"
               name="vertragsbeginn_option"
@@ -2960,10 +2401,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                 vertrag_sofortbeginn_zustimmung: false,
                 vertrag_widerrufsrecht_kenntnisnahme: false
               }))}
-              style={{ marginRight: '0.5rem' }}
+              className="nma-radio-input"
             />
-            <strong style={{ color: '#ffd700' }}>Normaler Beginn - Nach 14 Tagen Widerrufsfrist 📅</strong>
-            <div style={{ marginLeft: '1.5rem', marginTop: '0.5rem', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+            <strong className="u-text-accent">Normaler Beginn - Nach 14 Tagen Widerrufsfrist 📅</strong>
+            <div className="nma-indent-hint">
               Sie haben volles 14-tägiges Widerrufsrecht. Das Training beginnt erst nach Ablauf der Widerrufsfrist.
             </div>
           </label>
@@ -2971,34 +2412,29 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
         {/* Sofortbeginn-Checkboxen (nur wenn "sofort" gewählt) */}
         {memberData.vertragsbeginn_option === 'sofort' && (
-          <div style={{
-            padding: '1rem',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            border: '1px solid rgba(255, 215, 0, 0.3)'
-          }}>
-            <h5 style={{ color: '#ffd700', marginTop: 0 }}>Erforderliche Bestätigungen für Sofortbeginn:</h5>
+          <div className="nma-s7-confirm-box">
+            <h5 className="nma-s7-confirm-heading">Erforderliche Bestätigungen für Sofortbeginn:</h5>
 
-            <label style={{ display: 'flex', alignItems: 'start', marginBottom: '1rem', cursor: 'pointer' }}>
+            <label className="nma-s7-confirm-label">
               <input
                 type="checkbox"
                 checked={memberData.vertrag_sofortbeginn_zustimmung}
                 onChange={(e) => setMemberData(prev => ({ ...prev, vertrag_sofortbeginn_zustimmung: e.target.checked }))}
-                style={{ marginRight: '0.5rem', marginTop: '0.2rem' }}
+                className="nma-radio-input-top"
               />
-              <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <span className="nma-confirm-text">
                 <strong>Ich stimme ausdrücklich zu *</strong>, dass die Dienstleistung vor Ablauf der 14-tägigen Widerrufsfrist beginnt.
               </span>
             </label>
 
-            <label style={{ display: 'flex', alignItems: 'start', cursor: 'pointer' }}>
+            <label className="nma-s7-confirm-label-last">
               <input
                 type="checkbox"
                 checked={memberData.vertrag_widerrufsrecht_kenntnisnahme}
                 onChange={(e) => setMemberData(prev => ({ ...prev, vertrag_widerrufsrecht_kenntnisnahme: e.target.checked }))}
-                style={{ marginRight: '0.5rem', marginTop: '0.2rem' }}
+                className="nma-radio-input-top"
               />
-              <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+              <span className="nma-confirm-text">
                 <strong>Mir ist bekannt *</strong>, dass mein Widerrufsrecht erlischt, wenn die Dienstleistung vollständig erbracht wurde
                 und ich mit der Ausführung vor Ende der Widerrufsfrist begonnen habe.
               </span>
@@ -3008,13 +2444,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
         {/* Info-Box für normalen Beginn */}
         {memberData.vertragsbeginn_option === 'nach_widerruf' && (
-          <div style={{
-            padding: '1rem',
-            background: 'rgba(16, 185, 129, 0.1)',
-            borderRadius: '8px',
-            border: '1px solid rgba(16, 185, 129, 0.3)'
-          }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.9)' }}>
+          <div className="nma-s7-widerruf-info">
+            <p className="nma-s7-widerruf-text">
               ✓ Sie haben volles 14-tägiges Widerrufsrecht gemäß § 355 BGB.<br/>
               ✓ Das Training beginnt automatisch nach Ablauf der Widerrufsfrist.<br/>
               ✓ Sie können den Vertrag innerhalb von 14 Tagen ohne Angabe von Gründen widerrufen.
@@ -3029,20 +2460,14 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     <div className="step-content">
       <h3>Schritt 7: Benutzerkonto erstellen</h3>
 
-      <div style={{
-        padding: '1.5rem',
-        background: 'rgba(31, 41, 55, 0.8)',
-        borderRadius: '12px',
-        border: '2px solid rgba(59, 130, 246, 0.5)',
-        marginBottom: '2rem'
-      }}>
-        <h4 style={{ color: 'rgba(255, 255, 255, 0.95)', marginTop: 0, marginBottom: '1rem' }}>🔐 Erstellen Sie Ihren Login-Zugang</h4>
-        <p style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+      <div className="nma-s8-box">
+        <h4 className="nma-section-heading">🔐 Erstellen Sie Ihren Login-Zugang</h4>
+        <p className="nma-s8-desc">
           Mit diesen Zugangsdaten können Sie sich später im Mitgliederportal anmelden und Ihre Daten verwalten.
         </p>
 
         <div className="input-container">
-          <div className="input-group" style={{ gridColumn: '1 / -1' }}>
+          <div className="input-group nma-full-span">
             <label htmlFor="benutzername" className="input-label">Benutzername *</label>
             <input
               type="text"
@@ -3054,7 +2479,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               placeholder="Wählen Sie einen eindeutigen Benutzernamen"
               autoComplete="username"
             />
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)', marginTop: '0.3rem' }}>
+            <div className="nma-hint-xs">
               Mindestens 4 Zeichen, nur Buchstaben, Zahlen, Unterstrich und Bindestrich
             </div>
           </div>
@@ -3071,7 +2496,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               placeholder="Mindestens 8 Zeichen"
               autoComplete="new-password"
             />
-            <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)', marginTop: '0.3rem' }}>
+            <div className="nma-hint-xs">
               Mindestens 8 Zeichen mit Buchstaben und Zahlen
             </div>
           </div>
@@ -3092,29 +2517,13 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         </div>
 
         {memberData.passwort && memberData.passwort_wiederholen && memberData.passwort !== memberData.passwort_wiederholen && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(127, 29, 29, 0.6)',
-            border: '2px solid rgba(239, 68, 68, 0.6)',
-            borderRadius: '6px',
-            color: 'rgba(255, 255, 255, 0.95)',
-            fontSize: '0.85rem'
-          }}>
+          <div className="nma-warning-red">
             ⚠️ Die Passwörter stimmen nicht überein
           </div>
         )}
 
         {memberData.passwort && memberData.passwort.length > 0 && memberData.passwort.length < 8 && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(120, 53, 15, 0.6)',
-            border: '2px solid rgba(245, 158, 11, 0.6)',
-            borderRadius: '6px',
-            color: 'rgba(255, 255, 255, 0.95)',
-            fontSize: '0.85rem'
-          }}>
+          <div className="nma-warning-amber">
             ⚠️ Das Passwort muss mindestens 8 Zeichen lang sein
           </div>
         )}
@@ -3153,40 +2562,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
   // PORTAL MODAL TO BODY - BREAK ALL CONTAINERS
   const modalElement = (
-    <div className="modal-overlay" style={{
-      position: 'fixed !important',
-      top: '0px !important',
-      left: '0px !important',
-      right: '0px !important',
-      bottom: '0px !important',
-      width: '100vw !important',
-      height: '100vh !important',
-      display: 'flex !important',
-      alignItems: 'flex-start !important',
-      justifyContent: 'center !important',
-      padding: '0px !important',
-      margin: '0px !important',
-      zIndex: '99999 !important',
-      transform: 'translateY(0px) !important'
-    }}>
-      <div className="modal-content step-modal neues-mitglied-modal-v2" style={{
-        marginTop: '20px !important',
-        marginBottom: '20px !important',
-        marginLeft: 'auto !important',
-        marginRight: 'auto !important',
-        maxHeight: '85vh !important',
-        height: 'auto !important',
-        overflowY: 'auto !important',
-        overflowX: 'hidden !important',
-        width: '750px !important',
-        maxWidth: '90vw !important',
-        position: 'relative !important',
-        top: '0px !important',
-        left: '0px !important',
-        right: '0px !important',
-        transform: 'translateY(0px) !important',
-        padding: '1.5rem !important'
-      }}>
+    <div className="modal-overlay nma-modal-overlay">
+      <div className="modal-content step-modal neues-mitglied-modal-v2">
         <div className="modal-header">
         <h2 className="modal-title">Neues Mitglied anlegen</h2>
           <div className="step-indicator">
@@ -3194,23 +2571,7 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </div>
         </div>
 
-        <div className="progress-bar" style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          width: '100%',
-          margin: '0',
-          padding: '10px 12px',
-          height: 'auto',
-          minHeight: '55px',
-          backgroundColor: 'transparent',
-          border: 'none',
-          borderRadius: '0',
-          gap: '8px',
-          boxShadow: 'none',
-          animation: 'none',
-          marginBottom: '2.5rem'
-        }}>
+        <div className="progress-bar nma-progress-bar">
           {Array.from({ length: getDisplayStepCount() }, (_, i) => i + 1).map((displayStep) => {
             const actualStep = getActualStep(displayStep);
             const isActive = currentStep === actualStep;
@@ -3219,55 +2580,10 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             return (
             <div
               key={displayStep}
-              className={`progress-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                flex: 1,
-                position: 'relative',
-                minHeight: '60px',
-                margin: '0',
-                padding: '6px',
-                gap: '5px',
-                minWidth: '70px'
-              }}
+              className={`progress-step nma-progress-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}
             >
-              <div className="step-number" style={{
-                width: isActive ? '30px' : '26px',
-                height: isActive ? '30px' : '26px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: isActive ? '0.9rem' : '0.8rem',
-                background: isActive ? '#ffffff' : (isCompleted ? '#ffffff' : '#e5e7eb'),
-                color: isActive ? 'var(--primary-color)' : (isCompleted ? '#10b981' : '#6b7280'),
-                border: isActive ? '3px solid var(--primary-color)' : (isCompleted ? '3px solid #10b981' : '2px solid #e5e7eb'),
-                position: 'relative',
-                zIndex: 2,
-                transition: 'all 0.3s ease',
-                margin: '0',
-                flexShrink: 0,
-                boxShadow: isActive ? '0 2px 6px rgba(234, 179, 8, 0.25)' : (isCompleted ? '0 2px 6px rgba(16, 185, 129, 0.2)' : 'none'),
-                animation: 'none'
-              }}>{displayStep}</div>
-              <div className="step-label" style={{
-                margin: '0',
-                fontSize: '0.7rem',
-                fontWeight: isActive ? 600 : 500,
-                color: isActive ? '#1f2937' : (isCompleted ? '#10b981' : '#6b7280'),
-                textAlign: 'center',
-                transition: 'all 0.3s ease',
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: '100%',
-                textShadow: 'none',
-                animation: 'none'
-              }}>
+              <div className={`step-number nma-progress-step-number${isActive ? ' nma-progress-step-number--active' : (!isActive && isCompleted ? ' nma-progress-step-number--completed' : '')}`}>{displayStep}</div>
+              <div className={`step-label nma-step-label${isActive ? ' nma-step-label--active' : (isCompleted ? ' nma-step-label--completed' : ' nma-step-label--pending')}`}>
                 {/* Labels für öffentliche Registrierung (8 Schritte) */}
                 {isRegistrationFlow && (
                   <>
@@ -3358,47 +2674,20 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         {/* Warnung bei Vertrag-Schritt (Schritt 4 für Registration, Schritt 3 für Admin) */}
         {((isRegistrationFlow && currentStep === 4) || (!isRegistrationFlow && currentStep === 3)) &&
          (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert || !memberData.vertrag_tarif_id) && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(120, 53, 15, 0.6)',
-            border: '2px solid rgba(245, 158, 11, 0.6)',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            color: 'rgba(255, 255, 255, 0.95)',
-            textAlign: 'center'
-          }}>
+          <div className="nma-warning-amber">
             ⚠️ Bitte füllen Sie alle Pflichtfelder im Vertrag aus (AGB, Datenschutz, Dojo-Regeln, Hausordnung, Tarif).
           </div>
         )}
 
         {/* Warnung bei Widerruf-Schritt (Schritt 7 für Registration, Schritt 6 für Admin) */}
         {((isRegistrationFlow && currentStep === 7) || (!isRegistrationFlow && currentStep === 6)) && !memberData.vertragsbeginn_option && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(120, 53, 15, 0.6)',
-            border: '2px solid rgba(245, 158, 11, 0.6)',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            color: 'rgba(255, 255, 255, 0.95)',
-            textAlign: 'center'
-          }}>
+          <div className="nma-warning-amber">
             Bitte wählen Sie eine Option für den Vertragsbeginn aus.
           </div>
         )}
 
         {((isRegistrationFlow && currentStep === 7) || (!isRegistrationFlow && currentStep === 6)) && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem',
-            background: 'rgba(120, 53, 15, 0.6)',
-            border: '2px solid rgba(245, 158, 11, 0.6)',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            color: 'rgba(255, 255, 255, 0.95)',
-            textAlign: 'center'
-          }}>
+          <div className="nma-warning-amber">
             Für den Sofortbeginn müssen Sie beide Bestätigungen akzeptieren.
           </div>
         )}
@@ -3407,44 +2696,17 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         {currentStep === 8 && isRegistrationFlow && (
           <>
             {(!memberData.benutzername || memberData.benutzername.length < 4) && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(120, 53, 15, 0.6)',
-                border: '2px solid rgba(245, 158, 11, 0.6)',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.95)',
-                textAlign: 'center'
-              }}>
+              <div className="nma-warning-amber">
                 Bitte geben Sie einen Benutzernamen mit mindestens 4 Zeichen ein.
               </div>
             )}
             {(!memberData.passwort || memberData.passwort.length < 8) && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(120, 53, 15, 0.6)',
-                border: '2px solid rgba(245, 158, 11, 0.6)',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.95)',
-                textAlign: 'center'
-              }}>
+              <div className="nma-warning-amber">
                 Das Passwort muss mindestens 8 Zeichen lang sein.
               </div>
             )}
             {memberData.passwort && memberData.passwort_wiederholen && memberData.passwort !== memberData.passwort_wiederholen && (
-              <div style={{
-                marginTop: '1rem',
-                padding: '0.75rem',
-                background: 'rgba(120, 53, 15, 0.6)',
-                border: '2px solid rgba(245, 158, 11, 0.6)',
-                borderRadius: '6px',
-                fontSize: '0.85rem',
-                color: 'rgba(255, 255, 255, 0.95)',
-                textAlign: 'center'
-              }}>
+              <div className="nma-warning-amber">
                 Die Passwörter stimmen nicht überein.
               </div>
             )}

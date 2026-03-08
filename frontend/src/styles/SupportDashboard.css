@@ -23,16 +23,16 @@
   align-items: center;
   gap: 0.75rem;
   font-size: 1.75rem;
-  color: var(--text-primary);
+  color: var(--text-1);
   margin: 0 0 0.5rem 0;
 }
 
 .support-header-info h1 svg {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .support-header-info p {
-  color: var(--text-secondary);
+  color: var(--text-2);
   margin: 0;
   font-size: 0.95rem;
 }
@@ -47,10 +47,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--border-accent);
-  border-radius: 10px;
-  color: var(--text-primary);
+  background: var(--surface-3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-lg);
+  color: var(--text-1);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -59,7 +59,7 @@
 
 .btn-refresh:hover {
   background: rgba(16, 185, 129, 0.1);
-  border-color: #10b981;
+  border-color: var(--status-success);
 }
 
 .btn-refresh:disabled {
@@ -89,11 +89,15 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem;
-  background: var(--glass-bg);
-  border: 1px solid var(--border-accent);
-  border-radius: 12px;
-  border-left: 4px solid;
+  background: var(--surface-3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
+  border-left: 4px solid var(--card-color, var(--primary));
   transition: all 0.2s ease;
+}
+
+.stat-icon {
+  background-color: color-mix(in srgb, var(--card-color, var(--primary)) 13%, transparent);
 }
 
 .support-stat-card:hover {
@@ -101,48 +105,15 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.stat-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  flex-shrink: 0;
-}
-
 .stat-content {
   flex: 1;
   min-width: 0;
 }
 
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
 .stat-label {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
   margin-top: 0.25rem;
-}
-
-.stat-trend {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.stat-trend.up {
-  color: #10b981;
-}
-
-.stat-trend.down {
-  color: #ef4444;
 }
 
 /* Tabs */
@@ -151,9 +122,9 @@
   gap: 0.5rem;
   margin-bottom: 1.5rem;
   padding: 0.5rem;
-  background: var(--glass-bg);
-  border-radius: 12px;
-  border: 1px solid var(--border-accent);
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-xl);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .support-tab {
@@ -163,8 +134,8 @@
   padding: 0.75rem 1.5rem;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: var(--text-secondary);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-2);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -173,19 +144,19 @@
 
 .support-tab:hover {
   background: rgba(16, 185, 129, 0.1);
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .support-tab.active {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  color: var(--text-1);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 /* Content */
 .support-content {
-  background: var(--glass-bg);
-  border: 1px solid var(--border-accent);
+  background: var(--surface-3);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 16px;
   padding: 1.5rem;
   min-height: 400px;
@@ -216,12 +187,12 @@
   padding: 1rem 1.25rem;
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.05) 100%);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 0.5rem;
 }
 
 .column-header svg {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .column-header.features {
@@ -230,14 +201,14 @@
 }
 
 .column-header.features svg {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .column-header h2 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 /* Stats Numbers Row */
@@ -252,9 +223,9 @@
   flex-direction: column;
   align-items: center;
   padding: 1rem 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-accent);
-  border-radius: 10px;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-lg);
   text-align: center;
 }
 
@@ -277,13 +248,13 @@
 .stat-big-number {
   font-size: 1.75rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
   line-height: 1.2;
 }
 
 .stat-number-label {
   font-size: 0.7rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
   margin-top: 0.25rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -301,12 +272,12 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-md);
 }
 
 .voting-stat svg {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .voting-stat > div {
@@ -317,12 +288,12 @@
 .voting-value {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .voting-label {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 /* Alt: Grid Layout */
@@ -333,19 +304,19 @@
 }
 
 .statistik-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-accent);
-  border-radius: 12px;
+  background: var(--surface-1);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
 }
 
 .statistik-card h3 {
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: 1rem;
   font-weight: 600;
   margin: 0 0 1.25rem 0;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--border-accent);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 /* Kategorie Bars */
@@ -365,20 +336,21 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 .kategorie-bar {
   height: 8px;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   overflow: hidden;
 }
 
 .kategorie-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   transition: width 0.3s ease;
+  background-color: var(--fill-color, var(--primary));
 }
 
 /* Bereich Stats */
@@ -393,9 +365,9 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  border: 1px solid var(--border-accent);
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-lg);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .bereich-item.dojo {
@@ -423,13 +395,13 @@
 
 .bereich-name {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .bereich-count {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 /* Performance Stats */
@@ -444,12 +416,12 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-md);
 }
 
 .performance-item svg {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .performance-item > div {
@@ -460,12 +432,12 @@
 .performance-value {
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .performance-label {
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 /* Top Bearbeiter */
@@ -480,8 +452,8 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-md);
 }
 
 .bearbeiter-rank {
@@ -494,7 +466,7 @@
   border-radius: 50%;
   font-size: 0.75rem;
   font-weight: 700;
-  color: white;
+  color: var(--text-1);
 }
 
 .bearbeiter-info {
@@ -506,12 +478,12 @@
 
 .bearbeiter-name {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .bearbeiter-count {
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 /* DojoSwitcher Badge für Support */
@@ -525,7 +497,7 @@
 
 .badge-green {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
+  color: var(--text-1);
 }
 
 /* Responsive */
@@ -614,9 +586,9 @@
   display: flex;
   flex-direction: column;
   padding: 1rem 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 10px;
-  border: 1px solid var(--border-accent);
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-lg);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .feature-stat-item.neu {
@@ -638,11 +610,11 @@
 .feature-stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .feature-stat-label {
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
   margin-top: 0.25rem;
 }

@@ -1,10 +1,9 @@
-/* Mitgliederliste - Design System Theme */
+/* Mitgliederliste */
 .mitglieder-container {
   min-height: 100vh;
-  background: var(--bg-body);
-  padding: 2rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  color: var(--text-primary);
+  padding: var(--ui-page-padding);
+  font-family: inherit;
+  color: var(--text-1);
 }
 
 h2 {
@@ -14,33 +13,31 @@ h2 {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-header-margin-b);
   text-align: center;
-  text-shadow: var(--glow-gold);
 }
 
 /* Mitgliederkarten Layout */
 .card-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: var(--ui-grid-cols);
+  gap: var(--ui-grid-gap);
   padding: 1.5rem;
   justify-items: start;
 }
 
-/* Einzelne Mitgliederkarten - Design System Style */
+/* Einzelne Mitgliederkarten */
 .mitglieder-card {
-  background: var(--card-bg);
-  backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--schatten-glas);
-  padding: 2rem;
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  padding: var(--ui-card-padding);
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  transition: var(--transition-lang);
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
   width: 100%;
@@ -65,11 +62,11 @@ h2 {
 
 .mitglieder-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: var(--shadow-gold-lg);
-  border-color: var(--primary-alpha-50);
+  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
+  border-color: rgba(255, 215, 0, 0.4);
 }
 
-/* Rotating Border Effekt - DEZENTER wie Design System */
+/* Rotating Border Effekt */
 .mitglieder-card::after {
   content: '';
   position: absolute;
@@ -80,9 +77,9 @@ h2 {
   background: conic-gradient(
     from 0deg,
     transparent,
-    var(--primary-alpha-10),
+    rgba(255, 215, 0, 0.08),
     transparent,
-    var(--secondary-alpha-10),
+    rgba(255, 107, 53, 0.06),
     transparent
   );
   border-radius: 50%;
@@ -100,15 +97,15 @@ h2 {
   opacity: 0.7;
 }
 
-/* Profilbild (falls vorhanden) */
+/* Profilbild */
 .mitglied-avatar {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--comp-radius-circle);
   object-fit: cover;
   margin-bottom: 1rem;
   border: 3px solid var(--primary);
-  box-shadow: var(--glow-gold-sm);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
 }
 
 /* Mitgliedsdaten */
@@ -123,46 +120,475 @@ h2 {
   font-weight: 600;
   color: var(--primary);
   margin: 0.5rem 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
-               0 0 4px var(--primary-alpha-30);
 }
 
 .mitglied-details p {
-  color: var(--text-secondary);
+  color: var(--text-2);
   margin: 0.25rem 0;
-  font-size: 0.9rem;
+  font-size: var(--ui-card-body);
 }
 
 .filter-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
   justify-content: center;
   margin-top: 1.5rem;
 }
 
 .filter-button {
-  background-color: var(--farbe-rot-hell);
-  color: var(--text-primary);
-  padding: 8px 16px;
-  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-1);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
-  font-size: 14px;
-  border: none;
+  font-size: var(--ui-btn-font);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: background-color 0.3s;
 }
 
 .filter-button:hover {
-  background-color: var(--farbe-rot);
+  background: var(--surface-3);
 }
 
-/* Aktiver Filterbutton in einer anderen Farbe (z. B. Blau) */
 .filter-button.active {
-  background-color: #007BFF;
-  color: #fff;
+  background: var(--status-indigo-bg);
+  color: var(--status-indigo);
+  border-color: var(--status-indigo-border);
 }
 
 .filter-button.reset {
-  background-color: var(--farbe-grau);
+  background: var(--surface-1);
+  color: var(--text-3);
+}
+
+/* ── Inline-style replacements (ml- prefix) ─────────────────────────────── */
+
+/* ml-icon-lg: large emoji/icon span inside menu items */
+.ml-icon-lg {
+  font-size: 1.3rem;
+}
+
+/* ml-center-loader: full-viewport centred loading wrapper */
+.ml-center-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+/* ml-menu-anchor: inline dropdown anchor wrapper */
+.ml-menu-anchor {
+  position: relative;
+  display: inline-block;
+  z-index: 10000;
+}
+
+/* ── MemberCard (static parts) ──────────────────────────────────────────── */
+
+/* ml-member-card: stat-card base overrides for member cards */
+.ml-member-card {
+  padding: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 130px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  position: relative;
+}
+
+/* ml-checkbox: selection-mode checkbox overlay */
+.ml-checkbox {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+/* ml-check-mark: tick inside the checkbox */
+.ml-check-mark {
+  color: white;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+/* ml-card-top: wrapper div above member info */
+.ml-card-top {
+  margin-bottom: 0.3rem;
+}
+
+/* ml-card-header-row: flex row with avatar + name */
+.ml-card-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+/* ml-avatar: small circular avatar in card header */
+.ml-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+/* ml-member-name: name heading inside card */
+.ml-member-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.3;
+}
+
+/* ml-member-info: small text block below name */
+.ml-member-info {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* ml-info-dob: date-of-birth paragraph */
+.ml-info-dob {
+  margin: 0 0 0.2rem 0;
+  font-size: 0.7rem;
+}
+
+/* ml-info-stile: styles paragraph */
+.ml-info-stile {
+  margin: 0;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.3;
+}
+
+/* ── VirtualizedMemberGrid empty state ──────────────────────────────────── */
+
+/* ml-empty-card: stat-card padding + text-align for empty state */
+.ml-empty-card {
+  padding: 2rem;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* ml-empty-title: heading inside empty state */
+.ml-empty-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+}
+
+/* ml-empty-desc: description text inside empty state */
+.ml-empty-desc {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* ── Loading state (inside ready-check guard) ───────────────────────────── */
+
+/* ml-loader-text: "Lade Daten..." paragraph */
+.ml-loader-text {
+  text-align: center;
+}
+
+/* ml-loader-text p */
+.ml-loader-text p {
+  margin-top: 1rem;
+  color: var(--text-secondary);
+}
+
+/* ── Page header (main component) ──────────────────────────────────────── */
+
+/* ml-page-header: overrides for .page-header flex layout */
+.ml-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-top: 0.3rem;
+  align-items: center;
+}
+
+/* ml-page-title: overrides for .page-title */
+.ml-page-title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ml-toolbar-row: search + buttons row */
+.ml-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ml-search-input: text search field */
+.ml-search-input {
+  width: 160px;
+  padding: 0 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  transition: all 0.3s ease;
+  outline: none;
+  color: white;
+  box-sizing: border-box;
+  height: 34px;
+}
+
+/* ml-filter-select: style / age / belt filter dropdowns */
+.ml-filter-select {
+  padding: 0 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 34px;
+  outline: none;
+  padding-right: 1.8rem;
+}
+
+/* ml-reset-btn: filter reset button */
+.ml-reset-btn {
+  padding: 0 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+/* ml-actions-btn: kebab/actions menu trigger button */
+.ml-actions-btn {
+  padding: 0 0.6rem;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+  height: 34px;
+}
+
+/* ml-kebab-icon: ⋮ icon span */
+.ml-kebab-icon {
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+/* ml-dropdown: floating actions dropdown portal */
+.ml-dropdown {
+  position: fixed;
+  border-radius: 8px;
+  z-index: 999999;
+  min-width: 220px;
+  overflow: visible;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  padding: 0.5rem;
+}
+
+/* ml-dropdown-item: individual button inside dropdown */
+.ml-dropdown-item {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 600;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+/* last dropdown item has no bottom margin */
+.ml-dropdown-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ml-member-count: "X/Y" counter span */
+.ml-member-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  padding: 0 0.5rem;
+}
+
+/* ── ABC letter filter row ──────────────────────────────────────────────── */
+
+/* ml-letter-row: container for the alphabet filter */
+.ml-letter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ml-letter-label: "Nachname:" label */
+.ml-letter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ml-letter-btn: individual letter buttons */
+.ml-letter-btn {
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+  min-width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ml-letter-reset-btn: "✖ Alle" reset for letter filter */
+.ml-letter-reset-btn {
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* ── Selection mode action bar ──────────────────────────────────────────── */
+
+/* ml-selection-bar: purple action bar shown in selection mode */
+.ml-selection-bar {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(12px);
+}
+
+/* ml-selection-count: selected-count text */
+.ml-selection-count {
   color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* ml-select-all-btn: "Alle auswählen / abwählen" button */
+.ml-select-all-btn {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* ml-cancel-selection-btn: "Abbrechen" button in selection bar */
+.ml-cancel-selection-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* ml-member-card--selected: purple selection highlight */
+.ml-member-card--selected {
+  border: 2px solid rgba(139, 92, 246, 0.6) !important;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+}
+
+/* ml-checkbox--selected: checked state for selection checkbox */
+.ml-checkbox--selected {
+  border: 2px solid #8b5cf6;
+  background: #8b5cf6;
+}
+
+/* ml-member-grid: static grid properties for virtualized member grid */
+.ml-member-grid {
+  display: grid;
+  gap: 6px;
+  margin-top: 0.2rem;
+  margin-bottom: 0.5rem;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* ml-bulk-archive-btn: red archive action button in selection bar */
+.ml-bulk-archive-btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  background: rgba(128, 128, 128, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+  border: none;
+  border-radius: 6px;
+  cursor: not-allowed;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ml-bulk-archive-btn:not(:disabled) {
+  background: linear-gradient(135deg, #EF4444, #DC2626);
+  color: white;
+  cursor: pointer;
+}
+
+.ml-bulk-archive-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }

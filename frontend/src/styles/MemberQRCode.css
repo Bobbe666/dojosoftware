@@ -1,0 +1,97 @@
+/* ============================================================================
+   MEMBER QR CODE – scoped styles (prefix: mqr-)
+   ============================================================================ */
+
+/* Narrow modal override */
+.mqr-modal-content {
+  max-width: 500px;
+}
+
+/* Modal body: centered with generous padding */
+.mqr-modal-body {
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Dark gradient QR card */
+.mqr-card {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  padding: 2rem;
+  border-radius: 16px;
+  border: 3px solid #ffd700;
+  margin-bottom: 1.5rem;
+}
+
+/* Member name heading inside card */
+.mqr-member-name {
+  color: var(--primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+/* White QR code wrapper */
+.mqr-qr-wrap {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+/* Info text block below QR */
+.mqr-info-text {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Individual info row */
+.mqr-info-row {
+  margin-bottom: 0.5rem;
+}
+
+/* Usage hint box */
+.mqr-hint-box {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* 2-column button grid */
+.mqr-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* Common action button layout */
+.mqr-btn-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+}
+
+/* Print button overrides */
+.mqr-btn-print {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 53, 0.2));
+  border: 2px solid #ffd700;
+  color: var(--primary);
+}
+
+/* Full-width close button */
+.mqr-btn-close {
+  width: 100%;
+  margin-top: 1rem;
+}

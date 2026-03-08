@@ -1,0 +1,242 @@
+/* KalenderAbo — inline style replacements (prefix: ka-) */
+
+/* Main container */
+.ka-container {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Header row */
+.ka-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.ka-title {
+  color: var(--primary);
+  margin: 0;
+  font-size: 24px;
+}
+
+.ka-subtitle {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  font-size: 14px;
+}
+
+/* Card */
+.ka-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* Card header */
+.ka-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ka-card-title {
+  color: var(--text-primary);
+  margin: 0;
+  font-size: 18px;
+}
+
+/* Badge */
+.ka-badge {
+  background: rgba(255, 215, 0, 0.2);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Card description */
+.ka-card-description {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* URL box */
+.ka-url-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* URL input */
+.ka-url-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: monospace;
+}
+
+/* Copy button */
+.ka-copy-btn {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+/* Button group */
+.ka-button-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Calendar app button */
+.ka-calendar-btn {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Apple button variant */
+.ka-calendar-btn--apple {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Inline icon margin */
+.ka-btn-icon {
+  margin-right: 8px;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* Small 16px favicon image */
+.ka-favicon-sm {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+}
+
+/* 24px favicon image used in instructions */
+.ka-favicon-lg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Instructions card */
+.ka-instructions-card {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.ka-instructions-title {
+  color: var(--info);
+  margin: 0 0 16px 0;
+  font-size: 16px;
+}
+
+/* Instruction row */
+.ka-instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Instruction icon circle */
+.ka-instruction-icon {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ka-instruction-text {
+  color: var(--text-secondary);
+  margin: 4px 0 0 0;
+  font-size: 13px;
+}
+
+/* Info box */
+.ka-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  color: var(--primary);
+}
+
+/* Loading state */
+.ka-loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+/* Spinner */
+.ka-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 215, 0, 0.2);
+  border-top: 3px solid #ffd700;
+  border-radius: 50%;
+  animation: ka-spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes ka-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error state */
+.ka-error {
+  text-align: center;
+  padding: 40px;
+  color: var(--error);
+}
+
+/* Retry button */
+.ka-retry-btn {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #ffd700;
+  border: none;
+  border-radius: 8px;
+  color: var(--bg-secondary);
+  font-weight: bold;
+  cursor: pointer;
+}

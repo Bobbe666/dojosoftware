@@ -309,6 +309,7 @@ const DojoLizenzverwaltung = () => {
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [editingPlanPrices, setEditingPlanPrices] = useState({});
   const [activePlanTab, setActivePlanTab] = useState('starter'); // Für Features-Tab Sub-Navigation
+  const [featureStatusFilter, setFeatureStatusFilter] = useState('all'); // Filter: 'all', 'active', 'inactive'
 
   // Statistiken
   const [statsLoading, setStatsLoading] = useState(false);
@@ -1489,9 +1490,8 @@ const DojoLizenzverwaltung = () => {
   }, [dojosWithHealth]);
 
   const getPlanBadge = (plan) => {
-    const color = PLAN_COLORS[plan] || PLAN_COLORS.trial;
     return (
-      <span className="plan-badge" style={{ backgroundColor: `${color}20`, color }}>
+      <span className={`plan-badge plan-badge--${plan || 'trial'}`}>
         {(plan || 'trial').toUpperCase()}
       </span>
     );
@@ -1609,7 +1609,7 @@ const DojoLizenzverwaltung = () => {
           className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => { setActiveTab('settings'); loadSaasSettings(); }}
         >
-          <Settings size={16} style={{ marginRight: 4 }} />
+          <Settings size={16} />
           Einstellungen
         </button>
         {selectedDojo && (
@@ -1880,18 +1880,15 @@ const DojoLizenzverwaltung = () => {
                     return (
                       <div key={plan} className="distribution-item">
                         <div className="distribution-header">
-                          <span className="distribution-label" style={{ color: PLAN_COLORS[plan] }}>
+                          <span className={`distribution-label distribution-label--${plan}`}>
                             {PLAN_NAMES[plan]}
                           </span>
                           <span className="distribution-count">{count} ({percent}%)</span>
                         </div>
                         <div className="distribution-bar-bg">
                           <div
-                            className="distribution-bar"
-                            style={{
-                              width: `${percent}%`,
-                              backgroundColor: PLAN_COLORS[plan]
-                            }}
+                            className={`distribution-bar distribution-bar--${plan}`}
+                            style={{ width: `${percent}%` }}
                           />
                         </div>
                       </div>
@@ -2084,7 +2081,7 @@ const DojoLizenzverwaltung = () => {
                           <tr key={d.id}>
                             <td>{d.name}</td>
                             <td>
-                              <span className="plan-badge-mini" style={{ backgroundColor: `${PLAN_COLORS[d.plan]}20`, color: PLAN_COLORS[d.plan] }}>
+                              <span className={`plan-badge-mini plan-badge-mini--${d.plan}`}>
                                 {d.plan.toUpperCase()}
                               </span>
                             </td>
@@ -2457,6 +2454,26 @@ const DojoLizenzverwaltung = () => {
                       </div>
                     </div>
                   </div>
+                  <div className="psb-center">
+                    <button
+                      onClick={() => setFeatureStatusFilter('all')}
+                      className={`psb-filter ${featureStatusFilter === 'all' ? 'active' : ''}`}
+                    >
+                      Alle
+                    </button>
+                    <button
+                      onClick={() => setFeatureStatusFilter('active')}
+                      className={`psb-filter ${featureStatusFilter === 'active' ? 'active' : ''}`}
+                    >
+                      ✓ Aktiv
+                    </button>
+                    <button
+                      onClick={() => setFeatureStatusFilter('inactive')}
+                      className={`psb-filter ${featureStatusFilter === 'inactive' ? 'active' : ''}`}
+                    >
+                      ✕ Nicht aktiv
+                    </button>
+                  </div>
                   <div className="psb-right">
                     <button
                       className={`psb-visibility ${currentPrices.is_visible ? 'visible' : 'hidden'}`}
@@ -2484,34 +2501,53 @@ const DojoLizenzverwaltung = () => {
 
             {/* Features Grid - 2-3 pro Zeile */}
             <div className="features-grid-compact">
-              {allFeatures.map(feature => {
-                const isIncluded = (planFeatures[activePlanTab] || []).includes(feature.id);
-                return (
-                  <div
-                    key={feature.id}
-                    className={`feature-card-mini ${isIncluded ? 'included' : 'excluded'}`}
-                    onClick={() => {
-                      const currentFeatures = planFeatures[activePlanTab] || [];
-                      const newFeatures = isIncluded
-                        ? currentFeatures.filter(f => f !== feature.id)
-                        : [...currentFeatures, feature.id];
-                      setPlanFeatures(prev => ({
-                        ...prev,
-                        [activePlanTab]: newFeatures
-                      }));
-                    }}
-                  >
-                    <div className="fcm-header">
-                      <span className="fcm-emoji">{feature.emoji}</span>
-                      <span className="fcm-name">{feature.label}</span>
-                      <span className={`fcm-status ${isIncluded ? 'on' : 'off'}`}>
-                        {isIncluded ? <Check size={12} /> : <XCircle size={12} />}
-                      </span>
+              {(() => {
+                // Sortiere Features: Aktivierte zuerst
+                const sortedFeatures = [...allFeatures].sort((a, b) => {
+                  const aIncluded = (planFeatures[activePlanTab] || []).includes(a.id);
+                  const bIncluded = (planFeatures[activePlanTab] || []).includes(b.id);
+                  if (aIncluded && !bIncluded) return -1;
+                  if (!aIncluded && bIncluded) return 1;
+                  return 0;
+                });
+
+                // Filtere Features basierend auf Status
+                const filteredFeatures = sortedFeatures.filter(feature => {
+                  const isIncluded = (planFeatures[activePlanTab] || []).includes(feature.id);
+                  if (featureStatusFilter === 'active') return isIncluded;
+                  if (featureStatusFilter === 'inactive') return !isIncluded;
+                  return true; // 'all'
+                });
+
+                return filteredFeatures.map(feature => {
+                  const isIncluded = (planFeatures[activePlanTab] || []).includes(feature.id);
+                  return (
+                    <div
+                      key={feature.id}
+                      className={`feature-card-mini ${isIncluded ? 'included' : 'excluded'}`}
+                      onClick={() => {
+                        const currentFeatures = planFeatures[activePlanTab] || [];
+                        const newFeatures = isIncluded
+                          ? currentFeatures.filter(f => f !== feature.id)
+                          : [...currentFeatures, feature.id];
+                        setPlanFeatures(prev => ({
+                          ...prev,
+                          [activePlanTab]: newFeatures
+                        }));
+                      }}
+                    >
+                      <div className="fcm-header">
+                        <span className="fcm-emoji">{feature.emoji}</span>
+                        <span className="fcm-name">{feature.label}</span>
+                        <span className={`fcm-status ${isIncluded ? 'on' : 'off'}`}>
+                          {isIncluded ? <Check size={12} /> : <XCircle size={12} />}
+                        </span>
+                      </div>
+                      <div className="fcm-desc">{feature.description}</div>
                     </div>
-                    <div className="fcm-desc">{feature.description}</div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
             </div>
 
             {/* Save Button */}
@@ -3127,12 +3163,7 @@ const DojoLizenzverwaltung = () => {
                       .map(plan => (
                         <button
                           key={plan}
-                          className="btn-plan"
-                          style={{
-                            backgroundColor: `${PLAN_COLORS[plan]}20`,
-                            borderColor: PLAN_COLORS[plan],
-                            color: PLAN_COLORS[plan]
-                          }}
+                          className={`btn-plan btn-plan--${plan}`}
                           onClick={() => handleActivatePlan(selectedDojo.id, plan)}
                         >
                           {plan.charAt(0).toUpperCase() + plan.slice(1)}
@@ -3199,19 +3230,17 @@ const DojoLizenzverwaltung = () => {
                     return (
                       <div
                         key={plan}
-                        className={`plan-column-header ${isCurrentPlan ? 'current' : ''} ${isUpgrade ? 'upgrade' : ''}`}
-                        style={{ borderColor: PLAN_COLORS[plan] }}
+                        className={`plan-column-header plan-column-header--${plan} ${isCurrentPlan ? 'current' : ''} ${isUpgrade ? 'upgrade' : ''}`}
                       >
-                        <span className="plan-name" style={{ color: PLAN_COLORS[plan] }}>
+                        <span className={`plan-name plan-name--${plan}`}>
                           {PLAN_NAMES[plan]}
                         </span>
                         <span className="plan-price-small">{priceDisplay}</span>
                         {isCurrentPlan && <span className="current-badge">Aktuell</span>}
                         {isUpgrade && (
                           <button
-                            className="btn-upgrade-small"
+                            className={`btn-upgrade-small btn-upgrade-small--${plan}`}
                             onClick={() => handleActivatePlan(selectedDojo.id, plan)}
-                            style={{ backgroundColor: PLAN_COLORS[plan] }}
                           >
                             Upgrade
                           </button>
@@ -3246,10 +3275,10 @@ const DojoLizenzverwaltung = () => {
                           return (
                             <div
                               key={plan}
-                              className={`plan-cell ${isIncluded ? 'included' : 'not-included'} ${isCurrentPlan ? 'current-plan' : ''}`}
+                              className={`plan-cell plan-cell--${plan} ${isIncluded ? 'included' : 'not-included'} ${isCurrentPlan ? 'current-plan' : ''}`}
                             >
                               {isIncluded ? (
-                                <CheckCircle size={20} style={{ color: PLAN_COLORS[plan] }} />
+                                <CheckCircle size={20} className="plan-check-icon" />
                               ) : (
                                 <XCircle size={20} className="not-included-icon" />
                               )}
@@ -3271,12 +3300,7 @@ const DojoLizenzverwaltung = () => {
                     return (
                       <div key={plan} className="footer-cell">
                         <button
-                          className={`btn-select-plan ${isCurrentPlan ? 'current' : ''}`}
-                          style={{
-                            backgroundColor: isCurrentPlan ? PLAN_COLORS[plan] : 'transparent',
-                            borderColor: PLAN_COLORS[plan],
-                            color: isCurrentPlan ? '#fff' : PLAN_COLORS[plan]
-                          }}
+                          className={`btn-select-plan btn-select-plan--${plan} ${isCurrentPlan ? 'current' : ''}`}
                           onClick={() => !isCurrentPlan && handleActivatePlan(selectedDojo.id, plan)}
                           disabled={isCurrentPlan}
                         >

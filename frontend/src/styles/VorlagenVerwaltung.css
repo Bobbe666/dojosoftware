@@ -1,0 +1,473 @@
+/* VorlagenVerwaltung.css — extracted inline styles — vv- prefix */
+
+/* Page wrapper */
+.vv-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header bar */
+.vv-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Page title */
+.vv-page-title {
+  color: var(--text-primary);
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Page subtitle */
+.vv-page-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  margin-top: 0.3rem;
+}
+
+/* Action buttons row */
+.vv-action-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Error box */
+.vv-error-box {
+  background: var(--error-bg, rgba(239, 68, 68, 0.1));
+  border: 1px solid var(--alert-error-border, rgba(239, 68, 68, 0.3));
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: var(--error);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Error retry button */
+.vv-error-retry-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: var(--error);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+/* Tab bar */
+.vv-tab-bar {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border-default, #333);
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+/* Empty state (text-secondary #888) */
+.vv-empty-888 {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary, #888);
+}
+
+/* Empty state (text-secondary #666) */
+.vv-empty-666 {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary, #666);
+}
+
+/* Opacity icon margin */
+.vv-icon-fade {
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+/* Vorlage grid */
+.vv-vorlage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+/* Card body (flex-1 padding) */
+.vv-card-body-flex {
+  padding: 1rem;
+  flex: 1;
+}
+
+/* Card body (padding only) */
+.vv-card-body {
+  padding: 1rem;
+}
+
+/* Tag row */
+.vv-tag-row {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+
+/* Card title */
+.vv-card-title {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem 0;
+}
+
+/* Vorlage meta row */
+.vv-vorlage-meta-row {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #888);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Vorlage dot indicator */
+.vv-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  background: var(--pc, var(--primary, #ffd700));
+}
+
+/* Italic description */
+.vv-description {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #666);
+  margin-top: 0.3rem;
+  font-style: italic;
+}
+
+/* PDF badge */
+.vv-pdf-badge {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+/* Monospace IBAN */
+.vv-monospace {
+  font-family: monospace;
+  font-size: 0.75rem;
+}
+
+/* Profile grid */
+.vv-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+/* Profile header bar */
+.vv-profil-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+/* Profile subtitle small */
+.vv-profil-subtitle {
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
+}
+
+/* Profile section btns */
+.vv-profil-btns {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Profile card name */
+.vv-profil-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+/* Profile card info text */
+.vv-profil-info {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #888);
+  line-height: 1.6;
+}
+
+/* Profile card header row */
+.vv-profil-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+/* Profile icon buttons row */
+.vv-profil-icon-btns {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Icon button neutral */
+.vv-icon-btn-neutral {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* Icon button danger */
+.vv-icon-btn-danger {
+  background: none;
+  border: none;
+  color: var(--error);
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.7;
+}
+
+/* Primary action button (neue vorlage, erstes profil, etc.) */
+.vv-btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 7px;
+  background: var(--btn-primary-bg, var(--primary, #ffd700));
+  color: var(--btn-primary-text, #1a1a2e);
+  border: none;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* Back button */
+.vv-btn-back {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid var(--border-default, #444);
+  color: var(--text-secondary, #aaa);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+/* System badge */
+.vv-badge-system {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Card actions footer */
+.vv-card-actions {
+  border-top: 1px solid var(--border-default, #2a2a3a);
+  padding: 0.6rem 1rem;
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+/* Profile section title */
+.vv-profil-section-title {
+  color: var(--text-primary, #eee);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Profile card wrapper */
+.vv-profil-card {
+  background: var(--bg-card, #1e1e2e);
+  border-radius: 10px;
+  border: 1px solid var(--border-default, #2a2a3a);
+  overflow: hidden;
+}
+
+/* Primary button with top margin (empty-state variant) */
+.vv-btn-primary-mt {
+  margin-top: 1rem;
+}
+
+/* Profile nav button (background set inline based on ansicht state) */
+/* vv-page embedded removes padding */
+.vv-page--embedded {
+  padding: 0 !important;
+}
+
+.vv-btn-profile-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 7px;
+  border: 1px solid var(--border-default, #444);
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  font-size: 0.88rem;
+  background: transparent;
+}
+.vv-btn-profile-nav--active {
+  background: var(--bg-elevated, #333);
+}
+
+/* Tab button */
+.vv-tab-btn {
+  padding: 0.6rem 1.1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 400;
+  white-space: nowrap;
+  transition: all 0.15s;
+  color: var(--text-secondary, #aaa);
+}
+.vv-tab-btn--active {
+  border-bottom-color: var(--primary, #ffd700);
+  color: var(--primary, #ffd700);
+  font-weight: 600;
+}
+
+/* Color bar atop vorlage card (background via CSS var) */
+.vv-color-bar-sm {
+  height: 4px;
+  background: var(--pc, var(--primary, #ffd700));
+}
+
+/* Color bar atop profile card */
+.vv-color-bar-lg {
+  height: 6px;
+  background: var(--pc, var(--primary, #ffd700));
+}
+
+/* Kategorie badge – colors via CSS vars */
+.vv-kategorie-badge {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--pc22, var(--primary-alpha-10, rgba(255,215,0,0.1)));
+  color: var(--pc, var(--primary, #ffd700));
+}
+
+/* Tab count badge */
+.vv-tab-count {
+  margin-left: 0.4rem;
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-surface, #1a1a2a);
+  color: var(--text-secondary, #666);
+}
+.vv-tab-count--active {
+  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
+  color: var(--primary, #ffd700);
+}
+
+/* Profile type badge */
+.vv-profil-type-badge {
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-top: 0.25rem;
+  display: inline-block;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--pc22, var(--primary-alpha-10, rgba(255,215,0,0.1)));
+  color: var(--pc, var(--primary, #ffd700));
+}
+
+/* ActionBtn base and variants */
+.vv-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.12s;
+}
+.vv-action-btn--default {
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+}
+.vv-action-btn--default:hover {
+  background: rgba(255,255,255,0.06);
+}
+.vv-action-btn--primary {
+  background: var(--primary-alpha-10, rgba(255,215,0,0.1));
+  color: var(--primary, #ffd700);
+}
+.vv-action-btn--primary:hover {
+  background: var(--primary, #ffd700);
+  color: var(--btn-primary-text, #1a1a2e);
+}
+.vv-action-btn--danger {
+  background: transparent;
+  color: var(--error, #ef4444);
+}
+.vv-action-btn--danger:hover {
+  background: var(--error, #ef4444);
+  color: #fff;
+}
+.vv-action-btn--primary-custom {
+  background: var(--c22, rgba(255,215,0,0.13));
+  color: var(--c, var(--primary, #ffd700));
+}
+.vv-action-btn--primary-custom:hover {
+  background: var(--c, var(--primary, #ffd700));
+  color: #fff;
+}
+
+/* Vorlage card base */
+.vv-vorlage-card {
+  background: var(--bg-card, #1e1e2e);
+  border-radius: 10px;
+  border: 1px solid var(--border-default, #2a2a3a);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.15s;
+}
+
+/* Toast notification */
+.vv-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 2000;
+  background: var(--success, #10b981);
+  color: var(--text-primary);
+  padding: 0.7rem 1.2rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.2s ease;
+}

@@ -8,10 +8,10 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 */
 
 /* CSS-Variablen für einheitliche Farben - using theme variables */
-/* --btn-gold: var(--primary-alpha-10) equivalent with higher opacity */
+/* --btn-gold: rgba(255,215,0,0.1) equivalent with higher opacity */
 /* --btn-gold-hover: higher opacity gold */
 /* --btn-gold-bright: var(--primary) */
-/* --btn-bg-hover: var(--glass-bg) */
+/* --btn-bg-hover: var(--surface-3) */
 /* --btn-text-active: var(--bg-secondary) */
 /* --btn-gradient: var(--gradient-gold) */
 
@@ -23,10 +23,10 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   text-align: center;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   position: relative;
   overflow: hidden;
   min-width: 120px;
@@ -46,7 +46,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--primary-alpha-10), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent);
   transition: left 0.5s;
 }
 
@@ -56,9 +56,9 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 /* Hover State */
 .btn:hover {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   transform: translateY(-1px);
 }
 
@@ -66,7 +66,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn:active,
 .btn.active {
   background: var(--gradient-gold);
-  color: var(--bg-secondary);
+  color: #000;
   border: 1px solid var(--primary);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
@@ -88,20 +88,20 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-primary {
   background: transparent;
   border: 1px solid rgba(255, 215, 0, 0.2);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
 }
 
 .btn-primary:hover {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   transform: translateY(-1px);
 }
 
 .btn-primary:active,
 .btn-primary.active {
   background: var(--gradient-gold);
-  color: var(--bg-secondary);
+  color: #000;
   border-color: var(--primary);
   box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
 }
@@ -110,26 +110,26 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-secondary:not(.logout-button):not(.dashboard-button) {
   background: transparent;
   border: 1px solid rgba(255, 215, 0, 0.2);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
 }
 
 .btn-secondary:not(.logout-button):not(.dashboard-button):hover {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.4);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
 }
 
 /* Success - Green Tint */
 .btn-success {
   background: transparent;
   border: 1px solid rgba(34, 197, 94, 0.4);
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 .btn-success:hover {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: rgba(34, 197, 94, 0.6);
-  color: #10b981;
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border);
+  color: var(--status-success);
 }
 
 .btn-success.active,
@@ -144,13 +144,13 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-warning {
   background: transparent;
   border: 1px solid rgba(245, 158, 11, 0.4);
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .btn-warning:hover {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.6);
-  color: #f59e0b;
+  background: var(--status-warning-bg);
+  border-color: var(--status-warning-border);
+  color: var(--status-warning);
 }
 
 .btn-warning.active,
@@ -165,13 +165,13 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-danger {
   background: transparent;
   border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.6);
-  color: #ef4444;
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border);
+  color: var(--status-error);
 }
 
 .btn-danger.active,
@@ -186,13 +186,13 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-info {
   background: transparent;
   border: 1px solid rgba(59, 130, 246, 0.4);
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .btn-info:hover {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.6);
-  color: #3b82f6;
+  background: var(--status-indigo-bg);
+  border-color: var(--status-indigo-border);
+  color: var(--status-indigo);
 }
 
 .btn-info.active,
@@ -260,13 +260,13 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-ghost {
   background: transparent;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
 }
 
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.4);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
 }
 
 .btn-ghost-primary {
@@ -277,7 +277,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 .btn-ghost-primary:hover {
   background: var(--gradient-gold);
-  color: var(--bg-secondary);
+  color: #000;
   border-color: var(--primary);
 }
 
@@ -293,7 +293,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 .btn-group {
   display: inline-flex;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   overflow: hidden;
 }
 
@@ -369,11 +369,11 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-toggle {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -388,12 +388,12 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-toggle.btn-toggle-success {
   background: transparent;
   border: none;
-  color: rgba(34, 197, 94, 0.7);
+  color: var(--status-success);
 }
 
 .btn-toggle.btn-toggle-success:hover {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  background: var(--status-success-bg);
+  color: var(--status-success);
 }
 
 .btn-toggle.btn-toggle-success.active {
@@ -407,12 +407,12 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 .btn-toggle.btn-toggle-danger {
   background: transparent;
   border: none;
-  color: rgba(239, 68, 68, 0.7);
+  color: var(--status-error);
 }
 
 .btn-toggle.btn-toggle-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: var(--status-error-bg);
+  color: var(--status-error);
 }
 
 .btn-toggle.btn-toggle-danger.active {
@@ -424,7 +424,7 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
 
 /* Generischer Hover nur für Buttons OHNE spezifische Variante */
 .btn-toggle:not(.btn-toggle-success):not(.btn-toggle-danger):hover {
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   color: var(--primary);
   transform: none;
 }
@@ -459,34 +459,34 @@ Transparent mit goldenem Border, beim Hover aufhellen, beim Active mit Gradient
   align-items: center;
   gap: 0.3rem;
   padding: 0.4rem 0.6rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   fontSize: 0.75rem;
   fontWeight: 600;
   border: 1px solid;
 }
 
 .badge-success {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.3);
+  background: var(--status-success-bg);
+  color: var(--status-success);
+  border-color: var(--status-success-border);
 }
 
 .badge-danger {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.3);
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  border-color: var(--status-error-border);
 }
 
 .badge-warning {
-  background: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
-  border-color: rgba(245, 158, 11, 0.3);
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  border-color: var(--status-warning-border);
 }
 
 .badge-info {
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  border-color: rgba(59, 130, 246, 0.3);
+  background: var(--status-indigo-bg);
+  color: var(--status-indigo);
+  border-color: var(--status-indigo-border);
 }
 
 .badge-neutral {

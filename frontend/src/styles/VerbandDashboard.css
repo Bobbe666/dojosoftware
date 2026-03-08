@@ -1,6 +1,18 @@
 /* VerbandDashboard.css */
 /* Styling für das TDA Verband Dashboard */
 
+/* Status badge (dojo membership status) */
+.vd-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--badge-color, var(--text-muted));
+  background: var(--badge-bg, rgba(107,114,128,0.2));
+}
+
 .verband-dashboard {
   padding: 1.5rem;
   max-width: 1400px;
@@ -19,7 +31,7 @@
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  color: var(--text-muted);
+  color: var(--text-3);
 }
 
 .loading-spinner .spin {
@@ -37,9 +49,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: var(--bg-card);
+  background: var(--surface-2);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   margin-bottom: 1rem;
 }
 
@@ -47,7 +59,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -61,10 +73,10 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.5rem 0.75rem;
-  background: var(--bg-secondary);
+  background: var(--surface-3);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
-  color: var(--text-secondary);
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-2);
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
@@ -72,8 +84,8 @@
 }
 
 .btn-refresh-small:hover {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
+  background: var(--surface-hover);
+  color: var(--text-1);
 }
 
 /* Error Banner */
@@ -84,8 +96,8 @@
   padding: 1rem 1.5rem;
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 12px;
-  color: #ef4444;
+  border-radius: var(--comp-radius-xl);
+  color: var(--status-error);
   margin-bottom: 1.5rem;
 }
 
@@ -94,8 +106,8 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.5rem;
-  background: var(--bg-card);
-  border-radius: 14px;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 1.5rem;
   border: 1px solid var(--border-color);
 }
@@ -107,8 +119,8 @@
   padding: 0.875rem 1.25rem;
   background: transparent;
   border: none;
-  border-radius: 10px;
-  color: var(--text-secondary);
+  border-radius: var(--comp-radius-lg);
+  color: var(--text-2);
   cursor: pointer;
   font-weight: 500;
   font-size: 0.9rem;
@@ -116,8 +128,8 @@
 }
 
 .verband-tab:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--surface-3);
+  color: var(--text-1);
 }
 
 .verband-tab.active {
@@ -152,8 +164,8 @@
   align-items: flex-start;
   gap: 1rem;
   padding: 1.25rem 1.5rem;
-  background: var(--bg-card);
-  border-radius: 14px;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
   border: 1px solid var(--border-color);
   transition: all 0.2s ease;
   min-height: 90px;
@@ -170,7 +182,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   flex-shrink: 0;
 }
 
@@ -211,16 +223,9 @@
   flex: 1;
 }
 
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.2;
-}
-
 .stat-label {
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: var(--text-3);
   line-height: 1.4;
 }
 
@@ -229,7 +234,7 @@
   align-items: center;
   gap: 0.4rem;
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-3);
   margin-top: 0.25rem;
 }
 
@@ -241,11 +246,11 @@
 
 .breakdown-value {
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 .breakdown-separator {
-  color: var(--text-muted);
+  color: var(--text-3);
   opacity: 0.5;
 }
 
@@ -258,9 +263,9 @@
 .stat-badge .badge-text {
   font-size: 0.7rem;
   padding: 4px 8px;
-  background: var(--bg-secondary);
-  border-radius: 6px;
-  color: var(--text-secondary);
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-2);
 }
 
 /* Content Grid */
@@ -273,7 +278,7 @@
 
 /* Panel */
 .verband-panel {
-  background: var(--bg-card);
+  background: var(--surface-2);
   border-radius: 16px;
   border: 1px solid var(--border-color);
   overflow: hidden;
@@ -285,7 +290,7 @@
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  background: var(--surface-3);
 }
 
 .panel-header h3 {
@@ -295,7 +300,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .btn-link {
@@ -319,10 +324,10 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: var(--bg-card);
+  background: var(--surface-2);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  color: var(--text-primary);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-1);
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
@@ -330,7 +335,7 @@
 }
 
 .btn-secondary:hover {
-  background: var(--bg-secondary);
+  background: var(--surface-3);
 }
 
 .panel-content {
@@ -349,13 +354,13 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: var(--bg-secondary);
-  border-radius: 10px;
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-lg);
   transition: all 0.2s ease;
 }
 
 .mitgliedschaft-item:hover {
-  background: var(--bg-elevated);
+  background: var(--surface-hover);
 }
 
 .mitgliedschaft-icon {
@@ -365,7 +370,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(59, 130, 246, 0.1);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   color: #3B82F6;
   flex-shrink: 0;
 }
@@ -379,13 +384,13 @@
 
 .mitgliedschaft-name {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
   font-size: 0.9rem;
 }
 
 .mitgliedschaft-meta {
   font-size: 0.75rem;
-  color: var(--text-muted);
+  color: var(--text-3);
 }
 
 /* Event List */
@@ -400,8 +405,8 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
-  background: var(--bg-secondary);
-  border-radius: 10px;
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-lg);
 }
 
 .event-date {
@@ -410,7 +415,7 @@
   align-items: center;
   padding: 0.5rem 1rem;
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   min-width: 50px;
 }
 
@@ -435,12 +440,12 @@
 
 .event-title {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .event-location {
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-3);
 }
 
 /* Empty State */
@@ -451,7 +456,7 @@
   justify-content: center;
   padding: 2rem;
   text-align: center;
-  color: var(--text-muted);
+  color: var(--text-3);
 }
 
 .empty-state svg {
@@ -470,7 +475,7 @@
 
 .empty-state.large h4 {
   margin: 0.5rem 0;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 /* Quick Actions */
@@ -481,7 +486,7 @@
 .verband-quick-actions h3 {
   margin: 0 0 1rem 0;
   font-size: 1rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 .quick-action-grid {
@@ -497,16 +502,16 @@
   justify-content: center;
   gap: 0.75rem;
   padding: 1.5rem 1rem;
-  background: var(--bg-card);
+  background: var(--surface-2);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: var(--comp-radius-xl);
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .quick-action-btn:hover {
-  background: var(--bg-elevated);
+  background: var(--surface-hover);
   border-color: #3B82F6;
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
@@ -528,7 +533,7 @@
   padding: 1.5rem 2rem;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.1) 100%);
   border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 14px;
+  border-radius: var(--comp-radius-xl);
 }
 
 .info-banner > svg {
@@ -538,12 +543,12 @@
 
 .info-banner h4 {
   margin: 0 0 0.5rem 0;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .info-banner p {
   margin: 0 0 1rem 0;
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: 0.9rem;
   line-height: 1.6;
 }
@@ -555,7 +560,7 @@
   padding: 0.75rem 1.5rem;
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   color: white;
   font-weight: 600;
   text-decoration: none;
@@ -580,9 +585,9 @@
   display: flex;
   gap: 1.5rem;
   padding: 1.5rem;
-  background: var(--bg-card);
+  background: var(--surface-2);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
+  border-radius: var(--comp-radius-xl);
   transition: all 0.2s ease;
 }
 
@@ -597,7 +602,7 @@
   justify-content: center;
   padding: 1rem 1.5rem;
   background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   min-width: 80px;
 }
 
@@ -625,12 +630,12 @@
 
 .event-card-content h4 {
   margin: 0 0 0.5rem 0;
-  color: var(--text-primary);
+  color: var(--text-1);
 }
 
 .event-card-content p {
   margin: 0 0 1rem 0;
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-size: 0.9rem;
 }
 
@@ -644,7 +649,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: var(--text-muted);
+  color: var(--text-3);
 }
 
 /* Responsive */
@@ -728,8 +733,8 @@
   display: flex;
   gap: 0.75rem;
   padding: 0.5rem;
-  background: var(--bg-card);
-  border-radius: 12px;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
   border: 1px solid var(--border-color);
   flex-wrap: wrap;
 }
@@ -741,8 +746,8 @@
   padding: 0.75rem 1.25rem;
   border: none;
   background: transparent;
-  border-radius: 8px;
-  color: var(--text-secondary);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-2);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -750,8 +755,8 @@
 }
 
 .sub-tabs-horizontal .sub-tab-btn:hover {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
+  background: var(--surface-3);
+  color: var(--text-1);
 }
 
 .sub-tabs-horizontal .sub-tab-btn.active {
@@ -769,8 +774,8 @@
 }
 
 .verband-lastschrift .sub-tab-content {
-  background: var(--bg-card);
-  border-radius: 12px;
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-xl);
   border: 1px solid var(--border-color);
   padding: 1.5rem;
   min-height: 400px;

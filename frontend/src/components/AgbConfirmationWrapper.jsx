@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import '../styles/AgbConfirmationWrapper.css';
 import { useAuth } from '../context/AuthContext';
 import FirstLoginConfirmation from './FirstLoginConfirmation';
 import config from '../config/config.js';
@@ -69,14 +70,7 @@ const AgbConfirmationWrapper = ({ children }) => {
   // Zeige nichts bis Check abgeschlossen
   if (!checkComplete) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        flexDirection: 'column',
-        gap: '1rem'
-      }}>
+      <div className="agb-loading-screen">
         <div className="loading-spinner-large"></div>
         <div>Pruefe Zugangsberechtigung...</div>
       </div>

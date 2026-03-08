@@ -1,0 +1,521 @@
+/* AusgabenVerwaltung.css — auto-generated CSS classes, prefix: av- */
+
+/* 5x: display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)' */
+.av-form-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* 5x: width: '100%' */
+.av-full-width {
+  width: 100%;
+}
+
+/* 4x: fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.4rem' */
+.av-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.4rem;
+}
+
+/* 3x: fontWeight: '600', marginBottom: '1rem', fontSize: '0.92rem' */
+.av-section-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+}
+
+/* 2x: textAlign: 'right' */
+.av-text-right {
+  text-align: right;
+}
+
+/* 2x: padding: '3rem', textAlign: 'center', color: 'var(--text-secondary)' */
+.av-empty-state {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* 2x: padding: '2px 4px' */
+.av-btn-year {
+  padding: 2px 4px;
+}
+
+/* 2x: fontSize: '1.55rem', fontWeight: '700' */
+.av-stat-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+}
+
+/* 2x: fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' */
+.av-stat-sub {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.35rem;
+}
+
+/* 2x: fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' */
+.av-stat-sub-sm {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* 2x: fontSize: '0.75rem', color: 'var(--text-secondary)' */
+.av-text-muted-sm {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* ── New av- classes from inline style migration (2026-03-07) ── */
+
+/* Outer wrapper */
+.av-page {
+  padding: 1.5rem;
+}
+
+/* Page header */
+.av-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.av-page-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.av-page-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.av-header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Year navigation */
+.av-year-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+
+.av-year-label {
+  font-weight: 700;
+  min-width: 44px;
+  text-align: center;
+}
+
+/* Tab navigation */
+.av-tab-nav {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+/* KPI stats */
+.av-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.av-kpi-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Card base */
+.av-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.av-card-error-border {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-left: 3px solid var(--error, #ef4444);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+/* KPI value colors */
+.av-stat-value-error {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--error, #ef4444);
+}
+
+/* Vorjahr delta row (partially dynamic — color stays inline) */
+.av-delta-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+}
+
+/* Category name */
+.av-groesste-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--kat-color, var(--text-primary));
+}
+
+.av-groesste-summe {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Charts grid */
+.av-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+/* Category list */
+.av-kat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+/* Category button item header row */
+.av-kat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 3px;
+}
+
+/* Category icon */
+.av-kat-icon {
+  flex-shrink: 0;
+  color: var(--kat-color, var(--text-secondary));
+}
+
+.av-kat-name {
+  font-size: 0.83rem;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+/* Category amount */
+.av-kat-amount {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--kat-color, var(--text-primary));
+}
+
+.av-kat-pct {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Mini progress bar */
+.av-bar-track {
+  height: 3px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  margin-left: 1.5rem;
+}
+
+/* Bar fill: width stays inline (dynamic %), background from CSS var */
+
+/* Filter row */
+.av-filter-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.av-filter-select-monat {
+  min-width: 150px;
+}
+
+.av-filter-select-kat {
+  min-width: 190px;
+}
+
+.av-filter-reset-icon {
+  margin-right: 4px;
+}
+
+.av-summary-group {
+  margin-left: auto;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.av-summary-item {
+  text-align: right;
+}
+
+.av-summary-count {
+  font-weight: 700;
+}
+
+.av-summary-total {
+  font-weight: 700;
+  color: var(--error, #ef4444);
+}
+
+/* Table card */
+.av-table-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.av-table-loading {
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.av-table-loading-spinner {
+  margin: 0 auto 0.75rem;
+}
+
+.av-table-empty {
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.av-table-empty-icon {
+  opacity: 0.25;
+  margin-bottom: 0.75rem;
+}
+
+.av-table-scroll {
+  overflow-x: auto;
+}
+
+.av-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.av-thead-row {
+  background: var(--bg-secondary);
+}
+
+/* th textAlign is dynamic (left vs right based on header name) — stays inline */
+
+.av-tbody-row {
+  border-bottom: 1px solid var(--border-secondary);
+}
+
+.av-td-date {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.av-td-kat {
+  padding: 0.7rem 0.85rem;
+}
+
+/* category span color via CSS var */
+.av-kat-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--kat-color, var(--text-secondary));
+}
+
+.av-kat-cell-label {
+  font-size: 0.83rem;
+  color: var(--text-primary);
+}
+
+.av-td-desc {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.88rem;
+}
+
+.av-td-beleg {
+  padding: 0.7rem 0.85rem;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+}
+
+.av-td-betrag {
+  padding: 0.7rem 0.85rem;
+  text-align: right;
+  font-weight: 600;
+  color: var(--error, #ef4444);
+  white-space: nowrap;
+}
+
+.av-td-actions {
+  padding: 0.7rem 0.6rem;
+}
+
+.av-actions-flex {
+  display: flex;
+  gap: 0.2rem;
+  justify-content: flex-end;
+}
+
+.av-btn-delete {
+  color: var(--error, #ef4444);
+}
+
+/* Modal */
+.av-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.av-modal-content {
+  background: var(--bg-card);
+  border-radius: 14px;
+  padding: 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  margin: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.av-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.av-modal-title {
+  margin: 0;
+}
+
+.av-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.av-form-footer {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.av-btn-submit {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Category drill-down button */
+.av-kat-btn {
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.4rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+
+/* Filter reset button */
+.av-filter-reset-btn {
+  font-size: 0.83rem;
+}
+
+/* Empty state text */
+.av-empty-text-bold {
+  font-weight: 500;
+}
+
+.av-empty-text-hint {
+  font-size: 0.85rem;
+}
+
+/* Table header cell */
+.av-th {
+  padding: 0.7rem 0.85rem;
+  font-weight: 600;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.av-th--right { text-align: right; }
+
+/* ── inline-style replacements (2026-03-07) ── */
+
+/* Tab navigation button */
+.av-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.25rem;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.15s;
+}
+.av-tab-btn--active {
+  color: var(--primary, #ffd700);
+  font-weight: 600;
+  border-bottom-color: var(--primary, #ffd700);
+}
+
+/* Delta row modifiers */
+.av-delta-row--neg { color: var(--error, #ef4444); }
+.av-delta-row--pos { color: #10b981; }
+
+/* Category button hover */
+.av-kat-btn:hover { background: var(--bg-secondary); }
+
+/* Bar fill */
+.av-bar-fill {
+  height: 100%;
+  background: var(--kat-color, #6b7280);
+  border-radius: 2px;
+  transition: width 0.4s;
+}

@@ -3,8 +3,8 @@ import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info, UserPlus, LogIn, Building2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
-import { useForceDarkTheme } from '../context/ThemeContext';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
+import config from '../config/config.js';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/login.css';
@@ -23,13 +23,48 @@ const MitgliederLogin = () => {
   const [loginType, setLoginType] = useState('email'); // 'email' oder 'username'
   const [successMessage, setSuccessMessage] = useState('');
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [dojoData, setDojoData] = useState(null);
+  const [loadingDojo, setLoadingDojo] = useState(false);
 
   const { login, isAuthenticated, loading: authLoading } = useAuth();
   const { refreshDojos } = useDojoContext();
   const navigate = useNavigate();
 
-  // Erzwinge dunkles Theme auf Login-Seite
-  useForceDarkTheme();
+  // Subdomain aus Hostname extrahieren
+  const getSubdomain = () => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split('.');
+    // z.B. dojo-3.dojo.tda-intl.org -> dojo-3
+    if (parts.length >= 3 && parts[1] === 'dojo') {
+      return parts[0];
+    }
+    return null;
+  };
+
+  const subdomain = getSubdomain();
+
+  // Dojo-Daten laden wenn Subdomain vorhanden
+  useEffect(() => {
+    const loadDojoData = async () => {
+      if (!subdomain) return;
+
+      try {
+        setLoadingDojo(true);
+        const response = await fetch(`${config.apiBaseUrl}/public/dojo/${subdomain}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+          setDojoData(result.data);
+        }
+      } catch (err) {
+        console.error('Fehler beim Laden der Dojo-Daten:', err);
+      } finally {
+        setLoadingDojo(false);
+      }
+    };
+
+    loadDojoData();
+  }, [subdomain]);
 
   // Redirect wenn bereits eingeloggt - basierend auf Rolle
   const { user } = useAuth();
@@ -182,8 +217,12 @@ const MitgliederLogin = () => {
         <div className="login-branding member-branding">
           <div className="branding-content">
             <img src={dojoLogo} alt="Dojo Logo" className="branding-logo" />
-            <h1 className="branding-title">Mitglieder-Bereich</h1>
-            <p className="branding-subtitle">Willkommen im Mitglieder-Portal</p>
+            <h1 className="branding-title">
+              {dojoData ? dojoData.dojoname : 'Mitglieder-Bereich'}
+            </h1>
+            <p className="branding-subtitle">
+              {dojoData ? `Willkommen bei ${dojoData.dojoname}` : 'Willkommen im Mitglieder-Portal'}
+            </p>
             <div className="branding-features">
               <div className="feature-item">
                 <CheckCircle size={20} />
@@ -240,11 +279,14 @@ const MitgliederLogin = () => {
                     value={formData.loginField}
                     onChange={handleInputChange}
                     className={`form-input ${loginType === 'email' ? 'input-email' : 'input-username'}`}
-                    placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'ihr-benutzername'}
+                    placeholder={loginType === 'email' ? 'ihre-email@beispiel.de' : 'vorname.nachname'}
                     required
                     autoComplete="username"
                     disabled={loading}
                   />
+                  {loginType !== 'email' && (
+                    <p className="form-hint">z.B. edward.skala</p>
+                  )}
                 </div>
 
                 {/* Passwort Feld */}

@@ -9,8 +9,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: var(--ui-section-gap);
+  padding-bottom: var(--ui-header-padding-b);
   border-bottom: 2px solid var(--border-color);
 }
 
@@ -38,19 +38,19 @@
 
 .close-button:hover {
   background: rgba(255, 0, 0, 0.1);
-  color: #ff4444;
+  color: var(--status-error);
 }
 
 /* Progress Bar */
 .progress-container {
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-header-margin-b);
 }
 
 .progress-bar {
   width: 100%;
   height: 8px;
   background: var(--background-secondary);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   overflow: hidden;
   margin-bottom: 0.5rem;
 }
@@ -59,7 +59,7 @@
   height: 100%;
   background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
   transition: width 0.3s ease;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
 }
 
 .progress-text {
@@ -89,7 +89,7 @@
 .registration-step h3 {
   color: var(--primary-color);
   margin-bottom: 0.5rem;
-  font-size: 1.4rem;
+  font-size: var(--ui-page-title);
 }
 
 .registration-step p {
@@ -100,12 +100,12 @@
 
 /* Form Groups */
 .form-group {
-  margin-bottom: 1.2rem;
+  margin-bottom: var(--ui-form-gap);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.4rem;
+  margin-bottom: var(--ui-form-group-gap);
   font-weight: 500;
   color: var(--text-color);
 }
@@ -116,7 +116,7 @@
   width: 100%;
   padding: 0.8rem;
   border: 2px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 1rem;
   background: #ffffff !important;
   color: #000000 !important;
@@ -154,7 +154,7 @@
 /* Form Rows */
 .form-row {
   display: flex;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .form-row .form-group {
@@ -173,14 +173,14 @@
 .tariff-selection {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: var(--ui-grid-gap);
+  margin-bottom: var(--ui-section-gap);
 }
 
 .tariff-card {
   padding: 1.5rem;
   border: 2px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   cursor: pointer;
   transition: all 0.3s ease;
   background: #ffffff !important;
@@ -225,7 +225,7 @@
 .health-questions {
   background: var(--background-secondary);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 1rem;
 }
 
@@ -246,7 +246,7 @@
   margin-bottom: 1.5rem;
   padding: 1rem;
   background: var(--bg-secondary);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   border: 1px solid var(--primary);
 }
 
@@ -257,7 +257,7 @@
   line-height: 1.8;
   font-weight: 500;
   font-size: 1rem;
-  color: #e0e0e0;
+  color: var(--text-1);
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -288,7 +288,7 @@
 }
 
 .checkbox-label em {
-  color: #a0a0b0;
+  color: var(--text-3);
   font-size: 0.95rem;
   margin-top: 0.5rem;
   display: block;
@@ -299,7 +299,7 @@
 .legal-agreements {
   background: var(--bg-secondary);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 2px solid var(--primary);
   margin-bottom: 1.5rem;
 }
@@ -312,7 +312,7 @@
 .completion-info {
   background: #1a3d2e;
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 2px solid #22c55e;
   text-align: center;
   margin-top: 1rem;
@@ -333,8 +333,8 @@
 /* Modal Footer */
 .modal-footer {
   border-top: 2px solid var(--border-color);
-  padding-top: 1.5rem;
-  margin-top: 2rem;
+  padding-top: var(--ui-section-gap-sm);
+  margin-top: var(--ui-section-gap);
 }
 
 .button-group {
@@ -346,7 +346,7 @@
 .btn {
   padding: 0.8rem 2rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -385,7 +385,7 @@
 .error-message,
 .success-message {
   padding: 1.2rem 1.5rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   margin-bottom: 1.5rem;
   font-weight: 600;
   font-size: 1.05rem;
@@ -407,14 +407,14 @@
 
 .error-message {
   background: #3d1a1a;
-  color: #ff6b6b;
+  color: var(--status-error);
   border: 2px solid #ff4545;
   text-shadow: none;
 }
 
 .success-message {
   background: #1a3d2e;
-  color: #4ade80;
+  color: var(--status-success);
   border: 2px solid #22c55e;
   text-shadow: none;
 }
@@ -463,7 +463,7 @@
 .buddy-invitation-section {
   background: var(--background-secondary);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 1rem;
 }
 
@@ -486,7 +486,7 @@
 .friend-input-row {
   background: var(--background-color);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1rem;
   border: 1px solid var(--border-color);
 }
@@ -532,7 +532,7 @@
 .buddy-info {
   background: linear-gradient(135deg, rgba(var(--primary-color-rgb), 0.1), rgba(var(--secondary-color-rgb), 0.1));
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 2px solid rgba(var(--primary-color-rgb), 0.2);
   margin-top: 1.5rem;
 }
@@ -622,7 +622,7 @@
   margin-bottom: 3rem;
   padding: 2rem;
   background: rgba(var(--primary-color-rgb), 0.05);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 2px solid rgba(var(--primary-color-rgb), 0.1);
 }
 
@@ -646,14 +646,14 @@
 .benefits-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: var(--ui-section-gap-sm);
+  margin-bottom: var(--ui-section-gap);
 }
 
 .benefit-item {
   background: var(--background-secondary);
   padding: 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   text-align: center;
   border: 2px solid var(--border-color);
   transition: all 0.3s ease;
@@ -669,7 +669,7 @@
   font-size: 2.5rem;
   margin-bottom: 1rem;
   background: transparent;
-  color: var(--farbe-text);
+  color: var(--text-1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -690,7 +690,7 @@
 .invitation-info {
   background: var(--background-secondary);
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   margin-bottom: 3rem;
   border: 2px solid var(--border-color);
 }
@@ -756,7 +756,7 @@
 .registration-note {
   background: rgba(var(--secondary-color-rgb), 0.1);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   border: 2px solid rgba(var(--secondary-color-rgb), 0.2);
   margin-top: 2rem;
 }
@@ -771,7 +771,7 @@
 .security-notice {
   background: var(--background-secondary);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   border: 2px solid var(--border-color);
 }
 
@@ -806,7 +806,7 @@
   max-width: 500px;
   background: var(--background-secondary);
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 2px solid var(--border-color);
 }
 
@@ -877,7 +877,7 @@
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
   border: 2px solid #cccccc !important;
-  border-radius: 8px !important;
+  border-radius: var(--comp-radius-md) !important;
   padding: 0.8rem !important;
 }
 
@@ -916,4 +916,176 @@
   -webkit-text-fill-color: #000000 !important;
   background-color: #ffffff !important;
   color: #000000 !important;
+}
+/* === Inline-style replacements (auto-generated) === */
+.pr-margin-0 { margin: 0; }
+.pr-meta-text { margin: 0; color: var(--text-muted); font-size: 0.9rem; }
+.pr-margin-half { margin: 0.5rem 0; }
+
+/* === Additional inline-style replacements === */
+
+/* Promo code input wrapper - position: relative moved to existing CSS class */
+.promo-code-input-wrapper {
+  position: relative;
+}
+
+/* Promo code status icon */
+.pr-promo-status-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+}
+
+/* Promo code valid info box */
+.pr-promo-valid-info {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  background-color: rgba(16, 185, 129, 0.1);
+  border: 1px solid #10b981;
+  border-radius: 6px;
+  color: var(--success);
+}
+
+/* Promo code valid info text */
+.pr-promo-valid-text {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.9rem;
+}
+
+/* Promo code invalid info box */
+.pr-promo-invalid-info {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+
+/* Promo code hint text */
+.pr-promo-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+/* Family question intro text */
+.pr-family-question-text {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+/* Family info box */
+.pr-info-box {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+/* Family choice buttons row */
+.family-choice-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Main member card base styles */
+.family-member-card.hauptmitglied {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 2px solid var(--color-primary);
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+}
+
+/* Member card base */
+.family-member-card {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  position: relative;
+}
+
+/* Member badge (Hauptmitglied, Familienmitglied) */
+.pr-member-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.pr-member-badge--primary {
+  background-color: var(--color-primary);
+}
+
+.pr-member-badge--success {
+  background-color: var(--color-success);
+}
+
+.pr-member-badge--warning {
+  background-color: var(--color-warning);
+  margin-left: 0.5rem;
+}
+
+/* Remove member button positioning */
+.pr-remove-member-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Family member form */
+.family-member-form {
+  padding: 1.5rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+/* Form h4 no top margin */
+.pr-form-h4 {
+  margin-top: 0;
+}
+
+/* Info box within form - shared note box */
+.pr-note-box {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background-color: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* Minor warning box */
+.pr-minor-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: #fff3cd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* Form action buttons row */
+.pr-form-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Family overview actions row */
+.pr-family-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
 }

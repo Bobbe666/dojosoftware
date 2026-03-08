@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import StripeConnectSetup from './StripeConnectSetup';
+import '../styles/IntegrationsEinstellungen.css';
 
 const IntegrationsEinstellungen = () => {
   const { activeDojo } = useDojoContext();
@@ -113,26 +114,26 @@ const IntegrationsEinstellungen = () => {
 
   if (loading) {
     return (
-      <div style={styles.container}>
-        <div style={styles.loading}>Lade Einstellungen...</div>
+      <div className="ie-container">
+        <div className="ie-loading">Lade Einstellungen...</div>
       </div>
     );
   }
 
   return (
-    <div style={styles.container}>
+    <div className="ie-container">
       {/* Header */}
-      <div style={styles.header}>
+      <div className="ie-header">
         <Settings size={32} color="#ffd700" />
         <div>
-          <h2 style={styles.title}>Integration-Einstellungen</h2>
-          <p style={styles.subtitle}>Konfiguriere PayPal, SumUp, LexOffice und DATEV</p>
+          <h2 className="ie-title">Integration-Einstellungen</h2>
+          <p className="ie-subtitle">Konfiguriere PayPal, SumUp, LexOffice und DATEV</p>
         </div>
       </div>
 
       {/* Status Overview */}
       {status && (
-        <div style={styles.statusGrid}>
+        <div className="ie-status-grid">
           <StatusCard
             title="Stripe"
             icon={<CreditCard size={24} />}
@@ -165,64 +166,60 @@ const IntegrationsEinstellungen = () => {
       )}
 
       {/* Stripe Section */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
+      <div className="ie-section">
+        <div className="ie-section-header">
           <CreditCard size={24} color="#635bff" />
-          <h3 style={styles.sectionTitle}>Stripe</h3>
+          <h3 className="ie-section-title">Stripe</h3>
           <a
             href="https://dashboard.stripe.com/apikeys"
             target="_blank"
             rel="noopener noreferrer"
-            style={styles.helpLink}
+            className="ie-help-link"
           >
             <ExternalLink size={14} /> API-Keys Dashboard
           </a>
         </div>
 
-        <div style={styles.infoBox}>
+        <div className="ie-info-box">
           <p>
             Stripe ermöglicht Kreditkarten- und SEPA-Lastschrift-Zahlungen. Die API-Keys findest du
             im Stripe Dashboard unter Developers → API Keys.
           </p>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Publishable Key (öffentlich)</label>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Publishable Key (öffentlich)</label>
             <input
               type="text"
               value={config.stripe_publishable_key || ''}
               onChange={e => setConfig({ ...config, stripe_publishable_key: e.target.value })}
-              style={styles.input}
+              className="ie-input"
               placeholder="pk_live_... oder pk_test_..."
             />
           </div>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Secret Key (geheim)</label>
-            <div style={styles.secretInput}>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Secret Key (geheim)</label>
+            <div className="ie-secret-input">
               <input
                 type={showSecrets.stripe ? 'text' : 'password'}
                 value={config.stripe_secret_key || ''}
                 onChange={e => setConfig({ ...config, stripe_secret_key: e.target.value })}
-                style={{ ...styles.input, flex: 1 }}
+                className="ie-input"
                 placeholder="sk_live_... oder sk_test_..."
               />
-              <button style={styles.eyeButton} onClick={() => toggleSecret('stripe')}>
+              <button className="ie-eye-button" onClick={() => toggleSecret('stripe')}>
                 {showSecrets.stripe ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
         </div>
 
-        <div style={{
-          ...styles.infoBox,
-          background: 'rgba(99, 91, 255, 0.1)',
-          borderColor: 'rgba(99, 91, 255, 0.3)'
-        }}>
-          <p style={{ margin: 0 }}>
+        <div className="ie-info-box ie-info-box--stripe-connect">
+          <p>
             <strong>Hinweis:</strong> Verwende für Tests die Test-Keys (pk_test_... / sk_test_...).
             Für Live-Zahlungen benötigst du die Live-Keys (pk_live_... / sk_live_...).
           </p>
@@ -233,60 +230,60 @@ const IntegrationsEinstellungen = () => {
       <StripeConnectSetup />
 
       {/* PayPal Section */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
+      <div className="ie-section">
+        <div className="ie-section-header">
           <CreditCard size={24} color="#0070ba" />
-          <h3 style={styles.sectionTitle}>PayPal</h3>
+          <h3 className="ie-section-title">PayPal</h3>
           <a
             href="https://developer.paypal.com/dashboard/applications"
             target="_blank"
             rel="noopener noreferrer"
-            style={styles.helpLink}
+            className="ie-help-link"
           >
             <ExternalLink size={14} /> Entwickler-Dashboard
           </a>
         </div>
 
-        <div style={styles.infoBox}>
+        <div className="ie-info-box">
           <p>
             Um PayPal zu nutzen, erstelle eine App im PayPal Developer Dashboard und kopiere
             die Client ID und das Secret hierher.
           </p>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Client ID</label>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Client ID</label>
             <input
               type="text"
               value={config.paypal_client_id || ''}
               onChange={e => setConfig({ ...config, paypal_client_id: e.target.value })}
-              style={styles.input}
+              className="ie-input"
               placeholder="AV9b8ND..."
             />
           </div>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Client Secret</label>
-            <div style={styles.secretInput}>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Client Secret</label>
+            <div className="ie-secret-input">
               <input
                 type={showSecrets.paypal ? 'text' : 'password'}
                 value={config.paypal_client_secret || ''}
                 onChange={e => setConfig({ ...config, paypal_client_secret: e.target.value })}
-                style={{ ...styles.input, flex: 1 }}
+                className="ie-input"
                 placeholder="EK3qE9N..."
               />
-              <button style={styles.eyeButton} onClick={() => toggleSecret('paypal')}>
+              <button className="ie-eye-button" onClick={() => toggleSecret('paypal')}>
                 {showSecrets.paypal ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
         </div>
 
-        <div style={styles.formRow}>
-          <label style={styles.checkboxLabel}>
+        <div className="ie-form-row">
+          <label className="ie-checkbox-label">
             <input
               type="checkbox"
               checked={config.paypal_sandbox}
@@ -305,21 +302,21 @@ const IntegrationsEinstellungen = () => {
       </div>
 
       {/* SumUp Section */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
+      <div className="ie-section">
+        <div className="ie-section-header">
           <Smartphone size={24} color="#00b5ad" />
-          <h3 style={styles.sectionTitle}>SumUp Kartenterminal</h3>
+          <h3 className="ie-section-title">SumUp Kartenterminal</h3>
           <a
             href="https://developer.sumup.com/docs/api/getting-started/"
             target="_blank"
             rel="noopener noreferrer"
-            style={styles.helpLink}
+            className="ie-help-link"
           >
             <ExternalLink size={14} /> Entwickler-Dokumentation
           </a>
         </div>
 
-        <div style={styles.infoBox}>
+        <div className="ie-info-box">
           <p>
             SumUp ermöglicht Kartenzahlungen über das Kartenterminal (Solo, Air).
             Du kannst entweder einen API-Key oder OAuth-Credentials verwenden.
@@ -327,8 +324,8 @@ const IntegrationsEinstellungen = () => {
           </p>
         </div>
 
-        <div style={styles.formRow}>
-          <label style={styles.checkboxLabel}>
+        <div className="ie-form-row">
+          <label className="ie-checkbox-label">
             <input
               type="checkbox"
               checked={config.sumup_aktiv}
@@ -338,72 +335,68 @@ const IntegrationsEinstellungen = () => {
           </label>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Merchant Code</label>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Merchant Code</label>
             <input
               type="text"
               value={config.sumup_merchant_code || ''}
               onChange={e => setConfig({ ...config, sumup_merchant_code: e.target.value })}
-              style={styles.input}
+              className="ie-input"
               placeholder="MER1234..."
             />
           </div>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>API Key</label>
-            <div style={styles.secretInput}>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">API Key</label>
+            <div className="ie-secret-input">
               <input
                 type={showSecrets.sumup_api ? 'text' : 'password'}
                 value={config.sumup_api_key || ''}
                 onChange={e => setConfig({ ...config, sumup_api_key: e.target.value })}
-                style={{ ...styles.input, flex: 1 }}
+                className="ie-input"
                 placeholder="sup_sk_..."
               />
-              <button style={styles.eyeButton} onClick={() => toggleSecret('sumup_api')}>
+              <button className="ie-eye-button" onClick={() => toggleSecret('sumup_api')}>
                 {showSecrets.sumup_api ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
         </div>
 
-        <div style={{
-          ...styles.infoBox,
-          background: 'rgba(0, 181, 173, 0.1)',
-          borderColor: 'rgba(0, 181, 173, 0.3)'
-        }}>
-          <p style={{ margin: '0 0 8px 0' }}>
+        <div className="ie-info-box ie-info-box--sumup-oauth">
+          <p>
             <strong>Optional: OAuth-Credentials</strong> (nur wenn kein API-Key verwendet wird)
           </p>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Client ID (optional)</label>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Client ID (optional)</label>
             <input
               type="text"
               value={config.sumup_client_id || ''}
               onChange={e => setConfig({ ...config, sumup_client_id: e.target.value })}
-              style={styles.input}
+              className="ie-input"
               placeholder="OAuth Client ID..."
             />
           </div>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Client Secret (optional)</label>
-            <div style={styles.secretInput}>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Client Secret (optional)</label>
+            <div className="ie-secret-input">
               <input
                 type={showSecrets.sumup_secret ? 'text' : 'password'}
                 value={config.sumup_client_secret || ''}
                 onChange={e => setConfig({ ...config, sumup_client_secret: e.target.value })}
-                style={{ ...styles.input, flex: 1 }}
+                className="ie-input"
                 placeholder="OAuth Client Secret..."
               />
-              <button style={styles.eyeButton} onClick={() => toggleSecret('sumup_secret')}>
+              <button className="ie-eye-button" onClick={() => toggleSecret('sumup_secret')}>
                 {showSecrets.sumup_secret ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
@@ -419,38 +412,38 @@ const IntegrationsEinstellungen = () => {
       </div>
 
       {/* LexOffice Section */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
+      <div className="ie-section">
+        <div className="ie-section-header">
           <FileText size={24} color="#0066cc" />
-          <h3 style={styles.sectionTitle}>LexOffice</h3>
+          <h3 className="ie-section-title">LexOffice</h3>
           <a
             href="https://app.lexoffice.de/addons/public-api"
             target="_blank"
             rel="noopener noreferrer"
-            style={styles.helpLink}
+            className="ie-help-link"
           >
             <ExternalLink size={14} /> API-Schlüssel generieren
           </a>
         </div>
 
-        <div style={styles.infoBox}>
+        <div className="ie-info-box">
           <p>
             Der API-Schlüssel wird in LexOffice unter Einstellungen → Erweiterungen → Public API generiert.
           </p>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>API-Schlüssel</label>
-            <div style={styles.secretInput}>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">API-Schlüssel</label>
+            <div className="ie-secret-input">
               <input
                 type={showSecrets.lexoffice ? 'text' : 'password'}
                 value={config.lexoffice_api_key || ''}
                 onChange={e => setConfig({ ...config, lexoffice_api_key: e.target.value })}
-                style={{ ...styles.input, flex: 1 }}
+                className="ie-input"
                 placeholder="a1b2c3d4-e5f6-..."
               />
-              <button style={styles.eyeButton} onClick={() => toggleSecret('lexoffice')}>
+              <button className="ie-eye-button" onClick={() => toggleSecret('lexoffice')}>
                 {showSecrets.lexoffice ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
@@ -466,47 +459,47 @@ const IntegrationsEinstellungen = () => {
       </div>
 
       {/* DATEV Section */}
-      <div style={styles.section}>
-        <div style={styles.sectionHeader}>
+      <div className="ie-section">
+        <div className="ie-section-header">
           <Calculator size={24} color="#006633" />
-          <h3 style={styles.sectionTitle}>DATEV</h3>
+          <h3 className="ie-section-title">DATEV</h3>
         </div>
 
-        <div style={styles.infoBox}>
+        <div className="ie-info-box">
           <p>
             Die Beraternummer und Mandantennummer werden vom Steuerberater bereitgestellt
             und sind für den DATEV-Export erforderlich.
           </p>
         </div>
 
-        <div style={styles.formRow}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Beraternummer</label>
+        <div className="ie-form-row">
+          <div className="ie-form-group">
+            <label className="ie-label">Beraternummer</label>
             <input
               type="text"
               value={config.datev_consultant_number || ''}
               onChange={e => setConfig({ ...config, datev_consultant_number: e.target.value })}
-              style={styles.input}
+              className="ie-input"
               placeholder="12345"
               maxLength={7}
             />
           </div>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Mandantennummer</label>
+          <div className="ie-form-group">
+            <label className="ie-label">Mandantennummer</label>
             <input
               type="text"
               value={config.datev_client_number || ''}
               onChange={e => setConfig({ ...config, datev_client_number: e.target.value })}
-              style={styles.input}
+              className="ie-input"
               placeholder="10001"
               maxLength={5}
             />
           </div>
         </div>
 
-        <div style={styles.datevInfo}>
-          <h4 style={{ color: '#ffd700', margin: '0 0 8px 0' }}>DATEV-Export Formate:</h4>
-          <ul style={{ margin: 0, paddingLeft: '20px', color: '#aaa' }}>
+        <div className="ie-datev-info">
+          <h4>DATEV-Export Formate:</h4>
+          <ul>
             <li>Buchungsstapel (Rechnungen) - EXTF Format</li>
             <li>Zahlungen - EXTF Format</li>
             <li>Debitoren-Stammdaten - ASCII Format</li>
@@ -515,9 +508,9 @@ const IntegrationsEinstellungen = () => {
       </div>
 
       {/* Save Button */}
-      <div style={styles.footer}>
+      <div className="ie-footer">
         <button
-          style={styles.saveButton}
+          className="ie-save-button"
           onClick={handleSave}
           disabled={saving}
         >
@@ -534,17 +527,11 @@ const IntegrationsEinstellungen = () => {
 
 // Status Card Component
 const StatusCard = ({ title, icon, configured, mode }) => (
-  <div style={{
-    ...styles.statusCard,
-    borderColor: configured ? 'rgba(34, 197, 94, 0.5)' : 'rgba(255, 255, 255, 0.1)'
-  }}>
-    <div style={styles.statusIcon}>{icon}</div>
-    <div style={styles.statusInfo}>
+  <div className={`ie-status-card${configured ? ' ie-status-card--ok' : ''}`}>
+    <div className="ie-status-icon">{icon}</div>
+    <div className="ie-status-info">
       <strong>{title}</strong>
-      <span style={{
-        color: configured ? '#22c55e' : '#ef4444',
-        fontSize: '12px'
-      }}>
+      <span className={`ie-status-label${configured ? ' ie-status-label--ok' : ' ie-status-label--error'}`}>
         {configured ? 'Konfiguriert' : 'Nicht konfiguriert'}
         {mode && configured && ` (${mode})`}
       </span>
@@ -559,12 +546,9 @@ const StatusCard = ({ title, icon, configured, mode }) => (
 
 // Test Button Component
 const TestButton = ({ service, onTest, result, disabled }) => (
-  <div style={styles.testSection}>
+  <div className="ie-test-section">
     <button
-      style={{
-        ...styles.testButton,
-        opacity: disabled ? 0.5 : 1
-      }}
+      className="ie-test-button"
       onClick={onTest}
       disabled={disabled || result?.loading}
     >
@@ -576,11 +560,7 @@ const TestButton = ({ service, onTest, result, disabled }) => (
     </button>
 
     {result && !result.loading && (
-      <div style={{
-        ...styles.testResult,
-        background: result.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-        borderColor: result.success ? '#22c55e' : '#ef4444'
-      }}>
+      <div className={`ie-test-result${result.success ? ' ie-test-result--ok' : ' ie-test-result--error'}`}>
         {result.success ? (
           <CheckCircle size={16} color="#22c55e" />
         ) : (
@@ -592,191 +572,5 @@ const TestButton = ({ service, onTest, result, disabled }) => (
   </div>
 );
 
-const styles = {
-  container: {
-    padding: '24px',
-    maxWidth: '900px',
-    margin: '0 auto'
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    marginBottom: '32px'
-  },
-  title: {
-    color: '#ffd700',
-    margin: 0,
-    fontSize: '24px'
-  },
-  subtitle: {
-    color: '#aaa',
-    margin: '4px 0 0 0',
-    fontSize: '14px'
-  },
-  statusGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '16px',
-    marginBottom: '32px'
-  },
-  statusCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '16px',
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid',
-    borderRadius: '12px'
-  },
-  statusIcon: {
-    color: '#ffd700'
-  },
-  statusInfo: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    color: '#fff'
-  },
-  section: {
-    background: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 215, 0, 0.2)',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '20px'
-  },
-  sectionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '16px'
-  },
-  sectionTitle: {
-    color: '#fff',
-    margin: 0,
-    fontSize: '18px',
-    flex: 1
-  },
-  helpLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    color: '#ffd700',
-    textDecoration: 'none',
-    fontSize: '13px'
-  },
-  infoBox: {
-    background: 'rgba(59, 130, 246, 0.1)',
-    border: '1px solid rgba(59, 130, 246, 0.3)',
-    borderRadius: '8px',
-    padding: '12px 16px',
-    marginBottom: '20px',
-    color: '#aaa',
-    fontSize: '14px'
-  },
-  formRow: {
-    display: 'flex',
-    gap: '16px',
-    marginBottom: '16px'
-  },
-  formGroup: {
-    flex: 1
-  },
-  label: {
-    display: 'block',
-    color: '#ffd700',
-    marginBottom: '8px',
-    fontSize: '14px'
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    background: 'rgba(0, 0, 0, 0.3)',
-    border: '1px solid rgba(255, 215, 0, 0.3)',
-    borderRadius: '8px',
-    color: '#fff',
-    fontSize: '14px',
-    boxSizing: 'border-box'
-  },
-  secretInput: {
-    display: 'flex',
-    gap: '8px'
-  },
-  eyeButton: {
-    background: 'rgba(255, 255, 255, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '8px',
-    padding: '12px',
-    color: '#fff',
-    cursor: 'pointer'
-  },
-  checkboxLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '14px'
-  },
-  testSection: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    marginTop: '16px',
-    paddingTop: '16px',
-    borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-  },
-  testButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '10px 16px',
-    background: 'rgba(255, 255, 255, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '8px',
-    color: '#fff',
-    cursor: 'pointer',
-    fontSize: '14px'
-  },
-  testResult: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    borderRadius: '8px',
-    border: '1px solid',
-    fontSize: '13px'
-  },
-  datevInfo: {
-    background: 'rgba(0, 102, 51, 0.1)',
-    border: '1px solid rgba(0, 102, 51, 0.3)',
-    borderRadius: '8px',
-    padding: '16px',
-    marginTop: '16px'
-  },
-  footer: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: '24px'
-  },
-  saveButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '14px 28px',
-    background: '#ffd700',
-    border: 'none',
-    borderRadius: '8px',
-    color: '#1a1a2e',
-    fontWeight: 'bold',
-    fontSize: '16px',
-    cursor: 'pointer'
-  },
-  loading: {
-    textAlign: 'center',
-    padding: '60px',
-    color: '#888'
-  }
-};
 
 export default IntegrationsEinstellungen;

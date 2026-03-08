@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
 }
 
 .loading-spinner {
@@ -47,7 +47,7 @@
 }
 
 .styles-header p {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   margin: 0;
   font-size: 1rem;
 }
@@ -56,7 +56,7 @@
 .no-styles {
   text-align: center;
   padding: 3rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
 }
 
 .no-styles svg {
@@ -82,18 +82,18 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 0.75rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.9rem;
 }
 
 .style-tab:hover {
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -106,9 +106,9 @@
 
 /* Style Content */
 .style-content {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 16px;
+  border-radius: var(--comp-radius-xl);
   padding: 2rem;
 }
 
@@ -133,7 +133,7 @@
 }
 
 .style-description {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   margin: 0;
   font-size: 1rem;
 }
@@ -149,7 +149,7 @@
   background: var(--gradient-gold);
   color: #000;
   padding: 0.5rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -190,20 +190,20 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
   border: 1px solid rgba(255, 215, 0, 0.15);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem;
   transition: all 0.2s ease;
 }
 
 .graduation-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   border-color: rgba(255, 215, 0, 0.3);
 }
 
 .graduation-item.current {
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   border-color: rgba(255, 215, 0, 0.4);
 }
 
@@ -228,13 +228,13 @@
 }
 
 .graduation-name {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-weight: 500;
   font-size: 1rem;
 }
 
 .graduation-description {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text-3);
   font-size: 0.85rem;
 }
 
@@ -242,7 +242,7 @@
   background: var(--gradient-gold);
   color: #000;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -258,9 +258,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
   border: 1px solid rgba(255, 215, 0, 0.15);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   padding: 1rem;
 }
 
@@ -271,7 +271,7 @@
 }
 
 .exam-item span {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-size: 1rem;
 }
 
@@ -286,21 +286,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
   border: 1px solid rgba(255, 215, 0, 0.15);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   padding: 1rem;
 }
 
 .stat-label {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
   font-size: 0.9rem;
-}
-
-.stat-value {
-  color: var(--primary);
-  font-weight: 600;
-  font-size: 1rem;
 }
 
 /* Responsive */
@@ -337,9 +331,9 @@
 
 /* Training Hours Tracker */
 .member-styles .training-tracker-section {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 215, 0, 0.18);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -361,15 +355,15 @@
 }
 
 .member-styles .tracker-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem;
   transition: all 0.3s ease;
 }
 
 .member-styles .tracker-card:hover {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.3);
   transform: translateY(-2px);
 }
@@ -382,7 +376,7 @@
 }
 
 .member-styles .tracker-header h3 {
-  color: #ffffff;
+  color: var(--text-1);
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
@@ -392,10 +386,10 @@
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
   color: var(--primary);
   padding: 0.3rem 0.6rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -407,8 +401,8 @@
 .member-styles .tracker-progress .progress-bar {
   width: 100%;
   height: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: var(--surface-3);
+  border-radius: var(--comp-radius-md);
   overflow: hidden;
   margin-bottom: 0.5rem;
 }
@@ -416,7 +410,7 @@
 .member-styles .tracker-progress .progress-fill {
   height: 100%;
   background: var(--gradient-gold);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   transition: width 0.8s ease;
   box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
@@ -428,7 +422,7 @@
 }
 
 .member-styles .progress-text {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-1);
   font-size: 0.85rem;
   font-weight: 500;
 }
@@ -450,7 +444,7 @@
 }
 
 .member-styles .hours-label {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   font-size: 0.8rem;
 }
 
@@ -460,22 +454,504 @@
   font-weight: 700;
   background: rgba(255, 107, 53, 0.1);
   padding: 0.3rem 0.8rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   border: 1px solid rgba(255, 107, 53, 0.2);
 }
 
 .member-styles .hours-ready {
-  color: #10B981;
+  color: var(--status-success);
   font-size: 0.9rem;
   font-weight: 600;
-  background: rgba(16, 185, 129, 0.1);
+  background: var(--status-success-bg);
   padding: 0.4rem 0.8rem;
-  border-radius: 8px;
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--comp-radius-md);
+  border: 1px solid var(--status-success-border);
 }
 
 @media (max-width: 768px) {
   .member-styles .tracker-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ===================================================
+   MemberStyles extracted inline styles — mst- prefix
+   =================================================== */
+
+/* Loading spinner wrapper */
+.mst-spinner-center {
+  text-align: center;
+  color: var(--primary);
+}
+
+.mst-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255,215,0,0.2);
+  border-top-color: #ffd700;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+/* Page padding */
+.mst-page-pad {
+  padding: 2rem;
+}
+
+/* Centered max-width */
+.mst-centered-900 {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Title section */
+.mst-title-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Eyebrow label */
+.mst-eyebrow {
+  font-size: 0.75rem;
+  color: var(--primary);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  opacity: 0.8;
+}
+
+/* Gradient headline */
+.mst-gradient-title {
+  margin: 0 0 0.3rem;
+  font-size: 1.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Subtitle small-caps */
+.mst-subtitle-caps {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* Empty style state card */
+.mst-empty-card {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,215,0,0.15);
+  border-radius: 16px;
+}
+
+/* Styles list column */
+.mst-styles-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Stil card */
+.mst-stil-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,215,0,0.15);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* Stil card header */
+.mst-stil-header {
+  background: rgba(255,215,0,0.07);
+  border-bottom: 1px solid rgba(255,215,0,0.15);
+  padding: 1.2rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Stil name heading */
+.mst-stil-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+/* Active badge */
+.mst-active-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(16,185,129,0.15);
+  border: 1px solid rgba(16,185,129,0.4);
+  border-radius: 20px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.75rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Card body padding */
+.mst-card-body {
+  padding: 1.5rem;
+}
+
+/* Belt level box */
+.mst-belt-box {
+  borderRadius: 14px;
+  padding: 1.2rem;
+  text-align: center;
+}
+
+/* Belt bar */
+.mst-belt-bar {
+  width: 56px;
+  height: 14px;
+  border-radius: 4px;
+  margin: 0 auto 0.8rem;
+}
+
+/* Belt next (dimmed) */
+.mst-belt-next {
+  background: rgba(0,0,0,0.15);
+  border-radius: 14px;
+  padding: 1.2rem;
+  text-align: center;
+  border: 1px solid rgba(255,215,0,0.1);
+  opacity: 0.75;
+}
+
+/* Belt next bar */
+.mst-belt-next-bar {
+  width: 56px;
+  height: 14px;
+  border-radius: 4px;
+  margin: 0 auto 0.8rem;
+  opacity: 0.6;
+}
+
+/* Belt label main */
+.mst-belt-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.2rem;
+}
+
+/* Belt label secondary */
+.mst-belt-label-secondary {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 0.2rem;
+}
+
+/* Belt caption uppercase */
+.mst-belt-caption {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Progress section */
+.mst-progress-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Progress header */
+.mst-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+/* Progress label */
+.mst-progress-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+/* Progress track */
+.mst-progress-track {
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+/* Progress note right-aligned */
+.mst-progress-note {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+/* Graduation path section */
+.mst-grad-path-section {
+  margin-bottom: 1.5rem;
+}
+
+/* Graduation path label */
+.mst-grad-path-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+
+/* Grad path items container */
+.mst-grad-path-items {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Arrow indicator */
+.mst-arrow-indicator {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--primary);
+  font-size: 9px;
+}
+
+/* Exam info grid */
+.mst-exam-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Exam info box */
+.mst-exam-box {
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Exam box label small */
+.mst-exam-box-label {
+  font-size: 0.65rem;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.15rem;
+}
+
+/* Primary icon */
+.mst-icon-primary {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* Right-aligned muted text */
+.mst-text-right-muted {
+  text-align: right;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+
+/* ── Additional extracted inline styles (2026-03-07) ── */
+
+/* Loading: dashboard-content centered */
+.mst-loading-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+/* Empty state: trophy icon */
+.mst-empty-trophy {
+  color: rgba(255, 215, 0, 0.4);
+  margin-bottom: 1rem;
+}
+
+/* Empty state: heading */
+.mst-empty-heading {
+  color: var(--primary-alpha-60);
+  margin-bottom: 0.5rem;
+}
+
+/* Empty state: body text */
+.mst-empty-text {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Arrow center wrapper between current and next belt */
+.mst-arrow-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Arrow chevron icon */
+.mst-arrow-icon {
+  color: rgba(255, 215, 0, 0.4);
+}
+
+/* Muted calendar icon (last exam) */
+.mst-icon-muted {
+  color: var(--primary-alpha-60);
+  flex-shrink: 0;
+}
+
+/* Exam date text: secondary */
+.mst-exam-date-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* === Migrated from inline styles === */
+
+/* Belt grid wrapper */
+.mst-belt-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.mst-belt-grid--with-next {
+  grid-template-columns: 1fr auto 1fr;
+}
+
+/* Current belt box */
+.mst-belt-current {
+  background: rgba(0,0,0,0.25);
+  border-radius: 14px;
+  padding: 1.2rem;
+  text-align: center;
+  border: 1px solid var(--bc44, rgba(255,215,0,0.27));
+}
+
+/* Belt display bar (colored strip) */
+.mst-belt-bar {
+  width: 56px;
+  height: 14px;
+  background: var(--bc, #ffd700);
+  border-radius: 4px;
+  margin: 0 auto 0.8rem;
+  box-shadow: 0 0 14px var(--bc66, rgba(255,215,0,0.4));
+}
+.mst-belt-bar--next {
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* Progress counter */
+.mst-progress-counter {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffd700;
+}
+.mst-progress-counter--ready {
+  color: #10b981;
+}
+
+/* Progress fill bar (width stays inline) */
+.mst-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ffaa00);
+  border-radius: 4px;
+  transition: width 0.8s ease;
+  box-shadow: 0 0 8px rgba(255,215,0,0.4);
+}
+.mst-progress-fill--ready {
+  background: linear-gradient(90deg, #10b981, #059669);
+  box-shadow: 0 0 8px rgba(16,185,129,0.5);
+}
+
+/* Grad path item */
+.mst-grad-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  min-width: 56px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+.mst-grad-item--current {
+  background: rgba(255,215,0,0.12);
+  border-color: var(--gc66, rgba(255,215,0,0.4));
+}
+
+/* Grad belt mini bar */
+.mst-grad-belt-bar {
+  width: 34px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--gc, #555);
+  box-shadow: none;
+}
+.mst-grad-belt-bar--current {
+  box-shadow: 0 0 8px var(--gc88, rgba(255,215,0,0.53));
+}
+.mst-grad-belt-bar--future {
+  opacity: 0.45;
+}
+
+/* Grad name label (3 states) */
+.mst-grad-name {
+  font-size: 0.68rem;
+  font-weight: 400;
+  text-align: center;
+  max-width: 58px;
+  line-height: 1.25;
+}
+.mst-grad-name--current { color: #ffd700; font-weight: 700; }
+.mst-grad-name--past    { color: rgba(255,255,255,0.75); }
+.mst-grad-name--future  { color: rgba(255,255,255,0.45); }
+
+/* Grad path connector line */
+.mst-grad-connector {
+  width: 8px;
+  height: 2px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 1px;
+  align-self: flex-start;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+.mst-grad-connector--past {
+  background: rgba(16,185,129,0.5);
+}
+
+/* Next exam date */
+.mst-exam-date-primary {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 600;
+}
+.mst-exam-date-primary--set {
+  color: #ffd700;
 }

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Download, X, QrCode } from 'lucide-react';
+import '../styles/MemberQRCode.css';
 
 const MemberQRCode = ({ memberData, onClose }) => {
   const qrRef = useRef(null);
@@ -129,9 +130,9 @@ const MemberQRCode = ({ memberData, onClose }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '500px' }}>
+      <div className="modal-content mqr-modal-content">
         <div className="modal-header">
-          <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h2 className="u-flex-row-sm">
             <QrCode size={24} />
             Mein QR-Code
           </h2>
@@ -140,30 +141,13 @@ const MemberQRCode = ({ memberData, onClose }) => {
           </button>
         </div>
 
-        <div className="modal-body" style={{ textAlign: 'center', padding: '2rem' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
-            padding: '2rem',
-            borderRadius: '16px',
-            border: '3px solid #ffd700',
-            marginBottom: '1.5rem'
-          }}>
-            <h3 style={{
-              color: '#ffd700',
-              marginTop: 0,
-              marginBottom: '1rem',
-              fontSize: '1.5rem'
-            }}>
+        <div className="modal-body mqr-modal-body">
+          <div className="mqr-card">
+            <h3 className="mqr-member-name">
               {memberData.vorname} {memberData.nachname}
             </h3>
 
-            <div ref={qrRef} style={{
-              background: 'white',
-              padding: '1.5rem',
-              borderRadius: '12px',
-              display: 'inline-block',
-              marginBottom: '1rem'
-            }}>
+            <div ref={qrRef} className="mqr-qr-wrap">
               <QRCodeCanvas
                 value={qrData}
                 size={250}
@@ -174,50 +158,27 @@ const MemberQRCode = ({ memberData, onClose }) => {
               />
             </div>
 
-            <div style={{
-              color: 'rgba(255, 255, 255, 0.9)',
-              fontSize: '0.9rem',
-              lineHeight: '1.6'
-            }}>
-              <div style={{ marginBottom: '0.5rem' }}>
-                <strong style={{ color: '#ffd700' }}>Mitglieds-ID:</strong> {memberData.mitglied_id}
+            <div className="mqr-info-text">
+              <div className="mqr-info-row">
+                <strong className="u-text-accent">Mitglieds-ID:</strong> {memberData.mitglied_id}
               </div>
               {memberData.email && (
-                <div style={{ marginBottom: '0.5rem' }}>
-                  <strong style={{ color: '#ffd700' }}>Email:</strong> {memberData.email}
+                <div className="mqr-info-row">
+                  <strong className="u-text-accent">Email:</strong> {memberData.email}
                 </div>
               )}
             </div>
           </div>
 
-          <div style={{
-            background: 'rgba(255, 215, 0, 0.1)',
-            border: '1px solid rgba(255, 215, 0, 0.3)',
-            borderRadius: '8px',
-            padding: '1rem',
-            marginBottom: '1.5rem',
-            fontSize: '0.9rem',
-            color: '#666'
-          }}>
-            <strong style={{ color: '#ffd700' }}>💡 Verwendung:</strong><br/>
+          <div className="mqr-hint-box">
+            <strong className="u-text-accent">💡 Verwendung:</strong><br/>
             Zeige diesen QR-Code beim Check-in vor oder scanne ihn selbst in der App.
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '1rem'
-          }}>
+          <div className="mqr-btn-grid">
             <button
               onClick={handleDownload}
-              className="btn btn-primary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.875rem 1rem'
-              }}
+              className="btn btn-primary mqr-btn-action"
             >
               <Download size={20} />
               Herunterladen
@@ -225,17 +186,7 @@ const MemberQRCode = ({ memberData, onClose }) => {
 
             <button
               onClick={handlePrint}
-              className="btn btn-secondary"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.875rem 1rem',
-                background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 53, 0.2))',
-                border: '2px solid #ffd700',
-                color: '#ffd700'
-              }}
+              className="btn btn-secondary mqr-btn-print"
             >
               🖨️ Drucken
             </button>
@@ -243,11 +194,7 @@ const MemberQRCode = ({ memberData, onClose }) => {
 
           <button
             onClick={onClose}
-            className="btn btn-secondary"
-            style={{
-              width: '100%',
-              marginTop: '1rem'
-            }}
+            className="btn btn-secondary mqr-btn-close"
           >
             Schließen
           </button>

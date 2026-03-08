@@ -9,6 +9,7 @@ import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIA
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import "../styles/themes.css";
 import "../styles/components.css";
+import "../styles/MitgliederListe.css";
 import NeuesMitgliedAnlegen from "./NeuesMitgliedAnlegen.jsx";
 
 // Konstanten für Grid-Layout
@@ -40,7 +41,7 @@ const MemberCard = React.memo(({
 }) => {
   return (
     <div
-      className="stat-card"
+      className={`stat-card ml-member-card${selectionMode && isSelected ? ' ml-member-card--selected' : ''}`}
       onClick={(e) => {
         if (selectionMode) {
           e.stopPropagation();
@@ -49,102 +50,45 @@ const MemberCard = React.memo(({
           onNavigate(mitglied.mitglied_id);
         }
       }}
-      style={{
-        padding: '0.8rem',
-        borderRadius: '6px',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        minHeight: '130px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        position: 'relative',
-        border: selectionMode && isSelected
-          ? '2px solid rgba(139, 92, 246, 0.6)'
-          : '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: selectionMode && isSelected
-          ? '0 0 15px rgba(139, 92, 246, 0.3)'
-          : 'none'
-      }}
     >
       {/* Checkbox im Auswahlmodus */}
       {selectionMode && (
         <div
-          style={{
-            position: 'absolute',
-            top: '0.5rem',
-            right: '0.5rem',
-            width: '24px',
-            height: '24px',
-            borderRadius: '4px',
-            border: isSelected ? '2px solid #8b5cf6' : '2px solid rgba(255, 255, 255, 0.4)',
-            background: isSelected ? '#8b5cf6' : 'transparent',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            zIndex: 10
-          }}
+          className={`ml-checkbox${isSelected ? ' ml-checkbox--selected' : ''}`}
           onClick={(e) => {
             e.stopPropagation();
             onToggleSelection(mitglied.mitglied_id);
           }}
         >
           {isSelected && (
-            <span style={{ color: 'white', fontSize: '0.9rem', fontWeight: 'bold' }}>✓</span>
+            <span className="ml-check-mark">✓</span>
           )}
         </div>
       )}
 
-      <div style={{ marginBottom: '0.3rem' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          marginBottom: '0.3rem'
-        }}>
+      <div className="ml-card-top">
+        <div className="ml-card-header-row">
           <img
             src={mitglied.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
             alt={`${mitglied.vorname} ${mitglied.nachname}`}
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              objectFit: 'cover',
-              border: '2px solid #e5e7eb'
-            }}
+            className="ml-avatar"
             onError={(e) => {
               e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
             }}
           />
-          <h3 className="member-name" style={{
-            fontSize: '1.2rem',
-            fontWeight: '600',
-            margin: '0',
-            whiteSpace: 'normal',
-            overflow: 'visible',
-            textOverflow: 'unset',
-            lineHeight: '1.3'
-          }}>
+          <h3 className="member-name ml-member-name">
             {mitglied.nachname || "Unbekannt"}, {mitglied.vorname || "Unbekannt"}
           </h3>
         </div>
       </div>
-      <div className="member-info" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-        <p style={{ margin: '0 0 0.2rem 0', fontSize: '0.7rem' }}>
+      <div className="member-info ml-member-info">
+        <p className="ml-info-dob">
           <strong>Geburtsdatum:</strong>{" "}
           {mitglied.geburtsdatum
             ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE')
             : "N/A"}
         </p>
-        <p style={{
-          margin: '0',
-          whiteSpace: 'normal',
-          overflow: 'visible',
-          textOverflow: 'unset',
-          lineHeight: '1.3'
-        }}>
+        <p className="ml-info-stile">
           <strong>Stile:</strong>{" "}
           {mitglied.stile ? mitglied.stile.replace(/,/g, ", ") : "Keine Stile"}
         </p>
@@ -226,15 +170,11 @@ const VirtualizedMemberGrid = React.memo(({
   // Empty State
   if (safeMembers.length === 0) {
     return (
-      <div className="stat-card" style={{
-        padding: '2rem',
-        textAlign: 'center',
-        marginTop: '0.5rem'
-      }}>
-        <h3 style={{ fontSize: '1.1rem', fontWeight: '600', margin: '0 0 0.5rem 0' }}>
+      <div className="stat-card ml-empty-card">
+        <h3 className="ml-empty-title">
           {t('list.noMembers', 'Keine Mitglieder gefunden')}
         </h3>
-        <p style={{ margin: '0', color: 'rgba(255, 255, 255, 0.6)' }}>
+        <p className="ml-empty-desc">
           {t('list.noMembersDescription', 'Es sind noch keine Mitglieder im System registriert.')}
         </p>
       </div>
@@ -245,16 +185,8 @@ const VirtualizedMemberGrid = React.memo(({
   return (
     <div
       ref={containerRef}
-      className="stats-grid"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
-        gap: `${GAP}px`,
-        marginTop: '0.2rem',
-        marginBottom: '0.5rem',
-        maxHeight: '600px',
-        overflowY: 'auto'
-      }}
+      className="stats-grid ml-member-grid"
+      style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
     >
       {safeMembers.map((mitglied) => (
         <MemberCard
@@ -629,10 +561,10 @@ const MitgliederListe = () => {
   // Warte bis Übersetzungen und Context bereit sind
   if (!ready || !dojos) {
     return (
-      <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <div style={{ textAlign: 'center' }}>
+      <div className="app-container ml-center-loader">
+        <div className="ml-loader-text">
           <div className="loading-spinner"></div>
-          <p style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.7)' }}>Lade Daten...</p>
+          <p>Lade Daten...</p>
         </div>
       </div>
     );
@@ -640,55 +572,20 @@ const MitgliederListe = () => {
 
   return (
     <div className="app-container">
-      <div className="page-header" style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.5rem',
-        marginBottom: '0.5rem',
-        paddingTop: '0.3rem',
-        alignItems: 'center'
-      }} data-cache-break={cacheBreak}>
+      <div className="page-header ml-page-header" data-cache-break={cacheBreak}>
 
         {/* Zeile 1: Nur Titel */}
-        <h2 className="page-title" style={{
-          margin: 0,
-          fontSize: '1.6rem',
-          fontWeight: '700',
-          textAlign: 'center',
-          color: '#ffd700',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
-        }}>{t('list.title')}</h2>
+        <h2 className="page-title ml-page-title">{t('list.title')}</h2>
 
         {/* Zeile 2: Suchfeld + Neu + Filter + Aktionen */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }}>
+        <div className="ml-toolbar-row">
           {/* Suchfeld */}
           <input
             type="text"
             placeholder={t('list.searchPlaceholder')}
             value={searchTerm}
             onChange={handleSearchChange}
-            style={{
-              width: '160px',
-              padding: '0 0.6rem',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(12px)',
-              transition: 'all 0.3s ease',
-              outline: 'none',
-              color: 'white',
-              boxSizing: 'border-box',
-              height: '34px'
-            }}
-            className="search-input-dark"
+            className="search-input-dark ml-search-input"
             onFocus={(e) => {
               e.target.style.borderColor = '#F59E0B';
               e.target.style.boxShadow = '0 4px 20px rgba(245, 158, 11, 0.2)';
@@ -703,17 +600,7 @@ const MitgliederListe = () => {
           <select
             value={filterStil}
             onChange={(e) => setFilterStil(e.target.value)}
-            className={`filter-select ${filterStil ? 'active' : ''}`}
-            style={{
-              padding: '0 0.6rem',
-              fontSize: '0.8rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              height: '34px',
-              outline: 'none',
-              paddingRight: '1.8rem'
-            }}
+            className={`filter-select ml-filter-select ${filterStil ? 'active' : ''}`}
           >
             <option value="">🎯 {t('list.filters.allStyles', 'Alle Stile')}</option>
             <option value="__OHNE_STIL__" className="option-warning">❌ {t('list.filters.noStyle', 'Ohne Stil')}</option>
@@ -726,17 +613,7 @@ const MitgliederListe = () => {
           <select
             value={filterAlter}
             onChange={(e) => setFilterAlter(e.target.value)}
-            className={`filter-select ${filterAlter ? 'active' : ''}`}
-            style={{
-              padding: '0 0.6rem',
-              fontSize: '0.8rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              height: '34px',
-              outline: 'none',
-              paddingRight: '1.8rem'
-            }}
+            className={`filter-select ml-filter-select ${filterAlter ? 'active' : ''}`}
           >
             <option value="">📅 {t('list.filters.age', 'Alter')}</option>
             <option value="0-6">0-6 J.</option>
@@ -751,17 +628,7 @@ const MitgliederListe = () => {
           <select
             value={filterGurt}
             onChange={(e) => setFilterGurt(e.target.value)}
-            className={`filter-select ${filterGurt ? 'active' : ''}`}
-            style={{
-              padding: '0 0.6rem',
-              fontSize: '0.8rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              height: '34px',
-              outline: 'none',
-              paddingRight: '1.8rem'
-            }}
+            className={`filter-select ml-filter-select ${filterGurt ? 'active' : ''}`}
           >
             <option value="">🥋 {t('list.filters.allBelts', 'Alle Gurte')}</option>
             {availableGurte.map(gurt => (
@@ -773,46 +640,20 @@ const MitgliederListe = () => {
           {hasActiveFilters && (
             <button
               onClick={handleResetFilters}
-              className="filter-reset-btn"
-              style={{
-                padding: '0 0.6rem',
-                fontSize: '0.8rem',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                height: '34px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem',
-                fontWeight: '600'
-              }}
+              className="filter-reset-btn ml-reset-btn"
             >
               ✕ Reset
             </button>
           )}
 
           {/* Aktionen-Menü */}
-          <div className="menu-container" style={{ position: 'relative', display: 'inline-block', zIndex: 10000 }}>
+          <div className="menu-container ml-menu-anchor">
             <button
               ref={menuButtonRef}
               onClick={handleMenuToggle}
-              className="actions-btn"
-              style={{
-                padding: '0 0.6rem',
-                fontSize: '0.8rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                whiteSpace: 'nowrap',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                transition: 'all 0.3s ease',
-                boxSizing: 'border-box',
-                height: '34px'
-              }}
+              className="actions-btn ml-actions-btn"
             >
-              <span style={{ fontSize: '1rem', fontWeight: '900' }}>⋮</span>
+              <span className="ml-kebab-icon">⋮</span>
               <span>{t('common:labels.actions')}</span>
             </button>
           </div>
@@ -820,100 +661,47 @@ const MitgliederListe = () => {
           {/* Dropdown Menü als Portal direkt im Body */}
           {showMenu && ReactDOM.createPortal(
             <div
-              className="actions-dropdown"
+              className="actions-dropdown ml-dropdown"
               style={{
-                position: 'fixed',
                 top: `${menuPosition.top}px`,
                 left: `${menuPosition.left}px`,
-                borderRadius: '8px',
-                zIndex: 999999,
-                minWidth: '220px',
-                overflow: 'visible',
-                display: 'block',
-                visibility: 'visible',
-                opacity: 1,
-                padding: '0.5rem'
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <button
-                className="actions-dropdown-item"
+                className="actions-dropdown-item ml-dropdown-item"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setShowMenu(false);
                   handleNewMember();
                 }}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  fontWeight: '600',
-                  borderRadius: '6px',
-                  marginBottom: '0.5rem'
-                }}
               >
-                <span style={{ fontSize: '1.3rem' }}>➕</span>
+                <span className="ml-icon-lg">➕</span>
                 <span>{t('list.addMember')}</span>
               </button>
 
               <button
-                className="actions-dropdown-item"
+                className="actions-dropdown-item ml-dropdown-item"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   handlePrintMitglieder();
                 }}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  fontWeight: '600',
-                  borderRadius: '6px',
-                  marginBottom: '0.5rem'
-                }}
               >
-                <span style={{ fontSize: '1.3rem' }}>🖨️</span>
+                <span className="ml-icon-lg">🖨️</span>
                 <span>{t('list.printList', 'Mitgliederliste drucken')}</span>
               </button>
 
               <button
-                className="actions-dropdown-item"
+                className="actions-dropdown-item ml-dropdown-item"
                 onMouseDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   handleToggleSelectionMode();
                 }}
-                style={{
-                  width: '100%',
-                  padding: '0.75rem 1rem',
-                  border: 'none',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.75rem',
-                  fontWeight: '600',
-                  borderRadius: '6px'
-                }}
               >
-                <span style={{ fontSize: '1.3rem' }}>📦</span>
+                <span className="ml-icon-lg">📦</span>
                 <span>{selectionMode ? t('list.endSelection', 'Auswahl beenden') : t('list.bulkArchive', 'Mehrfach archivieren')}</span>
               </button>
             </div>,
@@ -921,31 +709,15 @@ const MitgliederListe = () => {
           )}
 
           {/* Anzahl Mitglieder */}
-          <span style={{
-            fontSize: '0.75rem',
-            color: 'rgba(255,255,255,0.6)',
-            whiteSpace: 'nowrap',
-            padding: '0 0.5rem'
-          }}>
+          <span className="ml-member-count">
             {filteredMitglieder.length}/{mitglieder.length}
           </span>
         </div>
 
         {/* Zeile 3: Nachname-Label + ABC-Buchstaben */}
         {availableLetters.length > 0 && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            flexWrap: 'wrap',
-            justifyContent: 'center'
-          }}>
-            <span style={{
-              fontSize: '0.75rem',
-              fontWeight: '600',
-              color: 'rgba(255,255,255,0.7)',
-              whiteSpace: 'nowrap'
-            }}>
+          <div className="ml-letter-row">
+            <span className="ml-letter-label">
               {t('detail.fields.lastName', 'Nachname')}:
             </span>
 
@@ -953,20 +725,7 @@ const MitgliederListe = () => {
               <button
                 key={letter}
                 onClick={() => handleLetterFilter(letter)}
-                className={`letter-filter-btn ${selectedLetter === letter ? 'active' : ''}`}
-                style={{
-                  padding: '0.2rem 0.45rem',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '0.7rem',
-                  transition: 'all 0.2s ease',
-                  minWidth: '24px',
-                  height: '24px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className={`letter-filter-btn ml-letter-btn ${selectedLetter === letter ? 'active' : ''}`}
               >
                 {letter}
               </button>
@@ -974,18 +733,7 @@ const MitgliederListe = () => {
             {selectedLetter && (
               <button
                 onClick={() => setSelectedLetter("")}
-                className="letter-filter-reset-btn"
-                style={{
-                  padding: '0.2rem 0.45rem',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  fontSize: '0.7rem',
-                  transition: 'all 0.2s ease',
-                  height: '24px',
-                  display: 'inline-flex',
-                  alignItems: 'center'
-                }}
+                className="letter-filter-reset-btn ml-letter-reset-btn"
               >
                 ✖ Alle
               </button>
@@ -998,33 +746,14 @@ const MitgliederListe = () => {
 
       {/* Aktionsleiste im Auswahlmodus */}
       {selectionMode && (
-        <div style={{
-          background: 'rgba(139, 92, 246, 0.15)',
-          border: '1px solid rgba(139, 92, 246, 0.3)',
-          borderRadius: '8px',
-          padding: '0.75rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          backdropFilter: 'blur(12px)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '0.85rem', fontWeight: '600' }}>
+        <div className="ml-selection-bar">
+          <div className="u-flex-row-lg">
+            <span className="ml-selection-count">
               {t('list.selectedCount', '{{count}} ausgewählt', { count: selectedMembers.length })}
             </span>
             <button
               onClick={handleSelectAll}
-              style={{
-                padding: '0.3rem 0.6rem',
-                fontSize: '0.75rem',
-                background: 'transparent',
-                color: 'rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="ml-select-all-btn"
               onMouseEnter={(e) => {
                 e.target.style.background = 'rgba(255, 255, 255, 0.1)';
                 e.target.style.borderColor = 'rgba(255, 255, 255, 0.5)';
@@ -1037,24 +766,11 @@ const MitgliederListe = () => {
               {selectedMembers.length === filteredMitglieder.length ? t('list.deselectAll', 'Alle abwählen') : t('list.selectAll', 'Alle auswählen')}
             </button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="u-flex-row-sm">
             <button
               onClick={handleBulkArchive}
               disabled={selectedMembers.length === 0}
-              style={{
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.8rem',
-                background: selectedMembers.length > 0 ? 'linear-gradient(135deg, #EF4444, #DC2626)' : 'rgba(128, 128, 128, 0.3)',
-                color: selectedMembers.length > 0 ? 'white' : 'rgba(255, 255, 255, 0.5)',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: selectedMembers.length > 0 ? 'pointer' : 'not-allowed',
-                fontWeight: '600',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem'
-              }}
+              className="ml-bulk-archive-btn"
               onMouseEnter={(e) => {
                 if (selectedMembers.length > 0) {
                   e.target.style.transform = 'translateY(-1px)';
@@ -1071,16 +787,7 @@ const MitgliederListe = () => {
             </button>
             <button
               onClick={handleToggleSelectionMode}
-              style={{
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.8rem',
-                background: 'transparent',
-                color: 'rgba(255, 255, 255, 0.8)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
+              className="ml-cancel-selection-btn"
               onMouseEnter={(e) => {
                 e.target.style.background = 'rgba(255, 255, 255, 0.1)';
               }}

@@ -1,0 +1,55 @@
+/* MitgliedKarte.css */
+
+.mk-search-badge {
+  color: #1976d2;
+  font-size: 12px;
+  margin-left: 8px;
+  background: #bbdefb;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.mk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999998;
+}
+
+.mk-context-menu {
+  position: fixed;
+  z-index: 999999;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  min-width: 210px;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.mk-context-header {
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid rgba(255,215,0,0.12);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.mk-context-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mk-context-btn:hover {
+  background: rgba(255,215,0,0.1);
+}

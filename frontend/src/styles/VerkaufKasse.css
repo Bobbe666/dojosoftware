@@ -49,7 +49,7 @@
   flex-direction: column;
   background: var(--bg-gradient);
   color: var(--text-primary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
   overflow: hidden;
   animation: fadeIn 0.6s ease-out;
 }
@@ -60,10 +60,10 @@
   gap: 0.5rem;
   margin-bottom: 1rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--primary-alpha-25);
+  border: 1px solid rgba(255,215,0,0.25);
   border-radius: 14px;
   padding: 0.8rem 1rem;
-  box-shadow: 0 8px 24px var(--primary-alpha-10);
+  box-shadow: 0 8px 24px rgba(255,215,0,0.1);
   backdrop-filter: var(--glass-blur);
 }
 
@@ -92,8 +92,8 @@
 }
 
 .kasse-kunde-reset:hover {
-  background: var(--primary-alpha-20);
-  border-color: var(--primary-alpha-40);
+  background: rgba(255,215,0,0.2);
+  border-color: rgba(255,215,0,0.4);
   color: var(--primary);
 }
 
@@ -111,8 +111,8 @@
   border-radius: 999px;
   font-size: 0.75rem;
   text-transform: none;
-  border: 1px solid var(--primary-alpha-35);
-  background: var(--primary-alpha-10);
+  border: 1px solid rgba(255,215,0,0.35);
+  background: rgba(255,215,0,0.1);
   color: #fefce8;
 }
 
@@ -141,7 +141,7 @@
 .kasse-checkins-leiste {
   margin-bottom: 1.2rem;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--primary-alpha-15);
+  border: 1px solid rgba(255,215,0,0.15);
   border-radius: 14px;
   padding: 0.9rem 1rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
@@ -172,7 +172,7 @@
 .kasse-checkin-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 0.6rem 0.75rem;
   display: flex;
   align-items: flex-start;
@@ -184,21 +184,21 @@
 }
 
 .kasse-checkin-card:hover {
-  border-color: var(--primary-alpha-60);
-  box-shadow: 0 10px 28px var(--primary-alpha-20);
+  border-color: rgba(255,215,0,0.6);
+  box-shadow: 0 10px 28px rgba(255,215,0,0.2);
   transform: translateY(-2px);
 }
 
 .kasse-checkin-card.active {
   border-color: rgba(255, 215, 0, 0.8);
-  box-shadow: 0 14px 32px var(--primary-alpha-25);
-  background: var(--primary-alpha-10);
+  box-shadow: 0 14px 32px rgba(255,215,0,0.25);
+  background: rgba(255,215,0,0.1);
 }
 
 .kasse-checkin-card .avatar {
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   background: var(--gradient-gold);
   display: flex;
   align-items: center;
@@ -250,7 +250,7 @@
   padding: 0.75rem 1.5rem;
   background: var(--color-error-500-alpha-10);
   border: 2px solid rgba(239, 68, 68, 0.3);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   color: var(--error);
   font-weight: 600;
   font-size: 1rem;
@@ -275,7 +275,7 @@
    ============================================ */
 
 .kasse-header {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   border-bottom: 2px solid var(--border-accent);
   padding: 1rem 1.5rem;
@@ -297,7 +297,7 @@
   height: 100%;
   background: linear-gradient(90deg,
     transparent,
-    var(--primary-alpha-10),
+    rgba(255,215,0,0.1),
     transparent);
   animation: shimmer 3s forwards;
 }
@@ -311,7 +311,7 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
-  text-shadow: 0 0 20px var(--primary-alpha-50);
+  text-shadow: 0 0 20px rgba(255,215,0,0.5);
 }
 
 .kasse-info {
@@ -379,7 +379,7 @@
    ============================================ */
 
 .kategorien-sidebar {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   border-right: 2px solid var(--border-accent);
   padding: 1rem 0;
@@ -393,12 +393,12 @@
   background: var(--btn-ghost-bg);
   color: rgba(255, 255, 255, 0.95);
   border: none;
-  border-left: 4px solid transparent;
+  border-left: 4px solid var(--kat-color, transparent);
   padding: 10px 16px;
   text-align: left;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -408,9 +408,9 @@
   width: 100%;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px var(--primary-alpha-20);
+  box-shadow: 0 2px 8px rgba(255,215,0,0.2);
   backdrop-filter: blur(10px);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
 }
 
 .kategorie-button::before {
@@ -420,7 +420,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
   transition: left 0.5s;
 }
 
@@ -431,13 +431,13 @@
 .kategorie-button:hover {
   background: var(--btn-ghost-bg-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px var(--primary-alpha-40);
+  box-shadow: 0 4px 15px rgba(255,215,0,0.4);
   color: var(--primary);
 }
 
 .kategorie-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px var(--primary-alpha-20);
+  box-shadow: 0 2px 6px rgba(255,215,0,0.2);
 }
 
 .kategorie-button.active {
@@ -445,7 +445,7 @@
   color: var(--primary);
   border-left-color: var(--primary);
   font-weight: 700;
-  box-shadow: 0 4px 15px var(--primary-alpha-40);
+  box-shadow: 0 4px 15px rgba(255,215,0,0.4);
 }
 
 .kategorie-icon {
@@ -458,7 +458,7 @@
    ============================================ */
 
 .artikel-section {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   padding: 1.5rem;
   overflow-y: auto;
@@ -472,10 +472,10 @@
 }
 
 .artikel-button {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-accent);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -484,14 +484,14 @@
   flex-direction: column;
   gap: 0.75rem;
   min-height: 140px;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
 }
 
 .artikel-button:hover:not(.disabled) {
   border-color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px var(--primary-alpha-15);
-  background: var(--glass-bg-hover);
+  box-shadow: 0 8px 25px rgba(255,215,0,0.15);
+  background: var(--surface-hover);
 }
 
 .artikel-button.disabled {
@@ -506,8 +506,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--glass-bg-hover);
-  border-radius: 8px;
+  background: var(--surface-hover);
+  border-radius: var(--comp-radius-md);
   overflow: hidden;
 }
 
@@ -557,7 +557,7 @@
    ============================================ */
 
 .warenkorb-section {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   border-left: 2px solid var(--border-accent);
   display: flex;
@@ -578,7 +578,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
 }
 
 .warenkorb-header h3 {
@@ -586,7 +586,7 @@
   color: var(--primary);
   font-size: 1.25rem;
   font-weight: 700;
-  text-shadow: 0 2px 8px var(--primary-alpha-40);
+  text-shadow: 0 2px 8px rgba(255,215,0,0.4);
   letter-spacing: 0.5px;
 }
 
@@ -606,17 +606,17 @@
 
 .warenkorb-items::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
 }
 
 .warenkorb-items::-webkit-scrollbar-thumb {
-  background: var(--primary-alpha-30);
-  border-radius: 4px;
+  background: rgba(255,215,0,0.3);
+  border-radius: var(--comp-radius-xs);
   transition: background 0.2s ease;
 }
 
 .warenkorb-items::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-alpha-50);
+  background: rgba(255,215,0,0.5);
 }
 
 .warenkorb-item {
@@ -625,17 +625,17 @@
   gap: 1rem;
   align-items: center;
   padding: 0.875rem 1rem;
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: 8px;
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: var(--comp-radius-md);
   margin-bottom: 0.75rem;
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
 }
 
 .warenkorb-item:hover {
-  border-color: var(--primary-alpha-35);
-  background: var(--glass-bg-hover);
+  border-color: rgba(255,215,0,0.35);
+  background: var(--surface-hover);
 }
 
 .item-info {
@@ -668,7 +668,7 @@
 }
 
 .item-separator {
-  color: var(--primary-alpha-50);
+  color: rgba(255,215,0,0.5);
   font-weight: 700;
 }
 
@@ -691,7 +691,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   transition: all 0.2s ease;
   backdrop-filter: blur(10px);
   line-height: 1;
@@ -720,7 +720,7 @@
 .warenkorb-summe {
   padding: 1rem 1.5rem;
   border-top: 2px solid var(--border-accent);
-  background: var(--primary-alpha-10);
+  background: rgba(255,215,0,0.1);
 }
 
 .summe-row {
@@ -743,10 +743,10 @@
   font-weight: 700;
   font-size: 1.2rem;
   color: var(--primary);
-  border-top: 2px solid var(--primary-alpha-30);
+  border-top: 2px solid rgba(255,215,0,0.3);
   padding-top: 0.75rem;
   margin-top: 0.5rem;
-  text-shadow: 0 1px 4px var(--primary-alpha-20);
+  text-shadow: 0 1px 4px rgba(255,215,0,0.2);
 }
 
 /* ============================================
@@ -756,7 +756,7 @@
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -766,13 +766,13 @@
   align-items: center;
   gap: 0.5rem;
   justify-content: center;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
 }
 
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, #ffed4e 50%, var(--primary) 100%);
   color: var(--bg-secondary);
-  box-shadow: 0 4px 20px var(--primary-alpha-40), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(255,215,0,0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -797,7 +797,7 @@
 
 .btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 30px var(--primary-alpha-60), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 30px rgba(255,215,0,0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   background: linear-gradient(135deg, #ffed4e 0%, var(--primary) 50%, #ffed4e 100%);
 }
 
@@ -813,10 +813,10 @@
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: var(--primary-alpha-50);
+  border-color: rgba(255,215,0,0.5);
   color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--primary-alpha-15);
+  box-shadow: 0 4px 12px rgba(255,215,0,0.15);
 }
 
 .btn-danger {
@@ -875,9 +875,9 @@
 .zahlung-content {
   background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 15, 35, 0.98) 100%);
   backdrop-filter: blur(30px);
-  border: 2px solid var(--primary-alpha-25);
+  border: 2px solid rgba(255,215,0,0.25);
   border-radius: 16px;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 80px var(--primary-alpha-15);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255,215,0,0.15);
   max-width: 550px;
   width: 100%;
   max-height: 90vh;
@@ -889,11 +889,11 @@
   padding: 1.25rem 1.5rem;
   margin: 0;
   color: var(--primary);
-  font-size: 1.4rem;
+  font-size: var(--ui-page-title);
   font-weight: 700;
-  border-bottom: 2px solid var(--primary-alpha-20);
-  background: linear-gradient(135deg, var(--primary-alpha-10) 0%, rgba(255, 215, 0, 0.03) 100%);
-  text-shadow: 0 2px 10px var(--primary-alpha-30);
+  border-bottom: 2px solid rgba(255,215,0,0.2);
+  background: linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(255, 215, 0, 0.03) 100%);
+  text-shadow: 0 2px 10px rgba(255,215,0,0.3);
   letter-spacing: 0.5px;
 }
 
@@ -912,7 +912,7 @@
   gap: 0.4rem;
   padding: 0.9rem 0.6rem;
   border: 2px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   cursor: pointer;
   transition: all 0.3s ease;
   font-weight: 600;
@@ -930,16 +930,16 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--primary-alpha-10), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent);
   transition: left 0.5s;
 }
 
 .zahlungsart-option:hover {
-  border-color: var(--primary-alpha-50);
-  background: var(--glass-bg);
+  border-color: rgba(255,215,0,0.5);
+  background: var(--surface-3);
   color: rgba(255, 255, 255, 0.95);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--primary-alpha-15);
+  box-shadow: 0 4px 12px rgba(255,215,0,0.15);
 }
 
 .zahlungsart-option:hover::before {
@@ -952,20 +952,20 @@
 
 .zahlungsart-option:has(input[type="radio"]:checked) {
   border-color: var(--primary);
-  background: linear-gradient(135deg, var(--primary-alpha-20) 0%, var(--primary-alpha-10) 100%);
+  background: linear-gradient(135deg, rgba(255,215,0,0.2) 0%, rgba(255,215,0,0.1) 100%);
   color: var(--primary);
-  box-shadow: 0 4px 20px var(--primary-alpha-30), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(255,215,0,0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
 }
 
 .bar-zahlung {
   padding: 0 1.5rem 1.25rem;
-  border-bottom: 2px solid var(--primary-alpha-10);
+  border-bottom: 2px solid rgba(255,215,0,0.1);
 }
 
 .zahlung-form-section {
   padding: 1.25rem 1.5rem;
-  border-bottom: 2px solid var(--primary-alpha-10);
+  border-bottom: 2px solid rgba(255,215,0,0.1);
 }
 
 .kunde-mitglied-row {
@@ -995,8 +995,8 @@
 }
 
 .betrag-readonly {
-  background: var(--primary-alpha-10) !important;
-  border-color: var(--primary-alpha-40) !important;
+  background: rgba(255,215,0,0.1) !important;
+  border-color: rgba(255,215,0,0.4) !important;
   color: var(--primary) !important;
   font-weight: 700 !important;
   cursor: not-allowed;
@@ -1010,10 +1010,10 @@
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.08) 100%);
   backdrop-filter: var(--glass-blur);
   border: 2px solid rgba(34, 197, 94, 0.4);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   font-size: 1.1rem;
   color: var(--success);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
   font-weight: 700;
   text-align: center;
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -1032,7 +1032,7 @@
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  text-shadow: 0 1px 3px var(--primary-alpha-20);
+  text-shadow: 0 1px 3px rgba(255,215,0,0.2);
   min-height: 2.2rem;
   line-height: 1.2;
   display: flex;
@@ -1045,12 +1045,12 @@
   padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: var(--glass-blur);
-  border: 2px solid var(--primary-alpha-20);
-  border-radius: 10px;
+  border: 2px solid rgba(255,215,0,0.2);
+  border-radius: var(--comp-radius-lg);
   font-size: 1rem;
   color: var(--text-primary);
   transition: all 0.3s ease;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
   font-weight: 500;
   min-height: 48px;
   box-sizing: border-box;
@@ -1060,8 +1060,8 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-alpha-15), 0 4px 12px var(--primary-alpha-20);
-  background: var(--glass-bg);
+  box-shadow: 0 0 0 4px rgba(255,215,0,0.15), 0 4px 12px rgba(255,215,0,0.2);
+  background: var(--surface-3);
   transform: translateY(-1px);
 }
 
@@ -1072,17 +1072,17 @@
 }
 
 .rueckgeld {
-  background: linear-gradient(135deg, var(--primary-alpha-15) 0%, var(--primary-alpha-10) 100%);
+  background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0.1) 100%);
   color: var(--primary);
   padding: 1rem 1.5rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1.2rem;
   font-weight: 700;
   text-align: center;
   margin-top: 1rem;
-  border: 2px solid var(--primary-alpha-30);
-  box-shadow: 0 4px 12px var(--primary-alpha-15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  text-shadow: 0 1px 4px var(--primary-alpha-30);
+  border: 2px solid rgba(255,215,0,0.3);
+  box-shadow: 0 4px 12px rgba(255,215,0,0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  text-shadow: 0 1px 4px rgba(255,215,0,0.3);
 }
 
 .zahlung-actions {
@@ -1114,15 +1114,15 @@
 }
 
 .erfolg-content {
-  background: var(--glass-bg);
+  background: var(--surface-3);
   backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-accent);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   box-shadow: 0 20px 25px rgba(0, 0, 0, 0.4);
   max-width: 400px;
   width: 100%;
   text-align: center;
-  padding: 2rem;
+  padding: var(--ui-page-padding);
   animation: fadeInUp 0.4s ease-out;
 }
 
@@ -1390,7 +1390,7 @@
 .variante-btn {
   padding: 0.75rem 1rem;
   border: 2px solid var(--border-color, rgba(255, 255, 255, 0.2));
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   background: var(--input-bg, rgba(255, 255, 255, 0.05));
   color: var(--text-primary, #ffffff);
   font-size: 0.9rem;
@@ -1418,7 +1418,7 @@
   align-items: center;
   padding: 1rem;
   background: var(--input-bg, rgba(255, 255, 255, 0.05));
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-top: 1rem;
 }
 
@@ -1461,7 +1461,7 @@
   color: var(--text-on-primary, #1a1a2e);
   font-size: 0.65rem;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -1530,4 +1530,10 @@
 [data-theme="tda-vib"] .artikel-button .variant-badge {
   background: #6B4423;
   color: #fff;
+}
+
+/* Inline-style migration */
+.vk-icon-inline {
+  vertical-align: middle;
+  margin-right: 4px;
 }

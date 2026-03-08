@@ -628,7 +628,7 @@ const Anwesenheit = () => {
 
       <div className="stundenplan-list">
         {gefilterteStunden.length === 0 && !loading && (
-          <p style={{ color: "#a00", fontStyle: "italic", marginBottom: "1rem" }}>
+          <p className="anw-warn-italic">
            ⚠️ Für das gewählte Datum sind keine Kurse geplant.
           </p>
         )}
@@ -830,18 +830,18 @@ const Anwesenheit = () => {
               📱 {mitglieder.filter(m => m.checkin_status === 'eingecheckt').length} eingecheckt
               {/* Filter-Status anzeigen */}
               {showStyleOnly && (
-                <span style={{ color: '#ff9800', fontWeight: 'bold', marginLeft: '10px' }}>
+                <span className="anw-filter-secondary">
                   | 🥋 Stil-Filter aktiv
                 </span>
               )}
               {showAllMembers && (
-                <span style={{ color: '#4caf50', fontWeight: 'bold', marginLeft: '10px' }}>
+                <span className="anw-filter-success">
                   | 🔍 Alle Mitglieder
                 </span>
               )}
               {/* Suchstatus anzeigen */}
               {isSearchActive && (
-                <span style={{ color: '#1976d2', fontWeight: 'bold', marginLeft: '10px' }}>
+                <span className="anw-filter-info">
                   | 🔍 Suche aktiv ({allMembersForSearch.length} durchsuchbar)
                 </span>
               )}

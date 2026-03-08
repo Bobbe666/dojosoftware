@@ -82,7 +82,7 @@ const AnwesenheitGrid = () => {
                   <div
                     key={i}
                     className="teilnehmer-box"
-                    style={{ backgroundColor: statusFarben[t.status] || "#eee" }}
+                    style={{ '--box-color': statusFarben[t.status] || "#eee" }}
                     title={`${t.vorname} ${t.name} – ${t.status}${t.bemerkung ? ` (${t.bemerkung})` : ""}`}
                   >
                     {t.vorname} {t.name}

@@ -97,8 +97,8 @@ const SupportDashboard = () => {
 
   // Statistik-Karten für Übersicht
   const StatCard = ({ icon: Icon, label, value, color, trend }) => (
-    <div className="support-stat-card" style={{ borderLeftColor: color }}>
-      <div className="stat-icon" style={{ backgroundColor: `${color}20` }}>
+    <div className="support-stat-card" style={{ '--card-color': color }}>
+      <div className="stat-icon">
         <Icon size={24} color={color} />
       </div>
       <div className="stat-content">
@@ -241,10 +241,10 @@ const SupportDashboard = () => {
                   <h3>Nach Kategorie</h3>
                   <div className="kategorie-bars">
                     {[
-                      { name: 'Vertrag', count: stats.kategorie_vertrag || 0, color: '#3b82f6' },
-                      { name: 'Hilfe', count: stats.kategorie_hilfe || 0, color: '#10b981' },
-                      { name: 'Problem', count: stats.kategorie_problem || 0, color: '#f59e0b' },
-                      { name: 'Sonstiges', count: stats.kategorie_sonstiges || 0, color: '#6b7280' }
+                      { name: 'Vertrag', count: stats.kategorie_vertrag || 0, color: 'var(--info)' },
+                      { name: 'Hilfe', count: stats.kategorie_hilfe || 0, color: 'var(--success)' },
+                      { name: 'Problem', count: stats.kategorie_problem || 0, color: 'var(--warning)' },
+                      { name: 'Sonstiges', count: stats.kategorie_sonstiges || 0, color: 'var(--text-muted)' }
                     ].map(kat => {
                       const total = (stats.kategorie_vertrag || 0) + (stats.kategorie_hilfe || 0) +
                                     (stats.kategorie_problem || 0) + (stats.kategorie_sonstiges || 0);
@@ -256,7 +256,7 @@ const SupportDashboard = () => {
                             <span>{kat.count}</span>
                           </div>
                           <div className="kategorie-bar">
-                            <div className="kategorie-fill" style={{ width: `${percent}%`, backgroundColor: kat.color }} />
+                            <div className="kategorie-fill" style={{ width: `${percent}%`, '--fill-color': kat.color }} />
                           </div>
                         </div>
                       );
@@ -353,12 +353,12 @@ const SupportDashboard = () => {
                   <h3>Nach Status</h3>
                   <div className="kategorie-bars">
                     {[
-                      { name: 'Neu', count: featureStats.neu || 0, color: '#f59e0b' },
-                      { name: 'Geprüft', count: featureStats.geprueft || 0, color: '#3b82f6' },
+                      { name: 'Neu', count: featureStats.neu || 0, color: 'var(--warning)' },
+                      { name: 'Geprüft', count: featureStats.geprueft || 0, color: 'var(--info)' },
                       { name: 'Geplant', count: featureStats.geplant || 0, color: '#8b5cf6' },
                       { name: 'In Arbeit', count: featureStats.in_arbeit || 0, color: '#ec4899' },
-                      { name: 'Umgesetzt', count: featureStats.umgesetzt || 0, color: '#10b981' },
-                      { name: 'Abgelehnt', count: featureStats.abgelehnt || 0, color: '#6b7280' }
+                      { name: 'Umgesetzt', count: featureStats.umgesetzt || 0, color: 'var(--success)' },
+                      { name: 'Abgelehnt', count: featureStats.abgelehnt || 0, color: 'var(--text-muted)' }
                     ].map(status => {
                       const total = featureStats.gesamt || 1;
                       const percent = total > 0 ? (status.count / total) * 100 : 0;
@@ -369,7 +369,7 @@ const SupportDashboard = () => {
                             <span>{status.count}</span>
                           </div>
                           <div className="kategorie-bar">
-                            <div className="kategorie-fill" style={{ width: `${percent}%`, backgroundColor: status.color }} />
+                            <div className="kategorie-fill" style={{ width: `${percent}%`, '--fill-color': status.color }} />
                           </div>
                         </div>
                       );

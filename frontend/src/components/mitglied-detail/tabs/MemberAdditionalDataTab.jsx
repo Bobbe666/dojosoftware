@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../../../styles/MemberAdditionalDataTab.css';
 
 /**
  * MemberAdditionalDataTab - Lehrgänge & Ehrungen verwalten
@@ -99,43 +100,27 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
   const getArtStyle = (art) => {
     switch (art) {
       case 'Ehrung':
-        return { background: 'rgba(255, 215, 0, 0.2)', color: '#FFD700' };
+        return { background: 'rgba(255, 215, 0, 0.2)', color: 'var(--primary)' };
       case 'Seminar':
-        return { background: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' };
+        return { background: 'rgba(59, 130, 246, 0.2)', color: 'var(--info)' };
       case 'Lehrgang':
-        return { background: 'rgba(16, 185, 129, 0.2)', color: '#10b981' };
+        return { background: 'rgba(16, 185, 129, 0.2)', color: 'var(--success)' };
       default:
         return { background: 'rgba(139, 92, 246, 0.2)', color: '#8b5cf6' };
     }
   };
 
   return (
-    <div className="zusatzdaten-content" style={{ padding: '1rem' }}>
+    <div className="zusatzdaten-content mad-root">
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem',
-        paddingBottom: '1rem',
-        borderBottom: '2px solid rgba(255, 215, 0, 0.2)'
-      }}>
-        <h2 style={{ margin: 0, color: '#FFD700', fontSize: '1.5rem', fontWeight: '700' }}>
+      <div className="mad-header">
+        <h2 className="mad-heading">
           Lehrgänge & Ehrungen
         </h2>
         {editMode && (
           <button
             onClick={openAddModal}
-            style={{
-              padding: '0.6rem 1.2rem',
-              background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-              border: 'none',
-              borderRadius: '8px',
-              color: '#000',
-              fontWeight: '600',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
+            className="mad-btn-add"
           >
             + Neuer Eintrag
           </button>
@@ -144,72 +129,55 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
 
       {/* Loading State */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+        <div className="mad-loading">
           Lade Daten...
         </div>
       )}
 
       {/* Empty State */}
       {!loading && zusatzdaten.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          color: 'rgba(255, 255, 255, 0.6)'
-        }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📋</div>
+        <div className="mad-empty">
+          <div className="u-emoji-xl">📋</div>
           <p>Noch keine Lehrgänge oder Ehrungen erfasst.</p>
-          {editMode && <p style={{ fontSize: '0.9rem' }}>Klicken Sie auf "Neuer Eintrag" um einen hinzuzufügen.</p>}
+          {editMode && <p className="mad-empty-hint">Klicken Sie auf "Neuer Eintrag" um einen hinzuzufügen.</p>}
         </div>
       )}
 
       {/* Table */}
       {!loading && zusatzdaten.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+        <div className="mad-table-scroll">
+          <table className="mad-table">
             <thead>
-              <tr style={{ borderBottom: '2px solid rgba(255, 215, 0, 0.3)' }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Datum</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Art</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Bezeichnung</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left', color: '#FFD700' }}>Lizenz</th>
-                {editMode && <th style={{ padding: '0.75rem', textAlign: 'center', color: '#FFD700' }}>Aktion</th>}
+              <tr className="mad-thead-row">
+                <th className="mad-th-left">Datum</th>
+                <th className="mad-th-left">Art</th>
+                <th className="mad-th-left">Bezeichnung</th>
+                <th className="mad-th-left">Lizenz</th>
+                {editMode && <th className="mad-th-center">Aktion</th>}
               </tr>
             </thead>
             <tbody>
               {zusatzdaten.map((item) => {
                 const artStyle = getArtStyle(item.art);
                 return (
-                  <tr key={item.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                    <td style={{ padding: '0.75rem' }}>
+                  <tr key={item.id} className="mad-tr">
+                    <td className="mad-td">
                       {new Date(item.datum).toLocaleDateString('de-DE')}
                     </td>
-                    <td style={{ padding: '0.75rem' }}>
-                      <span style={{
-                        padding: '0.2rem 0.6rem',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        ...artStyle
-                      }}>
+                    <td className="mad-td">
+                      <span className="mad-art-badge" style={artStyle}>
                         {item.art}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem' }}>{item.bezeichnung}</td>
-                    <td style={{ padding: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
+                    <td className="mad-td">{item.bezeichnung}</td>
+                    <td className="mad-td-secondary">
                       {item.lizenz || '-'}
                     </td>
                     {editMode && (
-                      <td style={{ padding: '0.75rem', textAlign: 'center' }}>
+                      <td className="mad-td-center">
                         <button
                           onClick={() => handleDelete(item)}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.2)',
-                            border: '1px solid #ef4444',
-                            padding: '0.25rem 0.5rem',
-                            borderRadius: '4px',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '0.8rem'
-                          }}
+                          className="mad-btn-delete"
                         >
                           Löschen
                         </button>
@@ -225,87 +193,43 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
 
       {/* Modal */}
       {showModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }} onClick={closeModal}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: 'linear-gradient(145deg, #1a1a2e 0%, #16213e 100%)',
-            borderRadius: '16px',
-            width: '90%',
-            maxWidth: '450px',
-            border: '1px solid rgba(255, 215, 0, 0.3)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
-          }}>
+        <div className="mad-modal-overlay" onClick={closeModal}>
+          <div onClick={e => e.stopPropagation()} className="mad-modal">
             {/* Modal Header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '1rem 1.5rem',
-              borderBottom: '1px solid rgba(255, 215, 0, 0.2)'
-            }}>
-              <h3 style={{ color: '#FFD700', margin: 0 }}>
+            <div className="mad-modal-header">
+              <h3 className="mad-modal-title">
                 {editingItem ? 'Eintrag bearbeiten' : 'Neuer Eintrag'}
               </h3>
               <button
                 onClick={closeModal}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '1.5rem'
-                }}
+                className="mad-modal-close-btn"
               >
                 ×
               </button>
             </div>
 
             {/* Modal Body */}
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+            <div className="mad-modal-body">
+              <div className="mad-mb-1">
+                <label className="u-form-label-secondary">
                   Datum *
                 </label>
                 <input
                   type="date"
                   value={formData.datum}
                   onChange={(e) => setFormData({ ...formData, datum: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="mad-form-input"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="mad-mb-1">
+                <label className="u-form-label-secondary">
                   Art *
                 </label>
                 <select
                   value={formData.art}
                   onChange={(e) => setFormData({ ...formData, art: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="mad-form-input"
                 >
                   <option value="Lehrgang">Lehrgang</option>
                   <option value="Seminar">Seminar</option>
@@ -313,8 +237,8 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
                 </select>
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="mad-mb-1">
+                <label className="u-form-label-secondary">
                   Bezeichnung *
                 </label>
                 <input
@@ -322,19 +246,12 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
                   value={formData.bezeichnung}
                   onChange={(e) => setFormData({ ...formData, bezeichnung: e.target.value })}
                   placeholder="z.B. Dan-Lehrgang, Trainer C-Lizenz..."
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="mad-form-input"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255,255,255,0.8)' }}>
+              <div className="mad-mb-1">
+                <label className="u-form-label-secondary">
                   Lizenz (optional)
                 </label>
                 <input
@@ -342,50 +259,22 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
                   value={formData.lizenz}
                   onChange={(e) => setFormData({ ...formData, lizenz: e.target.value })}
                   placeholder="z.B. Trainer C, Übungsleiter B..."
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255, 215, 0, 0.3)',
-                    borderRadius: '8px',
-                    color: '#fff'
-                  }}
+                  className="mad-form-input"
                 />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div style={{
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'flex-end',
-              padding: '1rem 1.5rem',
-              borderTop: '1px solid rgba(255, 215, 0, 0.2)'
-            }}>
+            <div className="mad-modal-footer">
               <button
                 onClick={closeModal}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  cursor: 'pointer'
-                }}
+                className="mad-btn-cancel"
               >
                 Abbrechen
               </button>
               <button
                 onClick={handleSave}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#000',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="mad-btn-save"
               >
                 Speichern
               </button>

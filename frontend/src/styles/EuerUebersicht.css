@@ -1,0 +1,293 @@
+/* EuerUebersicht Component Styles */
+
+/* Text label helpers */
+.eu-fw600 {
+  font-weight: 600;
+}
+
+.eu-meta-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.eu-sub-label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Flex row with icon + label */
+.eu-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Table cell: right-aligned error amount */
+.eu-td-error {
+  text-align: right;
+  padding: 0.75rem 0.5rem;
+  color: var(--error);
+}
+
+/* Table cell: right-aligned success amount */
+.eu-td-success {
+  text-align: right;
+  padding: 0.75rem 0.5rem;
+  color: var(--success);
+}
+
+/* Section subheadings */
+.eu-section-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+/* Section paddings */
+.eu-loading {
+  padding: 2rem;
+  text-align: center;
+}
+
+.eu-error {
+  padding: 2rem;
+  text-align: center;
+  color: var(--error);
+}
+
+/* Table */
+.eu-table-full {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+/* Table cells */
+.eu-th-left {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+}
+
+.eu-td-left {
+  padding: 0.75rem 0.5rem;
+  font-weight: 500;
+}
+
+.eu-td-right-bold {
+  text-align: right;
+  padding: 0.75rem 0.5rem;
+  font-weight: 700;
+}
+
+.eu-td-right-bold--pos { color: var(--success); }
+.eu-td-right-bold--neg { color: var(--error); }
+
+.eu-td-success-muted {
+  text-align: right;
+  padding: 0.75rem 0.5rem;
+  color: var(--success);
+  font-weight: 500;
+}
+
+/* Summary grid */
+.eu-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+/* Stat value sizes */
+.eu-stat-success {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.eu-stat-error {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--error);
+}
+
+.eu-stat-neutral {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+/* Sub note under stat */
+.eu-stat-note {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* Misc */
+.eu-mt1 {
+  margin-top: 1rem;
+}
+
+.eu-header-note {
+  margin: 0.5rem 0 0 0;
+  color: var(--text-secondary);
+}
+
+.eu-fw600-mb {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* ── Additional extracted inline styles ── */
+
+/* Chart tooltip */
+.eu-chart-tooltip {
+  background-color: var(--bg-modal);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.eu-tooltip-entry {
+  margin: 4px 0;
+  color: var(--entry-color, var(--text-primary));
+}
+
+/* Header layout */
+.eu-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Header h2 */
+.eu-h2-flex {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* TDA badge */
+.eu-tda-badge {
+  background-color: var(--primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  margin-left: 0.5rem;
+}
+
+/* Year display */
+.eu-year-display {
+  font-weight: 600;
+  font-size: 1.1rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Summary cards grid */
+.eu-summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Stat card base */
+.eu-stat-card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-primary);
+}
+
+.eu-stat-card--pos { border-left: 4px solid var(--success); }
+.eu-stat-card--neg { border-left: 4px solid var(--error); }
+
+/* Überschuss value */
+.eu-ueberschuss-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.eu-ueberschuss-value--pos { color: var(--success); }
+.eu-ueberschuss-value--neg { color: var(--error); }
+
+/* Einnahmen breakdown section */
+.eu-breakdown-card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-primary);
+  margin-bottom: 2rem;
+}
+
+/* Chart section */
+.eu-chart-card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-primary);
+  margin-bottom: 2rem;
+}
+
+/* Table section */
+.eu-table-card {
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-primary);
+  overflow-x: auto;
+}
+
+/* Table head row */
+.eu-thead-row {
+  border-bottom: 2px solid var(--border-primary);
+}
+
+/* Jahressumme row */
+.eu-total-row {
+  border-top: 2px solid var(--border-primary);
+  background-color: var(--bg-secondary);
+  font-weight: 700;
+}
+
+/* Total first cell */
+.eu-total-first-cell {
+  padding: 0.75rem 0.5rem;
+}
+
+/* Total überschuss cell */
+.eu-total-ueberschuss {
+  text-align: right;
+  padding: 0.75rem 0.5rem;
+}
+
+.eu-total-ueberschuss--pos { color: var(--success); }
+.eu-total-ueberschuss--neg { color: var(--error); }
+
+/* Table body data row */
+.eu-tbody-row {
+  border-bottom: 1px solid var(--border-secondary);
+  cursor: pointer;
+}
+
+.eu-tbody-row--selected { background-color: var(--bg-hover); }
+
+/* Refresh button */
+.eu-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}

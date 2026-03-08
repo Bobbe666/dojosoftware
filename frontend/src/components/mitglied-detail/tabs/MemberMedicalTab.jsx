@@ -1,4 +1,5 @@
 import React from 'react';
+import '../../../styles/MemberMedicalTab.css';
 
 // Standard-Allergien zur Auswahl
 const COMMON_ALLERGIES = [
@@ -152,45 +153,18 @@ const MemberMedicalTab = ({
 
         {/* Archivierte Allergien */}
         {allergienArchiv && allergienArchiv.length > 0 && (
-          <div className="allergie-archiv" style={{
-            marginTop: '1rem',
-            padding: '1rem',
-            background: 'rgba(255, 165, 0, 0.05)',
-            borderRadius: '8px',
-            border: '1px solid rgba(255, 165, 0, 0.2)'
-          }}>
-            <label style={{
-              fontSize: '0.85rem',
-              color: 'rgba(255, 165, 0, 0.8)',
-              fontWeight: '600',
-              display: 'block',
-              marginBottom: '0.5rem'
-            }}>
+          <div className="allergie-archiv mmt-archiv-box">
+            <label className="mmt-archiv-label">
               Archivierte Allergien (geloescht):
             </label>
-            <div className="allergien-archiv-liste" style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '0.5rem'
-            }}>
+            <div className="allergien-archiv-liste mmt-archiv-list">
               {allergienArchiv.map((allergie, index) => (
-                <div key={index} style={{
-                  background: 'rgba(255, 165, 0, 0.1)',
-                  padding: '0.5rem 0.75rem',
-                  borderRadius: '4px',
-                  border: '1px solid rgba(255, 165, 0, 0.3)',
-                  fontSize: '0.85rem'
-                }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                <div key={index} className="mmt-archiv-item">
+                  <span className="u-text-secondary">
                     {allergie.value}
                   </span>
                   {allergie.geloescht_am_readable && (
-                    <span style={{
-                      marginLeft: '0.5rem',
-                      fontSize: '0.75rem',
-                      color: 'rgba(255, 165, 0, 0.6)',
-                      fontStyle: 'italic'
-                    }}>
+                    <span className="mmt-archiv-date">
                       (geloescht: {allergie.geloescht_am_readable})
                     </span>
                   )}

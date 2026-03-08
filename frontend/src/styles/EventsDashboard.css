@@ -1,0 +1,505 @@
+/* EventsDashboard.css — extracted inline styles */
+
+/* Loading / centered states */
+.ed-loading-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: var(--text-muted);
+}
+
+/* Error banner */
+.ed-error-banner {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  color: var(--error);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ed-error-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.ed-error-retry-btn {
+  align-self: flex-start;
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 8px;
+  color: var(--error);
+  padding: 0.4rem 0.9rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+/* Dashboard main column */
+.ed-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.25rem 0;
+}
+
+/* Header row */
+.ed-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ed-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.2rem;
+}
+
+.ed-h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.ed-subtitle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* KPI info row */
+.ed-meta-info-row {
+  font-size: 0.78rem;
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+/* Section heading */
+.ed-section-heading {
+  margin: 0 0 0.9rem 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Empty state */
+.ed-empty-state {
+  text-align: center;
+  padding: 2.5rem;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.ed-empty-p {
+  margin: 0;
+}
+
+/* Event list column */
+.ed-events-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Event card title */
+.ed-event-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+/* Event title row */
+.ed-event-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* Badge: overbooked */
+.ed-badge-overbooked {
+  background: rgba(239,68,68,0.2);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: var(--error);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* Badge: warning */
+.ed-badge-warning {
+  background: rgba(245,158,11,0.15);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--warning);
+  font-size: 0.65rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Event meta row (date/location) */
+.ed-event-meta-row {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+}
+
+/* Event stats row */
+.ed-event-stats-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Capacity bar container */
+.ed-capacity-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 120px;
+}
+
+/* Capacity label row */
+.ed-capacity-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+}
+
+/* Progress bar track */
+.ed-progress-track {
+  height: 3px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* Small info item */
+.ed-info-item {
+  font-size: 0.78rem;
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+/* Action button group */
+.ed-action-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* min-width: 0 for text truncation */
+.ed-min-w-0 {
+  min-width: 0;
+}
+
+/* Capacity colour bar (small) */
+.ed-capacity-color-bar {
+  width: 60px;
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  margin-top: 0.3rem;
+}
+
+/* Auslastung value */
+.ed-auslastung-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-midnight-500);
+}
+
+/* Auslastung label */
+.ed-auslastung-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Stat big number */
+.ed-stat-big {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--color-midnight-500);
+  line-height: 1;
+}
+
+/* Stat label uppercase */
+.ed-stat-label-upper {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Stat muted text */
+.ed-stat-muted {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Event name truncated */
+.ed-event-name-truncated {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Event muted meta */
+.ed-event-muted-meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+/* Auslastung column */
+.ed-auslastung-col {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* Legend row */
+.ed-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Next event stat label */
+.ed-next-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.25rem;
+}
+
+/* Refresh button */
+.edb-refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+/* KPI grid */
+.edb-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+/* KPI card label */
+.edb-kpi-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* Next event hero */
+.edb-next-event-hero {
+  background: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.1) 100%);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+/* Next event countdown box */
+.edb-next-event-counter {
+  background: rgba(99,102,241,0.2);
+  border: 1px solid rgba(99,102,241,0.4);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  text-align: center;
+  flex-shrink: 0;
+  min-width: 72px;
+}
+
+/* Empty state icon */
+.edb-empty-icon {
+  margin-bottom: 0.5rem;
+  opacity: 0.3;
+}
+
+/* Event card (base) */
+.edb-event-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  transition: all 0.15s;
+}
+
+/* MapPin inline */
+.edb-mappin-inline {
+  display: inline;
+  margin-right: 2px;
+}
+
+/* Icon action buttons */
+.edb-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.edb-icon-btn--reminder {
+  background: rgba(245,158,11,0.15);
+  border-color: rgba(245,158,11,0.3);
+  color: var(--warning);
+}
+
+.edb-icon-btn--default {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--text-secondary);
+}
+
+/* Legend container */
+.edb-legend-container {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── inline-style replacements (2026-03-07) ── */
+
+/* Refresh button hover */
+.edb-refresh-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* KPI card — bg/border/color via CSS vars set on element */
+.edb-kpi-card {
+  background: var(--kpi-bg);
+  border: 1px solid var(--kpi-border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  transition: transform 0.15s;
+}
+.edb-kpi-card:hover {
+  transform: translateY(-2px);
+}
+
+/* KPI icon box */
+.edb-kpi-icon-box {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--kpi-color) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--kpi-color) 27%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* KPI value */
+.edb-kpi-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--kpi-color);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.edb-kpi-value--text {
+  font-size: 1.1rem;
+}
+
+/* KPI sub text */
+.edb-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--kpi-color);
+  opacity: 0.7;
+  margin-top: 0.1rem;
+}
+
+/* Capacity bar fill (next event hero) */
+.ed-capacity-fill {
+  height: 100%;
+  background: #6366f1;
+  border-radius: 2px;
+}
+
+/* Days-until-event text colors */
+.edb-days-text--urgent  { color: #ef4444; }
+.edb-days-text--warning { color: #f59e0b; }
+.edb-days-text--normal  { color: rgba(255,255,255,0.45); }
+
+/* Participant count */
+.edb-participant-count       { color: #fff; }
+.edb-participant-count--full { color: #ef4444; }
+
+/* Event fill rate progress bar */
+.edb-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.edb-fill--high   { background: #ef4444; }
+.edb-fill--medium { background: #f59e0b; }
+.edb-fill--low    { background: #22c55e; }
+
+/* Event card hover */
+.edb-event-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.14);
+}

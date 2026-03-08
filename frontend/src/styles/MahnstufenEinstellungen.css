@@ -2,10 +2,10 @@
 
 .mahnstufen-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f0f23 0%, var(--bg-secondary) 50%, #16213e 100%);
-  color: #ffffff;
+  background: var(--modal-bg-dark);
+  color: var(--text-1);
   padding: 1.5rem;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: inherit;
 }
 
 /* ===== HEADER ===== */
@@ -16,9 +16,9 @@
   justify-content: space-between;
   margin-bottom: 1.5rem;
   padding: 1rem 1.5rem;
-  background: var(--glass-bg);
+  background: var(--surface-2);
   backdrop-filter: blur(20px);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.2);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
@@ -33,7 +33,7 @@
 
 .mahnstufen-header p {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-2);
   margin: 0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -44,14 +44,14 @@
   gap: 0.75rem;
   align-items: flex-start;
   padding: 0.75rem 1rem;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.25);
-  border-radius: 8px;
+  background: var(--status-indigo-bg);
+  border: 1px solid var(--status-indigo-border);
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1.5rem;
 }
 
 .info-box svg {
-  color: #3b82f6;
+  color: var(--status-indigo);
   flex-shrink: 0;
   width: 18px;
   height: 18px;
@@ -59,15 +59,15 @@
 }
 
 .info-box h3 {
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   font-size: 0.85rem;
   margin: 0 0 0.3rem 0;
   font-weight: 600;
 }
 
 .info-box p {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
+  color: var(--text-2);
+  font-size: var(--ui-card-label);
   margin: 0;
   line-height: 1.5;
 }
@@ -75,14 +75,14 @@
 .info-box strong {
   color: var(--primary);
   font-family: 'Courier New', monospace;
-  font-size: 0.8rem;
+  font-size: var(--ui-card-label);
 }
 
 /* ===== MAHNSTUFE CARD ===== */
 .mahnstufe-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.15);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   margin-bottom: 1rem;
@@ -118,7 +118,7 @@
   align-items: center;
   padding: 1rem 1.25rem;
   background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid var(--primary-alpha-10);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
   transition: background 0.2s ease;
 }
 
@@ -145,7 +145,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-1);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
@@ -162,7 +162,7 @@
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
   padding: 1.25rem;
 }
 
@@ -177,7 +177,7 @@
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: var(--ui-form-group-gap);
 }
 
 .form-group.full-width {
@@ -188,9 +188,9 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-1);
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: var(--ui-form-label);
 }
 
 .form-group label svg {
@@ -204,9 +204,9 @@
 .form-group textarea {
   padding: 0.6rem 0.75rem;
   border: 1px solid rgba(255, 215, 0, 0.15);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.95);
+  border-radius: var(--comp-radius-sm);
+  background: var(--surface-2);
+  color: var(--text-1);
   font-size: 0.85rem;
   transition: all 0.2s ease;
 }
@@ -215,20 +215,20 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-alpha-10);
-  background: var(--glass-bg);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+  background: var(--surface-3);
 }
 
 .form-group textarea {
   resize: vertical;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: inherit;
   line-height: 1.6;
   min-height: 100px;
 }
 
 .form-group small {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
+  color: var(--text-4);
+  font-size: var(--ui-form-hint);
 }
 
 /* ===== SAVE FOOTER ===== */
@@ -246,7 +246,7 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .mahnstufen-container {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .mahnstufen-header {
@@ -273,3 +273,7 @@
     align-items: stretch;
   }
 }
+
+/* Collapsible section chevron */
+.mse-chevron { transition: transform 0.3s ease; }
+.mse-chevron--collapsed { transform: rotate(-90deg); }

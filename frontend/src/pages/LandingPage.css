@@ -71,7 +71,6 @@
   width: 100%;
   min-height: 100vh;
   background: var(--bg-primary, linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   color: var(--text-primary, #ffffff);
   animation: fadeIn 0.8s ease-out;
 }
@@ -164,7 +163,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 10px 20px;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
@@ -379,7 +378,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1rem 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -454,7 +453,7 @@
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1rem 2rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
@@ -546,7 +545,7 @@
   margin-top: 3rem;
   padding: 1.5rem 2rem;
   background: rgba(255, 215, 0, 0.05);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.15);
   animation: fadeIn 0.8s ease-out 1.2s both;
 }
@@ -697,7 +696,7 @@
 .mockup-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   display: flex;
   align-items: flex-start;
@@ -769,7 +768,7 @@
 
 .trust-badge {
   padding: 0.75rem 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 215, 0, 0.2);
@@ -831,7 +830,7 @@
 .landing-page .feature-card {
   background: var(--bg-glass, rgba(255, 255, 255, 0.08));
   padding: 1rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   border: 1px solid rgba(255, 215, 0, 0.2);
   transition: all 0.3s;
   text-align: center;
@@ -1010,7 +1009,7 @@
   background: var(--gold, #ffd700);
   color: #0f0f23;
   padding: 0.25rem 1rem;
-  border-radius: 20px;
+  border-radius: var(--comp-radius-pill);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -1055,7 +1054,7 @@
   width: 100%;
   border-collapse: collapse;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   overflow: hidden;
   min-width: 750px; /* Erhöht für 5+ Plan-Spalten */
 }
@@ -1144,7 +1143,7 @@
 .faq-item {
   background: var(--bg-glass, rgba(255, 255, 255, 0.08));
   padding: 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
@@ -1384,7 +1383,7 @@
   font-size: 0.65rem;
   font-weight: 700;
   padding: 0.3rem 0.6rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -1549,7 +1548,7 @@
   gap: 0.6rem;
   background: rgba(255, 255, 255, 0.05);
   padding: 0.75rem 1.25rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(255, 215, 0, 0.15);
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.9);
@@ -1593,7 +1592,7 @@
 
 .comparison-table-wrapper::-webkit-scrollbar-thumb {
   background: rgba(139, 92, 246, 0.5);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
 }
 
 .comparison-table {
@@ -1675,7 +1674,7 @@
   color: white;
   font-size: 0.65rem;
   padding: 0.2rem 0.6rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1961,7 +1960,7 @@
 .promo-badge-small {
   background: linear-gradient(135deg, #ffd700, #ff8c00);
   padding: 0.4rem 0.85rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-weight: 800;
   font-size: 0.75rem;
   color: #000;
@@ -1998,7 +1997,7 @@
   background: linear-gradient(135deg, #ffd700, #ff8c00);
   color: #000;
   padding: 0.55rem 1.25rem;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-weight: 700;
   font-size: 0.85rem;
   white-space: nowrap;
@@ -2111,7 +2110,7 @@
 .eb-discount-box {
   background: linear-gradient(135deg, rgba(215,162,58,.15), rgba(138,90,18,.1));
   border: 2px solid #d7a23a;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 30px 40px;
   text-align: center;
   min-width: 140px;
@@ -2249,7 +2248,7 @@
   font-weight: 700;
   padding: 18px 40px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 20px rgba(215,162,58,.3);

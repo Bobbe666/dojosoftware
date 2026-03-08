@@ -252,28 +252,12 @@ const Stundenplan = () => {
   if (loading) return <div className="stundenplan-container-modern">Lade Stundenplan...</div>;
   if (error) return (
     <div className="stundenplan-container-modern">
-      <div className="error-message-box" style={{
-        padding: '2rem',
-        margin: '2rem',
-        background: 'rgba(255, 107, 53, 0.1)',
-        border: '2px solid rgba(255, 107, 53, 0.3)',
-        borderRadius: '15px',
-        textAlign: 'center'
-      }}>
-        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚔️</div>
-        <h3 style={{ color: '#ff6b35', marginBottom: '1rem' }}>{error}</h3>
+      <div className="error-message-box sp-error-box">
+        <div className="u-emoji-xl">⚔️</div>
+        <h3 className="sp-error-h3">{error}</h3>
         <button
           onClick={loadData}
-          style={{
-            padding: '0.75rem 2rem',
-            background: 'linear-gradient(135deg, #ffd700, #ff6b35)',
-            border: 'none',
-            borderRadius: '10px',
-            color: '#1a1a2e',
-            fontWeight: 'bold',
-            cursor: 'pointer',
-            marginTop: '1rem'
-          }}
+          className="sp-retry-btn"
         >
           🔄 Nochmal versuchen
         </button>
@@ -298,79 +282,79 @@ const Stundenplan = () => {
       {/* Statistiken */}
       <div className="stundenplan-stats">
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>📅</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">📅</span>
+            <span className="sp-stat-value">
               {filteredStundenplan.length}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Einträge
           </div>
         </div>
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🏃‍♂️</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">🏃‍♂️</span>
+            <span className="sp-stat-value">
               {new Set(filteredStundenplan.map(s => s.tag)).size}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Trainingstage
           </div>
         </div>
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🥋</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">🥋</span>
+            <span className="sp-stat-value">
               {new Set(filteredStundenplan.map(s => s.kurs_id)).size}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Kurse
           </div>
         </div>
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>⏰</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">⏰</span>
+            <span className="sp-stat-value">
               {filteredStundenplan.length > 0 ? formatTime(filteredStundenplan.reduce((earliest, s) => s.uhrzeit_start < earliest ? s.uhrzeit_start : earliest, filteredStundenplan[0].uhrzeit_start)) : '--'}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Frühester Start
           </div>
         </div>
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🌙</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">🌙</span>
+            <span className="sp-stat-value">
               {filteredStundenplan.length > 0 ? formatTime(filteredStundenplan.reduce((latest, s) => s.uhrzeit_ende > latest ? s.uhrzeit_ende : latest, filteredStundenplan[0].uhrzeit_ende)) : '--'}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Spätestes Ende
           </div>
         </div>
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>📊</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">📊</span>
+            <span className="sp-stat-value">
               {filteredStundenplan.filter(s => s.tag === 'Montag').length}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Montags
           </div>
         </div>
         <div className="stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '0.1rem' }}>
-            <span style={{ fontSize: '1.2rem' }}>🎉</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#ffffff' }}>
+          <div className="sp-stat-row">
+            <span className="sp-stat-emoji">🎉</span>
+            <span className="sp-stat-value">
               {filteredStundenplan.filter(s => s.tag === 'Samstag' || s.tag === 'Sonntag').length}
             </span>
           </div>
-          <div style={{ fontSize: '0.7rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <div className="sp-stat-label">
             Wochenende
           </div>
         </div>
@@ -449,21 +433,10 @@ const Stundenplan = () => {
                             )}
                             {hasMultipleLocations && eintrag.standort_name && (
                               <div
-                                className="mini-standort"
-                                style={{
-                                  background: eintrag.standort_farbe || '#4F46E5',
-                                  color: 'white',
-                                  padding: '3px 8px',
-                                  fontSize: '0.65rem',
-                                  fontWeight: '600',
-                                  borderRadius: '4px',
-                                  marginTop: '4px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
+                                className="mini-standort sp-standort-badge"
+                                style={{ '--standort-color': eintrag.standort_farbe || '#4F46E5' }}
                               >
-                                <span style={{ fontSize: '0.75rem' }}>📍</span>
+                                <span className="sp-standort-pin">📍</span>
                                 <span>{eintrag.standort_name}</span>
                               </div>
                             )}
@@ -523,17 +496,8 @@ const Stundenplan = () => {
                             </span>
                             {hasMultipleLocations && eintrag.standort_name && (
                               <span
-                                style={{
-                                  background: eintrag.standort_farbe || '#4F46E5',
-                                  color: 'white',
-                                  padding: '4px 10px',
-                                  fontSize: '0.75rem',
-                                  fontWeight: '600',
-                                  borderRadius: '5px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '5px'
-                                }}
+                                className="sp-standort-badge-lg"
+                                style={{ '--standort-color': eintrag.standort_farbe || '#4F46E5' }}
                               >
                                 <span>📍</span>
                                 <span>{eintrag.standort_name}</span>
@@ -692,7 +656,7 @@ const Stundenplan = () => {
       )}
 
       {/* Altes Card-System als Backup falls gewünscht */}
-      <div className="stundenplan-grid" style={{display: 'none'}}>
+      <div className="stundenplan-grid sp-hidden">
         {sortedEintraege.length > 0 ? (
           sortedEintraege.map((eintrag, index) => (
             <div key={eintrag.id} className="stundenplan-card" style={{animationDelay: `${index * 0.1}s`}}>
@@ -755,14 +719,14 @@ const Stundenplan = () => {
                 <div className="stundenplan-field">
                   <label>🕐 Zeit:</label>
                   {editingId === eintrag.id ? (
-                    <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
+                    <div className="sp-time-edit-row">
                       <input
                         type="time"
                         className="edit-input-small"
                         value={editingData.uhrzeit_start}
                         onChange={(e) => setEditingData({ ...editingData, uhrzeit_start: e.target.value })}
                       />
-                      <span style={{color: '#ffffff'}}>bis</span>
+                      <span className="sp-bis-label">bis</span>
                       <input
                         type="time"
                         className="edit-input-small"
@@ -821,19 +785,11 @@ const Stundenplan = () => {
       </div>
 
       {/* Formular für neuen Stundenplan-Eintrag */}
-      <div className="neuer-stundenplan-card" style={{
-        animationDelay: `${sortedEintraege.length * 0.1 + 0.3}s`,
-        backdropFilter: 'none',
-        WebkitBackdropFilter: 'none',
-        background: 'rgba(30, 30, 50, 0.95)'
+      <div className="neuer-stundenplan-card sp-form-card-overrides" style={{
+        animationDelay: `${sortedEintraege.length * 0.1 + 0.3}s`
       }}>
         <div className="card-header">
-          <h3 style={{
-            backdropFilter: 'none',
-            WebkitBackdropFilter: 'none',
-            filter: 'none',
-            textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
-          }}>➕ Neuen Stundenplan-Eintrag hinzufügen</h3>
+          <h3 className="sp-form-header-h3">➕ Neuen Stundenplan-Eintrag hinzufügen</h3>
         </div>
         <div className="stundenplan-form-modern">
           <div className="form-group">

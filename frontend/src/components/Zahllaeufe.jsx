@@ -341,7 +341,7 @@ const Zahllaeufe = ({ embedded = false }) => {
             <button
               className="btn btn-primary"
               onClick={() => navigate('/dashboard/lastschriftlauf')}
-              style={{ marginTop: '1rem' }}
+              className="u-mt-1"
             >
               Ersten Zahllauf erstellen
             </button>
@@ -350,7 +350,7 @@ const Zahllaeufe = ({ embedded = false }) => {
           <table className="zahllaeufe-table">
             <thead>
               <tr>
-                <th style={{ width: '40px' }}></th>
+                <th className="zahllaeufe-icon-col"></th>
                 <th>Erstellt am</th>
                 <th>Forderungen bis einschl.</th>
                 <th>Geplanter Einzug</th>

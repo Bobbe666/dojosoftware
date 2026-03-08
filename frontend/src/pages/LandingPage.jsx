@@ -710,7 +710,7 @@ function LandingPage() {
           </div>
           <div className="footer-bottom">
             <p>© 2026 DojoSoftware by TDA International • Alle Rechte vorbehalten</p>
-            <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", opacity: 0.7 }}>Coming soon: English • Español • Français • Italiano</p>
+            <p className="u-mt-05 u-fs-075rem u-opacity-07">Coming soon: English • Español • Français • Italiano</p>
           </div>
         </div>
       </footer>

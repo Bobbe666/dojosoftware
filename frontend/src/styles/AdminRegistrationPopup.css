@@ -24,9 +24,9 @@
 }
 
 .admin-registration-popup {
-  background: linear-gradient(135deg, rgba(20, 20, 30, 0.98) 0%, rgba(30, 30, 45, 0.98) 100%);
+  background: var(--modal-bg-dark);
   border: 2px solid rgba(255, 215, 0, 0.4);
-  border-radius: 16px;
+  border-radius: var(--comp-radius-xl);
   max-width: 600px;
   width: 90%;
   max-height: 80vh;
@@ -47,9 +47,9 @@
 }
 
 .popup-header {
-  background: var(--primary-alpha-10);
+  background: rgba(255, 215, 0, 0.1);
   border-bottom: 1px solid rgba(255, 215, 0, 0.3);
-  padding: 1.5rem;
+  padding: var(--ui-page-padding);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -58,7 +58,7 @@
 .header-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--ui-header-gap);
 }
 
 .header-icon {
@@ -78,23 +78,23 @@
 .popup-header h2 {
   color: var(--primary);
   margin: 0;
-  font-size: 1.4rem;
+  font-size: var(--ui-page-title);
   font-weight: 700;
 }
 
 .popup-header .timestamp {
-  color: #a0a0b0;
+  color: var(--text-3);
   margin: 0.3rem 0 0 0;
-  font-size: 0.85rem;
+  font-size: var(--ui-form-label);
 }
 
 .close-btn {
   background: transparent;
   border: none;
-  color: #e0e0e0;
+  color: var(--text-1);
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   transition: all 0.2s ease;
 }
 
@@ -104,13 +104,13 @@
 }
 
 .popup-content {
-  padding: 1.5rem;
+  padding: var(--ui-page-padding);
   max-height: 60vh;
   overflow-y: auto;
 }
 
 .notification-badge {
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-form-gap);
   text-align: center;
 }
 
@@ -121,13 +121,13 @@
   color: #22c55e;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  font-size: 0.9rem;
+  font-size: var(--ui-card-body);
   font-weight: 600;
 }
 
 /* Info Sections */
 .info-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--ui-page-padding);
 }
 
 .info-section:last-child {
@@ -136,9 +136,9 @@
 
 .section-title {
   color: var(--primary);
-  font-size: 1rem;
+  font-size: var(--ui-form-input);
   font-weight: 700;
-  margin: 0 0 1rem 0;
+  margin: 0 0 var(--ui-form-gap) 0;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid rgba(255, 215, 0, 0.3);
 }
@@ -146,24 +146,24 @@
 .member-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .info-item {
-  background: rgba(30, 30, 45, 0.6);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 10px;
-  padding: 1rem;
+  border-radius: var(--comp-radius-lg);
+  padding: var(--ui-page-padding-sm);
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 0.8rem;
+  gap: var(--ui-stats-gap);
   transition: all 0.2s ease;
   text-align: left;
 }
 
 .info-item:hover {
-  background: rgba(30, 30, 45, 0.8);
+  background: var(--surface-3);
   border-color: rgba(255, 215, 0, 0.4);
   transform: translateY(-2px);
 }
@@ -186,8 +186,8 @@
 
 .info-item label {
   display: block;
-  color: #a0a0b0;
-  font-size: 0.8rem;
+  color: var(--text-3);
+  font-size: var(--ui-card-label);
   font-weight: 600;
   margin-bottom: 0.3rem;
   text-transform: uppercase;
@@ -196,18 +196,18 @@
 }
 
 .info-item p {
-  color: #e0e0e0;
+  color: var(--text-1);
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--ui-form-input);
   font-weight: 500;
   text-align: left !important;
   word-wrap: break-word;
 }
 
 .popup-footer {
-  background: rgba(20, 20, 30, 0.8);
+  background: var(--surface-1);
   border-top: 1px solid rgba(255, 215, 0, 0.2);
-  padding: 1.2rem 1.5rem;
+  padding: var(--ui-header-padding-b) var(--ui-page-padding);
   text-align: right;
 }
 
@@ -215,9 +215,9 @@
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.2) 100%);
   border: 1px solid rgba(255, 215, 0, 0.5);
   color: var(--primary);
-  padding: 0.8rem 2rem;
-  border-radius: 8px;
-  font-size: 1rem;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-md);
+  font-size: var(--ui-btn-font);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;

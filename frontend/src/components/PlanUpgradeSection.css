@@ -29,9 +29,10 @@
 .current-plan-card {
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid;
+  border-color: var(--plan-color, #3b82f6);
   border-radius: 12px;
   padding: 1.25rem;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-stats-margin-b);
 }
 
 .current-plan-header {
@@ -47,6 +48,7 @@
   color: #fff;
   font-weight: 600;
   font-size: 0.9rem;
+  background-color: var(--plan-color, #3b82f6);
 }
 
 .status-badge {
@@ -229,13 +231,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-grid-margin-b);
 }
 
 .upgrade-plan-card {
   position: relative;
   background: rgba(255, 255, 255, 0.03);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid;
+  border-color: var(--plan-color, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
   padding: 1.5rem;
   transition: all 0.2s;
@@ -277,6 +280,12 @@
   font-size: 1.25rem;
 }
 
+.plan-header__title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: var(--plan-color, #fff);
+}
+
 .price-display {
   text-align: center;
 }
@@ -295,7 +304,7 @@
 .price-billed {
   display: block;
   color: #6b7280;
-  font-size: 0.8rem;
+  font-size: var(--ui-card-label);
   margin-top: 0.25rem;
 }
 
@@ -336,6 +345,12 @@
   margin-top: 2px;
 }
 
+.plan-feature-check {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--plan-color, #3b82f6);
+}
+
 /* Upgrade Button */
 .btn-upgrade {
   display: flex;
@@ -347,10 +362,12 @@
   border: 2px solid;
   border-radius: 8px;
   color: #fff;
-  font-size: 0.95rem;
+  font-size: var(--ui-form-input);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  background-color: var(--plan-color, #3b82f6);
+  border-color: var(--plan-color, #3b82f6);
 }
 
 .btn-upgrade:hover:not(:disabled) {

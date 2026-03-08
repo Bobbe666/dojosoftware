@@ -167,7 +167,7 @@ const MahnstufenEinstellungen = () => {
           <h1>⚙️ Mahnstufen-Einstellungen</h1>
           <p>Konfiguriere die automatischen Mahnprozesse und Gebühren</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="u-flex-gap-sm">
           <button
             className="btn btn-success"
             onClick={handleAddMahnstufe}
@@ -206,12 +206,11 @@ const MahnstufenEinstellungen = () => {
       {mahnstufen.map((mahnstufe, index) => (
         <div key={mahnstufe.stufe} className="mahnstufe-card">
           <div
-            className="mahnstufe-header collapsible"
+            className="mahnstufe-header collapsible u-pointer"
             onClick={() => toggleSection(mahnstufe.stufe)}
-            style={{ cursor: 'pointer' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ transform: collapsedSections[mahnstufe.stufe] ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
+            <div className="u-flex-row-sm">
+              <span className={`mse-chevron${collapsedSections[mahnstufe.stufe] ? ' mse-chevron--collapsed' : ''}`}>
                 <ChevronDown size={20} />
               </span>
               <h2>
@@ -219,7 +218,7 @@ const MahnstufenEinstellungen = () => {
                 Mahnstufe {mahnstufe.stufe} - {mahnstufe.bezeichnung}
               </h2>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }} onClick={(e) => e.stopPropagation()}>
+            <div className="u-flex-row-lg" onClick={(e) => e.stopPropagation()}>
               <label className="checkbox-label">
                 <input
                   type="checkbox"

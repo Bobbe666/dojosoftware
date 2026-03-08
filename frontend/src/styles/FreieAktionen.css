@@ -1,0 +1,187 @@
+/* FreieAktionen Component Styles — fa- prefix */
+
+/* Guard / no-dojo state */
+.fa-guard-center {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.fa-guard-emoji {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Aktionen count badge in header */
+.fa-count-badge {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+
+/* Filter row */
+.fa-filter-row {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Search input */
+.fa-input-search {
+  flex: 1;
+  min-width: 160px;
+  max-width: 240px;
+}
+
+/* Type select */
+.fa-select-typ {
+  flex: 1;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+/* Status select */
+.fa-select-status {
+  flex: 1;
+  min-width: 160px;
+  max-width: 200px;
+}
+
+/* Empty state */
+.fa-empty-state {
+  padding: 3rem;
+  text-align: center;
+}
+
+/* Empty state icon */
+.fa-empty-icon {
+  color: var(--border-hover);
+  margin-bottom: 1rem;
+}
+
+/* First action button */
+.fa-btn-first {
+  margin-top: 1rem;
+}
+
+/* Card title row (flex with icon + strong) */
+.fa-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Card title text */
+.fa-card-title {
+  font-size: 1rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card actions right cluster */
+.fa-card-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* Beschreibung text */
+.fa-card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0.4rem 0 0;
+  line-height: 1.5;
+}
+
+/* Left action buttons group */
+.fa-action-left {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Abschliessen button */
+.fa-btn-abschliessen {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--color-info-400, #60a5fa);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Right icon buttons group */
+.fa-action-right {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Jahresplan narrow modal */
+.fa-modal-narrow {
+  max-width: 420px;
+}
+
+/* Jahresplan modal body center */
+.fa-modal-body-center {
+  text-align: center;
+  padding: 2rem;
+}
+
+/* Jahresplan modal main text */
+.fa-modal-text {
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+/* Jahresplan modal sub text */
+.fa-modal-subtext {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Full-width button */
+.fa-btn-full {
+  width: 100%;
+}
+
+/* Clickable stat item */
+.fa-stat-clickable {
+  cursor: pointer;
+}
+.fa-stat-clickable--active .stat-number { color: var(--stat-color, #ffd700); }
+
+/* Filter icon */
+.fa-filter-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Type icon */
+.fa-type-icon {
+  flex-shrink: 0;
+  color: var(--typ-color, #ffd700);
+}
+
+/* Type label text */
+.fa-type-label { color: var(--typ-color, #ffd700); font-size: 0.8125rem; }
+
+/* Card border-left color */
+.freie-aktion-card { border-left-color: var(--typ-color, transparent); }
+
+/* Status badge */
+.fa-status-badge {
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: color-mix(in srgb, var(--s-color, #6b7280) 13%, transparent);
+  color: var(--s-color, #6b7280);
+  border: 1px solid color-mix(in srgb, var(--s-color, #6b7280) 27%, transparent);
+}

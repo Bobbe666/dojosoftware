@@ -1,0 +1,27 @@
+/* FinanceTab.css */
+
+.ft-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ft-empty-icon {
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.ft-empty-title {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.ft-empty-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}

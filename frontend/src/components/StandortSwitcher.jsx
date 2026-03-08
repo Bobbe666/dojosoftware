@@ -83,9 +83,7 @@ const StandortSwitcher = () => {
       >
         {activeStandort === 'all' ? (
           <>
-            <div className="standort-color-indicator" style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)'
-            }} />
+            <div className="standort-color-indicator standort-color-indicator--all" />
             <div className="standort-switcher-content">
               <div className="standort-switcher-label">Standort:</div>
               <div className="standort-switcher-name">Alle Standorte</div>
@@ -93,9 +91,7 @@ const StandortSwitcher = () => {
           </>
         ) : (
           <>
-            <div className="standort-color-indicator" style={{
-              background: currentStandort?.farbe || '#4F46E5'
-            }} />
+            <div className="standort-color-indicator" style={{ '--standort-color': currentStandort?.farbe || '#4F46E5' }} />
             <div className="standort-switcher-content">
               <div className="standort-switcher-label">Standort:</div>
               <div className="standort-switcher-name">
@@ -133,12 +129,10 @@ const StandortSwitcher = () => {
             className={`standort-option ${activeStandort === 'all' ? 'active' : ''}`}
             onClick={() => handleSwitch('all')}
           >
-            <div className="standort-option-indicator" style={{
-              background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 100%)'
-            }} />
+            <div className="standort-option-indicator standort-option-indicator--all" />
             <div className="standort-option-content">
               <div className="standort-option-name">
-                <Building2 size={14} style={{ marginRight: '6px' }} />
+                <Building2 size={14} className="icon-mr" />
                 Alle Standorte
               </div>
               <div className="standort-option-stats">
@@ -167,12 +161,10 @@ const StandortSwitcher = () => {
                 className={`standort-option ${activeStandort === standort.standort_id ? 'active' : ''}`}
                 onClick={() => handleSwitch(standort.standort_id)}
               >
-                <div className="standort-option-indicator" style={{
-                  background: standort.farbe || '#4F46E5'
-                }} />
+                <div className="standort-option-indicator" style={{ '--standort-color': standort.farbe || '#4F46E5' }} />
                 <div className="standort-option-content">
                   <div className="standort-option-name">
-                    <MapPin size={14} style={{ marginRight: '6px' }} />
+                    <MapPin size={14} className="icon-mr" />
                     {standort.name}
                     {standort.ist_hauptstandort && (
                       <span className="standort-badge-small">Haupt</span>

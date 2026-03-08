@@ -1,5 +1,6 @@
 // Frontend/src/components/Auswertungen.jsx - Saubere Version für Backend-Datenstruktur
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useContext, useRef } from 'react';
+import { useDojoContext } from '../context/DojoContext';
 import {
   BarChart,
   Bar,
@@ -15,11 +16,16 @@ import {
   PieChart,
   Pie,
   Cell,
-  ComposedChart
+  ComposedChart,
+  ReferenceLine
 } from 'recharts';
 import axios from 'axios';
 import '../styles/Auswertungen.css';
 import '../styles/Auswertungen-BreakEven.css';
+import '../styles/Auswertungen-Overview.css';
+import '../styles/Auswertungen-Finanzen.css';
+import '../styles/Auswertungen-Performance.css';
+import '../styles/Auswertungen-Prognosen.css';
 
 function Auswertungen() {
   const [auswertungsData, setAuswertungsData] = useState(null);
@@ -33,6 +39,7 @@ function Auswertungen() {
     variableKosten: {},
     durchschnittsbeitrag: 85
   });
+  const [formResetKey, setFormResetKey] = useState(0);
   const [timePeriod, setTimePeriod] = useState('monthly');
   const [growthPeriod, setGrowthPeriod] = useState('monat');
   const [memberAnalytics, setMemberAnalytics] = useState(null);
@@ -56,6 +63,12 @@ function Auswertungen() {
     { id: 'annually', label: 'Jährlich', icon: '🎯' }
   ];
 
+  const { activeDojo } = useDojoContext();
+  const activeDojoId = activeDojo && activeDojo !== 'super-admin' && activeDojo !== 'verband'
+    ? activeDojo.id
+    : null;
+  const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
   useEffect(() => {
@@ -64,12 +77,12 @@ function Auswertungen() {
     loadMemberAnalytics();
     loadBeitragsvergleich();
     loadBeltsData();
-  }, [timePeriod]);
+  }, [timePeriod, activeDojoId]);
 
   const loadAuswertungen = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/auswertungen/complete');
+      const response = await axios.get(`/auswertungen/complete${dojoParam}`);
       const result = response.data;
 
       if (result.success) {
@@ -105,6 +118,7 @@ function Auswertungen() {
               variableKosten: latestResult.data.variableKosten,
               durchschnittsbeitrag: latestResult.data.durchschnittsbeitrag
             });
+            setFormResetKey(k => k + 1);
           } else {
             // Keine gespeicherte Berechnung - alle Kosten auf 0 setzen
             setBreakEvenForm({
@@ -112,6 +126,7 @@ function Auswertungen() {
               variableKosten: Object.keys(result.data.variableKosten).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
               durchschnittsbeitrag: result.data.durchschnittsbeitrag
             });
+            setFormResetKey(k => k + 1);
           }
         } catch (latestErr) {
           console.error('Fehler beim Laden der letzten Berechnung:', latestErr);
@@ -128,9 +143,17 @@ function Auswertungen() {
     }
   };
 
-  const calculateBreakEven = async () => {
+  const debouncedSave = useRef(null);
+
+  const scheduleAutoSave = (newForm) => {
+    if (debouncedSave.current) clearTimeout(debouncedSave.current);
+    debouncedSave.current = setTimeout(() => calculateBreakEven(newForm), 700);
+  };
+
+  const calculateBreakEven = async (formData) => {
+    const data = formData || breakEvenForm;
     try {
-      const response = await axios.post('/auswertungen/break-even', breakEvenForm);
+      const response = await axios.post('/auswertungen/break-even', data);
       const result = response.data;
 
       if (result.success) {
@@ -158,22 +181,25 @@ function Auswertungen() {
   };
 
   const updateFixkosten = (key, value) => {
-    setBreakEvenForm(prev => ({
-      ...prev,
-      fixkosten: { ...prev.fixkosten, [key]: Number(value) || 0 }
-    }));
+    setBreakEvenForm(prev => {
+      const newForm = { ...prev, fixkosten: { ...prev.fixkosten, [key]: Number(value) || 0 } };
+      scheduleAutoSave(newForm);
+      return newForm;
+    });
   };
 
   const updateVariableKosten = (key, value) => {
-    setBreakEvenForm(prev => ({
-      ...prev,
-      variableKosten: { ...prev.variableKosten, [key]: Number(value) || 0 }
-    }));
+    setBreakEvenForm(prev => {
+      const newForm = { ...prev, variableKosten: { ...prev.variableKosten, [key]: parseFloat(value) || 0 } };
+      scheduleAutoSave(newForm);
+      return newForm;
+    });
   };
 
   const loadMemberAnalytics = async () => {
     try {
-      const response = await axios.get(`/auswertungen/member-analytics?period=${timePeriod}`);
+      const sep = dojoParam ? '&' : '?';
+      const response = await axios.get(`/auswertungen/member-analytics${dojoParam}${sep}period=${timePeriod}`);
       const result = response.data;
       if (result.success) {
         setMemberAnalytics(result.data);
@@ -198,7 +224,7 @@ function Auswertungen() {
 
   const loadBeitragsvergleich = async () => {
     try {
-      const response = await axios.get('/auswertungen/beitragsvergleich');
+      const response = await axios.get(`/auswertungen/beitragsvergleich${dojoParam}`);
       const result = response.data;
       if (result.success) {
         setBeitragsvergleich(result.data);
@@ -229,6 +255,68 @@ function Auswertungen() {
     }
   };
 
+
+  // Label-Maps für leserliche Beschriftungen
+  const fixkostenLabels = {
+    miete: 'Miete / Pacht', versicherung: 'Versicherung', strom: 'Strom',
+    wasser: 'Wasser', gas: 'Gas / Heizung', internet: 'Internet',
+    hausmeister: 'Hausmeister', wartung: 'Instandhaltung', verwaltung: 'Verwaltung'
+  };
+  const variableKostenLabels = {
+    zahlungsabwicklung: 'Zahlungsabwicklung', verwaltung: 'Verwaltungsaufwand',
+    material: 'Verbrauchsmaterial', sonstiges: 'Sonstiges'
+  };
+
+  // Live Break-Even-Berechnung (kein API-Call nötig)
+  const breakEvenCalc = useMemo(() => {
+    if (!kostenvorlagen) return null;
+    const gesamtFixkosten = Object.values(breakEvenForm.fixkosten).reduce((s, v) => s + (Number(v) || 0), 0);
+    const variableKostenProMitglied = Object.values(breakEvenForm.variableKosten).reduce((s, v) => s + (Number(v) || 0), 0);
+    const beitrag = breakEvenForm.durchschnittsbeitrag || 0;
+    const deckungsbeitrag = beitrag - variableKostenProMitglied;
+    if (deckungsbeitrag <= 0 || gesamtFixkosten <= 0) return null;
+
+    const bep = Math.ceil(gesamtFixkosten / deckungsbeitrag);
+    const breakEvenUmsatz = bep * beitrag;
+    const gesamtKosten = (n) => gesamtFixkosten + variableKostenProMitglied * n;
+    const n1 = Math.ceil(bep * 1.2), n2 = Math.ceil(bep * 1.5), n3 = Math.ceil(bep * 2);
+
+    // Chart-Daten: Kosten- vs. Umsatzlinie
+    const maxN = Math.max(n3 + 5, 30);
+    const chartData = Array.from({ length: 31 }, (_, i) => {
+      const n = Math.round((i / 30) * maxN);
+      return { mitglieder: n, kosten: Math.round(gesamtKosten(n)), umsatz: Math.round(n * beitrag) };
+    });
+
+    return {
+      bep, gesamtFixkosten, variableKostenProMitglied, deckungsbeitrag,
+      breakEvenUmsatz, chartData,
+      szenarien: [
+        { name: 'Konservativ', mitglieder: n1, umsatz: n1 * beitrag, gewinn: n1 * beitrag - gesamtKosten(n1), beschreibung: '+20% Sicherheit' },
+        { name: 'Optimal',     mitglieder: n2, umsatz: n2 * beitrag, gewinn: n2 * beitrag - gesamtKosten(n2), beschreibung: '+50% über BEP' },
+        { name: 'Wachstum',    mitglieder: n3, umsatz: n3 * beitrag, gewinn: n3 * beitrag - gesamtKosten(n3), beschreibung: '2× Mitglieder' },
+      ],
+      empfehlungen: [
+        {
+          typ: bep < 80 ? 'success' : 'warning',
+          titel: `Break-Even bei ${bep} Mitgliedern`,
+          beschreibung: bep < 80
+            ? `Gut erreichbar. Mit 20% Puffer brauchen Sie ${n1} Mitglieder.`
+            : 'Hoher Break-Even. Prüfen Sie Fixkosten oder erhöhen Sie den Mitgliedsbeitrag.'
+        },
+        {
+          typ: 'info',
+          titel: 'Deckungsbeitrag',
+          beschreibung: `Jedes Mitglied trägt ${deckungsbeitrag.toFixed(2)}€ zur Fixkostendeckung bei (${beitrag}€ Beitrag − ${variableKostenProMitglied.toFixed(2)}€ variable Kosten).`
+        },
+        {
+          typ: 'info',
+          titel: 'Formel',
+          beschreibung: `BEP = ${gesamtFixkosten.toLocaleString('de-DE')}€ ÷ ${deckungsbeitrag.toFixed(2)}€ = ${bep} Mitglieder`
+        }
+      ]
+    };
+  }, [breakEvenForm, kostenvorlagen]);
 
   if (loading) {
     return (
@@ -291,637 +379,807 @@ function Auswertungen() {
       <div className="tab-content">
         {activeTab === 'breakeven' && (
           <div className="tab-panel">
-            <div className="break-even-container">
-              <div className="section-header-break-even">
-                <div>
+            <div className="be-wrapper">
+
+              {/* ── Header ── */}
+              <div className="be-page-header">
+                <div className="be-page-header-left">
                   <h2>🧮 Break-Even-Analyse</h2>
-                  <p>Ermitteln Sie den Break-Even-Punkt Ihres Dojos und planen Sie strategisch</p>
+                  <p>BEP = Fixkosten / (Ø-Beitrag − variable Kosten pro Mitglied)</p>
                 </div>
+                {breakEvenCalc && (
+                  <div className="be-hero-kpi">
+                    <span className="be-hero-value">{breakEvenCalc.bep}</span>
+                    <span className="be-hero-label">Mitglieder zum Break-Even</span>
+                  </div>
+                )}
               </div>
 
-              <form onSubmit={handleBreakEvenSubmit} className="break-even-form">
-                <div className="break-even-input-grid">
-                  {/* Fixkosten Card */}
-                  <div className="cost-card">
-                    <div className="cost-card-header">
-                      <h3>💰 Fixkosten</h3>
-                      <span className="subtitle">Monatliche Fixkosten</span>
-                    </div>
-                    <div className="cost-inputs">
-                      {kostenvorlagen && Object.entries(kostenvorlagen.fixkosten).map(([key, value]) => (
-                        <div key={key} className="input-row">
-                          <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
-                          <div className="input-with-unit">
-                            <input
-                              type="number"
-                              value={breakEvenForm.fixkosten[key] ?? value}
-                              onChange={(e) => updateFixkosten(key, e.target.value)}
-                              placeholder="0"
-                              min="0"
-                            />
-                            <span className="unit">€</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+              {/* ── Zwei Spalten ── */}
+              <div className="be-columns">
 
-                  {/* Variable Kosten Card */}
-                  <div className="cost-card">
-                    <div className="cost-card-header">
-                      <h3>📊 Variable Kosten</h3>
-                      <span className="subtitle">Pro Mitglied/Monat</span>
-                    </div>
-                    <div className="cost-inputs">
-                      {kostenvorlagen && Object.entries(kostenvorlagen.variableKosten).map(([key, value]) => (
-                        <div key={key} className="input-row">
-                          <label>{key.charAt(0).toUpperCase() + key.slice(1)}</label>
-                          <div className="input-with-unit">
-                            <input
-                              type="number"
-                              value={breakEvenForm.variableKosten[key] ?? value}
-                              onChange={(e) => updateVariableKosten(key, e.target.value)}
-                              placeholder="0"
-                              min="0"
-                            />
-                            <span className="unit">€</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                {/* Linke Spalte: Eingaben */}
+                <div className="be-left">
 
-                  {/* Durchschnittsbeitrag Card */}
-                  <div className="cost-card">
-                    <div className="cost-card-header">
-                      <h3>💵 Beitrag</h3>
-                      <span className="subtitle">Durchschnittlicher Mitgliedsbeitrag</span>
+                  {/* Fixkosten */}
+                  <div className="be-section">
+                    <div className="be-section-title">
+                      <span className="be-section-title-label">💰 Fixkosten / Monat</span>
+                      {breakEvenCalc && (
+                        <span className="be-section-total">{formatCurrency(breakEvenCalc.gesamtFixkosten)}</span>
+                      )}
                     </div>
-                    <div className="cost-inputs">
-                      <div className="input-row">
-                        <label>Monatlicher Beitrag</label>
-                        <div className="input-with-unit">
+                    {kostenvorlagen && Object.entries(kostenvorlagen.fixkosten).map(([key, defaultVal]) => (
+                      <div key={key} className="be-row">
+                        <label>{fixkostenLabels[key] || key}</label>
+                        <div className="be-field">
                           <input
+                            key={`fk-${key}-${formResetKey}`}
                             type="number"
-                            value={breakEvenForm.durchschnittsbeitrag}
-                            onChange={(e) => setBreakEvenForm(prev => ({
-                              ...prev,
-                              durchschnittsbeitrag: Number(e.target.value) || 0
-                            }))}
-                            placeholder="0"
+                            defaultValue={breakEvenForm.fixkosten[key] ?? defaultVal}
+                            onBlur={(e) => updateFixkosten(key, e.target.value)}
                             min="0"
+                            step="0.01"
                           />
-                          <span className="unit">€</span>
+                          <span className="be-field-unit">€</span>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Variable Kosten */}
+                  <div className="be-section">
+                    <div className="be-section-title">
+                      <span className="be-section-title-label">📊 Variable Kosten / Mitglied</span>
+                      {breakEvenCalc && (
+                        <span className="be-section-total">{formatCurrency(breakEvenCalc.variableKostenProMitglied)}</span>
+                      )}
+                    </div>
+                    {kostenvorlagen && Object.entries(kostenvorlagen.variableKosten).map(([key, defaultVal]) => (
+                      <div key={key} className="be-row">
+                        <label>{variableKostenLabels[key] || key}</label>
+                        <div className="be-field">
+                          <input
+                            key={`vk-${key}-${formResetKey}`}
+                            type="number"
+                            defaultValue={breakEvenForm.variableKosten[key] ?? defaultVal}
+                            onBlur={(e) => updateVariableKosten(key, e.target.value)}
+                            min="0"
+                            step="0.01"
+                          />
+                          <span className="be-field-unit">€</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Ø-Beitrag */}
+                  <div className="be-section">
+                    <div className="be-section-title">
+                      <span className="be-section-title-label">💵 Ø-Mitgliedsbeitrag</span>
+                      {breakEvenCalc && (
+                        <span className="be-section-total">DB: {formatCurrency(breakEvenCalc.deckungsbeitrag)}/Mitgl.</span>
+                      )}
+                    </div>
+                    <div className="be-row be-beitrag-row">
+                      <label>pro Mitglied / Monat</label>
+                      <div className="be-field">
+                        <input
+                          key={`db-${formResetKey}`}
+                          type="number"
+                          defaultValue={breakEvenForm.durchschnittsbeitrag}
+                          onBlur={(e) => setBreakEvenForm(prev => {
+                            const newForm = { ...prev, durchschnittsbeitrag: Number(e.target.value) || 0 };
+                            scheduleAutoSave(newForm);
+                            return newForm;
+                          })}
+                          min="0"
+                          step="0.01"
+                        />
+                        <span className="be-field-unit">€</span>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="form-actions-center">
-                  <button type="submit" className="btn-calculate">
-                    <span>🧮</span>
-                    Break-Even berechnen
+                  {/* Speichern */}
+                  <button className="be-save-btn" onClick={calculateBreakEven}>
+                    💾 Analyse speichern
                   </button>
+
                 </div>
-              </form>
 
-              {breakEvenData && (
-                <div className="break-even-results">
-                  {/* Hauptergebnisse als große KPI Cards */}
-                  <div className="results-header">
-                    <h3>📈 Ergebnisse</h3>
-                  </div>
+                {/* Rechte Spalte: Ergebnisse */}
+                <div className="be-right">
+                  {breakEvenCalc ? (
+                    <>
+                      {/* KPI-Dreierleiste */}
+                      <div className="be-kpi-row">
+                        <div className="be-kpi be-kpi--main">
+                          <span className="be-kpi-icon">🎯</span>
+                          <span className="be-kpi-value">{breakEvenCalc.bep}</span>
+                          <span className="be-kpi-label">BEP Mitglieder</span>
+                        </div>
+                        <div className="be-kpi">
+                          <span className="be-kpi-icon">💰</span>
+                          <span className="be-kpi-value">{formatCurrency(breakEvenCalc.breakEvenUmsatz)}</span>
+                          <span className="be-kpi-label">Umsatz nötig / Monat</span>
+                        </div>
+                        <div className="be-kpi">
+                          <span className="be-kpi-icon">📊</span>
+                          <span className="be-kpi-value">{formatCurrency(breakEvenCalc.deckungsbeitrag)}</span>
+                          <span className="be-kpi-label">Deckungsbeitrag / Mitgl.</span>
+                        </div>
+                      </div>
 
-                  <div className="kpi-results-grid">
-                    <div className="kpi-result-card primary">
-                      <div className="kpi-icon-large">👥</div>
-                      <div className="kpi-value">{breakEvenData.breakEvenPunkt.mitglieder}</div>
-                      <div className="kpi-label">Break-Even Mitglieder</div>
-                    </div>
-
-                    <div className="kpi-result-card success">
-                      <div className="kpi-icon-large">💰</div>
-                      <div className="kpi-value">{formatCurrency(breakEvenData.breakEvenPunkt.umsatz)}</div>
-                      <div className="kpi-label">Benötigter Umsatz</div>
-                    </div>
-
-                    <div className="kpi-result-card warning">
-                      <div className="kpi-icon-large">💳</div>
-                      <div className="kpi-value">{formatCurrency(breakEvenData.breakEvenPunkt.kostenProMitglied)}</div>
-                      <div className="kpi-label">Kosten pro Mitglied</div>
-                    </div>
-                  </div>
-
-                  {/* Szenarien */}
-                  <div className="scenarios-section">
-                    <h4>🎯 Szenarien-Analyse</h4>
-                    <div className="scenarios-grid-professional">
-                      {breakEvenData.szenarien.map((szenario, index) => (
-                        <div key={index} className={`scenario-card-pro ${szenario.gewinn >= 0 ? 'profitable' : 'loss'}`}>
-                          <div className="scenario-header">
-                            <h5>{szenario.name}</h5>
-                            <span className={`scenario-badge ${szenario.gewinn >= 0 ? 'success' : 'danger'}`}>
-                              {szenario.gewinn >= 0 ? '✓ Profitabel' : '⚠ Verlust'}
+                      {/* Kosten vs. Umsatz Chart */}
+                      <div className="be-chart-card">
+                        <div className="be-chart-header">
+                          <h4>Kosten vs. Umsatz</h4>
+                          <div className="be-chart-legend">
+                            <span className="be-legend-item">
+                              <span className="be-legend-dot be-legend-dot--kosten" />
+                              Gesamtkosten
+                            </span>
+                            <span className="be-legend-item">
+                              <span className="be-legend-dot be-legend-dot--umsatz" />
+                              Umsatz
                             </span>
                           </div>
-                          <div className="scenario-metrics">
-                            <div className="metric">
-                              <span className="metric-label">Mitglieder</span>
-                              <span className="metric-value">{szenario.mitglieder}</span>
-                            </div>
-                            <div className="metric">
-                              <span className="metric-label">Umsatz</span>
-                              <span className="metric-value">{formatCurrency(szenario.umsatz)}</span>
-                            </div>
-                            <div className="metric">
-                              <span className="metric-label">Gewinn/Verlust</span>
-                              <span className={`metric-value ${szenario.gewinn >= 0 ? 'positive' : 'negative'}`}>
-                                {formatCurrency(szenario.gewinn)}
-                              </span>
-                            </div>
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Empfehlungen */}
-                  <div className="recommendations-section">
-                    <h4>💡 Strategische Empfehlungen</h4>
-                    <div className="recommendations-list">
-                      {breakEvenData.empfehlungen.map((empfehlung, index) => (
-                        <div key={index} className={`recommendation-item ${empfehlung.typ || 'info'}`}>
-                          <span className="recommendation-icon">
-                            {empfehlung.typ === 'success' ? '✓' : empfehlung.typ === 'warning' ? '⚠' : 'ℹ'}
-                          </span>
-                          <div className="recommendation-content">
-                            <strong>{empfehlung.titel}</strong>
-                            <p>{empfehlung.beschreibung}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'overview' && (
-          <div className="tab-panel">
-            {/* Kompakte KPI-Grid mit 8 Hauptkennzahlen */}
-            <div className="kpi-compact-grid">
-              <div className="kpi-compact">
-                <div className="kpi-compact-icon">👥</div>
-                <div className="kpi-compact-value">{formatNumber(auswertungsData.summary.totalMembers)}</div>
-                <div className="kpi-compact-label">Mitglieder</div>
-                <div className="kpi-compact-sub">+{auswertungsData.mitgliederAnalyse.neueThisMonth} Monat</div>
-              </div>
-
-              <div className="kpi-compact success">
-                <div className="kpi-compact-icon">✓</div>
-                <div className="kpi-compact-value">{formatNumber(auswertungsData.summary.activeMembers)}</div>
-                <div className="kpi-compact-label">Aktiv</div>
-                <div className="kpi-compact-sub">{Math.round((auswertungsData.summary.activeMembers / auswertungsData.summary.totalMembers) * 100)}% Quote</div>
-              </div>
-
-              <div className="kpi-compact warning">
-                <div className="kpi-compact-icon">⏸</div>
-                <div className="kpi-compact-value">{formatNumber(auswertungsData.summary.inactiveMembers)}</div>
-                <div className="kpi-compact-label">Inaktiv</div>
-                <div className="kpi-compact-sub">{Math.round((auswertungsData.summary.inactiveMembers / auswertungsData.summary.totalMembers) * 100)}% Quote</div>
-              </div>
-
-              <div className="kpi-compact info">
-                <div className="kpi-compact-icon">📈</div>
-                <div className="kpi-compact-value">{auswertungsData.summary.growthRate}%</div>
-                <div className="kpi-compact-label">Wachstum</div>
-                <div className="kpi-compact-sub">Trend</div>
-              </div>
-
-              <div className="kpi-compact">
-                <div className="kpi-compact-icon">💰</div>
-                <div className="kpi-compact-value">{formatCurrency(auswertungsData.summary.monthlyRevenue)}</div>
-                <div className="kpi-compact-label">Monatlich</div>
-                <div className="kpi-compact-sub">{formatCurrency(auswertungsData.summary.yearlyRevenue)} / Jahr</div>
-              </div>
-
-              <div className="kpi-compact">
-                <div className="kpi-compact-icon">💳</div>
-                <div className="kpi-compact-value">{formatCurrency(auswertungsData.finanzielleAuswertung.durchschnittsBeitrag)}</div>
-                <div className="kpi-compact-label">Ø Beitrag</div>
-                <div className="kpi-compact-sub">Pro Mitglied</div>
-              </div>
-
-              <div className="kpi-compact info">
-                <div className="kpi-compact-icon">🔄</div>
-                <div className="kpi-compact-value">{auswertungsData.summary.retentionRate}%</div>
-                <div className="kpi-compact-label">Retention</div>
-                <div className="kpi-compact-sub">&gt;1 Jahr</div>
-              </div>
-
-              <div className="kpi-compact success">
-                <div className="kpi-compact-icon">⏱</div>
-                <div className="kpi-compact-value">{auswertungsData.summary.averageMembershipDuration}</div>
-                <div className="kpi-compact-label">Ø Jahre</div>
-                <div className="kpi-compact-sub">Mitgliedschaft</div>
-              </div>
-            </div>
-
-            {/* GROSSER WACHSTUMSTREND - Volle Breite */}
-            {auswertungsData.wachstumsAnalyse?.vergleichVorjahr && auswertungsData.wachstumsAnalyse?.prognose && (
-              <div className="growth-trend-section">
-                <div className="growth-header">
-                  <h3>📈 Wachstumstrend & Analyse</h3>
-                  <div className="growth-period-tabs">
-                    <button
-                      className={`period-tab ${growthPeriod === 'woche' ? 'active' : ''}`}
-                      onClick={() => setGrowthPeriod('woche')}
-                    >
-                      Woche
-                    </button>
-                    <button
-                      className={`period-tab ${growthPeriod === 'monat' ? 'active' : ''}`}
-                      onClick={() => setGrowthPeriod('monat')}
-                    >
-                      Monat
-                    </button>
-                    <button
-                      className={`period-tab ${growthPeriod === 'quartal' ? 'active' : ''}`}
-                      onClick={() => setGrowthPeriod('quartal')}
-                    >
-                      Quartal
-                    </button>
-                    <button
-                      className={`period-tab ${growthPeriod === 'jahr' ? 'active' : ''}`}
-                      onClick={() => setGrowthPeriod('jahr')}
-                    >
-                      Jahr
-                    </button>
-                  </div>
-                </div>
-
-                {/* Statistik-Karten über dem Chart */}
-                <div className="growth-stats-row">
-                  <div className="growth-stat-card">
-                    <div className="stat-icon">🎯</div>
-                    <div className="stat-content">
-                      <div className="stat-label">Aktuelles Jahr {auswertungsData.wachstumsAnalyse.vergleichVorjahr.aktuellesJahr}</div>
-                      <div className="stat-value">{auswertungsData.wachstumsAnalyse.vergleichVorjahr.neueAktuellesJahr} Neue</div>
-                    </div>
-                  </div>
-
-                  <div className="growth-stat-card">
-                    <div className="stat-icon">📅</div>
-                    <div className="stat-content">
-                      <div className="stat-label">Vorjahr {auswertungsData.wachstumsAnalyse.vergleichVorjahr.vorjahr}</div>
-                      <div className="stat-value">{auswertungsData.wachstumsAnalyse.vergleichVorjahr.neueVorjahr} Neue</div>
-                    </div>
-                  </div>
-
-                  <div className={`growth-stat-card ${auswertungsData.wachstumsAnalyse.vergleichVorjahr.prozent >= 0 ? 'positive' : 'negative'}`}>
-                    <div className="stat-icon">{auswertungsData.wachstumsAnalyse.vergleichVorjahr.prozent >= 0 ? '📈' : '📉'}</div>
-                    <div className="stat-content">
-                      <div className="stat-label">Vergleich Vorjahr</div>
-                      <div className="stat-value">
-                        {auswertungsData.wachstumsAnalyse.vergleichVorjahr.prozent > 0 ? '+' : ''}
-                        {auswertungsData.wachstumsAnalyse.vergleichVorjahr.prozent}%
+                        <ResponsiveContainer width="100%" height={210}>
+                          <LineChart data={breakEvenCalc.chartData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                            <XAxis
+                              dataKey="mitglieder"
+                              stroke="rgba(255,255,255,0.3)"
+                              tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
+                              label={{ value: 'Mitglieder', position: 'insideBottom', offset: -10, style: { fill: 'rgba(255,255,255,0.35)', fontSize: 10 } }}
+                            />
+                            <YAxis
+                              stroke="rgba(255,255,255,0.3)"
+                              tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }}
+                              tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
+                            />
+                            <Tooltip
+                              formatter={(v, name) => [formatCurrency(v), name === 'kosten' ? 'Kosten' : 'Umsatz']}
+                              labelFormatter={(l) => `${l} Mitglieder`}
+                              contentStyle={{ background: 'rgba(15,15,30,0.97)', border: '1px solid rgba(255,215,0,0.25)', borderRadius: 8, fontSize: 12 }}
+                            />
+                            <ReferenceLine
+                              x={breakEvenCalc.bep}
+                              stroke="rgba(255,215,0,0.6)"
+                              strokeDasharray="5 3"
+                              label={{ value: `BEP`, position: 'top', style: { fill: '#ffd700', fontSize: 11, fontWeight: 700 } }}
+                            />
+                            <Line type="monotone" dataKey="kosten" stroke="#ef4444" strokeWidth={2} dot={false} />
+                            <Line type="monotone" dataKey="umsatz" stroke="#10b981" strokeWidth={2} dot={false} />
+                          </LineChart>
+                        </ResponsiveContainer>
                       </div>
-                      <div className="stat-sub">
-                        {auswertungsData.wachstumsAnalyse.vergleichVorjahr.differenz > 0 ? '+' : ''}
-                        {auswertungsData.wachstumsAnalyse.vergleichVorjahr.differenz} Mitglieder
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="growth-stat-card info">
-                    <div className="stat-icon">🔮</div>
-                    <div className="stat-content">
-                      <div className="stat-label">Prognose {auswertungsData.wachstumsAnalyse.vergleichVorjahr.aktuellesJahr + 1}</div>
-                      <div className="stat-value">{auswertungsData.wachstumsAnalyse.prognose.naechstesJahr} Neue</div>
-                      <div className="stat-sub">{auswertungsData.wachstumsAnalyse.prognose.basis}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Großer Chart */}
-                <div className="growth-chart-container">
-                  <ResponsiveContainer width="100%" height={400}>
-                    <ComposedChart data={
-                      growthPeriod === 'woche' ? (auswertungsData.wachstumsAnalyse.woche || []) :
-                      growthPeriod === 'monat' ? (auswertungsData.wachstumsAnalyse.monat || []) :
-                      growthPeriod === 'quartal' ? (auswertungsData.wachstumsAnalyse.quartal || []) :
-                      (auswertungsData.wachstumsAnalyse.jahr || [])
-                    }>
-                      <defs>
-                        <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#ffd700" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="#ffd700" stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                      <XAxis
-                        dataKey={growthPeriod === 'jahr' ? 'jahr' : growthPeriod === 'quartal' ? 'quartal' : growthPeriod === 'monat' ? 'monat' : 'periode'}
-                        stroke="rgba(255,255,255,0.6)"
-                        angle={growthPeriod === 'woche' || growthPeriod === 'monat' ? -45 : 0}
-                        textAnchor={growthPeriod === 'woche' || growthPeriod === 'monat' ? 'end' : 'middle'}
-                        height={growthPeriod === 'woche' || growthPeriod === 'monat' ? 80 : 60}
-                      />
-                      <YAxis stroke="rgba(255,255,255,0.6)" />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'rgba(26, 26, 46, 0.95)',
-                          border: '1px solid rgba(255, 215, 0, 0.3)',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="neueMitglieder"
-                        stroke="#ffd700"
-                        strokeWidth={3}
-                        fill="url(#colorGrowth)"
-                        fillOpacity={1}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="neueMitglieder"
-                        stroke="#ff6b35"
-                        strokeWidth={2}
-                        dot={{ fill: '#ffd700', r: 5 }}
-                        activeDot={{ r: 8 }}
-                      />
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* Viele kompakte Charts in kompakter 3-Spalten-Grid */}
-            <div className="charts-grid-compact">
-              {/* Altersverteilung */}
-              <div className="chart-card-compact">
-                <h4>👶 Altersverteilung</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <PieChart>
-                    <Pie
-                      data={auswertungsData.mitgliederAnalyse.altersgruppen}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({name, value}) => `${value}`}
-                      outerRadius={60}
-                      fill="#8884d8"
-                      dataKey="value"
-                    >
-                      {auswertungsData.mitgliederAnalyse.altersgruppen.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Geschlechterverteilung */}
-              <div className="chart-card-compact">
-                <h4>⚧ Geschlechterverteilung</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={auswertungsData.mitgliederAnalyse.geschlechterVerteilung}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="geschlecht" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="anzahl" fill="#8884d8">
-                      {auswertungsData.mitgliederAnalyse.geschlechterVerteilung.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Eintrittsjahre */}
-              <div className="chart-card-compact">
-                <h4>📅 Eintrittsjahre</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={auswertungsData.mitgliederAnalyse.eintrittsJahre}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="jahr" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="anzahl" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Stil-Verteilung (Kurse) */}
-              <div className="chart-card-compact">
-                <h4>🥋 Stil-Verteilung (Kurse)</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={auswertungsData.stilAnalyse.verteilung.filter(s => s.anzahl > 0)}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="anzahl" fill="#82ca9d" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Graduierungsstatistik */}
-              <div className="chart-card-compact">
-                <h4>🥇 Top Gurte</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={auswertungsData.mitgliederAnalyse.graduierungsStats} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="gurtfarbe" type="category" width={100} />
-                    <Tooltip />
-                    <Bar dataKey="anzahl" fill="#ffc658">
-                      {auswertungsData.mitgliederAnalyse.graduierungsStats.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Nächste Geburtstage */}
-              <div className="chart-card-compact">
-                <h4>🎂 Nächste Geburtstage</h4>
-                <div className="birthday-list">
-                  {auswertungsData.mitgliederAnalyse.naechsteGeburtstage.length > 0 ? (
-                    auswertungsData.mitgliederAnalyse.naechsteGeburtstage.map((gb, index) => (
-                      <div key={index} className="birthday-item">
-                        <span className="birthday-icon">🎉</span>
-                        <div className="birthday-info">
-                          <strong>{gb.name}</strong>
-                          <span className="birthday-days">
-                            {gb.tageVerbleibend === 0 ? 'Heute!' : `in ${gb.tageVerbleibend} Tagen`}
-                          </span>
+                      {/* Szenarien */}
+                      <div className="be-scenarios-card">
+                        <h4 className="be-scenarios-title">Szenarien</h4>
+                        <div className="be-scenario-grid">
+                          {breakEvenCalc.szenarien.map((s, i) => (
+                            <div key={i} className={`be-scenario ${s.gewinn >= 0 ? 'be-scenario--profit' : 'be-scenario--loss'}`}>
+                              <div className="be-scenario-name">{s.name}</div>
+                              <div className="be-scenario-members">{s.mitglieder}</div>
+                              <div className="be-scenario-members-label">Mitglieder</div>
+                              <div className={`be-scenario-profit ${s.gewinn >= 0 ? 'positive' : 'negative'}`}>
+                                {s.gewinn >= 0 ? '+' : ''}{formatCurrency(s.gewinn)}
+                              </div>
+                              <div className="be-scenario-desc">{s.beschreibung}</div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    ))
+                    </>
                   ) : (
-                    <p className="no-data">Keine Geburtstage in den nächsten 30 Tagen</p>
+                    <div className="be-invalid">
+                      ⚠️ Bitte gültige Werte eingeben: Deckungsbeitrag muss &gt; 0 sein.
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Anwesenheit nach Wochentag */}
-              <div className="chart-card-compact">
-                <h4>📊 Anwesenheit/Wochentag</h4>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={auswertungsData.anwesenheitsStatistik.wochentagsVerteilung}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="tag" angle={-45} textAnchor="end" height={60} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="anzahl" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {/* ── Ist-Zustand Vergleich ── */}
+              {breakEvenCalc && auswertungsData && (() => {
+                const istMitglieder = auswertungsData.summary.activeMembers;
+                const istUmsatz = auswertungsData.summary.monthlyRevenue;
+                const istGesamtkosten = breakEvenCalc.gesamtFixkosten + breakEvenCalc.variableKostenProMitglied * istMitglieder;
+                const istErgebnis = istUmsatz - istGesamtkosten;
+                const auslastung = Math.round((istMitglieder / breakEvenCalc.bep) * 100);
+                const mitgliederDelta = istMitglieder - breakEvenCalc.bep;
+                const umsatzDelta = istUmsatz - breakEvenCalc.breakEvenUmsatz;
+                const isProfit = istErgebnis >= 0;
+                return (
+                  <div className="be-ist-card">
+                    <div className="be-ist-header">
+                      <span className="be-ist-title">📍 Ist-Zustand vs. Break-Even</span>
+                      <span className={`be-ist-badge ${isProfit ? 'be-ist-badge--green' : 'be-ist-badge--red'}`}>
+                        {isProfit ? '✓ Im Gewinn' : '⚠ Im Verlust'}
+                      </span>
+                    </div>
 
-              {/* Spitzenzeiten */}
-              <div className="chart-card-compact">
-                <h4>⏰ Spitzenzeiten</h4>
-                <div className="peak-times-list">
-                  {auswertungsData.anwesenheitsStatistik.spitzenzeiten.map((zeit, index) => (
-                    <div key={index} className="peak-time-item">
-                      <span className="peak-time">{zeit.zeit}</span>
-                      <div className="peak-bar">
+                    {/* Progress Bar */}
+                    <div className="be-ist-progress">
+                      <div className="be-ist-bar-bg">
                         <div
-                          className="peak-bar-fill"
-                          style={{width: `${(zeit.teilnehmer / 35) * 100}%`}}
-                        ></div>
-                        <span className="peak-count">{zeit.teilnehmer}</span>
+                          className={`be-ist-bar-fill ${auslastung >= 100 ? 'be-ist-bar-fill--over' : ''}`}
+                          style={{ width: `${Math.min(auslastung, 100)}%` }}
+                        />
+                      </div>
+                      <div className="be-ist-bar-meta">
+                        <span className="be-ist-bar-pct">{auslastung}%</span>
+                        <span className="be-ist-bar-text">
+                          {auslastung >= 100
+                            ? `${mitgliederDelta} Mitglieder über dem Break-Even`
+                            : `Noch ${Math.abs(mitgliederDelta)} Mitglieder bis zum Break-Even`}
+                        </span>
+                        <span className="be-ist-bar-bep">BEP: {breakEvenCalc.bep}</span>
+                      </div>
+                    </div>
+
+                    {/* 4 Vergleichs-KPIs */}
+                    <div className="be-ist-kpis">
+                      <div className="be-ist-kpi">
+                        <div className="be-ist-kpi-label">Aktive Mitglieder</div>
+                        <div className="be-ist-kpi-ist">{istMitglieder}</div>
+                        <div className="be-ist-kpi-vs">BEP {breakEvenCalc.bep}</div>
+                        <div className={`be-ist-kpi-delta ${mitgliederDelta >= 0 ? 'be-ist-delta--pos' : 'be-ist-delta--neg'}`}>
+                          {mitgliederDelta >= 0 ? '+' : ''}{mitgliederDelta}
+                        </div>
+                      </div>
+                      <div className="be-ist-kpi">
+                        <div className="be-ist-kpi-label">Monatsumsatz</div>
+                        <div className="be-ist-kpi-ist">{formatCurrency(istUmsatz)}</div>
+                        <div className="be-ist-kpi-vs">BEP {formatCurrency(breakEvenCalc.breakEvenUmsatz)}</div>
+                        <div className={`be-ist-kpi-delta ${umsatzDelta >= 0 ? 'be-ist-delta--pos' : 'be-ist-delta--neg'}`}>
+                          {umsatzDelta >= 0 ? '+' : ''}{formatCurrency(umsatzDelta)}
+                        </div>
+                      </div>
+                      <div className="be-ist-kpi">
+                        <div className="be-ist-kpi-label">Monatl. Gesamtkosten</div>
+                        <div className="be-ist-kpi-ist">{formatCurrency(istGesamtkosten)}</div>
+                        <div className="be-ist-kpi-vs">Fix {formatCurrency(breakEvenCalc.gesamtFixkosten)}</div>
+                        <div className="be-ist-kpi-delta be-ist-delta--neutral">
+                          +{formatCurrency(breakEvenCalc.variableKostenProMitglied * istMitglieder)} variabel
+                        </div>
+                      </div>
+                      <div className={`be-ist-kpi ${isProfit ? 'be-ist-kpi--profit' : 'be-ist-kpi--loss'}`}>
+                        <div className="be-ist-kpi-label">Monatl. Ergebnis</div>
+                        <div className={`be-ist-kpi-ist ${isProfit ? 'be-ist-delta--pos' : 'be-ist-delta--neg'}`}>
+                          {isProfit ? '+' : ''}{formatCurrency(istErgebnis)}
+                        </div>
+                        <div className="be-ist-kpi-vs">Umsatz − Kosten</div>
+                        <div className={`be-ist-kpi-delta ${isProfit ? 'be-ist-delta--pos' : 'be-ist-delta--neg'}`}>
+                          {isProfit ? 'Gewinn' : 'Verlust'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* ── Empfehlungen (volle Breite) ── */}
+              {breakEvenCalc && (
+                <div className="be-tips">
+                  {breakEvenCalc.empfehlungen.map((e, i) => (
+                    <div key={i} className={`be-tip be-tip--${e.typ}`}>
+                      <div className="be-tip-icon">
+                        {e.typ === 'success' ? '✓' : e.typ === 'warning' ? '⚠' : 'ℹ'}
+                      </div>
+                      <div className="be-tip-content">
+                        <strong>{e.titel}</strong>
+                        <p>{e.beschreibung}</p>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
+
             </div>
           </div>
         )}
 
-        {activeTab === 'financial' && (
-          <div className="tab-panel">
-            {/* Finanzielle Übersicht - Kompakt */}
-            <div className="kpi-compact-grid">
-              <div className="kpi-compact">
-                <div className="kpi-compact-icon">💰</div>
-                <div className="kpi-compact-value">{formatCurrency(auswertungsData.finanzielleAuswertung.monatlicheEinnahmen)}</div>
-                <div className="kpi-compact-label">Monatliche Einnahmen</div>
-                <div className="kpi-compact-sub">{formatCurrency(auswertungsData.finanzielleAuswertung.jahreseinnahmen)}/Jahr</div>
+        {activeTab === 'overview' && (() => {
+          const ov = auswertungsData;
+          const s = ov.summary;
+          const ma = ov.mitgliederAnalyse;
+          const wa = ov.wachstumsAnalyse;
+          const fin = ov.finanzielleAuswertung;
+          const anw = ov.anwesenheitsStatistik;
+          const aktivQuote = s.totalMembers > 0 ? Math.round((s.activeMembers / s.totalMembers) * 100) : 0;
+          const inaktivQuote = 100 - aktivQuote;
+          const chartData = growthPeriod === 'woche' ? (wa?.woche || []) :
+                            growthPeriod === 'monat' ? (wa?.monat || []) :
+                            growthPeriod === 'quartal' ? (wa?.quartal || []) :
+                            (wa?.jahr || []);
+          const xKey = growthPeriod === 'jahr' ? 'jahr' : growthPeriod === 'quartal' ? 'quartal' : growthPeriod === 'monat' ? 'monat' : 'periode';
+          const rotateTick = growthPeriod === 'woche' || growthPeriod === 'monat';
+          const tooltipStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 };
+          const PIE_COLORS = ['#ffd700','#10b981','#63b3ed','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+          const maxPeak = anw?.spitzenzeiten?.length ? Math.max(...anw.spitzenzeiten.map(z => z.teilnehmer)) : 1;
+
+          return (
+            <div className="ov-wrapper">
+
+              {/* ── 8 KPI Cards ── */}
+              <div className="ov-kpi-row">
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Mitglieder gesamt</div>
+                  <div className="ov-kpi-value">{formatNumber(s.totalMembers)}</div>
+                  <div className="ov-kpi-sub">+{ma.neueThisMonth} diesen Monat</div>
+                  <div className="ov-kpi-bar"><div className="ov-kpi-bar-fill ov-kpi-bar-fill--gold" /></div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Aktive Mitglieder</div>
+                  <div className="ov-kpi-value ov-kpi-value--green">{formatNumber(s.activeMembers)}</div>
+                  <div className="ov-kpi-sub">{aktivQuote}% Aktivquote</div>
+                  <div className="ov-kpi-bar"><div className="ov-kpi-bar-fill ov-kpi-bar-fill--green" style={{ width: `${aktivQuote}%` }} /></div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Inaktive Mitglieder</div>
+                  <div className="ov-kpi-value ov-kpi-value--red">{formatNumber(s.inactiveMembers)}</div>
+                  <div className="ov-kpi-sub">{inaktivQuote}% inaktiv</div>
+                  <div className="ov-kpi-bar"><div className="ov-kpi-bar-fill ov-kpi-bar-fill--red" style={{ width: `${inaktivQuote}%` }} /></div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Wachstumsrate</div>
+                  <div className={`ov-kpi-value ${s.growthRate >= 0 ? 'ov-kpi-value--green' : 'ov-kpi-value--red'}`}>
+                    {s.growthRate > 0 ? '+' : ''}{s.growthRate}%
+                  </div>
+                  <div className="ov-kpi-sub">Trend</div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Monatl. Einnahmen</div>
+                  <div className="ov-kpi-value ov-kpi-value--gold">{formatCurrency(s.monthlyRevenue)}</div>
+                  <div className="ov-kpi-sub">{formatCurrency(s.yearlyRevenue)} / Jahr</div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Ø Mitgliedsbeitrag</div>
+                  <div className="ov-kpi-value">{formatCurrency(fin.durchschnittsBeitrag)}</div>
+                  <div className="ov-kpi-sub">pro Mitglied / Monat</div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Retention Rate</div>
+                  <div className="ov-kpi-value ov-kpi-value--blue">{s.retentionRate}%</div>
+                  <div className="ov-kpi-sub">länger als 1 Jahr</div>
+                  <div className="ov-kpi-bar"><div className="ov-kpi-bar-fill ov-kpi-bar-fill--blue" style={{ width: `${s.retentionRate}%` }} /></div>
+                </div>
+                <div className="ov-kpi">
+                  <div className="ov-kpi-label">Ø Mitgliedschaft</div>
+                  <div className="ov-kpi-value">{s.averageMembershipDuration}</div>
+                  <div className="ov-kpi-sub">Jahre</div>
+                </div>
               </div>
 
-              <div className="kpi-compact">
-                <div className="kpi-compact-icon">📊</div>
-                <div className="kpi-compact-value">{formatCurrency(auswertungsData.finanzielleAuswertung.durchschnittsBeitrag)}</div>
-                <div className="kpi-compact-label">Ø Beitrag</div>
-                <div className="kpi-compact-sub">Pro Mitglied</div>
-              </div>
+              {/* ── Wachstumstrend ── */}
+              {wa?.vergleichVorjahr && wa?.prognose && (
+                <div className="ov-growth">
+                  <div className="ov-growth-header">
+                    <span className="ov-growth-title">Wachstumstrend</span>
+                    <div className="ov-period-tabs">
+                      {[['woche','Woche'],['monat','Monat'],['quartal','Quartal'],['jahr','Jahr']].map(([id, label]) => (
+                        <button key={id} className={`ov-period-btn ${growthPeriod === id ? 'active' : ''}`} onClick={() => setGrowthPeriod(id)}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="kpi-compact success">
-                <div className="kpi-compact-icon">📈</div>
-                <div className="kpi-compact-value">{auswertungsData.finanzielleAuswertung.gewinnMarge}%</div>
-                <div className="kpi-compact-label">Gewinnmarge</div>
-                <div className="kpi-compact-sub">Zahlungsausfall: {auswertungsData.finanzielleAuswertung.zahlungsausfall}%</div>
-              </div>
+                  <div className="ov-growth-stats">
+                    <div className="ov-stat">
+                      <div className="ov-stat-label">Aktuelles Jahr {wa.vergleichVorjahr.aktuellesJahr}</div>
+                      <div className="ov-stat-value">{wa.vergleichVorjahr.neueAktuellesJahr}</div>
+                      <div className="ov-stat-sub">Neue Mitglieder</div>
+                    </div>
+                    <div className="ov-stat">
+                      <div className="ov-stat-label">Vorjahr {wa.vergleichVorjahr.vorjahr}</div>
+                      <div className="ov-stat-value">{wa.vergleichVorjahr.neueVorjahr}</div>
+                      <div className="ov-stat-sub">Neue Mitglieder</div>
+                    </div>
+                    <div className={`ov-stat ${wa.vergleichVorjahr.prozent >= 0 ? 'ov-stat--pos' : 'ov-stat--neg'}`}>
+                      <div className="ov-stat-label">Vorjahresvergleich</div>
+                      <div className={`ov-stat-value ${wa.vergleichVorjahr.prozent >= 0 ? 'ov-stat-value--pos' : 'ov-stat-value--neg'}`}>
+                        {wa.vergleichVorjahr.prozent > 0 ? '+' : ''}{wa.vergleichVorjahr.prozent}%
+                      </div>
+                      <div className="ov-stat-sub">
+                        {wa.vergleichVorjahr.differenz > 0 ? '+' : ''}{wa.vergleichVorjahr.differenz} Mitglieder
+                      </div>
+                    </div>
+                    <div className="ov-stat">
+                      <div className="ov-stat-label">Prognose {wa.vergleichVorjahr.aktuellesJahr + 1}</div>
+                      <div className="ov-stat-value">{wa.prognose.naechstesJahr}</div>
+                      <div className="ov-stat-sub">{wa.prognose.basis}</div>
+                    </div>
+                  </div>
 
-              {auswertungsData.finanzielleAuswertung.tarifVerteilung && (
-                <div className="kpi-compact info">
-                  <div className="kpi-compact-icon">🎯</div>
-                  <div className="kpi-compact-value">{auswertungsData.finanzielleAuswertung.tarifVerteilung.length}</div>
-                  <div className="kpi-compact-label">Aktive Tarife</div>
-                  <div className="kpi-compact-sub">Mit Mitgliedern</div>
+                  <div className="ov-growth-chart">
+                    <ResponsiveContainer width="100%" height={280}>
+                      <ComposedChart data={chartData} margin={{ top: 5, right: 20, bottom: rotateTick ? 60 : 10, left: 0 }}>
+                        <defs>
+                          <linearGradient id="ovGrowth" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#ffd700" stopOpacity={0.5}/>
+                            <stop offset="95%" stopColor="#ffd700" stopOpacity={0.03}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey={xKey} stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }}
+                          angle={rotateTick ? -40 : 0} textAnchor={rotateTick ? 'end' : 'middle'} />
+                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Area type="monotone" dataKey="neueMitglieder" stroke="#ffd700" strokeWidth={2} fill="url(#ovGrowth)" />
+                        <Line type="monotone" dataKey="neueMitglieder" stroke="#ffd700" strokeWidth={2.5}
+                          dot={{ fill: '#ffd700', r: 3, strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Tarif-Verteilung */}
-            {auswertungsData.finanzielleAuswertung.tarifVerteilung && auswertungsData.finanzielleAuswertung.tarifVerteilung.length > 0 && (
-              <div className="chart-card-compact">
-                <h4>📊 Tarif-Verteilung</h4>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={auswertungsData.finanzielleAuswertung.tarifVerteilung} layout="horizontal">
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                    <XAxis type="number" stroke="rgba(255,255,255,0.6)" />
-                    <YAxis dataKey="tarifname" type="category" width={180} stroke="rgba(255,255,255,0.6)" />
-                    <Tooltip
-                      contentStyle={{ background: 'rgba(26, 26, 46, 0.95)', border: '1px solid rgba(255, 215, 0, 0.3)' }}
-                      labelStyle={{ color: '#ffd700' }}
-                    />
-                    <Bar dataKey="anzahl" fill="#ffd700" radius={[0, 8, 8, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+              {/* ── Charts Grid ── */}
+              <div className="ov-charts-grid">
 
-            {/* Beitragsvergleich - Optimierungspotential */}
-            {beitragsvergleich?.zusammenfassung && beitragsvergleich.zusammenfassung.gesamt > 0 && (
-              <div className="chart-card-compact">
-                <h4>💡 Beitragsoptimierung</h4>
-                <div className="kpi-compact-grid" style={{marginBottom: '20px'}}>
-                  <div className="kpi-compact warning">
-                    <div className="kpi-compact-icon">👥</div>
-                    <div className="kpi-compact-value">{beitragsvergleich.zusammenfassung.gesamt}</div>
-                    <div className="kpi-compact-label">Optimierbar</div>
+                {/* Altersverteilung */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Altersverteilung</span>
+                    <span className="ov-card-meta">{ma.altersgruppen.reduce((s,a) => s + a.value, 0)} Mitglieder</span>
                   </div>
-                  <div className="kpi-compact success">
-                    <div className="kpi-compact-icon">💰</div>
-                    <div className="kpi-compact-value">{formatCurrency(beitragsvergleich.zusammenfassung.potential / 100)}</div>
-                    <div className="kpi-compact-label">Monatl. Potential</div>
-                  </div>
-                  <div className="kpi-compact info">
-                    <div className="kpi-compact-icon">📈</div>
-                    <div className="kpi-compact-value">{formatCurrency(beitragsvergleich.zusammenfassung.durchschnittlicheErhoehung / 100)}</div>
-                    <div className="kpi-compact-label">Ø Erhöhung</div>
+                  <div className="ov-card-body">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <PieChart>
+                        <Pie data={ma.altersgruppen} cx="50%" cy="50%" innerRadius={40} outerRadius={70}
+                          dataKey="value" labelLine={false}
+                          label={({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
+                            const r = innerRadius + (outerRadius - innerRadius) * 1.4;
+                            const x = cx + r * Math.cos(-midAngle * Math.PI / 180);
+                            const y = cy + r * Math.sin(-midAngle * Math.PI / 180);
+                            return value > 0 ? <text x={x} y={y} fill="rgba(255,255,255,0.6)" textAnchor="middle" dominantBaseline="central" fontSize={10}>{value}</text> : null;
+                          }}>
+                          {ma.altersgruppen.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={tooltipStyle} />
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Kompakte Mitgliederliste */}
-                {beitragsvergleich.niedrigeBeitraege.length > 0 && (
-                  <div className="compact-member-list">
-                    <table className="data-table-compact">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Aktuell</th>
-                          <th>Potential</th>
-                          <th>Eintritt</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {beitragsvergleich.niedrigeBeitraege.slice(0, 10).map((mitglied, idx) => (
-                          <tr key={idx}>
-                            <td>
-                              <div className="member-name-cell">
-                                <span>{mitglied.name}</span>
-                                <span className="badge-small">{mitglied.alterskategorie}</span>
-                              </div>
-                            </td>
-                            <td className="align-right">{formatCurrency(mitglied.aktuellerBeitrag / 100)}</td>
-                            <td className="align-right positive">+{formatCurrency(mitglied.potentialErhoehung / 100)}</td>
-                            <td>{new Date(mitglied.eintrittsdatum).toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit' })}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {beitragsvergleich.niedrigeBeitraege.length > 10 && (
-                      <div className="table-footer">
-                        Zeige 10 von {beitragsvergleich.niedrigeBeitraege.length} Mitgliedern
+                {/* Geschlechterverteilung */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Geschlechterverteilung</span>
+                  </div>
+                  <div className="ov-card-body">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={ma.geschlechterVerteilung} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey="geschlecht" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.5)' }} />
+                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar dataKey="anzahl" radius={[4,4,0,0]}>
+                          {ma.geschlechterVerteilung.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Eintrittsjahre */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Eintrittsjahre</span>
+                  </div>
+                  <div className="ov-card-body">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={ma.eintrittsJahre} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey="jahr" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} />
+                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar dataKey="anzahl" fill="#10b981" radius={[4,4,0,0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Stil-Verteilung */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Stil-Verteilung</span>
+                  </div>
+                  <div className="ov-card-body">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={ov.stilAnalyse.verteilung.filter(s => s.anzahl > 0)} margin={{ top: 5, right: 10, bottom: 40, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} angle={-35} textAnchor="end" />
+                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar dataKey="anzahl" fill="#f59e0b" radius={[4,4,0,0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Gurtverteilung */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Gurtverteilung</span>
+                  </div>
+                  <div className="ov-card-body">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={ma.graduierungsStats} layout="vertical" margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis type="number" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.4)' }} />
+                        <YAxis dataKey="gurtfarbe" type="category" width={90} stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.5)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar dataKey="anzahl" radius={[0,4,4,0]}>
+                          {ma.graduierungsStats.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Nächste Geburtstage */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Nächste Geburtstage</span>
+                    <span className="ov-card-meta">30 Tage</span>
+                  </div>
+                  {ma.naechsteGeburtstage.length > 0 ? (
+                    <div className="ov-birthday-list">
+                      {ma.naechsteGeburtstage.map((gb, i) => (
+                        <div key={i} className="ov-birthday-row">
+                          <div className="ov-birthday-dot" />
+                          <span className="ov-birthday-name">{gb.name}</span>
+                          <span className={`ov-birthday-days ${gb.tageVerbleibend === 0 ? 'ov-birthday-days--today' : ''}`}>
+                            {gb.tageVerbleibend === 0 ? 'Heute!' : `in ${gb.tageVerbleibend} T.`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="ov-empty">Keine Geburtstage in den nächsten 30 Tagen</div>
+                  )}
+                </div>
+
+                {/* Anwesenheit / Wochentag */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Anwesenheit / Wochentag</span>
+                  </div>
+                  <div className="ov-card-body">
+                    <ResponsiveContainer width="100%" height={190}>
+                      <BarChart data={anw?.wochentagsVerteilung || []} margin={{ top: 5, right: 10, bottom: 30, left: -10 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey="tag" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.45)' }} angle={-30} textAnchor="end" />
+                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip contentStyle={tooltipStyle} />
+                        <Bar dataKey="anzahl" fill="#ffd700" radius={[4,4,0,0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Spitzenzeiten */}
+                <div className="ov-card">
+                  <div className="ov-card-header">
+                    <span className="ov-card-title">Spitzenzeiten</span>
+                  </div>
+                  <div className="ov-peak-list">
+                    {(anw?.spitzenzeiten || []).map((zeit, i) => (
+                      <div key={i} className="ov-peak-row">
+                        <span className="ov-peak-time">{zeit.zeit}</span>
+                        <div className="ov-peak-bar-bg">
+                          <div className="ov-peak-bar-fill" style={{ width: `${(zeit.teilnehmer / maxPeak) * 100}%` }} />
+                        </div>
+                        <span className="ov-peak-count">{zeit.teilnehmer}</span>
                       </div>
-                    )}
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
+
+        {activeTab === 'financial' && (() => {
+          const fin = auswertungsData.finanzielleAuswertung;
+          const tarife = fin.tarifVerteilung || [];
+          const maxUmsatz = tarife.length > 0 ? Math.max(...tarife.map(t => Number(t.monatsumsatz) || 0)) : 1;
+          const totalUmsatz = tarife.reduce((s, t) => s + (Number(t.monatsumsatz) || 0), 0) || 1;
+          const totalMitgl = tarife.reduce((s, t) => s + (Number(t.anzahl) || 0), 0);
+          const PIE_COLORS = ['#ffd700','#10b981','#63b3ed','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+          const opt = beitragsvergleich;
+          const hasOpt = opt?.zusammenfassung?.gesamt > 0;
+          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 };
+
+          return (
+            <div className="fin-wrapper">
+
+              {/* ── KPI Header ── */}
+              <div className="fin-kpi-row">
+                <div className="fin-kpi fin-kpi--hero">
+                  <div className="fin-kpi-label">Monatliche Einnahmen</div>
+                  <div className="fin-kpi-value">{formatCurrency(fin.monatlicheEinnahmen)}</div>
+                  <div className="fin-kpi-sub">{formatCurrency(fin.jahreseinnahmen)} / Jahr</div>
+                </div>
+                <div className="fin-kpi">
+                  <div className="fin-kpi-label">Aktive Verträge</div>
+                  <div className="fin-kpi-value">{totalMitgl}</div>
+                  <div className="fin-kpi-sub">{tarife.length} Tarife</div>
+                </div>
+                <div className="fin-kpi">
+                  <div className="fin-kpi-label">Ø Beitrag</div>
+                  <div className="fin-kpi-value">{formatCurrency(fin.durchschnittsBeitrag)}</div>
+                  <div className="fin-kpi-sub">pro Vertrag / Monat</div>
+                </div>
+                <div className="fin-kpi">
+                  <div className="fin-kpi-label">Optimierungspotential</div>
+                  {hasOpt ? (
+                    <>
+                      <div className="fin-kpi-value fin-kpi-value--green">+{formatCurrency(opt.zusammenfassung.potential / 100)}</div>
+                      <div className="fin-kpi-sub fin-kpi-sub--positive">{opt.zusammenfassung.gesamt} Mitgl. · / Monat möglich</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="fin-kpi-value fin-kpi-value--green">✓</div>
+                      <div className="fin-kpi-sub">Alle auf aktuellem Tarif</div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Tarif-Liste + Donut ── */}
+              <div className="fin-columns fin-columns--wide">
+
+                {/* Umsatz nach Tarif (Liste) */}
+                <div className="fin-card">
+                  <div className="fin-card-header">
+                    <span className="fin-card-title">Umsatz nach Tarif</span>
+                    <span className="fin-card-badge">{formatCurrency(fin.monatlicheEinnahmen)} / Monat</span>
+                  </div>
+                  {tarife.length > 0 ? (
+                    <div className="fin-tarif-list">
+                      {tarife.map((t, i) => (
+                        <div className="fin-tarif-row" key={i}>
+                          <div className="fin-tarif-label-row">
+                            <div className="fin-color-dot" style={{ '--dot-color': PIE_COLORS[i % PIE_COLORS.length] }} />
+                            <div className="fin-tarif-name" title={t.tarifname}>{t.tarifname}</div>
+                          </div>
+                          <div className="fin-tarif-bar-wrap">
+                            <div className="fin-tarif-bar-bg">
+                              <div className="fin-tarif-bar-fill" style={{ width: `${Math.round(((Number(t.monatsumsatz) || 0) / maxUmsatz) * 100)}%`, '--dot-color': PIE_COLORS[i % PIE_COLORS.length] }} />
+                            </div>
+                          </div>
+                          <div className="fin-tarif-meta">
+                            <div className="fin-tarif-umsatz">{formatCurrency(Number(t.monatsumsatz) || 0)}</div>
+                            <div className="fin-tarif-count">{t.anzahl} Mitgl. · {formatCurrency((Number(t.price_cents) || 0) / 100)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="fin-empty">Keine Tarife mit aktiven Verträgen</div>
+                  )}
+                </div>
+
+                {/* Umsatz-Verteilung Donut */}
+                <div className="fin-card">
+                  <div className="fin-card-header">
+                    <span className="fin-card-title">Umsatz-Verteilung</span>
+                    <span className="fin-card-badge">{tarife.length} Tarife</span>
+                  </div>
+                  {tarife.length > 0 ? (
+                    <div className="fin-donut-wrap">
+                      <PieChart width={150} height={150}>
+                        <Pie
+                          data={tarife.map(t => ({ name: t.tarifname, value: Number(t.monatsumsatz) || 0 }))}
+                          cx={75} cy={75} innerRadius={46} outerRadius={68}
+                          dataKey="value" startAngle={90} endAngle={-270}
+                        >
+                          {tarife.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Pie>
+                        <Tooltip contentStyle={ttStyle} formatter={(v) => formatCurrency(v)} />
+                      </PieChart>
+                      <div className="fin-donut-legend">
+                        {tarife.map((t, i) => (
+                          <div key={i} className="fin-legend-item">
+                            <div className="fin-legend-dot" style={{ '--dot-color': PIE_COLORS[i % PIE_COLORS.length] }} />
+                            <span className="fin-legend-name" title={t.tarifname}>{t.tarifname}</span>
+                            <span className="fin-legend-pct">{Math.round(((Number(t.monatsumsatz) || 0) / totalUmsatz) * 100)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="fin-empty">Keine Daten</div>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Mitglieder pro Tarif + Beitragsoptimierung ── */}
+              <div className="fin-columns">
+
+                {/* Bar Chart: Mitglieder pro Tarif */}
+                <div className="fin-card">
+                  <div className="fin-card-header">
+                    <span className="fin-card-title">Mitglieder pro Tarif</span>
+                    <span className="fin-card-badge">{totalMitgl} gesamt</span>
+                  </div>
+                  <div className="fin-chart-pad">
+                    <ResponsiveContainer width="100%" height={210}>
+                      <BarChart
+                        data={tarife.map(t => ({
+                          name: t.tarifname.length > 16 ? t.tarifname.slice(0, 16) + '…' : t.tarifname,
+                          anzahl: t.anzahl,
+                          beitrag: (Number(t.price_cents) || 0) / 100
+                        }))}
+                        margin={{ top: 5, right: 10, bottom: 45, left: -10 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis dataKey="name" stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 10, fill: 'rgba(255,255,255,0.45)' }} angle={-30} textAnchor="end" />
+                        <YAxis stroke="rgba(255,255,255,0.3)" tick={{ fontSize: 11, fill: 'rgba(255,255,255,0.4)' }} />
+                        <Tooltip contentStyle={ttStyle} formatter={(v, n) => [n === 'anzahl' ? `${v} Mitglieder` : formatCurrency(v), n === 'anzahl' ? 'Mitglieder' : 'Beitrag']} />
+                        <Bar dataKey="anzahl" radius={[4, 4, 0, 0]}>
+                          {tarife.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Beitragsoptimierung */}
+                {hasOpt ? (
+                  <div className="fin-card">
+                    <div className="fin-card-header">
+                      <span className="fin-card-title">Beitragsoptimierung</span>
+                      <span className="fin-card-badge">{opt.zusammenfassung.gesamt} Mitgl.</span>
+                    </div>
+                    <div className="fin-opt-summary">
+                      <div className="fin-opt-kpi">
+                        <div className="fin-opt-kpi-value">+{formatCurrency(opt.zusammenfassung.potential / 100)}</div>
+                        <div className="fin-opt-kpi-label">Monatl. Potential</div>
+                      </div>
+                      <div className="fin-opt-kpi">
+                        <div className="fin-opt-kpi-value">+{formatCurrency(opt.zusammenfassung.durchschnittlicheErhoehung / 100)}</div>
+                        <div className="fin-opt-kpi-label">Ø Erhöhung / Mitgl.</div>
+                      </div>
+                    </div>
+                    <div className="fin-opt-list">
+                      {opt.niedrigeBeitraege.slice(0, 15).map((m, idx) => (
+                        <div className="fin-opt-row" key={idx}>
+                          <div className="fin-opt-name" title={m.name}>{m.name}</div>
+                          <div className="fin-opt-current">{formatCurrency(m.aktuellerBeitrag / 100)}</div>
+                          <div className="fin-opt-delta">+{formatCurrency(m.potentialErhoehung / 100)}</div>
+                        </div>
+                      ))}
+                      {opt.niedrigeBeitraege.length > 15 && (
+                        <div className="fin-empty fin-empty--sm">
+                          + {opt.niedrigeBeitraege.length - 15} weitere
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="fin-card">
+                    <div className="fin-card-header">
+                      <span className="fin-card-title">Beitragsoptimierung</span>
+                    </div>
+                    <div className="fin-empty fin-empty--lg">
+                      Alle Mitglieder zahlen bereits den aktuellen Tarif.
+                    </div>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        )}
+
+            </div>
+          );
+        })()}
 
         {activeTab === 'members' && (
           <div className="tab-panel">
@@ -1111,7 +1369,7 @@ function Auswertungen() {
                         <div
                           className="guertel-color-badge"
                           style={{
-                            background: guertel.farbe_sekundaer
+                            '--badge-bg': guertel.farbe_sekundaer
                               ? `linear-gradient(135deg, ${guertel.farbe_hex}, ${guertel.farbe_sekundaer})`
                               : guertel.farbe_hex
                           }}
@@ -1156,101 +1414,282 @@ function Auswertungen() {
           </div>
         )}
 
-        {activeTab === 'performance' && (
-          <div className="tab-panel">
-            <div className="performance-metrics">
-              <div className="metric-card">
-                <div className="metric-header">
-                  <h3>Anwesenheitsstatistik</h3>
+        {activeTab === 'performance' && (() => {
+          const anw   = auswertungsData.anwesenheitsStatistik;
+          const sum   = auswertungsData.summary;
+          const ma    = auswertungsData.mitgliederAnalyse;
+          const woche = anw.wochentagsVerteilung || [];
+          const peaks = anw.spitzenzeiten || [];
+          const dauer = ma.mitgliedschaftsLaengen || [];
+          const maxWoche = woche.length > 0 ? Math.max(...woche.map(w => w.anzahl)) : 1;
+          const maxPeak  = peaks.length  > 0 ? Math.max(...peaks.map(p => p.teilnehmer)) : 1;
+          const maxDauer = dauer.length  > 0 ? Math.max(...dauer.map(d => d.anzahl)) : 1;
+          const topTag   = woche.length  > 0 ? woche.reduce((a, b) => a.anzahl > b.anzahl ? a : b) : null;
+          const topPeak  = peaks.length  > 0 ? peaks[0] : null;
+          const aktivQuote = sum.totalMembers > 0
+            ? Math.round((sum.activeMembers / sum.totalMembers) * 100) : 0;
+          const DAUER_COLORS = ['#f59e0b','#ffd700','#10b981','#3b82f6','#8b5cf6'];
+
+          return (
+            <div className="perf-wrapper">
+
+              {/* ── KPI Header ── */}
+              <div className="perf-kpi-row">
+                <div className="perf-kpi">
+                  <div className="perf-kpi-label">Ø Check-ins / Tag</div>
+                  <div className="perf-kpi-value perf-kpi-value--gold">
+                    {anw.durchschnittlicheAnwesenheit}
+                  </div>
+                  <div className="perf-kpi-sub">letzte 90 Tage</div>
                 </div>
-                <div className="metric-content">
-                  <div className="metric-value">{auswertungsData.anwesenheitsStatistik.durchschnittlicheAnwesenheit}%</div>
-                  <p>Durchschnittliche Anwesenheit</p>
+                <div className="perf-kpi">
+                  <div className="perf-kpi-label">Retention Rate</div>
+                  <div className={`perf-kpi-value ${sum.retentionRate >= 75 ? 'perf-kpi-value--green' : 'perf-kpi-value--red'}`}>
+                    {sum.retentionRate}%
+                  </div>
+                  <div className="perf-kpi-sub">länger als 1 Jahr</div>
+                  <div className="perf-kpi-bar">
+                    <div className={`perf-kpi-bar-fill ${sum.retentionRate >= 75 ? 'perf-kpi-bar-fill--green' : 'perf-kpi-bar-fill--red'}`} style={{ width: `${sum.retentionRate}%` }} />
+                  </div>
+                </div>
+                <div className="perf-kpi">
+                  <div className="perf-kpi-label">Aktivquote</div>
+                  <div className={`perf-kpi-value ${aktivQuote >= 80 ? 'perf-kpi-value--green' : ''}`}>
+                    {aktivQuote}%
+                  </div>
+                  <div className="perf-kpi-sub">{sum.activeMembers} von {sum.totalMembers} aktiv</div>
+                  <div className="perf-kpi-bar">
+                    <div className="perf-kpi-bar-fill perf-kpi-bar-fill--primary" style={{ width: `${aktivQuote}%` }} />
+                  </div>
+                </div>
+                <div className="perf-kpi">
+                  <div className="perf-kpi-label">Churn Rate</div>
+                  <div className={`perf-kpi-value ${ma.churnRate <= 3 ? 'perf-kpi-value--green' : ma.churnRate <= 7 ? '' : 'perf-kpi-value--red'}`}>
+                    {ma.churnRate}%
+                  </div>
+                  <div className="perf-kpi-sub">Austritte / Gesamt</div>
                 </div>
               </div>
 
-              <div className="metric-card">
-                <div className="metric-header">
-                  <h3>Kurslast</h3>
-                </div>
-                <div className="metric-content">
-                  <div className="metric-value">{auswertungsData.kursAnalyse.durchschnittlicheTeilnehmer}</div>
-                  <p>Teilnehmer pro Kurs</p>
-                </div>
-              </div>
-            </div>
+              {/* ── Wochentag + Spitzenzeiten ── */}
+              <div className="perf-columns">
 
-            <div className="performance-charts">
-              <div className="chart-card">
-                <h3>Wochentag-Anwesenheit</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={auswertungsData.anwesenheitsStatistik.wochentagsVerteilung}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="tag" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="prozent" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="chart-card">
-                <h3>Spitzenzeiten</h3>
-                <div className="peak-times">
-                  {auswertungsData.anwesenheitsStatistik.spitzenzeiten.map((zeit, index) => (
-                    <div key={index} className="time-slot">
-                      <span className="time">{zeit.zeit}</span>
-                      <span className="attendance">{zeit.teilnehmer} Teilnehmer</span>
+                {/* Wochentag-Verteilung */}
+                <div className="perf-card">
+                  <div className="perf-card-header">
+                    <span className="perf-card-title">Check-ins nach Wochentag</span>
+                    {topTag && <span className="perf-card-meta">Spitzentag: {topTag.tag}</span>}
+                  </div>
+                  {woche.length > 0 ? (
+                    <div className="perf-week-list">
+                      {woche.map((w, i) => {
+                        const isTop = topTag && w.tag === topTag.tag;
+                        return (
+                          <div className="perf-week-row" key={i}>
+                            <div className="perf-week-tag">{w.tag}</div>
+                            <div className="perf-week-bar-bg">
+                              <div
+                                className={`perf-week-bar-fill${isTop ? ' perf-week-bar-fill--top' : ''}`}
+                                style={{ width: `${Math.round((w.anzahl / maxWoche) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="perf-week-count">{w.anzahl}</div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  ) : (
+                    <div className="perf-empty">Noch keine Check-in-Daten vorhanden</div>
+                  )}
+                </div>
+
+                {/* Spitzenzeiten */}
+                <div className="perf-card">
+                  <div className="perf-card-header">
+                    <span className="perf-card-title">Top Trainingszeiten</span>
+                    {topPeak && <span className="perf-card-meta">Peak: {topPeak.zeit}</span>}
+                  </div>
+                  {peaks.length > 0 ? (
+                    <div className="perf-peak-list">
+                      {peaks.map((p, i) => (
+                        <div className="perf-peak-row" key={i}>
+                          <div className={`perf-peak-rank perf-peak-rank--${i + 1}`}>
+                            {i + 1 <= 3 ? ['①','②','③'][i] : i + 1}
+                          </div>
+                          <div className="perf-peak-time">{p.zeit}</div>
+                          <div className="perf-peak-bar-bg">
+                            <div
+                              className="perf-peak-bar-fill"
+                              style={{ width: `${Math.round((p.teilnehmer / maxPeak) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="perf-peak-count">{p.teilnehmer}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="perf-empty">Noch keine Check-in-Daten vorhanden</div>
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {activeTab === 'forecasting' && (
-          <div className="tab-panel">
-            <div className="forecast-overview">
-              <h3>Wachstumsprognose</h3>
-              <div className="forecast-stats">
-                <div className="forecast-item">
-                  <div className="forecast-label">Nächster Monat</div>
-                  <div className="forecast-value">+{auswertungsData.wachstumsAnalyse.prognose.naechsterMonat} Mitglieder</div>
-                </div>
-
-                <div className="forecast-item">
-                  <div className="forecast-label">Nächstes Quartal</div>
-                  <div className="forecast-value">+{auswertungsData.wachstumsAnalyse.prognose.naechstesQuartal} Mitglieder</div>
-                </div>
-
-                <div className="forecast-item">
-                  <div className="forecast-label">Nächstes Jahr</div>
-                  <div className="forecast-value">+{auswertungsData.wachstumsAnalyse.prognose.naechstesJahr} Mitglieder</div>
-                </div>
-              </div>
-
-              <div className="recommendations">
-                <h3>Empfehlungen</h3>
-                <div className="recommendations-list">
-                  {auswertungsData.recommendations.map((recommendation, index) => (
-                    <div key={index} className={`recommendation-item ${recommendation.typ}`}>
-                      <span className="recommendation-icon">
-                        {recommendation.typ === 'success' ? '✅' :
-                         recommendation.typ === 'warning' ? '⚠️' :
-                         recommendation.typ === 'info' ? 'ℹ️' : '💡'}
-                      </span>
-                      <div className="recommendation-content">
-                        <strong>{recommendation.title}</strong>
-                        <p>{recommendation.description}</p>
+              {/* ── Mitgliedschaftsdauer (volle Breite) ── */}
+              {dauer.length > 0 && (
+                <div className="perf-card">
+                  <div className="perf-card-header">
+                    <span className="perf-card-title">Mitgliedschaftsdauer</span>
+                    <span className="perf-card-meta">Ø {sum.averageMembershipDuration} Jahre</span>
+                  </div>
+                  <div className="perf-duration-list">
+                    {dauer.map((d, i) => (
+                      <div className="perf-duration-row" key={i}>
+                        <div className="perf-duration-label">{d.zeitraum}</div>
+                        <div className="perf-duration-bar-bg">
+                          <div
+                            className="perf-duration-bar-fill"
+                            style={{
+                              width: `${Math.round((d.anzahl / maxDauer) * 100)}%`,
+                              '--dot-color': DAUER_COLORS[i % DAUER_COLORS.length]
+                            }}
+                          />
+                        </div>
+                        <div className="perf-duration-count">{d.anzahl}</div>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+          );
+        })()}
+
+        {activeTab === 'forecasting' && (() => {
+          const wa   = auswertungsData.wachstumsAnalyse;
+          const prog = wa.prognose || {};
+          const vj   = wa.vergleichVorjahr || {};
+          const sum  = auswertungsData.summary;
+          const recs = auswertungsData.recommendations || [];
+
+          // Umsatz je Mitglied für Revenue-Prognose
+          const revenuePerMember = sum.activeMembers > 0
+            ? sum.monthlyRevenue / sum.activeMembers : 0;
+
+          const stages = [
+            { period: 'Heute',        members: sum.activeMembers,                          delta: null },
+            { period: '+ 3 Monate',   members: sum.activeMembers + (prog.naechsterMonat * 3 || 0),  delta: prog.naechsterMonat * 3 || 0 },
+            { period: '+ 6 Monate',   members: sum.activeMembers + (prog.naechstesQuartal * 2 || 0), delta: prog.naechstesQuartal * 2 || 0 },
+            { period: '+ 12 Monate',  members: sum.activeMembers + (prog.naechstesJahr || 0),        delta: prog.naechstesJahr || 0 },
+          ];
+
+          const wachstumsrate = memberAnalytics?.wachstumPrognose?.wachstumsrate ?? 0;
+          const ratePositive = wachstumsrate > 0;
+
+          const recIcon = (typ) => typ === 'success' ? '✓' : typ === 'warning' ? '!' : 'i';
+
+          return (
+            <div className="fc-wrapper">
+
+              {/* ── Prognose-Timeline ── */}
+              <div className="fc-timeline">
+                {stages.map((s, i) => (
+                  <div className={`fc-stage${i === 0 ? ' fc-stage--current' : ''}`} key={i}>
+                    <div className="fc-stage-period">{s.period}</div>
+                    <div className="fc-stage-members">{formatNumber(s.members)}</div>
+                    {s.delta > 0 && (
+                      <div className="fc-stage-delta">{formatNumber(s.delta)} Mitgl.</div>
+                    )}
+                    <div className="fc-stage-revenue">
+                      <strong>{formatCurrency(Math.round(s.members * revenuePerMember))}</strong>
+                      <span> / Monat</span>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
+
+              {/* ── Wachstumsrate + Vorjahresvergleich ── */}
+              <div className="fc-columns">
+
+                {/* Wachstumsrate */}
+                <div className="fc-card">
+                  <div className="fc-card-header">
+                    <span className="fc-card-title">Wachstumstrend</span>
+                    <span className={`fc-card-badge ${ratePositive ? 'fc-card-badge--green' : wachstumsrate < 0 ? 'fc-card-badge--red' : 'fc-card-badge--yellow'}`}>
+                      {ratePositive ? '+' : ''}{wachstumsrate}% / Periode
+                    </span>
+                  </div>
+                  <div className="fc-rate-display">
+                    <div className={`fc-rate-big ${ratePositive ? 'fc-rate-big--positive' : wachstumsrate < 0 ? 'fc-rate-big--negative' : 'fc-rate-big--neutral'}`}>
+                      {ratePositive ? '+' : ''}{wachstumsrate}%
+                    </div>
+                    <div className="fc-rate-info">
+                      <div className="fc-rate-label">
+                        Durchschnittliche Wachstumsrate basierend auf den letzten Zugängen
+                      </div>
+                      {prog.basis && <div className="fc-basis">{prog.basis}</div>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vorjahresvergleich */}
+                <div className="fc-card">
+                  <div className="fc-card-header">
+                    <span className="fc-card-title">Vorjahresvergleich</span>
+                    {vj.prozent !== undefined && (
+                      <span className={`fc-card-badge ${vj.prozent >= 0 ? 'fc-card-badge--green' : 'fc-card-badge--red'}`}>
+                        {vj.prozent > 0 ? '+' : ''}{vj.prozent}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="fc-compare-list">
+                    {vj.vorjahr && (
+                      <div className="fc-compare-row">
+                        <div className="fc-compare-label">Jahr {vj.vorjahr}</div>
+                        <div className="fc-compare-value">{vj.neueVorjahr} neue Mitgl.</div>
+                        <div className="fc-compare-delta" />
+                      </div>
+                    )}
+                    {vj.aktuellesJahr && (
+                      <div className="fc-compare-row">
+                        <div className="fc-compare-label">Jahr {vj.aktuellesJahr}</div>
+                        <div className="fc-compare-value">{vj.neueAktuellesJahr} neue Mitgl.</div>
+                        <div className={`fc-compare-delta ${vj.differenz >= 0 ? 'fc-compare-delta--positive' : 'fc-compare-delta--negative'}`}>
+                          {vj.differenz > 0 ? '+' : ''}{vj.differenz}
+                        </div>
+                      </div>
+                    )}
+                    {vj.aktuellesJahr && (
+                      <div className="fc-compare-row">
+                        <div className="fc-compare-label">Prognose {(vj.aktuellesJahr || 0) + 1}</div>
+                        <div className="fc-compare-value">{prog.naechstesJahr} neue Mitgl.</div>
+                        <div className="fc-compare-delta fc-compare-delta--positive">erwartet</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              {/* ── Empfehlungen ── */}
+              {recs.length > 0 && (
+                <>
+                  <div className="fc-section-label">Handlungsempfehlungen</div>
+                  <div className="fc-recs">
+                    {recs.map((r, i) => (
+                      <div key={i} className={`fc-rec fc-rec--${r.typ}`}>
+                        <div className="fc-rec-icon">{recIcon(r.typ)}</div>
+                        <div className="fc-rec-body">
+                          <strong>{r.title}</strong>
+                          <p>{r.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

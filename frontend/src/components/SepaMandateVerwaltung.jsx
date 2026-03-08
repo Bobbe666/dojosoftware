@@ -623,38 +623,30 @@ const SepaMandateVerwaltung = () => {
                   onChange={(e) => setNeuesMandatData({ ...neuesMandatData, mandatsreferenz: e.target.value })}
                   className="form-control"
                 />
-                <small style={{ color: '#888', fontSize: '0.85rem' }}>
+                <small className="form-hint">
                   Leer lassen fuer automatische Generierung (MANDAT-ID-Timestamp)
                 </small>
               </div>
 
               {/* SEPA-Mandatstext */}
-              <div style={{
-                marginTop: '1.5rem',
-                padding: '1rem',
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderRadius: '8px',
-                border: '1px solid rgba(255,255,255,0.1)',
-                fontSize: '0.85rem',
-                color: 'rgba(255,255,255,0.8)'
-              }}>
-                <strong style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <div className="sepa-mandate-text">
+                <strong className="sepa-mandate-text-header">
                   <PenTool size={16} />
                   SEPA-Lastschriftmandat
                 </strong>
-                <p style={{ marginTop: '0.5rem', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+                <p className="sepa-mandate-text-body">
                   Ich ermachtige den Zahlungsempfaenger, Zahlungen von meinem Konto
                   mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an,
                   die vom Zahlungsempfaenger auf mein Konto gezogenen Lastschriften einzuloesen.
                 </p>
-                <p style={{ marginTop: '0.5rem', marginBottom: 0, fontStyle: 'italic', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+                <p className="sepa-mandate-text-hint">
                   Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem
                   Belastungsdatum, die Erstattung des belasteten Betrages verlangen.
                 </p>
               </div>
 
               {/* Digitale Unterschrift */}
-              <div style={{ marginTop: '1.5rem' }}>
+              <div className="sepa-signature-wrapper">
                 <SignatureCanvas
                   label="Digitale Unterschrift"
                   required={true}

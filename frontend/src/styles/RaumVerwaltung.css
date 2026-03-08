@@ -11,39 +11,39 @@
   align-items: center;
   justify-content: center;
   min-height: 300px;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .raum-verwaltung .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: rgba(255, 255, 255, 0.05) !important;
+  margin-bottom: var(--ui-header-margin-b);
+  padding: var(--ui-page-padding-sm);
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   backdrop-filter: blur(10px);
 }
 
 .raum-verwaltung .header-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--ui-header-gap);
 }
 
 .raum-verwaltung .header-icon {
-  color: var(--primary, #ffd700) !important;
+  color: var(--primary) !important;
   width: 24px;
   height: 24px;
 }
 
 .raum-verwaltung .header-content h2 {
   margin: 0;
-  color: #ffd700 !important;
-  font-size: 1.5rem !important;
+  color: var(--primary) !important;
+  font-size: var(--ui-page-title) !important;
   font-weight: 600 !important;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+
   text-transform: none !important;
   font-style: normal !important;
   letter-spacing: normal !important;
@@ -51,16 +51,16 @@
 
 .raum-verwaltung .header-content p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.7) !important;
-  font-size: 0.9rem;
+  color: var(--text-2) !important;
+  font-size: var(--ui-page-subtitle);
 }
 
 /* Formular für neuen Raum */
 .raum-verwaltung .room-form-card {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 12px;
-  margin-bottom: 2rem;
+  border-radius: var(--comp-radius-xl);
+  margin-bottom: var(--ui-stats-margin-b);
   overflow: hidden;
   backdrop-filter: blur(10px);
 }
@@ -69,77 +69,77 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
+  padding: var(--ui-page-padding-sm);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.2) !important;
 }
 
 .raum-verwaltung .form-header h3 {
   margin: 0;
-  color: #ffd700 !important;
-  font-size: 1.1rem;
+  color: var(--primary) !important;
+  font-size: var(--ui-section-title);
   font-weight: 600;
 }
 
 .raum-verwaltung .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: var(--ui-form-gap);
+  padding: var(--ui-page-padding-sm);
 }
 
 .raum-verwaltung .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--ui-form-group-gap);
 }
 
 .raum-verwaltung .form-group label {
-  font-size: 0.9rem;
+  font-size: var(--ui-form-label);
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--text-2);
 }
 
 .raum-verwaltung .form-input {
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.05) !important;
+  padding: var(--ui-btn-pad-y);
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #ffffff !important;
+  border-radius: var(--comp-radius-md);
+  font-size: var(--ui-form-input);
+  color: var(--text-1) !important;
   transition: all 0.2s;
 }
 
 .raum-verwaltung .form-input:focus {
   outline: none;
-  border-color: #ffd700 !important;
+  border-color: var(--primary) !important;
   background: rgba(255, 255, 255, 0.08) !important;
   box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
 }
 
 .raum-verwaltung .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.4) !important;
+  color: var(--text-4) !important;
 }
 
 .raum-verwaltung .color-input-group {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--ui-header-gap);
 }
 
 .raum-verwaltung .color-input {
   width: 40px;
   height: 40px;
   border: 1px solid rgba(255, 215, 0, 0.3) !important;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   background: transparent !important;
 }
 
 .raum-verwaltung .color-value {
   font-family: monospace;
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: var(--ui-card-body);
+  color: var(--text-2) !important;
 }
 
 .raum-verwaltung .checkbox-label {
@@ -148,26 +148,26 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--text-2) !important;
 }
 
 .raum-verwaltung .checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 .raum-verwaltung .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .raum-verwaltung .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: var(--ui-form-gap);
+  padding: var(--ui-page-padding-sm);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.2) !important;
 }
@@ -181,9 +181,9 @@
 }
 
 .raum-verwaltung .room-card {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   transition: all 0.2s;
   overflow: hidden;
   backdrop-filter: blur(10px);
@@ -200,14 +200,14 @@
 }
 
 .raum-verwaltung .room-card.editing {
-  border: 2px solid #ffd700 !important;
+  border: 2px solid var(--primary) !important;
 }
 
 .raum-verwaltung .room-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
+  gap: var(--ui-stat-card-gap);
+  padding: var(--ui-page-padding-sm);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   background: transparent !important;
 }
@@ -216,6 +216,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
+  background-color: var(--room-color, #4F46E5);
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
@@ -223,20 +224,20 @@
 .raum-verwaltung .room-name {
   flex-grow: 1;
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--ui-card-title);
   font-weight: 600;
-  color: #ffffff !important;
+  color: var(--text-1) !important;
 }
 
 .raum-verwaltung .room-name-input {
   flex-grow: 1;
   padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.3) !important;
-  border-radius: 6px;
-  font-size: 1.1rem;
+  border-radius: var(--comp-radius-sm);
+  font-size: var(--ui-card-title);
   font-weight: 600;
-  color: #ffffff !important;
+  color: var(--text-1) !important;
 }
 
 .raum-verwaltung .room-actions {
@@ -245,21 +246,21 @@
 }
 
 .raum-verwaltung .room-details {
-  padding: 1.5rem;
+  padding: var(--ui-page-padding-sm);
   background: transparent !important;
 }
 
 .raum-verwaltung .room-description {
   margin: 0 0 1rem 0;
-  color: rgba(255, 255, 255, 0.7) !important;
-  font-size: 0.9rem;
+  color: var(--text-2) !important;
+  font-size: var(--ui-card-body);
   line-height: 1.5;
 }
 
 .raum-verwaltung .room-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
   margin-bottom: 1rem;
 }
 
@@ -267,32 +268,32 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7) !important;
-  font-size: 0.9rem;
+  color: var(--text-2) !important;
+  font-size: var(--ui-card-body);
 }
 
 .raum-verwaltung .room-info-item svg {
   width: 14px;
   height: 14px;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
 }
 
 .raum-verwaltung .room-status {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  border-radius: var(--comp-radius-pill);
+  font-size: var(--ui-badge-size);
   font-weight: 500;
 }
 
 .raum-verwaltung .room-status.inactive {
-  background: rgba(239, 68, 68, 0.2) !important;
-  color: #ef4444 !important;
-  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  background: var(--status-error-bg) !important;
+  color: var(--status-error) !important;
+  border: 1px solid var(--status-error-border) !important;
 }
 
 .raum-verwaltung .room-edit-form {
-  padding: 1.5rem;
+  padding: var(--ui-page-padding-sm);
   background: rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -305,9 +306,9 @@
   justify-content: center;
   padding: 3rem;
   text-align: center;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   backdrop-filter: blur(10px);
 }
 
@@ -318,28 +319,28 @@
 
 .raum-verwaltung .empty-state h3 {
   margin: 0 0 0.5rem 0;
-  color: #ffffff;
-  font-size: 1.2rem;
+  color: var(--text-1);
+  font-size: var(--ui-section-title);
   font-weight: 600;
 }
 
 .raum-verwaltung .empty-state p {
   margin: 0 0 2rem 0;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.9rem;
+  color: var(--text-3);
+  font-size: var(--ui-card-body);
 }
 
 /* Buttons */
 .raum-verwaltung .btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
-  color: var(--bg-secondary, #1a1a2e);
+  gap: var(--ui-btn-gap);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  background: var(--gradient-gold);
+  color: #000;
   border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--comp-radius-md);
+  font-size: var(--ui-btn-font);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -358,13 +359,13 @@
 .raum-verwaltung .btn-secondary {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  gap: var(--ui-btn-gap);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  background: var(--surface-3);
+  color: var(--text-1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  font-size: 0.9rem;
+  border-radius: var(--comp-radius-md);
+  font-size: var(--ui-btn-font);
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
@@ -382,35 +383,35 @@
   width: 32px;
   height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  border-radius: var(--comp-radius-sm);
+  background: var(--surface-2) !important;
+  color: var(--text-2) !important;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .raum-verwaltung .btn-icon:hover {
-  background: rgba(255, 255, 255, 0.1) !important;
+  background: var(--surface-3) !important;
   border-color: rgba(255, 215, 0, 0.3) !important;
-  color: #ffffff !important;
+  color: var(--text-1) !important;
 }
 
 .raum-verwaltung .btn-icon.success {
-  border-color: #10B981 !important;
-  color: #10B981 !important;
+  border-color: var(--status-success) !important;
+  color: var(--status-success) !important;
 }
 
 .raum-verwaltung .btn-icon.success:hover {
-  background: rgba(16, 185, 129, 0.2) !important;
+  background: var(--status-success-bg) !important;
 }
 
 .raum-verwaltung .btn-icon.danger {
-  border-color: #EF4444 !important;
-  color: #EF4444 !important;
+  border-color: var(--status-error) !important;
+  color: var(--status-error) !important;
 }
 
 .raum-verwaltung .btn-icon.danger:hover {
-  background: rgba(239, 68, 68, 0.2) !important;
+  background: var(--status-error-bg) !important;
 }
 
 /* Loading Spinner */
@@ -418,7 +419,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid rgba(255, 255, 255, 0.1) !important;
-  border-top: 3px solid #ffd700 !important;
+  border-top: 3px solid var(--primary) !important;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -438,7 +439,7 @@
 .dojo-edit-page .raum-verwaltung .section-header,
 [data-theme] .raum-verwaltung .section-header,
 .form-section .raum-verwaltung .section-header {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
 }
 
@@ -447,10 +448,10 @@
 [data-theme] .raum-verwaltung .section-header h2,
 [data-theme] .raum-verwaltung .header-content h2,
 .form-section .raum-verwaltung .header-content h2 {
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   text-transform: none !important;
-  font-size: 1.5rem !important;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: var(--ui-page-title) !important;
+
   font-style: normal !important;
   letter-spacing: normal !important;
 }
@@ -458,13 +459,13 @@
 .dojo-edit-page .raum-verwaltung .header-content p,
 [data-theme] .raum-verwaltung .header-content p,
 .form-section .raum-verwaltung .header-content p {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--text-2) !important;
 }
 
 .dojo-edit-page .raum-verwaltung .room-card,
 [data-theme] .raum-verwaltung .room-card,
 .form-section .raum-verwaltung .room-card {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
 }
 
@@ -473,7 +474,7 @@
 [data-theme] .raum-verwaltung .room-name,
 [data-theme] .raum-verwaltung .room-card h3,
 .form-section .raum-verwaltung .room-name {
-  color: #ffffff !important;
+  color: var(--text-1) !important;
 }
 
 .dojo-edit-page .raum-verwaltung .room-header,
@@ -488,30 +489,30 @@
 .dojo-edit-page .raum-verwaltung .btn-icon,
 [data-theme] .raum-verwaltung .btn-icon,
 .form-section .raum-verwaltung .btn-icon {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: var(--text-2) !important;
 }
 
 .dojo-edit-page .raum-verwaltung .btn-icon.danger,
 [data-theme] .raum-verwaltung .btn-icon.danger,
 .form-section .raum-verwaltung .btn-icon.danger {
-  border-color: #EF4444 !important;
-  color: #EF4444 !important;
+  border-color: var(--status-error) !important;
+  color: var(--status-error) !important;
 }
 
 /* TDA-VIB Theme Override - Force Dark */
 [data-theme="tda-vib"] .raum-verwaltung .section-header,
 [data-theme="tda-vib"] .raum-verwaltung .room-card,
 [data-theme="tda-vib"] .raum-verwaltung .room-form-card {
-  background: rgba(255, 255, 255, 0.05) !important;
+  background: var(--surface-2) !important;
   border-color: rgba(255, 215, 0, 0.2) !important;
 }
 
 [data-theme="tda-vib"] .raum-verwaltung .header-content h2,
 [data-theme="tda-vib"] .raum-verwaltung .form-header h3 {
-  color: #ffd700 !important;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: var(--primary) !important;
+
   font-style: normal !important;
   letter-spacing: normal !important;
   text-transform: none !important;
@@ -519,12 +520,12 @@
 
 [data-theme="tda-vib"] .raum-verwaltung .room-name,
 [data-theme="tda-vib"] .raum-verwaltung .form-group label {
-  color: #ffffff !important;
+  color: var(--text-1) !important;
 }
 
 [data-theme="tda-vib"] .raum-verwaltung .header-content p,
 [data-theme="tda-vib"] .raum-verwaltung .room-description {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: var(--text-2) !important;
 }
 
 /* CRITICAL: Override global typography for all headings in RaumVerwaltung */
@@ -535,7 +536,7 @@
 .raum-verwaltung .empty-state h3,
 div.raum-verwaltung h2,
 div.raum-verwaltung h3 {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+
   font-style: normal !important;
   letter-spacing: normal !important;
   text-transform: none !important;
@@ -545,7 +546,7 @@ div.raum-verwaltung h3 {
 @media (max-width: 768px) {
   .raum-verwaltung .section-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: var(--ui-form-gap);
     align-items: stretch;
   }
 
@@ -564,4 +565,70 @@ div.raum-verwaltung h3 {
   .raum-verwaltung .form-actions {
     flex-direction: column;
   }
+}
+
+/* -------------------------------------------------------
+   rv2- classes: edit-form inline style replacements
+   ------------------------------------------------------- */
+
+/* Edit-form label (Beschreibung, Größe, Kapazität, Farbe) */
+.raum-verwaltung .rv2-edit-label {
+  font-size: var(--ui-form-label);
+  font-weight: 500;
+  color: var(--text-2);
+  text-transform: none;
+}
+
+/* Edit-form text/number input */
+.raum-verwaltung .rv2-edit-input {
+  padding: var(--ui-btn-pad-y);
+  background: var(--surface-2) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: var(--comp-radius-md);
+  font-size: var(--ui-form-input);
+  color: var(--text-1) !important;
+}
+
+/* form-group with bottom margin (Beschreibung row) */
+.raum-verwaltung .rv2-form-group-mb {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* form-group aligned to bottom (Aktiv checkbox row) */
+.raum-verwaltung .rv2-form-group-end {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Color picker input in edit form */
+.raum-verwaltung .rv2-color-picker {
+  width: 50px;
+  height: 40px;
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border-radius: var(--comp-radius-md);
+  cursor: pointer;
+  background: transparent !important;
+}
+
+/* Checkbox label in edit form */
+.raum-verwaltung .rv2-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: var(--ui-form-label);
+  text-transform: none;
+}
+
+/* Checkbox in edit form */
+.raum-verwaltung .rv2-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
 }

@@ -6,14 +6,14 @@
 .rechnung-erstellen-container {
   min-height: auto;
   background: transparent !important;
-  padding: 1rem !important;
+  padding: var(--ui-page-padding-sm) !important;
 }
 
 /* Editor Grid */
 .rechnung-editor {
   display: grid;
   grid-template-columns: 400px 1fr;
-  gap: 2rem;
+  gap: var(--ui-section-gap);
   max-width: 1600px;
   margin: 0 auto;
 }
@@ -23,7 +23,7 @@
   background: rgba(26, 26, 46, 0.8) !important;
   backdrop-filter: blur(10px) !important;
   border: 1px solid rgba(201, 162, 39, 0.3) !important;
-  border-radius: 12px !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 1rem 1.25rem !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
   height: fit-content !important;
@@ -34,7 +34,7 @@
 .rechnung-erstellen-container .rechnung-form h2 {
   margin: 0 0 0.75rem 0 !important;
   color: #ffd700 !important;
-  font-size: 1.1rem !important;
+  font-size: var(--ui-section-title) !important;
   text-shadow: none !important;
 }
 
@@ -54,7 +54,7 @@
 .rechnung-erstellen-container .form-section h3 {
   margin: 0 0 0.5rem 0 !important;
   color: #ffd700 !important;
-  font-size: 0.8rem !important;
+  font-size: var(--ui-card-label) !important;
   font-weight: 600 !important;
 }
 
@@ -64,8 +64,8 @@
   width: 100% !important;
   padding: 0.4rem 0.5rem !important;
   border: 1px solid rgba(255, 215, 0, 0.25) !important;
-  border-radius: 6px !important;
-  font-size: 0.8rem !important;
+  border-radius: var(--comp-radius-sm) !important;
+  font-size: var(--ui-card-label) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   background: rgba(0, 0, 0, 0.3) !important;
 }
@@ -119,7 +119,7 @@
   background: linear-gradient(135deg, #10b981, #059669) !important;
   color: white !important;
   border: none !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -138,7 +138,7 @@
   background: linear-gradient(135deg, #ffd700, #f59e0b) !important;
   color: #1a1a2e !important;
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: var(--comp-radius-md) !important;
   font-size: 0.95rem !important;
   font-weight: 600 !important;
   cursor: pointer !important;
@@ -172,7 +172,7 @@
 .rechnung-erstellen-container .position-item {
   background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 215, 0, 0.15) !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   padding: 0.5rem 0.75rem !important;
   margin-bottom: 0.35rem !important;
 }
@@ -193,7 +193,7 @@
 /* Preview - keep white/light for paper effect */
 .rechnung-erstellen-container .rechnung-preview {
   background: #ffffff !important;
-  border-radius: 8px !important;
+  border-radius: var(--comp-radius-md) !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
   padding: 0 !important;
   overflow: hidden !important;
@@ -241,8 +241,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: var(--ui-header-margin-b);
+  padding-bottom: var(--ui-header-padding-b);
   border-bottom: 1px solid rgba(201, 162, 39, 0.3);
 }
 
@@ -269,7 +269,7 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   margin-bottom: 1rem;
 }
 
@@ -302,9 +302,9 @@
 .verband-rechnung-erstellen .form-section {
   background: rgba(26, 26, 46, 0.6);
   border: 1px solid rgba(201, 162, 39, 0.2);
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1.25rem;
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-header-padding-b);
+  margin-bottom: var(--ui-header-padding-b);
 }
 
 .verband-rechnung-erstellen .form-section h3 {
@@ -333,7 +333,7 @@
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: #aaa;
   font-size: 0.85rem;
   cursor: pointer;
@@ -358,7 +358,7 @@
   gap: 0.75rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 0.5rem 0.75rem;
   margin-bottom: 1rem;
 }
@@ -383,7 +383,7 @@
   justify-content: space-between;
   background: rgba(201, 162, 39, 0.1);
   border: 1px solid rgba(201, 162, 39, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 1rem;
 }
 
@@ -436,7 +436,7 @@
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -453,7 +453,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(201, 162, 39, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: #c9a227;
 }
 
@@ -487,17 +487,17 @@
 .verband-rechnung-erstellen .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .verband-rechnung-erstellen .form-row {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: var(--ui-form-group-gap);
 }
 
 .verband-rechnung-erstellen .form-row label {
-  font-size: 0.8rem;
+  font-size: var(--ui-form-label);
   color: #888;
   font-weight: 500;
 }
@@ -507,10 +507,10 @@
 .verband-rechnung-erstellen textarea {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 0.6rem 0.75rem;
+  border-radius: var(--comp-radius-sm);
+  padding: var(--ui-btn-pad-y) 0.75rem;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: var(--ui-form-input);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -569,7 +569,7 @@
   height: 32px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #888;
   cursor: pointer;
   transition: all 0.2s;
@@ -601,7 +601,7 @@
   width: 280px;
   padding: 1rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
 }
 
 .verband-rechnung-erstellen .summe-row {
@@ -627,7 +627,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -672,8 +672,8 @@
 .verband-rechnung-erstellen .rechnungen-liste {
   background: rgba(26, 26, 46, 0.6);
   border: 1px solid rgba(201, 162, 39, 0.2);
-  border-radius: 12px;
-  padding: 1.25rem;
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-header-padding-b);
 }
 
 .verband-rechnung-erstellen .rechnungen-liste h3 {
@@ -722,7 +722,7 @@
 .modal-content {
   background: #1a1a2e;
   border: 1px solid rgba(201, 162, 39, 0.3);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   max-width: 90vw;
   max-height: 90vh;
   overflow: hidden;
@@ -739,7 +739,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
+  padding: var(--ui-page-padding-sm) var(--ui-header-padding-b);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -775,7 +775,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  padding: 1rem 1.25rem;
+  padding: var(--ui-page-padding-sm) var(--ui-header-padding-b);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -795,7 +795,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: var(--ui-form-gap);
 }
 
 .rechnung-preview-column {
@@ -811,7 +811,7 @@
 .form-card {
   background: rgba(26, 26, 46, 0.6);
   border: 1px solid rgba(201, 162, 39, 0.2);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   overflow: hidden;
 }
 
@@ -839,7 +839,7 @@
 }
 
 .form-card-body {
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
 }
 
 /* Compact Empfänger Tabs */
@@ -858,7 +858,7 @@
   padding: 0.5rem 0.5rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #888;
   font-size: 0.75rem;
   cursor: pointer;
@@ -888,7 +888,7 @@
   gap: 0.5rem;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.4rem 0.6rem;
   margin-bottom: 0.6rem;
 }
@@ -915,7 +915,7 @@
   justify-content: space-between;
   background: rgba(201, 162, 39, 0.1);
   border: 1px solid rgba(201, 162, 39, 0.3);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.6rem 0.8rem;
 }
 
@@ -963,7 +963,7 @@
   padding: 0.5rem 0.6rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -980,7 +980,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(201, 162, 39, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   color: #c9a227;
 }
 
@@ -1125,7 +1125,7 @@
   width: 200px;
   padding: 0.75rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
 }
 
 .compact-summen .summe-row {
@@ -1165,7 +1165,7 @@
 .preview-card {
   background: rgba(26, 26, 46, 0.6);
   border: 1px solid rgba(201, 162, 39, 0.2);
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1207,7 +1207,7 @@
   padding: 0.2rem 0.5rem;
   background: rgba(34, 197, 94, 0.2);
   color: #22c55e;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-weight: 500;
 }
 
@@ -1220,14 +1220,14 @@
 .preview-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
   background: #f8f8f8;
 }
 
 /* Preview Document (looks like paper) */
 .preview-document {
   background: #fff;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
   min-height: 500px;
@@ -1269,7 +1269,7 @@
   margin-bottom: 1.5rem;
   padding: 0.75rem;
   background: #f5f5f5;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
 }
 
 .preview-recipient-label {
@@ -1413,7 +1413,7 @@
 
 /* Preview Actions (button container) */
 .preview-actions {
-  padding: 1rem;
+  padding: var(--ui-page-padding-sm);
   border-top: 1px solid rgba(201, 162, 39, 0.15);
   background: rgba(26, 26, 46, 0.8);
 }
@@ -1520,7 +1520,7 @@
   align-items: center;
   padding: 0.5rem;
   background: rgba(0, 0, 0, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
 }
 
 .pos-input {
@@ -1539,7 +1539,7 @@
 .pos-input select {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   padding: 0.4rem 0.5rem;
   color: #fff;
   font-size: 0.8rem;
@@ -1561,7 +1561,7 @@
 .btn-remove {
   background: transparent;
   border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   color: #888;
   cursor: pointer;
   padding: 0.35rem;
@@ -1687,7 +1687,7 @@
   padding: 0.2rem 0.5rem;
   background: rgba(201, 162, 39, 0.2);
   color: #c9a227;
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   font-size: 0.7rem;
   font-weight: 500;
   margin-left: 0.5rem;
@@ -1759,7 +1759,7 @@ input.readonly {
   margin-left: auto;
   background: rgba(201, 162, 39, 0.2);
   border: 1px solid rgba(201, 162, 39, 0.4);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   color: #c9a227;
   cursor: pointer;
   padding: 0.3rem;
@@ -1951,4 +1951,618 @@ input.readonly {
   .compact-empfaenger-tabs button {
     flex: 1 1 calc(50% - 0.175rem);
   }
+}
+
+/* vre- utility classes (auto-generated from inline style extraction) */
+.vre-th-center-primary {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.vre-th-center-primary-center {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.vre-td-center-w90 {
+  text-align: center;
+  flex: 0 0 auto;
+  width: 90px;
+}
+
+.vre-logo-wrapper {
+  padding: 0.3rem;
+  background: #fff;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.vre-label-small {
+  margin-top: 0;
+  font-size: 0.7rem;
+  color: #000;
+}
+
+.vre-label-small-bold {
+  margin-top: 0;
+  font-size: 0.75rem;
+  color: #000;
+  font-weight: 600;
+}
+
+.vre-section-title {
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #000;
+  text-transform: uppercase;
+}
+
+.vre-text-muted-xs {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+}
+
+/* ── New vre- classes from inline style migration (2026-03-07) ── */
+
+/* Loading state */
+.vre-loading-center {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-primary);
+}
+
+.vre-spinner-icon {
+  animation: spin 1s linear infinite;
+}
+
+/* View mode toggle bar */
+.vre-view-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(26, 26, 46, 0.95);
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  margin-bottom: 1rem;
+}
+
+/* Toggle button (erstellen / ansehen) */
+.vre-toggle-btn {
+  padding: 0.6rem 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  color: #ffd700;
+  cursor: pointer;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.vre-toggle-btn--active {
+  background: linear-gradient(135deg, #c9a227, #a68519);
+  border: none;
+  color: #000;
+  font-weight: 600;
+}
+
+/* Status badge in Rechnungen list */
+.vre-status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--status-bg, rgba(255, 215, 0, 0.1));
+  border: 1px solid var(--status-border, rgba(255, 215, 0, 0.3));
+  border-radius: 12px;
+  color: var(--status-text, #ffd700);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+/* Empfaenger type tab buttons */
+.vre-tab-btn {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: #aaa;
+  cursor: pointer;
+}
+.vre-tab-btn--active {
+  background: rgba(255, 215, 0, 0.2);
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+/* Rechnungen list view */
+.vre-list-wrapper {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.vre-list-card {
+  background: rgba(26, 26, 46, 0.95);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  overflow: hidden;
+}
+
+.vre-list-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vre-list-title {
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vre-list-count {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.vre-table-empty {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.vre-table-scroll {
+  overflow-x: auto;
+}
+
+.vre-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.vre-thead-row {
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.vre-th-right-primary {
+  padding: 0.75rem 1rem;
+  text-align: right;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.vre-tbody-row {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vre-td-mono {
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.vre-td-secondary {
+  padding: 0.75rem 1rem;
+  color: var(--text-secondary);
+}
+
+.vre-td-primary-bold {
+  padding: 0.75rem 1rem;
+  text-align: right;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.vre-td-center {
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.vre-td-actions {
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.vre-actions-flex {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+/* Action buttons */
+.vre-btn-view {
+  padding: 0.4rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vre-btn-download {
+  padding: 0.4rem;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 6px;
+  color: var(--color-midnight-500, #818cf8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vre-btn-bezahlt {
+  padding: 0.4rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 6px;
+  color: var(--success);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vre-btn-euer {
+  padding: 0.4rem;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 6px;
+  color: #a855f7;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Error banners */
+.vre-error-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--error);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.vre-error-banner-sm {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--error);
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Empfaenger type tabs */
+.vre-empfaenger-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Manuell form column */
+.vre-manuell-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.vre-textarea-noresize {
+  resize: none;
+}
+
+/* Quantity input in position list */
+.vre-qty-input {
+  width: 60px;
+}
+
+/* Positions scrollable list */
+.vre-positions-list {
+  margin-top: 0.75rem;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.vre-position-item-inner {
+  padding: 0.35rem 0.5rem;
+  margin-bottom: 0.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.vre-pos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.2rem;
+}
+
+.vre-pos-name {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.vre-btn-remove-pos {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 3px;
+  color: var(--error);
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 0;
+  line-height: 1;
+}
+
+.vre-pos-details {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vre-pos-menge-input {
+  width: 32px;
+  padding: 1px 2px;
+  font-size: 0.65rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.vre-pos-preis {
+  color: var(--text-secondary);
+  font-size: 0.65rem;
+}
+
+.vre-pos-separator {
+  color: #444;
+}
+
+.vre-pos-rabatt-input {
+  width: 32px;
+  padding: 1px 2px;
+  font-size: 0.65rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 2px;
+  color: var(--primary);
+  text-align: center;
+}
+
+.vre-pos-sum {
+  margin-left: auto;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Rabatt info button area */
+.vre-rabatt-field {
+  position: relative;
+}
+
+.vre-rabatt-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.vre-btn-info {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 50%;
+  color: var(--primary);
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 0;
+}
+
+/* Skonto readonly input */
+.vre-input-readonly {
+  background-color: rgba(255, 255, 255, 0.03);
+  cursor: not-allowed;
+}
+
+/* Rabatt Hinweis modal */
+.vre-hint-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  padding: 1rem;
+  background: rgba(255, 215, 0, 0.98);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  color: #000;
+  font-size: 0.85rem;
+  max-width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.vre-hint-modal-btn {
+  margin-top: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  background: #000;
+  color: var(--primary);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.vre-hint-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+}
+
+/* Invoice logo */
+.vre-invoice-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-left: auto;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Payment terms + QR section wrapper */
+.vre-payment-qr-row {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+  align-items: flex-start;
+}
+
+.vre-payment-terms-col {
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Rechnung footer (merged with existing .rechnung-footer class) */
+.vre-footer-row-mb {
+  margin-bottom: 0.3rem;
+}
+
+/* Vorschau Modal */
+.vre-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.vre-modal-content {
+  background: #1a1a2e;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: 12px;
+  width: 900px;
+  height: 85vh;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.vre-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vre-modal-title {
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.vre-modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.vre-modal-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.vre-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.vre-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vre-btn-modal-close {
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  color: #c9a227;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.vre-btn-modal-download {
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, #c9a227, #a68519);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Rechnung footer positioning (was previously inline) */
+.rechnung-footer {
+  position: absolute;
+  bottom: 0;
+  left: 20mm;
+  right: 20mm;
+  padding-top: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.2);
+  font-size: 7pt;
+  color: #000;
+  line-height: 1.6;
+  text-align: center;
 }

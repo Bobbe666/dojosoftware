@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import SignaturePad from 'react-signature-canvas';
 import { Trash2, Check, PenTool } from 'lucide-react';
+import '../styles/SignatureCanvas.css';
 
 /**
  * SignatureCanvas - Digitale Unterschrift Komponente
@@ -87,28 +88,16 @@ const SignatureCanvas = forwardRef(({
   };
 
   return (
-    <div className="signature-canvas-container" style={{ marginBottom: '1rem' }}>
-      <label style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        marginBottom: '0.5rem',
-        fontWeight: '600',
-        color: '#e5e5e5',
-        fontSize: '0.9rem'
-      }}>
+    <div className="signature-canvas-container sc-container">
+      <label className="sc-label">
         <PenTool size={16} />
-        {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
+        {label} {required && <span className="u-text-error">*</span>}
       </label>
 
-      <div style={{
-        border: `2px ${hasSignature ? 'solid #10b981' : 'dashed rgba(255,255,255,0.3)'}`,
-        borderRadius: '8px',
-        backgroundColor: disabled ? 'rgba(255,255,255,0.05)' : backgroundColor,
-        position: 'relative',
-        overflow: 'hidden',
-        transition: 'border-color 0.3s ease'
-      }}>
+      <div
+        className={`sc-pad-wrapper${hasSignature ? ' sc-pad-wrapper--signed' : ''}${disabled ? ' sc-pad-wrapper--disabled' : ''}`}
+        style={{ '--sc-bg': backgroundColor }}
+      >
         <SignaturePad
           ref={sigPad}
           canvasProps={{
@@ -130,19 +119,10 @@ const SignatureCanvas = forwardRef(({
 
         {/* Platzhalter-Text wenn leer */}
         {isEmpty && !disabled && (
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            color: '#9ca3af',
-            pointerEvents: 'none',
-            textAlign: 'center',
-            fontSize: '0.9rem'
-          }}>
-            <PenTool size={24} style={{ marginBottom: '0.5rem', opacity: 0.5 }} />
+          <div className="sc-placeholder">
+            <PenTool size={24} className="sc-placeholder-icon" />
             <div>Hier unterschreiben...</div>
-            <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+            <div className="sc-placeholder-sub">
               (Mit Maus oder Touch zeichnen)
             </div>
           </div>
@@ -150,48 +130,19 @@ const SignatureCanvas = forwardRef(({
 
         {/* Bestaetigungs-Icon wenn unterschrieben */}
         {hasSignature && (
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            backgroundColor: '#10b981',
-            borderRadius: '50%',
-            padding: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-          }}>
+          <div className="sc-confirm-badge">
             <Check size={16} color="white" />
           </div>
         )}
       </div>
 
       {/* Buttons */}
-      <div style={{
-        display: 'flex',
-        gap: '0.5rem',
-        marginTop: '0.5rem',
-        justifyContent: 'flex-end'
-      }}>
+      <div className="sc-buttons">
         <button
           type="button"
           onClick={handleClear}
           disabled={disabled || isEmpty}
-          style={{
-            padding: '0.5rem 1rem',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '6px',
-            backgroundColor: disabled || isEmpty ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-            color: disabled || isEmpty ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.8)',
-            cursor: disabled || isEmpty ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            fontSize: '0.875rem',
-            fontWeight: '500',
-            transition: 'all 0.2s ease'
-          }}
+          className="sc-clear-btn"
         >
           <Trash2 size={16} />
           Loeschen
@@ -199,13 +150,7 @@ const SignatureCanvas = forwardRef(({
       </div>
 
       {/* Hinweistext */}
-      <p style={{
-        fontSize: '0.75rem',
-        color: 'rgba(255,255,255,0.5)',
-        marginTop: '0.5rem',
-        marginBottom: 0,
-        lineHeight: 1.4
-      }}>
+      <p className="sc-hint">
         Mit Ihrer Unterschrift bestaetigen Sie die Erteilung des SEPA-Lastschriftmandats.
         Die Unterschrift wird digital gespeichert und ist rechtlich bindend.
       </p>

@@ -32,11 +32,16 @@ import {
   Users,
   Receipt,
   CheckCircle2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Upload,
+  CalendarDays,
+  AlertTriangle,
+  ChevronRight,
+  RotateCcw,
+  Building2
 } from "lucide-react";
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE: Dojo-Filter
-import { Building2 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
@@ -58,11 +63,14 @@ const Finanzcockpit = () => {
   const [stats, setStats] = useState(null);
   const [timelineData, setTimelineData] = useState([]);
   const [tarifData, setTarifData] = useState([]);
+  const [alerts, setAlerts] = useState({ ruecklastschriften: 0 });
+  const [aktiverChartTab, setAktiverChartTab] = useState('zahlungsarten');
 
   useEffect(() => {
     loadFinanzStats();
     loadTimelineData();
     loadTarifData();
+    loadAlerts();
   }, [updateTrigger, selectedPeriod, activeDojo, filter]); // 🔒 TAX COMPLIANCE: Neu laden wenn Dojo-Filter ändert
 
   // Sync selectedDojoId mit aktivem Dojo
@@ -204,6 +212,22 @@ const Finanzcockpit = () => {
     }
   };
 
+  const loadAlerts = async () => {
+    try {
+      const dojoFilterParam = getDojoFilterParam();
+      const rlRes = await fetchWithAuth(
+        `${config.apiBaseUrl}/ruecklastschriften${dojoFilterParam ? '?' + dojoFilterParam : ''}`
+      );
+      if (rlRes.ok) {
+        const rlData = await rlRes.json();
+        const offen = (rlData.ruecklastschriften || []).filter(r => r.status === 'offen' || r.status === 'neu').length;
+        setAlerts(prev => ({ ...prev, ruecklastschriften: offen }));
+      }
+    } catch (_) {
+      // Alerts sind optional — Fehler still ignorieren
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('de-DE', {
       style: 'currency',
@@ -256,48 +280,25 @@ const Finanzcockpit = () => {
   const CustomIncomeTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div style={{
-          backgroundColor: 'var(--bg-modal)',
-          border: '1px solid var(--border-primary)',
-          borderRadius: '12px',
-          color: 'var(--text-primary)',
-          padding: '12px',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)'
-        }}>
-          <p style={{ margin: '0 0 8px 0', fontWeight: '600', fontSize: '0.9rem' }}>
+        <div className="fc__tooltip">
+          <p className="fc__tooltip-title">
             {label}: {formatCurrency(payload[0].value)}
           </p>
 
           {label === 'Verträge' && tarifData.length > 0 && (
-            <div style={{
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-              paddingTop: '8px',
-              marginTop: '4px'
-            }}>
-              <p style={{
-                margin: '0 0 6px 0',
-                fontSize: '0.8rem',
-                color: '#FFD700',
-                fontWeight: '600'
-              }}>
+            <div className="fc__tooltip-breakdown">
+              <p className="fc__tooltip-breakdown-heading">
                 Aufschlüsselung nach Tarifen:
               </p>
               {tarifData.map(tarif => (
                 <div
                   key={tarif.name}
-                  style={{
-                    fontSize: '0.75rem',
-                    padding: '3px 0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    gap: '12px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
-                  }}
+                  className="fc__tooltip-row"
                 >
-                  <span style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                  <span className="u-text-primary">
                     {tarif.name}
                   </span>
-                  <span style={{ color: '#10b981', fontWeight: '500' }}>
+                  <span className="fc__tooltip-row-value">
                     {formatCurrency(tarif.value)} ({tarif.count})
                   </span>
                 </div>
@@ -337,7 +338,8 @@ const Finanzcockpit = () => {
       label: 'Gesamteinnahmen',
       value: formatCurrency(stats.gesamteinnahmen),
       detail: `${stats.einnahmenTrend > 0 ? '+' : ''}${(stats.einnahmenTrend ?? 0).toFixed(1)}% vs. Vorperiode`,
-      tone: stats.einnahmenTrend >= 0 ? 'positive' : 'negative'
+      tone: stats.einnahmenTrend >= 0 ? 'positive' : 'negative',
+      route: '/dashboard/jahresuebersicht'
     },
     {
       id: 'expenses',
@@ -347,7 +349,8 @@ const Finanzcockpit = () => {
       detail: stats.ausgabenTrend !== 0
         ? `${stats.ausgabenTrend > 0 ? '+' : ''}${(stats.ausgabenTrend ?? 0).toFixed(1)}% vs. Vorperiode`
         : 'Trenddaten folgen',
-      tone: stats.gesamteAusgaben > 0 ? 'warning' : 'neutral'
+      tone: stats.gesamteAusgaben > 0 ? 'warning' : 'neutral',
+      route: '/dashboard/ausgaben'
     },
     {
       id: 'cashflow',
@@ -355,7 +358,8 @@ const Finanzcockpit = () => {
       label: 'Cashflow',
       value: formatCurrency(stats.cashflow),
       detail: `${stats.cashflowProzent > 0 ? '+' : ''}${(stats.cashflowProzent ?? 0).toFixed(1)}% Marge`,
-      tone: stats.cashflow >= 0 ? 'positive' : 'negative'
+      tone: stats.cashflow >= 0 ? 'positive' : 'negative',
+      route: '/dashboard/euer'
     },
     {
       id: 'open-invoices',
@@ -363,7 +367,8 @@ const Finanzcockpit = () => {
       label: 'Offene Rechnungen',
       value: formatNumber(stats.offeneRechnungen),
       detail: `${formatCurrency(stats.offeneRechnungenBetrag)} offen`,
-      tone: stats.offeneRechnungen > 0 ? 'warning' : 'positive'
+      tone: stats.offeneRechnungen > 0 ? 'warning' : 'positive',
+      route: '/dashboard/rechnungen'
     },
     {
       id: 'contracts',
@@ -371,7 +376,8 @@ const Finanzcockpit = () => {
       label: 'Aktive Verträge',
       value: formatNumber(stats.anzahlVertraege),
       detail: `${formatCurrency(stats.monatlicheEinnahmen)} pro Monat`,
-      tone: 'neutral'
+      tone: 'neutral',
+      route: '/dashboard/beitraege'
     },
     {
       id: 'sales',
@@ -379,7 +385,8 @@ const Finanzcockpit = () => {
       label: 'Verkäufe',
       value: formatNumber(stats.anzahlVerkaeufe),
       detail: `${formatCurrency(stats.verkaeufeEinnahmen)} Umsatz`,
-      tone: 'neutral'
+      tone: 'neutral',
+      route: '/dashboard/tresen'
     }
   ] : [];
 
@@ -479,6 +486,20 @@ const Finanzcockpit = () => {
     }
   ] : [];
 
+  const ActionCard = ({ icon: Icon, label, desc, iconColor, onClick, badge }) => (
+    <button className="fc__action-card" onClick={onClick}>
+      <span className="fc__action-card-icon" style={{ '--icon-color': iconColor || 'var(--primary)' }}>
+        <Icon size={20} />
+      </span>
+      <span className="fc__action-card-text">
+        <span className="fc__action-card-label">{label}</span>
+        {desc && <span className="fc__action-card-desc">{desc}</span>}
+      </span>
+      {badge > 0 && <span className="fc__action-badge">{badge}</span>}
+      <ChevronRight size={14} className="fc__action-card-arrow" />
+    </button>
+  );
+
   if (loading) {
     return (
       <div className="finanzcockpit">
@@ -565,13 +586,19 @@ const Finanzcockpit = () => {
       </header>
 
       <section className="finanzcockpit__kpi-grid">
-        {kpiCards.map(({ id, icon: Icon, label, value, detail, tone }) => (
-          <div key={id} className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--${tone}`}>
+        {kpiCards.map(({ id, icon: Icon, label, value, detail, tone, route }) => (
+          <div
+            key={id}
+            className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--${tone}${route ? ' finanzcockpit__kpi-card--clickable' : ''}`}
+            onClick={() => route && navigate(route)}
+            title={route ? `Zu ${label}` : undefined}
+          >
             <div className="finanzcockpit__kpi-meta">
               <div className="finanzcockpit__kpi-icon">
                 <Icon size={18} />
               </div>
               <span className="finanzcockpit__kpi-label">{label}</span>
+              {route && <ChevronRight size={13} className="finanzcockpit__kpi-arrow" />}
             </div>
             <div className="finanzcockpit__kpi-value">{value}</div>
             <span className="finanzcockpit__kpi-detail">{detail}</span>
@@ -579,131 +606,102 @@ const Finanzcockpit = () => {
         ))}
       </section>
 
-      <section className="finanzcockpit__layout">
-        <div className="finanzcockpit__main">
-          <div className="finanzcockpit-card finanzcockpit__chart-card">
+      {(alerts.ruecklastschriften > 0 || (stats.ausstehendeZahlungen || 0) > 0 || (stats.offeneRechnungen || 0) > 0) && (
+        <section className="fc__alerts">
+          {alerts.ruecklastschriften > 0 && (
+            <div className="fc__alert-card fc__alert-card--error" onClick={() => navigate('/dashboard/ruecklastschriften')}>
+              <AlertTriangle size={16} />
+              <span className="fc__alert-count">{alerts.ruecklastschriften}</span>
+              <span className="fc__alert-label">offene Rücklastschrift{alerts.ruecklastschriften !== 1 ? 'en' : ''}</span>
+              <ChevronRight size={13} className="fc__alert-arrow" />
+            </div>
+          )}
+          {(stats.ausstehendeZahlungen || 0) > 0 && (
+            <div className="fc__alert-card fc__alert-card--warning" onClick={() => navigate('/dashboard/beitraege')}>
+              <AlertCircle size={16} />
+              <span className="fc__alert-count">{stats.ausstehendeZahlungen}</span>
+              <span className="fc__alert-label">ausstehende Beitragszahlung{stats.ausstehendeZahlungen !== 1 ? 'en' : ''}</span>
+              <ChevronRight size={13} className="fc__alert-arrow" />
+            </div>
+          )}
+          {(stats.offeneRechnungen || 0) > 0 && (
+            <div className="fc__alert-card fc__alert-card--invoice" onClick={() => navigate('/dashboard/rechnungen')}>
+              <FileText size={16} />
+              <span className="fc__alert-count">{stats.offeneRechnungen}</span>
+              <span className="fc__alert-label">offene Rechnung{stats.offeneRechnungen !== 1 ? 'en' : ''}</span>
+              <ChevronRight size={13} className="fc__alert-arrow" />
+            </div>
+          )}
+        </section>
+      )}
+
+      <div className="fc__main-grid">
+        {/* Linke Spalte: Charts + Insights */}
+        <div className="fc__charts-col">
+          <div className="finanzcockpit-card">
             <div className="finanzcockpit__card-header">
               <div>
                 <span className="finanzcockpit__card-eyebrow">Performance</span>
                 <h3>Umsatz-Entwicklung</h3>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={240}>
               <LineChart data={timelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
-                <XAxis
-                  dataKey="label"
-                  stroke="rgba(255, 255, 255, 0.7)"
-                  style={{ fontSize: '0.75rem' }}
-                />
-                <YAxis
-                  stroke="rgba(255, 255, 255, 0.7)"
-                  style={{ fontSize: '0.75rem' }}
-                  tickFormatter={formatCurrencyCompact}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'var(--bg-modal)',
-                    border: '1px solid var(--border-primary)',
-                    borderRadius: '12px',
-                    color: 'var(--text-primary)'
-                  }}
-                  formatter={(value) => formatCurrency(value)}
-                />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <XAxis dataKey="label" stroke="rgba(255,255,255,0.5)" />
+                <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
                 <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="umsatz"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  name="Umsatz"
-                  dot={{ fill: '#f59e0b', r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="trend"
-                  stroke="#10b981"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
-                  name="Trend"
-                  dot={false}
-                />
+                <Line type="monotone" dataKey="umsatz" stroke="#ffd700" strokeWidth={2} name="Umsatz" dot={{ fill: '#ffd700', r: 3 }} activeDot={{ r: 5 }} />
+                <Line type="monotone" dataKey="trend" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" name="Trend" dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="finanzcockpit__dual-grid">
-            {paymentMethodData.length > 0 && (
-              <div className="finanzcockpit-card finanzcockpit__chart-card">
-                <div className="finanzcockpit__card-header">
-                  <div>
-                    <span className="finanzcockpit__card-eyebrow">Zahlungsarten</span>
-                    <h3>Verteilung der Einnahmen</h3>
-                  </div>
-                  <PieChartIcon size={18} />
-                </div>
-                <ResponsiveContainer width="100%" height={280}>
-                  <PieChart>
-                    <Pie
-                      data={paymentMethodData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
-                      dataKey="value"
-                    >
-                      {paymentMethodData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'var(--bg-modal)',
-                        border: '1px solid var(--border-primary)',
-                        borderRadius: '12px',
-                        color: 'var(--text-primary)'
-                      }}
-                      formatter={(value) => formatCurrency(value)}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
+          <div className="finanzcockpit-card">
+            <div className="finanzcockpit__card-header">
+              <div>
+                <span className="finanzcockpit__card-eyebrow">Aufschlüsselung</span>
+                <h3>{aktiverChartTab === 'zahlungsarten' ? 'Zahlungsarten' : 'Einnahmen'}</h3>
               </div>
+              <div className="fc__chart-tabs">
+                <button className={aktiverChartTab === 'zahlungsarten' ? 'is-active' : ''} onClick={() => setAktiverChartTab('zahlungsarten')}>
+                  <PieChartIcon size={13} /> Zahlungsarten
+                </button>
+                <button className={aktiverChartTab === 'einnahmen' ? 'is-active' : ''} onClick={() => setAktiverChartTab('einnahmen')}>
+                  <BarChart3 size={13} /> Aufschlüsselung
+                </button>
+              </div>
+            </div>
+            {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length > 0 && (
+              <ResponsiveContainer width="100%" height={210}>
+                <PieChart>
+                  <Pie data={paymentMethodData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={80} dataKey="value">
+                    {paymentMethodData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
+                </PieChart>
+              </ResponsiveContainer>
             )}
-
-            {incomeBreakdownData.length > 0 && (
-              <div className="finanzcockpit-card finanzcockpit__chart-card">
-                <div className="finanzcockpit__card-header">
-                  <div>
-                    <span className="finanzcockpit__card-eyebrow">Einnahmen</span>
-                    <h3>Aufschlüsselung</h3>
-                  </div>
-                  <BarChart3 size={18} />
-                </div>
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={incomeBreakdownData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.08)" />
-                    <XAxis
-                      dataKey="name"
-                      stroke="rgba(255, 255, 255, 0.7)"
-                      style={{ fontSize: '0.75rem' }}
-                    />
-                    <YAxis
-                      stroke="rgba(255, 255, 255, 0.7)"
-                      style={{ fontSize: '0.75rem' }}
-                      tickFormatter={formatCurrencyCompact}
-                    />
-                    <Tooltip content={<CustomIncomeTooltip />} />
-                    <Bar dataKey="value" fill="#f59e0b" radius={[10, 10, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+            {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length === 0 && (
+              <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
+            )}
+            {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length > 0 && (
+              <ResponsiveContainer width="100%" height={210}>
+                <BarChart data={incomeBreakdownData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" />
+                  <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
+                  <Tooltip content={<CustomIncomeTooltip />} />
+                  <Bar dataKey="value" fill="#ffd700" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+            {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length === 0 && (
+              <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
             )}
           </div>
-        </div>
 
-        <aside className="finanzcockpit__sidebar">
           <div className="finanzcockpit-card finanzcockpit__insights">
             <div className="finanzcockpit__card-header">
               <div>
@@ -714,9 +712,7 @@ const Finanzcockpit = () => {
             <ul className="finanzcockpit__insight-list">
               {insights.map(({ id, icon: Icon, title, description }) => (
                 <li key={id}>
-                  <div className="finanzcockpit__insight-icon">
-                    <Icon size={18} />
-                  </div>
+                  <div className="finanzcockpit__insight-icon"><Icon size={16} /></div>
                   <div>
                     <p className="finanzcockpit__insight-title">{title}</p>
                     <p className="finanzcockpit__insight-description">{description}</p>
@@ -725,13 +721,62 @@ const Finanzcockpit = () => {
               ))}
             </ul>
           </div>
-        </aside>
-      </section>
+        </div>
+
+        {/* Rechte Spalte: Aktionen */}
+        <div className="fc__actions-col">
+          <div className="fc__action-groups">
+            <div className="fc__action-group">
+              <h3 className="fc__action-group-title">Buchführung</h3>
+              <div className="fc__action-list">
+                <ActionCard icon={FileSpreadsheet} label="EÜR erstellen" desc="Einnahmen-Überschuss-Rechnung" iconColor="#10b981" onClick={() => navigate('/dashboard/euer')} />
+                <ActionCard icon={TrendingDown} label="Ausgaben erfassen" desc="Neue Ausgabe buchen" iconColor="#ef4444" onClick={() => navigate('/dashboard/ausgaben')} />
+                <ActionCard icon={Upload} label="Kontoauszug importieren" desc="CSV / MT940 importieren" iconColor="#f97316" onClick={() => navigate('/dashboard/kontoauszug-import')} />
+                <ActionCard icon={CalendarDays} label="Jahresübersicht" desc="Monat-für-Monat Verlauf" iconColor="#6366f1" onClick={() => navigate('/dashboard/jahresuebersicht')} />
+              </div>
+            </div>
+
+            <div className="fc__action-group">
+              <h3 className="fc__action-group-title">Zahlungsverkehr</h3>
+              <div className="fc__action-list">
+                <ActionCard icon={CreditCard} label="Lastschriftlauf" desc="SEPA-Einzüge starten" iconColor="#3b82f6" onClick={() => navigate('/dashboard/lastschriftlauf')} />
+                <ActionCard icon={AlertCircle} label="Mahnwesen" desc="Überfällige Zahlungen" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mahnwesen')} badge={stats?.ausstehendeZahlungen || 0} />
+                <ActionCard icon={RotateCcw} label="Rücklastschriften" desc="Fehlgeschlagene Abbuchungen" iconColor="#ef4444" onClick={() => navigate('/dashboard/ruecklastschriften')} badge={alerts.ruecklastschriften} />
+              </div>
+            </div>
+
+            <div className="fc__action-group">
+              <h3 className="fc__action-group-title">Rechnungen & Beiträge</h3>
+              <div className="fc__action-list">
+                <ActionCard icon={FileText} label="Rechnungen prüfen" desc="Offene Posten verwalten" iconColor="#f59e0b" onClick={() => navigate('/dashboard/rechnungen')} badge={stats?.offeneRechnungen || 0} />
+                <ActionCard icon={DollarSign} label="Beiträge verwalten" desc="Verträge und Tarife" iconColor="#10b981" onClick={() => navigate('/dashboard/beitraege')} />
+              </div>
+            </div>
+
+            <div className="fc__action-group">
+              <h3 className="fc__action-group-title">Mitglieder-Analysen</h3>
+              <div className="fc__action-list">
+                <ActionCard icon={AlertCircle} label="Ohne SEPA-Mandat" desc="Mitglieder ohne Einzugsermächtigung" iconColor="#ef4444" onClick={() => navigate('/dashboard/mitglieder-filter/ohne-sepa')} />
+                <ActionCard icon={FileText} label="Ohne Vertrag" desc="Mitglieder ohne aktiven Vertrag" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mitglieder-filter/ohne-vertrag')} />
+                <ActionCard icon={AlertTriangle} label="Tarif-Abweichungen" desc="Soll/Ist-Vergleich der Beiträge" iconColor="#8b5cf6" onClick={() => navigate('/dashboard/mitglieder-filter/tarif-abweichung')} />
+                <ActionCard icon={CreditCard} label="Nach Zahlungsweise" desc="Gruppiert nach Bar / Karte / SEPA" iconColor="#3b82f6" onClick={() => navigate('/dashboard/mitglieder-filter/zahlungsweisen')} />
+              </div>
+            </div>
+
+            <div className="fc__action-group">
+              <h3 className="fc__action-group-title">Dokumente & Export</h3>
+              <div className="fc__action-list">
+                <ActionCard icon={FileSpreadsheet} label="Dokument-Vorlagen" desc="Briefe und E-Mails verwalten" iconColor="#8B0000" onClick={() => navigate('/dashboard/vorlagen')} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <section className="finanzcockpit__details">
         <div className="finanzcockpit-card finanzcockpit__detail-card">
           <div className="finanzcockpit__detail-header">
-            <TrendingUp size={18} />
+            <TrendingUp size={16} />
             <div>
               <h3>Einnahmen-Übersicht</h3>
               <p>Regelmäßige und variable Umsätze</p>
@@ -744,8 +789,7 @@ const Finanzcockpit = () => {
                 <div key={metric.label} className="finanzcockpit__metric-row">
                   <span className="finanzcockpit__metric-label">{metric.label}</span>
                   <span className={`finanzcockpit__metric-value ${metric.tone ? `is-${metric.tone}` : ''}`}>
-                    {MetricIcon && <MetricIcon size={14} />}
-                    {metric.value}
+                    {MetricIcon && <MetricIcon size={13} />}{metric.value}
                   </span>
                 </div>
               );
@@ -755,7 +799,7 @@ const Finanzcockpit = () => {
 
         <div className="finanzcockpit-card finanzcockpit__detail-card">
           <div className="finanzcockpit__detail-header">
-            <PieChartIcon size={18} />
+            <PieChartIcon size={16} />
             <div>
               <h3>Zahlungsarten</h3>
               <p>Wie Mitglieder und Kunden zahlen</p>
@@ -773,7 +817,7 @@ const Finanzcockpit = () => {
 
         <div className="finanzcockpit-card finanzcockpit__detail-card">
           <div className="finanzcockpit__detail-header">
-            <FileText size={18} />
+            <FileText size={16} />
             <div>
               <h3>Offene Posten</h3>
               <p>Forderungen und offene Beiträge</p>
@@ -785,9 +829,7 @@ const Finanzcockpit = () => {
                 <span className="finanzcockpit__metric-label">{metric.label}</span>
                 <span className={`finanzcockpit__metric-value ${metric.tone ? `is-${metric.tone}` : ''}`}>
                   {metric.value}
-                  {metric.sublabel && (
-                    <small>{metric.sublabel}</small>
-                  )}
+                  {metric.sublabel && <small>{metric.sublabel}</small>}
                 </span>
               </div>
             ))}
@@ -796,7 +838,7 @@ const Finanzcockpit = () => {
 
         <div className="finanzcockpit-card finanzcockpit__detail-card">
           <div className="finanzcockpit__detail-header">
-            <BarChart3 size={18} />
+            <BarChart3 size={16} />
             <div>
               <h3>Aktivität</h3>
               <p>Operative Kennzahlen der Periode</p>
@@ -813,94 +855,6 @@ const Finanzcockpit = () => {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="finanzcockpit__actions">
-        <h3>Direkte Aktionen</h3>
-        <div className="finanzcockpit__actions-grid">
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/euer')}
-            style={{ borderLeft: '3px solid #10b981' }}
-          >
-            <FileSpreadsheet size={20} />
-            EÜR (Einnahmen-Überschuss)
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/ausgaben')}
-            style={{ borderLeft: '3px solid #ef4444' }}
-          >
-            <TrendingDown size={20} />
-            Ausgaben erfassen
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/beitraege')}
-          >
-            <DollarSign size={20} />
-            Beiträge verwalten
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/rechnungen')}
-          >
-            <FileText size={20} />
-            Rechnungen prüfen
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/lastschriftlauf')}
-          >
-            <CreditCard size={20} />
-            Lastschriftlauf
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/mahnwesen')}
-          >
-            <AlertCircle size={20} />
-            Mahnwesen starten
-          </button>
-        </div>
-      </section>
-
-      <section className="finanzcockpit__actions">
-        <h3>📊 Mitglieder-Analysen</h3>
-        <div className="finanzcockpit__actions-grid">
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/mitglieder-filter/ohne-sepa')}
-            style={{ borderLeft: '3px solid #ef4444' }}
-          >
-            <AlertCircle size={20} />
-            Ohne SEPA-Mandat
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/mitglieder-filter/ohne-vertrag')}
-            style={{ borderLeft: '3px solid #f59e0b' }}
-          >
-            <FileText size={20} />
-            Ohne Vertrag
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/mitglieder-filter/tarif-abweichung')}
-            style={{ borderLeft: '3px solid #8b5cf6' }}
-          >
-            <AlertCircle size={20} />
-            Tarif-Abweichungen
-          </button>
-          <button
-            className="finanzcockpit__action-button"
-            onClick={() => navigate('/dashboard/mitglieder-filter/zahlungsweisen')}
-            style={{ borderLeft: '3px solid #3b82f6' }}
-          >
-            <CreditCard size={20} />
-            Nach Zahlungsweise
-          </button>
         </div>
       </section>
     </div>

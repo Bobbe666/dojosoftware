@@ -702,7 +702,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                 checked={zahlungsart === 'sumup'}
                 onChange={(e) => setZahlungsart(e.target.value)}
               />
-              <span><Smartphone size={16} style={{verticalAlign: 'middle', marginRight: 4}} /> SumUp Terminal</span>
+              <span><Smartphone size={16} className="vk-icon-inline" /> SumUp Terminal</span>
             </label>
           )}
         </div>
@@ -1132,7 +1132,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
               key={kat.kategorie_id}
               className={`kategorie-button ${selectedKategorie === kat.kategorie_id ? 'active' : ''}`}
               onClick={() => setSelectedKategorie(kat.kategorie_id)}
-              style={{ borderLeftColor: kat.farbe_hex }}
+              style={{ '--kat-color': kat.farbe_hex }}
             >
               <span className="kategorie-icon">{kat.icon}</span>
               {kat.name}

@@ -11,6 +11,7 @@ import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Buttons.css';
 import '../styles/Dashboard.css';
+import '../styles/PruefungDurchfuehren.css';
 
 const PruefungDurchfuehren = () => {
   const { getDojoFilterParam, activeDojo } = useDojoContext();
@@ -440,79 +441,49 @@ const PruefungDurchfuehren = () => {
     <div className="content-card">
       <div className="page-header">
         <div>
-          <h1 style={{
-            background: 'linear-gradient(135deg, #ffd700, #ff6b35, #f7931e)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            fontWeight: 700
-          }}>Prüfung durchführen</h1>
+          <h1 className="pd-page-title">Prüfung durchführen</h1>
           <p>Live-Ansicht für den Prüfungstag - Ergebnisse direkt eintragen</p>
         </div>
       </div>
 
       {error && (
-        <div className="alert alert-error" style={{ marginBottom: '1rem' }}>
+        <div className="alert alert-error pd-alert-mb">
           <AlertCircle size={20} />
           {error}
         </div>
       )}
 
       {success && (
-        <div className="alert alert-success" style={{ marginBottom: '1rem' }}>
+        <div className="alert alert-success pd-alert-mb">
           <Check size={20} />
           {success}
         </div>
       )}
 
       {/* Filter-Bereich - Alles in einer Zeile */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        padding: '1.5rem',
-        borderRadius: '12px',
-        marginBottom: '2rem',
-        border: '1px solid rgba(255, 215, 0, 0.2)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+      <div className="pd-filter-box">
+        <div className="pd-filter-row">
           {/* Zeitraum-Label und Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <label style={{ fontWeight: '600', color: '#FFD700', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+          <div className="u-flex-row-md">
+            <label className="pd-label-primary">
               Zeitraum
             </label>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div className="u-flex-gap-sm">
               <button
                 onClick={() => setDatumFilter('alle')}
-                className="logout-button"
-                style={{
-                  background: datumFilter === 'alle' 
-                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
-                    : undefined,
-                  color: datumFilter === 'alle' ? '#1a1a2e' : undefined
-                }}
+                className={`logout-button${datumFilter === 'alle' ? ' pd-filter-btn--active' : ''}`}
               >
                 Alle
               </button>
               <button
                 onClick={() => setDatumFilter('zukuenftig')}
-                className="logout-button"
-                style={{
-                  background: datumFilter === 'zukuenftig' 
-                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
-                    : undefined,
-                  color: datumFilter === 'zukuenftig' ? '#1a1a2e' : undefined
-                }}
+                className={`logout-button${datumFilter === 'zukuenftig' ? ' pd-filter-btn--active' : ''}`}
               >
                 Zukünftig
               </button>
               <button
                 onClick={() => setDatumFilter('vergangen')}
-                className="logout-button"
-                style={{
-                  background: datumFilter === 'vergangen' 
-                    ? 'linear-gradient(135deg, #FFD700, #FFA500)' 
-                    : undefined,
-                  color: datumFilter === 'vergangen' ? '#1a1a2e' : undefined
-                }}
+                className={`logout-button${datumFilter === 'vergangen' ? ' pd-filter-btn--active' : ''}`}
               >
                 Vergangen
               </button>
@@ -520,60 +491,38 @@ const PruefungDurchfuehren = () => {
           </div>
 
           {/* Datumsauswahl */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)', whiteSpace: 'nowrap' }}>
+          <div className="u-flex-row-sm">
+            <label className="pd-label-secondary">
               Zu Datum springen:
             </label>
             <input
               type="date"
               value={selectedDatum}
               onChange={(e) => setSelectedDatum(e.target.value)}
-              style={{
-                padding: '0.5rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'white',
-                fontSize: '0.9rem'
-              }}
+              className="pd-filter-input"
             />
             {selectedDatum && (
               <button
                 onClick={() => setSelectedDatum('')}
-                className="logout-button"
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '0.85rem'
-                }}
-              >
+                className="logout-button pd-btn-reset">
                 Zurücksetzen
               </button>
             )}
           </div>
 
           {/* Stil-Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <label style={{ fontWeight: '600', color: '#FFD700', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+          <div className="u-flex-row-sm">
+            <label className="pd-label-primary">
               Kampfkunst-Stil
             </label>
             <select
               value={selectedStil}
               onChange={(e) => setSelectedStil(e.target.value)}
-              style={{
-                padding: '0.5rem 0.8rem',
-                borderRadius: '8px',
-                border: '1px solid rgba(255, 215, 0, 0.3)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'white',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-                minWidth: '180px',
-                height: '38px'
-              }}
+              className="pd-stil-select"
             >
-              <option value="all" style={{ background: '#1a1a2e' }}>Alle Stile</option>
+              <option value="all" className="pd-option-dark">Alle Stile</option>
               {stile.map(stil => (
-                <option key={stil.stil_id} value={stil.stil_id} style={{ background: '#1a1a2e' }}>
+                <option key={stil.stil_id} value={stil.stil_id} className="pd-option-dark">
                   {stil.name}
                 </option>
               ))}
@@ -584,7 +533,7 @@ const PruefungDurchfuehren = () => {
 
       {/* Termin-Cards */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem' }}>
+        <div className="pd-loading-center">
           <div className="spinner"></div>
           <p>Lade Prüfungen...</p>
         </div>
@@ -595,7 +544,7 @@ const PruefungDurchfuehren = () => {
           <p>Es gibt keine geplanten Prüfungen.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1rem' }}>
+        <div className="pd-grid">
           {(() => {
             const heute = new Date();
             heute.setHours(0, 0, 0, 0);
@@ -698,41 +647,16 @@ const PruefungDurchfuehren = () => {
               const past = isPast(datum);
               const today = isToday(datum);
 
+              const datumState = today ? 'today' : past ? 'past' : 'future';
               return (
                 <div
                   key={datum}
-                  style={{
-                    background: today
-                      ? 'rgba(59, 130, 246, 0.1)'
-                      : past
-                        ? 'rgba(255, 255, 255, 0.03)'
-                        : 'rgba(255, 255, 255, 0.05)',
-                    borderRadius: '12px',
-                    border: today
-                      ? '2px solid rgba(59, 130, 246, 0.5)'
-                      : past
-                        ? '1px solid rgba(156, 163, 175, 0.2)'
-                        : '1px solid rgba(255, 215, 0, 0.3)',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease'
-                  }}
+                  className={`pd-datum-card pd-datum-card--${datumState}`}
                 >
                   {/* Termin-Header */}
                   <div
                     onClick={() => toggleDate(datum)}
-                    style={{
-                      padding: '1.25rem 1.5rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      background: today
-                        ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.05) 100%)'
-                        : past
-                          ? 'linear-gradient(135deg, rgba(156, 163, 175, 0.15) 0%, rgba(156, 163, 175, 0.05) 100%)'
-                          : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 100%)',
-                      transition: 'all 0.3s ease'
-                    }}
+                    className={`pd-datum-header pd-datum-header--${datumState}`}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = today
                         ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(59, 130, 246, 0.1) 100%)'
@@ -748,29 +672,15 @@ const PruefungDurchfuehren = () => {
                           : 'linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.05) 100%)';
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <Calendar
-                        size={28}
-                        style={{
-                          color: today ? '#3b82f6' : past ? '#9ca3af' : '#FFD700'
-                        }}
-                      />
+                    <div className="u-flex-row-lg">
+                      <Calendar size={28} className="pd-datum-icon" />
                       <div>
-                        <h3 style={{
-                          margin: 0,
-                          fontSize: '1.2rem',
-                          color: today ? '#3b82f6' : past ? '#9ca3af' : '#FFD700',
-                          fontWeight: '700'
-                        }}>
+                        <h3 className="pd-datum-title">
                           {formatDatum(datum)}
-                          {today && <span style={{ marginLeft: '0.75rem', fontSize: '0.9rem', fontWeight: '600' }}>• HEUTE</span>}
-                          {past && <span style={{ marginLeft: '0.75rem', fontSize: '0.9rem', fontWeight: '500', opacity: 0.7 }}>• vergangen</span>}
+                          {today && <span className="pd-badge-heute">• HEUTE</span>}
+                          {past && <span className="pd-badge-vergangen">• vergangen</span>}
                         </h3>
-                        <p style={{
-                          margin: '0.25rem 0 0 0',
-                          fontSize: '0.95rem',
-                          color: 'rgba(255, 255, 255, 0.7)'
-                        }}>
+                        <p className="pd-date-sub">
                           {pruefungenAmTag.length} {pruefungenAmTag.length === 1 ? 'Prüfling' : 'Prüflinge'}
                         </p>
                       </div>
@@ -778,17 +688,13 @@ const PruefungDurchfuehren = () => {
 
                     <ChevronDown
                       size={24}
-                      style={{
-                        color: today ? '#3b82f6' : past ? '#9ca3af' : '#FFD700',
-                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.3s ease'
-                      }}
+                      className={`pd-datum-chevron${isExpanded ? ' pd-datum-chevron--expanded' : ''}`}
                     />
                   </div>
 
                   {/* Teilnehmer-Liste (expandierbar) */}
                   {isExpanded && (
-                    <div style={{ padding: '0 1rem 1rem 1rem' }}>
+                    <div className="pd-expanded-body">
                       {pruefungenAmTag.map((pruefling, index) => {
                         const isEditing = editingPruefling?.pruefung_id === pruefling.pruefung_id;
                         const ergebnis = ergebnisse[pruefling.pruefung_id] || {
@@ -802,26 +708,12 @@ const PruefungDurchfuehren = () => {
                         return (
                           <div
                             key={index}
-                            style={{
-                              marginTop: '0.75rem',
-                              background: isEditing ? 'rgba(255, 215, 0, 0.08)' : 'rgba(255, 255, 255, 0.05)',
-                              borderRadius: '8px',
-                              border: isEditing ? '2px solid rgba(255, 215, 0, 0.5)' : '1px solid rgba(255, 215, 0, 0.2)',
-                              overflow: 'hidden',
-                              transition: 'all 0.3s ease'
-                            }}
+                            className={`pd-pruefling-card${isEditing ? ' pd-pruefling-card--editing' : ''}`}
                           >
                             {/* Prüfling Header */}
                             <div
                               onClick={() => handleToggleEdit(pruefling)}
-                              style={{
-                                padding: '1rem',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease'
-                              }}
+                              className="pd-pruefling-header"
                               onMouseEnter={(e) => {
                                 if (!isEditing) {
                                   e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
@@ -831,42 +723,25 @@ const PruefungDurchfuehren = () => {
                                 e.currentTarget.style.background = 'transparent';
                               }}
                             >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
-                                <div style={{
-                                  width: '40px',
-                                  height: '40px',
-                                  borderRadius: '50%',
-                                  background: 'linear-gradient(135deg, #FFD700, #FFA500)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  fontSize: '1.1rem',
-                                  fontWeight: 'bold',
-                                  color: '#1a1a2e'
-                                }}>
+                              <div className="pd-pruefling-inner">
+                                <div className="pd-pruefling-avatar">
                                   {index + 1}
                                 </div>
 
-                                <div style={{ flex: 1 }}>
-                                  <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#FFD700' }}>
+                                <div className="u-flex-1">
+                                  <h4 className="pd-pruefling-name">
                                     {pruefling.vorname} {pruefling.nachname}
                                   </h4>
-                                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                                  <p className="pd-pruefling-sub">
                                     {pruefling.stil_name} • {pruefling.graduierung_vorher} → {pruefling.graduierung_nachher}
                                   </p>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                <div className="pd-status-row">
                                   {getStatusBadge(pruefling)}
 
                                   {pruefling.punktzahl && (
-                                    <div style={{
-                                      padding: '0.4rem 0.8rem',
-                                      background: 'rgba(255, 215, 0, 0.1)',
-                                      borderRadius: '6px',
-                                      fontWeight: '600',
-                                      fontSize: '0.9rem'
-                                    }}>
+                                    <div className="pd-pkt-badge">
                                       {pruefling.punktzahl} / {pruefling.max_punktzahl} Pkt.
                                     </div>
                                   )}
@@ -875,51 +750,25 @@ const PruefungDurchfuehren = () => {
 
                               <ChevronDown
                                 size={20}
-                                style={{
-                                  color: '#FFD700',
-                                  transform: isEditing ? 'rotate(180deg)' : 'rotate(0deg)',
-                                  marginLeft: '0.5rem',
-                                  transition: 'transform 0.3s ease'
-                                }}
+                                className={`pd-pruefling-chevron${isEditing ? ' pd-pruefling-chevron--expanded' : ''}`}
                               />
                             </div>
 
                             {/* Inline Edit-Formular */}
                             {isEditing && (
-                              <div style={{
-                                padding: '1.5rem',
-                                borderTop: '1px solid rgba(255, 215, 0, 0.3)',
-                                background: 'rgba(0, 0, 0, 0.2)'
-                              }}>
+                              <div className="pd-edit-form">
                                 {/* Kompakte Ergebnis-Zeile: Alles in einer Reihe */}
-                                <div style={{
-                                  display: 'flex',
-                                  gap: '0.75rem',
-                                  marginBottom: '1.5rem',
-                                  alignItems: 'flex-end',
-                                  flexWrap: 'wrap'
-                                }}>
+                                <div className="pd-result-row">
                                   {/* Bestanden Buttons */}
-                                  <div style={{ flex: '0 0 auto' }}>
-                                    <label style={{
-                                      display: 'block',
-                                      marginBottom: '0.4rem',
-                                      fontWeight: '600',
-                                      color: '#FFD700',
-                                      fontSize: '0.75rem'
-                                    }}>
+                                  <div className="pd-col-auto">
+                                    <label className="pd-mini-label">
                                       Ergebnis
                                     </label>
-                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                    <div className="pd-btn-row">
                                       <button
                                         type="button"
                                         onClick={() => updateErgebnis(pruefling.pruefung_id, 'bestanden', true)}
-                                        className={`btn-toggle btn-toggle-success ${ergebnis.bestanden ? 'active' : ''}`}
-                                        style={{
-                                          padding: '0.4rem 0.6rem',
-                                          fontSize: '0.75rem',
-                                          minWidth: 'auto'
-                                        }}
+                                        className={`btn-toggle btn-toggle-success pd-btn-toggle-sm ${ergebnis.bestanden ? 'active' : ''}`}
                                       >
                                         <Check size={14} />
                                         Bestanden
@@ -928,12 +777,7 @@ const PruefungDurchfuehren = () => {
                                       <button
                                         type="button"
                                         onClick={() => updateErgebnis(pruefling.pruefung_id, 'bestanden', false)}
-                                        className={`btn-toggle btn-toggle-danger ${!ergebnis.bestanden ? 'active' : ''}`}
-                                        style={{
-                                          padding: '0.4rem 0.6rem',
-                                          fontSize: '0.75rem',
-                                          minWidth: 'auto'
-                                        }}
+                                        className={`btn-toggle btn-toggle-danger pd-btn-toggle-sm ${!ergebnis.bestanden ? 'active' : ''}`}
                                       >
                                         <X size={14} />
                                         Nicht bestanden
@@ -943,56 +787,27 @@ const PruefungDurchfuehren = () => {
 
                                   {/* Gurt-Auswahl - sehr kompakt */}
                                   {ergebnis.bestanden && (
-                                    <div style={{ flex: '0 0 auto', minWidth: '180px' }}>
-                                      <label style={{
-                                        display: 'block',
-                                        marginBottom: '0.4rem',
-                                        fontWeight: '600',
-                                        color: '#FFD700',
-                                        fontSize: '0.75rem'
-                                      }}>
-                                        <Award size={12} style={{ display: 'inline', marginRight: '0.3rem' }} />
+                                    <div className="pd-gurt-nav">
+                                      <label className="pd-mini-label">
+                                        <Award size={12} className="pd-icon-inline" />
                                         Neuer Gurt
                                       </label>
 
-                                      <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.3rem'
-                                      }}>
+                                      <div className="pd-gurt-row">
                                         <button
                                           type="button"
                                           onClick={() => handleGurtAendern(pruefling.pruefung_id, pruefling.stil_id, 'down')}
-                                          style={{
-                                            padding: '0.3rem',
-                                            borderRadius: '4px',
-                                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                                            background: 'rgba(255, 215, 0, 0.1)',
-                                            color: '#FFD700',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            display: 'flex',
-                                            alignItems: 'center'
-                                          }}
+                                          className="pd-gurt-btn"
                                           title="Gurt herabstufen"
                                         >
                                           <ChevronDown size={14} />
                                         </button>
 
-                                        <div style={{
-                                          flex: 1,
-                                          textAlign: 'center',
-                                          padding: '0.3rem 0.5rem',
-                                          background: ergebnis.neuer_gurt_farbe || 'rgba(255, 255, 255, 0.1)',
-                                          borderRadius: '4px',
-                                          border: '1px solid rgba(255, 215, 0, 0.3)',
-                                          minWidth: '80px'
-                                        }}>
-                                          <span style={{
-                                            fontSize: '0.75rem',
-                                            color: ergebnis.neuer_gurt_farbe ? '#1a1a2e' : '#FFD700',
-                                            fontWeight: '600'
-                                          }}>
+                                        <div
+                                          className="pd-gurt-display"
+                                          style={{ '--gurt-bg': ergebnis.neuer_gurt_farbe || 'rgba(255,255,255,0.1)' }}
+                                        >
+                                          <span className={`pd-gurt-label${ergebnis.neuer_gurt_farbe ? ' pd-gurt-label--dark' : ''}`}>
                                             {ergebnis.neuer_gurt_name || 'Kein Gurt'}
                                           </span>
                                         </div>
@@ -1000,17 +815,7 @@ const PruefungDurchfuehren = () => {
                                         <button
                                           type="button"
                                           onClick={() => handleGurtAendern(pruefling.pruefung_id, pruefling.stil_id, 'up')}
-                                          style={{
-                                            padding: '0.3rem',
-                                            borderRadius: '4px',
-                                            border: '1px solid rgba(255, 215, 0, 0.3)',
-                                            background: 'rgba(255, 215, 0, 0.1)',
-                                            color: '#FFD700',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            display: 'flex',
-                                            alignItems: 'center'
-                                          }}
+                                          className="pd-gurt-btn"
                                           title="Gurt hochstufen"
                                         >
                                           <ChevronUp size={14} />
@@ -1020,8 +825,8 @@ const PruefungDurchfuehren = () => {
                                   )}
 
                                   {/* Erreichte Punktzahl */}
-                                  <div style={{ flex: '0 0 auto', minWidth: '100px' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '600', color: '#FFD700', fontSize: '0.75rem' }}>
+                                  <div className="pd-col-100">
+                                    <label className="pd-mini-label">
                                       Erreicht
                                     </label>
                                     <input
@@ -1029,45 +834,27 @@ const PruefungDurchfuehren = () => {
                                       value={ergebnis.punktzahl || ''}
                                       onChange={(e) => updateErgebnis(pruefling.pruefung_id, 'punktzahl', e.target.value)}
                                       placeholder="85"
-                                      className="form-input"
-                                      style={{
-                                        fontSize: '0.8rem',
-                                        padding: '0.4rem',
-                                        width: '100%',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                                        borderRadius: '6px',
-                                        color: 'white'
-                                      }}
+                                      className="form-input pd-edit-input"
                                     />
                                   </div>
 
                                   {/* Maximale Punktzahl */}
-                                  <div style={{ flex: '0 0 auto', minWidth: '100px' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '600', color: '#FFD700', fontSize: '0.75rem' }}>
+                                  <div className="pd-col-100">
+                                    <label className="pd-mini-label">
                                       Max.
                                     </label>
                                     <input
                                       type="number"
                                       value={ergebnis.max_punktzahl || 100}
                                       onChange={(e) => updateErgebnis(pruefling.pruefung_id, 'max_punktzahl', e.target.value)}
-                                      className="form-input"
-                                      style={{
-                                        fontSize: '0.8rem',
-                                        padding: '0.4rem',
-                                        width: '100%',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                                        borderRadius: '6px',
-                                        color: 'white'
-                                      }}
+                                      className="form-input pd-edit-input"
                                     />
                                   </div>
                                 </div>
 
                                 {/* Prüferkommentar */}
-                                <div style={{ marginBottom: '1.5rem' }}>
-                                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#FFD700', fontSize: '0.95rem' }}>
+                                <div className="pd-kommentar-section">
+                                  <label className="pd-kommentar-label">
                                     Prüferkommentar / Bemerkungen
                                   </label>
                                   <textarea
@@ -1075,81 +862,53 @@ const PruefungDurchfuehren = () => {
                                     onChange={(e) => updateErgebnis(pruefling.pruefung_id, 'prueferkommentar', e.target.value)}
                                     rows="3"
                                     placeholder="Notizen zum Prüfungsverlauf, Stärken, Schwächen, etc."
-                                    style={{
-                                      width: '100%',
-                                      fontSize: '0.95rem',
-                                      padding: '0.7rem',
-                                      background: 'rgba(255, 255, 255, 0.05)',
-                                      border: '1px solid rgba(255, 215, 0, 0.3)',
-                                      borderRadius: '6px',
-                                      color: 'white',
-                                      resize: 'vertical'
-                                    }}
+                                    className="pd-textarea"
                                   />
                                 </div>
 
                                 {/* Prüfungsinhalte & Bewertungen */}
                                 {pruefungsinhalte[pruefling.pruefung_id] && (
-                                  <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                                    <h4 style={{ color: '#ffd700', marginBottom: '1rem', fontSize: '1.1rem' }}>
+                                  <div className="pd-inhalte-box">
+                                    <h4 className="pd-inhalte-h4">
                                       📋 Prüfungsinhalte bewerten
                                     </h4>
                                     {Object.entries(pruefungsinhalte[pruefling.pruefung_id]).map(([kategorie, inhalte]) => (
-                                      <div key={kategorie} style={{ marginBottom: '1.5rem' }}>
-                                        <h5 style={{
-                                          color: '#ffd700',
-                                          fontSize: '0.95rem',
-                                          marginBottom: '0.75rem',
-                                          borderBottom: '1px solid rgba(255,215,0,0.2)',
-                                          paddingBottom: '0.5rem'
-                                        }}>
+                                      <div key={kategorie} className="pd-kommentar-section">
+                                        <h5 className="pd-kategorie-h5">
                                           {kategorie === 'grundtechniken' && '🥋 Grundtechniken'}
                                           {kategorie === 'kata' && '🎭 Kata / Formen'}
                                           {kategorie === 'kumite' && '⚔️ Kumite / Sparring'}
                                           {kategorie === 'theorie' && '📚 Theorie'}
                                         </h5>
-                                        <div style={{ display: 'grid', gap: '0.75rem' }}>
+                                        <div className="pd-inhalte-grid">
                                           {inhalte.map((inhalt, idx) => {
                                             const inhaltId = inhalt.id || inhalt.inhalt_id;
                                             const bewertung = bewertungen[pruefling.pruefung_id]?.[kategorie]?.find(b => b.inhalt_id === inhaltId) || {};
                                             return (
-                                              <div key={`${kategorie}-${idx}-${inhaltId}`} style={{
-                                                display: 'flex',
-                                                gap: '1rem',
-                                                alignItems: 'center',
-                                                padding: '0.75rem',
-                                                background: 'rgba(0,0,0,0.2)',
-                                                borderRadius: '6px',
-                                                fontSize: '0.9rem'
-                                              }}>
-                                                <span style={{ color: 'rgba(255,255,255,0.9)', flex: 1 }}>{inhalt.inhalt || inhalt.titel}</span>
+                                              <div key={`${kategorie}-${idx}-${inhaltId}`} className="pd-inhalt-row">
+                                                <span className="pd-inhalt-text">{inhalt.inhalt || inhalt.titel}</span>
 
-                                                <div style={{ minWidth: '140px' }}>
+                                                <div className="pd-bestanden-wrap">
                                                   <button
                                                     type="button"
                                                     onClick={() => updateBewertung(pruefling.pruefung_id, inhaltId, kategorie, 'bestanden', !bewertung.bestanden)}
-                                                    className={`btn-toggle ${bewertung.bestanden ? 'btn-toggle-success active' : 'btn-toggle-neutral'}`}
-                                                    style={{
-                                                      padding: '0.4rem 0.8rem',
-                                                      fontSize: '0.8rem',
-                                                      width: '100%'
-                                                    }}
+                                                    className={`btn-toggle pd-inhalt-btn ${bewertung.bestanden ? 'btn-toggle-success active' : 'btn-toggle-neutral'}`}
                                                   >
                                                     {bewertung.bestanden ? (
                                                       <>
-                                                        <Check size={14} style={{ marginRight: '0.3rem' }} />
+                                                        <Check size={14} className="pd-icon-mr" />
                                                         Bestanden
                                                       </>
                                                     ) : (
                                                       <>
-                                                        <X size={14} style={{ marginRight: '0.3rem' }} />
+                                                        <X size={14} className="pd-icon-mr" />
                                                         Offen
                                                       </>
                                                     )}
                                                   </button>
                                                 </div>
 
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: '120px' }}>
+                                                <div className="pd-pkt-wrap">
                                                   <input
                                                     type="number"
                                                     placeholder="0"
@@ -1157,18 +916,9 @@ const PruefungDurchfuehren = () => {
                                                     max={inhalt.max_punktzahl || bewertung.max_punktzahl || 10}
                                                     value={bewertung.punktzahl || ''}
                                                     onChange={(e) => updateBewertung(pruefling.pruefung_id, inhaltId, kategorie, 'punktzahl', parseFloat(e.target.value) || 0)}
-                                                    style={{
-                                                      width: '70px',
-                                                      padding: '0.4rem',
-                                                      background: 'rgba(255,255,255,0.1)',
-                                                      border: '1px solid rgba(255,215,0,0.3)',
-                                                      borderRadius: '4px',
-                                                      color: '#fff',
-                                                      fontSize: '0.85rem',
-                                                      textAlign: 'center'
-                                                    }}
+                                                    className="pd-pkt-input"
                                                   />
-                                                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem' }}>
+                                                  <span className="pd-pkt-max">
                                                     / {inhalt.max_punktzahl || bewertung.max_punktzahl || 10}
                                                   </span>
                                                 </div>
@@ -1182,7 +932,7 @@ const PruefungDurchfuehren = () => {
                                 )}
 
                                 {/* Aktionen */}
-                                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                                <div className="pd-action-row">
                                   <button
                                     onClick={() => setEditingPruefling(null)}
                                     className="btn btn-secondary"

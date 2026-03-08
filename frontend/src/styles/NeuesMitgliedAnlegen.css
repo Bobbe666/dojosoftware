@@ -6,6 +6,20 @@
   width: 750px !important;
   max-width: 90vw !important;
   min-width: auto !important;
+  margin-top: 20px !important;
+  margin-bottom: 20px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  max-height: 85vh !important;
+  height: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  transform: translateY(0) !important;
+  padding: 1.5rem !important;
 }
 
 /* Modal Overlay - immer von oben starten */
@@ -33,7 +47,7 @@
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group select {
   padding: 0.4rem 0.5rem !important;
   border: 2px solid #cccccc !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-size: 0.85rem !important;
   line-height: 1.3 !important;
   height: 32px !important;
@@ -60,7 +74,7 @@
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
   border: 2px solid #cccccc !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   padding: 0.4rem 0.5rem !important;
   font-size: 0.85rem !important;
   width: 100% !important;
@@ -75,7 +89,7 @@
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group textarea {
   padding: 0.4rem 0.5rem !important;
   border: 2px solid #cccccc !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-size: 0.85rem !important;
   line-height: 1.3 !important;
   transition: all 0.3s ease !important;
@@ -165,7 +179,7 @@
 /* Spezifischere Selektoren für bessere Priorität */
 .modal-overlay .modal-content {
   background: var(--background-color) !important;
-  border-radius: 12px !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 1.5rem !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
   width: 100% !important;
@@ -233,7 +247,7 @@
 .modal-overlay .modal-content .input-field {
   padding: 0.7rem !important;
   border: 2px solid #cccccc !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-size: 0.85rem !important;
   transition: all 0.3s ease !important;
   background: #ffffff !important;
@@ -282,7 +296,7 @@
 /* Modal Content - Scroll-Reset */
 .modal-content {
   background: var(--background-color) !important;
-  border-radius: 12px !important;
+  border-radius: var(--comp-radius-xl) !important;
   padding: 1rem !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
   width: 100% !important;
@@ -434,16 +448,16 @@
 
 .input-label {
   font-weight: 600 !important;
-  margin-bottom: 0.4rem !important;
+  margin-bottom: var(--ui-form-group-gap) !important;
   color: var(--text-color) !important;
-  font-size: 0.85rem !important;
+  font-size: var(--ui-btn-font) !important;
 }
 
 .input-field {
   padding: 0.4rem 0.5rem !important;
   border: 2px solid #cccccc !important;
-  border-radius: 6px !important;
-  font-size: 0.85rem !important;
+  border-radius: var(--comp-radius-sm) !important;
+  font-size: var(--ui-btn-font) !important;
   line-height: 1.3 !important;
   height: 32px !important;
   transition: all 0.3s ease !important;
@@ -514,7 +528,7 @@ select.input-field option {
   font-size: 0.8rem;
   line-height: 1.3;
   padding: 0.8rem;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   border: 2px solid var(--border-color);
   background-color: rgba(255, 255, 255, 0.8);
   transition: all 0.3s ease;
@@ -557,7 +571,7 @@ select.input-field option {
 .minor-info {
   background: var(--warning-bg);
   border: 2px solid var(--warning-color);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.8rem;
   margin-bottom: 1rem;
 }
@@ -573,7 +587,7 @@ select.input-field option {
 .duplicate-warning {
   background: var(--warning-bg);
   border: 2px solid var(--warning-color);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.8rem;
   margin-top: 0.8rem;
   color: var(--warning-text);
@@ -585,12 +599,12 @@ select.input-field option {
 .no-duplicate-info {
   background: rgba(31, 41, 55, 0.8);
   border: 2px solid rgba(34, 197, 94, 0.5);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 1rem;
   margin-top: 1rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: var(--ui-section-title);
   text-align: center;
 }
 
@@ -598,7 +612,7 @@ select.input-field option {
 .validation-warning {
   background: var(--warning-bg);
   border: 2px solid var(--warning-color);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.8rem;
   margin-top: 0.8rem;
   color: var(--warning-text);
@@ -617,12 +631,12 @@ select.input-field option {
 .duplicate-dialog h3 {
   color: var(--warning-color);
   margin-bottom: 0.8rem;
-  font-size: 1.1rem;
+  font-size: var(--ui-section-title);
 }
 
 .duplicate-info {
   background: var(--light-gray);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.8rem;
   margin: 0.8rem 0;
 }
@@ -640,17 +654,17 @@ select.input-field option {
   margin-top: 1.5rem;
   padding-top: 0.8rem;
   border-top: 2px solid var(--border-color);
-  gap: 0.8rem;
+  gap: var(--ui-btn-gap);
 }
 
 .modal-buttons .primary-button {
   background: var(--primary-color) !important;
   color: white !important;
   border: none !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 6px !important;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x) !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-weight: 600 !important;
-  font-size: 0.85rem !important;
+  font-size: var(--ui-btn-font) !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
   order: 2 !important;
@@ -671,10 +685,10 @@ select.input-field option {
   background: var(--secondary-color) !important;
   color: var(--text-color) !important;
   border: 2px solid var(--border-color) !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 6px !important;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x) !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-weight: 600 !important;
-  font-size: 0.85rem !important;
+  font-size: var(--ui-btn-font) !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
   order: 1 !important;
@@ -689,10 +703,10 @@ select.input-field option {
   background: var(--success-color);
   color: white;
   border: none;
-  padding: 0.6rem 1.5rem;
-  border-radius: 6px;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  border-radius: var(--comp-radius-sm);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--ui-btn-font);
   cursor: pointer;
   transition: all 0.3s ease;
   order: 2;
@@ -713,10 +727,10 @@ select.input-field option {
   background: var(--error-color) !important;
   color: white !important;
   border: none !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 6px !important;
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x) !important;
+  border-radius: var(--comp-radius-sm) !important;
   font-weight: 600 !important;
-  font-size: 0.85rem !important;
+  font-size: var(--ui-btn-font) !important;
   cursor: pointer !important;
   transition: all 0.3s ease !important;
   order: 3 !important;
@@ -971,12 +985,12 @@ select.input-field option {
   gap: 0.75rem;
   padding: 0.75rem;
   background: rgba(31, 41, 55, 0.8);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
   border: 2px solid rgba(59, 130, 246, 0.5);
   transition: all 0.3s ease;
   margin-bottom: 0.75rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
 }
 
 .vertrag-checkbox-wrapper:hover {
@@ -1000,7 +1014,7 @@ select.input-field option {
   -webkit-appearance: none;
   -moz-appearance: none;
   border: 2px solid #D1D5DB;
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   background: white;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1032,10 +1046,10 @@ select.input-field option {
 .vertrag-checkbox-label {
   flex: 1;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--text-1);
   cursor: pointer;
   user-select: none;
-  font-size: 0.9rem;
+  font-size: var(--ui-card-body);
   line-height: 1.4;
 }
 
@@ -1073,4 +1087,1047 @@ select.input-field option {
 .neues-mitglied-modal-v2 select option {
   background: #ffffff !important;
   color: #000000 !important;
+}
+
+/* ========================================
+   NMA UTILITY CLASSES (extracted inline styles)
+   Prefix: nma-
+   ======================================== */
+
+/* Label: block, 0.85rem, --text-primary, mb 0.4rem */
+.nma-label {
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+  display: block;
+  font-size: 0.85rem;
+}
+
+/* Paragraph / span: 0.85rem, --text-secondary, margin 0 */
+.nma-text-sm-muted {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* h4 heading inside member cards: no margin-top, --text-primary, 0.25rem sub-margin */
+.nma-member-name {
+  color: var(--text-primary);
+  margin: 0 0 0.25rem 0;
+}
+
+/* Span: --text-primary, 0.9rem */
+.nma-text-primary-sm {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* Flex row with icon + text, member card header */
+.nma-member-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Span: block, mb 0.25rem (option button title) */
+.nma-option-title {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+/* h4: --text-primary, marginTop 0, marginBottom 1rem */
+.nma-section-heading {
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* Checkbox input: scale(1.2), mt 0.2rem */
+.nma-checkbox-scaled {
+  margin-top: 0.2rem;
+  transform: scale(1.2);
+}
+
+/* Indented hint below radio/checkbox */
+.nma-indent-hint {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Hint text: 0.75rem, --text-secondary, mt 0.3rem */
+.nma-hint-xs {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.3rem;
+}
+
+/* Inline secondary label: --text-secondary, ml 0.5rem, 0.85rem */
+.nma-tag-secondary {
+  color: var(--text-secondary);
+  margin-left: 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* Success badge: --success, ml 0.5rem, 0.8rem */
+.nma-badge-success {
+  color: var(--success);
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Italic note below member: --text-secondary, 0.8rem, italic, top margin */
+.nma-note-italic {
+  color: var(--text-secondary);
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* grid-column full-span */
+.nma-full-span {
+  grid-column: 1 / -1;
+}
+
+/* Radio label: mr 0.5rem */
+.nma-radio-input {
+  margin-right: 0.5rem;
+}
+
+/* Radio label with top offset */
+.nma-radio-input-top {
+  margin-right: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+/* Option subtitle: 0.8rem, slightly dimmed, normal weight */
+.nma-option-subtitle {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  font-weight: normal;
+}
+
+/* Inline legal text / confirmation span: 0.85rem, --text-primary */
+.nma-confirm-text {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+/* h5 subsection heading: --text-primary, margin bottom 1rem, no top margin */
+.nma-subsection-heading {
+  color: var(--text-primary);
+  margin: 0 0 1rem 0;
+}
+
+/* ===================================================================
+   NMA MIGRATED INLINE STYLES - prefix: nma-
+   =================================================================== */
+
+/* DateInputAutoAdvance: wrapper row */
+.nma-date-row {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+/* DateInputAutoAdvance: individual input base */
+.nma-date-input {
+  padding: 0.4rem 0.3rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  height: 32px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.nma-date-input-day,
+.nma-date-input-month {
+  width: 45px;
+}
+
+.nma-date-input-year {
+  width: 60px;
+}
+
+/* Step 1 heading override (more specific than .step-content h3) */
+.nma-step-heading {
+  color: var(--primary-color);
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+  background-color: transparent;
+  font-weight: 600;
+  border-radius: 0;
+  padding-top: 0;
+}
+
+/* Family step heading */
+.nma-family-heading {
+  color: var(--primary-color);
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+}
+
+/* input-field: inner style (overrides on top of .input-field) */
+.nma-input-inline {
+  padding: 0.4rem 0.5rem;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.3;
+  height: 32px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* Schüler/Student box */
+.nma-schueler-box {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(31, 41, 55, 0.8);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+}
+
+/* Schüler label row */
+.nma-schueler-label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+}
+
+/* Schüler checkbox */
+.nma-schueler-checkbox {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #3B82F6;
+}
+
+/* Schüler label text */
+.nma-schueler-text {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+/* Schüler info box */
+.nma-schueler-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(31, 41, 55, 0.8);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Family choice container */
+.nma-family-choice-box {
+  padding: 1.5rem;
+  background: rgba(31, 41, 55, 0.8);
+  border-radius: 12px;
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  margin-bottom: 1.5rem;
+}
+
+/* Description text under family heading */
+.nma-family-desc {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Family option button - primary (blue gradient) */
+.nma-btn-family-primary {
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+/* Family option button - neutral */
+.nma-btn-family-neutral {
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+/* Subtitle in neutral family button */
+.nma-btn-subtitle-sm {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  font-weight: normal;
+}
+
+/* Family option button - green */
+.nma-btn-family-green {
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+/* Existing member login box */
+.nma-existing-login-box {
+  padding: 1.5rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 12px;
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  margin-bottom: 1.5rem;
+}
+
+/* Existing member login heading */
+.nma-existing-login-heading {
+  color: var(--text-primary);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+/* Existing member login description */
+.nma-existing-login-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Login grid container */
+.nma-login-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+/* Login label */
+.nma-login-label {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+}
+
+/* Login text/password input */
+.nma-login-input {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* Login error message */
+.nma-login-error {
+  padding: 0.75rem;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 6px;
+  color: var(--error);
+  font-size: 0.85rem;
+}
+
+/* Login button row */
+.nma-login-btn-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Login cancel button */
+.nma-btn-login-cancel {
+  padding: 0.6rem 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Logged-in confirmation box */
+.nma-logged-in-box {
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.6);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+/* Existing main member box (in family list) */
+.nma-family-main-existing {
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+/* New main member box (in family list) */
+.nma-family-main-new {
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+/* Family member list item */
+.nma-family-member-item {
+  padding: 1rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+/* Family member header row */
+.nma-family-member-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+/* Badge: green member role */
+.nma-badge-green {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Badge: blue family position */
+.nma-badge-blue {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Badge: amber minor */
+.nma-badge-amber {
+  background: rgba(245, 158, 11, 0.3);
+  color: var(--color-gold-400);
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* Remove button for family members */
+.nma-btn-remove {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+/* Add family member button */
+.nma-btn-add-family {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s;
+}
+
+.nma-btn-add-family:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+/* New family member form box */
+.nma-family-form-box {
+  padding: 1.25rem;
+  background: rgba(31, 41, 55, 0.8);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+/* Family member input (inside grid) */
+.nma-family-input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* Family info box (blue tint) */
+.nma-family-info-box {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+/* Family minor warning box */
+.nma-family-minor-box {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Family form button row */
+.nma-family-btn-row {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+/* Add family member confirm button */
+.nma-btn-family-confirm {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* Cancel family form button */
+.nma-btn-family-cancel {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Family discount info box */
+.nma-family-discount-info {
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  margin-bottom: 1rem;
+}
+
+/* Family discount text */
+.nma-family-discount-text {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Step 6: badge for existing main member */
+.nma-s6-existing-box {
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 2px solid rgba(16, 185, 129, 0.5);
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+/* Step 6: small inline badge (Hauptmitglied / Bestehendes Hauptmitglied) */
+.nma-s6-badge {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 15px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-right: 0.5rem;
+}
+
+/* Step 6: family member contract card */
+.nma-s6-family-card {
+  padding: 1.25rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+}
+
+/* Step 6: contract card header row */
+.nma-s6-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+/* Step 6: tarif selection row */
+.nma-s6-tarif-row {
+  margin-bottom: 1rem;
+}
+
+/* Step 6: tarif label */
+.nma-s6-tarif-label {
+  display: block;
+  color: var(--text-primary);
+  margin-bottom: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Step 6: tarif select */
+.nma-s6-tarif-select {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* Step 6: price breakdown box */
+.nma-s6-price-box {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+/* Step 6: price row flex */
+.nma-s6-price-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+/* Step 6: discount row (green) */
+.nma-s6-discount-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  color: var(--success);
+}
+
+/* Step 6: discount percent badge */
+.nma-s6-discount-badge {
+  background: rgba(16, 185, 129, 0.3);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Step 6: discount amount bold */
+.nma-s6-discount-amount {
+  font-weight: 600;
+}
+
+/* Step 6: total price row */
+.nma-s6-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* Step 6: no tarif warning */
+.nma-s6-no-tarif-warning {
+  padding: 0.5rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--color-gold-400);
+}
+
+/* Step 6: summary box */
+.nma-s6-summary-box {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(31, 41, 55, 0.9);
+  border: 2px solid rgba(59, 130, 246, 0.6);
+  border-radius: 12px;
+}
+
+/* Step 6: summary row */
+.nma-s6-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Step 6: family member summary span (dynamic color) */
+.nma-s6-member-price-existing {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+
+/* Step 6: total row */
+.nma-s6-total-sum-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0 0 0;
+  margin-top: 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+/* Step 6: AGB box for existing member mode */
+.nma-s6-agb-box {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: rgba(31, 41, 55, 0.9);
+  border: 2px solid rgba(245, 158, 11, 0.5);
+  border-radius: 12px;
+}
+
+/* Step 6: AGB note text */
+.nma-s6-agb-note {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* Step 7: main widerruf box */
+.nma-s7-box {
+  padding: 1.5rem;
+  background: rgba(31, 41, 55, 0.8);
+  border-radius: 12px;
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  margin-bottom: 2rem;
+}
+
+/* Step 7: heading */
+.nma-s7-heading {
+  color: var(--text-primary);
+  margin-top: 0;
+}
+
+/* Step 7: choices container */
+.nma-s7-choices {
+  margin-bottom: 1.5rem;
+}
+
+/* Step 7: sofort confirmation box */
+.nma-s7-confirm-box {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* Step 7: confirm box heading */
+.nma-s7-confirm-heading {
+  color: var(--primary);
+  margin-top: 0;
+}
+
+/* Step 7: confirm label (flex row) */
+.nma-s7-confirm-label {
+  display: flex;
+  align-items: start;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+/* Step 7: second confirm label (no bottom margin) */
+.nma-s7-confirm-label-last {
+  display: flex;
+  align-items: start;
+  cursor: pointer;
+}
+
+/* Step 7: nach_widerruf info box */
+.nma-s7-widerruf-info {
+  padding: 1rem;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Step 7: nach_widerruf info text */
+.nma-s7-widerruf-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+/* Step 8: main box */
+.nma-s8-box {
+  padding: 1.5rem;
+  background: rgba(31, 41, 55, 0.8);
+  border-radius: 12px;
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  margin-bottom: 2rem;
+}
+
+/* Step 8: description */
+.nma-s8-desc {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Warning box: amber (used in multiple steps) */
+.nma-warning-amber {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(120, 53, 15, 0.6);
+  border: 2px solid rgba(245, 158, 11, 0.6);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+/* Error box: red (password mismatch) */
+.nma-warning-red {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: rgba(127, 29, 29, 0.6);
+  border: 2px solid rgba(239, 68, 68, 0.6);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* Modal overlay: inline !important styles are intentional in the portal */
+
+/* Progress bar container override */
+.nma-progress-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  height: auto;
+  min-height: 55px;
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  gap: 8px;
+  box-shadow: none;
+  animation: none;
+  margin-bottom: 2.5rem;
+}
+
+/* Progress step override */
+.nma-progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  min-height: 60px;
+  margin: 0;
+  padding: 6px;
+  gap: 5px;
+  min-width: 70px;
+}
+
+/* Step label override */
+.nma-step-label {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.3s ease;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  text-shadow: none;
+  animation: none;
+}
+
+/* Family members section top spacer (conditional) */
+.nma-family-section-spacer {
+  margin-top: 2rem;
+}
+
+/* Family members heading (h4) */
+.nma-family-contracts-heading {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Modal overlay for NeuesMitglied (higher z-index + reset) */
+.nma-modal-overlay {
+  z-index: 99999 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  transform: translateY(0) !important;
+}
+
+/* Login submit button */
+.nma-btn-login-submit {
+  padding: 0.6rem 1.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.nma-btn-login-submit:disabled {
+  background: rgba(16, 185, 129, 0.5);
+  cursor: wait;
+}
+
+/* Logged-in status text */
+.nma-logged-in-status {
+  color: var(--success);
+  font-size: 0.85rem;
+}
+
+/* Checkbox label flex (schueler/student toggle) */
+.nma-checkbox-label-flex {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* Price display: assigned vs unassigned */
+.nma-price-assigned {
+  color: #10b981;
+}
+.nma-price-unassigned {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Legal checkbox labels (AGB, Datenschutz, Dojo-Regeln, Hausordnung) */
+.nma-legal-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+.nma-legal-label:last-child {
+  margin-bottom: 0;
+}
+.nma-legal-label--accepted {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* S7 radio choice labels */
+.nma-s7-choice-label {
+  display: block;
+  padding: 1rem;
+  background: rgba(31, 41, 55, 0.6);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+.nma-s7-choice-label:last-child {
+  margin-bottom: 0;
+}
+.nma-s7-choice-label--selected {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+/* Progress step number circle */
+.nma-progress-step-number {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  background: #e5e7eb;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+  margin: 0;
+  flex-shrink: 0;
+  box-shadow: none;
+  animation: none;
+}
+.nma-progress-step-number--active {
+  width: 30px;
+  height: 30px;
+  font-size: 0.9rem;
+  background: #ffffff;
+  color: var(--primary-color);
+  border: 3px solid var(--primary-color);
+  box-shadow: 0 2px 6px rgba(234, 179, 8, 0.25);
+}
+.nma-progress-step-number--completed {
+  background: #ffffff;
+  color: #10b981;
+  border: 3px solid #10b981;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
+}
+
+/* Step label states */
+.nma-step-label--active {
+  font-weight: 600;
+  color: #1f2937;
+}
+.nma-step-label--completed {
+  color: #10b981;
+}
+.nma-step-label--pending {
+  color: #6b7280;
 }

@@ -167,7 +167,7 @@ const styles = {
   },
   message: {
     fontSize: '16px',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     lineHeight: '1.6',
     marginBottom: '32px'
   },
@@ -216,7 +216,7 @@ const styles = {
     padding: '12px',
     backgroundColor: '#334155',
     borderRadius: '8px',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     cursor: 'pointer',
     fontSize: '14px'
   },
@@ -234,7 +234,7 @@ const styles = {
   },
   stackTrace: {
     fontSize: '12px',
-    color: '#94a3b8',
+    color: 'var(--text-muted)',
     overflow: 'auto',
     maxHeight: '200px',
     padding: '12px',

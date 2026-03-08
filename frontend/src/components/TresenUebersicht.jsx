@@ -284,178 +284,95 @@ const TresenUebersicht = () => {
 
       {/* ✨ Dashboard Statistik-Karten ✨ */}
       <div 
-        className="stats-floating-bar"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-around',
-          gap: '0.5rem',
-          padding: '0.5rem 1rem',
-          marginBottom: '1.5rem',
-          background: 'rgba(255, 255, 255, 0.05)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '8px',
-          border: '1px solid rgba(255, 215, 0, 0.15)',
-          flexWrap: 'wrap'
-        }}
+        className="stats-floating-bar tu-stats-floating-bar"
       >
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>👥</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">👥</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.mitglieder)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Mitglieder
           </span>
         </div>
 
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>✅</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">✅</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.anwesenheit)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Anwesenheiten
           </span>
         </div>
 
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>📱</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">📱</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.checkins_heute)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Check-ins
           </span>
         </div>
 
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>🥋</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">🥋</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.kurse)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Kurse
           </span>
         </div>
 
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>🎖️</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">🎖️</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.stile)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Stile
           </span>
         </div>
 
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>👨‍🏫</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">👨‍🏫</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.trainer)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Trainer
           </span>
         </div>
 
         <div 
           className="stat-item"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.25rem 0.75rem',
-            borderRadius: '6px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 215, 0, 0.1)',
-            flex: '1 1 auto',
-            minWidth: 'fit-content'
-          }}
+          className="tu-stat-item"
         >
-          <span style={{ fontSize: '0.95rem' }}>💰</span>
-          <span style={{ fontSize: '1rem', fontWeight: 'bold', color: '#ffd700' }}>
+          <span className="tu-icon-sm">💰</span>
+          <span className="u-heading-primary">
             {formatNumber(dashboardStats.beitraege)}
           </span>
-          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.6)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+          <span className="u-label-xs-meta">
             Beiträge
           </span>
         </div>

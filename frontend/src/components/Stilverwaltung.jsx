@@ -169,18 +169,12 @@ const StilVerwaltung = () => {
     }[size] || 'belt-preview';
     
     return (
-      <div className={`${sizeClass} ${className}`}>
+      <div className={`${sizeClass} ${className}`} style={{ '--belt-primaer': primaer || '#CCCCCC' }}>
         {/* Basis-Gürtel mit Primärfarbe */}
-        <div 
-          className="belt-base" 
-          style={{ backgroundColor: primaer || '#CCCCCC' }}
-        >
+        <div className="belt-base">
           {/* Sekundärer Streifen wenn vorhanden */}
           {sekundaer && (
-            <div 
-              className="belt-stripe" 
-              style={{ backgroundColor: sekundaer }}
-            />
+            <div className="belt-stripe" style={{ '--belt-sekundaer': sekundaer }} />
           )}
         </div>
       </div>
@@ -1232,13 +1226,9 @@ const StilVerwaltung = () => {
 
     return (
       <div
-        className="graduierung-item"
+        className="graduierung-item sv-grad-item-relative"
         // Dynamische Border-Farbe basierend auf Gürtel-Farbe
         data-border-color={graduierung.farbe_hex}
-        style={{
-          position: 'relative',
-          zIndex: 1
-        }}
       >
 
         <div className="graduierung-header">
@@ -1251,29 +1241,27 @@ const StilVerwaltung = () => {
             <strong>{graduierung.name}</strong>
             <span className="reihenfolge-badge">#{graduierung.reihenfolge}</span>
           </div>
-          <div className="graduierung-actions" style={{position: 'relative', zIndex: 9999}}>
+          <div className="graduierung-actions sv-grad-actions">
             {/* Position-Buttons */}
-          <button 
-            className="btn btn-info move-btn move-up"
+          <button
+            className="btn btn-info move-btn move-up sv-grad-move-btn"
             onClick={(e) => {
               e.stopPropagation();
               onMoveUp && onMoveUp(graduierung);
             }}
             disabled={isFirst}
             title="Nach oben verschieben"
-            style={{position: 'relative', zIndex: 10000, pointerEvents: 'auto'}}
           >
             ↑
           </button>
-          <button 
-            className="btn btn-info move-btn move-down"
+          <button
+            className="btn btn-info move-btn move-down sv-grad-move-btn"
             onClick={(e) => {
               e.stopPropagation();
               onMoveDown && onMoveDown(graduierung);
             }}
             disabled={isLast}
             title="Nach unten verschieben"
-            style={{position: 'relative', zIndex: 10000, pointerEvents: 'auto'}}
           >
             ↓
           </button>
@@ -1283,38 +1271,35 @@ const StilVerwaltung = () => {
 
             {/* Bearbeiten & Löschen Buttons */}
             <button
-              className="sub-tab-btn"
+              className="sub-tab-btn sv-grad-action-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onShowPruefungsinhalte && onShowPruefungsinhalte(graduierung);
               }}
               disabled={loading}
               title="Prüfungsinhalte anzeigen"
-              style={{position: 'relative', zIndex: 10000, pointerEvents: 'auto', fontSize: '0.85rem', padding: '0.5rem 1rem'}}
             >
               📝 Prüfungsinhalte
             </button>
             <button
-              className="sub-tab-btn"
+              className="sub-tab-btn sv-grad-action-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit && onEdit(graduierung);
               }}
               disabled={loading}
               title="Graduierung bearbeiten"
-              style={{position: 'relative', zIndex: 10000, pointerEvents: 'auto', fontSize: '0.85rem', padding: '0.5rem 1rem'}}
             >
               ✏️ Bearbeiten
             </button>
             <button
-              className="sub-tab-btn"
+              className="sub-tab-btn sv-grad-action-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(graduierung.graduierung_id);
               }}
               disabled={loading}
               title="Graduierung löschen"
-              style={{position: 'relative', zIndex: 10000, pointerEvents: 'auto', fontSize: '0.85rem', padding: '0.5rem 1rem'}}
             >
               🗑️
             </button>
@@ -1387,7 +1372,7 @@ const StilVerwaltung = () => {
           {/* Reaktivieren Button für inaktive Stile */}
           {!stil.aktiv && (
             <button
-              className="btn btn-success btn-small move-btn"
+              className="btn btn-success btn-small move-btn sv-btn-sm-compact"
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
@@ -1428,7 +1413,6 @@ const StilVerwaltung = () => {
                 }
               }}
               title="Stil reaktivieren"
-              style={{ minWidth: '40px', padding: '4px 8px', fontSize: '0.75rem' }}
             >
               ✓
             </button>
@@ -1561,74 +1545,22 @@ const StilVerwaltung = () => {
     return (
       <>
         {/* Header mit Buttons - AUSSERHALB des graduierung-manager */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem',
-          paddingBottom: '1rem',
-          borderBottom: '2px solid rgba(255, 215, 0, 0.2)',
-          isolation: 'isolate',
-          position: 'relative',
-          zIndex: 10000
-        }}>
-          <h3 style={{
-            fontSize: '1.5rem',
-            margin: 0,
-            color: '#ffd700',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '2px',
-            textShadow: '0 2px 10px rgba(255, 215, 0, 0.3)'
-          }}>Graduierungen verwalten</h3>
-          <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="sv-grad-manager-header">
+          <h3 className="sv-grad-manager-title">Graduierungen verwalten</h3>
+          <div className="sv-grad-manager-btn-row">
             <button
+              className="sv-grad-manager-btn"
               onClick={() => setShowAddForm(true)}
               disabled={loading}
               title="Standard-Gürtel hinzufügen"
-              style={{
-                position: 'relative',
-                zIndex: 10001,
-                backdropFilter: 'none',
-                WebkitBackdropFilter: 'none',
-                filter: 'none',
-                textShadow: 'none',
-                background: 'rgba(30, 30, 50, 0.95)',
-                border: '2px solid #ffd700',
-                color: '#ffd700',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                isolation: 'isolate',
-                opacity: loading ? 0.5 : 1
-              }}
             >
               + Graduierung hinzufügen
             </button>
             <button
+              className="sv-grad-manager-btn"
               onClick={() => setShowCustomColorForm(true)}
               disabled={loading}
               title="Eigene Farbe erstellen"
-              style={{
-                position: 'relative',
-                zIndex: 10001,
-                backdropFilter: 'none',
-                WebkitBackdropFilter: 'none',
-                filter: 'none',
-                textShadow: 'none',
-                background: 'rgba(30, 30, 50, 0.95)',
-                border: '2px solid #ffd700',
-                color: '#ffd700',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '8px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                isolation: 'isolate',
-                opacity: loading ? 0.5 : 1
-              }}
             >
               Eigene Farbe
             </button>
@@ -1675,73 +1607,25 @@ const StilVerwaltung = () => {
           (
             <div
               onClick={() => setShowAddForm(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
-                padding: '2rem 0',
-                overflowY: 'auto',
-                zIndex: 1000
-              }}
+              className="sv-modal-overlay"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  display: 'block',
-                  width: '90%',
-                  maxWidth: '800px',
-                  margin: '0 auto',
-                  padding: '2rem',
-                  boxSizing: 'border-box',
-                  overflowX: 'hidden',
-                  overflowY: 'visible',
-                  background: 'rgba(26, 26, 46, 0.98)',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                  position: 'relative'
-                }}
+                className="sv-modal-content sv-modal-content--800"
               >
-                <div className="modal-header" style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                  <h3 className="modal-title" style={{ margin: 0, color: '#ffd700', fontSize: '1.5rem' }}>Neue Graduierung hinzufügen</h3>
+                <div className="modal-header sv-modal-header-sep">
+                  <h3 className="modal-title sv-heading-primary">Neue Graduierung hinzufügen</h3>
                   <button
-                    className="modal-close"
+                    className="modal-close sv-close-btn"
                     onClick={() => setShowAddForm(false)}
                     title="Schließen"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'rgba(255,255,255,0.6)',
-                      fontSize: '2rem',
-                      cursor: 'pointer',
-                      padding: '0',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
                   >
                     ×
                   </button>
                 </div>
 
                 {/* Tab-Navigation */}
-                <div style={{
-                  display: 'flex',
-                  gap: '0.5rem',
-                  marginBottom: '1.5rem',
-                  borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
-                  paddingBottom: '0.5rem',
-                  overflowX: 'auto'
-                }}>
+                <div className="sv-tab-nav">
                   {[
                     { key: 'grundstufe', label: '🟡 Grundstufe' },
                     { key: 'mittelstufe', label: '🟢 Mittelstufe' },
@@ -1752,18 +1636,7 @@ const StilVerwaltung = () => {
                     <button
                       key={tab.key}
                       onClick={() => setActiveKategorie(tab.key)}
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        background: activeKategorie === tab.key ? 'rgba(255, 215, 0, 0.15)' : 'transparent',
-                        border: activeKategorie === tab.key ? '1px solid rgba(255, 215, 0, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '8px',
-                        color: activeKategorie === tab.key ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                        cursor: 'pointer',
-                        fontSize: '0.95rem',
-                        fontWeight: activeKategorie === tab.key ? '600' : '400',
-                        transition: 'all 0.2s ease',
-                        whiteSpace: 'nowrap'
-                      }}
+                      className={`sv-kat-tab-btn ${activeKategorie === tab.key ? 'sv-kat-tab-btn--active' : ''}`}
                     >
                       {tab.label}
                     </button>
@@ -1771,14 +1644,8 @@ const StilVerwaltung = () => {
                 </div>
 
                 {/* Gürtel der aktiven Kategorie */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <div className="belt-grid" style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                    gap: '1rem',
-                    width: '100%',
-                    boxSizing: 'border-box'
-                  }}>
+                <div className="sv-mb-15">
+                  <div className="belt-grid sv-belt-grid">
                     {standardGuertel
                       .filter(guertel => guertel.kategorie === activeKategorie)
                       .map(guertel => (
@@ -1807,35 +1674,14 @@ const StilVerwaltung = () => {
                             });
                           }}
                           title={guertel.name}
-                          style={{
-                            padding: '1rem 0.75rem',
-                            background: newGraduierung.name === guertel.name ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                            border: newGraduierung.name === guertel.name ? '2px solid #ffd700' : '2px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '12px',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            minHeight: '110px',
-                            boxSizing: 'border-box'
-                          }}
+                          className={`sv-belt-option-card ${newGraduierung.name === guertel.name ? 'sv-belt-option-card--selected' : ''}`}
                         >
                           <BeltPreview
                             primaer={guertel.primaer}
                             sekundaer={guertel.sekundaer}
                             size="small"
                           />
-                          <span style={{
-                            fontSize: '0.85rem',
-                            color: newGraduierung.name === guertel.name ? '#ffd700' : 'rgba(255, 255, 255, 0.85)',
-                            marginTop: '0.5rem',
-                            textAlign: 'center',
-                            lineHeight: '1.3',
-                            wordWrap: 'break-word',
-                            width: '100%'
-                          }}>{guertel.name}</span>
+                          <span className={`sv-belt-option-name ${newGraduierung.name === guertel.name ? 'sv-belt-option-name--selected' : ''}`}>{guertel.name}</span>
                         </div>
                       ))
                     }
@@ -1844,23 +1690,17 @@ const StilVerwaltung = () => {
 
                 {/* Vorschau des gewählten Gürtels */}
                 {newGraduierung.name && (
-                  <div style={{
-                    padding: '1rem',
-                    background: 'rgba(255, 215, 0, 0.05)',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255, 215, 0, 0.2)',
-                    marginBottom: '1.5rem'
-                  }}>
-                    <h4 style={{ margin: '0 0 1rem 0', color: '#ffd700', fontSize: '1rem' }}>Vorschau:</h4>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div className="sv-belt-preview-box">
+                    <h4 className="sv-belt-preview-title">Vorschau:</h4>
+                    <div className="sv-belt-preview-row">
                       <BeltPreview
                         primaer={newGraduierung.farbe_hex}
                         sekundaer={newGraduierung.farbe_sekundaer}
                         size="large"
                       />
                       <div>
-                        <strong style={{ color: 'rgba(255, 255, 255, 0.9)', fontSize: '1.1rem', display: 'block', marginBottom: '0.5rem' }}>{newGraduierung.name}</strong>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+                        <strong className="sv-belt-preview-name">{newGraduierung.name}</strong>
+                        <div className="sv-belt-preview-meta">
                           <span>Primär: {newGraduierung.farbe_hex}</span>
                           {newGraduierung.farbe_sekundaer && (
                             <span>Sekundär: {newGraduierung.farbe_sekundaer}</span>
@@ -1875,9 +1715,9 @@ const StilVerwaltung = () => {
                 )}
 
                 {/* Anforderungen */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="sv-grid-2col">
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Trainingsstunden (Minimum):
                     </label>
                     <input
@@ -1888,20 +1728,11 @@ const StilVerwaltung = () => {
                         trainingsstunden_min: Math.max(0, parseInt(e.target.value) || 0)
                       })}
                       min="0"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '1rem',
-                        boxSizing: 'border-box'
-                      }}
+                      className="sv-number-input"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Mindestzeit (Monate):
                     </label>
                     <input
@@ -1912,51 +1743,23 @@ const StilVerwaltung = () => {
                         mindestzeit_monate: Math.max(0, parseInt(e.target.value) || 0)
                       })}
                       min="0"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '1rem',
-                        boxSizing: 'border-box'
-                      }}
+                      className="sv-number-input"
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <div className="sv-modal-footer">
                   <button
                     onClick={() => setShowAddForm(false)}
                     disabled={loading}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '8px',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontSize: '1rem',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.5 : 1
-                    }}
+                    className="sv-btn-cancel"
                   >
                     Abbrechen
                   </button>
                   <button
                     onClick={handleAddGraduierung}
                     disabled={!newGraduierung.name || loading}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: (!newGraduierung.name || loading) ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 215, 0, 0.2)',
-                      border: '1px solid #ffd700',
-                      borderRadius: '8px',
-                      color: '#ffd700',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      cursor: (!newGraduierung.name || loading) ? 'not-allowed' : 'pointer',
-                      opacity: (!newGraduierung.name || loading) ? 0.5 : 1
-                    }}
+                    className="sv-btn-save"
                   >
                     {loading ? 'Wird gespeichert...' : 'Graduierung hinzufügen'}
                   </button>
@@ -1972,66 +1775,26 @@ const StilVerwaltung = () => {
           (
             <div
               onClick={() => setShowCustomColorForm(false)}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
-                padding: '2rem 0',
-                overflowY: 'auto',
-                zIndex: 1000
-              }}
+              className="sv-modal-overlay"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  display: 'block',
-                  width: '90%',
-                  maxWidth: '600px',
-                  margin: '0 auto',
-                  padding: '2rem',
-                  boxSizing: 'border-box',
-                  overflowX: 'hidden',
-                  overflowY: 'visible',
-                  background: 'rgba(26, 26, 46, 0.98)',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                  position: 'relative'
-                }}
+                className="sv-modal-content sv-modal-content--600"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                  <h3 style={{ margin: 0, color: '#ffd700', fontSize: '1.5rem' }}>Eigene Gürtel-Farbe erstellen</h3>
+                <div className="sv-section-header">
+                  <h3 className="sv-heading-primary">Eigene Gürtel-Farbe erstellen</h3>
                   <button
                     onClick={() => setShowCustomColorForm(false)}
                     title="Schließen"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'rgba(255,255,255,0.6)',
-                      fontSize: '2rem',
-                      cursor: 'pointer',
-                      padding: '0',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="sv-close-btn"
                   >
                     ×
                   </button>
                 </div>
                 
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
-                    Graduierung-Name: <span style={{ color: '#ff6b6b', fontWeight: '700' }}>*</span>
+                <div className="sv-mb-15">
+                  <label className="sv-label-primary">
+                    Graduierung-Name: <span className="sv-required-star">*</span>
                   </label>
                   <input
                     type="text"
@@ -2042,31 +1805,21 @@ const StilVerwaltung = () => {
                     })}
                     placeholder="z.B. Lila-Silbergurt"
                     autoFocus
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: !newGraduierung.name ? '2px solid rgba(255, 107, 107, 0.5)' : '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '8px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '1rem',
-                      boxSizing: 'border-box',
-                      boxShadow: !newGraduierung.name ? '0 0 0 3px rgba(255, 107, 107, 0.1)' : 'none'
-                    }}
+                    className={`sv-grad-name-input ${!newGraduierung.name ? 'sv-grad-name-input--error' : ''}`}
                   />
                   {!newGraduierung.name && (
-                    <small style={{ color: '#ff6b6b', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                    <small className="sv-required-hint">
                       Bitte geben Sie einen Namen ein
                     </small>
                   )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div className="u-grid-2col">
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Primärfarbe:
                     </label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div className="sv-flex-gap-sm">
                       <input
                         type="color"
                         value={newGraduierung.farbe_hex}
@@ -2074,13 +1827,7 @@ const StilVerwaltung = () => {
                           ...newGraduierung,
                           farbe_hex: e.target.value
                         })}
-                        style={{
-                          width: '50px',
-                          height: '40px',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: '6px',
-                          cursor: 'pointer'
-                        }}
+                        className="sv-color-picker"
                       />
                       <input
                         type="text"
@@ -2097,33 +1844,15 @@ const StilVerwaltung = () => {
                           }
                         }}
                         placeholder="#32CD32"
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: '6px',
-                          color: 'rgba(255, 255, 255, 0.9)',
-                          fontSize: '0.85rem',
-                          textAlign: 'center',
-                          textTransform: 'uppercase'
-                        }}
+                        className="sv-color-text-input"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                      padding: '0.75rem',
-                      background: newGraduierung.farbe_sekundaer ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid ' + (newGraduierung.farbe_sekundaer ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.2)'),
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}>
+                    <label
+                      className={`sv-sekundaer-label ${newGraduierung.farbe_sekundaer ? 'sv-sekundaer-label--active' : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={newGraduierung.farbe_sekundaer !== null}
@@ -2131,23 +1860,14 @@ const StilVerwaltung = () => {
                           ...newGraduierung,
                           farbe_sekundaer: e.target.checked ? '#FFFFFF' : null
                         })}
-                        style={{
-                          marginRight: '0.75rem',
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer'
-                        }}
+                        className="sv-sekundaer-checkbox"
                       />
-                      <span style={{
-                        color: newGraduierung.farbe_sekundaer ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '0.9rem',
-                        fontWeight: newGraduierung.farbe_sekundaer ? '600' : '500'
-                      }}>
+                      <span className={`sv-sekundaer-text ${newGraduierung.farbe_sekundaer ? 'sv-sekundaer-text--active' : ''}`}>
                         Sekundärfarbe (Streifen) hinzufügen
                       </span>
                     </label>
                     {newGraduierung.farbe_sekundaer ? (
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div className="sv-flex-gap-sm">
                         <input
                           type="color"
                           value={newGraduierung.farbe_sekundaer}
@@ -2155,13 +1875,7 @@ const StilVerwaltung = () => {
                             ...newGraduierung,
                             farbe_sekundaer: e.target.value
                           })}
-                          style={{
-                            width: '50px',
-                            height: '40px',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '6px',
-                            cursor: 'pointer'
-                          }}
+                          className="sv-color-picker"
                         />
                         <input
                           type="text"
@@ -2177,21 +1891,11 @@ const StilVerwaltung = () => {
                             }
                           }}
                           placeholder="#FFFFFF"
-                          style={{
-                            flex: 1,
-                            padding: '0.5rem',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '6px',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            fontSize: '0.85rem',
-                            textAlign: 'center',
-                            textTransform: 'uppercase'
-                          }}
+                          className="sv-color-text-input"
                         />
                       </div>
                     ) : (
-                      <div style={{ height: '40px', display: 'flex', alignItems: 'center', color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem' }}>
+                      <div className="sv-placeholder-row">
                         Keine Sekundärfarbe
                       </div>
                     )}
@@ -2199,8 +1903,8 @@ const StilVerwaltung = () => {
                 </div>
 
                 {/* Live-Vorschau kompakt */}
-                <div style={{ padding: '1rem', background: 'rgba(255, 215, 0, 0.05)', borderRadius: '8px', border: '1px solid rgba(255, 215, 0, 0.2)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', fontWeight: '500' }}>Vorschau:</span>
+                <div className="sv-card-gold">
+                  <span className="sv-label-secondary">Vorschau:</span>
                   <BeltPreview
                     primaer={newGraduierung.farbe_hex}
                     sekundaer={newGraduierung.farbe_sekundaer}
@@ -2208,9 +1912,9 @@ const StilVerwaltung = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="sv-grid-2col">
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Trainingsstunden (Minimum):
                     </label>
                     <input
@@ -2221,20 +1925,11 @@ const StilVerwaltung = () => {
                         trainingsstunden_min: Math.max(0, parseInt(e.target.value) || 0)
                       })}
                       min="0"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '1rem',
-                        boxSizing: 'border-box'
-                      }}
+                      className="sv-number-input"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Mindestzeit (Monate):
                     </label>
                     <input
@@ -2245,34 +1940,16 @@ const StilVerwaltung = () => {
                         mindestzeit_monate: Math.max(0, parseInt(e.target.value) || 0)
                       })}
                       min="0"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '1rem',
-                        boxSizing: 'border-box'
-                      }}
+                      className="sv-number-input"
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: '1.5rem' }}>
+                <div className="sv-actions-row">
                   <button
                     onClick={() => setShowCustomColorForm(false)}
                     disabled={loading}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '8px',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontSize: '1rem',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.5 : 1
-                    }}
+                    className="sv-btn-cancel"
                   >
                     Abbrechen
                   </button>
@@ -2280,17 +1957,7 @@ const StilVerwaltung = () => {
                     onClick={handleAddCustomGraduierung}
                     disabled={!newGraduierung.name || loading}
                     title={!newGraduierung.name ? 'Bitte geben Sie zuerst einen Namen ein' : 'Graduierung erstellen'}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: (!newGraduierung.name || loading) ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 215, 0, 0.2)',
-                      border: '1px solid #ffd700',
-                      borderRadius: '8px',
-                      color: '#ffd700',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      cursor: (!newGraduierung.name || loading) ? 'not-allowed' : 'pointer',
-                      opacity: (!newGraduierung.name || loading) ? 0.5 : 1
-                    }}
+                    className="sv-btn-save"
                   >
                     {loading ? 'Wird erstellt...' : 'Eigene Graduierung erstellen'}
                   </button>
@@ -2309,68 +1976,28 @@ const StilVerwaltung = () => {
                 setShowEditGraduierung(false);
                 setEditingGraduierung(null);
               }}
-              style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: 'rgba(0, 0, 0, 0.8)',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
-                padding: '2rem 0',
-                overflowY: 'auto',
-                zIndex: 1000
-              }}
+              className="sv-modal-overlay"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  display: 'block',
-                  width: '90%',
-                  maxWidth: '700px',
-                  margin: '0 auto',
-                  padding: '2rem',
-                  boxSizing: 'border-box',
-                  overflowX: 'hidden',
-                  overflowY: 'visible',
-                  background: 'rgba(26, 26, 46, 0.98)',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-                  position: 'relative'
-                }}
+                className="sv-modal-content sv-modal-content--700"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-                  <h3 style={{ margin: 0, color: '#ffd700', fontSize: '1.5rem' }}>Graduierung bearbeiten</h3>
+                <div className="sv-section-header">
+                  <h3 className="sv-heading-primary">Graduierung bearbeiten</h3>
                   <button
                     onClick={() => {
                       setShowEditGraduierung(false);
                       setEditingGraduierung(null);
                     }}
                     title="Schließen"
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'rgba(255,255,255,0.6)',
-                      fontSize: '2rem',
-                      cursor: 'pointer',
-                      padding: '0',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="sv-close-btn"
                   >
                     ×
                   </button>
                 </div>
 
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                <div className="sv-mb-15">
+                  <label className="sv-label-primary">
                     Graduierung-Name:
                   </label>
                   <input
@@ -2380,25 +2007,16 @@ const StilVerwaltung = () => {
                       ...editingGraduierung,
                       name: e.target.value
                     })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '8px',
-                      color: 'rgba(255, 255, 255, 0.9)',
-                      fontSize: '1rem',
-                      boxSizing: 'border-box'
-                    }}
+                    className="sv-text-input"
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                <div className="u-grid-2col">
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Primärfarbe:
                     </label>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <div className="sv-flex-gap-sm">
                       <input
                         type="color"
                         value={editingGraduierung.farbe_hex}
@@ -2406,13 +2024,7 @@ const StilVerwaltung = () => {
                           ...editingGraduierung,
                           farbe_hex: e.target.value
                         })}
-                        style={{
-                          width: '50px',
-                          height: '40px',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: '6px',
-                          cursor: 'pointer'
-                        }}
+                        className="sv-color-picker"
                       />
                       <input
                         type="text"
@@ -2428,33 +2040,15 @@ const StilVerwaltung = () => {
                           }
                         }}
                         placeholder="#32CD32"
-                        style={{
-                          flex: 1,
-                          padding: '0.5rem',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          border: '1px solid rgba(255, 255, 255, 0.2)',
-                          borderRadius: '6px',
-                          color: 'rgba(255, 255, 255, 0.9)',
-                          fontSize: '0.85rem',
-                          textAlign: 'center',
-                          textTransform: 'uppercase'
-                        }}
+                        className="sv-color-text-input"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      marginBottom: '0.5rem',
-                      padding: '0.75rem',
-                      background: editingGraduierung.farbe_sekundaer ? 'rgba(255, 215, 0, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid ' + (editingGraduierung.farbe_sekundaer ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 255, 255, 0.2)'),
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}>
+                    <label
+                      className={`sv-sekundaer-label ${editingGraduierung.farbe_sekundaer ? 'sv-sekundaer-label--active' : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={editingGraduierung.farbe_sekundaer !== null}
@@ -2462,23 +2056,14 @@ const StilVerwaltung = () => {
                           ...editingGraduierung,
                           farbe_sekundaer: e.target.checked ? '#FFFFFF' : null
                         })}
-                        style={{
-                          marginRight: '0.75rem',
-                          width: '18px',
-                          height: '18px',
-                          cursor: 'pointer'
-                        }}
+                        className="sv-sekundaer-checkbox"
                       />
-                      <span style={{
-                        color: editingGraduierung.farbe_sekundaer ? '#ffd700' : 'rgba(255, 255, 255, 0.7)',
-                        fontSize: '0.9rem',
-                        fontWeight: editingGraduierung.farbe_sekundaer ? '600' : '500'
-                      }}>
+                      <span className={`sv-sekundaer-text ${editingGraduierung.farbe_sekundaer ? 'sv-sekundaer-text--active' : ''}`}>
                         Sekundärfarbe (Streifen) hinzufügen
                       </span>
                     </label>
                     {editingGraduierung.farbe_sekundaer ? (
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                      <div className="sv-flex-gap-sm">
                         <input
                           type="color"
                           value={editingGraduierung.farbe_sekundaer}
@@ -2486,13 +2071,7 @@ const StilVerwaltung = () => {
                             ...editingGraduierung,
                             farbe_sekundaer: e.target.value
                           })}
-                          style={{
-                            width: '50px',
-                            height: '40px',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '6px',
-                            cursor: 'pointer'
-                          }}
+                          className="sv-color-picker"
                         />
                         <input
                           type="text"
@@ -2508,21 +2087,11 @@ const StilVerwaltung = () => {
                             }
                           }}
                           placeholder="#FFFFFF"
-                          style={{
-                            flex: 1,
-                            padding: '0.5rem',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            borderRadius: '6px',
-                            color: 'rgba(255, 255, 255, 0.9)',
-                            fontSize: '0.85rem',
-                            textAlign: 'center',
-                            textTransform: 'uppercase'
-                          }}
+                          className="sv-color-text-input"
                         />
                       </div>
                     ) : (
-                      <div style={{ height: '40px', display: 'flex', alignItems: 'center', color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.85rem' }}>
+                      <div className="sv-placeholder-row">
                         Keine Sekundärfarbe
                       </div>
                     )}
@@ -2530,8 +2099,8 @@ const StilVerwaltung = () => {
                 </div>
 
                 {/* Live-Vorschau kompakt */}
-                <div style={{ padding: '1rem', background: 'rgba(255, 215, 0, 0.05)', borderRadius: '8px', border: '1px solid rgba(255, 215, 0, 0.2)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '0.9rem', fontWeight: '500' }}>Vorschau:</span>
+                <div className="sv-card-gold">
+                  <span className="sv-label-secondary">Vorschau:</span>
                   <BeltPreview
                     primaer={editingGraduierung.farbe_hex}
                     sekundaer={editingGraduierung.farbe_sekundaer}
@@ -2539,9 +2108,9 @@ const StilVerwaltung = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div className="sv-grid-2col">
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Trainingsstunden:
                     </label>
                     <input
@@ -2552,20 +2121,11 @@ const StilVerwaltung = () => {
                         trainingsstunden_min: Math.max(0, parseInt(e.target.value) || 0)
                       })}
                       min="0"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '1rem',
-                        boxSizing: 'border-box'
-                      }}
+                      className="sv-number-input"
                     />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+                    <label className="sv-label-primary">
                       Mindestzeit (Monate):
                     </label>
                     <input
@@ -2576,37 +2136,19 @@ const StilVerwaltung = () => {
                         mindestzeit_monate: Math.max(0, parseInt(e.target.value) || 0)
                       })}
                       min="0"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '8px',
-                        color: 'rgba(255, 255, 255, 0.9)',
-                        fontSize: '1rem',
-                        boxSizing: 'border-box'
-                      }}
+                      className="sv-number-input"
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', marginTop: '1.5rem' }}>
+                <div className="sv-actions-row">
                   <button
                     onClick={() => {
                       setShowEditGraduierung(false);
                       setEditingGraduierung(null);
                     }}
                     disabled={loading}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '8px',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                      fontSize: '1rem',
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.5 : 1
-                    }}
+                    className="sv-btn-cancel"
                   >
                     Abbrechen
                   </button>
@@ -2617,17 +2159,7 @@ const StilVerwaltung = () => {
                       setEditingGraduierung(null);
                     }}
                     disabled={!editingGraduierung.name || loading}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      background: (!editingGraduierung.name || loading) ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 215, 0, 0.2)',
-                      border: '1px solid #ffd700',
-                      borderRadius: '8px',
-                      color: '#ffd700',
-                      fontSize: '1rem',
-                      fontWeight: '600',
-                      cursor: (!editingGraduierung.name || loading) ? 'not-allowed' : 'pointer',
-                      opacity: (!editingGraduierung.name || loading) ? 0.5 : 1
-                    }}
+                    className="sv-btn-save"
                   >
                     {loading ? 'Wird gespeichert...' : 'Änderungen speichern'}
                   </button>
@@ -2676,40 +2208,14 @@ const StilVerwaltung = () => {
             setSelectedGraduierung(null);
             setSelectedKategorie('');
           }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            padding: '2rem 0',
-            overflowY: 'auto',
-            zIndex: 1000
-          }}
+          className="sv-modal-overlay"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              display: 'block',
-              width: '90%',
-              maxWidth: '600px',
-              margin: '0 auto',
-              padding: '2rem',
-              boxSizing: 'border-box',
-              background: 'rgba(26, 26, 46, 0.98)',
-              borderRadius: '20px',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-              position: 'relative'
-            }}
+            className="sv-modal-content sv-modal-content--600"
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-              <h3 style={{ margin: 0, color: '#ffd700', fontSize: '1.5rem' }}>
+            <div className="sv-section-header">
+              <h3 className="sv-heading-primary">
                 {editingPruefungsinhalt ? 'Prüfungsinhalt bearbeiten' : 'Prüfungsinhalt hinzufügen'}
               </h3>
               <button
@@ -2720,42 +2226,30 @@ const StilVerwaltung = () => {
                   setSelectedKategorie('');
                 }}
                 title="Schließen"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontSize: '2rem',
-                  cursor: 'pointer',
-                  padding: '0',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="sv-close-btn"
               >
                 ×
               </button>
             </div>
 
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
+            <div className="sv-mb-15">
+              <div className="sv-belt-info-row">
                 <BeltPreview
                   primaer={selectedGraduierung?.farbe_hex}
                   sekundaer={selectedGraduierung?.farbe_sekundaer}
                   size="small"
                 />
                 <div>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.9)', fontWeight: '600' }}>
+                  <div className="sv-belt-info-name">
                     {selectedGraduierung?.name}
                   </div>
-                  <div style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.85rem' }}>
+                  <div className="sv-belt-info-kat">
                     {kategorieLabels[selectedKategorie]}
                   </div>
                 </div>
               </div>
 
-              <label style={{ display: 'block', marginBottom: '0.5rem', color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.9rem', fontWeight: '500' }}>
+              <label className="sv-label-primary">
                 Inhalt:
               </label>
               <textarea
@@ -2763,22 +2257,11 @@ const StilVerwaltung = () => {
                 onChange={(e) => setInhaltText(e.target.value)}
                 placeholder="z.B. Grundstellungen, Heian Shodan, Grundkumite..."
                 rows="4"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  fontSize: '1rem',
-                  boxSizing: 'border-box',
-                  resize: 'vertical',
-                  fontFamily: 'inherit'
-                }}
+                className="sv-textarea"
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <div className="sv-modal-footer">
               <button
                 onClick={() => {
                   setShowPruefungsinhaltForm(false);
@@ -2787,33 +2270,14 @@ const StilVerwaltung = () => {
                   setSelectedKategorie('');
                 }}
                 disabled={loading}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
-                  borderRadius: '8px',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  fontSize: '1rem',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.5 : 1
-                }}
+                className="sv-btn-cancel"
               >
                 Abbrechen
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!inhaltText.trim() || loading}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  background: (!inhaltText.trim() || loading) ? 'rgba(255, 215, 0, 0.3)' : 'rgba(255, 215, 0, 0.2)',
-                  border: '1px solid #ffd700',
-                  borderRadius: '8px',
-                  color: '#ffd700',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: (!inhaltText.trim() || loading) ? 'not-allowed' : 'pointer',
-                  opacity: (!inhaltText.trim() || loading) ? 0.5 : 1
-                }}
+                className="sv-btn-save"
               >
                 {loading ? 'Wird gespeichert...' : editingPruefungsinhalt ? 'Speichern' : 'Hinzufügen'}
               </button>
@@ -2847,49 +2311,23 @@ const StilVerwaltung = () => {
             setShowPruefungsinhalteModal(false);
             setViewingGraduierung(null);
           }}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0, 0, 0, 0.8)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'center',
-            padding: '2rem 0',
-            overflowY: 'auto',
-            zIndex: 1000
-          }}
+          className="sv-modal-overlay"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              display: 'block',
-              width: '90%',
-              maxWidth: '900px',
-              margin: '0 auto',
-              padding: '2rem',
-              boxSizing: 'border-box',
-              background: 'rgba(26, 26, 46, 0.98)',
-              borderRadius: '20px',
-              border: '1px solid rgba(255, 215, 0, 0.3)',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-              position: 'relative'
-            }}
+            className="sv-modal-content sv-modal-content--900"
           >
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 215, 0, 0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="sv-section-header">
+              <div className="u-flex-row-lg">
                 <BeltPreview
                   primaer={viewingGraduierung.farbe_hex}
                   sekundaer={viewingGraduierung.farbe_sekundaer}
                   size="normal"
                 />
                 <div>
-                  <h3 style={{ margin: 0, color: '#ffd700', fontSize: '1.5rem' }}>Prüfungsinhalte</h3>
-                  <p style={{ margin: '0.25rem 0 0 0', color: 'rgba(255, 255, 255, 0.7)', fontSize: '1rem' }}>
+                  <h3 className="sv-heading-primary">Prüfungsinhalte</h3>
+                  <p className="sv-modal-subtitle">
                     {viewingGraduierung.name}
                   </p>
                 </div>
@@ -2900,84 +2338,41 @@ const StilVerwaltung = () => {
                   setViewingGraduierung(null);
                 }}
                 title="Schließen"
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontSize: '2rem',
-                  cursor: 'pointer',
-                  padding: '0',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="sv-close-btn"
               >
                 ×
               </button>
             </div>
 
             {/* Prüfungsinhalte Kategorien */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <div className="sv-pruef-kat-grid">
               {kategorien.map(kategorie => {
                 const inhalte = pruefungsinhalte[kategorie.key] || [];
 
                 return (
                   <div
                     key={kategorie.key}
-                    style={{
-                      padding: '1.5rem',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: '12px'
-                    }}
+                    className="sv-pruef-kat-card"
                   >
-                    <h4 style={{
-                      margin: '0 0 1rem 0',
-                      color: '#ffd700',
-                      fontSize: '1.1rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem'
-                    }}>
+                    <h4 className="sv-pruef-kat-title">
                       <span>{kategorie.icon}</span>
                       <span>{kategorie.label}</span>
                     </h4>
                     {inhalte.length > 0 ? (
-                      <ul style={{
-                        listStyle: 'none',
-                        padding: 0,
-                        margin: 0,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.5rem'
-                      }}>
+                      <ul className="sv-pruef-inhalt-list">
                         {inhalte
                           .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
                           .map(inhalt => (
                             <li
                               key={inhalt.id}
-                              style={{
-                                padding: '0.75rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                borderRadius: '8px',
-                                color: 'rgba(255, 255, 255, 0.9)',
-                                fontSize: '0.95rem',
-                                borderLeft: '3px solid rgba(255, 215, 0, 0.5)'
-                              }}
+                              className="sv-pruef-inhalt-item"
                             >
                               {inhalt.inhalt}
                             </li>
                           ))}
                       </ul>
                     ) : (
-                      <p style={{
-                        color: 'rgba(255, 255, 255, 0.5)',
-                        fontSize: '0.9rem',
-                        fontStyle: 'italic',
-                        margin: 0
-                      }}>
+                      <p className="sv-pruef-inhalt-empty">
                         Noch keine Inhalte definiert
                       </p>
                     )}
@@ -2987,14 +2382,13 @@ const StilVerwaltung = () => {
             </div>
 
             {/* Footer */}
-            <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center' }}>
+            <div className="sv-pruef-footer">
               <button
                 onClick={() => {
                   setShowPruefungsinhalteModal(false);
                   setViewingGraduierung(null);
                 }}
-                className="sub-tab-btn"
-                style={{ minWidth: '200px' }}
+                className="sub-tab-btn sv-btn-wide"
               >
                 Schließen
               </button>
@@ -3063,24 +2457,20 @@ const StilVerwaltung = () => {
               return (
                 <div key={grad.graduierung_id} className="graduierung-pruefung">
                   <div
-                    className="graduierung-header clickable"
+                    className="graduierung-header clickable sv-pruef-mgr-cursor"
                     onClick={() => toggleGraduierung(grad.graduierung_id)}
-                    style={{ cursor: 'pointer' }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                    <div className="sv-pruef-mgr-row">
                       <BeltPreview
                         primaer={grad.farbe_hex}
                         sekundaer={grad.farbe_sekundaer}
                         size="normal"
                       />
-                      <h4 style={{ margin: 0 }}>{grad.name}</h4>
+                      <h4 className="sv-grad-h4">{grad.name}</h4>
                     </div>
-                    <span style={{
-                      fontSize: '1.5rem',
-                      transition: 'transform 0.3s ease',
-                      transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                      display: 'inline-block'
-                    }}>
+                    <span
+                      className={`sv-chevron ${isExpanded ? 'sv-chevron--expanded' : ''}`}
+                    >
                       ▼
                     </span>
                   </div>
@@ -3102,18 +2492,16 @@ const StilVerwaltung = () => {
                                     <span>{inhalt.inhalt}</span>
                                     <div className="inhalt-actions">
                                       <button
-                                        className="sub-tab-btn"
+                                        className="sub-tab-btn sv-pruef-action-btn"
                                         onClick={() => handleEditPruefungsinhalt(grad, kategorie.key, inhalt)}
                                         title="Bearbeiten"
-                                        style={{fontSize: '0.75rem', padding: '0.35rem 0.75rem'}}
                                       >
                                         ✏️
                                       </button>
                                       <button
-                                        className="sub-tab-btn"
+                                        className="sub-tab-btn sv-pruef-action-btn"
                                         onClick={() => handleDeletePruefungsinhalt(grad, kategorie.key, inhalt.id)}
                                         title="Löschen"
-                                        style={{fontSize: '0.75rem', padding: '0.35rem 0.75rem'}}
                                       >
                                         🗑️
                                       </button>
@@ -3126,7 +2514,7 @@ const StilVerwaltung = () => {
                               ))
                             )}
                           </ul>
-                          <div className="sub-tabs" style={{ marginTop: '0.5rem' }}>
+                          <div className="sub-tabs sv-sub-tabs-mt">
                             <button
                               className="sub-tab-btn"
                               onClick={() => handleAddPruefungsinhalt(grad, kategorie.key)}
@@ -3580,11 +2968,7 @@ const StilVerwaltung = () => {
                       </button>
 
                       <button
-                        className="sub-tab-btn"
-                        style={{
-                          background: 'linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(34, 139, 34, 0.3))',
-                          borderColor: '#32CD32'
-                        }}
+                        className="sub-tab-btn sv-allgemein-apply-btn"
                         onClick={async () => {
                           if (!confirm('Möchten Sie die aktuellen Wartezeiten auf ALLE bestehenden Graduierungen anwenden?\n\nDies überschreibt die Mindestzeiten aller Graduierungen entsprechend ihrer Kategorie.\n\nHinweis: Kategorien werden automatisch basierend auf dem Gürtelnamen erkannt.')) {
                             return;
@@ -3692,7 +3076,7 @@ const StilVerwaltung = () => {
                 )}
 
                 {activeTab === 'graduierungen' && (
-                  <div style={{ isolation: 'isolate', position: 'relative', zIndex: 1 }}>
+                  <div className="sv-graduierungen-isolation">
                     <GraduierungManager />
                   </div>
                 )}
@@ -3731,54 +3115,28 @@ const StilVerwaltung = () => {
 
                         {/* Zusammenfassung oben - 3 Boxen nebeneinander */}
                         {statistiken?.summary && (
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: '20px',
-                            marginBottom: '30px'
-                          }}>
-                            <div style={{
-                              padding: '20px',
-                              background: 'rgba(20, 20, 35, 0.7)',
-                              backdropFilter: 'blur(20px)',
-                              border: '1px solid rgba(255, 215, 0, 0.2)',
-                              borderRadius: '12px',
-                              textAlign: 'center'
-                            }}>
-                              <div style={{color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: '10px'}}>
+                          <div className="sv-stats-summary-grid">
+                            <div className="sv-stat-summary-card">
+                              <div className="sv-stat-label">
                                 Gürtel gesamt
                               </div>
-                              <div style={{color: '#FFD700', fontSize: '36px', fontWeight: 'bold'}}>
+                              <div className="sv-stat-value">
                                 {statistiken.summary.total_graduierungen || 0}
                               </div>
                             </div>
-                            <div style={{
-                              padding: '20px',
-                              background: 'rgba(20, 20, 35, 0.7)',
-                              backdropFilter: 'blur(20px)',
-                              border: '1px solid rgba(255, 215, 0, 0.2)',
-                              borderRadius: '12px',
-                              textAlign: 'center'
-                            }}>
-                              <div style={{color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: '10px'}}>
+                            <div className="sv-stat-summary-card">
+                              <div className="sv-stat-label">
                                 Aktive Mitglieder
                               </div>
-                              <div style={{color: '#FFD700', fontSize: '36px', fontWeight: 'bold'}}>
+                              <div className="sv-stat-value">
                                 {statistiken.summary.total_mitglieder || 0}
                               </div>
                             </div>
-                            <div style={{
-                              padding: '20px',
-                              background: 'rgba(20, 20, 35, 0.7)',
-                              backdropFilter: 'blur(20px)',
-                              border: '1px solid rgba(255, 215, 0, 0.2)',
-                              borderRadius: '12px',
-                              textAlign: 'center'
-                            }}>
-                              <div style={{color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginBottom: '10px'}}>
+                            <div className="sv-stat-summary-card">
+                              <div className="sv-stat-label">
                                 Kategorien
                               </div>
-                              <div style={{color: '#FFD700', fontSize: '36px', fontWeight: 'bold'}}>
+                              <div className="sv-stat-value">
                                 {statistiken.summary.kategorien_count || 0}
                               </div>
                             </div>
@@ -3786,41 +3144,18 @@ const StilVerwaltung = () => {
                         )}
 
                         {/* Hauptbereich: Schüler-Verteilung und Prüfungs-Erfolgsrate nebeneinander */}
-                        <div style={{
-                          display: 'grid',
-                          gridTemplateColumns: '2fr 1fr',
-                          gap: '25px',
-                          alignItems: 'start'
-                        }}>
+                        <div className="sv-stats-main-grid">
 
                           {/* Linke Spalte: Schüler-Verteilung */}
                           {statistiken?.graduierungen && statistiken.graduierungen.length > 0 && (
-                            <div style={{
-                              padding: '25px',
-                              background: 'rgba(20, 20, 35, 0.7)',
-                              backdropFilter: 'blur(20px)',
-                              border: '1px solid rgba(255, 215, 0, 0.2)',
-                              borderRadius: '12px'
-                            }}>
-                              <h4 style={{
-                                color: '#FFD700',
-                                fontSize: '18px',
-                                marginBottom: '8px',
-                                fontWeight: '600'
-                              }}>
+                            <div className="sv-stats-card">
+                              <h4 className="sv-stats-card-title">
                                 👥 Schüler-Verteilung nach Gürteln
                               </h4>
-                              <p style={{
-                                color: 'rgba(255,255,255,0.6)',
-                                fontSize: '14px',
-                                marginBottom: '20px'
-                              }}>
+                              <p className="sv-stats-card-subtitle">
                                 Anzahl der Schüler pro Gürtelfarbe
                               </p>
-                              <div style={{
-                                display: 'grid',
-                                gap: '10px'
-                              }}>
+                              <div className="sv-punkte-grid">
                                 {statistiken.graduierungen.map((grad, idx) => (
                                   <GurtStatistikItem
                                     key={grad.graduierung_id || idx}
@@ -3835,127 +3170,51 @@ const StilVerwaltung = () => {
 
                           {/* Rechte Spalte: Prüfungs-Erfolgsrate */}
                           {pruefungsStats?.gesamt && (
-                            <div style={{
-                              padding: '25px',
-                              background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.05))',
-                              backdropFilter: 'blur(20px)',
-                              border: '2px solid rgba(255, 215, 0, 0.3)',
-                              borderRadius: '12px',
-                              position: 'sticky',
-                              top: '20px'
-                            }}>
-                              <h4 style={{
-                                color: '#FFD700',
-                                fontSize: '18px',
-                                marginBottom: '8px',
-                                fontWeight: '600',
-                                textAlign: 'center'
-                              }}>
+                            <div className="sv-pruef-success-panel">
+                              <h4 className="sv-stats-card-title-center">
                                 ✅ Prüfungs-Erfolgsrate
                               </h4>
-                              <p style={{
-                                color: 'rgba(255,255,255,0.6)',
-                                fontSize: '14px',
-                                marginBottom: '25px',
-                                textAlign: 'center'
-                              }}>
+                              <p className="sv-stats-card-subtitle-center">
                                 Erfolgsquote bei Gürtelprüfungen
                               </p>
 
                               {/* Großer Prozentkreis */}
-                              <div style={{
-                                textAlign: 'center',
-                                marginBottom: '25px'
-                              }}>
-                                <div style={{
-                                  width: '150px',
-                                  height: '150px',
-                                  margin: '0 auto',
-                                  borderRadius: '50%',
-                                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.05))',
-                                  border: '3px solid rgba(255, 215, 0, 0.4)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  boxShadow: '0 0 30px rgba(255, 215, 0, 0.3)'
-                                }}>
-                                  <div style={{
-                                    fontSize: '42px',
-                                    fontWeight: 'bold',
-                                    color: '#FFD700',
-                                    textShadow: '0 0 10px rgba(255, 215, 0, 0.5)',
-                                    lineHeight: '1'
-                                  }}>
+                              <div className="sv-percent-circle-wrap">
+                                <div className="sv-percent-circle">
+                                  <div className="sv-percent-number">
                                     {pruefungsStats.gesamt.gesamt > 0
                                       ? Math.round((pruefungsStats.gesamt.bestanden / pruefungsStats.gesamt.gesamt) * 100)
                                       : 0}%
                                   </div>
-                                  <div style={{
-                                    fontSize: '12px',
-                                    color: 'rgba(255,255,255,0.7)',
-                                    marginTop: '5px'
-                                  }}>
+                                  <div className="sv-percent-label">
                                     Erfolgsrate
                                   </div>
                                 </div>
                               </div>
 
                               {/* Details */}
-                              <div style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '10px'
-                              }}>
-                                <div style={{
-                                  padding: '10px 12px',
-                                  background: 'rgba(255,255,255,0.05)',
-                                  borderRadius: '8px',
-                                  borderLeft: '3px solid rgba(255,255,255,0.3)',
-                                  display: 'flex',
-                                  justifyContent: 'space-between'
-                                }}>
-                                  <span style={{color: 'rgba(255,255,255,0.7)', fontSize: '13px'}}>Gesamt:</span>
-                                  <span style={{color: '#FFD700', fontWeight: '600', fontSize: '14px'}}>
+                              <div className="sv-stat-details-col">
+                                <div className="sv-stat-detail-row">
+                                  <span className="sv-stat-detail-label">Gesamt:</span>
+                                  <span className="sv-stat-detail-value">
                                     {pruefungsStats.gesamt.gesamt || 0}
                                   </span>
                                 </div>
-                                <div style={{
-                                  padding: '10px 12px',
-                                  background: 'rgba(50,205,50,0.1)',
-                                  borderRadius: '8px',
-                                  borderLeft: '3px solid #32CD32',
-                                  display: 'flex',
-                                  justifyContent: 'space-between'
-                                }}>
-                                  <span style={{color: 'rgba(255,255,255,0.7)', fontSize: '13px'}}>Bestanden:</span>
-                                  <span style={{color: '#32CD32', fontWeight: '600', fontSize: '14px'}}>
+                                <div className="sv-stat-detail-row--green">
+                                  <span className="sv-stat-detail-label">Bestanden:</span>
+                                  <span className="sv-stat-detail-value--green">
                                     {pruefungsStats.gesamt.bestanden || 0}
                                   </span>
                                 </div>
-                                <div style={{
-                                  padding: '10px 12px',
-                                  background: 'rgba(220,20,60,0.1)',
-                                  borderRadius: '8px',
-                                  borderLeft: '3px solid #DC143C',
-                                  display: 'flex',
-                                  justifyContent: 'space-between'
-                                }}>
-                                  <span style={{color: 'rgba(255,255,255,0.7)', fontSize: '13px'}}>Nicht bestanden:</span>
-                                  <span style={{color: '#DC143C', fontWeight: '600', fontSize: '14px'}}>
+                                <div className="sv-stat-detail-row--red">
+                                  <span className="sv-stat-detail-label">Nicht bestanden:</span>
+                                  <span className="sv-stat-detail-value--red">
                                     {pruefungsStats.gesamt.nicht_bestanden || 0}
                                   </span>
                                 </div>
-                                <div style={{
-                                  padding: '10px 12px',
-                                  background: 'rgba(255,165,0,0.1)',
-                                  borderRadius: '8px',
-                                  borderLeft: '3px solid #FFA500',
-                                  display: 'flex',
-                                  justifyContent: 'space-between'
-                                }}>
-                                  <span style={{color: 'rgba(255,255,255,0.7)', fontSize: '13px'}}>Geplant:</span>
-                                  <span style={{color: '#FFA500', fontWeight: '600', fontSize: '14px'}}>
+                                <div className="sv-stat-detail-row--orange">
+                                  <span className="sv-stat-detail-label">Geplant:</span>
+                                  <span className="sv-stat-detail-value--orange">
                                     {pruefungsStats.gesamt.geplant || 0}
                                   </span>
                                 </div>
@@ -3967,62 +3226,38 @@ const StilVerwaltung = () => {
 
                         {/* Pruefungs-Punkte Statistik */}
                         {statistiken?.pruefungsPunkte?.pro_graduierung?.length > 0 && (
-                          <div style={{
-                            marginTop: '30px',
-                            padding: '25px',
-                            background: 'rgba(20, 20, 35, 0.7)',
-                            backdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255, 215, 0, 0.2)',
-                            borderRadius: '12px'
-                          }}>
-                            <h4 style={{
-                              color: '#FFD700',
-                              fontSize: '18px',
-                              marginBottom: '8px',
-                              fontWeight: '600'
-                            }}>
+                          <div className="sv-stats-card-mt">
+                            <h4 className="sv-stats-card-title">
                               📊 Pruefungs-Punkte nach Graduierung
                             </h4>
-                            <p style={{
-                              color: 'rgba(255,255,255,0.6)',
-                              fontSize: '14px',
-                              marginBottom: '20px'
-                            }}>
+                            <p className="sv-stats-card-subtitle">
                               Durchschnittliche Punktzahl bei Pruefungen
                             </p>
 
                             {/* Gesamt-Durchschnitt */}
                             {statistiken.pruefungsPunkte.gesamt && (
-                              <div style={{
-                                display: 'flex',
-                                gap: '20px',
-                                marginBottom: '20px',
-                                padding: '15px',
-                                background: 'rgba(255, 215, 0, 0.1)',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 215, 0, 0.3)'
-                              }}>
-                                <div style={{ textAlign: 'center', flex: 1 }}>
-                                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                              <div className="sv-punkte-gesamt-row">
+                                <div className="sv-center-flex">
+                                  <div className="sv-meta-label">
                                     Gesamt-Durchschnitt
                                   </div>
-                                  <div style={{ color: '#FFD700', fontSize: '24px', fontWeight: 'bold' }}>
+                                  <div className="sv-stat-lg">
                                     {statistiken.pruefungsPunkte.gesamt.durchschnitt?.toFixed(1) || '0'}
                                   </div>
                                 </div>
-                                <div style={{ textAlign: 'center', flex: 1 }}>
-                                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                <div className="sv-center-flex">
+                                  <div className="sv-meta-label">
                                     Pruefungen gesamt
                                   </div>
-                                  <div style={{ color: '#FFD700', fontSize: '24px', fontWeight: 'bold' }}>
+                                  <div className="sv-stat-lg">
                                     {statistiken.pruefungsPunkte.gesamt.gesamt_pruefungen || 0}
                                   </div>
                                 </div>
-                                <div style={{ textAlign: 'center', flex: 1 }}>
-                                  <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '4px' }}>
+                                <div className="sv-center-flex">
+                                  <div className="sv-meta-label">
                                     Erfolgsquote
                                   </div>
-                                  <div style={{ color: '#32CD32', fontSize: '24px', fontWeight: 'bold' }}>
+                                  <div className="sv-erfolgsquote">
                                     {statistiken.pruefungsPunkte.gesamt.gesamt_pruefungen > 0
                                       ? Math.round((statistiken.pruefungsPunkte.gesamt.gesamt_bestanden / statistiken.pruefungsPunkte.gesamt.gesamt_pruefungen) * 100)
                                       : 0}%
@@ -4032,38 +3267,27 @@ const StilVerwaltung = () => {
                             )}
 
                             {/* Punkte pro Graduierung */}
-                            <div style={{ display: 'grid', gap: '10px' }}>
+                            <div className="sv-punkte-grid">
                               {statistiken.pruefungsPunkte.pro_graduierung.map((grad, idx) => (
-                                <div key={idx} style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '15px',
-                                  padding: '10px 15px',
-                                  background: 'rgba(255,255,255,0.03)',
-                                  borderRadius: '8px',
-                                  borderLeft: `4px solid ${grad.graduierung_farbe || '#FFD700'}`
-                                }}>
-                                  <div style={{
-                                    width: '20px',
-                                    height: '20px',
-                                    borderRadius: '50%',
-                                    backgroundColor: grad.graduierung_farbe || '#FFD700',
-                                    border: '2px solid rgba(255,255,255,0.3)',
-                                    flexShrink: 0
-                                  }} />
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: '600' }}>
+                                <div
+                                  key={idx}
+                                  className="sv-punkte-row"
+                                  style={{ '--grad-farbe': grad.graduierung_farbe || '#FFD700' }}
+                                >
+                                  <div className="sv-punkte-dot" />
+                                  <div className="u-flex-1-min0">
+                                    <div className="sv-text-primary-14">
                                       {grad.graduierung_name}
                                     </div>
-                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>
+                                    <div className="sv-text-muted-12">
                                       {grad.anzahl_pruefungen} Pruefungen
                                     </div>
                                   </div>
-                                  <div style={{ textAlign: 'right' }}>
-                                    <div style={{ color: '#FFD700', fontSize: '18px', fontWeight: 'bold' }}>
+                                  <div className="sv-text-right">
+                                    <div className="sv-stat-md">
                                       {parseFloat(grad.durchschnitt_punkte)?.toFixed(1) || '0'}
                                     </div>
-                                    <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                                    <div className="sv-text-muted-11">
                                       ({grad.min_punkte?.toFixed(0)} - {grad.max_punkte?.toFixed(0)})
                                     </div>
                                   </div>
@@ -4075,66 +3299,37 @@ const StilVerwaltung = () => {
 
                         {/* Hochstufungen / Promotions */}
                         {statistiken?.hochstufungen && (
-                          <div style={{
-                            marginTop: '30px',
-                            padding: '25px',
-                            background: 'rgba(20, 20, 35, 0.7)',
-                            backdropFilter: 'blur(20px)',
-                            border: '1px solid rgba(255, 215, 0, 0.2)',
-                            borderRadius: '12px'
-                          }}>
-                            <h4 style={{
-                              color: '#FFD700',
-                              fontSize: '18px',
-                              marginBottom: '8px',
-                              fontWeight: '600'
-                            }}>
+                          <div className="sv-stats-card-mt">
+                            <h4 className="sv-stats-card-title">
                               🎓 Hochstufungen (letzte 12 Monate)
                             </h4>
-                            <p style={{
-                              color: 'rgba(255,255,255,0.6)',
-                              fontSize: '14px',
-                              marginBottom: '20px'
-                            }}>
+                            <p className="sv-stats-card-subtitle">
                               Erfolgreiche Pruefungen und Graduierungswechsel
                             </p>
 
                             {/* Gesamt-Zahl */}
-                            <div style={{
-                              textAlign: 'center',
-                              marginBottom: '20px',
-                              padding: '20px',
-                              background: 'linear-gradient(135deg, rgba(50, 205, 50, 0.2), rgba(50, 205, 50, 0.05))',
-                              borderRadius: '12px',
-                              border: '2px solid rgba(50, 205, 50, 0.3)'
-                            }}>
-                              <div style={{ color: '#32CD32', fontSize: '48px', fontWeight: 'bold' }}>
+                            <div className="sv-hochstufungen-total">
+                              <div className="sv-hochstufungen-number">
                                 {statistiken.hochstufungen.gesamt_12_monate || 0}
                               </div>
-                              <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
+                              <div className="sv-hochstufungen-label">
                                 Hochstufungen in 12 Monaten
                               </div>
                             </div>
 
                             {/* Hochstufungen pro Monat */}
                             {statistiken.hochstufungen.pro_monat?.length > 0 && (
-                              <div style={{ marginBottom: '20px' }}>
-                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginBottom: '10px' }}>
+                              <div className="sv-mb-20">
+                                <div className="sv-label-secondary-13">
                                   Verlauf nach Monat:
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                <div className="sv-monat-chips">
                                   {statistiken.hochstufungen.pro_monat.slice(0, 6).map((monat, idx) => (
-                                    <div key={idx} style={{
-                                      padding: '8px 12px',
-                                      background: 'rgba(255,255,255,0.05)',
-                                      borderRadius: '6px',
-                                      textAlign: 'center',
-                                      minWidth: '70px'
-                                    }}>
-                                      <div style={{ color: '#FFD700', fontSize: '18px', fontWeight: 'bold' }}>
+                                    <div key={idx} className="sv-monat-chip">
+                                      <div className="sv-stat-md">
                                         {monat.anzahl}
                                       </div>
-                                      <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '11px' }}>
+                                      <div className="sv-text-muted-11">
                                         {monat.monat_label}
                                       </div>
                                     </div>
@@ -4146,51 +3341,35 @@ const StilVerwaltung = () => {
                             {/* Letzte Hochstufungen */}
                             {statistiken.hochstufungen.letzte?.length > 0 && (
                               <div>
-                                <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', marginBottom: '10px' }}>
+                                <div className="sv-label-secondary-13">
                                   Letzte Hochstufungen:
                                 </div>
-                                <div style={{ display: 'grid', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+                                <div className="sv-letzte-hochstufungen">
                                   {statistiken.hochstufungen.letzte.slice(0, 10).map((h, idx) => (
-                                    <div key={idx} style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '12px',
-                                      padding: '10px 12px',
-                                      background: 'rgba(255,255,255,0.03)',
-                                      borderRadius: '8px',
-                                      borderLeft: `4px solid ${h.zu_farbe || '#FFD700'}`
-                                    }}>
-                                      <div style={{ flex: 1 }}>
-                                        <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px', fontWeight: '600' }}>
+                                    <div
+                                      key={idx}
+                                      className="sv-hochstufung-row"
+                                      style={{ '--zu-farbe': h.zu_farbe || '#FFD700', '--von-farbe': h.von_farbe || '#ccc' }}
+                                    >
+                                      <div className="u-flex-1">
+                                        <div className="sv-text-primary-14">
                                           {h.vorname} {h.nachname}
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-                                          <div style={{
-                                            width: '14px',
-                                            height: '14px',
-                                            borderRadius: '50%',
-                                            backgroundColor: h.von_farbe || '#ccc',
-                                            border: '1px solid rgba(255,255,255,0.3)'
-                                          }} />
-                                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px' }}>→</span>
-                                          <div style={{
-                                            width: '14px',
-                                            height: '14px',
-                                            borderRadius: '50%',
-                                            backgroundColor: h.zu_farbe || '#FFD700',
-                                            border: '1px solid rgba(255,255,255,0.3)'
-                                          }} />
-                                          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px' }}>
+                                        <div className="sv-farb-arrow">
+                                          <div className="sv-farb-dot-sm" style={{ '--dot-color': h.von_farbe || '#ccc' }} />
+                                          <span className="sv-text-muted-12">→</span>
+                                          <div className="sv-farb-dot-sm" style={{ '--dot-color': h.zu_farbe || '#FFD700' }} />
+                                          <span className="sv-text-secondary-12">
                                             {h.zu_graduierung}
                                           </span>
                                         </div>
                                       </div>
-                                      <div style={{ textAlign: 'right' }}>
-                                        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>
+                                      <div className="sv-text-right">
+                                        <div className="sv-text-secondary-12">
                                           {new Date(h.pruefungsdatum).toLocaleDateString('de-DE')}
                                         </div>
                                         {h.punktzahl && (
-                                          <div style={{ color: '#FFD700', fontSize: '13px', fontWeight: '600' }}>
+                                          <div className="sv-punktzahl">
                                             {h.punktzahl}/{h.max_punktzahl || 100} Pkt.
                                           </div>
                                         )}
@@ -4221,34 +3400,14 @@ const StilVerwaltung = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => resetCreateModal()}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'center',
-                padding: '2rem 0',
-                overflowY: 'auto'
-              }}
+              className="sv-create-modal-overlay-flex"
             >
               <motion.div
-                className="modal-content create-stil-modal stil-modal"
+                className="modal-content create-stil-modal stil-modal sv-modal-content sv-modal-content--700"
                 initial={{ scale: 0.8, opacity: 0, y: 50 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.8, opacity: 0, y: 50 }}
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                  display: 'block',
-                  width: '90%',
-                  maxWidth: '700px',
-                  margin: '0 auto',
-                  padding: '2rem',
-                  boxSizing: 'border-box',
-                  overflowX: 'hidden',
-                  overflowY: 'visible',
-                  background: 'rgba(26, 26, 46, 0.98)',
-                  borderRadius: '20px',
-                  border: '1px solid rgba(255, 215, 0, 0.3)',
-                  position: 'relative'
-                }}
               >
                 {/* Header mit Fortschritt */}
                 <div className="modal-header">

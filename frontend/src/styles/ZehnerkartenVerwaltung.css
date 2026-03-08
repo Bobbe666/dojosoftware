@@ -1,0 +1,545 @@
+/* ============================================================
+   ZehnerkartenVerwaltung styles  (zk- prefix)
+   ============================================================ */
+
+/* Loading state */
+.zk-loading {
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Root container */
+.zk-container {
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(20, 20, 30, 0.98) 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Header row */
+.zk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Header title gradient */
+.zk-title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* New-karte form box */
+.zk-form-box {
+  background: rgba(16, 185, 129, 0.08);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Form heading */
+.zk-form-heading {
+  color: var(--success);
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+/* 3-col grid for form fields */
+.zk-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Form label */
+.zk-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+}
+
+/* Form input / select */
+.zk-field {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.9rem;
+}
+
+/* Button row */
+.zk-btn-row {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Primary (success) button */
+.zk-btn-primary {
+  background: #10B981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Secondary (cancel/danger outline) button */
+.zk-btn-secondary {
+  background: transparent;
+  color: var(--error);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Empty state box */
+.zk-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+}
+
+/* Empty icon */
+.zk-empty-icon {
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+/* Empty heading */
+.zk-empty-heading {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Empty sub-text */
+.zk-empty-sub {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+/* Cards grid */
+.zk-cards-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Individual karte card */
+.zk-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Karte header */
+.zk-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+/* Karte title */
+.zk-card-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* Karte subtitle */
+.zk-card-subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Checkin button */
+.zk-btn-checkin {
+  background: #10B981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Details / historie button */
+.zk-btn-details {
+  background: transparent;
+  color: var(--success);
+  border: 1px solid #10B981;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Delete button */
+.zk-btn-delete {
+  background: transparent;
+  color: var(--error);
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+/* Progress section */
+.zk-progress-section {
+  margin-bottom: 1rem;
+}
+
+/* Progress label row */
+.zk-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+/* Progress label left */
+.zk-progress-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Progress label right (used count) */
+.zk-progress-pct {
+  font-size: 0.9rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* Progress bar track */
+.zk-progress-track {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* History section */
+.zk-history-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* History heading */
+.zk-history-heading {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* History loading */
+.zk-history-loading {
+  text-align: center;
+  padding: 1rem;
+}
+
+/* History empty */
+.zk-history-empty {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* History scroll list */
+.zk-history-list {
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+/* History entry row */
+.zk-history-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* History nota */
+.zk-history-nota {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* History badge pill */
+.zk-history-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Emoji icon large */
+.zk-icon-lg {
+  font-size: 2.5rem;
+}
+
+/* Modal overlay */
+.zk-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+/* Zahlungs-modal overlay (higher z-index) */
+.zk-modal-overlay--payment {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+}
+
+/* Modal box */
+.zk-modal-box {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  text-align: center;
+}
+
+/* Modal box wider (payment) */
+.zk-modal-box--wide {
+  background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Modal emoji */
+.zk-modal-emoji {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+/* Modal heading */
+.zk-modal-heading {
+  color: var(--success);
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+/* Modal heading centered */
+.zk-modal-heading--center {
+  color: var(--success);
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* Modal body text */
+.zk-modal-body {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* Modal button row */
+.zk-modal-btn-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Modal primary button */
+.zk-modal-btn-primary {
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  transition: all 0.3s ease;
+}
+
+/* Modal cancel button */
+.zk-modal-btn-cancel {
+  background: transparent;
+  color: var(--error);
+  border: 2px solid #ef4444;
+  border-radius: 12px;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Payment option card */
+.zk-payment-option {
+  border-radius: 12px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Payment options grid */
+.zk-payment-grid {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Payment option content row */
+.zk-payment-content {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+/* Payment option title */
+.zk-payment-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--success);
+  font-weight: 700;
+}
+
+/* Payment option description */
+.zk-payment-desc {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Karte card — status border modifiers */
+.zk-card--aktiv       { border: 2px solid #10b981; }
+.zk-card--aufgebraucht { border: 2px solid #ef4444; }
+.zk-card--abgelaufen  { border: 2px solid #f59e0b; }
+.zk-card--default     { border: 2px solid #6b7280; }
+
+/* Status badge pill — per-status modifiers */
+.zk-status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.zk-status-badge--aktiv       { background: rgba(16,185,129,0.13);  color: #10b981; border: 1px solid #10b981; }
+.zk-status-badge--aufgebraucht { background: rgba(239,68,68,0.13);  color: #ef4444; border: 1px solid #ef4444; }
+.zk-status-badge--abgelaufen  { background: rgba(245,158,11,0.13);  color: #f59e0b; border: 1px solid #f59e0b; }
+.zk-status-badge--default     { background: rgba(107,114,128,0.13); color: #6b7280; border: 1px solid #6b7280; }
+
+/* Progress bar fill — per-status gradient */
+.zk-progress-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+.zk-progress-fill--aktiv        { background: linear-gradient(90deg, #10B981 0%, #34D399 100%); }
+.zk-progress-fill--aufgebraucht { background: linear-gradient(90deg, #ef4444 0%, #f87171 100%); }
+.zk-progress-fill--abgelaufen   { background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%); }
+
+/* History entry alternating rows */
+.zk-history-entry:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.zk-history-entry:nth-child(even) {
+  background: transparent;
+}
+
+/* Payment option — selected state + hover */
+.zk-payment-option {
+  background: rgba(255, 255, 255, 0.03);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+.zk-payment-option--selected {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(52, 211, 153, 0.2) 100%);
+  border: 2px solid #10B981;
+}
+.zk-payment-option:not(.zk-payment-option--selected):hover {
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* Nachkauf confirm button */
+.zk-modal-btn-nachkauf {
+  background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+  transition: all 0.3s ease;
+}
+.zk-modal-btn-nachkauf:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+}
+.zk-modal-btn-nachkauf:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  box-shadow: none;
+  cursor: not-allowed;
+}

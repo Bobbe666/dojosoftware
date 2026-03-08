@@ -65,10 +65,6 @@ const CourseRatingAdmin = () => {
         key={i}
         size={16}
         className={i < rating ? 'filled' : 'empty'}
-        style={{
-          color: i < rating ? '#ffd700' : 'rgba(255, 255, 255, 0.3)',
-          fill: i < rating ? '#ffd700' : 'none'
-        }}
       />
     ));
   };

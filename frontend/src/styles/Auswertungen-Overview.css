@@ -1,0 +1,316 @@
+/* ===== ÜBERSICHT TAB – PROFESSIONAL REDESIGN ===== */
+
+.ov-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-section-gap);
+}
+
+/* ── 8 KPI Cards ── */
+.ov-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ui-stats-gap);
+}
+
+.ov-kpi {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-stat-card-padding);
+  transition: border-color 0.2s;
+}
+
+.ov-kpi:hover { border-color: rgba(255, 215, 0, 0.2); }
+
+.ov-kpi-label {
+  font-size: var(--ui-stat-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.45rem;
+}
+
+.ov-kpi-value {
+  font-size: var(--ui-kpi-value);
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-kpi-value--gold   { color: var(--primary); text-shadow: 0 0 16px rgba(255,215,0,0.3); }
+.ov-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 12px rgba(16,185,129,0.25); }
+.ov-kpi-value--red    { color: var(--status-error); }
+.ov-kpi-value--blue   { color: #63b3ed; }
+
+.ov-kpi-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.ov-kpi-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-top: 0.6rem;
+  overflow: hidden;
+}
+
+.ov-kpi-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
+}
+
+/* ── Wachstumstrend ── */
+.ov-growth {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.ov-growth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ov-growth-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.ov-period-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--comp-radius-md);
+  padding: 0.2rem;
+}
+
+.ov-period-btn {
+  padding: 0.3rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ov-period-btn:hover { color: rgba(255, 255, 255, 0.75); }
+
+.ov-period-btn.active {
+  background: rgba(255, 215, 0, 0.2);
+  color: var(--primary);
+}
+
+/* Stat cards row inside growth */
+.ov-growth-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ov-stat {
+  padding: 0.9rem 1.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ov-stat:last-child { border-right: none; }
+
+.ov-stat--pos { background: rgba(16, 185, 129, 0.04); }
+.ov-stat--neg { background: rgba(239, 68, 68, 0.04); }
+
+.ov-stat-label {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 0.3rem;
+}
+
+.ov-stat-value {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.ov-stat-value--pos { color: var(--status-success); }
+.ov-stat-value--neg { color: var(--status-error); }
+
+.ov-stat-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Chart inside growth */
+.ov-growth-chart {
+  padding: 1rem 0.5rem 0.5rem;
+}
+
+/* ── Charts Grid ── */
+.ov-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ui-grid-gap);
+}
+
+/* ── Card ── */
+.ov-card {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.ov-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.ov-card-title {
+  font-size: var(--ui-card-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.ov-card-meta {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.ov-card-body {
+  padding: 0.75rem;
+}
+
+/* ── Geburtstage ── */
+.ov-birthday-list {
+  padding: 0.5rem 0;
+}
+
+.ov-birthday-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ov-birthday-row:last-child { border-bottom: none; }
+
+.ov-birthday-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.ov-birthday-name {
+  flex: 1;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ov-birthday-days {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 215, 0, 0.7);
+  white-space: nowrap;
+}
+
+.ov-birthday-days--today { color: var(--status-success); }
+
+.ov-empty {
+  padding: 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* ── Peak Times (inline im ov-card) ── */
+.ov-peak-list {
+  padding: 0.6rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ov-peak-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 32px;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ov-peak-time {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ov-peak-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ov-peak-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: rgba(99, 179, 237, 0.7);
+  transition: width 0.7s ease;
+}
+
+.ov-peak-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .ov-charts-grid { grid-template-columns: repeat(2, 1fr); }
+  .ov-growth-stats { grid-template-columns: repeat(2, 1fr); }
+  .ov-stat:nth-child(2) { border-right: none; }
+  .ov-stat:nth-child(3) { border-top: 1px solid rgba(255,255,255,0.05); }
+  .ov-stat:nth-child(4) { border-top: 1px solid rgba(255,255,255,0.05); border-right: none; }
+}
+
+@media (max-width: 800px) {
+  .ov-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .ov-charts-grid { grid-template-columns: 1fr; }
+}

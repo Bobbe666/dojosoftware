@@ -1,0 +1,278 @@
+/* ============================================================
+   DokumentenZentrale — Zentrales Dokumentenmanagement
+   Nutzt CSS-Variablen aus dem zentralen Design-System
+   ============================================================ */
+
+.dz-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  color: var(--text-primary, #e2e8f0);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+
+.dz-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dz-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.1));
+  border-radius: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.dz-back-btn:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.1));
+  color: var(--text-primary, #e2e8f0);
+}
+
+.dz-header-info {
+  flex: 1;
+}
+
+.dz-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0 0 4px;
+}
+
+.dz-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+}
+
+/* ── Tab Navigation ───────────────────────────────────────── */
+
+.dz-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.04));
+  border-radius: 14px;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dz-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dz-tab:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.06));
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.dz-tab.active {
+  background: var(--primary-alpha-20, rgba(255, 215, 0, 0.15));
+  color: var(--primary, #ffd700);
+  font-weight: 600;
+}
+
+/* ── Content Area ─────────────────────────────────────────── */
+
+.dz-content {
+  min-height: 400px;
+}
+
+.dz-lazy-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 4rem 0;
+  color: var(--text-muted, #64748b);
+}
+
+.dz-spinner {
+  animation: dz-spin 1s linear infinite;
+}
+
+@keyframes dz-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── Übersicht: Stats Grid ────────────────────────────────── */
+
+.dz-uebersicht {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dz-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.dz-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dz-stat-card:hover {
+  background: var(--glass-bg-hover, rgba(255, 255, 255, 0.07));
+  border-color: var(--accent, var(--primary, #ffd700));
+  transform: translateY(-2px);
+}
+
+.dz-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent, var(--primary, #ffd700)) 15%, transparent);
+  color: var(--accent, var(--primary, #ffd700));
+  flex-shrink: 0;
+}
+
+.dz-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dz-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  line-height: 1.2;
+}
+
+.dz-stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  margin-top: 2px;
+}
+
+/* ── Übersicht: Schnellzugriff ────────────────────────────── */
+
+.dz-quick-nav h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-secondary, #cbd5e1);
+  margin: 0 0 1rem;
+}
+
+.dz-quick-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.dz-quick-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--glass-bg, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dz-quick-card:hover {
+  background: var(--primary-alpha-10, rgba(255, 215, 0, 0.08));
+  border-color: var(--primary-alpha-30, rgba(255, 215, 0, 0.3));
+}
+
+.dz-quick-card > svg {
+  color: var(--primary, #ffd700);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dz-quick-card h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  margin: 0 0 4px;
+}
+
+.dz-quick-card p {
+  font-size: 0.82rem;
+  color: var(--text-muted, #64748b);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .dz-container {
+    padding: 1rem;
+  }
+
+  .dz-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dz-back-btn {
+    align-self: flex-start;
+  }
+
+  .dz-title {
+    font-size: 1.3rem;
+  }
+
+  .dz-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dz-quick-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .dz-tab {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dz-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

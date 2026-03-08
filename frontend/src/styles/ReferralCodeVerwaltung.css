@@ -1,0 +1,158 @@
+/* ReferralCodeVerwaltung.css — prefix: rcv- */
+
+.rcv-root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rcv-loading {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Active code box */
+.rcv-code-box {
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.rcv-code-box-empty {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.rcv-section-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rcv-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.rcv-code-value {
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gold, #D4AF37);
+  letter-spacing: 0.1em;
+}
+
+.rcv-copy-btn {
+  border-radius: 8px;
+  padding: 0.35rem 0.875rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.rcv-copy-btn--default {
+  background: rgba(212, 175, 55, 0.15);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--color-gold, #D4AF37);
+}
+
+.rcv-copy-btn--copied {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10B981;
+}
+
+.rcv-code-meta {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 0.5rem;
+}
+
+/* Stats grid */
+.rcv-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.rcv-stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.875rem 0.75rem;
+  text-align: center;
+}
+
+.rcv-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--stat-color, var(--primary));
+}
+
+.rcv-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* Referral list */
+.rcv-list-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rcv-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.rcv-list-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  flex: 1;
+}
+
+.rcv-status-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  color: var(--status-color, #6b7280);
+  background: color-mix(in srgb, var(--status-color, #6b7280) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--status-color, #6b7280) 33%, transparent);
+}
+
+.rcv-praemie {
+  color: #D4AF37;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.rcv-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+  padding: 1rem 0;
+}

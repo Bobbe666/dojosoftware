@@ -15,16 +15,11 @@
     "pruefungswesen": "Esami",
     "events": "Eventi",
     "finanzen": "Finanze",
-    "artikelverwaltung": "Gestione Prodotti",
     "verwaltung": "Gestione Dojo",
-    "personal": "Personale",
-    "berichte": "Report",
+    "berichte": "Documenti & Report",
     "einstellungen": "Impostazioni",
     "schnellaktionen": "Azioni Rapide",
-    "support": "Supporto",
-    "wunschliste": "Lista Desideri",
-    "info": "Info",
-    "hilfe": "Aiuto"
+    "hilfeSupport": "Aiuto & Supporto"
   },
   "checkin": {
     "memberCheckin": "Check-in Membri",
@@ -113,6 +108,8 @@
     "articlesDesc": "Gestisci assortimento e livelli di stock"
   },
   "berichte": {
+    "dokumentenzentrale": "Centro Documenti",
+    "dokumentenzentraleDesc": "Gestione centralizzata di documenti, modelli e contratti",
     "evaluations": "Analisi",
     "evaluationsDesc": "Crea statistiche e report",
     "reportsAndDocs": "Report & Documenti",

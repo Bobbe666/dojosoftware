@@ -1,5 +1,5 @@
 .mitgliedschaften-page {
-  padding: 2rem;
+  padding: var(--ui-page-padding);
 }
 .mitgliedschaften-page .header {
   display: flex;

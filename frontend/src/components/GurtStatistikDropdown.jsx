@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '../styles/GurtStatistikDropdown.css';
 
 /**
  * Komponente für ein einzelnes Gurt-Statistik-Item mit Dropdown
@@ -31,57 +32,23 @@ const GurtStatistikItem = ({ grad, stilId, API_BASE }) => {
   };
 
   return (
-    <div style={{
-      borderRadius: '8px',
-      overflow: 'hidden',
-      marginBottom: '8px'
-    }}>
+    <div className="gurt-item" style={{ '--gurt-color': grad.farbe_hex || '#FFD700' }}>
       {/* Haupt-Gurt-Item */}
       <div
         onClick={toggleExpand}
-        style={{
-          padding: '12px 15px',
-          background: 'rgba(255,255,255,0.05)',
-          borderLeft: `4px solid ${grad.farbe_hex || '#FFD700'}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          transition: 'transform 0.2s ease, background 0.2s ease',
-          cursor: 'pointer'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = 'translateX(5px)';
-          e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = 'translateX(0)';
-          e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-        }}
+        className="gurt-item__header"
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{
-            color: 'rgba(255,255,255,0.9)',
-            fontSize: '14px',
-            fontWeight: '500'
-          }}>
+        <div className="gurt-item__header-left">
+          <span className="gurt-item__name">
             {grad.graduierung}
           </span>
-          <span style={{
-            fontSize: '12px',
-            color: 'rgba(255,255,255,0.5)',
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
-            transition: 'transform 0.2s ease'
-          }}>
+          <span className={`gurt-item__chevron${isExpanded ? ' gurt-item__chevron--expanded' : ''}`}>
             ▼
           </span>
         </div>
-        <span style={{
-          color: '#FFD700',
-          fontWeight: 'bold',
-          fontSize: '16px'
-        }}>
+        <span className="gurt-item__count">
           {grad.anzahl_mitglieder || 0}{' '}
-          <span style={{ fontSize: '13px', fontWeight: 'normal', color: 'rgba(255,215,0,0.7)' }}>
+          <span className="gurt-item__count-label">
             Schüler
           </span>
         </span>
@@ -89,41 +56,29 @@ const GurtStatistikItem = ({ grad, stilId, API_BASE }) => {
 
       {/* Dropdown mit Mitgliedern */}
       {isExpanded && (
-        <div style={{
-          background: 'rgba(0,0,0,0.3)',
-          padding: '10px 15px',
-          borderLeft: `4px solid ${grad.farbe_hex || '#FFD700'}`,
-          borderTop: '1px solid rgba(255,255,255,0.1)'
-        }}>
+        <div
+          className="gurt-item__dropdown"
+        >
           {loading ? (
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: 0 }}>
+            <p className="gurt-item__message">
               Lade Mitglieder...
             </p>
           ) : mitglieder.length === 0 ? (
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '13px', margin: 0 }}>
+            <p className="gurt-item__message">
               Keine Mitglieder mit diesem Gürtel
             </p>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div className="gurt-item__member-list">
               {mitglieder.map((mitglied) => (
                 <div
                   key={mitglied.mitglied_id}
-                  style={{
-                    padding: '8px 10px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: '4px',
-                    fontSize: '13px',
-                    color: 'rgba(255,255,255,0.9)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
+                  className="gurt-item__member-row"
                 >
                   <span>
                     {mitglied.nachname}, {mitglied.vorname}
                   </span>
                   {mitglied.geburtsdatum && (
-                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+                    <span className="gurt-item__member-age">
                       {new Date().getFullYear() - new Date(mitglied.geburtsdatum).getFullYear()} Jahre
                     </span>
                   )}

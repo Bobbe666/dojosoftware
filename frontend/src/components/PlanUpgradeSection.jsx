@@ -13,7 +13,7 @@ const PLAN_FEATURES = {
     name: 'Starter',
     price_monthly: 49,
     price_yearly: 490,
-    color: '#3b82f6',
+    color: 'var(--info)',
     features: [
       'Bis zu 100 Mitglieder',
       'Mitgliederverwaltung',
@@ -59,7 +59,7 @@ const PLAN_FEATURES = {
     name: 'Enterprise',
     price_monthly: 249,
     price_yearly: 2490,
-    color: '#ef4444',
+    color: 'var(--error)',
     features: [
       'Unbegrenzte Mitglieder',
       'Alles aus Premium',
@@ -213,7 +213,7 @@ const PlanUpgradeSection = () => {
   const currentPlan = subscription?.plan_type || 'trial';
   const currentPlanInfo = PLAN_FEATURES[currentPlan] || {
     name: currentPlan === 'trial' ? 'Trial' : currentPlan,
-    color: '#6b7280'
+    color: 'var(--text-muted)'
   };
 
   return (
@@ -224,9 +224,9 @@ const PlanUpgradeSection = () => {
       </div>
 
       {/* Aktueller Plan */}
-      <div className="current-plan-card" style={{ borderColor: currentPlanInfo.color }}>
+      <div className="current-plan-card" style={{ '--plan-color': currentPlanInfo.color }}>
         <div className="current-plan-header">
-          <div className="plan-badge" style={{ backgroundColor: currentPlanInfo.color }}>
+          <div className="plan-badge">
             {currentPlanInfo.name || 'Trial'}
           </div>
           <span className="status-badge active">
@@ -331,7 +331,7 @@ const PlanUpgradeSection = () => {
                 <div
                   key={plan.plan_name}
                   className={`upgrade-plan-card ${isPopular ? 'popular' : ''}`}
-                  style={{ borderColor: planInfo.color }}
+                  style={{ '--plan-color': planInfo.color }}
                 >
                   {isPopular && (
                     <div className="popular-badge">
@@ -340,7 +340,7 @@ const PlanUpgradeSection = () => {
                   )}
 
                   <div className="plan-header">
-                    <h4 style={{ color: planInfo.color }}>{planInfo.name}</h4>
+                    <h4 className="plan-header__title">{planInfo.name}</h4>
                     {formatPrice(
                       plan.price_monthly || planInfo.price_monthly,
                       plan.price_yearly || planInfo.price_yearly
@@ -350,7 +350,7 @@ const PlanUpgradeSection = () => {
                   <ul className="plan-features">
                     {(planInfo.features || []).map((feature, idx) => (
                       <li key={idx}>
-                        <Check size={16} style={{ color: planInfo.color }} />
+                        <Check size={16} className="plan-feature-check" />
                         {feature}
                       </li>
                     ))}
@@ -358,10 +358,6 @@ const PlanUpgradeSection = () => {
 
                   <button
                     className="btn-upgrade"
-                    style={{
-                      backgroundColor: planInfo.color,
-                      borderColor: planInfo.color
-                    }}
                     onClick={() => handleUpgrade(plan.plan_name)}
                     disabled={upgrading}
                   >

@@ -19,6 +19,7 @@ import { useDojoContext } from '../context/DojoContext';
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/TarifePreise.css";
+import "../styles/Rabattsystem.css";
 
 const Rabattsystem = () => {
   const { activeDojo } = useDojoContext();
@@ -307,11 +308,11 @@ const Rabattsystem = () => {
                 <div className="tarif-header">
                   <div className="tarif-title">
                     <h3>{rabatt.name}</h3>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div className="u-flex-wrap-gap">
                       <span className="status-badge active">Aktiv</span>
                       {rabatt.ist_familien_rabatt && (
-                        <span className="status-badge" style={{ background: '#8b5cf6' }}>
-                          <Users size={12} style={{ marginRight: '0.25rem' }} />
+                        <span className="status-badge rs-badge-purple">
+                          <Users size={12} className="rs-mr-025" />
                           Familie
                         </span>
                       )}
@@ -342,7 +343,7 @@ const Rabattsystem = () => {
 
                 <div className="tarif-details">
                   {rabatt.beschreibung && (
-                    <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
+                    <div className="detail-item rs-detail-full">
                       <span className="label">
                         <Tag size={14} /> Beschreibung
                       </span>
@@ -365,7 +366,7 @@ const Rabattsystem = () => {
                     <span className="label">
                       <Calendar size={14} /> Gültig bis
                     </span>
-                    <div className="value" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <div className="value rs-value-icon">
                       {rabatt.gueltig_bis ? formatDate(rabatt.gueltig_bis) : (
                         <>
                           <Infinity size={14} /> Unbegrenzt
@@ -407,13 +408,9 @@ const Rabattsystem = () => {
       {inaktiveRabatte.length > 0 && (
         <div className="section">
           <div
-            className="section-header"
-            style={{
-              background: 'rgba(107, 114, 128, 0.1)',
-              borderLeft: '4px solid #6b7280'
-            }}
+            className="section-header rs-section-header-inactive"
           >
-            <h2 style={{ color: '#6b7280' }}>
+            <h2 className="u-text-muted">
               <XCircle size={24} /> Inaktive Rabatte
               <span className="tarif-count">({inaktiveRabatte.length})</span>
             </h2>
@@ -421,11 +418,11 @@ const Rabattsystem = () => {
 
           <div className="tarife-grid">
             {inaktiveRabatte.map(rabatt => (
-              <div key={rabatt.id} className="tarif-card" style={{ opacity: 0.7, border: '2px solid #6b7280' }}>
+              <div key={rabatt.id} className="tarif-card rs-card-inactive">
                 <div className="tarif-header">
                   <div className="tarif-title">
                     <h3>{rabatt.name}</h3>
-                    <span className="status-badge" style={{ background: '#6b7280' }}>
+                    <span className="status-badge rs-badge-gray">
                       Inaktiv
                     </span>
                   </div>
@@ -475,21 +472,20 @@ const Rabattsystem = () => {
       {/* Neuer Rabatt Modal */}
       {showNewRabatt && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: '600px' }}>
+          <div className="modal rs-max-600">
             <div style={modalHeaderStyle}>
               <h3 style={modalHeaderTitleStyle}>Neuer Rabatt</h3>
               <button
-                className="close-btn"
+                className="close-btn rs-close-btn"
                 onClick={() => setShowNewRabatt(false)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
               >
-                <X size={20} style={{ color: 'var(--text-primary, #f8fafc)' }} />
+                <X size={20} className="rs-icon-primary" />
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+            <div className="rs-p-15">
+              <div className="rs-mb-1">
+                <label className="u-form-label">
                   Name *
                 </label>
                 <input
@@ -497,12 +493,12 @@ const Rabattsystem = () => {
                   value={newRabatt.name}
                   onChange={(e) => setNewRabatt({...newRabatt, name: e.target.value})}
                   placeholder="z.B. Familienrabatt, Studentenrabatt"
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  className="u-input-sm"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <div className="rs-mb-1">
+                <label className="u-form-label">
                   Beschreibung
                 </label>
                 <textarea
@@ -510,17 +506,17 @@ const Rabattsystem = () => {
                   onChange={(e) => setNewRabatt({...newRabatt, beschreibung: e.target.value})}
                   placeholder="Beschreibung des Rabatts..."
                   rows={3}
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  className="u-input-sm"
                 />
               </div>
 
               {/* Rabatt-Typ Auswahl */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <div className="rs-mb-1">
+                <label className="u-form-label">
                   Rabatt-Typ *
                 </label>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <div className="rs-flex-gap-1">
+                  <label className="rs-label-check">
                     <input
                       type="radio"
                       name="rabatt_typ"
@@ -530,7 +526,7 @@ const Rabattsystem = () => {
                     />
                     <Percent size={16} /> Prozent
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <label className="rs-label-check">
                     <input
                       type="radio"
                       name="rabatt_typ"
@@ -543,10 +539,10 @@ const Rabattsystem = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 {newRabatt.rabatt_typ === 'prozent' ? (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    <label className="u-form-label">
                       Rabatt (%) *
                     </label>
                     <input
@@ -556,12 +552,12 @@ const Rabattsystem = () => {
                       value={newRabatt.rabatt_prozent}
                       onChange={(e) => setNewRabatt({...newRabatt, rabatt_prozent: e.target.value})}
                       placeholder="z.B. 10"
-                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      className="u-input-sm"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    <label className="u-form-label">
                       Rabatt-Betrag (EUR) *
                     </label>
                     <input
@@ -570,12 +566,12 @@ const Rabattsystem = () => {
                       value={newRabatt.rabatt_betrag_euro}
                       onChange={(e) => setNewRabatt({...newRabatt, rabatt_betrag_euro: e.target.value})}
                       placeholder="z.B. 5.00 oder 10,50"
-                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      className="u-input-sm"
                     />
                   </div>
                 )}
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Max. Nutzungen
                   </label>
                   <input
@@ -584,38 +580,38 @@ const Rabattsystem = () => {
                     value={newRabatt.max_nutzungen}
                     onChange={(e) => setNewRabatt({...newRabatt, max_nutzungen: e.target.value})}
                     placeholder="Leer = unbegrenzt"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Gültig von *
                   </label>
                   <input
                     type="date"
                     value={newRabatt.gueltig_von}
                     onChange={(e) => setNewRabatt({...newRabatt, gueltig_von: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                    Gültig bis <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
+                  <label className="u-form-label">
+                    Gültig bis <span className="rs-hint">(leer = unbegrenzt)</span>
                   </label>
                   <input
                     type="date"
                     value={newRabatt.gueltig_bis}
                     onChange={(e) => setNewRabatt({...newRabatt, gueltig_bis: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <div className="rs-mb-1">
+                <label className="rs-label-check-sm">
                   <input
                     type="checkbox"
                     checked={newRabatt.aktiv}
@@ -626,8 +622,8 @@ const Rabattsystem = () => {
               </div>
 
               {/* Familien-Rabatt Einstellungen */}
-              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--background-secondary, #f3f4f6)', borderRadius: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '0.75rem' }}>
+              <div className="rs-familien-box">
+                <label className="rs-label-check-sm-mb">
                   <input
                     type="checkbox"
                     checked={newRabatt.ist_familien_rabatt}
@@ -638,9 +634,9 @@ const Rabattsystem = () => {
                 </label>
 
                 {newRabatt.ist_familien_rabatt && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
+                  <div className="rs-familien-grid">
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                      <label className="u-form-label">
                         Ab Position *
                       </label>
                       <input
@@ -649,12 +645,12 @@ const Rabattsystem = () => {
                         value={newRabatt.familie_position_min}
                         onChange={(e) => setNewRabatt({...newRabatt, familie_position_min: e.target.value})}
                         placeholder="z.B. 2 für 2. Mitglied"
-                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                        className="u-input-sm"
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                        Bis Position <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
+                      <label className="u-form-label">
+                        Bis Position <span className="rs-hint">(leer = unbegrenzt)</span>
                       </label>
                       <input
                         type="number"
@@ -662,26 +658,24 @@ const Rabattsystem = () => {
                         value={newRabatt.familie_position_max}
                         onChange={(e) => setNewRabatt({...newRabatt, familie_position_max: e.target.value})}
                         placeholder="z.B. 2 für nur 2. Mitglied"
-                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                        className="u-input-sm"
                       />
                     </div>
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+              <div className="rs-modal-footer">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-secondary rs-btn-sm"
                   onClick={() => setShowNewRabatt(false)}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Abbrechen
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary rs-btn-sm-icon"
                   onClick={() => handleSaveRabatt(newRabatt)}
                   disabled={!newRabatt.name || !newRabatt.gueltig_von || (newRabatt.rabatt_typ === 'prozent' ? !newRabatt.rabatt_prozent : !newRabatt.rabatt_betrag_euro)}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
                   Speichern
@@ -695,50 +689,49 @@ const Rabattsystem = () => {
       {/* Rabatt bearbeiten Modal */}
       {editingRabatt && (
         <div className="modal-overlay">
-          <div className="modal" style={{ maxWidth: '600px' }}>
+          <div className="modal rs-max-600">
             <div style={modalHeaderStyle}>
               <h3 style={modalHeaderTitleStyle}>Rabatt bearbeiten</h3>
               <button
-                className="close-btn"
+                className="close-btn rs-close-btn"
                 onClick={() => setEditingRabatt(null)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
               >
-                <X size={20} style={{ color: 'var(--text-primary, #f8fafc)' }} />
+                <X size={20} className="rs-icon-primary" />
               </button>
             </div>
 
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+            <div className="rs-p-15">
+              <div className="rs-mb-1">
+                <label className="u-form-label">
                   Name *
                 </label>
                 <input
                   type="text"
                   value={editingRabatt.name}
                   onChange={(e) => setEditingRabatt({...editingRabatt, name: e.target.value})}
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  className="u-input-sm"
                 />
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <div className="rs-mb-1">
+                <label className="u-form-label">
                   Beschreibung
                 </label>
                 <textarea
                   value={editingRabatt.beschreibung || ''}
                   onChange={(e) => setEditingRabatt({...editingRabatt, beschreibung: e.target.value})}
                   rows={3}
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                  className="u-input-sm"
                 />
               </div>
 
               {/* Rabatt-Typ Auswahl */}
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+              <div className="rs-mb-1">
+                <label className="u-form-label">
                   Rabatt-Typ *
                 </label>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                <div className="rs-flex-gap-1">
+                  <label className="rs-label-check">
                     <input
                       type="radio"
                       name="edit_rabatt_typ"
@@ -748,7 +741,7 @@ const Rabattsystem = () => {
                     />
                     <Percent size={16} /> Prozent
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <label className="rs-label-check">
                     <input
                       type="radio"
                       name="edit_rabatt_typ"
@@ -761,10 +754,10 @@ const Rabattsystem = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 {editingRabatt.rabatt_typ === 'prozent' ? (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    <label className="u-form-label">
                       Rabatt (%) *
                     </label>
                     <input
@@ -773,12 +766,12 @@ const Rabattsystem = () => {
                       max="100"
                       value={editingRabatt.rabatt_prozent || ''}
                       onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_prozent: parseFloat(e.target.value)})}
-                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      className="u-input-sm"
                     />
                   </div>
                 ) : (
                   <div>
-                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                    <label className="u-form-label">
                       Rabatt-Betrag (EUR) *
                     </label>
                     <input
@@ -787,12 +780,12 @@ const Rabattsystem = () => {
                       value={editingRabatt.rabatt_betrag_euro || ''}
                       onChange={(e) => setEditingRabatt({...editingRabatt, rabatt_betrag_euro: e.target.value})}
                       placeholder="z.B. 5.00 oder 10,50"
-                      style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                      className="u-input-sm"
                     />
                   </div>
                 )}
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Max. Nutzungen
                   </label>
                   <input
@@ -801,38 +794,38 @@ const Rabattsystem = () => {
                     value={editingRabatt.max_nutzungen || ''}
                     onChange={(e) => setEditingRabatt({...editingRabatt, max_nutzungen: e.target.value ? parseInt(e.target.value) : null})}
                     placeholder="Leer = unbegrenzt"
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div className="u-grid-2col">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                  <label className="u-form-label">
                     Gültig von *
                   </label>
                   <input
                     type="date"
                     value={editingRabatt.gueltig_von ? editingRabatt.gueltig_von.split('T')[0] : ''}
                     onChange={(e) => setEditingRabatt({...editingRabatt, gueltig_von: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                    Gültig bis <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
+                  <label className="u-form-label">
+                    Gültig bis <span className="rs-hint">(leer = unbegrenzt)</span>
                   </label>
                   <input
                     type="date"
                     value={editingRabatt.gueltig_bis ? editingRabatt.gueltig_bis.split('T')[0] : ''}
                     onChange={(e) => setEditingRabatt({...editingRabatt, gueltig_bis: e.target.value})}
-                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                    className="u-input-sm"
                   />
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+              <div className="rs-mb-1">
+                <label className="rs-label-check-sm">
                   <input
                     type="checkbox"
                     checked={editingRabatt.aktiv}
@@ -843,8 +836,8 @@ const Rabattsystem = () => {
               </div>
 
               {/* Familien-Rabatt Einstellungen */}
-              <div style={{ marginBottom: '1rem', padding: '1rem', background: 'var(--background-secondary, #f3f4f6)', borderRadius: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', cursor: 'pointer', marginBottom: '0.75rem' }}>
+              <div className="rs-familien-box">
+                <label className="rs-label-check-sm-mb">
                   <input
                     type="checkbox"
                     checked={editingRabatt.ist_familien_rabatt}
@@ -855,9 +848,9 @@ const Rabattsystem = () => {
                 </label>
 
                 {editingRabatt.ist_familien_rabatt && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
+                  <div className="rs-familien-grid">
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
+                      <label className="u-form-label">
                         Ab Position *
                       </label>
                       <input
@@ -866,12 +859,12 @@ const Rabattsystem = () => {
                         value={editingRabatt.familie_position_min || ''}
                         onChange={(e) => setEditingRabatt({...editingRabatt, familie_position_min: e.target.value})}
                         placeholder="z.B. 2 für 2. Mitglied"
-                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                        className="u-input-sm"
                       />
                     </div>
                     <div>
-                      <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.875rem', fontWeight: '500' }}>
-                        Bis Position <span style={{ fontWeight: 'normal', color: '#6b7280' }}>(leer = unbegrenzt)</span>
+                      <label className="u-form-label">
+                        Bis Position <span className="rs-hint">(leer = unbegrenzt)</span>
                       </label>
                       <input
                         type="number"
@@ -879,26 +872,24 @@ const Rabattsystem = () => {
                         value={editingRabatt.familie_position_max || ''}
                         onChange={(e) => setEditingRabatt({...editingRabatt, familie_position_max: e.target.value})}
                         placeholder="z.B. 2 für nur 2. Mitglied"
-                        style={{ width: '100%', padding: '0.5rem', fontSize: '0.875rem' }}
+                        className="u-input-sm"
                       />
                     </div>
                   </div>
                 )}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
+              <div className="rs-modal-footer">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-secondary rs-btn-sm"
                   onClick={() => setEditingRabatt(null)}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   Abbrechen
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary rs-btn-sm-icon"
                   onClick={() => handleSaveRabatt(editingRabatt)}
                   disabled={!editingRabatt.name || (editingRabatt.rabatt_typ === 'prozent' ? !editingRabatt.rabatt_prozent : !editingRabatt.rabatt_betrag_euro)}
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                 >
                   <Save size={16} />
                   Speichern

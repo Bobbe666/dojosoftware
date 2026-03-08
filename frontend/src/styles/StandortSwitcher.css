@@ -9,11 +9,11 @@
 .standort-switcher-trigger {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 14px;
+  gap: var(--ui-btn-gap);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
@@ -33,6 +33,10 @@
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background: var(--standort-color, #4F46E5);
+}
+.standort-color-indicator--all {
+  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
 }
 
 .standort-switcher-content {
@@ -44,7 +48,7 @@
 }
 
 .standort-switcher-label {
-  font-size: 0.7rem;
+  font-size: var(--ui-badge-size-sm);
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -52,7 +56,7 @@
 }
 
 .standort-switcher-name {
-  font-size: 0.9rem;
+  font-size: var(--ui-btn-font);
   color: #1e293b;
   font-weight: 600;
   white-space: nowrap;
@@ -69,8 +73,8 @@
   padding: 2px 6px;
   background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   color: white;
-  border-radius: 4px;
-  font-size: 0.65rem;
+  border-radius: var(--comp-radius-xs);
+  font-size: var(--ui-badge-size-sm);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -91,7 +95,7 @@
 .standort-switcher-dropdown {
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
   min-width: 280px;
   max-width: 400px;
@@ -114,16 +118,16 @@
 .dropdown-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
+  gap: var(--ui-btn-gap);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   border-bottom: 1px solid #f1f5f9;
-  font-size: 0.85rem;
+  font-size: var(--ui-form-label);
   font-weight: 700;
   color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   background: #f8fafc;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--comp-radius-xl) var(--comp-radius-xl) 0 0;
 }
 
 .dropdown-divider {
@@ -135,8 +139,8 @@
 .standort-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: var(--ui-header-gap);
+  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
   border: none;
   background: white;
   width: 100%;
@@ -160,6 +164,10 @@
   border-radius: 50%;
   flex-shrink: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background: var(--standort-color, #4F46E5);
+}
+.standort-option-indicator--all {
+  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
 }
 
 .standort-option-content {
@@ -171,7 +179,7 @@
 }
 
 .standort-option-name {
-  font-size: 0.9rem;
+  font-size: var(--ui-btn-font);
   font-weight: 600;
   color: #1e293b;
   display: flex;
@@ -187,7 +195,7 @@
   background: linear-gradient(135deg, #10B981 0%, #059669 100%);
   color: white;
   border-radius: 3px;
-  font-size: 0.6rem;
+  font-size: var(--ui-badge-size-sm);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -195,7 +203,7 @@
 }
 
 .standort-option-stats {
-  font-size: 0.75rem;
+  font-size: var(--ui-badge-size);
   color: #64748b;
 }
 
@@ -213,7 +221,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid #f1f5f9;
-  border-top-color: #3b82f6;
+  border-top-color: var(--status-indigo);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -227,77 +235,86 @@
 /* Dark Mode Support */
 [data-theme="dark"] .standort-switcher-trigger,
 .dark .standort-switcher-trigger {
-  background: var(--bg-card, rgba(255, 255, 255, 0.05));
-  border-color: var(--border-default, rgba(255, 255, 255, 0.1));
+  background: var(--surface-2);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .standort-switcher-label,
 .dark .standort-switcher-label {
-  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  color: var(--text-2);
 }
 
 [data-theme="dark"] .standort-switcher-name,
 .dark .standort-switcher-name {
-  color: var(--text-primary, #ffffff);
+  color: var(--text-1);
 }
 
 [data-theme="dark"] .standort-switcher-dropdown,
 .dark .standort-switcher-dropdown {
-  background: var(--bg-card, #1f2937);
-  border-color: var(--border-default, #374151);
+  background: var(--modal-bg-dark);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 [data-theme="dark"] .dropdown-header,
 .dark .dropdown-header {
-  background: var(--bg-secondary, #111827);
-  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
-  border-color: var(--border-default, #374151);
+  background: var(--surface-1);
+  color: var(--text-2);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] .standort-option,
 .dark .standort-option {
   background: transparent;
-  color: var(--text-primary, #ffffff);
+  color: var(--text-1);
 }
 
 [data-theme="dark"] .standort-option:hover,
 .dark .standort-option:hover {
-  background: var(--bg-card-hover, rgba(255, 255, 255, 0.05));
+  background: var(--surface-2);
 }
 
 [data-theme="dark"] .standort-option.active,
 .dark .standort-option.active {
-  background: var(--primary-alpha-10, rgba(255, 215, 0, 0.1));
+  background: rgba(255, 215, 0, 0.1);
 }
 
 [data-theme="dark"] .standort-option-name,
 .dark .standort-option-name {
-  color: var(--text-primary, #ffffff);
+  color: var(--text-1);
 }
 
 [data-theme="dark"] .standort-option-stats,
 .dark .standort-option-stats {
-  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  color: var(--text-2);
 }
 
 [data-theme="dark"] .chevron,
 .dark .chevron {
-  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  color: var(--text-2);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   .standort-switcher-trigger {
     min-width: 150px;
-    padding: 6px 10px;
+    padding: calc(var(--ui-btn-pad-y) - 0.1rem) calc(var(--ui-btn-pad-x) - 0.2rem);
   }
 
   .standort-switcher-name {
-    font-size: 0.85rem;
+    font-size: var(--ui-btn-font-sm);
   }
 
   .standort-switcher-dropdown {
     min-width: 250px;
     max-width: calc(100vw - 32px);
   }
+}
+
+/* ============================================================
+   Migrated inline styles
+   ============================================================ */
+
+/* Inline icon spacing used on Building2 and MapPin within option names */
+.icon-mr {
+  margin-right: 6px;
 }

@@ -1,10 +1,10 @@
 /* Training Reminders */
 .training-reminders {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.18);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-page-padding-sm);
+  margin-bottom: var(--ui-page-padding-sm);
   position: relative;
 }
 
@@ -12,7 +12,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-page-padding-sm);
 }
 
 .training-reminders .reminders-title {
@@ -23,19 +23,19 @@
 }
 
 .training-reminders .reminders-title h3 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--ui-section-title);
   font-weight: 600;
 }
 
 .training-reminders .reminders-badge {
-  background: #ef4444;
-  color: white;
-  font-size: 0.7rem;
+  background: var(--status-error);
+  color: var(--text-1);
+  font-size: var(--ui-badge-size-sm);
   font-weight: 700;
   padding: 0.2rem 0.4rem;
-  border-radius: 10px;
+  border-radius: var(--comp-radius-lg);
   min-width: 18px;
   text-align: center;
   animation: pulse 2s infinite;
@@ -44,9 +44,9 @@
 .training-reminders .settings-button {
   background: rgba(255, 215, 0, 0.1);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.4rem;
-  color: #ffd700;
+  color: var(--primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -57,19 +57,25 @@
   transform: scale(1.05);
 }
 
+.training-reminders .settings-button--active {
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  color: #ffd700;
+}
+
 .training-reminders .reminder-settings {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
   border: 1px solid rgba(255, 215, 0, 0.2);
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  border-radius: var(--comp-radius-md);
+  padding: var(--ui-page-padding-sm);
+  margin-bottom: var(--ui-page-padding-sm);
   animation: slideDown 0.3s ease-out;
 }
 
 .training-reminders .reminder-settings h4 {
-  color: #ffd700;
-  margin: 0 0 1rem 0;
-  font-size: 0.9rem;
+  color: var(--primary);
+  margin: 0 0 var(--ui-page-padding-sm) 0;
+  font-size: var(--ui-card-body);
   font-weight: 600;
 }
 
@@ -81,33 +87,33 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.85rem;
+  color: var(--text-1);
+  font-size: var(--ui-form-label);
   cursor: pointer;
 }
 
 .training-reminders .setting-item input[type="checkbox"] {
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 .training-reminders .setting-item input[type="range"] {
   width: 100%;
   margin-top: 0.3rem;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
 }
 
 .training-reminders .active-reminders {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  margin-bottom: 1rem;
+  margin-bottom: var(--ui-page-padding-sm);
 }
 
 .training-reminders .reminder-card {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 10px;
-  padding: 1rem;
+  border-radius: var(--comp-radius-lg);
+  padding: var(--ui-page-padding-sm);
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -116,13 +122,13 @@
 }
 
 .training-reminders .reminder-card.active {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--status-error);
+  background: var(--status-error-bg);
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }
 
 .training-reminders .reminder-icon {
-  color: #ef4444;
+  color: var(--status-error);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -135,15 +141,15 @@
 }
 
 .training-reminders .reminder-course h4 {
-  color: #ffffff;
+  color: var(--text-1);
   margin: 0 0 0.2rem 0;
-  font-size: 0.9rem;
+  font-size: var(--ui-card-body);
   font-weight: 600;
 }
 
 .training-reminders .reminder-trainer {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.8rem;
+  color: var(--text-2);
+  font-size: var(--ui-card-label);
 }
 
 .training-reminders .reminder-time,
@@ -152,70 +158,70 @@
   align-items: center;
   gap: 0.3rem;
   margin-top: 0.3rem;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: var(--ui-badge-size-sm);
+  color: var(--text-2);
 }
 
 .training-reminders .time-until {
-  color: #ef4444;
+  color: var(--status-error);
   font-weight: 600;
   margin-left: auto;
 }
 
 .training-reminders .dismiss-button {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--surface-3);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: var(--comp-radius-sm);
   padding: 0.3rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-2);
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .training-reminders .dismiss-button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background: var(--surface-3);
+  color: var(--text-1);
   transform: scale(1.05);
 }
 
 .training-reminders .no-reminders {
   text-align: center;
-  padding: 2rem 1rem;
-  color: rgba(255, 255, 255, 0.6);
+  padding: var(--ui-section-gap) var(--ui-page-padding-sm);
+  color: var(--text-3);
 }
 
 .training-reminders .no-reminders svg {
-  color: #10B981;
+  color: var(--status-success);
   margin-bottom: 0.5rem;
 }
 
 .training-reminders .no-reminders p {
   margin: 0 0 0.3rem 0;
-  font-size: 1rem;
+  font-size: var(--ui-section-title);
   font-weight: 500;
 }
 
 .training-reminders .no-reminders span {
-  font-size: 0.8rem;
+  font-size: var(--ui-card-label);
   font-style: italic;
 }
 
 .training-reminders .upcoming-courses {
-  margin-top: 1rem;
+  margin-top: var(--ui-page-padding-sm);
 }
 
 .training-reminders .upcoming-courses h4 {
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 0.8rem 0;
-  font-size: 0.9rem;
+  font-size: var(--ui-card-body);
   font-weight: 600;
 }
 
 .training-reminders .course-preview {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
   border: 1px solid rgba(255, 215, 0, 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   padding: 0.6rem;
   margin-bottom: 0.5rem;
   display: flex;
@@ -225,7 +231,7 @@
 }
 
 .training-reminders .course-preview:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   border-color: rgba(255, 215, 0, 0.2);
 }
 
@@ -236,21 +242,21 @@
 }
 
 .training-reminders .course-name {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.8rem;
+  color: var(--text-1);
+  font-size: var(--ui-card-label);
   font-weight: 500;
 }
 
 .training-reminders .course-time {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 0.75rem;
+  color: var(--text-3);
+  font-size: var(--ui-badge-size-sm);
 }
 
 .training-reminders .loading-spinner {
   width: 20px;
   height: 20px;
   border: 2px solid rgba(255, 215, 0, 0.3);
-  border-top: 2px solid #ffd700;
+  border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -260,8 +266,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 2rem;
-  color: rgba(255, 255, 255, 0.6);
+  padding: var(--ui-section-gap);
+  color: var(--text-3);
 }
 
 /* Animations */
@@ -332,4 +338,18 @@
     align-items: flex-start;
     gap: 0.3rem;
   }
+}
+
+/* Inline-style migration */
+.tr-course-name {
+  font-weight: bold;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.tr-course-details {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }

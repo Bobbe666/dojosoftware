@@ -8,15 +8,9 @@ const TemplateEditor = lazy(() => import('../components/TemplateEditor'));
 
 // Loading Fallback für TemplateEditor
 const EditorLoadingFallback = () => (
-  <div style={{
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: '400px',
-    color: '#666'
-  }}>
+  <div className="editor-loading-fallback">
     <div className="loading-spinner"></div>
-    <span style={{ marginLeft: '1rem' }}>Template-Editor wird geladen...</span>
+    <span>Template-Editor wird geladen...</span>
   </div>
 );
 
@@ -214,8 +208,7 @@ const Vertragsdokumente = () => {
         </button>
         {dojos && dojos.length > 1 && activeTab === 'dokumente' && (
           <button
-            className="btn btn-info"
-            style={{ marginLeft: 'auto' }}
+            className="btn btn-info tabs-copy-btn"
             onClick={handleOpenCopyModal}
           >
             📋 Dokumente kopieren
@@ -356,22 +349,13 @@ const Vertragsdokumente = () => {
       {/* Info Boxes - nur im Dokumente-Tab anzeigen */}
       {activeTab === 'dokumente' && (
         <>
-          <div className="info-box" style={{ position: 'relative' }}>
+          <div className="info-box info-box-collapsible">
             <h4
               onClick={() => setShowPlaceholders(!showPlaceholders)}
-              style={{
-                cursor: 'pointer',
-                userSelect: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                margin: 0,
-                padding: 0,
-                position: 'relative'
-              }}
+              className="info-box-toggle"
             >
               <span>💡 Verfügbare Platzhalter</span>
-              <span style={{ fontSize: '1em', marginLeft: '10px' }}>{showPlaceholders ? '▼' : '▶'}</span>
+              <span className="info-box-toggle-icon">{showPlaceholders ? '▼' : '▶'}</span>
             </h4>
             {showPlaceholders && (
               <>
@@ -389,7 +373,7 @@ const Vertragsdokumente = () => {
                   <li><code>{'{{mitglied.anrede}}'}</code> - Anrede</li>
                   <li><code>{'{{mitglied.mitgliedsnummer}}'}</code> - Mitgliedsnummer</li>
                 </ul>
-                <ul style={{ marginTop: '0.5rem' }}>
+                <ul className="info-box-list-gap">
                   <li><code>{'{{vertrag.vertragsnummer}}'}</code> - Vertragsnummer</li>
                   <li><code>{'{{vertrag.vertragsbeginn}}'}</code> - Vertragsbeginn</li>
                   <li><code>{'{{vertrag.vertragsende}}'}</code> - Vertragsende</li>
@@ -399,7 +383,7 @@ const Vertragsdokumente = () => {
                   <li><code>{'{{vertrag.kuendigungsfrist_monate}}'}</code> - Kündigungsfrist</li>
                   <li><code>{'{{vertrag.tarifname}}'}</code> - Tarifname</li>
                 </ul>
-                <ul style={{ marginTop: '0.5rem' }}>
+                <ul className="info-box-list-gap">
                   <li><code>{'{{dojo.dojoname}}'}</code> - Name Ihres Dojos</li>
                   <li><code>{'{{dojo.strasse}}'}</code> - Straße des Dojos</li>
                   <li><code>{'{{dojo.hausnummer}}'}</code> - Hausnummer</li>
@@ -410,23 +394,23 @@ const Vertragsdokumente = () => {
                   <li><code>{'{{dojo.internet}}'}</code> - Webseite</li>
                   <li><code>{'{{dojo.untertitel}}'}</code> - Untertitel</li>
                 </ul>
-                <ul style={{ marginTop: '0.5rem' }}>
+                <ul className="info-box-list-gap">
                   <li><code>{'{{system.datum}}'}</code> - Heutiges Datum</li>
                   <li><code>{'{{system.jahr}}'}</code> - Aktuelles Jahr</li>
                   <li><code>{'{{system.monat}}'}</code> - Aktueller Monat</li>
                 </ul>
-                <p style={{ marginTop: '0.5rem' }}>Diese werden automatisch beim Generieren des PDFs ersetzt.</p>
+                <p className="info-box-closing-text">Diese werden automatisch beim Generieren des PDFs ersetzt.</p>
               </>
             )}
           </div>
 
-          <div className="info-box" style={{ marginTop: '1rem', background: 'rgba(76, 175, 80, 0.1)', borderColor: 'rgba(76, 175, 80, 0.3)' }}>
+          <div className="info-box info-box-green">
             <h4>🖼️ Logo-Integration</h4>
             <p>
               Das <strong>Haupt-Logo</strong> Ihres Dojos wird automatisch rechts oben in allen Vertragsdokumenten angezeigt.
             </p>
-            <p style={{ marginBottom: 0 }}>
-              📌 Logo-Verwaltung: <a href="/dashboard/dojos" style={{ color: '#4caf50', textDecoration: 'underline' }}>Dojo-Verwaltung → Logos-Tab</a>
+            <p className="mb-0">
+              📌 Logo-Verwaltung: <a href="/dashboard/dojos" className="info-box-link-success">Dojo-Verwaltung → Logos-Tab</a>
             </p>
           </div>
         </>

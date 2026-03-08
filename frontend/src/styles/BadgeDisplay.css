@@ -1,0 +1,113 @@
+/* BadgeDisplay.css */
+
+.badge-display__loading {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.badge-display__empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  border: 1px dashed rgba(255,255,255,0.1);
+}
+
+/* Compact view */
+.badge-display__compact-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent), color-mix(in srgb, var(--badge-farbe, #ffd700) 13%, transparent));
+  border: 2px solid var(--badge-farbe, #ffd700);
+}
+
+.badge-display__compact-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--badge-farbe, #ffd700) 38%, transparent);
+}
+
+.badge-display__compact-more {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+/* Full view */
+.badge-display__container {
+  background: rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.badge-display__title {
+  font-size: 0.9rem;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-display__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.badge-display__card {
+  border-radius: 10px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, #ffd700) 8%, transparent), transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent);
+}
+
+.badge-display__card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--badge-farbe, #ffd700) 19%, transparent);
+}
+
+.badge-display__card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent), color-mix(in srgb, var(--badge-farbe, #ffd700) 13%, transparent));
+  border: 2px solid var(--badge-farbe, #ffd700);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--badge-farbe, #ffd700) 25%, transparent);
+}
+
+.badge-display__card-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.badge-display__card-date {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-align: center;
+}

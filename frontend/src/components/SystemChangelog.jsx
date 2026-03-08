@@ -16,6 +16,22 @@ import {
 // ============================================================================
 export const CHANGELOG = [
   {
+    version: '2.8.0',
+    date: '2026-03-02',
+    type: 'feature',
+    title: 'Integrierter Mitglieder-Chat',
+    highlights: [
+      'Echtzeit-Chat für alle Mitglieder',
+      'Direktchats und Gruppenräume',
+      'Emoji-Reaktionen auf Nachrichten',
+      'In-App Benachrichtigungen bei neuen Nachrichten',
+      'Ungelesen-Badge im Header',
+      'Ankündigungs-Kanal für Admin-Nachrichten'
+    ],
+    details: 'Mitglieder können ab sofort direkt in der App miteinander chatten. Zu finden über das Chat-Icon im Header. Unterstützt werden Direktchats zwischen zwei Personen sowie Gruppenräume. Neue Nachrichten werden als Toast-Popup angezeigt und als Badge-Zahl im Header-Icon. Admins können Push-Nachrichten optional auch im Ankündigungs-Chat-Kanal veröffentlichen.',
+    files: ['ChatPage.jsx', 'ChatRoomList.jsx', 'ChatWindow.jsx', 'ChatMessage.jsx', 'ChatNewRoom.jsx', 'ChatPopup.jsx', 'ChatContext.jsx', 'chat.js', 'chatSocket.js', 'MemberHeader.jsx', 'Chat.css']
+  },
+  {
     version: '2.7.0',
     date: '2026-02-17',
     type: 'feature',
@@ -231,15 +247,17 @@ const SystemChangelog = ({ maxItems = 5, showAll = false }) => {
             key={entry.version}
             style={{
               ...styles.changelogItem,
-              borderLeft: `3px solid ${getTypeColor(entry.type)}`
+              '--type-color': getTypeColor(entry.type),
+              borderLeft: '3px solid var(--type-color)'
             }}
           >
             <div style={styles.itemHeader} onClick={() => toggleExpand(entry.version)}>
               <div style={styles.itemMeta}>
                 <span style={{
                   ...styles.typeBadge,
-                  background: `${getTypeColor(entry.type)}20`,
-                  color: getTypeColor(entry.type)
+                  '--type-color': getTypeColor(entry.type),
+                  background: 'color-mix(in srgb, var(--type-color) 13%, transparent)',
+                  color: 'var(--type-color)'
                 }}>
                   {getTypeIcon(entry.type)}
                   {getTypeLabel(entry.type)}
@@ -435,7 +453,7 @@ const styles = {
   },
   fileTag: {
     background: 'rgba(59, 130, 246, 0.2)',
-    color: '#60a5fa',
+    color: 'var(--color-info-400)',
     padding: '2px 8px',
     borderRadius: '4px',
     fontSize: '0.7rem'

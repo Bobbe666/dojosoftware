@@ -19,9 +19,8 @@
 .kurse-container-modern {
   min-height: 100vh;
   background: var(--hintergrund-primary);
-  padding: 2rem;
+  padding: var(--ui-page-padding);
   color: var(--farbe-text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Header Section */
@@ -54,7 +53,7 @@
 
 .kurse-subtitle {
   color: var(--farbe-text-hell);
-  font-size: 1.1rem;
+  font-size: var(--ui-section-title);
   font-weight: 400;
   margin: 0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -65,8 +64,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 2rem;
-  gap: 2rem;
+  margin-bottom: var(--ui-section-gap);
+  gap: var(--ui-section-gap);
   animation: fadeInUp 0.6s ease-out 0.1s both;
 }
 
@@ -92,10 +91,10 @@
 }
 
 .filter-select {
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 215, 0, 0.4);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
@@ -129,8 +128,8 @@
   background: linear-gradient(135deg, var(--farbe-akzent), var(--farbe-akzent-2));
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: var(--comp-radius-xl);
+  padding: 0.75rem var(--ui-card-padding);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -171,7 +170,7 @@ html body div.kurse-container-modern div.kurse-stats div.stat-card,
 html body .kurse-container-modern .stat-card,
 .kurse-container-modern .stat-card {
   padding: 0.3rem 0.4rem !important;
-  border-radius: 6px !important;
+  border-radius: var(--comp-radius-sm) !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
   text-align: center !important;
   min-height: 32px !important;
@@ -196,14 +195,6 @@ html body .kurse-container-modern .stat-card,
 }
 
 /* Icon links, Text rechts - KOMPAKT */
-.stat-icon {
-  font-size: 1rem !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 16px !important;
-  flex-shrink: 0 !important;
-}
 
 .stat-content {
   display: flex !important;
@@ -322,7 +313,7 @@ html body .kurse-container-modern .stat-card,
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   background: rgba(255, 255, 255, 0.2);
   color: white;
   cursor: pointer;
@@ -405,7 +396,7 @@ html body .kurse-container-modern .stat-card,
   background: var(--farbe-hauptfarbe);
   color: white;
   padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -421,10 +412,10 @@ html body .kurse-container-modern .stat-card,
 
 .edit-select,
 .edit-input {
-  padding: 8px 12px;
+  padding: 0.5rem 0.75rem;
   background: rgba(255, 255, 255, 0.2);
   border: 2px solid rgba(255, 215, 0, 0.5);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
@@ -450,12 +441,12 @@ html body .kurse-container-modern .stat-card,
 .edit-header-input {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   color: #ffffff;
   font-weight: 700;
   font-size: 1.1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  padding: 8px 12px;
+  padding: 0.5rem 0.75rem;
   min-width: 100px;
   transition: all 0.3s ease;
 }
@@ -476,7 +467,7 @@ html body .kurse-container-modern .stat-card,
   padding: 0.5rem;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 215, 0, 0.3);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   backdrop-filter: blur(10px);
   width: 100%;
   max-width: 100%;
@@ -555,8 +546,8 @@ html body .kurse-container-modern .stat-card,
   background: var(--farbe-hauptfarbe);
   color: #ffffff;
   border: none;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: var(--comp-radius-md);
+  padding: 0.75rem;
   font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -578,10 +569,10 @@ html body .kurse-container-modern .stat-card,
 }
 
 .form-input {
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 215, 0, 0.4);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
@@ -610,8 +601,8 @@ html body .kurse-container-modern .stat-card,
   background: var(--farbe-hauptfarbe);
   color: #ffffff;
   border: none;
-  border-radius: 6px;
-  padding: 8px 10px;
+  border-radius: var(--comp-radius-sm);
+  padding: 0.5rem 0.625rem;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -649,8 +640,8 @@ html body .kurse-container-modern .stat-card,
   background: linear-gradient(135deg, var(--farbe-akzent), var(--farbe-akzent-2));
   color: #ffffff;
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: var(--comp-radius-xl);
+  padding: 0.75rem var(--ui-card-padding);
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -667,14 +658,14 @@ html body .kurse-container-modern .stat-card,
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgba(255, 215, 0, 0.3);
   border-radius: 16px;
-  padding: 2rem;
+  padding: var(--ui-card-padding);
   margin-top: 1rem;
   backdrop-filter: blur(10px);
 }
 
 .new-trainer-form h4 {
   color: #ffffff;
-  font-size: 1.3rem;
+  font-size: var(--ui-section-title);
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   margin: 0 0 1.5rem 0;
@@ -683,7 +674,7 @@ html body .kurse-container-modern .stat-card,
 
 .trainer-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: var(--ui-stats-cols);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -697,8 +688,8 @@ html body .kurse-container-modern .stat-card,
   background: var(--farbe-hauptfarbe);
   color: #ffffff;
   border: none;
-  border-radius: 12px;
-  padding: 14px 28px;
+  border-radius: var(--comp-radius-xl);
+  padding: 0.875rem 1.75rem;
   font-weight: 700;
   font-size: 1.1rem;
   cursor: pointer;
@@ -783,7 +774,7 @@ html body .kurse-container-modern .stat-card,
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 2rem;
+  margin-bottom: var(--ui-stats-margin-b);
 }
 
 .einstellungen-card {
@@ -803,10 +794,10 @@ html body .kurse-container-modern .stat-card,
 }
 
 .einstellungen-card .card-content {
-  padding: 2rem;
+  padding: var(--ui-card-padding);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: var(--ui-section-gap);
 }
 
 .einstellungen-card .card-header h3 {
@@ -815,7 +806,7 @@ html body .kurse-container-modern .stat-card,
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin: 0;
-  font-size: 1.3rem;
+  font-size: var(--ui-section-title);
   font-weight: 700;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
 }
@@ -853,7 +844,7 @@ html body .kurse-container-modern .stat-card,
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   transition: all 0.3s ease;
   position: relative;
 }
@@ -885,7 +876,7 @@ html body .kurse-container-modern .stat-card,
   width: 28px;
   height: 24px;
   border: 2px solid rgba(255, 215, 0, 0.5);
-  border-radius: 4px;
+  border-radius: var(--comp-radius-xs);
   background: rgba(255, 215, 0, 0.3);
   color: #ffffff;
   cursor: pointer !important;
@@ -924,7 +915,7 @@ html body .kurse-container-modern .stat-card,
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--comp-radius-md);
   background: rgba(255, 255, 255, 0.1);
   color: #ffffff;
   cursor: pointer;
@@ -958,7 +949,7 @@ html body .kurse-container-modern .stat-card,
 .info-box {
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   margin-top: 1rem;
 }
@@ -1028,7 +1019,7 @@ html body .kurse-container-modern .stat-card,
 .neuer-kurs-card .card-header h3 {
   color: white !important;
   margin: 0;
-  font-size: 1.3rem;
+  font-size: var(--ui-section-title);
   font-weight: 700;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   background: none !important;
@@ -1038,10 +1029,10 @@ html body .kurse-container-modern .stat-card,
 }
 
 .kurs-form-modern {
-  padding: 2rem;
+  padding: var(--ui-card-padding);
   display: flex;
   flex-direction: row;
-  gap: 2rem;
+  gap: var(--ui-section-gap);
   align-items: flex-start;
 }
 
@@ -1070,10 +1061,10 @@ html body .kurse-container-modern .stat-card,
 }
 
 .form-select {
-  padding: 12px 16px;
+  padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 215, 0, 0.4);
-  border-radius: 12px;
+  border-radius: var(--comp-radius-xl);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
@@ -1091,8 +1082,8 @@ html body .kurse-container-modern .stat-card,
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-akzent));
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 14px 28px;
+  border-radius: var(--comp-radius-xl);
+  padding: 0.875rem 1.75rem;
   font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
@@ -1163,11 +1154,11 @@ html body .kurse-container-modern .stat-card,
 /* Responsive Design für Mobile */
 @media (max-width: 768px) {
   .kurse-container-modern {
-    padding: 1rem;
+    padding: var(--ui-page-padding-sm);
   }
 
   .kurse-header h2 {
-    font-size: 2rem;
+    font-size: var(--ui-page-title);
   }
 
   .kurse-controls {
@@ -1314,4 +1305,338 @@ body .kurs-card h3,
 html .kurs-card h3 {
   font-size: 0.4rem !important;
   font-weight: 700 !important;
+}
+
+/* ============================================================================
+   KURSE – additional scoped utility classes (prefix: ku-)
+   Added 2026-03-06 to replace inline styles
+   ============================================================================ */
+
+/* Header margin */
+.ku-header {
+  margin-bottom: 0.5rem;
+}
+
+/* Header h2 */
+.ku-header-title {
+  font-size: 1.2rem;
+  margin-bottom: 0.2rem;
+}
+
+/* Tab navigation margin */
+.ku-tab-nav {
+  margin-bottom: 0.5rem;
+}
+
+/* Sort row */
+.ku-sort-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Sort row label */
+.ku-sort-label {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+/* Sort button base */
+.ku-sort-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.ku-sort-btn.active {
+  background: rgba(255, 215, 0, 0.3);
+  border: 2px solid rgba(255, 215, 0, 0.6);
+}
+
+/* Stats grid */
+.ku-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+/* Stat card */
+.ku-stat-card {
+  padding: 0.5rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  min-height: 78px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Stat inner row */
+.ku-stat-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.1rem;
+}
+
+/* Stat inner row small gap variant */
+.ku-stat-inner-sm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-bottom: 0.05rem;
+}
+
+/* Stat emoji */
+.ku-stat-emoji-lg {
+  font-size: 1.2rem;
+}
+
+.ku-stat-emoji {
+  font-size: 1rem;
+}
+
+/* Stat number – first card (darker text) */
+.ku-stat-number-dark {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+/* Stat number – standard */
+.ku-stat-number {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+/* Stat label */
+.ku-stat-label {
+  font-size: 0.6rem;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Stat label muted variant (first card) */
+.ku-stat-label-muted {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Stil section margin */
+.ku-stil-mb {
+  margin-bottom: 2rem;
+}
+
+/* Stil header */
+.ku-stil-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.ku-stil-header:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15));
+  border-color: rgba(255, 215, 0, 0.5);
+}
+
+/* Stil title span */
+.ku-stil-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Stil count badge */
+.ku-stil-count {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Stil chevron */
+.ku-stil-chevron {
+  transition: transform 0.3s ease;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.ku-stil-chevron.collapsed {
+  transform: rotate(-90deg);
+}
+
+/* Standort badge pin icon */
+.ku-pin-icon {
+  font-size: 0.9rem;
+}
+
+/* Room info column */
+.ku-room-info-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.ku-room-name {
+  font-weight: bold;
+}
+
+.ku-room-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+.ku-room-size {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+/* New room form */
+.ku-new-room-form {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+}
+
+.ku-new-room-h4 {
+  color: var(--text-primary);
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+}
+
+/* New room inputs */
+.ku-room-input {
+  padding: 0.4rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.4);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* Button row at bottom of new room form */
+.ku-room-btn-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Add room button */
+.ku-btn-add-room {
+  padding: 0.4rem 0.8rem;
+  background: rgba(0, 255, 0, 0.3);
+  border: 1px solid rgba(0, 255, 0, 0.5);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+/* Cancel room button */
+.ku-btn-cancel-room {
+  padding: 0.4rem 0.8rem;
+  background: rgba(255, 0, 0, 0.3);
+  border: 1px solid rgba(255, 0, 0, 0.5);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+/* Add new room trigger button */
+.ku-btn-add-room-trigger {
+  margin-top: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  background: rgba(255, 215, 0, 0.2);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* Stammdaten room form */
+.ku-room-stammdaten-form {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+/* Input buttons top margin */
+.ku-input-buttons-mt {
+  margin-top: 0.5rem;
+}
+
+/* Cancel trainer button override */
+.ku-cancel-trainer-btn {
+  margin-left: 1rem;
+  padding: 14px 28px;
+  font-size: 1.1rem;
+}
+
+/* Einstellungen card animation delays */
+.ku-card-delay-1 { animation-delay: 0.1s; }
+.ku-card-delay-2 { animation-delay: 0.2s; }
+.ku-card-delay-3 { animation-delay: 0.3s; }
+.ku-card-delay-4 { animation-delay: 0.4s; }
+
+/* Stil-header chevron arrow — transform is dynamic (kept inline) */
+.ku-stil-chevron-span {
+  transition: transform 0.3s ease;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.ku-stil-chevron-span--collapsed { transform: rotate(-90deg); }
+
+/* Standort badge — background via --standort-color CSS var */
+.kurs-standort-badge {
+  color: white;
+  background: var(--standort-color, #4F46E5);
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  margin-top: 8px;
+  margin-bottom: 4px;
 }

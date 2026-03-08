@@ -1,0 +1,76 @@
+/* ===== FREUNDE WERBEN FREUNDE CSS ===== */
+
+/* No-dojo placeholder */
+.fwf-no-dojo-placeholder {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.fwf-no-dojo-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Code search */
+.fwf-code-search-wrapper {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.fwf-code-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-disabled);
+  pointer-events: none;
+}
+
+.fwf-code-search-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.fwf-code-search-clear {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+}
+
+/* Section headings */
+.fwf-section-h3-gold {
+  color: var(--primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  -webkit-text-stroke: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #FFD700;
+}
+
+.fwf-section-h3-blue {
+  color: var(--color-info-400);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+  -webkit-text-stroke: 0;
+  text-transform: none;
+  letter-spacing: normal;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #60a5fa;
+}

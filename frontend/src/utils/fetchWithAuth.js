@@ -209,11 +209,20 @@ export const fetchWithAuth = async (url, options = {}) => {
   }
 
   // Führe fetch aus mit credentials: 'include' (Session-Cookies)
-  const response = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include', // WICHTIG: Session-Cookies automatisch senden
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: 'include', // WICHTIG: Session-Cookies automatisch senden
+    });
+  } catch (networkError) {
+    // Netzwerkfehler = Server nicht erreichbar (Wartung/Neustart)
+    window.dispatchEvent(new CustomEvent('server:maintenance', {
+      detail: { status: 0, url, error: networkError.message }
+    }));
+    throw networkError;
+  }
 
   // 401 Unauthorized - Automatischer Logout
   if (response.status === 401) {
@@ -224,12 +233,13 @@ export const fetchWithAuth = async (url, options = {}) => {
 
   // 403 Forbidden - Falsches Dojo / Kein Zugriff
   if (response.status === 403) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error('❌ [Auth] 403 Forbidden - Kein Zugriff auf dieses Dojo');
+    // Clone damit der Body für den Aufrufer noch lesbar bleibt
+    const cloned = response.clone();
+    const errorData = await cloned.json().catch(() => ({}));
+    console.error('❌ [Auth] 403 Forbidden:', errorData.error || errorData.message || 'Kein Zugriff');
 
-    // Prüfe ob es ein Dojo-Zugriffsproblem ist
-    if (errorData.error === 'Zugriff verweigert' ||
-        errorData.message?.includes('keinen Zugriff')) {
+    // Prüfe ob es ein Dojo-Zugriffsproblem ist (nicht bloß fehlende Rolle)
+    if (errorData.message?.includes('keinen Zugriff auf dieses Dojo')) {
       // Alle Auth-Daten entfernen
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem('dojo_user');
@@ -245,6 +255,13 @@ export const fetchWithAuth = async (url, options = {}) => {
       window.location.href = '/login?error=wrong_dojo';
       throw new Error('Sie haben keinen Zugriff auf dieses Dojo.');
     }
+  }
+
+  // 502/503 - Server nicht erreichbar (Wartung/Neustart)
+  if (response.status === 502 || response.status === 503) {
+    window.dispatchEvent(new CustomEvent('server:maintenance', {
+      detail: { status: response.status, url }
+    }));
   }
 
   return response;

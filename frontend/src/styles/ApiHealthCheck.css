@@ -1,0 +1,161 @@
+/* ApiHealthCheck.css — prefix: ahc- */
+
+.ahc-reconnect-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: ahcSlideDown 0.3s ease-out;
+}
+
+@keyframes ahcSlideDown {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+.ahc-reconnect-text {
+  font-weight: 500;
+}
+
+.ahc-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ahc-card {
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.ahc-icon-wrap {
+  font-size: 4rem;
+  margin: 0 auto 24px;
+  animation: ahcPulse 2s infinite;
+}
+
+@keyframes ahcPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.ahc-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--color-gold-400);
+  line-height: 1.4;
+}
+
+.ahc-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.ahc-error-box {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  font-size: 0.85rem;
+  color: #fca5a5;
+}
+
+.ahc-error-icon {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.ahc-countdown-box {
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.ahc-countdown-label {
+  font-size: 0.9rem;
+  color: var(--color-info-400);
+  margin-bottom: 8px;
+}
+
+.ahc-countdown-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--info);
+  font-family: monospace;
+}
+
+.ahc-failures-text {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.ahc-blurred {
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+/* Retry button — static base styles */
+.ahc-retry-btn {
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.ahc-retry-btn--idle {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.ahc-retry-btn--checking {
+  background: rgba(59, 130, 246, 0.3);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Spin animation for retry icon */
+.ahc-spin {
+  animation: ahcSpin 1s linear infinite;
+}
+
+@keyframes ahcSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

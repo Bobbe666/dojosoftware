@@ -317,7 +317,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       {/* Header - nur anzeigen wenn nicht embedded */}
       {!embedded && (
       <div className="lastschriftlauf-header">
-        <button className="btn btn-secondary" onClick={() => navigate('/dashboard/beitraege')} style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}>
+        <button className="btn btn-secondary ll-btn-sm" onClick={() => navigate('/dashboard/beitraege')}>
           <ArrowLeft size={16} />
           Zurück
         </button>
@@ -325,20 +325,18 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           <h1>💶 SEPA-Lastschriftlauf</h1>
           <p>Monatliche Lastschriften generieren und an Bank übermitteln</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="u-flex-gap-sm">
           <button
-            className="btn btn-secondary"
+            className="btn btn-secondary ll-btn-sm"
             onClick={() => navigate('/dashboard/zahllaeufe')}
-            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
           >
             <FileText size={16} />
             Zahlläufe-Übersicht
           </button>
           <button
-            className="btn btn-info"
+            className="btn btn-info ll-btn-sm"
             onClick={loadPreview}
             disabled={loading}
-            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem' }}
           >
             <RefreshCw size={16} />
             Aktualisieren
@@ -440,9 +438,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                   {missingMandates.slice(0, 5).map(member => (
                     <div
                       key={member.mitglied_id}
-                      className="missing-mandate-item"
+                      className="missing-mandate-item ll-cursor-pointer"
                       onClick={() => navigate(`/dashboard/mitglieder/${member.mitglied_id}`)}
-                      style={{ cursor: 'pointer' }}
                     >
                       <span className="member-name">
                         {member.vorname} {member.nachname} (ID: {member.mitglied_id})
@@ -459,9 +456,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                   )}
                 </div>
                 <button
-                  className="logout-button"
+                  className="logout-button ll-mt-1"
                   onClick={() => navigate('/dashboard/sepa-mandate')}
-                  style={{ marginTop: '1rem' }}
                 >
                   SEPA-Mandate verwalten
                 </button>
@@ -530,8 +526,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
             <select
               value={selectedBank || ''}
               onChange={(e) => setSelectedBank(parseInt(e.target.value))}
-              className="form-select-compact"
-              style={{ minWidth: '200px' }}
+              className="form-select-compact ll-select-wide"
             >
               {availableBanks.length === 0 ? (
                 <option value="">Keine Bankkonten verfügbar</option>
@@ -547,20 +542,18 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           </div>
 
           <button
-            className="logout-button"
+            className="logout-button ll-nowrap"
             onClick={loadPreview}
             disabled={loading}
-            style={{ whiteSpace: 'nowrap' }}
           >
             <Eye size={16} />
             {loading ? 'Lädt...' : 'Vorschau aktualisieren'}
           </button>
 
           <button
-            className="logout-button"
+            className="logout-button ll-nowrap"
             onClick={handleExport}
             disabled={loading || !preview || preview.count === 0}
-            style={{ whiteSpace: 'nowrap' }}
           >
             <Download size={16} />
             Jetzt exportieren
@@ -569,14 +562,13 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           {/* Stripe Buttons - nur anzeigen wenn Stripe konfiguriert */}
           {stripeStatus?.stripe_configured && (
             <>
-              <div style={{ borderLeft: '1px solid rgba(255,255,255,0.2)', height: '40px', margin: '0 0.5rem' }} />
+              <div className="ll-divider" />
 
               {stripeStatus.needs_setup > 0 && (
                 <button
-                  className="logout-button"
+                  className="logout-button ll-stripe-setup-btn"
                   onClick={handleStripeSetupAll}
                   disabled={stripeProcessing}
-                  style={{ whiteSpace: 'nowrap', background: 'rgba(99, 102, 241, 0.2)', borderColor: 'rgba(99, 102, 241, 0.5)' }}
                   title={`${stripeStatus.needs_setup} Mitglieder benötigen Stripe Setup`}
                 >
                   {stripeProcessing ? <Loader size={16} className="spin" /> : <Settings size={16} />}
@@ -585,10 +577,9 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               )}
 
               <button
-                className="logout-button"
+                className="logout-button ll-stripe-execute-btn"
                 onClick={handleStripeExecute}
                 disabled={stripeProcessing || !preview || preview.count === 0}
-                style={{ whiteSpace: 'nowrap', background: 'rgba(99, 102, 241, 0.3)', borderColor: 'rgba(99, 102, 241, 0.6)' }}
               >
                 {stripeProcessing ? <Loader size={16} className="spin" /> : <Zap size={16} />}
                 Mit Stripe einziehen
@@ -599,26 +590,16 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
         {/* Stripe Setup Fortschritt */}
         {stripeSetupProgress && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem 1rem',
-            borderRadius: '8px',
-            background: stripeSetupProgress.status === 'error' ? 'rgba(239, 68, 68, 0.1)' :
-                        stripeSetupProgress.status === 'completed' ? 'rgba(16, 185, 129, 0.1)' :
-                        'rgba(99, 102, 241, 0.1)',
-            border: `1px solid ${stripeSetupProgress.status === 'error' ? 'rgba(239, 68, 68, 0.3)' :
-                                 stripeSetupProgress.status === 'completed' ? 'rgba(16, 185, 129, 0.3)' :
-                                 'rgba(99, 102, 241, 0.3)'}`
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className={`ll-stripe-progress ll-stripe-progress--${stripeSetupProgress.status}`}>
+            <div className="u-flex-row-sm">
               {stripeSetupProgress.status === 'running' && <Loader size={16} className="spin" />}
-              {stripeSetupProgress.status === 'completed' && <CheckCircle size={16} style={{ color: '#10b981' }} />}
-              {stripeSetupProgress.status === 'error' && <AlertCircle size={16} style={{ color: '#ef4444' }} />}
+              {stripeSetupProgress.status === 'completed' && <CheckCircle size={16} className="u-text-success" />}
+              {stripeSetupProgress.status === 'error' && <AlertCircle size={16} className="u-text-error" />}
               <span>{stripeSetupProgress.message}</span>
               {stripeSetupProgress.status !== 'running' && (
                 <button
                   onClick={() => setStripeSetupProgress(null)}
-                  style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
+                  className="ll-dismiss-btn"
                 >
                   ×
                 </button>
@@ -629,19 +610,13 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
         {/* Stripe Batch Ergebnis */}
         {stripeBatchResult && (
-          <div style={{
-            marginTop: '1rem',
-            padding: '0.75rem 1rem',
-            borderRadius: '8px',
-            background: stripeBatchResult.status === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-            border: `1px solid ${stripeBatchResult.status === 'error' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className={`ll-stripe-result${stripeBatchResult.status === 'error' ? ' ll-stripe-result--error' : ' ll-stripe-result--ok'}`}>
+            <div className="ll-flex-between">
+              <div className="u-flex-row-sm">
                 {stripeBatchResult.status === 'error' ? (
-                  <AlertCircle size={16} style={{ color: '#ef4444' }} />
+                  <AlertCircle size={16} className="u-text-error" />
                 ) : (
-                  <CheckCircle size={16} style={{ color: '#10b981' }} />
+                  <CheckCircle size={16} className="u-text-success" />
                 )}
                 <span>
                   {stripeBatchResult.status === 'error' ? stripeBatchResult.message :
@@ -650,13 +625,13 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               </div>
               <button
                 onClick={() => setStripeBatchResult(null)}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer' }}
+                className="ll-dismiss-btn"
               >
                 ×
               </button>
             </div>
             {stripeBatchResult.batch_id && (
-              <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>
+              <div className="ll-batch-id">
                 Batch-ID: {stripeBatchResult.batch_id}
               </div>
             )}
@@ -673,7 +648,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
             <table className="preview-table">
               <thead>
                 <tr>
-                  <th style={{ width: '30px' }}></th>
+                  <th className="ll-th-expand"></th>
                   <th>Mitglied</th>
                   <th>IBAN</th>
                   <th>Offene Monate</th>
@@ -686,7 +661,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                 {preview.preview.map((item, index) => (
                   <React.Fragment key={index}>
                     <tr>
-                      <td style={{ textAlign: 'center', cursor: 'pointer', padding: '0.5rem' }}
+                      <td className="ll-td-expand"
                           onClick={() => toggleRowExpanded(item.mitglied_id)}>
                         {expandedRows.has(item.mitglied_id) ? (
                           <ChevronDown size={18} />
@@ -703,14 +678,14 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                         <code>{item.iban}</code>
                       </td>
                       <td>
-                        <span className="badge badge-warning" style={{ marginRight: '0.5rem' }}>
+                        <span className="badge badge-warning ll-badge-mr">
                           {item.anzahl_monate} {item.anzahl_monate === 1 ? 'Monat' : 'Monate'}
                         </span>
                         <br />
-                        <small style={{ color: 'rgba(255,255,255,0.6)' }}>{item.offene_monate}</small>
+                        <small className="u-text-secondary">{item.offene_monate}</small>
                       </td>
                       <td>
-                        <strong style={{ color: item.anzahl_monate > 1 ? '#f59e0b' : '#10b981' }}>
+                        <strong className={`ll-betrag-value${item.anzahl_monate > 1 ? ' ll-betrag-value--warn' : ''}`}>
                           {formatCurrency(item.betrag)}
                         </strong>
                       </td>
@@ -727,23 +702,23 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                     {expandedRows.has(item.mitglied_id) && item.beitraege && item.beitraege.length > 0 && (
                       <tr className="details-row">
                         <td></td>
-                        <td colSpan={6} style={{ padding: '0.5rem 1rem', backgroundColor: 'rgba(255,255,255,0.05)' }}>
-                          <div style={{ fontSize: '0.85rem' }}>
-                            <strong style={{ marginBottom: '0.5rem', display: 'block' }}>Einzelne Beiträge:</strong>
-                            <table style={{ width: '100%', marginTop: '0.5rem' }}>
+                        <td colSpan={6} className="ll-details-td">
+                          <div className="ll-details-inner">
+                            <strong className="ll-details-heading">Einzelne Beiträge:</strong>
+                            <table className="ll-details-table">
                               <thead>
-                                <tr style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
-                                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Beschreibung</th>
-                                  <th style={{ textAlign: 'left', padding: '0.25rem' }}>Datum</th>
-                                  <th style={{ textAlign: 'right', padding: '0.25rem' }}>Betrag</th>
+                                <tr className="ll-details-thead-row">
+                                  <th className="ll-td-left">Beschreibung</th>
+                                  <th className="ll-td-left">Datum</th>
+                                  <th className="ll-td-right">Betrag</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {item.beitraege.map((beitrag, bIdx) => (
-                                  <tr key={bIdx} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                                    <td style={{ padding: '0.25rem' }}>{beitrag.beschreibung || beitrag.monat}</td>
-                                    <td style={{ padding: '0.25rem' }}>{beitrag.datum}</td>
-                                    <td style={{ padding: '0.25rem', textAlign: 'right' }}>{formatCurrency(beitrag.betrag)}</td>
+                                  <tr key={bIdx} className="ll-details-beitrag-row">
+                                    <td className="ll-td-pad">{beitrag.beschreibung || beitrag.monat}</td>
+                                    <td className="ll-td-pad">{beitrag.datum}</td>
+                                    <td className="ll-td-right">{formatCurrency(beitrag.betrag)}</td>
                                   </tr>
                                 ))}
                               </tbody>

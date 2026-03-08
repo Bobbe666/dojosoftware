@@ -249,7 +249,7 @@ const Mahnwesen = () => {
           <h1>⚠️ Mahnwesen</h1>
           <p>Verwalte offene Beiträge und Mahnungen</p>
         </div>
-        <div className="header-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+        <div className="header-actions">
           <button
             className="btn btn-secondary"
             onClick={() => navigate('/dashboard/einstellungen/mahnstufen')}
@@ -281,43 +281,36 @@ const Mahnwesen = () => {
 
       {/* Mahnlauf Ergebnis */}
       {mahnlaufErgebnis && (
-        <div className="mahnlauf-ergebnis" style={{
-          background: mahnlaufErgebnis.simulation ? 'rgba(251, 191, 36, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-          border: `1px solid ${mahnlaufErgebnis.simulation ? '#f59e0b' : '#22c55e'}`,
-          borderRadius: '12px',
-          padding: '1rem',
-          marginBottom: '1rem'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-            <h3 style={{ margin: 0, color: mahnlaufErgebnis.simulation ? '#f59e0b' : '#22c55e' }}>
+        <div className={`mahnlauf-ergebnis${mahnlaufErgebnis.simulation ? ' mahnlauf-ergebnis--simulation' : ' mahnlauf-ergebnis--real'}`}>
+          <div className="mahnlauf-ergebnis-header">
+            <h3 className="mahnlauf-ergebnis-title">
               {mahnlaufErgebnis.simulation ? '🔍 Simulation' : '✅ Mahnlauf durchgeführt'}
             </h3>
             <button
-              className="btn btn-sm btn-secondary"
+              className="btn btn-sm btn-secondary mahnlauf-close-btn"
               onClick={() => setMahnlaufErgebnis(null)}
-              style={{ padding: '0.25rem 0.5rem' }}
             >
               ×
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', fontSize: '0.9rem' }}>
+          <div className="mahnlauf-grid">
             <div>
               <strong>Geprüft:</strong> {mahnlaufErgebnis.zusammenfassung?.geprueft || 0}
             </div>
-            <div style={{ color: '#22c55e' }}>
+            <div className="u-text-success">
               <strong>Neue Mahnungen:</strong> {mahnlaufErgebnis.zusammenfassung?.neueMahnungen || 0}
             </div>
-            <div style={{ color: '#6b7280' }}>
+            <div className="u-text-muted">
               <strong>Übersprungen:</strong> {mahnlaufErgebnis.zusammenfassung?.uebersprungen || 0}
             </div>
-            <div style={{ color: '#ef4444' }}>
+            <div className="u-text-error">
               <strong>Fehler:</strong> {mahnlaufErgebnis.zusammenfassung?.fehler || 0}
             </div>
           </div>
           {mahnlaufErgebnis.ergebnisse?.neueMahnungen?.length > 0 && (
-            <div style={{ marginTop: '1rem' }}>
+            <div className="mahnlauf-ergebnis-details">
               <strong>Neue Mahnungen:</strong>
-              <ul style={{ margin: '0.5rem 0', paddingLeft: '1.5rem' }}>
+              <ul className="mahnlauf-ergebnis-list">
                 {mahnlaufErgebnis.ergebnisse.neueMahnungen.slice(0, 5).map((m, i) => (
                   <li key={i}>{m.mitglied} - {m.mahnstufe}. Mahnung (€{parseFloat(m.betrag).toFixed(2)})</li>
                 ))}
