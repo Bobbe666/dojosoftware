@@ -274,7 +274,7 @@ router.get('/current', async (req, res) => {
           status: 'active',
           feature_verkauf: 1, feature_buchfuehrung: 1, feature_events: 1,
           feature_multidojo: 1, feature_api: 1, feature_messenger: 1,
-          feature_homepage_builder: 1,
+          feature_homepage_builder: 1, feature_kontoauszug: 1,
           max_members: 99999
         },
         trial_days_left: null,
