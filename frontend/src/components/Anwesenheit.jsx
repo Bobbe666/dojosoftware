@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Suspense, lazy } from "react";
 import axios from "axios";
+const VerkaufKasse = lazy(() => import('./VerkaufKasse'));
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import "../styles/themes.css";
@@ -27,6 +28,11 @@ const Anwesenheit = () => {
   const [expandedCards, setExpandedCards] = useState({});
   const [selectedMember, setSelectedMember] = useState(null); // Für Popup-Modal
   
+  // Abwesenheiten für gewähltes Datum
+  const [abwesenheiten, setAbwesenheiten] = useState([]);
+  const [abwesenheitenLoading, setAbwesenheitenLoading] = useState(false);
+  const [showAbwesenheiten, setShowAbwesenheiten] = useState(true);
+
   // NEU: Check-in Integration
   const [showAllMembers, setShowAllMembers] = useState(false);
   const [showStyleOnly, setShowStyleOnly] = useState(false); // NEU: Stil-Filter (ohne Gruppe)
@@ -38,10 +44,70 @@ const Anwesenheit = () => {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const suchfeldRef = useRef(null);
 
+  // Verletzung Modal
+  const [showVerletzungModal, setShowVerletzungModal] = useState(false);
+  const [verletzungMember, setVerletzungMember] = useState(null);
+  const [verletzungForm, setVerletzungForm] = useState({ datum: new Date().toISOString().split('T')[0], art: '', koerperregion: '', schwere: 'leicht', notizen: '', wieder_trainierbar_ab: '' });
+  const [verletzungSaving, setVerletzungSaving] = useState(false);
+  const [verletzungError, setVerletzungError] = useState(null);
+
+  // Verkauf Modal
+  const [showVerkauf, setShowVerkauf] = useState(false);
+  const [verkaufKunde, setVerkaufKunde] = useState(null);
+
+  const openVerletzung = (mitglied) => {
+    setVerletzungMember(mitglied);
+    setVerletzungForm({ datum: new Date().toISOString().split('T')[0], art: '', koerperregion: '', schwere: 'leicht', notizen: '', wieder_trainierbar_ab: '' });
+    setVerletzungError(null);
+    setShowVerletzungModal(true);
+  };
+
+  const saveVerletzung = async () => {
+    if (!verletzungForm.art.trim()) { setVerletzungError('Bitte Art der Verletzung angeben.'); return; }
+    setVerletzungSaving(true);
+    setVerletzungError(null);
+    try {
+      await axios.post('/verletzungen', { mitglied_id: verletzungMember.mitglied_id || verletzungMember.id, ...verletzungForm });
+      setShowVerletzungModal(false);
+    } catch { setVerletzungError('Fehler beim Speichern.'); }
+    finally { setVerletzungSaving(false); }
+  };
+
+  // Sondertraining Modal
+  const [showSonderModal, setShowSonderModal] = useState(false);
+  const [sonderForm, setSonderForm] = useState({ name: '', datum: '', stil_id: '' });
+  const [sonderSaving, setSonderSaving] = useState(false);
+  const [stile, setStile] = useState([]);
+
+  // Abwesenheiten für gewähltes Datum laden
+  useEffect(() => {
+    const loadAbwesenheiten = async () => {
+      setAbwesenheitenLoading(true);
+      try {
+        const dojoParam = activeDojo?.id ? `&dojo_id=${activeDojo.id}` : '';
+        const res = await fetchWithAuth(`${config.apiBaseUrl}/abwesenheiten/admin?von=${ausgewaehltesDatum}&bis=${ausgewaehltesDatum}${dojoParam}`);
+        if (res.ok) {
+          const data = await res.json();
+          setAbwesenheiten(data.abwesenheiten || []);
+        }
+      } catch (_) {}
+      setAbwesenheitenLoading(false);
+    };
+    loadAbwesenheiten();
+  }, [ausgewaehltesDatum]);
+
   // NEU: Kurse für Datum laden statt Stundenplan
   useEffect(() => {
     loadKurseForDate(ausgewaehltesDatum);
   }, [ausgewaehltesDatum]);
+
+  // Stile einmalig laden
+  useEffect(() => {
+    fetchWithAuth(`${config.apiBaseUrl}/stile?aktiv=1`)
+      .then(r => r.json())
+      .then(data => setStile(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, []);
 
   // Hilfsfunktion für sichere API-Aufrufe mit Fehlerbehandlung
   const fetchKursMitglieder = async (url) => {
@@ -601,25 +667,78 @@ const Anwesenheit = () => {
     return [...entfernt, ...nichtAnwesend, "---ANWESEND---", ...anwesend];
   };
 
+  const handleSondertrainingErstellen = async () => {
+    if (!sonderForm.name.trim() || !sonderForm.datum || !sonderForm.stil_id) return;
+    setSonderSaving(true);
+    try {
+      // dojo_id direkt aus activeDojo holen — getDojoFilterParam gibt '' für Super-Admin zurück
+      const dojoId = activeDojo && typeof activeDojo === 'object' ? activeDojo.id : null;
+      const url = dojoId
+        ? `${config.apiBaseUrl}/anwesenheit/sondertraining?dojo_id=${dojoId}`
+        : `${config.apiBaseUrl}/anwesenheit/sondertraining`;
+      const res = await fetchWithAuth(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_name: sonderForm.name.trim(), datum: sonderForm.datum, stil_id: sonderForm.stil_id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const neuesEvent = {
+          stundenplan_id: data.stundenplan_id,
+          typ: 'sonder',
+          wochentag: sonderForm.datum,
+          zeit: '—',
+          kurs_name: data.event_name,
+          stil: stile.find(s => String(s.stil_id) === String(sonderForm.stil_id))?.name || '',
+        };
+        // Falls das Datum mit dem aktuell gewählten übereinstimmt → in Liste einfügen
+        if (sonderForm.datum === ausgewaehltesDatum) {
+          setGefilterteStunden(prev => [...prev, neuesEvent]);
+        } else {
+          // Datum wechseln und Liste neu laden
+          setAusgewaehltesDatum(sonderForm.datum);
+        }
+        setShowSonderModal(false);
+        setSonderForm({ name: '', datum: ausgewaehltesDatum, stil_id: '' });
+        // Auto-auswählen
+        handleStundeWaehlen(neuesEvent);
+      }
+    } catch (e) {
+      console.error('Fehler beim Anlegen des Sondertrainings:', e);
+    } finally {
+      setSonderSaving(false);
+    }
+  };
+
   return (
     <div className="anwesenheit-container">
-      {/* Header Section mit Wochentagen und Datum */}
+      {/* Header Section */}
       <div className="anwesenheit-header">
         <div className="anwesenheit-header-content">
+          {/* Zeile 1: Titel + Datum + Sondertraining */}
           <div className="anwesenheit-header-top">
-            <div className="anwesenheit-header-title">
-              <h2>Anwesenheitsverwaltung</h2>
-            </div>
-            <div className="wochentag-buttons">
-              {["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"].map((tag) => (
-                <button key={tag} onClick={() => handleWochentagClick(tag)}>
-                  {tag}
-                </button>
-              ))}
-            </div>
+            <h2>Anwesenheitsverwaltung</h2>
             <div className="datum-auswahl-kompakt">
               <input type="date" value={ausgewaehltesDatum} onChange={(e) => handleDatumWechsel(e.target.value)} />
+              <button
+                className="sonder-btn"
+                onClick={() => {
+                  setSonderForm({ name: '', datum: ausgewaehltesDatum, stil_id: stile[0]?.stil_id ? String(stile[0].stil_id) : '' });
+                  setShowSonderModal(true);
+                }}
+                title="Sondertraining / einmaliges Event erfassen"
+              >
+                ⚡ Sondertraining
+              </button>
             </div>
+          </div>
+          {/* Zeile 2: Wochentag-Schnellauswahl */}
+          <div className="wochentag-buttons">
+            {["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"].map((tag) => (
+              <button key={tag} onClick={() => handleWochentagClick(tag)}>
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -649,7 +768,10 @@ const Anwesenheit = () => {
               }
             >
               <div>
-                {stunde.wochentag}, {stunde.zeit}
+                {stunde.typ === 'sonder'
+                  ? <span className="sonder-badge">⚡ Sondertraining</span>
+                  : <>{stunde.wochentag}, {stunde.zeit}</>
+                }
               </div>
               <div>
                 {stunde.stil && <strong>{stunde.stil}</strong>}
@@ -674,6 +796,41 @@ const Anwesenheit = () => {
         })}
       </div>
 
+      {/* Abwesenheiten Panel */}
+      {(abwesenheiten.length > 0 || abwesenheitenLoading) && (
+        <div className="abw-panel">
+          <button
+            className="abw-panel-header"
+            onClick={() => setShowAbwesenheiten(v => !v)}
+          >
+            <span>🚫 Abgemeldete Mitglieder ({abwesenheitenLoading ? '…' : abwesenheiten.length})</span>
+            <span className="abw-panel-toggle">{showAbwesenheiten ? '▲' : '▼'}</span>
+          </button>
+          {showAbwesenheiten && (
+            <div className="abw-panel-list">
+              {abwesenheitenLoading ? (
+                <p className="abw-panel-loading">Lade…</p>
+              ) : abwesenheiten.map(a => {
+                const artLabels = { krank: { label: 'Krank', emoji: '🤒' }, abwesend: { label: 'Abwesend', emoji: '✈️' }, urlaub: { label: 'Urlaub', emoji: '🏖️' }, sonstiges: { label: 'Sonstiges', emoji: '📝' } };
+                const meta = artLabels[a.art] || artLabels.sonstiges;
+                const vonStr = a.datum ? new Date(String(a.datum).slice(0,10) + 'T00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short' }) : '';
+                const bisStr = a.datum_bis && a.datum_bis !== a.datum ? new Date(String(a.datum_bis).slice(0,10) + 'T00:00').toLocaleDateString('de-DE', { day: '2-digit', month: 'short' }) : '';
+                return (
+                  <div key={a.id} className="abw-panel-item">
+                    <span className="abw-panel-emoji">{meta.emoji}</span>
+                    <div className="abw-panel-info">
+                      <span className="abw-panel-name">{a.vorname} {a.nachname}</span>
+                      <span className="abw-panel-meta">{meta.label}{bisStr ? ` · ${vonStr} – ${bisStr}` : ''}</span>
+                      {a.notiz && <span className="abw-panel-notiz">{a.notiz}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {ausgewaehlteStunde && (
         <div className="mitglieder-abschnitt">
           {/* NEU: Suchfeld, Toggle und Anwesend-Button in einer Zeile */}
@@ -692,8 +849,8 @@ const Anwesenheit = () => {
               />
             </div>
 
-            {/* NEU: Filter-Buttons in Gruppe */}
-            <div className="filter-buttons-gruppe">
+            {/* NEU: Filter-Buttons in Gruppe — nur bei regulären Kursen */}
+            <div className="filter-buttons-gruppe" style={ausgewaehlteStunde?.typ === 'sonder' ? { display: 'none' } : {}}>
               {/* Button 1: Kurs-Mitglieder (Standard) */}
               <button
                 onClick={async () => {
@@ -865,9 +1022,118 @@ const Anwesenheit = () => {
                   anwesenheitEintrag={eintrag}
                   isFromSearch={isFromSearch}
                   onClick={toggleCard}
+                  onVerletzung={openVerletzung}
+                  onVerkauf={(m) => { setVerkaufKunde(m); setShowVerkauf(true); }}
                 />
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Sondertraining Modal */}
+      {showSonderModal && (
+        <div className="sonder-modal-overlay" onClick={() => setShowSonderModal(false)}>
+          <div className="sonder-modal" onClick={e => e.stopPropagation()}>
+            <div className="sonder-modal-header">
+              <h3>⚡ Sondertraining anlegen</h3>
+              <button className="sonder-modal-close" onClick={() => setShowSonderModal(false)}>✕</button>
+            </div>
+            <div className="sonder-modal-body">
+              <label className="sonder-label">Name des Events</label>
+              <input
+                className="sonder-input"
+                type="text"
+                placeholder="z.B. Weißwurstessen, Wettkampftraining..."
+                value={sonderForm.name}
+                onChange={e => setSonderForm(f => ({ ...f, name: e.target.value }))}
+                autoFocus
+              />
+              <label className="sonder-label">Datum</label>
+              <input
+                className="sonder-input"
+                type="date"
+                value={sonderForm.datum}
+                onChange={e => setSonderForm(f => ({ ...f, datum: e.target.value }))}
+              />
+              <label className="sonder-label">Kampfstil (zählt als Einheit für)</label>
+              <select
+                className="sonder-select"
+                value={sonderForm.stil_id}
+                onChange={e => setSonderForm(f => ({ ...f, stil_id: e.target.value }))}
+              >
+                <option value="">— Stil wählen —</option>
+                {stile.map(s => (
+                  <option key={s.stil_id} value={s.stil_id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="sonder-modal-footer">
+              <button className="sonder-cancel-btn" onClick={() => setShowSonderModal(false)}>Abbrechen</button>
+              <button
+                className="sonder-save-btn"
+                onClick={handleSondertrainingErstellen}
+                disabled={sonderSaving || !sonderForm.name.trim() || !sonderForm.datum || !sonderForm.stil_id}
+              >
+                {sonderSaving ? '⏳ Anlegen...' : '✓ Anlegen & öffnen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sondertraining Modal */}
+      {showSonderModal && (
+        <div className="sonder-modal-overlay" onClick={() => setShowSonderModal(false)}>
+          <div className="sonder-modal" onClick={e => e.stopPropagation()}>
+            <h3>⚡ Sondertraining erfassen</h3>
+            <p className="sonder-modal-hint">Einmaliges Event das als Trainingseinheit zählt</p>
+
+            <div className="sonder-modal-field">
+              <label>Name des Events</label>
+              <input
+                type="text"
+                placeholder="z.B. Weißwurstessen, Wettkampftraining..."
+                value={sonderForm.name}
+                onChange={e => setSonderForm(f => ({ ...f, name: e.target.value }))}
+                autoFocus
+              />
+            </div>
+
+            <div className="sonder-modal-field">
+              <label>Datum</label>
+              <input
+                type="date"
+                value={sonderForm.datum}
+                onChange={e => setSonderForm(f => ({ ...f, datum: e.target.value }))}
+              />
+            </div>
+
+            <div className="sonder-modal-field">
+              <label>Kampfstil</label>
+              <select
+                value={sonderForm.stil_id}
+                onChange={e => setSonderForm(f => ({ ...f, stil_id: e.target.value }))}
+              >
+                <option value="">— Stil wählen —</option>
+                {stile.map(s => (
+                  <option key={s.stil_id} value={s.stil_id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="sonder-modal-actions">
+              <button className="sonder-modal-cancel" onClick={() => setShowSonderModal(false)}>
+                Abbrechen
+              </button>
+              <button
+                className="sonder-modal-save"
+                onClick={handleSondertrainingErstellen}
+                disabled={sonderSaving || !sonderForm.name.trim() || !sonderForm.datum || !sonderForm.stil_id}
+              >
+                {sonderSaving ? '⏳ Erstelle...' : '✓ Erstellen & Anwesenheit erfassen'}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -880,6 +1146,52 @@ const Anwesenheit = () => {
         onAction={handlePopupAction}
         onBemerkungChange={(value) => updateBemerkung(selectedMember?.id, value)}
       />
+
+      {/* Verkauf Modal */}
+      {showVerkauf && verkaufKunde && (
+        <Suspense fallback={null}>
+          <VerkaufKasse
+            kunde={verkaufKunde}
+            onClose={() => { setShowVerkauf(false); setVerkaufKunde(null); }}
+          />
+        </Suspense>
+      )}
+
+      {/* Verletzung Modal */}
+      {showVerletzungModal && verletzungMember && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', zIndex: 9999, overflowY: 'auto' }} onClick={() => setShowVerletzungModal(false)}>
+          <div style={{ background: 'var(--bg-card, #1e2130)', border: '2px solid rgba(99,102,241,0.3)', borderRadius: '1rem', maxWidth: '480px', width: 'calc(100% - 2rem)', margin: '2rem auto', padding: '1.5rem' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--primary, #6366f1)' }}>🤕 Verletzung — {verletzungMember.vorname} {verletzungMember.nachname}</h3>
+              <button onClick={() => setShowVerletzungModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'inherit' }}>✕</button>
+            </div>
+            {verletzungError && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.6rem', color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>{verletzungError}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              <div><label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.3rem' }}>Datum</label><input type="date" value={verletzungForm.datum} onChange={e => setVerletzungForm(f => ({ ...f, datum: e.target.value }))} className="form-input" style={{ width: '100%' }} /></div>
+              <div><label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.3rem' }}>Art der Verletzung *</label><input type="text" value={verletzungForm.art} onChange={e => setVerletzungForm(f => ({ ...f, art: e.target.value }))} placeholder="z.B. Verstauchung, Prellung..." className="form-input" style={{ width: '100%' }} autoFocus /></div>
+              <div><label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.3rem' }}>Körperregion</label>
+                <select value={verletzungForm.koerperregion} onChange={e => setVerletzungForm(f => ({ ...f, koerperregion: e.target.value }))} className="form-input" style={{ width: '100%' }}>
+                  <option value="">— wählen —</option>
+                  {['Kopf / Gesicht','Schulter / Schlüsselbein','Arm / Ellbogen','Handgelenk / Hand','Finger','Rippen / Brustkorb','Rücken / Wirbelsäule','Hüfte / Becken','Oberschenkel','Knie','Schienbein / Wade','Sprunggelenk / Fuß','Zehen','Sonstiges'].map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+              <div><label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.3rem' }}>Schwere</label>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {[{ value: 'leicht', label: '🟡 Leicht' }, { value: 'mittel', label: '🟠 Mittel' }, { value: 'schwer', label: '🔴 Schwer' }].map(s => (
+                    <button key={s.value} onClick={() => setVerletzungForm(f => ({ ...f, schwere: s.value }))} style={{ flex: 1, padding: '0.5rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', background: verletzungForm.schwere === s.value ? 'rgba(99,102,241,0.2)' : 'transparent', border: verletzungForm.schwere === s.value ? '2px solid #6366f1' : '2px solid rgba(255,255,255,0.1)', color: 'inherit' }}>{s.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div><label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.3rem' }}>Wieder trainierbar ab</label><input type="date" value={verletzungForm.wieder_trainierbar_ab} onChange={e => setVerletzungForm(f => ({ ...f, wieder_trainierbar_ab: e.target.value }))} className="form-input" style={{ width: '100%' }} /></div>
+              <div><label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.3rem' }}>Notizen</label><textarea value={verletzungForm.notizen} onChange={e => setVerletzungForm(f => ({ ...f, notizen: e.target.value }))} placeholder="Weitere Details..." className="form-input" rows={3} style={{ width: '100%', resize: 'vertical' }} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <button onClick={() => setShowVerletzungModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>Abbrechen</button>
+              <button onClick={saveVerletzung} className="btn btn-primary" style={{ flex: 1 }} disabled={verletzungSaving}>{verletzungSaving ? 'Speichern...' : '✓ Speichern'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

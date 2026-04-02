@@ -13,6 +13,7 @@
 
 const argon2 = require('argon2');
 const bcrypt = require('bcrypt');
+const logger = require('../utils/logger');
 
 // =============================================================================
 // CONFIGURATION
@@ -253,10 +254,10 @@ const migratePasswordHash = async (db, userId, newHash) => {
        WHERE id = ?`,
       [newHash, userId]
     );
-    console.log(`✅ [Password] Migrated user ${userId} to Argon2id`);
+    logger.info(`[Password] Migrated user ${userId} to Argon2id`);
     return true;
   } catch (error) {
-    console.error(`❌ [Password] Migration failed for user ${userId}:`, error.message);
+    logger.error(`[Password] Migration failed for user ${userId}:`, { error: error.message });
     return false;
   }
 };

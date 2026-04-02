@@ -1,7 +1,7 @@
 // =====================================================================================
 // SERVICE WORKER - Dojosoftware
-// Push-Notifications + Chat-Benachrichtigungen
-// Version: CHAT_2026_03_01
+// Push-Notifications + Chat-Benachrichtigungen + App-Badge
+// Version: 2026_03_30
 // =====================================================================================
 
 self.addEventListener('install', (event) => {
@@ -12,12 +12,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(clients.claim());
 });
 
-// Kein Caching - alle Requests direkt ans Netzwerk
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    fetch(event.request).catch(() => new Response('Offline', { status: 503 }))
-  );
-});
+// Kein fetch-Handler → kein Request-Interception, kein Caching, keine Update-Probleme
 
 // ─── Push-Notifications empfangen ─────────────────────────────────────────────
 
@@ -35,16 +30,31 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Dojosoftware';
   const options = {
     body: data.body || data.message || '',
-    icon: data.icon || '/icons/icon-192x192.png',
-    badge: data.badge || '/icons/badge-72x72.png',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/badge-72x72.png',
     data: data.data || { url: '/member/chat' },
     vibrate: [200, 100, 200],
-    requireInteraction: false,
-    tag: data.tag || 'dojo-notification'
+    requireInteraction: data.requireInteraction || false,
+    tag: data.tag || 'dojo-notification',
+    renotify: true
+  };
+
+  // App-Badge setzen (unreadCount aus Payload oder +1)
+  const setBadge = () => {
+    if ('setAppBadge' in self.navigator) {
+      const count = typeof data.unreadCount === 'number' ? data.unreadCount : undefined;
+      return count != null
+        ? self.navigator.setAppBadge(count)
+        : self.navigator.setAppBadge();
+    }
+    return Promise.resolve();
   };
 
   event.waitUntil(
-    self.registration.showNotification(title, options)
+    Promise.all([
+      self.registration.showNotification(title, options),
+      setBadge()
+    ])
   );
 });
 
@@ -59,6 +69,10 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Badge beim Klick löschen
+      if ('clearAppBadge' in self.navigator) {
+        self.navigator.clearAppBadge().catch(() => {});
+      }
       for (const client of clientList) {
         if ('focus' in client) {
           client.navigate(targetUrl);
@@ -70,4 +84,17 @@ self.addEventListener('notificationclick', (event) => {
       }
     })
   );
+});
+
+// ─── Badge-Update aus App (via postMessage) ───────────────────────────────────
+
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+  if (event.data.type === 'SET_BADGE' && 'setAppBadge' in self.navigator) {
+    const count = event.data.count;
+    (count > 0
+      ? self.navigator.setAppBadge(count)
+      : self.navigator.clearAppBadge()
+    ).catch(() => {});
+  }
 });

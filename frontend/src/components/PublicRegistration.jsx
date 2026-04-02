@@ -33,6 +33,20 @@ const PublicRegistration = ({ onClose }) => {
   const [promoCodeStatus, setPromoCodeStatus] = useState(null); // 'valid', 'invalid', 'checking', null
   const [promoCodeInfo, setPromoCodeInfo] = useState(null);
 
+  // Erziehungsberechtigten-Modus
+  const [registrantType, setRegistrantType] = useState(null); // null | 'self' | 'guardian'
+  const [guardianData, setGuardianData] = useState({
+    vorname: '',
+    nachname: '',
+    telefon: '',
+    strasse: '',
+    hausnummer: '',
+    plz: '',
+    ort: '',
+    verhaeltnis: 'elternteil'
+  });
+  const [guardianSubStep, setGuardianSubStep] = useState(1); // 1=Kind-Daten, 2=EB-Daten
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -252,8 +266,39 @@ const PublicRegistration = ({ onClose }) => {
           setError("Passwort muss mindestens 8 Zeichen lang sein.");
           return false;
         }
+        if (!/[A-Z]/.test(formData.password)) {
+          setError("Passwort muss mindestens einen Großbuchstaben enthalten.");
+          return false;
+        }
+        if (!/[0-9]/.test(formData.password)) {
+          setError("Passwort muss mindestens eine Zahl enthalten.");
+          return false;
+        }
         break;
       case 2:
+        if (registrantType === 'guardian') {
+          if (guardianSubStep === 1) {
+            // Kind-Daten validieren
+            if (!formData.vorname || !formData.nachname || !formData.geburtsdatum || !formData.geschlecht) {
+              setError('Bitte füllen Sie alle Pflichtfelder des Kindes aus.');
+              return false;
+            }
+            if (!isMinor(formData.geburtsdatum)) {
+              setError('Das angegebene Geburtsdatum entspricht einer volljährigen Person. Bitte nutzen Sie "Ich melde mich selbst an".');
+              return false;
+            }
+          } else {
+            // EB-Daten validieren
+            if (!guardianData.vorname || !guardianData.nachname || !guardianData.verhaeltnis ||
+                !guardianData.strasse || !guardianData.hausnummer || !guardianData.plz ||
+                !guardianData.ort || !guardianData.telefon) {
+              setError('Bitte füllen Sie alle Pflichtfelder aus.');
+              return false;
+            }
+          }
+          break;
+        }
+        // Normaler Selbst-Modus
         const requiredFields = ['vorname', 'nachname', 'geburtsdatum', 'geschlecht', 'strasse', 'hausnummer', 'plz', 'ort', 'telefon'];
         for (let field of requiredFields) {
           if (!formData[field]) {
@@ -314,6 +359,37 @@ const PublicRegistration = ({ onClose }) => {
           };
           break;
         case 2:
+          if (registrantType === 'guardian') {
+            if (guardianSubStep === 1) {
+              // Nur zum EB-Sub-Schritt weiter — kein API-Call
+              setGuardianSubStep(2);
+              setLoading(false);
+              return;
+            }
+            // Sub-Schritt 2: API-Call mit Kind + EB-Daten
+            endpoint = "/public/register/step2";
+            payload = {
+              email: formData.email,
+              vorname: formData.vorname,
+              nachname: formData.nachname,
+              geburtsdatum: formData.geburtsdatum,
+              geschlecht: formData.geschlecht,
+              // Adresse vom EB (Kind wohnt dort)
+              strasse: guardianData.strasse,
+              hausnummer: guardianData.hausnummer,
+              plz: guardianData.plz,
+              ort: guardianData.ort,
+              telefon: guardianData.telefon,
+              // EB-Daten
+              is_guardian_registration: true,
+              erziehungsberechtigt_vorname: guardianData.vorname,
+              erziehungsberechtigt_nachname: guardianData.nachname,
+              erziehungsberechtigt_email: formData.email,
+              erziehungsberechtigt_telefon: guardianData.telefon,
+              verhaeltnis: guardianData.verhaeltnis
+            };
+            break;
+          }
           endpoint = "/public/register/step2";
           payload = {
             email: formData.email,
@@ -413,15 +489,30 @@ const PublicRegistration = ({ onClose }) => {
   };
 
   const handlePrevStep = () => {
+    setError("");
+    // Guardian Sub-Schritt: 2b → 2a
+    if (registrantType === 'guardian' && currentStep === 2 && guardianSubStep === 2) {
+      setGuardianSubStep(1);
+      return;
+    }
+    // Zurück zum Pre-Step
+    if (currentStep === 1) {
+      setRegistrantType(null);
+      return;
+    }
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
-      setError("");
     }
   };
 
   const progressPercentage = (currentStep / totalSteps) * 100;
 
   const renderStep = () => {
+    // Pre-Step: Vorabfrage wer sich anmeldet
+    if (registrantType === null) {
+      return renderPreStep();
+    }
+
     // Familien-Schritt hat Vorrang wenn aktiv
     if (showFamilyQuestion) {
       return renderFamilyStep();
@@ -447,6 +538,41 @@ const PublicRegistration = ({ onClose }) => {
     }
   };
 
+  const renderPreStep = () => (
+    <div className="registration-step pre-step">
+      <h3>Für wen möchten Sie eine Mitgliedschaft beantragen?</h3>
+      <p className="pre-step-subtitle">Bitte wählen Sie aus, für wen die Anmeldung ist.</p>
+
+      <div className="registrant-type-cards">
+        <div
+          className="registrant-type-card"
+          onClick={() => setRegistrantType('self')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && setRegistrantType('self')}
+        >
+          <div className="type-card-icon">🧑</div>
+          <h4>Ich melde mich selbst an</h4>
+          <p>Ich bin volljährig (18+) und beantrage eine Mitgliedschaft für mich.</p>
+          <span className="type-card-select-btn">Auswählen →</span>
+        </div>
+
+        <div
+          className="registrant-type-card"
+          onClick={() => setRegistrantType('guardian')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && setRegistrantType('guardian')}
+        >
+          <div className="type-card-icon">👨‍👧</div>
+          <h4>Ich bin Erziehungsberechtigte/r</h4>
+          <p>Ich melde mein Kind oder eine minderjährige Person an und bin der/die gesetzliche Vertreter/in.</p>
+          <span className="type-card-select-btn">Auswählen →</span>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderStep1 = () => (
     <div className="registration-step">
       <h3>Schritt 1: Grundregistrierung</h3>
@@ -464,7 +590,7 @@ const PublicRegistration = ({ onClose }) => {
       </div>
 
       <div className="form-group">
-        <label>Passwort * (mindestens 8 Zeichen)</label>
+        <label>Passwort * (min. 8 Zeichen, 1 Großbuchstabe, 1 Zahl)</label>
         <input
           type="password"
           value={formData.password}
@@ -532,111 +658,295 @@ const PublicRegistration = ({ onClose }) => {
     </div>
   );
 
-  const renderStep2 = () => (
-    <div className="registration-step">
-      <h3>Schritt 2: Persönliche Daten</h3>
-      <p>Bitte geben Sie Ihre persönlichen Daten ein.</p>
+  const renderStep2 = () => {
+    if (registrantType === 'guardian') {
+      if (guardianSubStep === 1) {
+        // Sub-Schritt 2a: Kind-Daten
+        return (
+          <div className="registration-step">
+            <div className="guardian-mode-banner">
+              <span className="guardian-mode-icon">👨‍👧</span>
+              <span>Anmeldung als Erziehungsberechtigte/r — Schritt 2a von 2</span>
+            </div>
+            <h3>Schritt 2: Daten des Kindes</h3>
+            <p>Bitte geben Sie die persönlichen Daten des Kindes ein, das Sie anmelden möchten.</p>
 
-      <div className="form-row">
-        <div className="form-group">
-          <label>Vorname *</label>
-          <input
-            type="text"
-            value={formData.vorname}
-            onChange={(e) => handleInputChange("vorname", e.target.value)}
-            required
-          />
+            <div className="form-row">
+              <div className="form-group">
+                <label>Vorname des Kindes *</label>
+                <input
+                  type="text"
+                  value={formData.vorname}
+                  onChange={(e) => handleInputChange("vorname", e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Nachname des Kindes *</label>
+                <input
+                  type="text"
+                  value={formData.nachname}
+                  onChange={(e) => handleInputChange("nachname", e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>Geburtsdatum *</label>
+                <input
+                  type="date"
+                  value={formData.geburtsdatum}
+                  onChange={(e) => handleInputChange("geburtsdatum", e.target.value)}
+                  required
+                />
+                {formData.geburtsdatum && !isMinor(formData.geburtsdatum) && (
+                  <span className="field-warning">
+                    ⚠️ Diese Person ist volljährig. Bitte nutzen Sie "Ich melde mich selbst an".
+                  </span>
+                )}
+              </div>
+              <div className="form-group">
+                <label>Geschlecht *</label>
+                <select
+                  value={formData.geschlecht}
+                  onChange={(e) => handleInputChange("geschlecht", e.target.value)}
+                  required
+                >
+                  <option value="">Bitte wählen</option>
+                  <option value="m">Männlich</option>
+                  <option value="w">Weiblich</option>
+                  <option value="d">Divers</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="info-box pr-info-box" style={{ marginTop: '1rem' }}>
+              <p className="pr-margin-0">
+                Im nächsten Schritt geben Sie Ihre eigenen Daten als Erziehungsberechtigte/r ein.
+              </p>
+            </div>
+          </div>
+        );
+      }
+
+      // Sub-Schritt 2b: EB-Daten
+      const handleGuardianChange = (field, value) => {
+        setGuardianData(prev => ({ ...prev, [field]: value }));
+        setError('');
+      };
+
+      return (
+        <div className="registration-step">
+          <div className="guardian-mode-banner">
+            <span className="guardian-mode-icon">👨‍👧</span>
+            <span>Anmeldung als Erziehungsberechtigte/r — Schritt 2b von 2</span>
+          </div>
+          <h3>Schritt 2: Ihre Daten als Erziehungsberechtigte/r</h3>
+          <p>
+            Sie melden <strong>{formData.vorname} {formData.nachname}</strong> an.
+            Bitte geben Sie jetzt Ihre eigenen Kontakt- und Adressdaten ein.
+          </p>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>Ihr Vorname *</label>
+              <input
+                type="text"
+                value={guardianData.vorname}
+                onChange={(e) => handleGuardianChange("vorname", e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Ihr Nachname *</label>
+              <input
+                type="text"
+                value={guardianData.nachname}
+                onChange={(e) => handleGuardianChange("nachname", e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Beziehung zum Kind *</label>
+            <select
+              value={guardianData.verhaeltnis}
+              onChange={(e) => handleGuardianChange("verhaeltnis", e.target.value)}
+              required
+            >
+              <option value="elternteil">Elternteil (Mutter / Vater)</option>
+              <option value="grosselternteil">Großelternteil</option>
+              <option value="vormund">Vormund</option>
+              <option value="sonstige">Sonstige gesetzliche Vertretung</option>
+            </select>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group flex-3">
+              <label>Straße *</label>
+              <input
+                type="text"
+                value={guardianData.strasse}
+                onChange={(e) => handleGuardianChange("strasse", e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group flex-1">
+              <label>Hausnummer *</label>
+              <input
+                type="text"
+                value={guardianData.hausnummer}
+                onChange={(e) => handleGuardianChange("hausnummer", e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>PLZ *</label>
+              <input
+                type="text"
+                value={guardianData.plz}
+                onChange={(e) => handleGuardianChange("plz", e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Ort *</label>
+              <input
+                type="text"
+                value={guardianData.ort}
+                onChange={(e) => handleGuardianChange("ort", e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>Telefon *</label>
+            <input
+              type="tel"
+              value={guardianData.telefon}
+              onChange={(e) => handleGuardianChange("telefon", e.target.value)}
+              placeholder="+49 123 456789"
+              required
+            />
+          </div>
         </div>
+      );
+    }
+
+    // Normaler Selbst-Modus
+    return (
+      <div className="registration-step">
+        <h3>Schritt 2: Persönliche Daten</h3>
+        <p>Bitte geben Sie Ihre persönlichen Daten ein.</p>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Vorname *</label>
+            <input
+              type="text"
+              value={formData.vorname}
+              onChange={(e) => handleInputChange("vorname", e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Nachname *</label>
+            <input
+              type="text"
+              value={formData.nachname}
+              onChange={(e) => handleInputChange("nachname", e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Geburtsdatum *</label>
+            <input
+              type="date"
+              value={formData.geburtsdatum}
+              onChange={(e) => handleInputChange("geburtsdatum", e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Geschlecht *</label>
+            <select
+              value={formData.geschlecht}
+              onChange={(e) => handleInputChange("geschlecht", e.target.value)}
+              required
+            >
+              <option value="">Bitte wählen</option>
+              <option value="m">Männlich</option>
+              <option value="w">Weiblich</option>
+              <option value="d">Divers</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group flex-3">
+            <label>Straße *</label>
+            <input
+              type="text"
+              value={formData.strasse}
+              onChange={(e) => handleInputChange("strasse", e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group flex-1">
+            <label>Hausnummer *</label>
+            <input
+              type="text"
+              value={formData.hausnummer}
+              onChange={(e) => handleInputChange("hausnummer", e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>PLZ *</label>
+            <input
+              type="text"
+              value={formData.plz}
+              onChange={(e) => handleInputChange("plz", e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>Ort *</label>
+            <input
+              type="text"
+              value={formData.ort}
+              onChange={(e) => handleInputChange("ort", e.target.value)}
+              required
+            />
+          </div>
+        </div>
+
         <div className="form-group">
-          <label>Nachname *</label>
+          <label>Telefon *</label>
           <input
-            type="text"
-            value={formData.nachname}
-            onChange={(e) => handleInputChange("nachname", e.target.value)}
+            type="tel"
+            value={formData.telefon}
+            onChange={(e) => handleInputChange("telefon", e.target.value)}
+            placeholder="+49 123 456789"
             required
           />
         </div>
       </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label>Geburtsdatum *</label>
-          <input
-            type="date"
-            value={formData.geburtsdatum}
-            onChange={(e) => handleInputChange("geburtsdatum", e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label>Geschlecht *</label>
-          <select
-            value={formData.geschlecht}
-            onChange={(e) => handleInputChange("geschlecht", e.target.value)}
-            required
-          >
-            <option value="">Bitte wählen</option>
-            <option value="m">Männlich</option>
-            <option value="w">Weiblich</option>
-            <option value="d">Divers</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="form-row">
-        <div className="form-group flex-3">
-          <label>Straße *</label>
-          <input
-            type="text"
-            value={formData.strasse}
-            onChange={(e) => handleInputChange("strasse", e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group flex-1">
-          <label>Hausnummer *</label>
-          <input
-            type="text"
-            value={formData.hausnummer}
-            onChange={(e) => handleInputChange("hausnummer", e.target.value)}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="form-row">
-        <div className="form-group">
-          <label>PLZ *</label>
-          <input
-            type="text"
-            value={formData.plz}
-            onChange={(e) => handleInputChange("plz", e.target.value)}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label>Ort *</label>
-          <input
-            type="text"
-            value={formData.ort}
-            onChange={(e) => handleInputChange("ort", e.target.value)}
-            required
-          />
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Telefon *</label>
-        <input
-          type="tel"
-          value={formData.telefon}
-          onChange={(e) => handleInputChange("telefon", e.target.value)}
-          placeholder="+49 123 456789"
-          required
-        />
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderStep3 = () => (
     <div className="registration-step">
@@ -1158,7 +1468,7 @@ const PublicRegistration = ({ onClose }) => {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Passwort * (mindestens 8 Zeichen)</label>
+                    <label>Passwort * (min. 8 Zeichen, 1 Großbuchstabe, 1 Zahl)</label>
                     <input
                       type="password"
                       value={newFamilyMember.password}
@@ -1378,17 +1688,19 @@ const PublicRegistration = ({ onClose }) => {
           {onClose && <button className="close-button" onClick={onClose}>×</button>}
         </div>
 
-        <div className="progress-container">
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${progressPercentage}%` }}
-            ></div>
+        {registrantType !== null && (
+          <div className="progress-container">
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ width: `${progressPercentage}%` }}
+              ></div>
+            </div>
+            <div className="progress-text">
+              Schritt {currentStep} von {totalSteps} ({Math.round(progressPercentage)}%)
+            </div>
           </div>
-          <div className="progress-text">
-            Schritt {currentStep} von {totalSteps} ({Math.round(progressPercentage)}%)
-          </div>
-        </div>
+        )}
 
         <div className="modal-body">
           {error && <div className="error-message">{error}</div>}
@@ -1397,11 +1709,11 @@ const PublicRegistration = ({ onClose }) => {
           {renderStep()}
         </div>
 
-        {/* Footer-Buttons verstecken wenn Familien-Schritt aktiv (hat eigene Buttons) */}
-        {!showFamilyQuestion && (
+        {/* Footer-Buttons verstecken beim Pre-Step und beim Familien-Schritt */}
+        {registrantType !== null && !showFamilyQuestion && (
           <div className="modal-footer">
             <div className="button-group">
-              {currentStep > 1 && (
+              {(currentStep > 1 || registrantType !== null) && (
                 <button
                   className="btn btn-secondary"
                   onClick={handlePrevStep}

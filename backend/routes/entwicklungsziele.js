@@ -3,13 +3,23 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
-// Admin-Prüfung
+// Admin-Prüfung (admin + super_admin)
 const requireAdmin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && (req.user.role === 'admin' || req.user.role === 'super_admin')) {
     next();
   } else {
     res.status(403).json({ error: 'Admin-Berechtigung erforderlich' });
+  }
+};
+
+// 🔒 Super-Admin only — für plattformweite Statistiken
+const requireSuperAdmin = (req, res, next) => {
+  if (isSuperAdmin(req)) {
+    next();
+  } else {
+    res.status(403).json({ error: 'Super-Admin-Berechtigung erforderlich' });
   }
 };
 
@@ -18,6 +28,10 @@ const requireAdmin = (req, res, next) => {
 // Ziele abrufen
 router.get('/', authenticateToken, async (req, res) => {
   try {
+    // 🔒 SICHERHEIT: Dojo-Isolation
+    const secureDojoId = getSecureDojoId(req);
+    const superAdmin = isSuperAdmin(req);
+
     const { typ, kontext_typ, kontext_id } = req.query;
 
     let query = 'SELECT * FROM entwicklungsziele WHERE 1=1';
@@ -27,15 +41,28 @@ router.get('/', authenticateToken, async (req, res) => {
       query += ' AND typ = ?';
       params.push(typ);
     }
-    if (kontext_typ) {
-      query += ' AND kontext_typ = ?';
-      params.push(kontext_typ);
-    }
-    if (kontext_id) {
-      query += ' AND kontext_id = ?';
-      params.push(kontext_id);
-    } else if (kontext_typ && kontext_typ !== 'global') {
-      query += ' AND kontext_id IS NULL';
+
+    if (!superAdmin && secureDojoId) {
+      // Kundendojo: Nur eigene Dojo-Ziele oder globale Ziele
+      if (kontext_typ && kontext_typ !== 'global' && kontext_typ !== 'dojo') {
+        query += ' AND kontext_typ = ?';
+        params.push(kontext_typ);
+      } else {
+        query += ' AND (kontext_typ = ? OR (kontext_typ = ? AND kontext_id = ?))';
+        params.push('global', 'dojo', secureDojoId);
+      }
+    } else {
+      // Super-Admin: alle Filter erlaubt
+      if (kontext_typ) {
+        query += ' AND kontext_typ = ?';
+        params.push(kontext_typ);
+      }
+      if (kontext_id) {
+        query += ' AND kontext_id = ?';
+        params.push(kontext_id);
+      } else if (kontext_typ && kontext_typ !== 'global') {
+        query += ' AND kontext_id IS NULL';
+      }
     }
 
     query += ' ORDER BY jahr ASC';
@@ -77,14 +104,23 @@ router.post('/batch', authenticateToken, requireAdmin, async (req, res) => {
     const { ziele } = req.body;
 
     for (const ziel of ziele) {
-      await connection.query(`
-        INSERT INTO entwicklungsziele (typ, kontext_typ, kontext_id, jahr, ziel_wert, notizen, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE
-          ziel_wert = VALUES(ziel_wert),
-          notizen = VALUES(notizen)
-      `, [ziel.typ, ziel.kontext_typ || 'global', ziel.kontext_id || null,
-          ziel.jahr, ziel.ziel_wert, ziel.notizen, req.user.id]);
+      const kontextId = ziel.kontext_id || null;
+      // NULL-sicheres UPSERT: ON DUPLICATE KEY UPDATE versagt bei NULL-Spalten im Unique-Index
+      // Deshalb: erst UPDATE mit <=> (NULL-safe), dann INSERT wenn kein Row gefunden
+      const [upd] = await connection.query(`
+        UPDATE entwicklungsziele
+        SET ziel_wert = ?, notizen = ?
+        WHERE typ = ? AND kontext_typ = ? AND kontext_id <=> ? AND jahr = ?
+      `, [ziel.ziel_wert, ziel.notizen || null,
+          ziel.typ, ziel.kontext_typ || 'global', kontextId, ziel.jahr]);
+
+      if (upd.affectedRows === 0) {
+        await connection.query(`
+          INSERT INTO entwicklungsziele (typ, kontext_typ, kontext_id, jahr, ziel_wert, notizen, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [ziel.typ, ziel.kontext_typ || 'global', kontextId,
+            ziel.jahr, ziel.ziel_wert, ziel.notizen || null, req.user.id]);
+      }
     }
 
     await connection.commit();
@@ -176,8 +212,8 @@ router.delete('/beitraege/:id', authenticateToken, requireAdmin, async (req, res
 
 // ==================== STATISTIKEN (IST-Werte) ====================
 
-// Aktuelle IST-Werte abrufen (für Vergleich mit Zielen)
-router.get('/statistiken', authenticateToken, async (req, res) => {
+// Aktuelle IST-Werte abrufen (für Vergleich mit Zielen) — nur Super-Admin
+router.get('/statistiken', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { kontext_typ, kontext_id } = req.query;
     const stats = {};
@@ -197,36 +233,49 @@ router.get('/statistiken', authenticateToken, async (req, res) => {
     stats.verband_einzelpersonen = verbandResult[0]?.einzelpersonen || 0;
     stats.umsatz_verband = parseFloat(verbandResult[0]?.umsatz_verband) || 0;
 
-    // Dojo-Mitglieder zählen (ohne status-Filter da Spalte nicht existiert)
-    let dojoQuery = 'SELECT COUNT(*) as count FROM mitglieder WHERE 1=1';
+    // Dojo-Mitglieder: echte User-Accounts (keine Demo-Dojos)
+    let dojoQuery = `
+      SELECT COUNT(*) as count FROM users u
+      WHERE 1=1
+    `;
     const dojoParams = [];
     if (kontext_id) {
-      dojoQuery += ' AND dojo_id = ?';
+      dojoQuery = `SELECT COUNT(*) as count FROM mitglieder m
+        JOIN dojo d ON m.dojo_id = d.id
+        WHERE d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%' AND m.dojo_id = ?`;
       dojoParams.push(kontext_id);
     }
     const [dojoResult] = await db.promise().query(dojoQuery, dojoParams);
     stats.dojo_mitglieder = dojoResult[0]?.count || 0;
 
-    // Software-Nutzer (User) zählen
-    const [userResult] = await db.promise().query(`
-      SELECT COUNT(*) as count FROM users
+    // Software-Lizenzen zählen (aktive SaaS-Lizenzen)
+    const [lizenzResult] = await db.promise().query(`
+      SELECT COUNT(*) as count FROM software_lizenzen WHERE status = 'aktiv'
     `);
-    stats.software_nutzer = userResult[0]?.count || 0;
+    stats.software_nutzer = lizenzResult[0]?.count || 0;
 
-    // Dojos zählen
+    // Dojos zählen (ohne Demo-Dojos)
     const [dojoCountResult] = await db.promise().query(`
-      SELECT COUNT(*) as count FROM dojo WHERE ist_aktiv = 1
+      SELECT COUNT(*) as count FROM dojo WHERE ist_aktiv = 1 AND dojoname NOT LIKE '%demo%'
     `);
     stats.dojos = dojoCountResult[0]?.count || 0;
 
-    // Durchschnittlichen Dojo-Umsatz schätzen (basierend auf Tarifen)
+    // Durchschnittlichen Monatsbeitrag aus echten Tarifen berechnen
+    // Nur reguläre Mitgliedschaftstarife (altersgruppe != NULL = gezielte Gruppenpreise)
+    // und Tarife mit sinnvollem Beitragsbereich (keine 10er Karten etc.)
     const [tarifResult] = await db.promise().query(`
-      SELECT AVG(price_cents)/100 as durchschnitt
+      SELECT
+        AVG(price_cents)/100 as durchschnitt_alle,
+        AVG(CASE WHEN price_cents BETWEEN 1 AND 9999 THEN price_cents END)/100 as durchschnitt_regulaer
       FROM tarife
       WHERE active = 1 AND ist_archiviert = 0 AND price_cents > 0
     `);
-    const avgBeitrag = parseFloat(tarifResult[0]?.durchschnitt) || 55;
-    stats.umsatz_dojo = Math.round(stats.dojo_mitglieder * avgBeitrag * 12);
+    const avgBeitrag = parseFloat(tarifResult[0]?.durchschnitt_regulaer)
+                    || parseFloat(tarifResult[0]?.durchschnitt_alle)
+                    || 0;
+    stats.avg_monatsbeitrag = Math.round(avgBeitrag * 100) / 100;
+    stats.avg_jahresbeitrag = Math.round(avgBeitrag * 12 * 100) / 100;
+    stats.umsatz_dojo = avgBeitrag > 0 ? Math.round(stats.dojo_mitglieder * avgBeitrag * 12) : 0;
 
     // Gesamtumsatz
     stats.umsatz = stats.umsatz_verband + stats.umsatz_dojo;
@@ -240,8 +289,8 @@ router.get('/statistiken', authenticateToken, async (req, res) => {
 
 // ==================== VERGLEICHE ====================
 
-// Vergleichsdaten abrufen (IST vs SOLL pro Jahr)
-router.get('/vergleiche', authenticateToken, async (req, res) => {
+// Vergleichsdaten abrufen (IST vs SOLL pro Jahr) — nur Super-Admin
+router.get('/vergleiche', authenticateToken, requireSuperAdmin, async (req, res) => {
   try {
     const { kontext_typ, kontext_id } = req.query;
     const currentYear = new Date().getFullYear();
@@ -252,23 +301,23 @@ router.get('/vergleiche', authenticateToken, async (req, res) => {
       FROM verbandsmitgliedschaften WHERE status = 'aktiv'
     `);
 
-    const [dojoResult] = await db.promise().query('SELECT COUNT(*) as count FROM mitglieder');
-    const [userResult] = await db.promise().query('SELECT COUNT(*) as count FROM users');
-    const [dojosResult] = await db.promise().query('SELECT COUNT(*) as count FROM dojo WHERE ist_aktiv = 1');
+    const [dojoResult] = await db.promise().query('SELECT COUNT(*) as count FROM users');
+    const [lizenzResult] = await db.promise().query("SELECT COUNT(*) as count FROM software_lizenzen WHERE status = 'aktiv'");
+    const [dojosResult] = await db.promise().query("SELECT COUNT(*) as count FROM dojo WHERE ist_aktiv = 1 AND dojoname NOT LIKE '%demo%'");
 
-    // Durchschnittsbeitrag für Umsatzberechnung
+    // Durchschnittsbeitrag für Umsatzberechnung (kein Fallback)
     const [tarifResult] = await db.promise().query(`
       SELECT AVG(price_cents)/100 as durchschnitt FROM tarife
       WHERE active = 1 AND ist_archiviert = 0 AND price_cents > 0
     `);
-    const avgBeitrag = parseFloat(tarifResult[0]?.durchschnitt) || 55;
+    const avgBeitrag = parseFloat(tarifResult[0]?.durchschnitt) || 0;
 
     const istWerte = {
       verband_mitglieder: verbandResult[0]?.total || 0,
       dojo_mitglieder: dojoResult[0]?.count || 0,
-      software_nutzer: userResult[0]?.count || 0,
+      software_nutzer: lizenzResult[0]?.count || 0,
       dojos: dojosResult[0]?.count || 0,
-      umsatz: (parseFloat(verbandResult[0]?.umsatz) || 0) + ((dojoResult[0]?.count || 0) * avgBeitrag * 12)
+      umsatz: (parseFloat(verbandResult[0]?.umsatz) || 0) + (avgBeitrag > 0 ? (dojoResult[0]?.count || 0) * avgBeitrag * 12 : 0)
     };
 
     // SOLL-Werte aus entwicklungsziele

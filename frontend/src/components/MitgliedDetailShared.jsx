@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from 'axios';
+import openApiBlob from '../utils/openApiBlob';
 import config from '../config/config.js';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { SkeletonProfile, LoadingSpinner, LoadingButton } from "./ui/Skeleton";
@@ -24,9 +25,215 @@ import "../styles/MitgliedDetailShared.css";
 import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 
 // Extrahierte Tab-Komponenten
-import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab } from './mitglied-detail';
+import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab, MemberInjuryTab } from './mitglied-detail';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import VorlagenSendenModal from './VorlagenSendenModal';
+
+// ── Versandhistorie-Sektion im Mitgliederprofil ────────────────────────────────
+function MitgliedVersandhistorie({ mitgliedId, activeDojo }) {
+  const [eintraege, setEintraege] = useState([]);
+  const [loading, setLoading]     = useState(true);
+
+  useEffect(() => {
+    if (!mitgliedId) return;
+    setLoading(true);
+    const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+    axios.get(`/api/versandhistorie/mitglied/${mitgliedId}${dojoParam}`)
+      .then(res => setEintraege(res.data.eintraege || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [mitgliedId, activeDojo]);
+
+  const VERSANDART = { email: 'E-Mail', email_mit_pdf: 'E-Mail + PDF', pdf: 'PDF Download' };
+  const fmt = ts => ts ? new Date(ts).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+
+  return (
+    <div className="field-group card">
+      <h3 className="mds2-section-heading">Versandhistorie (Vorlagen)</h3>
+      {loading ? (
+        <div className="info-box"><p>Lade...</p></div>
+      ) : eintraege.length === 0 ? (
+        <div className="info-box"><p>ℹ️ Noch keine Vorlagen an dieses Mitglied gesendet.</p></div>
+      ) : (
+        <div className="mds-flex-col">
+          {eintraege.map(e => (
+            <div key={e.id} className="mds-saved-doc-row">
+              <div className="u-flex-1">
+                <div className="mds2-fw600-mb025">{e.vorlage_name || '—'}</div>
+                {e.betreff && e.betreff !== e.vorlage_name && (
+                  <div className="mds-saved-doc-meta">{e.betreff}</div>
+                )}
+                <div className="mds-saved-doc-meta">
+                  {fmt(e.gesendet_am)} · {VERSANDART[e.versand_art] || e.versand_art}
+                  {e.empfaenger_email && ` · ${e.empfaenger_email}`}
+                </div>
+              </div>
+              <span style={{
+                fontSize: '0.75rem', fontWeight: 600, borderRadius: 4, padding: '2px 8px',
+                background: e.status === 'gesendet' ? 'rgba(72,187,120,0.15)' : 'rgba(248,113,113,0.15)',
+                color: e.status === 'gesendet' ? '#68d391' : '#f87171',
+              }}>
+                {e.status === 'gesendet' ? '✓ Gesendet' : '✗ Fehler'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Verkäufe-Summary-Card für Finanzübersicht ─────────────────────────────────
+function MitgliedVerkaufsCard({ mitgliedId, activeDojo }) {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    if (!mitgliedId) return;
+    const dojoParam = activeDojo?.id ? `&dojo_id=${activeDojo.id}` : '';
+    axios.get(`/verkaeufe?mitglied_id=${mitgliedId}&limit=100${dojoParam}`)
+      .then(res => {
+        const list = Array.isArray(res.data) ? res.data : (res.data.data || []);
+        const total = list.reduce((s, v) => s + (v.brutto_gesamt_cent || 0), 0);
+        const offen = list.filter(v => v.zahlungsstatus === 'offen').reduce((s, v) => s + (v.brutto_gesamt_cent || 0), 0);
+        setData({ count: list.length, total, offen });
+      })
+      .catch(() => {});
+  }, [mitgliedId, activeDojo]);
+
+  if (!data || data.count === 0) return null;
+
+  const fmtEur = c => (c / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+
+  return (
+    <div className="finance-kpi-card mds-kpi-card-info">
+      <div className="mds-flex-row-mb">
+        <span className="mds2-fs-2">🛒</span>
+        <h4 className="mds2-label-bold">Artikel-Einkäufe</h4>
+      </div>
+      <div className="mds2-stat-value" style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+        {fmtEur(data.total)}
+      </div>
+      <div className="mds-text-secondary-sm">
+        {data.count} Kauf{data.count !== 1 ? 'käufe' : ''}
+        {data.offen > 0 && <span style={{ color: '#fca5a5', marginLeft: 8 }}>· {fmtEur(data.offen)} offen</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Einkäufe-Tab im Mitgliederprofil ──────────────────────────────────────────
+function MitgliedEinkäufeTab({ mitgliedId, activeDojo }) {
+  const [verkaeufe, setVerkaeufe] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState(null);
+  const [positionen, setPositionen] = useState({});
+
+  useEffect(() => {
+    if (!mitgliedId) return;
+    setLoading(true);
+    const dojoParam = activeDojo?.id ? `&dojo_id=${activeDojo.id}` : '';
+    axios.get(`/verkaeufe?mitglied_id=${mitgliedId}&limit=50${dojoParam}`)
+      .then(res => setVerkaeufe(Array.isArray(res.data) ? res.data : (res.data.data || res.data.verkaeufe || [])))
+      .catch(err => console.error('Einkäufe-Fehler:', err.response?.status, err.response?.data))
+      .finally(() => setLoading(false));
+  }, [mitgliedId, activeDojo]);
+
+  const toggleExpand = async (verkaufId) => {
+    if (expandedId === verkaufId) { setExpandedId(null); return; }
+    setExpandedId(verkaufId);
+    if (!positionen[verkaufId]) {
+      try {
+        const res = await axios.get(`/verkaeufe/${verkaufId}`);
+        setPositionen(prev => ({ ...prev, [verkaufId]: (res.data.data?.positionen || res.data.positionen) || [] }));
+      } catch {}
+    }
+  };
+
+  const fmt = ts => ts ? new Date(ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+  const fmtEur = cent => (cent / 100).toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+  const zahlungsLabel = { bar: 'Bar', karte: 'Karte', sumup: 'SumUp', digital: 'Digital', lastschrift: 'Lastschrift' };
+  const statusColor = { offen: '#fca5a5', in_einzug: '#fbbf24', eingezogen: '#86efac', bezahlt: '#86efac' };
+
+  const s = {
+    wrap: { borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', marginBottom: 10 },
+    row: { display: 'grid', gridTemplateColumns: '1fr 90px 100px 28px', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', userSelect: 'none', minWidth: 0 },
+    badge: { fontSize: 11, padding: '2px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', whiteSpace: 'nowrap', textAlign: 'center' },
+    amount: { fontWeight: 700, color: '#ffd700', fontSize: 15, textAlign: 'right', whiteSpace: 'nowrap' },
+    arrow: { color: 'rgba(255,255,255,0.4)', fontSize: 12, textAlign: 'right' },
+    expanded: { borderTop: '1px solid rgba(255,255,255,0.07)', padding: '12px 16px', background: 'rgba(0,0,0,0.2)' },
+    posRow: { display: 'grid', gridTemplateColumns: '1fr 36px 80px 80px', gap: 8, padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: 13, alignItems: 'center' },
+    posHeader: { display: 'grid', gridTemplateColumns: '1fr 36px 80px 80px', gap: 8, padding: '4px 0 6px', fontSize: 11, color: 'rgba(255,255,255,0.4)', fontWeight: 500 },
+  };
+
+  return (
+    <div style={{ padding: '4px 0' }}>
+      <h3 className="mds2-section-heading" style={{ marginBottom: '1rem' }}>🛒 Artikel-Einkäufe</h3>
+      {loading ? (
+        <div className="info-box"><p>Lade...</p></div>
+      ) : verkaeufe.length === 0 ? (
+        <div className="info-box"><p>ℹ️ Noch keine Artikel-Einkäufe vorhanden.</p></div>
+      ) : verkaeufe.map(v => {
+        const betrag = v.brutto_gesamt_euro != null ? parseFloat(v.brutto_gesamt_euro) * 100 : v.brutto_gesamt_cent;
+        const isOpen = expandedId === v.verkauf_id;
+        return (
+          <div key={v.verkauf_id} style={s.wrap}>
+            <div style={s.row} onClick={() => toggleExpand(v.verkauf_id)}>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  Bon #{v.bon_nummer || v.verkauf_id}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                  {fmt(v.verkauf_datum || v.verkauf_timestamp)}
+                  {v.zahlungsstatus && (
+                    <span style={{ marginLeft: 8, color: statusColor[v.zahlungsstatus] || 'rgba(255,255,255,0.4)' }}>
+                      {v.zahlungsstatus === 'offen' ? '● Offen' : v.zahlungsstatus === 'in_einzug' ? '● In Einzug' : v.zahlungsstatus === 'eingezogen' ? '✓ Eingezogen' : '✓ Bezahlt'}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span style={s.badge}>{zahlungsLabel[v.zahlungsart] || v.zahlungsart || '—'}</span>
+              <div style={s.amount}>{fmtEur(betrag)}</div>
+              <div style={s.arrow}>{isOpen ? '▲' : '▼'}</div>
+            </div>
+
+            {isOpen && (
+              <div style={s.expanded}>
+                {positionen[v.verkauf_id] === undefined ? (
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Lade…</div>
+                ) : positionen[v.verkauf_id].length === 0 ? (
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Keine Positionen.</div>
+                ) : (
+                  <>
+                    <div style={s.posHeader}>
+                      <span>Artikel</span><span style={{ textAlign: 'center' }}>Menge</span>
+                      <span style={{ textAlign: 'right' }}>Einzelpreis</span>
+                      <span style={{ textAlign: 'right' }}>Gesamt</span>
+                    </div>
+                    {positionen[v.verkauf_id].map((pos, i) => (
+                      <div key={i} style={s.posRow}>
+                        <span style={{ color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {pos.artikel_name || pos.name}
+                          {pos.rabatt_prozent > 0 && <span style={{ color: '#4ade80', marginLeft: 6, fontSize: 11 }}>-{pos.rabatt_prozent}%</span>}
+                        </span>
+                        <span style={{ textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>{pos.menge}×</span>
+                        <span style={{ textAlign: 'right', color: 'rgba(255,255,255,0.5)' }}>{(pos.einzelpreis_cent / 100).toFixed(2)} €</span>
+                        <span style={{ textAlign: 'right', color: '#ffd700', fontWeight: 600 }}>{(pos.brutto_cent / 100).toFixed(2)} €</span>
+                      </div>
+                    ))}
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 6, paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Gesamt</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: '#ffd700' }}>{fmtEur(betrag)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // Hilfsfunktion: Wandelt einen ISO-Datumsstring in "yyyy-MM-dd" um.
 function toMySqlDate(dateString) {
@@ -244,6 +451,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [activeTab, setActiveTab] = useState("allgemein");
   const [styleSubTab, setStyleSubTab] = useState("stile");
   const [activeStyleTab, setActiveStyleTab] = useState(0);
+  const [stilDropdownOpen, setStilDropdownOpen] = useState(false);
   const [activeExamTab, setActiveExamTab] = useState(0);
   const [financeSubTab, setFinanceSubTab] = useState("finanzübersicht");
   const [graduationListCollapsed, setGraduationListCollapsed] = useState(true); // Graduierungen-Liste standardmäßig eingeklappt
@@ -278,7 +486,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [anwesenheitsDaten, setAnwesenheitsDaten] = useState([]);
   const [finanzDaten, setFinanzDaten] = useState([]);
   const [statistikDaten, setStatistikDaten] = useState({});
+  const [stilStatistiken, setStilStatistiken] = useState([]);
+  const [openYears, setOpenYears] = useState(() => new Set([String(new Date().getFullYear())]));
   const [verträge, setVerträge] = useState([]);
+  const [ruecklastschriftenStats, setRuecklastschriftenStats] = useState(null);
 
   // Nachrichten State
   const [memberNotifications, setMemberNotifications] = useState([]);
@@ -300,6 +511,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showMitgliedsausweis, setShowMitgliedsausweis] = useState(false);
   const [showVorlagenSenden, setShowVorlagenSenden] = useState(false);
+  const [showVertragAnpassungModal, setShowVertragAnpassungModal] = useState(false);
+  const [vertragAnpassungen, setVertragAnpassungen] = useState([]);
+  const [vertragAnpassungForm, setVertragAnpassungForm] = useState({
+    typ: 'student', neuer_betrag: '', gueltig_von: '', gueltig_bis: '', grund: ''
+  });
+  const [vertragAnpassungLoading, setVertragAnpassungLoading] = useState(false);
+  const [vertragAnpassungError, setVertragAnpassungError] = useState('');
   const [archiveReason, setArchiveReason] = useState('');
   const [newVertrag, setNewVertrag] = useState(() => {
     const heute = new Date();
@@ -418,8 +636,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const offeneBeiträge = Array.isArray(finanzDaten)
     ? finanzDaten.filter((f) => {
         const status = (f.status || '').toString().toLowerCase();
-        const bezahlt = f.bezahlt === 0 || f.bezahlt === false;
-        return status === 'offen' || status === 'überfällig' || status === 'überfällig' || bezahlt;
+        const nichtBezahlt = f.bezahlt === 0 || f.bezahlt === false || f.bezahlt === null || f.bezahlt === undefined;
+        if (!nichtBezahlt && status !== 'offen' && status !== 'überfällig') return false;
+        // Nur tatsächlich fällige Beiträge zählen (nicht zukünftige geplante)
+        const heute = new Date(); heute.setHours(23, 59, 59, 999);
+        const faelligkeit = new Date(f.zahlungsdatum || f.datum || 0);
+        return faelligkeit <= heute;
       }).length
     : 0;
 
@@ -479,6 +701,18 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       }
       console.error('❌ Fehler beim Laden der Finanzdaten:', err);
       console.error('🔍 Error Details:', err.response || err);
+    }
+  };
+
+  // Rücklastschriften-Stats laden
+  const fetchRuecklastschriftenStats = async () => {
+    if (!id) return;
+    try {
+      const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+      const res = await axios.get(`/mitglieder/${id}/ruecklastschriften-stats${dojoParam}`);
+      if (res.data?.success) setRuecklastschriftenStats(res.data.stats);
+    } catch (err) {
+      // Silently ignore — no Rücklastschriften data available
     }
   };
 
@@ -1830,6 +2064,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     loadMemberStyles(controller.signal);
     loadSepaMandate(controller.signal);
     loadArchivierteMandate(controller.signal);
+    fetchRuecklastschriftenStats();
 
     return () => {
       controller.abort();
@@ -1905,11 +2140,24 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     }
   }, [mitglied, memberStile, stile]); // ✅ Entfernt: selectedStilId, activeStyleTab, activeExamTab (werden nur intern geprüft)
 
+  // Stil-Statistiken laden (Anwesenheitsquote pro Stil)
+  const fetchStilStatistiken = async (signal = null) => {
+    try {
+      const config = signal ? { signal } : {};
+      const res = await axios.get(`/anwesenheit/stil-statistiken/${id}`, config);
+      setStilStatistiken(res.data);
+    } catch (err) {
+      if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') return;
+      console.error('Fehler beim Laden der Stil-Statistiken:', err);
+    }
+  };
+
   // ✨ NEU: Anwesenheitsdaten für Anwesenheits-Tab laden (alle Stile)
   useEffect(() => {
     if (activeTab === "anwesenheit") {
       const controller = new AbortController();
       fetchAnwesenheitsDaten(null, controller.signal); // Alle Stile
+      fetchStilStatistiken(controller.signal);
       return () => {
         controller.abort();
       };
@@ -2442,6 +2690,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     { key: "familie", label: "Familie & Vertreter", icon: "👨‍👩‍👧‍👦" },
     { key: "gurt_stil", label: "Gurt & Stil / Prüfung", icon: "🥋" },
     { key: "buddy_gruppen", label: "Buddy-Gruppen", icon: "👥" },
+    { key: "verletzungen", label: "Verletzungen", icon: "🩹" },
     { key: "nachrichten", label: "Nachrichten", icon: "📬" },
     { key: "statistiken", label: "Statistiken", icon: "📊" },
     { key: "zusatzdaten", label: "Lehrgänge & Ehrungen", icon: "🏆" },
@@ -2588,23 +2837,27 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <span className="badge-label">Nachrichten:</span>
                 <span className="badge-value">{offeneNachrichten}</span>
               </div>
-              <div className={`mitglied-detail-badge ${offeneBeiträge > 0 ? 'badge-warning' : ''}`} title="Offene Beiträge">
-                <span className="badge-icon">💰</span>
-                <span className="badge-label">Beiträge:</span>
-                <span className={`badge-value ${offeneBeiträge > 0 ? 'warning' : ''}`}>{offeneBeiträge}</span>
-              </div>
+              {offeneBeiträge > 0 && (
+                <div className="mitglied-detail-badge badge-warning" title="Offene Beiträge">
+                  <span className="badge-icon">💰</span>
+                  <span className="badge-label">Beiträge:</span>
+                  <span className="badge-value warning">{offeneBeiträge}</span>
+                </div>
+              )}
             </div>
             </div>
 
-            {/* Drei-Punkte-Menü */}
+            {/* Aktionen-Menü */}
             {isAdmin && (
               <div className="mds-actions-menu-wrapper">
                 <button
-                  className="mitglied-detail-actions-btn"
+                  className="mitglied-detail-actions-btn mds-aktionen-btn"
                   onClick={() => setShowActionsMenu(!showActionsMenu)}
                   title="Aktionen"
                 >
-                  ⋮
+                  <span className="mds-aktionen-icon">⚙️</span>
+                  <span className="mds-aktionen-label">Aktionen</span>
+                  <span className="mds-aktionen-chevron">{showActionsMenu ? '▲' : '▼'}</span>
                 </button>
 
                 {/* Dropdown-Menü */}
@@ -2672,6 +2925,25 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       >
                         <span className="menu-item-icon">📧</span>
                         <span>Dokument senden</span>
+                      </button>
+
+                      <button
+                        className="mitglied-detail-menu-item"
+                        onClick={() => {
+                          const mid = mitglied?.mitglied_id || mitglied?.id;
+                          if (mid) {
+                            axios.get(`/vertrag-anpassungen/mitglied/${mid}`)
+                              .then(r => setVertragAnpassungen(r.data.anpassungen || []))
+                              .catch(() => setVertragAnpassungen([]));
+                          }
+                          setVertragAnpassungForm({ typ: 'student', neuer_betrag: '', gueltig_von: '', gueltig_bis: '', grund: '' });
+                          setVertragAnpassungError('');
+                          setShowVertragAnpassungModal(true);
+                          setShowActionsMenu(false);
+                        }}
+                      >
+                        <span className="menu-item-icon">🎓</span>
+                        <span>Tarif zeitlich anpassen</span>
                       </button>
 
                       <div className="mitglied-detail-menu-divider" />
@@ -3258,25 +3530,29 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         </div>
                         <div className="mds-kontostand-value-primary" style={{
                           '--val-color': (() => {
+                            const heute = new Date(); heute.setHours(23, 59, 59, 999);
                             const kontostand = finanzDaten
-                              .filter(item => !item.bezahlt)
+                              .filter(item => !item.bezahlt && new Date(item.zahlungsdatum || item.datum || 0) <= heute)
                               .reduce((sum, item) => sum + (parseFloat(item.betrag) || 0), 0);
                             return kontostand > 0 ? '#ef4444' : '#10b981';
                           })()
                         }}>
                           {(() => {
-                            // Berechne offenen Betrag aus unbezahlten Beiträgen
+                            // Nur fällige (nicht zukünftige) unbezahlte Beiträge
+                            const heute = new Date(); heute.setHours(23, 59, 59, 999);
                             const kontostand = finanzDaten
-                              .filter(item => !item.bezahlt)
+                              .filter(item => !item.bezahlt && new Date(item.zahlungsdatum || item.datum || 0) <= heute)
                               .reduce((sum, item) => sum + (parseFloat(item.betrag) || 0), 0);
                             return `${kontostand.toFixed(2)} €`;
                           })()}
                         </div>
                         <div className="mds-kontostand-sublabel">
                           {(() => {
-                            const unbezahlt = finanzDaten.filter(item => !item.bezahlt).length;
+                            const heute = new Date(); heute.setHours(23, 59, 59, 999);
+                            const unbezahlt = finanzDaten.filter(item => !item.bezahlt && new Date(item.zahlungsdatum || item.datum || 0) <= heute).length;
+                            const geplant = finanzDaten.filter(item => !item.bezahlt && new Date(item.zahlungsdatum || item.datum || 0) > heute).length;
                             const bezahlt = finanzDaten.filter(item => item.bezahlt).length;
-                            return `${unbezahlt} offen, ${bezahlt} bezahlt`;
+                            return `${unbezahlt} überfällig, ${bezahlt} bezahlt${geplant > 0 ? `, ${geplant} geplant` : ''}`;
                           })()}
                         </div>
                       </div>
@@ -3364,15 +3640,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "dokumente" && (
-            <div className="mds2-flex-col-15">
-              <div className="field-group card">
-                <h3 className="mds2-mb-15-heading">Dokumente & Einverständnisse</h3>
+            <div className="dok-wrap">
+
+              {/* ── Einverständnisse & Dokumente ── */}
+              <div className="dok-card">
+                <h3 className="dok-section-title">📋 Dokumente & Einverständnisse</h3>
                 {(() => {
-                  // 🔍 Hole Daten aus dem aktiven Vertrag (falls vorhanden), sonst aus mitglied
                   const activeContract = verträge.find(v => v.status === 'aktiv') || verträge[0];
                   const docSource = activeContract || mitglied;
 
-                  // Mapping: Vertrag verwendet andere Feldnamen als mitglied
                   const hausordnung_akzeptiert = docSource.hausordnung_akzeptiert_am ? true : (mitglied.hausordnung_akzeptiert || false);
                   const hausordnung_akzeptiert_am = docSource.hausordnung_akzeptiert_am || mitglied.hausordnung_akzeptiert_am;
 
@@ -3391,496 +3667,208 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   const gesundheitserklaerung = docSource.gesundheitserklaerung_datum ? docSource.gesundheitserklaerung : mitglied.gesundheitserklaerung;
                   const gesundheitserklaerung_datum = docSource.gesundheitserklaerung_datum || mitglied.gesundheitserklaerung_datum;
 
+                  const docs = [
+                    { key: 'hausordnung_akzeptiert', label: 'Hausordnung', ok: hausordnung_akzeptiert, okLabel: 'Akzeptiert', date: hausordnung_akzeptiert_am },
+                    { key: 'datenschutz_akzeptiert', label: 'Datenschutz', ok: datenschutz_akzeptiert, okLabel: 'Akzeptiert', date: datenschutz_akzeptiert_am },
+                    { key: 'foto_einverstaendnis', label: 'Foto-Einverständnis', ok: foto_einverstaendnis, okLabel: 'Erteilt', date: foto_einverstaendnis_datum },
+                    { key: 'agb_akzeptiert', label: 'AGB', ok: agb_akzeptiert, okLabel: 'Akzeptiert', date: agb_akzeptiert_am },
+                    { key: 'haftungsausschluss_akzeptiert', label: 'Haftungsausschluss', ok: haftungsausschluss_akzeptiert, okLabel: 'Akzeptiert', date: haftungsausschluss_datum },
+                    { key: 'gesundheitserklaerung', label: 'Gesundheitserklärung', ok: gesundheitserklaerung, okLabel: 'Abgegeben', date: gesundheitserklaerung_datum },
+                  ];
+
                   return (
-                <div className="mds-flex-col">
-                  {activeContract && (
-                    <div className="mds-contract-info-hint">
-                      ℹ️ Daten werden aus dem aktiven Vertrag #{activeContract.personenVertragNr || activeContract.id} geladen
-                    </div>
-                  )}
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">Hausordnung akzeptiert:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="checkbox"
-                        checked={updatedData.hausordnung_akzeptiert || false}
-                        onChange={(e) => handleChange(e, "hausordnung_akzeptiert")}
-                        className="mds2-icon-18"
-                      />
-                    ) : (
-                      <div className="mds-flex-row">
-                        <span className={`status-badge mds2-badge-uppercase-xs `}>
-                          {hausordnung_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
-                        </span>
-                        {hausordnung_akzeptiert_am && (
-                          <span className="mds-nowrap-sm">
-                            am {new Date(hausordnung_akzeptiert_am).toLocaleDateString('de-DE')}
-                          </span>
-                        )}
+                    <>
+                      {activeContract && (
+                        <div className="dok-hint">
+                          ℹ️ Daten aus aktivem Vertrag #{activeContract.personenVertragNr ?? activeContract.id}
+                        </div>
+                      )}
+                      <div className="dok-consent-grid">
+                        {docs.map(({ key, label, ok, okLabel, date }) => (
+                          <div key={key} className={`dok-doc-card${ok ? ' dok-doc-card--ok' : ' dok-doc-card--miss'}`}>
+                            <div className="dok-doc-top">
+                              <span className="dok-doc-label">{label}</span>
+                              {editMode && isAdmin
+                                ? <input type="checkbox" className="dok-checkbox" checked={updatedData[key] || false} onChange={(e) => handleChange(e, key)} />
+                                : <span className={`dok-doc-badge${ok ? ' dok-doc-badge--ok' : ' dok-doc-badge--miss'}`}>{ok ? okLabel : 'Fehlt'}</span>
+                              }
+                            </div>
+                            {date && <div className="dok-doc-date">{new Date(date).toLocaleDateString('de-DE')}</div>}
+                          </div>
+                        ))}
+                        {/* Vereinsordnung Datum — Sonderfall mit Datumseingabe */}
+                        <div className="dok-doc-card">
+                          <div className="dok-doc-top">
+                            <span className="dok-doc-label">Vereinsordnung Datum</span>
+                            {editMode && isAdmin
+                              ? <input type="date" className="dok-date-input" value={toInputDate(updatedData.vereinsordnung_datum)} onChange={(e) => handleChange(e, 'vereinsordnung_datum')} />
+                              : null
+                            }
+                          </div>
+                          {!editMode && (
+                            <div className="dok-doc-date">
+                              {mitglied.vereinsordnung_datum
+                                ? new Date(mitglied.vereinsordnung_datum).toLocaleDateString('de-DE')
+                                : '15.1.2023'}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">Datenschutz akzeptiert:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="checkbox"
-                        checked={updatedData.datenschutz_akzeptiert || false}
-                        onChange={(e) => handleChange(e, "datenschutz_akzeptiert")}
-                        className="mds2-icon-18"
-                      />
-                    ) : (
-                      <div className="mds-flex-row">
-                        <span className={`status-badge mds2-badge-uppercase-xs `}>
-                          {datenschutz_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
-                        </span>
-                        {datenschutz_akzeptiert_am && (
-                          <span className="mds-nowrap-sm">
-                            am {new Date(datenschutz_akzeptiert_am).toLocaleDateString('de-DE')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">Foto-Einverständnis:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="checkbox"
-                        checked={updatedData.foto_einverstaendnis || false}
-                        onChange={(e) => handleChange(e, "foto_einverstaendnis")}
-                        className="mds2-icon-18"
-                      />
-                    ) : (
-                      <div className="mds-flex-row">
-                        <span className={`status-badge mds2-badge-uppercase-xs `}>
-                          {foto_einverstaendnis ? "✅ Erteilt" : "❌ Fehlt"}
-                        </span>
-                        {foto_einverstaendnis_datum && (
-                          <span className="mds-nowrap-sm">
-                            am {new Date(foto_einverstaendnis_datum).toLocaleDateString('de-DE')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">AGB akzeptiert:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="checkbox"
-                        checked={updatedData.agb_akzeptiert || false}
-                        onChange={(e) => handleChange(e, "agb_akzeptiert")}
-                        className="mds2-icon-18"
-                      />
-                    ) : (
-                      <div className="mds-flex-row">
-                        <span className={`status-badge mds2-badge-uppercase-xs `}>
-                          {agb_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
-                        </span>
-                        {agb_akzeptiert_am && (
-                          <span className="mds-nowrap-sm">
-                            am {new Date(agb_akzeptiert_am).toLocaleDateString('de-DE')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">Haftungsausschluss:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="checkbox"
-                        checked={updatedData.haftungsausschluss_akzeptiert || false}
-                        onChange={(e) => handleChange(e, "haftungsausschluss_akzeptiert")}
-                        className="mds2-icon-18"
-                      />
-                    ) : (
-                      <div className="mds-flex-row">
-                        <span className={`status-badge mds2-badge-uppercase-xs `}>
-                          {haftungsausschluss_akzeptiert ? "✅ Akzeptiert" : "❌ Fehlt"}
-                        </span>
-                        {haftungsausschluss_datum && (
-                          <span className="mds-nowrap-sm">
-                            am {new Date(haftungsausschluss_datum).toLocaleDateString('de-DE')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">Gesundheitserklärung:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="checkbox"
-                        checked={updatedData.gesundheitserklaerung || false}
-                        onChange={(e) => handleChange(e, "gesundheitserklaerung")}
-                        className="mds2-icon-18"
-                      />
-                    ) : (
-                      <div className="mds-flex-row">
-                        <span className={`status-badge mds2-badge-uppercase-xs `}>
-                          {gesundheitserklaerung ? "✅ Abgegeben" : "❌ Fehlt"}
-                        </span>
-                        {gesundheitserklaerung_datum && (
-                          <span className="mds-nowrap-sm">
-                            am {new Date(gesundheitserklaerung_datum).toLocaleDateString('de-DE')}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mds-doc-row">
-                    <label className="mds-uppercase-label">Vereinsordnung Datum:</label>
-                    {editMode && isAdmin ? (
-                      <input
-                        type="date"
-                        value={toInputDate(updatedData.vereinsordnung_datum)}
-                        onChange={(e) => handleChange(e, "vereinsordnung_datum")}
-                        className="mds-date-input-sm"
-                      />
-                    ) : (
-                      <span className="mds-vereinsordnung-value">
-                        {mitglied.vereinsordnung_datum
-                          ? new Date(mitglied.vereinsordnung_datum).toLocaleDateString("de-DE")
-                          : "15.1.2023"
-                        }
-                      </span>
-                    )}
-                  </div>
-                </div>
-                  ); // Ende des return
-                })()} {/* Ende der IIFE */}
+                    </>
+                  );
+                })()}
               </div>
 
-              {/* Bestätigte Dokumenten-Benachrichtigungen */}
+              {/* ── Bestätigte Dokumente ── */}
               {confirmedNotifications.length > 0 && (
-                <div className="field-group card">
-                  <h3 className="mds2-mb-15-heading">✅ Bestätigte Dokumente</h3>
-                  <div className="mds-flex-col">
+                <div className="dok-card">
+                  <h3 className="dok-section-title">✅ Bestätigte Dokumente</h3>
+                  <div className="dok-confirmed-list">
                     {confirmedNotifications.map((notification) => {
                       const metadata = notification.metadata || {};
                       return (
-                        <div
-                          key={notification.id}
-                          className="mds-confirmed-doc-row"
-                        >
-                          <div className="u-flex-1">
-                            <div className="mds-confirmed-doc-detail">
-                              {notification.subject}
-                            </div>
-                            <div className="mds-confirmed-doc-version">
-                              {metadata.document_title && `${metadata.document_title} `}
-                              {metadata.document_version && `(Version ${metadata.document_version})`}
-                            </div>
+                        <div key={notification.id} className="dok-confirmed-row">
+                          <div className="dok-confirmed-left">
+                            <div className="dok-confirmed-subject">{notification.subject}</div>
+                            {(metadata.document_title || metadata.document_version) && (
+                              <div className="dok-confirmed-sub">
+                                {metadata.document_title && metadata.document_title}
+                                {metadata.document_version && ` (Version ${metadata.document_version})`}
+                              </div>
+                            )}
                           </div>
-                          <div className="mds-confirmed-doc-meta">
-                            <span className="mds-confirmed-badge">
-                              ✓ Bestätigt
-                            </span>
-                            <span className="mds-confirmed-doc-timestamp">
-                              {new Date(notification.confirmed_at).toLocaleString('de-DE', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                          <div className="dok-confirmed-right">
+                            <span className="dok-confirmed-badge">✓ Bestätigt</span>
+                            <span className="dok-confirmed-time">
+                              {new Date(notification.confirmed_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="info-box mds2-mt-1">
-                    <p>ℹ️ <strong>Hinweis:</strong> Hier werden alle vom Mitglied bestätigten Dokumente mit Datum und Uhrzeit der Bestätigung angezeigt.</p>
-                  </div>
+                  <p className="dok-info-note">ℹ️ Alle vom Mitglied bestätigten Dokumente mit Datum und Uhrzeit der Bestätigung.</p>
                 </div>
               )}
 
-              {/* 🔒 ADMIN-ONLY: SEPA-Lastschriftmandat (Banking Information) */}
+              {/* ── Aktives SEPA-Mandat (Admin) ── */}
               {isAdmin && sepaMandate && (
-                <div className="field-group card bank-sub-tab-content">
-                  <h3 className="mds-sepa-heading">
-                    Aktuelles SEPA-Lastschriftmandat
-                  </h3>
-
-                  <div className="mds-sepa-grid-card">
-                  <div className="mds2-flex-col-1">
-                    {/* Header mit Referenz und Status */}
-                    <div className="mds-sepa-header-row">
-                      <div className="mds-sepa-ref-col">
-                        <span className="mds-sepa-ref">
-                          {sepaMandate.mandatsreferenz}
-                        </span>
-                        <span className="mds-sepa-status-text">
-                          STATUS: AKTIV
-                        </span>
-                      </div>
+                <div className="dok-card">
+                  <div className="dok-sepa-head">
+                    <h3 className="dok-section-title">🏦 Aktuelles SEPA-Lastschriftmandat</h3>
+                    <span className="dok-sepa-status-badge">AKTIV</span>
+                  </div>
+                  <div className="dok-sepa-body">
+                    <div className="dok-sepa-grid">
+                      <span className="dok-kv-label">Mandatsreferenz</span>
+                      <span className="dok-kv-value dok-mono">{sepaMandate.mandatsreferenz}</span>
+                      <span className="dok-kv-label">Erstellt</span>
+                      <span className="dok-kv-value">{new Date(sepaMandate.erstellungsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                      <span className="dok-kv-label">Gläubiger-ID</span>
+                      <span className="dok-kv-value dok-mono">{sepaMandate.glaeubiger_id || 'N/A'}</span>
+                      <span className="dok-kv-label">IBAN</span>
+                      <span className="dok-kv-value dok-mono">{sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)} **** ${sepaMandate.iban.slice(-4)}` : 'N/A'}</span>
+                      <span className="dok-kv-label">Kontoinhaber</span>
+                      <span className="dok-kv-value">{sepaMandate.kontoinhaber || 'N/A'}</span>
+                      <span className="dok-kv-label">BIC</span>
+                      <span className="dok-kv-value dok-mono">{sepaMandate.bic || 'N/A'}</span>
                     </div>
-
-                    {/* Mandat Details */}
-                    <div className="mds-sepa-details-grid">
-                      <span className="mds-secondary-bold">Erstellt:</span>
-                      <span className="mds-info-value">
-                        {new Date(sepaMandate.erstellungsdatum).toLocaleDateString('de-DE', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric'
-                        })}
-                      </span>
-
-                      <span className="mds-secondary-bold">Gläubiger-ID:</span>
-                      <span className="mds-sepa-gid-value">
-                        {sepaMandate.glaeubiger_id || 'N/A'}
-                      </span>
-
-                      <span className="mds-secondary-bold">IBAN:</span>
-                      <span className="mds2-mono-primary">
-                        {sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)} **** ${sepaMandate.iban.slice(-4)}` : 'N/A'}
-                      </span>
-
-                      <span className="mds-secondary-bold">Kontoinhaber:</span>
-                      <span className="mds-info-value">
-                        {sepaMandate.kontoinhaber || 'N/A'}
-                      </span>
-
-                      <span className="mds-secondary-bold">BIC:</span>
-                      <span className="mds2-mono-primary">
-                        {sepaMandate.bic || 'N/A'}
-                      </span>
-                    </div>
+                    <button className="dok-pdf-btn" onClick={() => downloadSepaMandate()} title="PDF herunterladen">PDF</button>
                   </div>
-
-                  {/* Actions */}
-                  <div className="mds-sepa-actions-col">
-                    <button
-                      className="mds-sepa-pdf-btn"
-                      onClick={() => downloadSepaMandate()}
-                      title="PDF herunterladen"
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                        e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                      }}
-                    >
-                      PDF
-                    </button>
-                  </div>
-                </div>
-
-                  <div className="info-box mds2-mt-1">
-                    <p className="mds-sepa-note">
-                      <strong>Hinweis:</strong> Dieses Mandat ist derzeit aktiv und wird für SEPA-Lastschriften verwendet.
-                    </p>
-                  </div>
+                  <p className="dok-info-note">Dieses Mandat ist aktiv und wird für SEPA-Lastschriften verwendet.</p>
                 </div>
               )}
 
-              {/* 🔒 ADMIN-ONLY: Archivierte SEPA-Mandate */}
+              {/* ── Archivierte SEPA-Mandate (Admin) ── */}
               {isAdmin && archivierteMandate.length > 0 && (
-                <div className="field-group card">
-                  <h3>Archivierte & Widerrufene SEPA-Mandate</h3>
-                  <div className="archivierte-mandate-liste">
-                    {archivierteMandate.map((mandat, index) => (
-                      <div key={mandat.mandat_id} className="archiviertes-mandat-item">
-                        <div className="mandat-info">
-                          <div className="mandat-header">
-                            <span className="mandatsreferenz">
-                              🔖 {mandat.mandatsreferenz}
-                            </span>
-                            <span className="archiviert-datum">
-                              {mandat.archiviert_am
-                                ? `Archiviert: ${new Date(mandat.archiviert_am).toLocaleDateString('de-DE')}`
-                                : mandat.widerruf_datum
-                                  ? `Widerrufen: ${new Date(mandat.widerruf_datum).toLocaleDateString('de-DE')}`
-                                  : 'Nicht mehr aktiv'
-                              }
-                            </span>
+                <div className="dok-card">
+                  <h3 className="dok-section-title">📦 Archivierte & Widerrufene Mandate</h3>
+                  <div className="dok-archived-list">
+                    {archivierteMandate.map((mandat) => (
+                      <div key={mandat.mandat_id} className="dok-archived-row">
+                        <div className="dok-archived-info">
+                          <div className="dok-archived-ref">🔖 {mandat.mandatsreferenz}</div>
+                          <div className="dok-archived-meta">
+                            Erstellt: {new Date(mandat.erstellungsdatum).toLocaleDateString('de-DE')}
+                            {' · '}
+                            {mandat.archiviert_am
+                              ? `Archiviert: ${new Date(mandat.archiviert_am).toLocaleDateString('de-DE')}`
+                              : mandat.widerruf_datum
+                                ? `Widerrufen: ${new Date(mandat.widerruf_datum).toLocaleDateString('de-DE')}`
+                                : 'Nicht mehr aktiv'}
                           </div>
-                          <div className="mandat-details">
-                            <span>Erstellt: {new Date(mandat.erstellungsdatum).toLocaleDateString('de-DE')}</span>
-                            <span>Status: {mandat.status === 'widerrufen' ? '🚫 Widerrufen' : '📦 Archiviert'}</span>
-                            {mandat.archiviert_grund && (
-                              <span>Grund: {mandat.archiviert_grund}</span>
-                            )}
-                          </div>
-                          <div className="mandat-banking">
+                          <div className="dok-archived-sub">
                             <span>IBAN: {mandat.iban ? `${mandat.iban.slice(0, 4)}****${mandat.iban.slice(-4)}` : 'N/A'}</span>
-                            <span>Kontoinhaber: {mandat.kontoinhaber}</span>
+                            <span>{mandat.kontoinhaber}</span>
+                            <span className={`dok-archived-badge${mandat.status === 'widerrufen' ? ' dok-archived-badge--rev' : ''}`}>
+                              {mandat.status === 'widerrufen' ? 'Widerrufen' : 'Archiviert'}
+                            </span>
+                            {mandat.archiviert_grund && <span>Grund: {mandat.archiviert_grund}</span>}
                           </div>
                         </div>
-                        <div className="mandat-actions">
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => downloadArchiviertesMandat(
-                              mandat.mandat_id,
-                              mandat.vorname,
-                              mandat.nachname,
-                              mandat.erstellungsdatum
-                            )}
-                            title="PDF herunterladen"
-                          >
-                            📄 PDF
-                          </button>
-                        </div>
+                        <button className="dok-pdf-btn" onClick={() => downloadArchiviertesMandat(mandat.mandat_id, mandat.vorname, mandat.nachname, mandat.erstellungsdatum)} title="PDF herunterladen">PDF</button>
                       </div>
                     ))}
                   </div>
-                  <div className="info-box">
-                    <p>ℹ️ <strong>Hinweis:</strong> Archivierte und widerrufene SEPA-Mandate bleiben dauerhaft gespeichert und können jederzeit als PDF heruntergeladen werden.</p>
-                  </div>
+                  <p className="dok-info-note">Archivierte und widerrufene Mandate bleiben dauerhaft gespeichert und können als PDF heruntergeladen werden.</p>
                 </div>
               )}
 
-              {/* Dokumente aus Vorlagen generieren - NUR FÜR ADMINS */}
+              {/* ── Dokumente aus Vorlagen generieren (Admin) ── */}
               {isAdmin && (
-                <div className="field-group card">
-                  <h3 className="mds2-section-heading">Dokumente aus Vorlagen generieren</h3>
+                <div className="dok-card">
+                  <h3 className="dok-section-title">🖨️ Dokumente aus Vorlagen generieren</h3>
                   {verfügbareVorlagen.length === 0 ? (
-                    <div className="info-box">
-                      <p>ℹ️ Keine Vorlagen verfügbar. Erstellen Sie zuerst Vorlagen im Bereich "Vertragsdokumente".</p>
-                    </div>
+                    <p className="dok-info-note">ℹ️ Keine Vorlagen verfügbar. Erstellen Sie zuerst Vorlagen im Bereich "Vertragsdokumente".</p>
                   ) : (
-                    <div>
-                      <div className="info-box mds2-mb-1">
-                        <p>ℹ️ Wählen Sie eine Vorlage aus, um ein PDF mit den aktuellen Daten dieses Mitglieds zu erstellen.</p>
-                      </div>
-                      <div className="mds-vorlagen-grid">
+                    <>
+                      <p className="dok-info-note" style={{ marginBottom: '0.85rem' }}>Wählen Sie eine Vorlage, um ein PDF mit den aktuellen Mitgliedsdaten zu erstellen.</p>
+                      <div className="dok-vorlage-grid">
                         {verfügbareVorlagen.map((vorlage) => (
-                          <div
-                            key={vorlage.id}
-                            className="mds-vorlage-card"
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            <div className="mds-vorlage-card-header">
-                              <div className="u-flex-1">
-                                <h4 className="mds-vorlage-title">
-                                  {vorlage.name}
-                                </h4>
-                                {vorlage.beschreibung && (
-                                  <p className="mds-vorlage-description">
-                                    {vorlage.beschreibung}
-                                  </p>
-                                )}
-                                <div className="mds-vorlage-badges">
-                                  <span className="mds-vorlage-badge-type">
-                                    {vorlage.template_type || 'vertrag'}
-                                  </span>
-                                  {vorlage.is_default && (
-                                    <span className="mds-vorlage-badge-default">
-                                      ⭐ Standard
-                                    </span>
-                                  )}
-                                </div>
+                          <div key={vorlage.id} className="dok-vorlage-card">
+                            <div className="dok-vorlage-top">
+                              <div className="dok-vorlage-name">{vorlage.name}</div>
+                              {vorlage.beschreibung && <div className="dok-vorlage-desc">{vorlage.beschreibung}</div>}
+                              <div className="dok-vorlage-badges">
+                                <span className="dok-vorlage-type-badge">{vorlage.template_type || 'vertrag'}</span>
+                                {vorlage.is_default && <span className="dok-vorlage-default-badge">⭐ Standard</span>}
                               </div>
                             </div>
-                            <div className="mds-vorlage-actions">
-                              <button
-                                className="btn btn-primary btn-sm mds-vorlage-pdf-btn"
-                                onClick={() => generateDocumentFromTemplate(vorlage.id, vorlage.name)}
-                                disabled={generatingDocument}
-                                onMouseEnter={(e) => {
-                                  if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
-                                  }
-                                }}
-                                onMouseLeave={(e) => {
-                                  if (!e.currentTarget.disabled) {
-                                    e.currentTarget.style.background = 'transparent';
-                                    e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                                  }
-                                }}
-                              >
-                                {generatingDocument ? 'Generiere...' : 'PDF erstellen'}
+                            <div className="dok-vorlage-actions">
+                              <button className="dok-action-btn dok-action-btn--primary" onClick={() => generateDocumentFromTemplate(vorlage.id, vorlage.name)} disabled={generatingDocument}>
+                                {generatingDocument ? 'Generiere…' : 'PDF erstellen'}
                               </button>
-                              <button
-                                className="btn btn-secondary btn-sm mds-vorlage-pdf-btn"
-                                onClick={() => downloadTemplateAsPDF(vorlage.id, vorlage.name)}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                                  e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.4)';
-                                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.9)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = 'transparent';
-                                  e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.2)';
-                                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)';
-                                }}
-                                title="Vorlage als PDF herunterladen"
-                              >
+                              <button className="dok-action-btn" onClick={() => downloadTemplateAsPDF(vorlage.id, vorlage.name)} title="Vorlage als PDF">
                                 Vorlage
                               </button>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
 
-              {/* Liste der gespeicherten Dokumente */}
-              <div className="field-group card">
-                <h3 className="mds2-section-heading">Gespeicherte Dokumente</h3>
+              {/* ── Gespeicherte Dokumente ── */}
+              <div className="dok-card">
+                <h3 className="dok-section-title">📁 Gespeicherte Dokumente</h3>
                 {mitgliedDokumente.length === 0 ? (
-                  <div className="info-box">
-                    <p>ℹ️ Keine Dokumente vorhanden. {isAdmin ? 'Generieren Sie Dokumente aus den Vorlagen oben.' : 'Es wurden noch keine Dokumente für Sie erstellt.'}</p>
-                  </div>
+                  <p className="dok-info-note">ℹ️ Keine Dokumente vorhanden. {isAdmin ? 'Generieren Sie Dokumente aus den Vorlagen oben.' : 'Es wurden noch keine Dokumente für Sie erstellt.'}</p>
                 ) : (
-                  <div className="mds-flex-col">
+                  <div className="dok-file-list">
                     {mitgliedDokumente.filter(dok => !dok.dokumentname.startsWith('Rechnung')).map((dok) => (
-                      <div
-                        key={dok.id}
-                        className="mds-saved-doc-row"
-                      >
-                        <div className="u-flex-1">
-                          <div className="mds2-fw600-mb025">
-                            {dok.dokumentname}
-                          </div>
-                          <div className="mds-saved-doc-meta">
-                            Erstellt: {new Date(dok.erstellt_am).toLocaleDateString('de-DE', {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
+                      <div key={dok.id} className="dok-file-row">
+                        <div className="dok-file-info">
+                          <div className="dok-file-name">{dok.dokumentname}</div>
+                          <div className="dok-file-meta">
+                            Erstellt: {new Date(dok.erstellt_am).toLocaleDateString('de-DE', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                             {dok.erstellt_von_name && ` von ${dok.erstellt_von_name}`}
                           </div>
                         </div>
-                        <div className="u-flex-gap-sm">
-                          <button
-                            className="dashboard-button"
-                            onClick={() => downloadMitgliedDokument(dok.id, dok.dokumentname)}
-                            title="Dokument herunterladen"
-                          >
-                            Download
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="dashboard-button"
-                              onClick={() => deleteMitgliedDokument(dok)}
-                              title="Dokument löschen"
-                            >
-                              Löschen
-                            </button>
-                          )}
+                        <div className="dok-file-actions">
+                          <button className="dok-action-btn" onClick={() => downloadMitgliedDokument(dok.id, dok.dokumentname)}>Download</button>
+                          {isAdmin && <button className="dok-action-btn dok-action-btn--danger" onClick={() => deleteMitgliedDokument(dok)}>Löschen</button>}
                         </div>
                       </div>
                     ))}
@@ -3888,53 +3876,34 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 )}
               </div>
 
-              {/* Rechnungen */}
-              <div className="field-group card">
-                <h3 className="mds2-section-heading">Rechnungen</h3>
+              {/* ── Versandhistorie (Admin) ── */}
+              {isAdmin && <MitgliedVersandhistorie mitgliedId={id} activeDojo={activeDojo} />}
+
+              {/* ── Rechnungen ── */}
+              <div className="dok-card">
+                <h3 className="dok-section-title">🧾 Rechnungen</h3>
                 {rechnungen.length === 0 ? (
-                  <div className="info-box">
-                    <p>ℹ️ Keine Rechnungen vorhanden.</p>
-                  </div>
+                  <p className="dok-info-note">ℹ️ Keine Rechnungen vorhanden.</p>
                 ) : (
-                  <div className="mds-flex-col">
+                  <div className="dok-file-list">
                     {rechnungen.map((rechnung) => (
-                      <div
-                        key={rechnung.rechnung_id}
-                        className="mds-saved-doc-row"
-                      >
-                        <div className="u-flex-1">
-                          <div className="mds2-fw600-mb025">
-                            {rechnung.rechnungsnummer}
-                          </div>
-                          <div className="mds-saved-doc-meta">
-                            Datum: {new Date(rechnung.datum).toLocaleDateString('de-DE')} | 
-                            Betrag: {Number(rechnung.betrag).toFixed(2)} € | 
-                            Status: {rechnung.status_text || rechnung.status}
+                      <div key={rechnung.rechnung_id} className="dok-file-row">
+                        <div className="dok-file-info">
+                          <div className="dok-file-name">{rechnung.rechnungsnummer}</div>
+                          <div className="dok-file-meta">
+                            {new Date(rechnung.datum).toLocaleDateString('de-DE')} · {Number(rechnung.betrag).toFixed(2)} € · {rechnung.status_text || rechnung.status}
                           </div>
                         </div>
-                        <div className="u-flex-gap-sm">
-                          <button
-                            className="dashboard-button"
-                            onClick={() => window.open(`/api/rechnungen/${rechnung.rechnung_id}/pdf`, '_blank')}
-                            title="Rechnung als PDF anzeigen"
-                          >
-                            PDF anzeigen
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="dashboard-button"
-                              onClick={() => deleteRechnung(rechnung)}
-                              title="Rechnung löschen"
-                            >
-                              Löschen
-                            </button>
-                          )}
+                        <div className="dok-file-actions">
+                          <button className="dok-action-btn" onClick={() => openApiBlob(`/api/rechnungen/${rechnung.rechnung_id}/pdf`)}>PDF anzeigen</button>
+                          {isAdmin && <button className="dok-action-btn dok-action-btn--danger" onClick={() => deleteRechnung(rechnung)}>Löschen</button>}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+
             </div>
           )}
 
@@ -4061,9 +4030,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                 <div className="mds-modal-footer-end">
                   <button
-                    className="btn btn-secondary"
+                    className="btn btn-secondary mds2-fs-09"
                     onClick={() => setShowMandateModal(false)}
-                    className="mds2-fs-09"
                   >
                     Schließen
                   </button>
@@ -4074,24 +4042,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
           {activeTab === "familie" && (
             <>
-              {/* Familienmitglied hinzufügen Button - nur für Admin */}
+              {/* Familienmitglied hinzufügen Banner - nur für Admin */}
               {isAdmin && (
-                <div className="mds-family-add-banner">
-                  <div className="mds-family-add-row">
-                    <div>
-                      <h4 className="mds-family-add-title">Familienmitglied hinzufügen</h4>
-                      <p className="mds-family-add-subtitle">
-                        Fügen Sie ein neues Familienmitglied mit Familienrabatt hinzu
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setShowFamilyMemberModal(true)}
-                      className="mds-family-add-btn"
-                    >
-                      <span>👨‍👩‍👧</span>
-                      Familienmitglied hinzufügen
-                    </button>
+                <div className="fam-add-banner">
+                  <div className="fam-add-banner-text">
+                    <div className="fam-add-banner-title">Familienmitglied hinzufügen</div>
+                    <div className="fam-add-banner-sub">Neues Mitglied mit Familienrabatt anlegen</div>
                   </div>
+                  <button className="fam-add-btn" onClick={() => setShowFamilyMemberModal(true)}>
+                    👨‍👩‍👧 Hinzufügen
+                  </button>
                 </div>
               )}
 
@@ -4115,515 +4075,406 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
 
           {activeTab === "vertrag" && (
-            <div className="mds-vertrag-tab-wrapper">
-              {/* CONTRACT SECTION - COMPLETELY NEW DESIGN */}
-              <div className="mds-vertrag-section">
-                {/* HEADER WITH NEW CONTRACT BUTTON */}
-                <div className="mds-vertrag-section-header">
-                  <h3 className="mds-vertrag-section-title">
-                    Vertragsverwaltung
-                  </h3>
+            <div className="vtr-wrapper">
 
-                  {isAdmin && (
-                    <>
-                      <button
-                        className={`vertragsfrei-button ${mitglied?.vertragsfrei ? 'vertragsfrei-button-active' : ''}`}
-                        onClick={async () => {
-                          const isVertragsfrei = !mitglied?.vertragsfrei;
-                          const grund = isVertragsfrei
-                            ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
-                            : null;
-
-                          if (isVertragsfrei && !grund) {
-                            return;
-                          }
-
-                          try {
-                            await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
-                              vertragsfrei: isVertragsfrei ? 1 : 0,
-                              vertragsfrei_grund: grund || null
-                            });
-
-                            setMitglied(prev => ({
-                              ...prev,
-                              vertragsfrei: isVertragsfrei ? 1 : 0,
-                              vertragsfrei_grund: grund || null
-                            }));
-
-                            alert(isVertragsfrei
-                              ? '✅ Mitglied wurde als vertragsfrei markiert'
-                              : '✅ Vertragsfreistellung wurde aufgehoben'
-                            );
-                          } catch (error) {
-                            console.error('Fehler beim Aktualisieren:', error);
-                            alert('❌ Fehler beim Speichern der Vertragsfreistellung');
-                          }
-                        }}
-                      >
-                        {mitglied?.vertragsfrei
-                          ? '✅ Vertragsfrei'
-                          : '📝 Vertragsfrei stellen'}
-                      </button>
-
-                      <button
-                        className="neuer-vertrag-button"
-                        onClick={() => setShowNewVertrag(true)}
-                      >
-                        ➕ Neuer Vertrag
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                {/* VERTRAGSFREI GRUND */}
-                {isAdmin && mitglied?.vertragsfrei && mitglied?.vertragsfrei_grund && (
-                  <div className="mds-vertragsfrei-hinweis">
-                    <div className="mds-vertragsfrei-title">
-                      Mitglied ist aus folgendem Grund Beitrags- bzw. Vertragsfrei
-                    </div>
-                    <div className="mds-vertragsfrei-grund">
-                      <strong>Grund:</strong> {mitglied.vertragsfrei_grund}
-                    </div>
-                  </div>
-                )}
-
-                {/* CONTRACTS GRID */}
-                {verträge.length > 0 ? (
-                  <div className="mds-vertraege-grid">
-                    {verträge.map(vertrag => (
-                      <div
-                        key={vertrag.id}
-                        className="vertrag-card mds-vertrag-card-inner"
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)';
-                          e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.3)';
-                          e.currentTarget.style.borderColor = 'rgba(255, 215, 0, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.2)';
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                        }}
-                      >
-                        {/* CONTRACT HEADER */}
-                        <div className="mds-vertrag-card-header">
-                          <div>
-                            <h4 className="mds-vertrag-card-title">
-                              📄 Vertrag #{vertrag.personenVertragNr}
-                            </h4>
-                            <span className="mds-vertrag-card-created">
-                              Erstellt: {new Date(vertrag.created_at || vertrag.vertragsbeginn).toLocaleDateString('de-DE')}
-                            </span>
-                          </div>
-
-                          <span className={`mds-vertrag-status-badge mds-vertrag-status-badge--${vertrag.geloescht ? 'geloescht' : vertrag.status}`}>
-                            {vertrag.geloescht ? '🗑️ GELÖSCHT' :
-                             vertrag.status === 'aktiv' ? '✅ AKTIV' :
-                             vertrag.status === 'gekuendigt' ? '❌ GEKÜNDIGT' :
-                             vertrag.status === 'ruhepause' ? '⏸️ RUHEPAUSE' : '⏹️ BEENDET'}
-                          </span>
-                        </div>
-
-                        {/* CONTRACT INFO */}
-                        <div className="mds-vertrag-info-rows">
-                          <div className="mds-vertrag-info-row">
-                            <span className="mds2-fs-11">📄</span>
-                            <span className="mds-secondary-label">TARIF:</span>
-                            <strong className="mds-info-value">
-                              {vertrag.tarif_name || 'Keine Angabe'}
-                              {vertrag.monatsbeitrag && ` - €${parseFloat(vertrag.monatsbeitrag).toFixed(2)}/Monat`}
-                            </strong>
-                          </div>
-                          <div className="mds-vertrag-info-row">
-                            <span className="mds2-fs-11">📄</span>
-                            <span className="mds-secondary-label">LAUFZEIT:</span>
-                            <strong className="mds-info-value">
-                              {vertrag.vertragsbeginn && vertrag.vertragsende
-                                ? `${new Date(vertrag.vertragsbeginn).toLocaleDateString('de-DE')} bis ${new Date(vertrag.vertragsende).toLocaleDateString('de-DE')}`
-                                : 'Keine Angabe'}
-                            </strong>
-                          </div>
-                          <div className="mds-vertrag-info-row">
-                            <span className="mds2-fs-11">📄</span>
-                            <span className="mds-secondary-label">ZAHLUNG:</span>
-                            <strong className="mds-info-value">
-                              {vertrag.billing_cycle ? translateBillingCycle(vertrag.billing_cycle) : 'Keine Angabe'}
-                            </strong>
-                          </div>
-                          {/* Zahlungsart */}
-                          <div className="mds-vertrag-info-row">
-                            <span className="mds2-fs-11">💳</span>
-                            <span className="mds-secondary-label">ZAHLART:</span>
-                            <strong className="mds-info-value">
-                              {vertrag.payment_method === 'direct_debit' ? '🏦 Lastschrift' :
-                               vertrag.payment_method === 'bank_transfer' ? '💳 Überweisung' :
-                               vertrag.payment_method === 'cash' ? '💵 Bar' :
-                               vertrag.payment_method || 'Keine Angabe'}
-                            </strong>
-                          </div>
-                          {/* Aufnahmegebühr */}
-                          {vertrag.aufnahmegebuehr_cents && vertrag.aufnahmegebuehr_cents > 0 && (
-                            <div className="mds-vertrag-info-row">
-                              <span className="mds2-fs-11">💵</span>
-                              <span className="mds-secondary-label">AUFNAHME:</span>
-                              <strong className="mds-aufnahme-value">
-                                €{(vertrag.aufnahmegebuehr_cents / 100).toFixed(2)}
-                              </strong>
-                            </div>
-                          )}
-                          {/* Kündigungsfrist */}
-                          {vertrag.kuendigungsfrist_monate && (
-                            <div className="mds-vertrag-info-row">
-                              <span className="mds2-fs-11">⏰</span>
-                              <span className="mds-secondary-label">KÜNDIGUNG:</span>
-                              <strong className="mds-info-value">
-                                {vertrag.kuendigungsfrist_monate} {vertrag.kuendigungsfrist_monate === 1 ? 'Monat' : 'Monate'} Frist
-                              </strong>
-                            </div>
-                          )}
-                          {/* Mindestlaufzeit */}
-                          {vertrag.mindestlaufzeit_monate && (
-                            <div className="mds-vertrag-info-row">
-                              <span className="mds2-fs-11">⏱️</span>
-                              <span className="mds-secondary-label">MIN.LAUFZEIT:</span>
-                              <strong className="mds-info-value">
-                                {vertrag.mindestlaufzeit_monate} {vertrag.mindestlaufzeit_monate === 1 ? 'Monat' : 'Monate'}
-                              </strong>
-                            </div>
-                          )}
-                          {vertrag.kuendigung_eingegangen && (
-                            <div className="mds-vertrag-kuendigung-row">
-                              <span className="mds2-fs-11">📄</span>
-                              <span className="u-text-warning">Kündigung eingegangen:</span>
-                              <strong className="u-text-warning">
-                                {new Date(vertrag.kuendigung_eingegangen).toLocaleDateString('de-DE')}
-                              </strong>
-                            </div>
-                          )}
-                          {vertrag.status === 'ruhepause' && vertrag.ruhepause_von && vertrag.ruhepause_bis && (
-                            <div className="mds-vertrag-ruhepause-row">
-                              <span className="mds2-fs-11">⏸️</span>
-                              <span className="mds-ruhepause-label">Ruhepause:</span>
-                              <strong className="mds-ruhepause-label">
-                                {new Date(vertrag.ruhepause_von).toLocaleDateString('de-DE')} bis {new Date(vertrag.ruhepause_bis).toLocaleDateString('de-DE')}
-                              </strong>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* CONTRACT ACTIONS */}
-                        <div className="mds-vertrag-actions-row">
-                          {/* PDF BUTTON (Dokument-ähnliche Ansicht) */}
-                          <button
-                            className="mds-contract-action-btn mds-contract-btn-pdf"
-                            onClick={() => {
-                              setSelectedVertrag(vertrag);
-                              setShowVertragDetails(true);
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(244, 67, 54, 0.3)';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(244, 67, 54, 0.15)';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            📄 PDF
-                          </button>
-
-                          {/* DETAILS BUTTON (Strukturierte Datenansicht) */}
-                          <button
-                            className="mds-contract-action-btn mds-contract-btn-details"
-                            onClick={() => {
-                              setSelectedVertrag(vertrag);
-                              setShowStructuredDetails(true);
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = 'rgba(33, 150, 243, 0.3)';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = 'rgba(33, 150, 243, 0.15)';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            🔍 Details
-                          </button>
-
-                          {/* ADMIN-ONLY BUTTONS */}
-                          {isAdmin && (
-                            <>
-                              {/* EDIT BUTTON */}
-                              <button
-                                className="mds-contract-action-btn mds-contract-btn-edit"
-                                onClick={() => setEditingVertrag(vertrag)}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = 'rgba(255, 215, 0, 0.3)';
-                                  e.currentTarget.style.transform = 'translateY(-2px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = 'rgba(255, 215, 0, 0.15)';
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                }}
-                              >
-                                ✏️ Bearbeiten
-                              </button>
-
-                              {/* STATUS ACTION BUTTONS */}
-                              {vertrag.status === 'aktiv' && (
-                                <>
-                                  <button
-                                    className="mds-contract-action-btn mds-contract-btn-pause"
-                                    onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.background = 'rgba(255, 193, 7, 0.3)';
-                                      e.currentTarget.style.transform = 'translateY(-2px)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.background = 'rgba(255, 193, 7, 0.15)';
-                                      e.currentTarget.style.transform = 'translateY(0)';
-                                    }}
-                                  >
-                                    ⏸️ Ruhepause
-                                  </button>
-                                  <button
-                                    className="mds-contract-action-btn mds-contract-btn-cancel"
-                                    onClick={() => handleVertragAction(vertrag.id, 'kündigen')}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.background = 'rgba(231, 76, 60, 0.3)';
-                                      e.currentTarget.style.transform = 'translateY(-2px)';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.background = 'rgba(231, 76, 60, 0.15)';
-                                      e.currentTarget.style.transform = 'translateY(0)';
-                                    }}
-                                  >
-                                    ❌ Kündigen
-                                  </button>
-                                </>
-                              )}
-                              {vertrag.status === 'ruhepause' && (
-                                <button
-                                  className="mds-contract-action-btn mds-contract-btn-reactivate"
-                                  onClick={() => handleVertragAction(vertrag.id, 'reaktivieren')}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(46, 213, 115, 0.3)';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'rgba(46, 213, 115, 0.15)';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                  }}
-                                >
-                                  ▶️ Reaktivieren
-                                </button>
-                              )}
-                              {vertrag.status === 'gekuendigt' && !vertrag.geloescht && (
-                                <button
-                                  className="mds-contract-action-btn mds-contract-btn-reactivate"
-                                  onClick={() => handleKündigungAufheben(vertrag)}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(46, 213, 115, 0.3)';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'rgba(46, 213, 115, 0.15)';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                  }}
-                                >
-                                  🔄 Kündigung aufheben
-                                </button>
-                              )}
-                              {isAdmin && !vertrag.geloescht && (
-                                <button
-                                  className="mds-contract-action-btn mds-contract-btn-delete"
-                                  onClick={() => handleVertragLöschen(vertrag)}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.background = 'rgba(231, 76, 60, 0.3)';
-                                    e.currentTarget.style.transform = 'translateY(-2px)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.background = 'rgba(231, 76, 60, 0.15)';
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                  }}
-                                >
-                                  🗑️ Löschen
-                                </button>
-                              )}
-                            </>
-                          )}
-
-                          {/* MEMBER-ONLY: Ruhepause Button */}
-                          {!isAdmin && vertrag.status === 'aktiv' && (
-                            <button
-                              className="mds-contract-action-btn mds-contract-btn-pause"
-                              onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(255, 193, 7, 0.3)';
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'rgba(255, 193, 7, 0.15)';
-                                e.currentTarget.style.transform = 'translateY(0)';
-                              }}
-                            >
-                              ⏸️ Ruhepause beantragen
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* NO CONTRACTS MESSAGE */
-                  <div className="mds-no-vertraege">
-                    <p className="mds-no-vertraege-text">
-                      Keine Verträge vorhanden
-                    </p>
-                    {isAdmin && (
-                      <button
-                        className="neuer-vertrag-button"
-                        onClick={() => setShowNewVertrag(true)}
-                      >
-                        ➕ Ersten Vertrag erstellen
-                      </button>
-                    )}
+              {/* ── Header ── */}
+              <div className="vtr-header">
+                <div className="vtr-header-title">Vertragsverwaltung</div>
+                {isAdmin && (
+                  <div className="vtr-header-actions">
+                    <button
+                      className={`vtr-btn-freistell${mitglied?.vertragsfrei ? ' vtr-btn-freistell--active' : ''}`}
+                      onClick={async () => {
+                        const isVertragsfrei = !mitglied?.vertragsfrei;
+                        const grund = isVertragsfrei
+                          ? prompt('Grund für Vertragsfreistellung:\n(z.B. Ehrenmitglied, Familie, Sponsor, etc.)')
+                          : null;
+                        if (isVertragsfrei && !grund) return;
+                        try {
+                          await axios.put(`/mitglieddetail/${mitglied.mitglied_id}`, {
+                            vertragsfrei: isVertragsfrei ? 1 : 0,
+                            vertragsfrei_grund: grund || null
+                          });
+                          setMitglied(prev => ({
+                            ...prev,
+                            vertragsfrei: isVertragsfrei ? 1 : 0,
+                            vertragsfrei_grund: grund || null
+                          }));
+                        } catch (error) {
+                          console.error('Fehler beim Aktualisieren:', error);
+                        }
+                      }}
+                    >
+                      {mitglied?.vertragsfrei ? '✓ Vertragsfrei' : 'Vertragsfrei stellen'}
+                    </button>
+                    <button className="vtr-btn-new" onClick={() => setShowNewVertrag(true)}>
+                      + Neuer Vertrag
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* 10ER-KARTEN VERWALTUNG */}
+              {/* ── Vertragsfrei Hinweis ── */}
+              {isAdmin && !!mitglied?.vertragsfrei && !!mitglied?.vertragsfrei_grund && (
+                <div className="vtr-freistell-box">
+                  <div className="vtr-freistell-label">Beitrags- und vertragsfreies Mitglied</div>
+                  <div className="vtr-freistell-grund">Grund: {mitglied.vertragsfrei_grund}</div>
+                </div>
+              )}
+
+              {/* ── Contract list ── */}
+              {verträge.length > 0 ? (
+                <div className="vtr-grid">
+                  {verträge.map(vertrag => {
+                    const statusKey = vertrag.geloescht ? 'geloescht' : vertrag.status;
+                    const statusLabel = vertrag.geloescht ? 'Gelöscht' :
+                                        vertrag.status === 'aktiv'      ? 'Aktiv' :
+                                        vertrag.status === 'gekuendigt' ? 'Gekündigt' :
+                                        vertrag.status === 'ruhepause'  ? 'Ruhepause' : 'Beendet';
+                    const zahlart = vertrag.payment_method === 'direct_debit'  ? 'Lastschrift' :
+                                    vertrag.payment_method === 'bank_transfer' ? 'Überweisung' :
+                                    vertrag.payment_method === 'cash'          ? 'Bar' :
+                                    vertrag.payment_method || '—';
+                    return (
+                      <div key={vertrag.id} className={`vtr-card vtr-card--${statusKey}`}>
+
+                        {/* Card header */}
+                        <div className="vtr-card-head">
+                          <div className="vtr-card-head-left">
+                            <div className="vtr-card-nr">Vertrag #{vertrag.personenVertragNr ?? vertrag.id}</div>
+                            <div className="vtr-card-date">
+                              Erstellt {new Date(vertrag.created_at || vertrag.vertragsbeginn).toLocaleDateString('de-DE')}
+                            </div>
+                          </div>
+                          <div className={`vtr-status-badge vtr-status-badge--${statusKey}`}>{statusLabel}</div>
+                        </div>
+
+                        {/* Info grid */}
+                        <div className="vtr-info">
+                          <div className="vtr-kv">
+                            <div className="vtr-kv-label">Tarif</div>
+                            <div className="vtr-kv-value">
+                              {vertrag.tarif_name || '—'}
+                              {vertrag.monatsbeitrag && (
+                                <div className="vtr-kv-price">{parseFloat(vertrag.monatsbeitrag).toFixed(2)} €/Monat</div>
+                              )}
+                            </div>
+                          </div>
+                          {vertrag.neuer_monatsbeitrag && vertrag.neuer_beitrag_ab && (
+                            <div className="vtr-kv vtr-kv--warn">
+                              <div className="vtr-kv-label">Erhöhung</div>
+                              <div className="vtr-kv-value">
+                                {parseFloat(vertrag.neuer_monatsbeitrag).toFixed(2)} €/Monat
+                                <div className="vtr-kv-sub">ab {new Date(vertrag.neuer_beitrag_ab).toLocaleDateString('de-DE')}</div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="vtr-kv">
+                            <div className="vtr-kv-label">Laufzeit</div>
+                            <div className="vtr-kv-value">
+                              {vertrag.vertragsbeginn && vertrag.vertragsende
+                                ? `${new Date(vertrag.vertragsbeginn).toLocaleDateString('de-DE')} – ${new Date(vertrag.vertragsende).toLocaleDateString('de-DE')}`
+                                : '—'}
+                            </div>
+                          </div>
+                          <div className="vtr-kv">
+                            <div className="vtr-kv-label">Zahlung</div>
+                            <div className="vtr-kv-value">
+                              {vertrag.billing_cycle ? translateBillingCycle(vertrag.billing_cycle) : '—'}
+                            </div>
+                          </div>
+                          <div className="vtr-kv">
+                            <div className="vtr-kv-label">Zahlart</div>
+                            <div className="vtr-kv-value">{zahlart}</div>
+                          </div>
+                          {vertrag.aufnahmegebuehr_cents > 0 && (
+                            <div className="vtr-kv">
+                              <div className="vtr-kv-label">Aufnahme</div>
+                              <div className="vtr-kv-value">{(vertrag.aufnahmegebuehr_cents / 100).toFixed(2)} €</div>
+                            </div>
+                          )}
+                          {vertrag.kuendigungsfrist_monate && (
+                            <div className="vtr-kv">
+                              <div className="vtr-kv-label">Kündigung</div>
+                              <div className="vtr-kv-value">
+                                {vertrag.kuendigungsfrist_monate} {vertrag.kuendigungsfrist_monate === 1 ? 'Monat' : 'Monate'} Frist
+                              </div>
+                            </div>
+                          )}
+                          {vertrag.mindestlaufzeit_monate && (
+                            <div className="vtr-kv">
+                              <div className="vtr-kv-label">Mindestlaufzeit</div>
+                              <div className="vtr-kv-value">
+                                {vertrag.mindestlaufzeit_monate} {vertrag.mindestlaufzeit_monate === 1 ? 'Monat' : 'Monate'}
+                              </div>
+                            </div>
+                          )}
+                          {vertrag.kuendigung_eingegangen && (
+                            <div className="vtr-kv vtr-kv--red">
+                              <div className="vtr-kv-label">Kündigung eingeg.</div>
+                              <div className="vtr-kv-value">
+                                {new Date(vertrag.kuendigung_eingegangen).toLocaleDateString('de-DE')}
+                              </div>
+                            </div>
+                          )}
+                          {vertrag.status === 'ruhepause' && vertrag.ruhepause_von && vertrag.ruhepause_bis && (
+                            <div className="vtr-kv vtr-kv--gold">
+                              <div className="vtr-kv-label">Ruhepause</div>
+                              <div className="vtr-kv-value">
+                                {new Date(vertrag.ruhepause_von).toLocaleDateString('de-DE')} – {new Date(vertrag.ruhepause_bis).toLocaleDateString('de-DE')}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Payment mini-summary */}
+                        {finanzDaten.length > 0 && (() => {
+                          const heute = new Date(); heute.setHours(23, 59, 59, 999);
+                          const fBezahlt = finanzDaten.filter(f => f.bezahlt === 1 || f.bezahlt === true || f.bezahlt === '1');
+                          const fOffen   = finanzDaten.filter(f => !(f.bezahlt === 1 || f.bezahlt === true || f.bezahlt === '1') && new Date(f.zahlungsdatum || f.datum || 0) <= heute);
+                          const sumBez   = fBezahlt.reduce((s, f) => s + parseFloat(f.betrag || 0), 0);
+                          const sumOff   = fOffen.reduce((s, f) => s + parseFloat(f.betrag || 0), 0);
+                          const letzte   = fBezahlt.map(f => ({ ...f, _d: new Date(f.zahlungsdatum || f.datum) })).sort((a, b) => b._d - a._d)[0];
+                          return (
+                            <div className="vtr-summary">
+                              <div className="vtr-summary-title">Beitragsübersicht</div>
+                              <div className="vtr-summary-grid">
+                                <div className="vtr-summary-item">
+                                  <div className="vtr-summary-label">Bezahlt</div>
+                                  <div className="vtr-summary-value vtr-green">{fBezahlt.length}× · {sumBez.toFixed(2)} €</div>
+                                </div>
+                                <div className="vtr-summary-item">
+                                  <div className="vtr-summary-label">Überfällig</div>
+                                  <div className={`vtr-summary-value${fOffen.length > 0 ? ' vtr-red' : ''}`}>
+                                    {fOffen.length > 0 ? `${fOffen.length}× · ${sumOff.toFixed(2)} €` : '–'}
+                                  </div>
+                                </div>
+                                {letzte && (
+                                  <div className="vtr-summary-item">
+                                    <div className="vtr-summary-label">Letzte Zahlung</div>
+                                    <div className="vtr-summary-value">{letzte._d.toLocaleDateString('de-DE')}</div>
+                                  </div>
+                                )}
+                              </div>
+                              <button
+                                className="vtr-summary-link"
+                                onClick={() => { setActiveTab('finanzen'); setFinanceSubTab('beitraege'); }}
+                              >
+                                Vollständige Beitragsübersicht →
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                        {/* Actions */}
+                        <div className="vtr-actions">
+                          <button className="vtr-act vtr-act--pdf"
+                            onClick={() => { setSelectedVertrag(vertrag); setShowVertragDetails(true); }}>
+                            PDF
+                          </button>
+                          <button className="vtr-act vtr-act--details"
+                            onClick={() => { setSelectedVertrag(vertrag); setShowStructuredDetails(true); }}>
+                            Details
+                          </button>
+                          {isAdmin && (
+                            <>
+                              <button className="vtr-act vtr-act--edit"
+                                onClick={() => setEditingVertrag(vertrag)}>
+                                Bearbeiten
+                              </button>
+                              {vertrag.status === 'aktiv' && (
+                                <>
+                                  <button className="vtr-act vtr-act--pause"
+                                    onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}>
+                                    Ruhepause
+                                  </button>
+                                  <button className="vtr-act vtr-act--cancel"
+                                    onClick={() => handleVertragAction(vertrag.id, 'kündigen')}>
+                                    Kündigen
+                                  </button>
+                                </>
+                              )}
+                              {vertrag.status === 'ruhepause' && (
+                                <button className="vtr-act vtr-act--activate"
+                                  onClick={() => handleVertragAction(vertrag.id, 'reaktivieren')}>
+                                  Reaktivieren
+                                </button>
+                              )}
+                              {vertrag.status === 'gekuendigt' && !vertrag.geloescht && (
+                                <button className="vtr-act vtr-act--activate"
+                                  onClick={() => handleKündigungAufheben(vertrag)}>
+                                  Kündigung aufheben
+                                </button>
+                              )}
+                              {!vertrag.geloescht && (
+                                <button className="vtr-act vtr-act--delete"
+                                  onClick={() => handleVertragLöschen(vertrag)}>
+                                  Löschen
+                                </button>
+                              )}
+                            </>
+                          )}
+                          {!isAdmin && vertrag.status === 'aktiv' && (
+                            <button className="vtr-act vtr-act--pause"
+                              onClick={() => handleVertragAction(vertrag.id, 'ruhepause')}>
+                              Ruhepause beantragen
+                            </button>
+                          )}
+                        </div>
+
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="vtr-empty">
+                  <div className="vtr-empty-icon">📋</div>
+                  <div className="vtr-empty-text">Keine Verträge vorhanden</div>
+                  {isAdmin && (
+                    <button className="vtr-btn-new" onClick={() => setShowNewVertrag(true)}>
+                      + Ersten Vertrag erstellen
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 10er-Karten */}
               <ZehnerkartenVerwaltung
                 mitgliedId={mitglied?.mitglied_id}
                 mitglied={mitglied}
                 isAdmin={isAdmin}
               />
+
             </div>
           )}
 
           {activeTab === "anwesenheit" && (
-            <div className="anwesenheit-container">
-              {/* Hauptstatistiken - Moderne Karten */}
-              <div className="anwesenheit-stats-grid">
-                <div className="stat-card primary">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-content">
-                    <div className="stat-label">Gesamte Anwesenheiten</div>
-                    <div className="stat-value">{statistikDaten.totalAnwesenheiten || 0}</div>
-                  </div>
+            <div className="anw-container">
+
+              {/* ── Zeile 1: 4 Hauptkarten ── */}
+              <div className="anw-stats-row">
+                <div className="field-group card anw-stat-card">
+                  <div className="anw-stat-icon">🎯</div>
+                  <div className="anw-stat-label">Trainings gesamt</div>
+                  <div className="anw-stat-number">{statistikDaten.totalAnwesenheiten || 0}</div>
+                  <div className="anw-stat-sub">dokumentierte Trainings</div>
                 </div>
-                
-                <div className="stat-card secondary">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-content">
-                    <div className="stat-label">Mögliche Trainings</div>
-                    <div className="stat-value">{statistikDaten.totalMöglicheAnwesenheiten || 0}</div>
-                  </div>
+
+                <div className="field-group card anw-stat-card">
+                  <div className="anw-stat-icon">📆</div>
+                  <div className="anw-stat-label">Diesen Monat</div>
+                  <div className="anw-stat-number anw-good">{statistikDaten.thisMonthAttendances || 0}</div>
+                  <div className="anw-stat-sub">Trainings</div>
                 </div>
-                
-                <div className="stat-card accent">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-content">
-                    <div className="stat-label">Anwesenheitsquote</div>
-                    <div className={`stat-value ${statistikDaten.anwesenheitsquote >= 75 ? 'success' : statistikDaten.anwesenheitsquote >= 50 ? 'warning' : 'error'}`}>
-                      {statistikDaten.anwesenheitsquote || 0}%
-                    </div>
+
+                <div className="field-group card anw-stat-card">
+                  <div className="anw-stat-icon">🔥</div>
+                  <div className="anw-stat-label">Aktueller Streak</div>
+                  <div className={`anw-stat-number ${(statistikDaten.currentStreak || 0) >= 5 ? 'anw-good' : ''}`}>
+                    {statistikDaten.currentStreak || 0}
                   </div>
+                  <div className="anw-stat-sub">Trainings in Folge</div>
                 </div>
-                
-                <div className="stat-card info">
-                  <div className="stat-icon">📊</div>
-                  <div className="stat-content">
-                    <div className="stat-label">Letzte Anwesenheit</div>
-                    <div className="stat-value">
-                      {statistikDaten.letzteAnwesenheit ?
-                        new Date(statistikDaten.letzteAnwesenheit).toLocaleDateString("de-DE") :
-                        "-"}
-                    </div>
+
+                <div className="field-group card anw-stat-card">
+                  <div className="anw-stat-icon">📅</div>
+                  <div className="anw-stat-label">Letzte Anwesenheit</div>
+                  <div className="anw-stat-number anw-stat-date">
+                    {statistikDaten.letzteAnwesenheit
+                      ? new Date(statistikDaten.letzteAnwesenheit).toLocaleDateString("de-DE", { day: '2-digit', month: 'short' })
+                      : '—'}
+                  </div>
+                  <div className="anw-stat-sub">
+                    {statistikDaten.letzteAnwesenheit
+                      ? new Date(statistikDaten.letzteAnwesenheit).getFullYear()
+                      : 'Noch keine Daten'}
                   </div>
                 </div>
               </div>
 
-              {/* Detail-Metriken - Kompakte Zeilen */}
-              <div className="anwesenheit-details">
-                <div className="detail-row">
-                  <div className="detail-item">
-                    <span className="detail-label">Diesen Monat</span>
-                    <span className="detail-value highlight">{statistikDaten.thisMonthAttendances || 0}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">→ Pro Monat (6M)</span>
-                    <span className="detail-value">{statistikDaten.avgPerMonth || 0}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Letzte Woche</span>
-                    <span className="detail-value">{statistikDaten.lastWeekAttendances || 0}</span>
-                  </div>
-                </div>
-
-                <div className="detail-row">
-                  <div className="detail-item streak">
-                    <span className="detail-label">🔥 Streak</span>
-                    <span className={`detail-value ${statistikDaten.currentStreak >= 5 ? 'excellent' : statistikDaten.currentStreak >= 3 ? 'good' : 'normal'}`}>
-                      {statistikDaten.currentStreak || 0} Trainings in Folge
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">📈 Konsistenz</span>
-                    <span className="detail-value">{statistikDaten.consecutiveMonths || 0} Monate</span>
-                  </div>
-                  {statistikDaten.bestMonth && (
-                    <div className="detail-item best">
-                      <span className="detail-label">🏆 Bester Monat</span>
-                      <span className="detail-value excellent">
-                        {statistikDaten.bestMonth.month} ({statistikDaten.bestMonth.count})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Monatliche Übersicht */}
-              {statistikDaten.monthlyStats && statistikDaten.monthlyStats.length > 0 && (
-                <div className="monthly-overview">
-                  <h3>Monatliche Übersicht</h3>
-                  <div className="monthly-grid">
-                    {statistikDaten.monthlyStats.map((monthStat, index) => (
-                      <div key={index} className={`month-item ${monthStat.count === 0 ? 'no-data' : ''}`}>
-                        <span className="month-name">{monthStat.month}</span>
-                        <span className={`month-count ${monthStat.count >= 8 ? 'excellent' : monthStat.count >= 4 ? 'good' : monthStat.count > 0 ? 'ok' : 'poor'}`}>
-                          {monthStat.count}
-                        </span>
+              {/* ── Zeile 2: Quote pro Stil ── */}
+              {stilStatistiken.length > 0 && (
+                <div className="anw-quote-row">
+                  {stilStatistiken.map(s => {
+                    const pct = s.quote ?? 0;
+                    const color = pct >= 70 ? '#4ade80' : pct >= 40 ? '#FFD700' : '#f87171';
+                    return (
+                      <div key={s.stil_id} className="field-group card anw-quote-card">
+                        <div className="anw-quote-stil">{s.stil_name}</div>
+                        <div className="anw-quote-pct" style={{ color }}>
+                          {s.quote !== null ? `${s.quote}%` : '—'}
+                        </div>
+                        <div className="anw-quote-bar-wrap">
+                          <div className="anw-quote-bar-fill" style={{ width: `${Math.min(pct, 100)}%`, background: color }} />
+                        </div>
+                        <div className="anw-quote-detail">
+                          {s.anwesend} von {s.moeglich} möglichen Trainings
+                        </div>
+                        {s.eintrittsdatum && (
+                          <div className="anw-quote-since">
+                            seit {new Date(s.eintrittsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
 
-              {/* Anwesenheitsliste */}
-              <div className="anwesenheit-liste">
-                <h3>Letzte Anwesenheiten</h3>
-                <div className="attendance-grid">
-                  {anwesenheitsDaten.filter(a => a.anwesend).length > 0 ? (
-                    anwesenheitsDaten
-                      .filter(a => a.anwesend)
-                      .sort((a, b) => new Date(b.datum) - new Date(a.datum))
-                      .slice(0, 24)
-                      .map((attendance, index) => (
-                        <div key={index} className="attendance-item">
-                          <span className="attendance-date">
-                            {new Date(attendance.datum).toLocaleDateString("de-DE")}
-                          </span>
-                        </div>
-                      ))
-                  ) : (
-                    <div className="no-data-message">
-                      <span>Keine Anwesenheitsdaten verfügbar</span>
+              {/* ── Zeile 3: Chart + Liste nebeneinander ── */}
+              <div className="anw-bottom-row">
+
+                {/* Balkenchart */}
+                {statistikDaten.monthlyStats?.length > 0 && (() => {
+                  const maxCount = Math.max(...statistikDaten.monthlyStats.map(m => m.count), 1);
+                  return (
+                    <div className="field-group card anw-monthly-card">
+                      <h3 className="anw-section-title">Monatliche Übersicht</h3>
+                      <div className="anw-monthly-grid">
+                        {statistikDaten.monthlyStats.map((m, i) => (
+                          <div key={i} className="anw-month-col">
+                            <div className="anw-month-bar-wrap">
+                              <div
+                                className={`anw-month-bar ${m.count >= 8 ? 'anw-bar-great' : m.count >= 4 ? 'anw-bar-good' : m.count > 0 ? 'anw-bar-ok' : 'anw-bar-none'}`}
+                                style={{ height: `${Math.max((m.count / maxCount) * 100, m.count > 0 ? 10 : 3)}%` }}
+                              />
+                            </div>
+                            <span className="anw-month-count">{m.count > 0 ? m.count : ''}</span>
+                            <span className="anw-month-name">{m.month}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
+                  );
+                })()}
+
+                {/* Letzte Anwesenheiten */}
+                <div className="field-group card anw-list-card">
+                  <h3 className="anw-section-title">Letzte Anwesenheiten</h3>
+                  {anwesenheitsDaten.filter(a => a.anwesend).length > 0 ? (
+                    <div className="anw-chips">
+                      {anwesenheitsDaten
+                        .filter(a => a.anwesend)
+                        .sort((a, b) => new Date(b.datum) - new Date(a.datum))
+                        .slice(0, 30)
+                        .map((a, i) => {
+                          const d = new Date(a.datum);
+                          const isRecent = (Date.now() - d) < 14 * 24 * 60 * 60 * 1000;
+                          return (
+                            <span key={i} className={`anw-chip${isRecent ? ' anw-chip--recent' : ''}`}
+                              title={d.toLocaleDateString("de-DE", { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}>
+                              {d.toLocaleDateString("de-DE", { day: '2-digit', month: '2-digit' })}
+                            </span>
+                          );
+                        })}
+                    </div>
+                  ) : (
+                    <p className="anw-empty">Noch keine Anwesenheitsdaten verfügbar.</p>
                   )}
                 </div>
+
               </div>
+
             </div>
           )}
 
@@ -4655,16 +4506,27 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 >
                   🏦 Bank & SEPA
                 </button>
+                <button
+                  className={`finance-sub-tab-btn ${financeSubTab === "einkäufe" ? "active" : ""}`}
+                  onClick={() => setFinanceSubTab("einkäufe")}
+                >
+                  🛒 Einkäufe
+                </button>
               </div>
 
               {financeSubTab === "finanzübersicht" && (
                 <div className="finanzübersicht-sub-tab-content">
                   {(() => {
                     // Berechnungen für die Finanzübersicht
+                    const _heute = new Date(); _heute.setHours(23, 59, 59, 999);
                     const bezahlteZahlungen = finanzDaten.filter(f => f.bezahlt);
-                    const offeneZahlungen = finanzDaten.filter(f => !f.bezahlt);
+                    // Fällige (vergangene) offene Zahlungen = echte Forderungen
+                    const offeneZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || 0) <= _heute);
+                    // Geplante (zukünftige) Zahlungen
+                    const geplanteZahlungen = finanzDaten.filter(f => !f.bezahlt && new Date(f.zahlungsdatum || f.datum || '9999-12-31') > _heute);
                     const gesamtBezahlt = bezahlteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
                     const gesamtOffen = offeneZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
+                    const gesamtGeplant = geplanteZahlungen.reduce((sum, f) => sum + parseFloat(f.betrag || 0), 0);
                     const gesamtBetrag = gesamtBezahlt + gesamtOffen;
                     const durchschnittBeitrag = finanzDaten.length > 0 ? gesamtBetrag / finanzDaten.length : 0;
                     const aufnahmegebuehren = verträge && verträge.length > 0 
@@ -4711,20 +4573,39 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       <div className="mds2-flex-col-15">
                         {/* KPI-Karten */}
                         <div className="mds-kpi-grid">
-                          <div className="finance-kpi-card mds-kpi-card-danger">
+                          <div className="finance-kpi-card mds-kpi-card-success">
                             <div className="mds-flex-row-mb">
-                              <span className="mds2-fs-2">⚠️</span>
+                              <span className="mds2-fs-2">📅</span>
                               <h4 className="mds2-label-bold">
-                                Offene Beträge
+                                Geplante Einzüge
                               </h4>
                             </div>
-                            <div className="mds-kpi-value-danger">
-                              {gesamtOffen.toFixed(2)} €
+                            <div className="mds-kpi-value-success">
+                              {gesamtGeplant.toFixed(2)} €
                             </div>
                             <div className="mds-text-secondary-sm">
-                              {offeneZahlungen.length} ausstehende Beiträge
+                              {geplanteZahlungen.length} kommende Beiträge
                             </div>
                           </div>
+
+                          {(gesamtOffen > 0 || (ruecklastschriftenStats?.offen_anzahl > 0)) && (
+                            <div className="finance-kpi-card mds-kpi-card-danger">
+                              <div className="mds-flex-row-mb">
+                                <span className="mds2-fs-2">⚠️</span>
+                                <h4 className="mds2-label-bold">
+                                  Offene Forderungen
+                                </h4>
+                              </div>
+                              <div className="mds-kpi-value-danger">
+                                {(gesamtOffen + parseFloat(ruecklastschriftenStats?.offen_betrag || 0)).toFixed(2)} €
+                              </div>
+                              <div className="mds-text-secondary-sm">
+                                {offeneZahlungen.length > 0 && <span>{offeneZahlungen.length} überfällig</span>}
+                                {offeneZahlungen.length > 0 && ruecklastschriftenStats?.offen_anzahl > 0 && <span> · </span>}
+                                {ruecklastschriftenStats?.offen_anzahl > 0 && <span style={{ color: '#fca5a5' }}>{ruecklastschriftenStats.offen_anzahl} Rücklastschrift{ruecklastschriftenStats.offen_anzahl !== 1 ? 'en' : ''}</span>}
+                              </div>
+                            </div>
+                          )}
 
                           <div className="finance-kpi-card mds-kpi-card-primary">
                             <div className="mds-flex-row-mb">
@@ -4789,6 +4670,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                         {/* Detaillierte Statistiken */}
                         <div className="mds-finance-stats-grid">
+                          <MitgliedVerkaufsCard mitgliedId={id} activeDojo={activeDojo} />
                           <div className="field-group card">
                             <h3 className="mds-finance-section-title">
                               Zahlungsinformationen
@@ -4833,76 +4715,125 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
               )}
 
-              {financeSubTab === "zahlungshistorie" && (
-                <div className="zahlungshistorie-sub-tab-content">
-                  <div className="field-group card mds2-w-full">
-                    <h3>Zahlungshistorie</h3>
-                    {finanzDaten.length > 0 ? (
-                      <div className="zahlungshistorie-table-wrapper">
-                        <table className="zahlungshistorie-table">
-                          <thead>
-                            <tr>
-                              <th>Zahlungsdatum</th>
-                              <th>Fälligkeitsdatum</th>
-                              <th>Betrag</th>
-                              <th>Zahlungsart</th>
-                              <th>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {finanzDaten
-                              .sort((a, b) => {
-                                const dateA = new Date(b.zahlungsdatum || b.datum);
-                                const dateB = new Date(a.zahlungsdatum || a.datum);
-                                return dateA - dateB;
-                              })
-                              .map((payment, index) => {
-                                // Gleiche Logik wie in calculatePeriodSums für bezahlt-Status
-                                const isPaid = payment.bezahlt === true || payment.bezahlt === 1 || payment.bezahlt === "1" || String(payment.bezahlt) === "1";
-                                
-                                return (
-                                  <tr key={payment.beitrag_id || index} className={isPaid ? 'paid-row' : 'unpaid-row'}>
-                                    <td>
-                                      {payment.zahlungsdatum 
-                                        ? new Date(payment.zahlungsdatum).toLocaleDateString("de-DE")
-                                        : "-"}
-                                    </td>
-                                    <td>
-                                      {payment.datum
-                                        ? new Date(payment.datum).toLocaleDateString("de-DE")
-                                        : payment.zahlungsdatum
-                                          ? new Date(payment.zahlungsdatum).toLocaleDateString("de-DE")
-                                          : "-"}
-                                    </td>
-                                    <td className="betrag">
-                                      {payment.betrag ? `${parseFloat(payment.betrag).toFixed(2)} €` : "0,00 €"}
-                                    </td>
-                                    <td>
-                                      {payment.zahlungsart?.toLowerCase() === 'überweisung' || payment.zahlungsart?.toLowerCase() === 'Überweisung' ? '💳 Überweisung' :
-                                       payment.zahlungsart?.toLowerCase() === 'lastschrift' || payment.zahlungsart?.toLowerCase() === 'direct_debit' ? '🏦 Lastschrift' :
-                                       payment.zahlungsart?.toLowerCase() === 'bar' ? '💵 Bar' :
-                                       payment.zahlungsart || 'Unbekannt'}
-                                    </td>
-                                    <td>
-                                      <span className={`status-badge ${isPaid ? 'status-paid' : 'status-unpaid'}`}>
-                                        {isPaid ? '✅ Bezahlt' : '⏳ Ausstehend'}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                          </tbody>
-                        </table>
+              {financeSubTab === "zahlungshistorie" && (() => {
+                const isPaid = p => p.bezahlt === true || p.bezahlt === 1 || p.bezahlt === "1" || String(p.bezahlt) === "1";
+                const _zhpHeute = new Date(); _zhpHeute.setHours(23, 59, 59, 999);
+                const paidList = finanzDaten.filter(isPaid);
+                const offenList = finanzDaten.filter(p => !isPaid(p));
+                const ueberfaelligList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || 0) <= _zhpHeute);
+                const geplanteList = offenList.filter(p => new Date(p.zahlungsdatum || p.datum || '9999-12-31') > _zhpHeute);
+                const totalBezahlt    = paidList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                const totalOffen      = offenList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                const totalUeberfaellig = ueberfaelligList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                const totalGeplant    = geplanteList.reduce((s, p) => s + parseFloat(p.betrag || 0), 0);
+                const letzteZahlung = [...paidList].sort((a,b) => new Date(b.zahlungsdatum) - new Date(a.zahlungsdatum))[0];
+                const sorted = [...finanzDaten].sort((a,b) => new Date(b.zahlungsdatum||b.datum) - new Date(a.zahlungsdatum||a.datum));
+                const fmt = n => parseFloat(n||0).toLocaleString('de-DE', {minimumFractionDigits:2});
+                const uniqueMonths = new Set(paidList.map(p => {
+                  const d = new Date(p.zahlungsdatum||p.datum); return `${d.getFullYear()}-${d.getMonth()}`;
+                })).size;
+                const avgMonth = uniqueMonths > 0 ? totalBezahlt / uniqueMonths : 0;
+                const methodStr = art => {
+                  const a = (art||'').toLowerCase();
+                  if (a.includes('lastschrift')||a.includes('direct')) return 'Lastschrift';
+                  if (a.includes('überweisung')) return 'Überweisung';
+                  if (a.includes('bar')) return 'Bar';
+                  if (a.includes('paypal')) return 'PayPal';
+                  return art || '—';
+                };
+                const byYear = {};
+                sorted.forEach(p => {
+                  const y = String(new Date(p.zahlungsdatum||p.datum||Date.now()).getFullYear());
+                  (byYear[y] = byYear[y]||[]).push(p);
+                });
+                const toggleYear = y => setOpenYears(prev => {
+                  const n = new Set(prev); n.has(y) ? n.delete(y) : n.add(y); return n;
+                });
+
+                return (
+                  <div className="zhp-wrap">
+
+                    {/* ── Linke Spalte: Statistik-Kacheln ── */}
+                    <div className="zhp-left">
+                      <div className="zhp-tile">
+                        <div className="zhp-tile-label">Gesamt bezahlt</div>
+                        <div className="zhp-tile-value zhp-green">{fmt(totalBezahlt)} €</div>
+                        <div className="zhp-tile-sub">{paidList.length} Zahlungen</div>
                       </div>
-                    ) : (
-                      <div className="no-data-message">
-                        <p>ℹ️ Keine Zahlungshistorie verfügbar</p>
-                        <small>Es wurden noch keine Zahlungen erfasst.</small>
+                      <div className="zhp-tile">
+                        <div className="zhp-tile-label">Geplante Einzüge</div>
+                        <div className={`zhp-tile-value ${totalGeplant > 0 ? 'zhp-green' : 'zhp-dim'}`}>{fmt(totalGeplant)} €</div>
+                        <div className="zhp-tile-sub">{geplanteList.length > 0 ? `${geplanteList.length} kommende` : '–'}</div>
                       </div>
-                    )}
+                      {totalUeberfaellig > 0 && (
+                        <div className="zhp-tile">
+                          <div className="zhp-tile-label">Überfällig</div>
+                          <div className="zhp-tile-value zhp-red">{fmt(totalUeberfaellig)} €</div>
+                          <div className="zhp-tile-sub">{ueberfaelligList.length} ausstehend</div>
+                        </div>
+                      )}
+                      <div className="zhp-tile">
+                        <div className="zhp-tile-label">Ø pro Monat</div>
+                        <div className="zhp-tile-value zhp-gold">{fmt(avgMonth)} €</div>
+                        <div className="zhp-tile-sub">über {uniqueMonths} Monate</div>
+                      </div>
+                      <div className="zhp-tile">
+                        <div className="zhp-tile-label">Letzte Zahlung</div>
+                        <div className="zhp-tile-value zhp-dim-lg">
+                          {letzteZahlung ? new Date(letzteZahlung.zahlungsdatum).toLocaleDateString('de-DE', {day:'2-digit', month:'short', year:'numeric'}) : '—'}
+                        </div>
+                        <div className="zhp-tile-sub">{letzteZahlung ? `${fmt(letzteZahlung.betrag)} €` : ''}</div>
+                      </div>
+                    </div>
+
+                    {/* ── Rechte Spalte: Aufklappbare Jahresliste ── */}
+                    <div className="zhp-right">
+                      {sorted.length === 0 ? (
+                        <div className="zhp-empty">Keine Zahlungen erfasst</div>
+                      ) : Object.keys(byYear).sort((a,b) => b-a).map(year => {
+                        const isOpen = openYears.has(year);
+                        const yearSum = byYear[year].filter(isPaid).reduce((s,p) => s+parseFloat(p.betrag||0), 0);
+                        return (
+                          <div key={year} className="zhp-year">
+
+                            {/* Jahr-Header: klickbar */}
+                            <button className="zhp-year-btn" onClick={() => toggleYear(year)}>
+                              <div className="zhp-year-left">
+                                <div className="zhp-year-chevron">{isOpen ? '▾' : '▸'}</div>
+                                <div className="zhp-year-name">{year}</div>
+                                <div className="zhp-year-count">{byYear[year].length} Einträge</div>
+                              </div>
+                              <div className="zhp-year-sum">{fmt(yearSum)} €</div>
+                            </button>
+
+                            {/* Einträge */}
+                            {isOpen && byYear[year].map((p, i) => {
+                              const paid = isPaid(p);
+                              const refDate = p.zahlungsdatum || p.datum;
+                              const d = refDate ? new Date(refDate) : null;
+                              const isFuture = !paid && d && d > _zhpHeute;
+                              return (
+                                <div key={p.beitrag_id||i} className="zhp-entry">
+                                  <div className={`zhp-dot ${paid ? 'zhp-dot-paid' : isFuture ? 'zhp-dot-future' : 'zhp-dot-open'}`} />
+                                  <div className="zhp-entry-date">
+                                    {d ? d.toLocaleDateString('de-DE', {day:'2-digit', month:'short'}) : '—'}
+                                  </div>
+                                  <div className="zhp-entry-method">{methodStr(p.zahlungsart)}</div>
+                                  <div className="zhp-entry-amount">{fmt(p.betrag)} €</div>
+                                  <div className={`zhp-entry-badge ${paid ? 'zhp-badge-paid' : isFuture ? 'zhp-badge-future' : 'zhp-badge-open'}`}>
+                                    {paid ? 'Bezahlt' : isFuture ? 'Geplant' : 'Offen'}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {financeSubTab === "beitraege" && (
                 <div className="beitraege-sub-tab-content">
@@ -5069,21 +5000,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               
                               // Prüfe ob bereits ein Beitrag für diesen Monat existiert
                               const existiertBereits = finanzDaten.some(f => {
-                                // Nur zahlungsdatum prüfen (einziges Datumsfeld in beitraege-Tabelle)
-                                // Ignoriere Artikel-Verkäufe (haben magicline_description)
-                                if (f.magicline_description) {
-                                  return false; // Artikel-Verkäufe nicht als Monatsbeitrag zählen
-                                }
-
-                                const fDatumZahlung = f.zahlungsdatum ? new Date(f.zahlungsdatum) : null;
-
-                                if (!fDatumZahlung || isNaN(fDatumZahlung.getTime())) {
-                                  return false;
-                                }
-
-                                // Prüfe ob im gleichen Monat/Jahr
-                                return fDatumZahlung.getMonth() === aktuellerMonat &&
-                                       fDatumZahlung.getFullYear() === aktuellesJahr;
+                                if (f.magicline_description) return false;
+                                // Datum als String auslesen (vermeidet UTC-Timezone-Bug bei new Date('YYYY-MM-DD'))
+                                const dateStr = f.zahlungsdatum ? f.zahlungsdatum.toString().substring(0, 10) : null;
+                                if (!dateStr || dateStr.length < 7) return false;
+                                const fJahr = parseInt(dateStr.substring(0, 4), 10);
+                                const fMonat = parseInt(dateStr.substring(5, 7), 10) - 1; // 0-indexed
+                                return fMonat === aktuellerMonat && fJahr === aktuellesJahr;
                               });
                               
                               if (!existiertBereits) {
@@ -5142,9 +5065,21 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         };
                         
                         // Kombiniere vorhandene und generierte Beiträge
-                        const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
+                        // Wichtig: lokale Date-Methoden verwenden, da mysql2 DATE-Spalten als
+                        // JS-Date (lokale Mitternacht CET) zurückgibt, die JSON-serialisiert als
+                        // UTC-String erscheinen → substring(0,7) gibt falschen Monat (UTC-1h)
+                        const _echteMonateSet = new Set(finanzDaten.map(f => {
+                          if (!f.zahlungsdatum) return null;
+                          const d = new Date(f.zahlungsdatum);
+                          if (isNaN(d.getTime())) return null;
+                          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        }).filter(Boolean));
+                        const zukuenftigeBeitraege = generateZukuenftigeBeitraege().filter(vb => {
+                          const s = (vb.datum || '').substring(0, 7); // "YYYY-MM"
+                          return !_echteMonateSet.has(s);
+                        });
                         const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
-                        
+
                         // Sortiere nach Datum (neueste zuerst)
                         alleBeitraege.sort((a, b) => {
                           // Generierte Beiträge haben 'datum', echte Beiträge haben 'zahlungsdatum'
@@ -5157,433 +5092,385 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         const periodKeys = Object.keys(grouped).sort().reverse();
                         
                         return (
-                          <>
-                            {/* Ansichtsfilter für Beiträge - außerhalb der Card */}
-                            <div className="beitraege-view-filter mds2-mb-1">
-                              <button
-                                className={`view-filter-btn ${beitraegeViewMode === "monat" ? "active" : ""}`}
-                                onClick={() => setBeiträgeViewMode("monat")}
-                              >
-                                📅 Monat
-                              </button>
-                              <button
-                                className={`view-filter-btn ${beitraegeViewMode === "quartal" ? "active" : ""}`}
-                                onClick={() => setBeiträgeViewMode("quartal")}
-                              >
-                                📊 Quartal
-                              </button>
-                              <button
-                                className={`view-filter-btn ${beitraegeViewMode === "jahr" ? "active" : ""}`}
-                                onClick={() => setBeiträgeViewMode("jahr")}
-                              >
-                                📆 Jahr
-                              </button>
-                              <button
-                                className="view-filter-btn mds-nowrap"
-                                onClick={() => {
-                                  // Berechne periodKeys neu für den Button
-                                  const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
-                                  const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
-                                  const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
-                                  const periodKeys = Object.keys(grouped).sort().reverse();
+                          <div className="btr-wrap">
+                            {/* ── Stats ── */}
+                            {alleBeitraege.length > 0 && (() => {
+                              const _btrHeute = new Date(); _btrHeute.setHours(23, 59, 59, 999);
+                              const isPz = b => b.bezahlt === true || b.bezahlt === 1 || String(b.bezahlt) === '1';
+                              const totalAll   = alleBeitraege.reduce((s, b) => s + parseFloat(b.betrag || 0), 0);
+                              const totalPaid  = alleBeitraege.reduce((s, b) => isPz(b) ? s + parseFloat(b.betrag || 0) : s, 0);
+                              const totalUeberfaellig = alleBeitraege.reduce((s, b) => {
+                                if (isPz(b)) return s;
+                                const d = new Date(b.datum || b.zahlungsdatum || 0);
+                                return d <= _btrHeute ? s + parseFloat(b.betrag || 0) : s;
+                              }, 0);
+                              const totalGeplant = alleBeitraege.reduce((s, b) => {
+                                if (isPz(b)) return s;
+                                const d = new Date(b.datum || b.zahlungsdatum || '9999-12-31');
+                                return d > _btrHeute ? s + parseFloat(b.betrag || 0) : s;
+                              }, 0);
+                              return (
+                                <div className="btr-stats-row">
+                                  <div className="btr-stat">
+                                    <div className="btr-stat-label">Bezahlt</div>
+                                    <div className="btr-stat-value btr-green">{totalPaid.toFixed(2)} €</div>
+                                  </div>
+                                  <div className="btr-stat">
+                                    <div className="btr-stat-label">Geplante Einzüge</div>
+                                    <div className="btr-stat-value btr-green">{totalGeplant.toFixed(2)} €</div>
+                                  </div>
+                                  {totalUeberfaellig > 0 && (
+                                    <div className="btr-stat">
+                                      <div className="btr-stat-label">Überfällig</div>
+                                      <div className="btr-stat-value btr-red">{totalUeberfaellig.toFixed(2)} €</div>
+                                    </div>
+                                  )}
+                                  <div className="btr-stat">
+                                    <div className="btr-stat-label">Gesamt</div>
+                                    <div className="btr-stat-value">{totalAll.toFixed(2)} €</div>
+                                  </div>
+                                  <div className="btr-stat">
+                                    <div className="btr-stat-label">Einträge</div>
+                                    <div className="btr-stat-value">{alleBeitraege.length}</div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
-                                  const allCollapsed = periodKeys.length > 0 && periodKeys.every(key => collapsedPeriods[key] === true);
-                                  const newState = {};
-                                  periodKeys.forEach(key => {
-                                    newState[key] = !allCollapsed;
-                                  });
-                                  setCollapsedPeriods(newState);
+                            {/* ── Filter bar ── */}
+                            <div className="btr-filter-bar">
+                              <div className="btr-filter-group">
+                                {['monat', 'quartal', 'jahr'].map(mode => (
+                                  <button
+                                    key={mode}
+                                    className={`btr-filter-btn${beitraegeViewMode === mode ? ' btr-filter-btn--active' : ''}`}
+                                    onClick={() => setBeiträgeViewMode(mode)}
+                                  >
+                                    {mode === 'monat' ? 'Monat' : mode === 'quartal' ? 'Quartal' : 'Jahr'}
+                                  </button>
+                                ))}
+                              </div>
+                              <button
+                                className="btr-filter-btn btr-collapse-btn"
+                                onClick={() => {
+                                  const allCollapsed = periodKeys.length > 0 && periodKeys.every(k => collapsedPeriods[k] === true);
+                                  const s = {};
+                                  periodKeys.forEach(k => { s[k] = !allCollapsed; });
+                                  setCollapsedPeriods(s);
                                 }}
                               >
-                                {(() => {
-                                  const zukuenftigeBeitraege = generateZukuenftigeBeitraege();
-                                  const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
-                                  const grouped = groupBeiträge(alleBeitraege, beitraegeViewMode);
-                                  const periodKeys = Object.keys(grouped).sort().reverse();
-                                  const allCollapsed = periodKeys.length > 0 && periodKeys.every(key => collapsedPeriods[key] === true);
-                                  return allCollapsed ? '📂 Alle ausklappen' : '📁 Alle einklappen';
-                                })()}
+                                {periodKeys.length > 0 && periodKeys.every(k => collapsedPeriods[k] === true) ? '↕ Ausklappen' : '↕ Einklappen'}
                               </button>
                             </div>
 
-                            <div className="field-group card mds2-w-full">
-                              <h3>Beiträge & Zahlungen</h3>
-
-                              {/* Gruppierte Beiträge-Ansicht */}
+                            {/* ── List ── */}
+                            <div className="btr-list">
                               {alleBeitraege.length === 0 ? (
-                                <div className="no-data-message">
-                                  <p>📭 Keine Beiträge vorhanden</p>
-                                  <small>Es wurden noch keine Beiträge erfasst und es gibt keinen aktiven Vertrag.</small>
+                                <div className="btr-empty">
+                                  <div className="btr-empty-icon">📭</div>
+                                  <div>Keine Beiträge vorhanden</div>
+                                  <div className="btr-empty-sub">Noch keine Beiträge erfasst und kein aktiver Vertrag.</div>
                                 </div>
                               ) : (
-                                <div className="beitraege-grouped-view">
-                            {periodKeys.map(periodKey => {
-                              const beitraege = grouped[periodKey];
-                              const sums = calculatePeriodSums(beitraege);
-                              const isCollapsed = collapsedPeriods[periodKey];
-
-                              return (
-                                <div key={periodKey} className="period-group">
-                                  <div
-                                    className="period-header"
-                                    onClick={() => {
-                                      setCollapsedPeriods(prev => ({
-                                        ...prev,
-                                        [periodKey]: !prev[periodKey]
-                                      }));
-                                    }}
-                                  >
-                                    <div className="period-header-left">
-                                      <span className="collapse-icon">
-                                        {isCollapsed ? '▶' : '▼'}
-                                      </span>
-                                      <span className="period-label">
-                                        {formatPeriodLabel(periodKey, beitraegeViewMode)}
-                                      </span>
-                                      <span className="period-count">
-                                        ({beitraege.length} Beiträge)
-                                      </span>
-                                    </div>
-                                    <div className="period-summary">
-                                      <span className="summary-item total">
-                                        Gesamt: {sums.total.toFixed(2)} €
-                                      </span>
-                                      <span className="summary-item paid">
-                                        Bezahlt: {sums.paid.toFixed(2)} €
-                                      </span>
-                                      <span className="summary-item unpaid">
-                                        Offen: {sums.unpaid.toFixed(2)} €
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  {!isCollapsed && (
-                                    <div className="period-content">
-                                      <table className="beitraege-table">
-                                        <thead>
-                                          <tr>
-                                            <th className="mds-beitrag-th-narrow"></th>
-                                            <th>Datum</th>
-                                            <th>Betrag</th>
-                                            <th>Zahlungsart</th>
-                                            <th>Status</th>
-                                            <th>Aktionen</th>
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {beitraege.map((beitrag) => {
-                                            const isExpanded = expandedBeitraege[beitrag.beitrag_id];
+                                periodKeys.map(periodKey => {
+                                  const beitraege = grouped[periodKey];
+                                  const sums = calculatePeriodSums(beitraege);
+                                  const isCollapsed = collapsedPeriods[periodKey];
+                                  return (
+                                    <div key={periodKey} className="btr-period">
+                                      <button
+                                        className="btr-period-btn"
+                                        onClick={() => setCollapsedPeriods(prev => ({ ...prev, [periodKey]: !prev[periodKey] }))}
+                                      >
+                                        <div className="btr-period-left">
+                                          <div className="btr-period-chevron">{isCollapsed ? '›' : '⌄'}</div>
+                                          <div className="btr-period-name">{formatPeriodLabel(periodKey, beitraegeViewMode)}</div>
+                                          <div className="btr-period-count">{beitraege.length}</div>
+                                        </div>
+                                        <div className="btr-period-right">
+                                          {sums.unpaid > 0 && (
+                                            <div className="btr-period-open">{sums.unpaid.toFixed(2)} € offen</div>
+                                          )}
+                                          <div className="btr-period-sum">{sums.total.toFixed(2)} €</div>
+                                        </div>
+                                      </button>
+                                      {!isCollapsed && (
+                                        <div className="btr-period-entries">
+                                          {beitraege.map(beitrag => {
+                                            const isExp = expandedBeitraege[beitrag.beitrag_id];
+                                            const bezahlt = beitrag.bezahlt === true || beitrag.bezahlt === 1 || String(beitrag.bezahlt) === '1';
+                                            const btrD = new Date(beitrag.datum || beitrag.zahlungsdatum || '9999-12-31');
+                                            const _btrN = new Date(); _btrN.setHours(23, 59, 59, 999);
+                                            const isFutureBtr = !bezahlt && btrD > _btrN;
                                             return (
                                               <React.Fragment key={beitrag.beitrag_id}>
-                                            <tr className={`${beitrag.bezahlt ? 'paid' : 'unpaid'}${beitrag.generiert ? ' mds-beitrag-row--generiert' : ''}`}>
-                                              <td className="mds-beitrag-td-narrow">
-                                                {!beitrag.generiert && beitrag.beitrag_id && (
-                                                  <button
-                                                    onClick={() => setExpandedBeitraege(prev => ({
-                                                      ...prev,
-                                                      [beitrag.beitrag_id]: !prev[beitrag.beitrag_id]
-                                                    }))}
-                                                    className={`mds-beitrag-expand-btn${isExpanded ? ' mds-beitrag-expand-btn--expanded' : ''}`}
-                                                    title="Details anzeigen"
-                                                  >
-                                                    ▶
-                                                  </button>
-                                                )}
-                                              </td>
-                                              <td>
-                                                {new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString("de-DE")}
-                                                {beitrag.generiert && (
-                                                  <span className="mds-beitrag-generated-icon" title="Automatisch generiert basierend auf Vertragsdaten">
-                                                    🔮
-                                                  </span>
-                                                )}
-                                              </td>
-                                              <td className="betrag">
-                                                {parseFloat(beitrag.betrag).toFixed(2)} €
-                                                {beitrag.anteilig && (
-                                                  <span className="mds-beitrag-anteilig-note" title="Anteiliger Beitrag für letzten Monat bei Kündigung">
-                                                    (anteilig)
-                                                  </span>
-                                                )}
-                                              </td>
-                                              <td>
-                                                {beitrag.zahlungsart?.toLowerCase() === 'überweisung' || beitrag.zahlungsart?.toLowerCase() === 'Überweisung' ? '💳 Überweisung' :
-                                                 beitrag.zahlungsart?.toLowerCase() === 'lastschrift' ? '🏦 Lastschrift' :
-                                                 beitrag.zahlungsart?.toLowerCase() === 'bar' ? '💵 Bar' :
-                                                 beitrag.zahlungsart || 'Unbekannt'}
-                                              </td>
-                                              <td>
-                                                <span className={`status-badge ${beitrag.bezahlt ? 'status-paid' : 'status-unpaid'}`}>
-                                                  {beitrag.bezahlt ? '✅ Bezahlt' : '⏳ Ausstehend'}
-                                                </span>
-                                              </td>
-                                              <td>
-                                                {isAdmin && (
-                                                  <button
-                                                    className={`btn-toggle-payment ${beitrag.bezahlt ? 'btn-mark-unpaid' : 'btn-mark-paid'}`}
-                                                    onClick={async () => {
-                                                      try {
-                                                        // Für generierte Beiträge: Erstelle neuen Beitrag in DB
-                                                        if (beitrag.generiert) {
-                                                          const zahlungsdatum = beitrag.bezahlt 
-                                                            ? null 
-                                                            : new Date().toISOString().split('T')[0];
-                                                          
-                                                          const newBeitrag = {
-                                                            mitglied_id: mitglied.mitglied_id,
-                                                            betrag: parseFloat(beitrag.betrag),
-                                                            zahlungsart: beitrag.zahlungsart,
-                                                            zahlungsdatum: zahlungsdatum,
-                                                            bezahlt: beitrag.bezahlt ? 0 : 1
-                                                          };
-                                                          
-                                                          await axios.post('/beitraege', newBeitrag);
-                                                          fetchFinanzDaten();
-                                                        } else {
-                                                          // Für vorhandene Beiträge: Update
-                                                          const zahlungsdatum = beitrag.zahlungsdatum 
-                                                            ? new Date(beitrag.zahlungsdatum).toISOString().split('T')[0]
-                                                            : (beitrag.bezahlt ? null : new Date().toISOString().split('T')[0]);
-
-                                                          const updateData = {
-                                                            betrag: parseFloat(beitrag.betrag),
-                                                            zahlungsart: beitrag.zahlungsart,
-                                                            zahlungsdatum: zahlungsdatum,
-                                                            bezahlt: beitrag.bezahlt ? 0 : 1
-                                                          };
-
-                                                          await axios.put(`/beitraege/${beitrag.beitrag_id}`, updateData);
-                                                          fetchFinanzDaten();
-                                                        }
-                                                      } catch (err) {
-                                                        console.error('❌ Fehler beim Aktualisieren:', err);
-                                                        console.error('❌ Error Details:', err.response?.data || err.message);
-                                                      }
-                                                    }}
-                                                  >
-                                                    {beitrag.bezahlt ? '❌ Als unbezahlt markieren' : '✅ Als bezahlt markieren'}
-                                                  </button>
-                                                )}
-                                              </td>
-                                            </tr>
-                                            {isExpanded && !beitrag.generiert && (
-                                              <tr className="beitrag-details-row">
-                                                <td colSpan="6" className="mds-beitrag-detail-td">
-                                                  <div className="mds-beitrag-detail-grid">
-                                                    <div>
-                                                      <strong className="mds-beitrag-detail-label">Beitrags-ID:</strong>
-                                                      <span>#{beitrag.beitrag_id}</span>
-                                                    </div>
-                                                    {beitrag.magicline_description && (
-                                                      <div className="mds-beitrag-detail-full-col">
-                                                        <strong className="mds-beitrag-detail-label">Beschreibung:</strong>
-                                                        <span>{beitrag.magicline_description}</span>
-                                                      </div>
-                                                    )}
-                                                    {(beitrag.datum || beitrag.zahlungsdatum) && (
-                                                      <div>
-                                                        <strong className="mds-beitrag-detail-label">Datum:</strong>
-                                                        <span>{new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</span>
-                                                      </div>
-                                                    )}
-                                                    {beitrag.zahlungsdatum && (
-                                                      <div>
-                                                        <strong className="mds-beitrag-detail-label">Zahlungsdatum:</strong>
-                                                        <span>{new Date(beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</span>
-                                                      </div>
-                                                    )}
-                                                    <div>
-                                                      <strong className="mds-beitrag-detail-label">Betrag (brutto):</strong>
-                                                      <span>{parseFloat(beitrag.betrag).toFixed(2)} €</span>
-                                                    </div>
-                                                    <div>
-                                                      <strong className="mds-beitrag-detail-label">Zahlungsart:</strong>
-                                                      <span>{beitrag.zahlungsart || 'Nicht angegeben'}</span>
-                                                    </div>
-                                                    <div>
-                                                      <strong className="mds-beitrag-detail-label">Status:</strong>
-                                                      <span className={beitrag.bezahlt ? 'mds-beitrag-status--paid' : 'mds-beitrag-status--unpaid'}>
-                                                        {beitrag.bezahlt ? 'Bezahlt' : 'Ausstehend'}
-                                                      </span>
-                                                    </div>
-                                                    {beitrag.dojo_id && (
-                                                      <div>
-                                                        <strong className="mds-beitrag-detail-label">Dojo-ID:</strong>
-                                                        <span>#{beitrag.dojo_id}</span>
-                                                      </div>
-                                                    )}
+                                                <div className={`btr-entry${beitrag.generiert ? ' btr-entry--forecast' : ''}`}>
+                                                  <div className={`btr-dot${bezahlt ? ' btr-dot--paid' : isFutureBtr ? ' btr-dot--future' : ' btr-dot--open'}`} />
+                                                  {!beitrag.generiert ? (
+                                                    <button
+                                                      className={`btr-expand-btn${isExp ? ' btr-expand-btn--open' : ''}`}
+                                                      onClick={() => setExpandedBeitraege(prev => ({ ...prev, [beitrag.beitrag_id]: !prev[beitrag.beitrag_id] }))}
+                                                      title="Details"
+                                                    >›</button>
+                                                  ) : (
+                                                    <div className="btr-forecast-icon" title="Prognostiziert">🔮</div>
+                                                  )}
+                                                  <div className="btr-entry-date">
+                                                    {new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString('de-DE')}
                                                   </div>
-                                                </td>
-                                              </tr>
-                                            )}
+                                                  <div className="btr-entry-method">
+                                                    {beitrag.zahlungsart || '—'}
+                                                    {beitrag.anteilig && <div className="btr-anteilig">anteilig</div>}
+                                                  </div>
+                                                  <div className={`btr-entry-amount${bezahlt ? '' : ' btr-amount--open'}`}>
+                                                    {parseFloat(beitrag.betrag).toFixed(2)} €
+                                                  </div>
+                                                  <div className={`btr-entry-badge${bezahlt ? ' btr-badge--paid' : isFutureBtr ? ' btr-badge--future' : ' btr-badge--open'}`}>
+                                                    {bezahlt ? 'Bezahlt' : isFutureBtr ? 'Geplant' : 'Überfällig'}
+                                                  </div>
+                                                  {isAdmin && (
+                                                    <button
+                                                      className={`btr-action-btn${bezahlt ? ' btr-action--unpay' : ' btr-action--pay'}`}
+                                                      onClick={async () => {
+                                                        try {
+                                                          if (beitrag.generiert) {
+                                                            await axios.post('/beitraege', {
+                                                              mitglied_id: mitglied.mitglied_id,
+                                                              betrag: parseFloat(beitrag.betrag),
+                                                              zahlungsart: beitrag.zahlungsart,
+                                                              zahlungsdatum: bezahlt ? null : new Date().toISOString().split('T')[0],
+                                                              bezahlt: bezahlt ? 0 : 1
+                                                            });
+                                                          } else {
+                                                            await axios.put(`/beitraege/${beitrag.beitrag_id}`, {
+                                                              betrag: parseFloat(beitrag.betrag),
+                                                              zahlungsart: beitrag.zahlungsart,
+                                                              zahlungsdatum: beitrag.zahlungsdatum
+                                                                ? new Date(beitrag.zahlungsdatum).toISOString().split('T')[0]
+                                                                : (bezahlt ? null : new Date().toISOString().split('T')[0]),
+                                                              bezahlt: bezahlt ? 0 : 1
+                                                            });
+                                                          }
+                                                          fetchFinanzDaten();
+                                                        } catch (err) {
+                                                          console.error('Fehler:', err.response?.data || err.message);
+                                                        }
+                                                      }}
+                                                    >
+                                                      {bezahlt ? 'Stornieren' : 'Bezahlt'}
+                                                    </button>
+                                                  )}
+                                                </div>
+                                                {isExp && !beitrag.generiert && (
+                                                  <div className="btr-detail">
+                                                    <div className="btr-detail-grid">
+                                                      <div className="btr-detail-item">
+                                                        <div className="btr-detail-label">Beitrags-ID</div>
+                                                        <div className="btr-detail-value">#{beitrag.beitrag_id}</div>
+                                                      </div>
+                                                      {beitrag.magicline_description && (
+                                                        <div className="btr-detail-item btr-detail-item--full">
+                                                          <div className="btr-detail-label">Beschreibung</div>
+                                                          <div className="btr-detail-value">{beitrag.magicline_description}</div>
+                                                        </div>
+                                                      )}
+                                                      {(beitrag.datum || beitrag.zahlungsdatum) && (
+                                                        <div className="btr-detail-item">
+                                                          <div className="btr-detail-label">Datum</div>
+                                                          <div className="btr-detail-value">{new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</div>
+                                                        </div>
+                                                      )}
+                                                      {beitrag.zahlungsdatum && (
+                                                        <div className="btr-detail-item">
+                                                          <div className="btr-detail-label">Zahlungsdatum</div>
+                                                          <div className="btr-detail-value">{new Date(beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</div>
+                                                        </div>
+                                                      )}
+                                                      <div className="btr-detail-item">
+                                                        <div className="btr-detail-label">Betrag</div>
+                                                        <div className="btr-detail-value">{parseFloat(beitrag.betrag).toFixed(2)} €</div>
+                                                      </div>
+                                                      <div className="btr-detail-item">
+                                                        <div className="btr-detail-label">Zahlungsart</div>
+                                                        <div className="btr-detail-value">{beitrag.zahlungsart || 'Nicht angegeben'}</div>
+                                                      </div>
+                                                      <div className="btr-detail-item">
+                                                        <div className="btr-detail-label">Status</div>
+                                                        <div className={`btr-detail-value${bezahlt ? ' btr-green' : ' btr-red'}`}>{bezahlt ? 'Bezahlt' : 'Ausstehend'}</div>
+                                                      </div>
+                                                      {beitrag.dojo_id && (
+                                                        <div className="btr-detail-item">
+                                                          <div className="btr-detail-label">Dojo-ID</div>
+                                                          <div className="btr-detail-value">#{beitrag.dojo_id}</div>
+                                                        </div>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                )}
                                               </React.Fragment>
                                             );
                                           })}
-                                        </tbody>
-                                      </table>
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                                </div>
+                                  );
+                                })
                               )}
                             </div>
-                          </>
+                          </div>
                         );
                       })()}
                 </div>
               )}
 
               {financeSubTab === "bank" && (
-                <div className="bank-sub-tab-content">
-                  <div className="grid-container">
-                    <div className="field-group card bank-sepa-card">
-                      <h3 className="bank-sepa-heading">Bankdaten</h3>
-                      <div>
-                        <label>IBAN:</label>
-                        {editMode ? (
-                          <input
-                            type="text"
-                            value={updatedData.iban || ""}
-                            onChange={(e) => handleChange(e, "iban")}
-                            placeholder="DE89 3704 0044 0532 0130 00"
-                          />
-                        ) : (
-                          <span>{mitglied.iban || "Nicht angegeben"}</span>
-                        )}
-                      </div>
-                      <div>
-                        <label>BIC:</label>
-                        {editMode ? (
-                          <input
-                            type="text"
-                            value={updatedData.bic || ""}
-                            onChange={(e) => handleChange(e, "bic")}
-                            placeholder="COBADEFFXXX"
-                          />
-                        ) : (
-                          <span>{mitglied.bic || "Nicht angegeben"}</span>
-                        )}
-                      </div>
-                      <div>
-                        <label>Bankname:</label>
-                        {editMode ? (
-                          <input
-                            type="text"
-                            value={updatedData.bankname || ""}
-                            onChange={(e) => handleChange(e, "bankname")}
-                            placeholder="Commerzbank AG"
-                          />
-                        ) : (
-                          <span>{mitglied.bankname || "Nicht angegeben"}</span>
-                        )}
-                      </div>
-                      <div>
-                        <label>Kontoinhaber:</label>
-                        {editMode ? (
-                          <input
-                            type="text"
-                            value={updatedData.kontoinhaber || ""}
-                            onChange={(e) => handleChange(e, "kontoinhaber")}
-                            placeholder="Max Mustermann"
-                          />
-                        ) : (
-                          <span>{mitglied.kontoinhaber || `${mitglied.vorname} ${mitglied.nachname}`}</span>
-                        )}
-                      </div>
-                      <div>
-                        <label>Zahlungsmethode:</label>
-                        {editMode ? (
-                          <CustomSelect
-                            value={updatedData.zahlungsmethode || ""}
-                            onChange={(e) => handleChange(e, "zahlungsmethode")}
-                            options={[
-                              { value: 'SEPA-Lastschrift', label: 'SEPA-Lastschrift' },
-                              { value: 'Lastschrift', label: 'Lastschrift' },
-                              { value: 'Bar', label: 'Bar' },
-                              { value: 'Überweisung', label: 'Überweisung' }
-                            ]}
-                          />
-                        ) : (
-                          <span>{mitglied.zahlungsmethode || "Nicht angegeben"}</span>
-                        )}
-                      </div>
-                      <div>
-                        <label>Zahllaufgruppe:</label>
-                        {editMode ? (
-                          <input
-                            type="text"
-                            value={updatedData.zahllaufgruppe || ""}
-                            onChange={(e) => handleChange(e, "zahllaufgruppe")}
-                            placeholder="01"
-                          />
-                        ) : (
-                          <span>{mitglied.zahllaufgruppe || "Nicht angegeben"}</span>
-                        )}
-                      </div>
+                <div className="bnk-wrap">
+
+                  {/* ── Bankdaten ── */}
+                  <div className="bnk-card">
+                    <div className="bnk-card-title">🏦 Bankdaten</div>
+
+                    <div className="bnk-kv">
+                      <div className="bnk-kv-label">IBAN</div>
+                      {editMode
+                        ? <input className="bnk-input bnk-mono" type="text" value={updatedData.iban || ''} onChange={e => handleChange(e, 'iban')} placeholder="DE89 3704 0044 0532 0130 00" />
+                        : <div className={`bnk-kv-value bnk-mono${mitglied.iban ? '' : ' bnk-empty'}`}>{mitglied.iban || '—'}</div>
+                      }
                     </div>
 
-                    <div className="field-group card bank-sepa-card">
-                      <h3 className="bank-sepa-heading">SEPA-Lastschriftmandat</h3>
-                      {sepaMandate ? (
-                        <div className="sepa-mandate-info">
-                          <div className="mandate-status">
-                            <span className="status-badge active">✅ Aktiv</span>
-                            <span>Mandat-Referenz: {sepaMandate.mandatsreferenz}</span>
-                          </div>
-                          <div className="mandate-details">
-                            <p><strong>Erstellt am:</strong> {new Date(sepaMandate.erstellungsdatum).toLocaleDateString("de-DE")}</p>
-                            <p><strong>Gültig bis:</strong> {sepaMandate.ablaufdatum ? new Date(sepaMandate.ablaufdatum).toLocaleDateString("de-DE") : "Unbefristet"}</p>
-                            <p><strong>Gläubiger-Identifikation:</strong> {sepaMandate.glaeubiger_id}</p>
-                            {sepaMandate.widerruf_datum && (
-                              <p><strong>Widerrufen am:</strong> <span className="widerruf-datum">{new Date(sepaMandate.widerruf_datum).toLocaleDateString("de-DE")}</span></p>
-                            )}
-                            <p><strong>IBAN:</strong> {sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)}****${sepaMandate.iban.slice(-4)}` : 'N/A'}</p>
-                            <p><strong>Kontoinhaber:</strong> {sepaMandate.kontoinhaber}</p>
-                          </div>
-                          <div className="mandate-actions">
-                            <button className="bank-sepa-button" onClick={() => downloadSepaMandate()}>
-                              📥 Mandat herunterladen
-                            </button>
-                            <button className="bank-sepa-button bank-sepa-button-warning" onClick={() => revokeSepaMandate()}>
-                              ? Mandat widerrufen
-                            </button>
+                    <div className="bnk-kv">
+                      <div className="bnk-kv-label">BIC</div>
+                      {editMode
+                        ? <input className="bnk-input bnk-mono" type="text" value={updatedData.bic || ''} onChange={e => handleChange(e, 'bic')} placeholder="COBADEFFXXX" />
+                        : <div className={`bnk-kv-value bnk-mono${mitglied.bic ? '' : ' bnk-empty'}`}>{mitglied.bic || '—'}</div>
+                      }
+                    </div>
+
+                    <div className="bnk-kv">
+                      <div className="bnk-kv-label">Bank</div>
+                      {editMode
+                        ? <input className="bnk-input" type="text" value={updatedData.bankname || ''} onChange={e => handleChange(e, 'bankname')} placeholder="Commerzbank AG" />
+                        : <div className={mitglied.bankname ? 'bnk-kv-value' : 'bnk-empty'}>{mitglied.bankname || '—'}</div>
+                      }
+                    </div>
+
+                    <div className="bnk-kv">
+                      <div className="bnk-kv-label">Kontoinhaber</div>
+                      {editMode
+                        ? <input className="bnk-input" type="text" value={updatedData.kontoinhaber || ''} onChange={e => handleChange(e, 'kontoinhaber')} placeholder="Max Mustermann" />
+                        : <div className="bnk-kv-value">{mitglied.kontoinhaber || `${mitglied.vorname} ${mitglied.nachname}`}</div>
+                      }
+                    </div>
+
+                    <div className="bnk-kv">
+                      <div className="bnk-kv-label">Zahlungsmethode</div>
+                      {editMode
+                        ? <CustomSelect
+                            value={updatedData.zahlungsmethode || ''}
+                            onChange={e => handleChange(e, 'zahlungsmethode')}
+                            options={[
+                              { value: 'SEPA-Lastschrift', label: 'SEPA-Lastschrift' },
+                              { value: 'Lastschrift',      label: 'Lastschrift'      },
+                              { value: 'Bar',              label: 'Bar'              },
+                              { value: 'Überweisung',      label: 'Überweisung'      }
+                            ]}
+                          />
+                        : <div className={mitglied.zahlungsmethode ? 'bnk-kv-value' : 'bnk-empty'}>{mitglied.zahlungsmethode || '—'}</div>
+                      }
+                    </div>
+
+                    <div className="bnk-kv">
+                      <div className="bnk-kv-label">Zahllaufgruppe</div>
+                      {editMode
+                        ? <input className="bnk-input" type="text" value={updatedData.zahllaufgruppe || ''} onChange={e => handleChange(e, 'zahllaufgruppe')} placeholder="01" />
+                        : <div className={mitglied.zahllaufgruppe ? 'bnk-kv-value' : 'bnk-empty'}>{mitglied.zahllaufgruppe || '—'}</div>
+                      }
+                    </div>
+                  </div>
+
+                  {/* ── SEPA-Mandat ── */}
+                  <div className="bnk-card">
+                    <div className="bnk-card-title">📋 SEPA-Lastschriftmandat</div>
+
+                    {sepaMandate ? (
+                      <>
+                        <div className={`bnk-mandate-status${sepaMandate.widerruf_datum ? ' bnk-mandate-status--revoked' : ' bnk-mandate-status--active'}`}>
+                          <div className="bnk-mandate-status-dot" />
+                          <div className="bnk-mandate-status-text">{sepaMandate.widerruf_datum ? 'Widerrufen' : 'Aktiv'}</div>
+                          <div className="bnk-mandate-ref">{sepaMandate.mandatsreferenz}</div>
+                        </div>
+
+                        <div className="bnk-kv">
+                          <div className="bnk-kv-label">Erstellt am</div>
+                          <div className="bnk-kv-value">{new Date(sepaMandate.erstellungsdatum).toLocaleDateString('de-DE')}</div>
+                        </div>
+                        <div className="bnk-kv">
+                          <div className="bnk-kv-label">Gültig bis</div>
+                          <div className="bnk-kv-value">{sepaMandate.ablaufdatum ? new Date(sepaMandate.ablaufdatum).toLocaleDateString('de-DE') : 'Unbefristet'}</div>
+                        </div>
+                        <div className="bnk-kv">
+                          <div className="bnk-kv-label">Gläubiger-ID</div>
+                          <div className="bnk-kv-value bnk-mono">{sepaMandate.glaeubiger_id}</div>
+                        </div>
+                        <div className="bnk-kv">
+                          <div className="bnk-kv-label">IBAN (Mandat)</div>
+                          <div className="bnk-kv-value bnk-mono">
+                            {sepaMandate.iban ? `${sepaMandate.iban.slice(0, 4)} **** **** ${sepaMandate.iban.slice(-4)}` : '—'}
                           </div>
                         </div>
-                      ) : (
-                        <div className="no-sepa-mandate">
-                          <p>Kein SEPA-Lastschriftmandat vorhanden.</p>
-                          {mitglied?.iban && mitglied?.bic ? (
-                            <button 
-                              className="bank-sepa-button bank-sepa-button-primary"
-                              onClick={() => generateSepaMandate()}
-                              disabled={generatingMandate}
-                            >
-                              {generatingMandate ? "⏳ Erstelle Mandat..." : "📝 SEPA-Mandat erstellen"}
-                            </button>
-                          ) : (
-                            <div className="info-box warning">
-                              <p>ℹ️ Bitte vervollständigen Sie zuerst die Bankdaten (IBAN und BIC), um ein SEPA-Mandat zu erstellen.</p>
-                            </div>
-                          )}
+                        <div className="bnk-kv">
+                          <div className="bnk-kv-label">Kontoinhaber</div>
+                          <div className="bnk-kv-value">{sepaMandate.kontoinhaber}</div>
                         </div>
-                      )}
-                      
-                      <div className="sepa-legal-info">
-                        <h4>Rechtliche Grundlagen</h4>
-                        <p className="legal-text">
-                          Das SEPA-Lastschriftmandat berechtigt den Zahlungsempfänger, Zahlungen vom Konto des Zahlungspflichtigen mittels Lastschrift einzuziehen. 
-                          Zugleich wird die Bank des Zahlungspflichtigen zur Einlösung der Lastschrift angewiesen.
-                        </p>
-                        <p className="legal-text">
-                          <strong>Hinweis:</strong> Der Zahlungspflichtige kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. 
-                          Es gelten dabei die mit der Bank vereinbarten Bedingungen.
-                        </p>
+                        {sepaMandate.widerruf_datum && (
+                          <div className="bnk-kv">
+                            <div className="bnk-kv-label">Widerrufen am</div>
+                            <div className="bnk-kv-value bnk-red">{new Date(sepaMandate.widerruf_datum).toLocaleDateString('de-DE')}</div>
+                          </div>
+                        )}
+                        <div className="bnk-actions">
+                          <button className="bnk-btn" onClick={() => downloadSepaMandate()}>Mandat herunterladen</button>
+                          <button className="bnk-btn bnk-btn--danger" onClick={() => revokeSepaMandate()}>Mandat widerrufen</button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="bnk-no-mandate">
+                        <div className="bnk-no-mandate-icon">📄</div>
+                        <div className="bnk-no-mandate-text">Kein SEPA-Mandat vorhanden</div>
+                        {mitglied?.iban && mitglied?.bic ? (
+                          <button
+                            className="bnk-btn bnk-btn--primary"
+                            onClick={() => generateSepaMandate()}
+                            disabled={generatingMandate}
+                          >
+                            {generatingMandate ? 'Erstelle Mandat…' : 'SEPA-Mandat erstellen'}
+                          </button>
+                        ) : (
+                          <div className="bnk-info-box">
+                            Bitte zuerst IBAN und BIC hinterlegen, um ein SEPA-Mandat zu erstellen.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="bnk-legal">
+                      <div className="bnk-legal-title">Rechtliche Grundlagen</div>
+                      <div className="bnk-legal-text">
+                        Das SEPA-Lastschriftmandat berechtigt den Zahlungsempfänger, Zahlungen vom Konto des Zahlungspflichtigen
+                        mittels Lastschrift einzuziehen. Zugleich wird die Bank des Zahlungspflichtigen zur Einlösung der Lastschrift angewiesen.
+                      </div>
+                      <div className="bnk-legal-text">
+                        <strong>Hinweis:</strong> Der Zahlungspflichtige kann innerhalb von acht Wochen, beginnend mit dem
+                        Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit der Bank vereinbarten Bedingungen.
                       </div>
                     </div>
                   </div>
+
                 </div>
+              )}
+
+              {financeSubTab === "einkäufe" && (
+                <MitgliedEinkäufeTab mitgliedId={id} activeDojo={activeDojo} />
               )}
             </div>
           )}
@@ -5905,77 +5792,109 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             />
           )}
 
+          {activeTab === "verletzungen" && (
+            <MemberInjuryTab
+              mitgliedId={id}
+              isAdmin={isAdmin}
+            />
+          )}
+
                     {activeTab === "gurt_stil" && (
             <div className="style-management-container">
-              {/* Sub-Tabs für Stile und Prüfung - Sidebar Style */}
-              <div className="sub-tabs-sidebar-style">
-                <button
-                  className={`tab-vertical-btn ${styleSubTab === "stile" ? "active" : ""}`}
-                  onClick={() => setStyleSubTab("stile")}
-                >
-                  <span className="tab-icon">🥋</span>
-                  <span className="tab-label">Stile</span>
-                </button>
-                <button
-                  className={`tab-vertical-btn ${styleSubTab === "pruefung" ? "active" : ""}`}
-                  onClick={() => setStyleSubTab("pruefung")}
-                >
-                  <span className="tab-icon">📝</span>
-                  <span className="tab-label">Prüfung</span>
-                </button>
+
+              {/* OBERE ZEILE: Stile/Prüfung + Stil wählen/Hinzufügen */}
+              <div className="mds-gurt-top-row">
+                <div className="sub-tabs-sidebar-style">
+
+                  {/* Stile-Button: zeigt aktiven Stil + Dropdown */}
+                  <div className="mds-stil-dropdown-wrapper">
+                    <button
+                      className={`tab-vertical-btn ${styleSubTab === "stile" ? "active" : ""}`}
+                      onClick={() => {
+                        setStyleSubTab("stile");
+                        if (memberStile.length > 1) setStilDropdownOpen(o => !o);
+                      }}
+                    >
+                      <span className="tab-icon">🥋</span>
+                      <span className="tab-label">
+                        {styleSubTab === "stile" && memberStile[activeStyleTab]
+                          ? memberStile[activeStyleTab].stil_name
+                          : "Stile"}
+                      </span>
+                      {memberStile.length > 1 && (
+                        <span className="mds-stil-dropdown-chevron">▾</span>
+                      )}
+                    </button>
+
+                    {stilDropdownOpen && memberStile.length > 1 && (
+                      <>
+                        <div
+                          className="mds-stil-dropdown-backdrop"
+                          onClick={() => setStilDropdownOpen(false)}
+                        />
+                        <div className="mds-stil-dropdown-menu">
+                          {memberStile.map((ms, index) => (
+                            <button
+                              key={ms.stil_id}
+                              className={`mds-stil-dropdown-item${activeStyleTab === index ? ' active' : ''}`}
+                              onClick={() => {
+                                setActiveStyleTab(index);
+                                setStilDropdownOpen(false);
+                              }}
+                            >
+                              <span>{ms.ist_hauptstil ? '⭐' : '🥋'}</span>
+                              <span>{ms.stil_name}</span>
+                              {activeStyleTab === index && <span className="mds-stil-dropdown-check">✓</span>}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <button
+                    className={`tab-vertical-btn ${styleSubTab === "pruefung" ? "active" : ""}`}
+                    onClick={() => { setStyleSubTab("pruefung"); setStilDropdownOpen(false); }}
+                  >
+                    <span className="tab-icon">📝</span>
+                    <span className="tab-label">Prüfung</span>
+                  </button>
+                </div>
+
+                {isAdmin && (
+                  <div className="mds-stil-add-controls">
+                    <select
+                      value={selectedStilId}
+                      onChange={(e) => handleStyleChange(e.target.value)}
+                      disabled={!editMode}
+                      className="mds-stil-select"
+                    >
+                      <option value="" className="mds2-dark-input">➕ Stil wählen...</option>
+                      {stile
+                        .filter(s => s.aktiv === 1 || s.aktiv === true)
+                        .filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id))
+                        .map(stil => (
+                          <option key={stil.stil_id} value={stil.stil_id} className="mds2-dark-input">
+                            {stil.stil_name || stil.name}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      onClick={handleAddStyle}
+                      disabled={!selectedStilId || !editMode}
+                      className={(selectedStilId && editMode) ? 'mds-stil-add-btn-active' : 'mds-stil-add-btn-inactive'}
+                    >
+                      Hinzufügen
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* TRENNSTRICH */}
+              <hr className="mds-gurt-divider" />
 
               {styleSubTab === "stile" && (
                 <div className="stile-sub-tab-content">
-                  {/* Stil-Tabs und Stil hinzufügen Button in einer Zeile */}
-                  <div className="mds-stil-add-row">
-                    {/* Stil-Tabs Links - Sidebar Style */}
-                    {memberStile.length > 0 ? (
-                      <div className="stil-tabs-row">
-                        {memberStile.map((memberStil, index) => (
-                          <button
-                            key={memberStil.stil_id}
-                            onClick={() => setActiveStyleTab(index)}
-                            className={`tab-vertical-btn ${activeStyleTab === index ? 'active' : ''}`}
-                          >
-                            <span className="tab-icon">🥋</span>
-                            <span className="tab-label">{memberStil.stil_name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="u-flex-1"></div>
-                    )}
-
-                    {/* Stil hinzufügen Rechts - Sichtbar für Admins */}
-                    {isAdmin && (
-                      <div className="mds-stil-add-controls">
-                        <select
-                          value={selectedStilId}
-                          onChange={(e) => handleStyleChange(e.target.value)}
-                          disabled={!editMode}
-                          className="mds-stil-select"
-                        >
-                          <option value="" className="mds2-dark-input">➕ Stil wählen...</option>
-                          {stile
-                            .filter(s => s.aktiv === 1 || s.aktiv === true) // Nur aktive Stile
-                            .filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id)) // Nicht bereits zugewiesen
-                            .map(stil => (
-                              <option key={stil.stil_id} value={stil.stil_id} className="mds2-dark-input">
-                                {stil.stil_name || stil.name}
-                              </option>
-                            ))}
-                        </select>
-                        <button
-                          onClick={handleAddStyle}
-                          disabled={!selectedStilId || !editMode}
-                          className={(selectedStilId && editMode) ? 'mds-stil-add-btn-active' : 'mds-stil-add-btn-inactive'}
-                        >
-                          Hinzufügen
-                        </button>
-                      </div>
-                    )}
-                  </div>
 
                   {/* Grid Container für die Stil-Karten */}
                   {memberStile.length > 0 ? (
@@ -6000,190 +5919,169 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           {/* Stil-Überschrift mit Badge */}
                           <div className="mds-stil-header">
                             <h2 className="mds-stil-title">
-                              🥋 {memberStil.stil_name}
+                              {memberStil.ist_hauptstil && <span title="Hauptstil" style={{marginRight:'6px',fontSize:'16px'}}>⭐</span>}
+                              {memberStil.stil_name}
+                              {memberStil.ist_hauptstil && <span style={{marginLeft:'8px',fontSize:'11px',background:'#c8a84b',color:'#fff',borderRadius:'4px',padding:'2px 7px',fontWeight:600,verticalAlign:'middle'}}>Hauptstil</span>}
                             </h2>
-                            {editMode && (
-                              <button
-                                onClick={() => handleRemoveStyle(memberStil.stil_id)}
-                                className="mds-stil-remove-btn"
-                              >
-                                🗑️ Stil entfernen
-                              </button>
-                            )}
+                            <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
+                              {isAdmin && !memberStil.ist_hauptstil && memberStile.length > 1 && (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await axios.post(`/mitglieder/${id}/stile/hauptstil`, { stil: memberStil.stil_enum || memberStil.stil_name });
+                                      setMemberStile(prev => prev.map(s => ({ ...s, ist_hauptstil: s.stil_id === memberStil.stil_id })));
+                                    } catch (e) {
+                                      console.error('Hauptstil setzen fehlgeschlagen', e);
+                                    }
+                                  }}
+                                  style={{fontSize:'12px',padding:'4px 10px',border:'1px solid #c8a84b',borderRadius:'5px',background:'transparent',color:'#c8a84b',cursor:'pointer',fontWeight:500}}
+                                >
+                                  ⭐ Als Hauptstil setzen
+                                </button>
+                              )}
+                              {editMode && (
+                                <button
+                                  onClick={() => handleRemoveStyle(memberStil.stil_id)}
+                                  className="mds-stil-remove-btn"
+                                >
+                                  🗑️ Stil entfernen
+                                </button>
+                              )}
+                            </div>
                           </div>
 
-                          {/* 2 Karten im Grid - über volle Breite */}
-                          <div className="grid-container zwei-spalten">
-                            {/* Karte 1: Aktuelle Graduierung */}
-                            <div className="field-group card">
-                              <h3>Aktuelle Graduierung</h3>
-                              <div>
-                                <label className="mds2-btn-lowercase-sm">Gurtfarbe:</label>
-                                <div className="mds-gurt-row">
-                                  <BeltPreview
-                                    primaer={(isActiveStyle && currentGraduation?.farbe_hex) || '#666'}
-                                    sekundaer={isActiveStyle && currentGraduation?.farbe_sekundaer}
-                                    size="normal"
-                                  />
-                                  <span className="mds-gurt-name">
-                                    {(isActiveStyle && currentGraduation?.name) || "Keine Graduierung"}
-                                  </span>
-                                </div>
+                          {/* ── 2 Karten: Graduierung + Beschreibung ── */}
+                          <div className="grt-top-grid">
 
-                                {/* Buttons immer sichtbar, aber nur im Edit-Modus aktiv */}
-                                {isActiveStyle && isAdmin && (
-                                  <div className="graduierung-buttons mds-grad-buttons-row">
-                                    <button
-                                      className="grad-btn grad-btn-down"
-                                      onClick={() => {
-                                        console.log('🔘 Niedriger-Button geklickt! CurrentGrad:', currentGraduation?.name);
-                                        handleGraduationArrowChange(currentGraduation?.graduierung_id, 'up');
-                                      }}
-                                      disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0}
-                                    >
-                                      ⬇️ Niedriger
-                                    </button>
-                                    <button
-                                      className="grad-btn grad-btn-up"
-                                      onClick={() => {
-                                        console.log('🔘 Höher-Button geklickt! CurrentGrad:', currentGraduation?.name);
-                                        handleGraduationArrowChange(currentGraduation?.graduierung_id, 'down');
-                                      }}
-                                      disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1}
-                                    >
-                                      ⬆️ Höher
-                                    </button>
-                                  </div>
-                                )}
+                            {/* Karte 1: Aktuelle Graduierung */}
+                            <div className="grt-card">
+                              <h3 className="grt-card-title">Aktuelle Graduierung</h3>
+
+                              <div className="grt-belt-row">
+                                <BeltPreview
+                                  primaer={(isActiveStyle && currentGraduation?.farbe_hex) || '#666'}
+                                  sekundaer={isActiveStyle && currentGraduation?.farbe_sekundaer}
+                                  size="normal"
+                                />
+                                <span className="grt-belt-name">
+                                  {(isActiveStyle && currentGraduation?.name) || "Keine Graduierung"}
+                                </span>
                               </div>
 
-                              {isActiveStyle && currentGraduation && (
-                                <>
-                                  <div>
-                                    <label className="mds2-btn-lowercase-sm">Mindest-Trainingsstunden:</label>
-                                    <span>{currentGraduation.trainingsstunden_min || 0} Stunden</span>
-                                  </div>
-                                  <div>
-                                    <label className="mds2-btn-lowercase-sm">Mindestzeit:</label>
-                                    <span>{currentGraduation.mindestzeit_monate || 0} Monate</span>
-                                  </div>
-                                  {currentGraduation.kategorie && (
-                                    <div>
-                                      <label className="mds2-btn-lowercase-sm">Kategorie:</label>
-                                      <span className="mds-kategorie-badge">
-                                        {currentGraduation.kategorie}
-                                      </span>
-                                    </div>
-                                  )}
-                                </>
+                              {isActiveStyle && isAdmin && (
+                                <div className="grt-grad-btns">
+                                  <button
+                                    className="grt-grad-btn"
+                                    onClick={() => handleGraduationArrowChange(currentGraduation?.graduierung_id, 'up')}
+                                    disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0}
+                                  >
+                                    ⬇ Niedriger
+                                  </button>
+                                  <button
+                                    className="grt-grad-btn grt-grad-btn--up"
+                                    onClick={() => handleGraduationArrowChange(currentGraduation?.graduierung_id, 'down')}
+                                    disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1}
+                                  >
+                                    ⬆ Höher
+                                  </button>
+                                </div>
                               )}
 
-                              <div>
-                                <label className="mds2-btn-lowercase-sm">Letzte Prüfung:</label>
+                              {isActiveStyle && currentGraduation && (
+                                <div className="grt-kv-grid">
+                                  <span className="grt-kv-label">Min. Stunden</span>
+                                  <span className="grt-kv-value">{currentGraduation.trainingsstunden_min || 0} h</span>
+                                  <span className="grt-kv-label">Mindestzeit</span>
+                                  <span className="grt-kv-value">{currentGraduation.mindestzeit_monate || 0} Monate</span>
+                                  {currentGraduation.kategorie && (
+                                    <>
+                                      <span className="grt-kv-label">Kategorie</span>
+                                      <span className="grt-kv-value">
+                                        <span className="grt-kategorie-badge">{currentGraduation.kategorie}</span>
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="grt-kv-grid grt-kv-grid--mt">
+                                <span className="grt-kv-label">Letzte Prüfung</span>
                                 {editMode && isActiveStyle ? (
                                   <input
                                     type="date"
+                                    className="grt-date-input"
                                     value={lastExamDate}
                                     onChange={(e) => setLastExamDate(e.target.value)}
                                   />
                                 ) : (
-                                  <span>
+                                  <span className="grt-kv-value">
                                     {lastExamDate
-                                      ? new Date(lastExamDate).toLocaleDateString("de-DE")
-                                      : "Keine Prüfung dokumentiert"}
+                                      ? new Date(lastExamDate).toLocaleDateString('de-DE')
+                                      : <span className="grt-kv-empty">Keine Prüfung dokumentiert</span>}
                                   </span>
                                 )}
                               </div>
                             </div>
 
                             {/* Karte 2: Beschreibung */}
-                            <div className="field-group card">
-                              <h3>Beschreibung</h3>
-                              <div>
-                                <label className="mds2-btn-lowercase-sm">Über diesen Stil:</label>
-                                <p className="mds-stil-desc-text">
-                                  {memberStil.beschreibung || fullStilData?.beschreibung || "Keine Beschreibung verfügbar"}
-                                </p>
-                              </div>
+                            <div className="grt-card">
+                              <h3 className="grt-card-title">Über diesen Stil</h3>
+                              <p className="grt-desc-text">
+                                {memberStil.beschreibung || fullStilData?.beschreibung || "Keine Beschreibung verfügbar"}
+                              </p>
                             </div>
                           </div>
 
-                          {/* Karte 3: Alle Graduierungen - Volle Breite - Einklappbar */}
-                          <div className="grid-container mds2-mt-15">
-                            <div className="field-group card">
-                              <div
-                                onClick={() => {
-                                  setGraduationListCollapsed(!graduationListCollapsed);
-                                }}
-                                className="mds-collapse-header"
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.background = 'rgba(255, 215, 0, 0.05)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.background = 'transparent';
-                                }}
-                              >
-                                <h3 className="mds-collapse-h3">📊 Alle Graduierungen - {memberStil.stil_name}</h3>
-                                <span
-                                  className={`mds-collapse-icon${graduationListCollapsed ? '' : ' mds-collapse-icon--expanded'}`}
-                                >
-                                  ▼
-                                </span>
-                              </div>
+                          {/* ── Karte 3: Alle Graduierungen (einklappbar) ── */}
+                          <div className="grt-card grt-card--full grt-card--mt">
+                            <div
+                              className="grt-collapse-header"
+                              onClick={() => setGraduationListCollapsed(!graduationListCollapsed)}
+                            >
+                              <h3 className="grt-card-title grt-card-title--inline">📊 Alle Graduierungen — {memberStil.stil_name}</h3>
+                              <span className={`grt-collapse-icon${graduationListCollapsed ? '' : ' grt-collapse-icon--open'}`}>▼</span>
+                            </div>
 
-                              {!graduationListCollapsed && (
-                                <div className="mds-graduation-list">
-                                  {fullStilData && fullStilData.graduierungen && fullStilData.graduierungen.length > 0 ? (
-                                    fullStilData.graduierungen
-                                      .sort((a, b) => a.reihenfolge - b.reihenfolge)
-                                      .map((graduation, index) => (
-                                        <div
-                                          key={graduation.graduierung_id}
-                                          className={`mds-graduation-row ${(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? 'mds-graduation-row-active' : 'mds-graduation-row-inactive'}`}
-                                        >
+                            {!graduationListCollapsed && (
+                              <div className="grt-grad-list">
+                                {fullStilData && fullStilData.graduierungen && fullStilData.graduierungen.length > 0 ? (
+                                  fullStilData.graduierungen
+                                    .sort((a, b) => a.reihenfolge - b.reihenfolge)
+                                    .map((graduation, index) => {
+                                      const isCurrent = isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id;
+                                      return (
+                                        <div key={graduation.graduierung_id} className={`grt-grad-row${isCurrent ? ' grt-grad-row--current' : ''}`}>
                                           <BeltPreview
                                             primaer={graduation.farbe_hex}
                                             sekundaer={graduation.farbe_sekundaer}
                                             size="small"
                                           />
-                                          <div className="u-flex-1">
-                                            <div className={(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) ? 'mds-graduation-name-active' : 'mds-graduation-name-inactive'}>
+                                          <div className="grt-grad-row-info">
+                                            <div className="grt-grad-row-name">
                                               {graduation.name}
-                                              {(isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id) && (
-                                                <span className="mds-graduation-aktuell-badge">
-                                                  ⭐ Aktuell
-                                                </span>
-                                              )}
+                                              {isCurrent && <span className="grt-aktuell-badge">⭐ Aktuell</span>}
                                             </div>
-                                            <div className="mds-graduation-sub">
+                                            <div className="grt-grad-row-sub">
                                               {graduation.reihenfolge || index + 1}. Kyu · {graduation.trainingsstunden_min}h · {graduation.mindestzeit_monate} Monate
                                             </div>
                                           </div>
                                         </div>
-                                      ))
-                                  ) : (
-                                    <p className="mds-no-stile-text">
-                                      Keine Graduierungen verfügbar
-                                    </p>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                                      );
+                                    })
+                                ) : (
+                                  <p className="grt-empty-text">Keine Graduierungen verfügbar</p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
                     })()
                   ) : (
-                    <div className="grid-container">
-                      <div className="field-group card">
-                        <h3>Stil-Verwaltung</h3>
-                        <p className="mds-no-stile-text">
-                          Keine Stile zugeordnet
-                        </p>
-                        <p className="mds-no-stile-hint">
-                          Verwenden Sie das Auswahlfeld oben, um einen Stil hinzuzufügen.
-                        </p>
-                      </div>
+                    <div className="grt-card">
+                      <h3 className="grt-card-title">Stil-Verwaltung</h3>
+                      <p className="grt-empty-text">Keine Stile zugeordnet</p>
+                      <p className="grt-empty-hint">Verwenden Sie das Auswahlfeld oben, um einen Stil hinzuzufügen.</p>
                     </div>
                   )}
                 </div>
@@ -6195,6 +6093,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <PruefungsStatus
                     mitgliedId={id}
                     readOnly={!isAdmin}
+                    mitglied={mitglied}
                   />
                 </div>
               )}
@@ -6255,6 +6154,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   vertragsende: updatedVertrag.vertragsende,
                   kuendigungsfrist_monate: updatedVertrag.kuendigungsfrist_monate,
                   mindestlaufzeit_monate: updatedVertrag.mindestlaufzeit_monate,
+                  monatsbeitrag: updatedVertrag.monatsbeitrag,
+                  aufnahmegebuehr_cents: updatedVertrag.aufnahmegebuehr_cents,
                   agb_akzeptiert: updatedVertrag.agb_akzeptiert,
                   datenschutz_akzeptiert: updatedVertrag.datenschutz_akzeptiert,
                   hausordnung_akzeptiert: updatedVertrag.hausordnung_akzeptiert,
@@ -7112,7 +7013,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   <div className="mds-structured-kuendigung-btn-row">
                     <button
                       onClick={() => {
-                        window.open(`${config.apiBaseUrl}/vertraege/${selectedVertrag.id}/kuendigungsbestaetigung`, '_blank');
+                        openApiBlob(`${config.apiBaseUrl}/vertraege/${selectedVertrag.id}/kuendigungsbestaetigung`);
                       }}
                       className="mds-kuendigung-pdf-btn"
                       onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 152, 0, 0.3)'}
@@ -7545,6 +7446,188 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           mitgliedId={member.id}
           onClose={() => setShowVorlagenSenden(false)}
         />
+      )}
+
+      {/* Vertrag-Anpassung Modal */}
+      {showVertragAnpassungModal && (
+        <div
+          className="mds-archive-overlay"
+          onClick={() => setShowVertragAnpassungModal(false)}
+        >
+          <div
+            className="mds-archive-modal-box"
+            style={{ maxWidth: 560, maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>🎓 Tarif zeitlich anpassen</h3>
+              <button onClick={() => setShowVertragAnpassungModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', color: 'var(--text-secondary)' }}>✕</button>
+            </div>
+
+            {/* Neue Anpassung */}
+            <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '1rem', marginBottom: '1.25rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Neue Anpassung erstellen</h4>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Typ</label>
+                  <select
+                    value={vertragAnpassungForm.typ}
+                    onChange={e => setVertragAnpassungForm(f => ({ ...f, typ: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)' }}
+                  >
+                    <option value="schueler">Schüler</option>
+                    <option value="student">Student</option>
+                    <option value="azubi">Azubi</option>
+                    <option value="rentner">Rentner</option>
+                    <option value="sonstiges">Sonstiges</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Neuer Beitrag (€/Monat)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="z.B. 49.00"
+                    value={vertragAnpassungForm.neuer_betrag}
+                    onChange={e => setVertragAnpassungForm(f => ({ ...f, neuer_betrag: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Gültig von</label>
+                  <input
+                    type="date"
+                    value={vertragAnpassungForm.gueltig_von}
+                    onChange={e => setVertragAnpassungForm(f => ({ ...f, gueltig_von: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Gültig bis</label>
+                  <input
+                    type="date"
+                    value={vertragAnpassungForm.gueltig_bis}
+                    onChange={e => setVertragAnpassungForm(f => ({ ...f, gueltig_bis: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: '0.75rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Begründung (optional)</label>
+                <input
+                  type="text"
+                  placeholder="z.B. Immatrikulationsbescheinigung liegt vor"
+                  value={vertragAnpassungForm.grund}
+                  onChange={e => setVertragAnpassungForm(f => ({ ...f, grund: e.target.value }))}
+                  style={{ width: '100%', padding: '0.5rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {vertragAnpassungError && (
+                <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.75rem', background: 'rgba(255,0,0,0.1)', border: '1px solid rgba(255,0,0,0.3)', borderRadius: 6, color: '#ff6b6b', fontSize: '0.85rem' }}>
+                  {vertragAnpassungError}
+                </div>
+              )}
+
+              <button
+                disabled={vertragAnpassungLoading}
+                onClick={async () => {
+                  const { typ, neuer_betrag, gueltig_von, gueltig_bis, grund } = vertragAnpassungForm;
+                  if (!neuer_betrag || !gueltig_von || !gueltig_bis) {
+                    setVertragAnpassungError('Bitte Betrag, Beginn und Ende ausfüllen.');
+                    return;
+                  }
+                  const mid = mitglied?.mitglied_id || mitglied?.id;
+                  setVertragAnpassungLoading(true);
+                  setVertragAnpassungError('');
+                  try {
+                    const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+                    await axios.post(`/vertrag-anpassungen${dojoParam}`, {
+                      mitglied_id: mid,
+                      typ,
+                      alter_betrag: mitglied?.vertragsBetrag || mitglied?.beitrag || 0,
+                      neuer_betrag: parseFloat(neuer_betrag),
+                      gueltig_von,
+                      gueltig_bis,
+                      grund: grund || null
+                    });
+                    const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
+                    setVertragAnpassungen(r.data.anpassungen || []);
+                    setVertragAnpassungForm({ typ: 'student', neuer_betrag: '', gueltig_von: '', gueltig_bis: '', grund: '' });
+                  } catch (err) {
+                    const e = err.response?.data?.error;
+                    setVertragAnpassungError(typeof e === 'string' ? e : (e?.message || err.message || 'Fehler beim Speichern.'));
+                  } finally {
+                    setVertragAnpassungLoading(false);
+                  }
+                }}
+                style={{
+                  marginTop: '1rem', width: '100%', padding: '0.65rem', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)', color: 'var(--text-primary)', fontWeight: 600, cursor: vertragAnpassungLoading ? 'not-allowed' : 'pointer', fontSize: '0.9rem'
+                }}
+              >
+                {vertragAnpassungLoading ? '⏳ Speichern...' : '✓ Tarifanpassung speichern'}
+              </button>
+            </div>
+
+            {/* Bestehende Anpassungen */}
+            {vertragAnpassungen.length > 0 && (
+              <div>
+                <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bisherige Anpassungen</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {vertragAnpassungen.map(a => {
+                    const statusColors = { genehmigt: '#4caf50', beantragt: '#ff9800', abgelehnt: '#f44336', abgelaufen: '#888' };
+                    const typLabels = { schueler: 'Schüler', student: 'Student', azubi: 'Azubi', rentner: 'Rentner', sonstiges: 'Sonstiges' };
+                    return (
+                      <div key={a.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.65rem 0.85rem', border: `1px solid ${statusColors[a.status] || '#555'}40`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                        <div>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{typLabels[a.typ] || a.typ}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginLeft: '0.5rem' }}>
+                            {new Date(a.gueltig_von).toLocaleDateString('de-DE')} – {new Date(a.gueltig_bis).toLocaleDateString('de-DE')}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{parseFloat(a.neuer_betrag).toFixed(2).replace('.', ',')} €</span>
+                          <span style={{ background: `${statusColors[a.status] || '#555'}20`, color: statusColors[a.status] || '#888', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize' }}>{a.status}</span>
+                        </div>
+                        {a.erstellt_von === 'mitglied' && a.status === 'beantragt' && (
+                          <div style={{ width: '100%', display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.put(`/vertrag-anpassungen/${a.id}/genehmigen`, { neuer_betrag: a.neuer_betrag });
+                                  const mid = mitglied?.mitglied_id || mitglied?.id;
+                                  const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
+                                  setVertragAnpassungen(r.data.anpassungen || []);
+                                } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
+                              }}
+                              style={{ padding: '4px 12px', borderRadius: 6, background: '#4caf5020', border: '1px solid #4caf50', color: '#4caf50', cursor: 'pointer', fontSize: '0.8rem' }}
+                            >✓ Genehmigen</button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await axios.put(`/vertrag-anpassungen/${a.id}/ablehnen`);
+                                  const mid = mitglied?.mitglied_id || mitglied?.id;
+                                  const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
+                                  setVertragAnpassungen(r.data.anpassungen || []);
+                                } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
+                              }}
+                              style={{ padding: '4px 12px', borderRadius: 6, background: '#f4433620', border: '1px solid #f44336', color: '#f44336', cursor: 'pointer', fontSize: '0.8rem' }}
+                            >✕ Ablehnen</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
     </div>

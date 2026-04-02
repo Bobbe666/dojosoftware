@@ -80,7 +80,7 @@
   background: var(--gradient-gold);
   border-radius: var(--comp-radius-md);
   transition: width 0.8s ease;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 10px var(--primary-alpha-30);
 }
 
 .equipment-checklist .progress-text {
@@ -117,7 +117,7 @@
 
 .equipment-checklist .course-item {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-lg);
   padding: var(--ui-page-padding-sm);
   transition: all 0.2s ease;
@@ -125,7 +125,7 @@
 
 .equipment-checklist .course-item:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .equipment-checklist .course-info h4 {
@@ -167,7 +167,7 @@
   font-size: var(--ui-form-input);
   font-weight: 600;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .equipment-checklist .equipment-items {
@@ -178,7 +178,7 @@
 
 .equipment-checklist .equipment-item {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-lg);
   padding: var(--ui-page-padding-sm);
   display: flex;
@@ -200,7 +200,7 @@
 
 .equipment-checklist .equipment-item:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-1px);
 }
 
@@ -263,9 +263,9 @@
 }
 
 .equipment-checklist .required-badge {
-  background: rgba(255,215,0,0.1);
+  background: var(--primary-alpha-10);
   color: var(--primary);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 .equipment-checklist .unavailable-badge {
@@ -301,7 +301,7 @@
 /* Tips */
 .equipment-checklist .equipment-tips {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding);
 }
@@ -349,7 +349,7 @@
 .equipment-checklist-loading .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255, 215, 0, 0.3);
+  border: 3px solid var(--primary-alpha-30);
   border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;

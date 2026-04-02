@@ -92,8 +92,10 @@
 .ba-flex-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 /* 2x – flex row actions aligned right */
@@ -157,9 +159,9 @@
 }
 
 .ba-btn-login {
-  background: #ffd700;
-  color: var(--bg-primary);
-  border: none;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary-alpha-40);
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
@@ -203,7 +205,7 @@
 }
 
 .ba-stat-card--gold {
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .ba-stat-card--blue {
@@ -239,8 +241,8 @@
 
 /* Manual award button (gold gradient) */
 .ba-btn-manual-award {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1));
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, var(--primary-alpha-30), var(--primary-alpha-10));
+  border: 1px solid var(--primary-alpha-40);
   color: var(--primary);
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -268,7 +270,7 @@
 }
 
 .ba-section-card--gold {
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 /* Section headings */
@@ -296,13 +298,12 @@
   font-size: 1rem;
 }
 
-/* Filters header row (space-between + flex-wrap) */
+/* Filters header row – Überschrift + Filter untereinander */
 .ba-filters-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: 1rem;
-  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
@@ -312,6 +313,7 @@
   gap: 0.5rem;
   flex-wrap: wrap;
   align-items: center;
+  width: 100%;
 }
 
 /* Search input inside pending panel */
@@ -406,7 +408,7 @@
   height: 24px;
   border-radius: 50%;
   background: rgba(34, 197, 94, 0.2);
-  border: 2px solid #22c55e;
+  border: 2px solid var(--status-success);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -439,6 +441,7 @@
 /* Badge list grid */
 .ba-badge-list {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   gap: 0.75rem;
 }
 
@@ -487,7 +490,7 @@
   padding: 1.5rem;
   width: 400px;
   max-width: 90%;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 /* Modal card wide (500px, scrollable) */
@@ -499,7 +502,7 @@
   max-width: 90%;
   max-height: 90vh;
   overflow-y: auto;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 /* Modal body spacing */
@@ -590,8 +593,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--bc1, rgba(255,215,0,0.25)), var(--bc2, rgba(255,215,0,0.125)));
-  border: 2px solid var(--bc, #ffd700);
+  background: linear-gradient(135deg, var(--bc1, var(--primary-alpha-25)), var(--bc2, rgba(255,215,0,0.125)));
+  border: 2px solid var(--bc, var(--primary));
 }
 .bao-badge-circle--40 { width: 40px; height: 40px; }
 .bao-badge-circle--45 { width: 45px; height: 45px; }
@@ -600,14 +603,14 @@
 
 /* Badge name label (dynamic color via CSS var) */
 .bao-badge-name {
-  color: var(--bc, #ffd700);
+  color: var(--bc, var(--primary));
   font-size: 0.8rem;
   font-weight: 500;
 }
 
 /* Badge title (larger, in badge list view) */
 .bao-badge-title {
-  color: var(--bc, #ffd700);
+  color: var(--bc, var(--primary));
   font-size: 1rem;
   font-weight: 600;
 }
@@ -626,15 +629,15 @@
   gap: 0.4rem;
 }
 .bao-tab-btn--active {
-  background: rgba(255,215,0,0.3);
-  border-color: rgba(255,215,0,0.5);
-  color: #ffd700;
+  background: var(--primary-alpha-30);
+  border-color: var(--primary-alpha-50);
+  color: var(--primary);
 }
 .bao-tab-btn--green { /* base variant – inherits inactive styles */ }
 .bao-tab-btn--green-active {
   background: rgba(34,197,94,0.3);
   border-color: rgba(34,197,94,0.5);
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 /* Pending award card item */
@@ -651,7 +654,7 @@
 }
 .bao-pending-item--selected {
   background: rgba(34,197,94,0.15);
-  border: 2px solid #22c55e;
+  border: 2px solid var(--status-success);
 }
 
 /* Selection checkbox indicator */
@@ -666,7 +669,7 @@
   background: transparent;
 }
 .bao-select-indicator--selected {
-  border-color: #22c55e;
+  border-color: var(--status-success);
   background: #22c55e;
 }
 

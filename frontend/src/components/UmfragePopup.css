@@ -1,0 +1,137 @@
+.ufp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 1rem;
+}
+
+.ufp-box {
+  background: #1e2130;
+  border: 1px solid rgba(99,102,241,0.35);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ufp-progress {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+}
+
+.ufp-icon {
+  font-size: 2rem;
+  text-align: center;
+}
+
+.ufp-titel {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+  margin: 0;
+}
+
+.ufp-beschreibung {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.6);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ufp-ja-nein {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.ufp-btn-jn {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ufp-btn-ja {
+  background: rgba(34,197,94,0.1);
+  border-color: rgba(34,197,94,0.3);
+  color: #86efac;
+}
+.ufp-btn-ja:hover, .ufp-btn-ja.aktiv {
+  background: rgba(34,197,94,0.25);
+  border-color: #22c55e;
+}
+
+.ufp-btn-nein {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.3);
+  color: #fca5a5;
+}
+.ufp-btn-nein:hover, .ufp-btn-nein.aktiv {
+  background: rgba(239,68,68,0.25);
+  border-color: #ef4444;
+}
+
+.ufp-kommentar {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.ufp-kommentar:focus {
+  outline: none;
+  border-color: rgba(99,102,241,0.5);
+}
+.ufp-kommentar::placeholder { color: rgba(255,255,255,0.3); }
+
+.ufp-footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 0.25rem;
+}
+
+.ufp-btn-skip {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+}
+.ufp-btn-skip:hover { color: rgba(255,255,255,0.7); }
+
+.ufp-btn-absenden {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ufp-btn-absenden:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ufp-btn-absenden:not(:disabled):hover { opacity: 0.88; }

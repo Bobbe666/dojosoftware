@@ -122,9 +122,9 @@
 }
 
 .ms-badge-primary {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: var(--primary);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--primary-alpha-25);
   border-radius: 6px;
   padding: 2px 10px;
   font-size: 0.8rem;
@@ -183,8 +183,8 @@
 /* Loading spinner override */
 .ms-spinner {
   margin: 0 auto 1rem;
-  border: 3px solid rgba(255, 215, 0, 0.3);
-  border-top-color: #ffd700;
+  border: 3px solid var(--primary-alpha-30);
+  border-top-color: var(--primary);
   width: 40px;
   height: 40px;
 }
@@ -213,7 +213,7 @@
 
 .ms-error-retry-btn {
   padding: 0.75rem 2rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 10px;
   color: var(--bg-secondary);
@@ -226,7 +226,7 @@
 /* Calendar filter bar */
 .ms-filter-bar {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 12px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -245,13 +245,13 @@
 }
 
 .ms-swatch-all {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 50%, rgba(255, 255, 255, 0.05) 50%);
-  border: 2px solid rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, var(--primary-alpha-20) 50%, rgba(255, 255, 255, 0.05) 50%);
+  border: 2px solid var(--primary-alpha-50);
 }
 
 .ms-swatch-mine {
-  background: rgba(255, 215, 0, 0.2);
-  border: 2px solid #ffd700;
+  background: var(--primary-alpha-20);
+  border: 2px solid var(--primary);
 }
 
 .ms-swatch-other {
@@ -267,7 +267,7 @@
   justify-content: center;
   min-width: 70px;
   height: 70px;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-radius: 12px;
   flex-shrink: 0;
 }
@@ -275,7 +275,7 @@
 /* Empty state */
 .ms-empty-state {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 16px;
   padding: 3rem;
   text-align: center;
@@ -302,7 +302,7 @@
 /* Past training card */
 .ms-past-card {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: 12px;
   padding: 1rem;
   display: flex;
@@ -320,7 +320,7 @@
   justify-content: center;
   min-width: 50px;
   height: 50px;
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
   border-radius: 8px;
   flex-shrink: 0;
 }
@@ -347,7 +347,7 @@
 .ms-view-btn {
   padding: 0.75rem 1.5rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
@@ -357,9 +357,9 @@
   transition: all 0.3s ease;
 }
 .ms-view-btn--active {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-20);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* Calendar filter buttons */
@@ -369,7 +369,7 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   background: transparent;
-  border: 1.5px solid rgba(255, 215, 0, 0.2);
+  border: 1.5px solid var(--primary-alpha-20);
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
@@ -378,20 +378,20 @@
   font-weight: 400;
 }
 .ms-filter-btn--active {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-20);
+  border-color: var(--primary);
+  color: var(--primary);
   font-weight: 600;
 }
 .ms-filter-btn:not(.ms-filter-btn--active):hover {
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-40);
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* Member event card (single events: tournaments, etc.) */
 .ms-event-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 16px;
   padding: 1.25rem;
   display: flex;
@@ -406,7 +406,7 @@
 /* Training card (regular schedule) */
 .ms-training-card {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 16px;
   padding: 1.5rem;
   display: flex;
@@ -420,10 +420,10 @@
 }
 .ms-training-card:hover {
   transform: translateY(-2px);
-  border-color: #ffd700;
+  border-color: var(--primary);
 }
 .ms-training-card--pruefung:hover {
-  border-color: #ef4444;
+  border-color: var(--status-error);
 }
 
 /* Training icon box */
@@ -434,7 +434,7 @@
   justify-content: center;
   min-width: 80px;
   height: 80px;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-radius: 12px;
   flex-shrink: 0;
 }
@@ -451,9 +451,9 @@
 }
 .ms-status-badge--bestaetigt {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: var(--status-success);
 }
 .ms-status-badge--angemeldet {
   background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  color: var(--status-indigo);
 }

@@ -57,6 +57,7 @@ const Finanzcockpit = () => {
   const { getDojoFilterParam, activeDojo, filter, dojos, switchDojo, setFilter } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
+  const [memberStats, setMemberStats] = useState(null);
 
   // Dojo-Auswahl für schnelles Wechseln im Finanzcockpit
   const [selectedDojoId, setSelectedDojoId] = useState(filter === 'all' ? 'all' : (activeDojo?.id || 'all'));
@@ -71,6 +72,7 @@ const Finanzcockpit = () => {
     loadTimelineData();
     loadTarifData();
     loadAlerts();
+    loadMemberStats();
   }, [updateTrigger, selectedPeriod, activeDojo, filter]); // 🔒 TAX COMPLIANCE: Neu laden wenn Dojo-Filter ändert
 
   // Sync selectedDojoId mit aktivem Dojo
@@ -210,6 +212,18 @@ const Finanzcockpit = () => {
     } catch (error) {
       console.error('Fehler beim Laden der Tarif-Daten:', error);
     }
+  };
+
+  const loadMemberStats = async () => {
+    try {
+      const dojoFilterParam = getDojoFilterParam();
+      const separator = dojoFilterParam ? '&' : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/member-stats?period=${selectedPeriod}${separator}${dojoFilterParam}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) setMemberStats(result.data);
+      }
+    } catch (_) {}
   };
 
   const loadAlerts = async () => {
@@ -443,24 +457,28 @@ const Finanzcockpit = () => {
     {
       label: 'Offener Betrag',
       value: formatCurrency(stats.offeneRechnungenBetrag),
-      tone: stats.offeneRechnungenBetrag > 0 ? 'warning' : 'positive'
+      tone: stats.offeneRechnungenBetrag > 0 ? 'warning' : 'positive',
+      route: '/dashboard/rechnungen'
     },
     {
       label: 'Offene Rechnungen',
       value: formatNumber(stats.offeneRechnungen),
-      tone: stats.offeneRechnungen > 0 ? 'warning' : 'positive'
+      tone: stats.offeneRechnungen > 0 ? 'warning' : 'positive',
+      route: '/dashboard/rechnungen'
     },
     {
       label: 'Überfällig',
       value: stats.ueberfaelligeRechnungen > 0
         ? formatNumber(stats.ueberfaelligeRechnungen)
         : 'Keine',
-      tone: stats.ueberfaelligeRechnungen > 0 ? 'negative' : 'positive'
+      tone: stats.ueberfaelligeRechnungen > 0 ? 'negative' : 'positive',
+      route: '/dashboard/rechnungen'
     },
     {
       label: 'Ausstehende Beiträge',
       value: formatCurrency(stats.ausstehendeZahlungenBetrag),
-      sublabel: `${formatNumber(stats.ausstehendeZahlungen)} Verträge`
+      sublabel: `${formatNumber(stats.ausstehendeZahlungen)} Verträge`,
+      route: '/dashboard/beitraege'
     }
   ] : [];
 
@@ -468,7 +486,8 @@ const Finanzcockpit = () => {
     {
       label: 'Zahlläufe',
       value: formatNumber(stats.anzahlZahllaeufe),
-      sublabel: `${formatCurrency(stats.zahllaeufeEinnahmen)} abgeschlossen`
+      sublabel: `${formatCurrency(stats.zahllaeufeEinnahmen)} abgeschlossen`,
+      route: '/dashboard/lastschriftlauf'
     },
     {
       label: 'Zahlungen',
@@ -477,14 +496,107 @@ const Finanzcockpit = () => {
     },
     {
       label: 'Rechnungen (bezahlt)',
-      value: formatCurrency(stats.rechnungenEinnahmen)
+      value: formatCurrency(stats.rechnungenEinnahmen),
+      route: '/dashboard/rechnungen'
     },
     {
       label: 'Ausgaben',
       value: formatCurrency(stats.gesamteAusgaben),
-      sublabel: `${formatNumber(stats.anzahlAusgaben)} Buchungen`
+      sublabel: `${formatNumber(stats.anzahlAusgaben)} Buchungen`,
+      route: '/dashboard/ausgaben'
     }
   ] : [];
+
+  const memberKpiCards = memberStats ? [
+    {
+      id: 'avg-beitrag',
+      icon: DollarSign,
+      label: 'Ø Monatsbeitrag',
+      value: formatCurrency(memberStats.avgMonatsbeitrag),
+      detail: `${formatNumber(memberStats.totalVertraege)} aktive Verträge`,
+      tone: 'neutral'
+    },
+    {
+      id: 'sepa-rate',
+      icon: CreditCard,
+      label: 'SEPA-Quote',
+      value: `${memberStats.sepaRate}\u202f%`,
+      detail: `${formatNumber(memberStats.sepaCount)} von ${formatNumber(memberStats.totalVertraege)}`,
+      tone: memberStats.sepaRate >= 70 ? 'positive' : memberStats.sepaRate >= 40 ? 'warning' : 'negative',
+      progress: memberStats.sepaRate
+    },
+    {
+      id: 'inkasso',
+      icon: CheckCircle2,
+      label: 'Inkasso-Quote',
+      value: `${memberStats.inkassoQuote}\u202f%`,
+      detail: `${formatNumber(memberStats.bezahltRechnungen)} / ${formatNumber(memberStats.totalRechnungen)} Rechnungen`,
+      tone: memberStats.inkassoQuote >= 90 ? 'positive' : memberStats.inkassoQuote >= 70 ? 'warning' : 'negative',
+      progress: memberStats.inkassoQuote
+    },
+    {
+      id: 'netto-wachstum',
+      icon: memberStats.nettoWachstum >= 0 ? TrendingUp : TrendingDown,
+      label: 'Netto-Wachstum',
+      value: `${memberStats.nettoWachstum > 0 ? '+' : ''}${memberStats.nettoWachstum}`,
+      detail: `+${memberStats.neueMitglieder} neu · -${memberStats.verloreneMitglieder} beendet`,
+      tone: memberStats.nettoWachstum > 0 ? 'positive' : memberStats.nettoWachstum < 0 ? 'negative' : 'neutral'
+    }
+  ] : [];
+
+  // Zahlungsarten mit Prozentwerten für Progress-Bars
+  const totalZahlungen = stats
+    ? (stats.barEinnahmen || 0) + (stats.kartenEinnahmen || 0) + (stats.lastschriftEinnahmen || 0) +
+      (stats.ueberweisungEinnahmen || 0) + (stats.paypalEinnahmen || 0) + (stats.sonstigeEinnahmen || 0)
+    : 0;
+  const PAYMENT_COLORS = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#06b6d4', '#94a3b8'];
+  const zahlungsartenRows = stats ? [
+    { label: 'Lastschrift / SEPA', value: stats.lastschriftEinnahmen || 0, color: PAYMENT_COLORS[2] },
+    { label: 'Bar', value: stats.barEinnahmen || 0, color: PAYMENT_COLORS[0] },
+    { label: 'Karte', value: stats.kartenEinnahmen || 0, color: PAYMENT_COLORS[1] },
+    { label: 'Überweisung', value: stats.ueberweisungEinnahmen || 0, color: PAYMENT_COLORS[3] },
+    { label: 'PayPal', value: stats.paypalEinnahmen || 0, color: PAYMENT_COLORS[4] },
+    { label: 'Sonstige', value: stats.sonstigeEinnahmen || 0, color: PAYMENT_COLORS[5] }
+  ].filter(r => r.value > 0) : [];
+
+  // Neue Insights aus memberStats
+  const memberInsights = memberStats ? [
+    memberStats.sepaRate < 50 && {
+      id: 'sepa-low',
+      icon: AlertCircle,
+      tone: 'warning',
+      title: 'SEPA-Quote unter 50\u202f%',
+      description: `Nur ${memberStats.sepaRate}\u202f% zahlen per Lastschrift – Automatisierung empfohlen`
+    },
+    memberStats.sepaRate >= 80 && {
+      id: 'sepa-high',
+      icon: CheckCircle2,
+      tone: 'positive',
+      title: 'Hohe SEPA-Automatisierung',
+      description: `${memberStats.sepaRate}\u202f% der Mitglieder zahlen per Lastschrift – sehr gut`
+    },
+    memberStats.inkassoQuote < 80 && {
+      id: 'inkasso-low',
+      icon: AlertTriangle,
+      tone: 'negative',
+      title: 'Inkasso-Quote unter 80\u202f%',
+      description: `${100 - memberStats.inkassoQuote}\u202f% der fälligen Rechnungen noch offen`
+    },
+    memberStats.nettoWachstum > 0 && {
+      id: 'growth',
+      icon: TrendingUp,
+      tone: 'positive',
+      title: `+${memberStats.nettoWachstum} Verträge netto`,
+      description: `${memberStats.neueMitglieder} neue, ${memberStats.verloreneMitglieder} beendete Verträge in diesem Zeitraum`
+    },
+    memberStats.nettoWachstum < 0 && {
+      id: 'churn',
+      icon: TrendingDown,
+      tone: 'negative',
+      title: `${memberStats.nettoWachstum} Verträge netto`,
+      description: `${memberStats.verloreneMitglieder} beendet, nur ${memberStats.neueMitglieder} neue Verträge`
+    }
+  ].filter(Boolean) : [];
 
   const ActionCard = ({ icon: Icon, label, desc, iconColor, onClick, badge }) => (
     <button className="fc__action-card" onClick={onClick}>
@@ -606,32 +718,37 @@ const Finanzcockpit = () => {
         ))}
       </section>
 
-      {(alerts.ruecklastschriften > 0 || (stats.ausstehendeZahlungen || 0) > 0 || (stats.offeneRechnungen || 0) > 0) && (
+      {memberKpiCards.length > 0 && (
+        <section>
+          <p className="finanzcockpit__member-section-label">Mitglieder-Kennzahlen</p>
+          <div className="finanzcockpit__member-kpi-grid">
+            {memberKpiCards.map(({ id, icon: Icon, label, value, detail, tone, progress }) => (
+              <div key={id} className={`finanzcockpit-card finanzcockpit__kpi-card finanzcockpit__kpi-card--mini finanzcockpit__kpi-card--${tone}`}>
+                <div className="finanzcockpit__kpi-meta">
+                  <div className="finanzcockpit__kpi-icon"><Icon size={16} /></div>
+                  <span className="finanzcockpit__kpi-label">{label}</span>
+                </div>
+                <div className="finanzcockpit__kpi-value">{value}</div>
+                <span className="finanzcockpit__kpi-detail">{detail}</span>
+                {progress !== undefined && (
+                  <div className="fc__progress-wrap">
+                    <div className={`fc__progress-bar fc__progress-bar--${tone}`} style={{ width: `${Math.min(progress, 100)}%` }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {alerts.ruecklastschriften > 0 && (
         <section className="fc__alerts">
-          {alerts.ruecklastschriften > 0 && (
-            <div className="fc__alert-card fc__alert-card--error" onClick={() => navigate('/dashboard/ruecklastschriften')}>
-              <AlertTriangle size={16} />
-              <span className="fc__alert-count">{alerts.ruecklastschriften}</span>
-              <span className="fc__alert-label">offene Rücklastschrift{alerts.ruecklastschriften !== 1 ? 'en' : ''}</span>
-              <ChevronRight size={13} className="fc__alert-arrow" />
-            </div>
-          )}
-          {(stats.ausstehendeZahlungen || 0) > 0 && (
-            <div className="fc__alert-card fc__alert-card--warning" onClick={() => navigate('/dashboard/beitraege')}>
-              <AlertCircle size={16} />
-              <span className="fc__alert-count">{stats.ausstehendeZahlungen}</span>
-              <span className="fc__alert-label">ausstehende Beitragszahlung{stats.ausstehendeZahlungen !== 1 ? 'en' : ''}</span>
-              <ChevronRight size={13} className="fc__alert-arrow" />
-            </div>
-          )}
-          {(stats.offeneRechnungen || 0) > 0 && (
-            <div className="fc__alert-card fc__alert-card--invoice" onClick={() => navigate('/dashboard/rechnungen')}>
-              <FileText size={16} />
-              <span className="fc__alert-count">{stats.offeneRechnungen}</span>
-              <span className="fc__alert-label">offene Rechnung{stats.offeneRechnungen !== 1 ? 'en' : ''}</span>
-              <ChevronRight size={13} className="fc__alert-arrow" />
-            </div>
-          )}
+          <div className="fc__alert-card fc__alert-card--error" onClick={() => navigate('/dashboard/ruecklastschriften')}>
+            <AlertTriangle size={16} />
+            <span className="fc__alert-count">{alerts.ruecklastschriften}</span>
+            <span className="fc__alert-label">offene Rücklastschrift{alerts.ruecklastschriften !== 1 ? 'en' : ''} – sofortige Bearbeitung empfohlen</span>
+            <ChevronRight size={13} className="fc__alert-arrow" />
+          </div>
         </section>
       )}
 
@@ -710,9 +827,9 @@ const Finanzcockpit = () => {
               </div>
             </div>
             <ul className="finanzcockpit__insight-list">
-              {insights.map(({ id, icon: Icon, title, description }) => (
+              {[...insights, ...memberInsights].map(({ id, icon: Icon, title, description, tone }) => (
                 <li key={id}>
-                  <div className="finanzcockpit__insight-icon"><Icon size={16} /></div>
+                  <div className={`finanzcockpit__insight-icon${tone ? ` finanzcockpit__insight-icon--${tone}` : ''}`}><Icon size={16} /></div>
                   <div>
                     <p className="finanzcockpit__insight-title">{title}</p>
                     <p className="finanzcockpit__insight-description">{description}</p>
@@ -727,29 +844,13 @@ const Finanzcockpit = () => {
         <div className="fc__actions-col">
           <div className="fc__action-groups">
             <div className="fc__action-group">
-              <h3 className="fc__action-group-title">Buchführung</h3>
-              <div className="fc__action-list">
-                <ActionCard icon={FileSpreadsheet} label="EÜR erstellen" desc="Einnahmen-Überschuss-Rechnung" iconColor="#10b981" onClick={() => navigate('/dashboard/euer')} />
-                <ActionCard icon={TrendingDown} label="Ausgaben erfassen" desc="Neue Ausgabe buchen" iconColor="#ef4444" onClick={() => navigate('/dashboard/ausgaben')} />
-                <ActionCard icon={Upload} label="Kontoauszug importieren" desc="CSV / MT940 importieren" iconColor="#f97316" onClick={() => navigate('/dashboard/kontoauszug-import')} />
-                <ActionCard icon={CalendarDays} label="Jahresübersicht" desc="Monat-für-Monat Verlauf" iconColor="#6366f1" onClick={() => navigate('/dashboard/jahresuebersicht')} />
-              </div>
-            </div>
-
-            <div className="fc__action-group">
-              <h3 className="fc__action-group-title">Zahlungsverkehr</h3>
+              <h3 className="fc__action-group-title">Abrechnung</h3>
               <div className="fc__action-list">
                 <ActionCard icon={CreditCard} label="Lastschriftlauf" desc="SEPA-Einzüge starten" iconColor="#3b82f6" onClick={() => navigate('/dashboard/lastschriftlauf')} />
                 <ActionCard icon={AlertCircle} label="Mahnwesen" desc="Überfällige Zahlungen" iconColor="#f59e0b" onClick={() => navigate('/dashboard/mahnwesen')} badge={stats?.ausstehendeZahlungen || 0} />
                 <ActionCard icon={RotateCcw} label="Rücklastschriften" desc="Fehlgeschlagene Abbuchungen" iconColor="#ef4444" onClick={() => navigate('/dashboard/ruecklastschriften')} badge={alerts.ruecklastschriften} />
-              </div>
-            </div>
-
-            <div className="fc__action-group">
-              <h3 className="fc__action-group-title">Rechnungen & Beiträge</h3>
-              <div className="fc__action-list">
-                <ActionCard icon={FileText} label="Rechnungen prüfen" desc="Offene Posten verwalten" iconColor="#f59e0b" onClick={() => navigate('/dashboard/rechnungen')} badge={stats?.offeneRechnungen || 0} />
                 <ActionCard icon={DollarSign} label="Beiträge verwalten" desc="Verträge und Tarife" iconColor="#10b981" onClick={() => navigate('/dashboard/beitraege')} />
+                <ActionCard icon={Upload} label="Kontoauszug importieren" desc="CSV / MT940 importieren" iconColor="#f97316" onClick={() => navigate('/dashboard/kontoauszug-import')} />
               </div>
             </div>
 
@@ -774,13 +875,14 @@ const Finanzcockpit = () => {
       </div>
 
       <section className="finanzcockpit__details">
-        <div className="finanzcockpit-card finanzcockpit__detail-card">
+        <div className="finanzcockpit-card finanzcockpit__detail-card finanzcockpit__detail-card--clickable" onClick={() => navigate('/dashboard/jahresuebersicht')}>
           <div className="finanzcockpit__detail-header">
             <TrendingUp size={16} />
             <div>
               <h3>Einnahmen-Übersicht</h3>
               <p>Regelmäßige und variable Umsätze</p>
             </div>
+            <ChevronRight size={14} className="finanzcockpit__detail-arrow" />
           </div>
           <div className="finanzcockpit__metrics-list">
             {incomeMetrics.map(metric => {
@@ -802,16 +904,30 @@ const Finanzcockpit = () => {
             <PieChartIcon size={16} />
             <div>
               <h3>Zahlungsarten</h3>
-              <p>Wie Mitglieder und Kunden zahlen</p>
+              <p>Verteilung nach Einnahmen</p>
             </div>
           </div>
-          <div className="finanzcockpit__metrics-list">
-            {paymentMetrics.map(metric => (
-              <div key={metric.label} className="finanzcockpit__metric-row">
-                <span className="finanzcockpit__metric-label">{metric.label}</span>
-                <span className="finanzcockpit__metric-value">{metric.value}</span>
-              </div>
-            ))}
+          <div>
+            {zahlungsartenRows.length > 0 ? zahlungsartenRows.map(row => {
+              const pct = totalZahlungen > 0 ? Math.round((row.value / totalZahlungen) * 100) : 0;
+              return (
+                <div key={row.label} className="fc__payment-row">
+                  <div className="fc__payment-row-header">
+                    <div className="fc__payment-row-left">
+                      <div className="fc__payment-dot" style={{ background: row.color }} />
+                      <span className="fc__payment-row-label">{row.label}</span>
+                    </div>
+                    <div className="fc__payment-row-right">
+                      <span className="fc__payment-row-pct">{pct}\u202f%</span>
+                      <span className="fc__payment-row-value">{formatCurrency(row.value)}</span>
+                    </div>
+                  </div>
+                  <div className="fc__progress-wrap">
+                    <div className="fc__progress-bar" style={{ width: `${pct}%`, background: row.color }} />
+                  </div>
+                </div>
+              );
+            }) : <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>}
           </div>
         </div>
 
@@ -825,12 +941,17 @@ const Finanzcockpit = () => {
           </div>
           <div className="finanzcockpit__metrics-list">
             {dueMetrics.map(metric => (
-              <div key={metric.label} className="finanzcockpit__metric-row">
+              <div
+                key={metric.label}
+                className={`finanzcockpit__metric-row${metric.route ? ' finanzcockpit__metric-row--clickable' : ''}`}
+                onClick={metric.route ? () => navigate(metric.route) : undefined}
+              >
                 <span className="finanzcockpit__metric-label">{metric.label}</span>
                 <span className={`finanzcockpit__metric-value ${metric.tone ? `is-${metric.tone}` : ''}`}>
                   {metric.value}
                   {metric.sublabel && <small>{metric.sublabel}</small>}
                 </span>
+                {metric.route && <ChevronRight size={12} className="fc__metric-row-arrow" />}
               </div>
             ))}
           </div>
@@ -846,16 +967,54 @@ const Finanzcockpit = () => {
           </div>
           <div className="finanzcockpit__metrics-list">
             {activityMetrics.map(metric => (
-              <div key={metric.label} className="finanzcockpit__metric-row">
+              <div
+                key={metric.label}
+                className={`finanzcockpit__metric-row${metric.route ? ' finanzcockpit__metric-row--clickable' : ''}`}
+                onClick={metric.route ? () => navigate(metric.route) : undefined}
+              >
                 <span className="finanzcockpit__metric-label">{metric.label}</span>
                 <span className="finanzcockpit__metric-value">
                   {metric.value}
                   {metric.sublabel && <small>{metric.sublabel}</small>}
                 </span>
+                {metric.route && <ChevronRight size={12} className="fc__metric-row-arrow" />}
               </div>
             ))}
           </div>
         </div>
+
+        {tarifData.length > 0 && (
+          <div className="finanzcockpit-card finanzcockpit__detail-card">
+            <div className="finanzcockpit__detail-header">
+              <Users size={16} />
+              <div>
+                <h3>Top-Tarife</h3>
+                <p>Umsatz nach Mitgliedschaftsart</p>
+              </div>
+            </div>
+            {(() => {
+              const maxVal = Math.max(...tarifData.map(t => t.value), 1);
+              return (
+                <div className="fc__tarif-list">
+                  {tarifData.slice(0, 5).map((tarif, idx) => (
+                    <div key={tarif.name} className="fc__tarif-item">
+                      <div className="fc__tarif-header">
+                        <div className="fc__tarif-name">
+                          <span className="fc__tarif-rank">{idx + 1}</span>
+                          <span className="fc__tarif-name-text">{tarif.name}</span>
+                        </div>
+                        <span className="fc__tarif-stats">{formatCurrency(tarif.value)} · {tarif.count}×</span>
+                      </div>
+                      <div className="fc__tarif-bar-wrap">
+                        <div className="fc__tarif-bar" style={{ width: `${Math.round((tarif.value / maxVal) * 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </section>
     </div>
   );

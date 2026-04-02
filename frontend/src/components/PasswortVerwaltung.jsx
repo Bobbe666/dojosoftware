@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Key, Search, RefreshCw, Eye, EyeOff, CheckCircle, AlertCircle, Users, Building2, Shield, UserPlus, Zap, RotateCcw, Clock } from 'lucide-react';
 import config from '../config/config.js';
 import { getAuthToken } from '../utils/fetchWithAuth';
+import { useDojoContext } from '../context/DojoContext';
 import '../styles/PasswortVerwaltung.css';
 
 const PasswortVerwaltung = ({ dojoOnly = false }) => {
+  const { activeDojo } = useDojoContext();
+  const activeDojoId = activeDojo && activeDojo !== 'super-admin' && activeDojo !== 'verband' && activeDojo !== 'shop'
+    ? activeDojo.id : null;
   const [activeTab, setActiveTab] = useState(dojoOnly ? 'dojo' : 'software');
   const [users, setUsers] = useState([]);
   const [membersWithoutLogin, setMembersWithoutLogin] = useState([]);
@@ -42,13 +46,14 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
     if (activeTab === 'dojo') loadMembersWithoutLogin();
     setSearchTerm('');
     setShowWithoutLogin(false);
-  }, [activeTab]);
+  }, [activeTab, activeDojoId]);
 
   const loadUsers = async () => {
     setLoading(true);
     setMessage({ text: '', type: '' });
     try {
-      const response = await fetch(`${config.apiBaseUrl}/admins/password-management/${activeTab}`, {
+      const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
+      const response = await fetch(`${config.apiBaseUrl}/admins/password-management/${activeTab}${dojoParam}`, {
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       });
       if (!response.ok) throw new Error('Fehler beim Laden');
@@ -63,7 +68,8 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
 
   const loadMembersWithoutLogin = async () => {
     try {
-      const response = await fetch(`${config.apiBaseUrl}/admins/password-management/dojo-ohne-login`, {
+      const dojoParam = activeDojoId ? `?dojo_id=${activeDojoId}` : '';
+      const response = await fetch(`${config.apiBaseUrl}/admins/password-management/dojo-ohne-login${dojoParam}`, {
         headers: { 'Authorization': `Bearer ${getAuthToken()}` }
       });
       if (!response.ok) throw new Error('Fehler beim Laden');
@@ -80,7 +86,8 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
     try {
       const response = await fetch(`${config.apiBaseUrl}/admins/password-management/dojo/bulk-create`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${getAuthToken()}`, 'Content-Type': 'application/json' }
+        headers: { 'Authorization': `Bearer ${getAuthToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(activeDojoId ? { dojo_id: activeDojoId } : {})
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Fehler');

@@ -1,0 +1,231 @@
+{
+  "invoices": {
+    "title": "Rechnungen",
+    "subtitle": "Alle Rechnungen verwalten",
+    "create": "Neue Rechnung",
+    "edit": "Rechnung bearbeiten",
+    "view": "Rechnung ansehen",
+    "columns": {
+      "invoiceNumber": "Rechnungs-Nr.",
+      "date": "Datum",
+      "dueDate": "Fällig am",
+      "member": "Mitglied",
+      "amount": "Betrag",
+      "status": "Status",
+      "actions": "Aktionen"
+    },
+    "status": {
+      "open": "Offen",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig",
+      "partiallyPaid": "Teilbezahlt",
+      "cancelled": "Storniert"
+    },
+    "filters": {
+      "all": "Alle Rechnungen",
+      "open": "Offen",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig",
+      "archive": "Archiv"
+    },
+    "searchPlaceholder": "Suche nach Rechnungsnummer, Mitglied oder Beschreibung...",
+    "noInvoices": "Keine Rechnungen gefunden",
+    "emptyStates": {
+      "all": "Es wurden noch keine Rechnungen erstellt.",
+      "open": "Keine offenen Rechnungen vorhanden.",
+      "paid": "Keine bezahlten Rechnungen vorhanden.",
+      "overdue": "Keine überfälligen Rechnungen vorhanden.",
+      "archive": "Keine archivierten Rechnungen vorhanden."
+    },
+    "types": {
+      "membershipFee": "Mitgliedsbeitrag",
+      "examFee": "Prüfungsgebühr",
+      "courseFee": "Kursgebühr",
+      "equipment": "Ausrüstung",
+      "other": "Sonstiges"
+    },
+    "details": "Rechnungsdetails",
+    "tabs": {
+      "details": "Details",
+      "positions": "Positionen",
+      "payments": "Zahlungen"
+    },
+    "positionsTable": {
+      "position": "Pos.",
+      "description": "Beschreibung",
+      "quantity": "Menge",
+      "unitPrice": "Einzelpreis",
+      "total": "Gesamt",
+      "noPositions": "Keine Positionen vorhanden"
+    },
+    "paymentsTable": {
+      "title": "Zahlungshistorie",
+      "date": "Datum",
+      "amount": "Betrag",
+      "method": "Methode",
+      "note": "Notiz",
+      "noPayments": "Keine Zahlungen vorhanden"
+    },
+    "confirmArchive": "Rechnung archivieren?",
+    "confirmUnarchive": "Archivierung aufheben?",
+    "confirmDelete": "Rechnung wirklich löschen? Dies kann nicht rückgängig gemacht werden!",
+    "archived": "Rechnung archiviert",
+    "unarchived": "Archivierung aufgehoben",
+    "deleted": "Rechnung gelöscht",
+    "tooltips": {
+      "viewDetails": "Details anzeigen",
+      "archive": "Archivieren",
+      "restore": "Wiederherstellen",
+      "delete": "Löschen"
+    },
+    "form": {
+      "selectMember": "Mitglied auswählen",
+      "invoiceDate": "Rechnungsdatum",
+      "dueDate": "Fälligkeitsdatum",
+      "items": "Positionen",
+      "addItem": "Position hinzufügen",
+      "description": "Beschreibung",
+      "quantity": "Menge",
+      "unitPrice": "Einzelpreis",
+      "total": "Gesamt",
+      "subtotal": "Zwischensumme",
+      "tax": "MwSt.",
+      "totalAmount": "Gesamtbetrag"
+    },
+    "actions": {
+      "markPaid": "Als bezahlt markieren",
+      "sendEmail": "Per E-Mail senden",
+      "download": "PDF herunterladen",
+      "cancel": "Stornieren",
+      "duplicate": "Duplizieren"
+    }
+  },
+  "fees": {
+    "title": "Beiträge",
+    "subtitle": "Mitgliedsbeiträge verwalten",
+    "columns": {
+      "member": "Mitglied",
+      "tariff": "Tarif",
+      "amount": "Betrag",
+      "period": "Zeitraum",
+      "dueDate": "Fällig am",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "paid": "Bezahlt",
+      "overdue": "Überfällig"
+    },
+    "createBatch": "Beiträge generieren"
+  },
+  "directDebit": {
+    "title": "Lastschriftlauf",
+    "subtitle": "SEPA-Lastschriften verwalten",
+    "createRun": "Neuen Lastschriftlauf erstellen",
+    "runDate": "Einzugsdatum",
+    "totalAmount": "Gesamtbetrag",
+    "transactions": "Transaktionen",
+    "status": {
+      "pending": "Vorbereitet",
+      "submitted": "Eingereicht",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen"
+    },
+    "export": "SEPA-XML exportieren"
+  },
+  "sepa": {
+    "title": "SEPA-Mandate",
+    "subtitle": "Einzugsermächtigungen verwalten",
+    "columns": {
+      "mandateId": "Mandatsreferenz",
+      "member": "Mitglied",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "signatureDate": "Unterschriftsdatum",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Aktiv",
+      "revoked": "Widerrufen",
+      "expired": "Abgelaufen"
+    },
+    "create": "Neues Mandat anlegen",
+    "revoke": "Mandat widerrufen"
+  },
+  "dunning": {
+    "title": "Mahnwesen",
+    "subtitle": "Offene Forderungen verwalten",
+    "levels": {
+      "reminder": "Zahlungserinnerung",
+      "dunning1": "1. Mahnung",
+      "dunning2": "2. Mahnung",
+      "dunning3": "3. Mahnung"
+    },
+    "sendReminder": "Mahnung versenden",
+    "daysOverdue": "Tage überfällig"
+  },
+  "tariffs": {
+    "title": "Tarife & Preise",
+    "subtitle": "Mitgliedschaftstarife verwalten",
+    "create": "Neuen Tarif anlegen",
+    "columns": {
+      "name": "Bezeichnung",
+      "price": "Preis",
+      "interval": "Intervall",
+      "members": "Mitglieder"
+    },
+    "intervals": {
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljährlich",
+      "halfYearly": "Halbjährlich",
+      "yearly": "Jährlich",
+      "oneTime": "Einmalig"
+    }
+  },
+  "expenses": {
+    "title": "Ausgaben",
+    "subtitle": "Betriebsausgaben erfassen",
+    "create": "Ausgabe hinzufügen",
+    "columns": {
+      "date": "Datum",
+      "category": "Kategorie",
+      "description": "Beschreibung",
+      "amount": "Betrag",
+      "receipt": "Beleg"
+    },
+    "categories": {
+      "rent": "Miete",
+      "utilities": "Nebenkosten",
+      "equipment": "Ausstattung",
+      "marketing": "Werbung",
+      "insurance": "Versicherung",
+      "other": "Sonstiges"
+    }
+  },
+  "cockpit": {
+    "title": "Finanzcockpit",
+    "subtitle": "Übersicht aller Finanzkennzahlen",
+    "revenue": "Einnahmen",
+    "expenses": "Ausgaben",
+    "profit": "Gewinn",
+    "totalInvoices": "Gesamt Rechnungen",
+    "openInvoices": "Offene Rechnungen",
+    "paidInvoices": "Bezahlte Rechnungen",
+    "overdueInvoices": "Überfällige Rechnungen",
+    "overdueAmount": "Überfällige Beträge",
+    "thisMonth": "Dieser Monat",
+    "thisYear": "Dieses Jahr",
+    "compared": "Im Vergleich zum Vorjahr"
+  },
+  "errors": {
+    "loadingError": "Fehler beim Laden der Finanzdaten",
+    "savingError": "Fehler beim Speichern",
+    "invoiceNotFound": "Rechnung nicht gefunden",
+    "paymentFailed": "Zahlung fehlgeschlagen"
+  },
+  "messages": {
+    "invoiceSaved": "Rechnung gespeichert",
+    "invoiceSent": "Rechnung versendet",
+    "paymentRecorded": "Zahlung erfasst"
+  }
+}

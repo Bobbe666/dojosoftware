@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Bell, Settings, Send, Users, History, FileText, CheckCircle, XCircle, Clock, Newspaper } from 'lucide-react';
+import axios from 'axios';
+import { Mail, Bell, Settings, Send, Users, History, FileText, CheckCircle, XCircle, Clock, Newspaper, BookOpen } from 'lucide-react';
 import { LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer } from 'recharts';
 import '../styles/NotificationSystem.css';
 import config from '../config/config.js';
@@ -12,9 +13,16 @@ import NewsVerwaltung from './NewsVerwaltung';
 
 
 const NotificationSystem = () => {
-  const { activeDojo, filter } = useDojoContext();
+  const { activeDojo, filter, dojos } = useDojoContext();
   const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Kurs-Nachricht State
+  const [kurseList, setKurseList] = useState([]);
+  const [kursDropdownOpen, setKursDropdownOpen] = useState(false);
+  const [kursNachricht, setKursNachricht] = useState({ kursId: '', betreff: '', text: '' });
+  const [kursNachrichtSending, setKursNachrichtSending] = useState(false);
+  const [kursNachrichtResult, setKursNachrichtResult] = useState(null);
 
   // Prüfe ob User Haupt-Admin ist (für News-Feature)
   let isMainAdmin = false;
@@ -119,15 +127,38 @@ const NotificationSystem = () => {
     loadTemplates();
     loadHistory();
     loadPushSubscriptions();
+    loadKurse();
     // loadTimelineData(); // TODO: Endpoint noch nicht implementiert
   }, []);
 
-  // Lade Empfänger neu, wenn sich der Dojo-Filter ändert
+  // Lade Empfänger + Kurse neu, wenn sich der Dojo-Filter ändert
   useEffect(() => {
     if (activeDojo) {
       loadRecipients();
+      loadKurse();
     }
   }, [filter, activeDojo]);
+
+  const loadKurse = async () => {
+    try {
+      const params = {};
+      if (activeDojo?.id) {
+        params.dojo_id = activeDojo.id;
+      }
+      // Axios hat globalen Auth-Header + baseURL '/api' konfiguriert
+      const res = await axios.get('/kurse', { params });
+      const raw = Array.isArray(res.data) ? res.data : [];
+      // Normalisiere Feldnamen: regulärer Endpunkt gibt gruppenname/stil,
+      // include_schedule gibt name/stil_name → vereinheitlichen
+      setKurseList(raw.map(k => ({
+        ...k,
+        name: k.name || k.gruppenname || '',
+        stil_name: k.stil_name || k.stil || '',
+      })));
+    } catch (err) {
+      console.error('Fehler beim Laden der Kurse:', err);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -296,19 +327,15 @@ const NotificationSystem = () => {
         const membersData = await membersResponse.json();
         console.log('📊 Raw members data:', Array.isArray(membersData) ? membersData.slice(0, 2) : membersData); // Zeige ersten 2 Einträge
 
-        // Erstelle realistische Email-Adressen basierend auf den Namen
+        // Nur Mitglieder mit echter E-Mail-Adresse verwenden
         if (Array.isArray(membersData)) {
-          memberEmails = membersData.map(member => {
-            const firstName = (member.vorname || 'member').toLowerCase().replace(/[^a-z]/g, '');
-            const lastName = (member.nachname || 'test').toLowerCase().replace(/[^a-z]/g, '');
-            const email = `${firstName}.${lastName}@dojo.local`;
-
-            return {
-              email: email,
+          memberEmails = membersData
+            .filter(member => member.email && member.email.trim())
+            .map(member => ({
+              email: member.email.trim(),
               name: `${member.vorname || ''} ${member.nachname || ''}`.trim(),
               type: 'mitglied'
-            };
-          });
+            }));
         } else {
           console.warn('⚠️ membersData is not an array:', membersData);
           memberEmails = [];
@@ -625,23 +652,45 @@ const NotificationSystem = () => {
     return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
   }
 
+  const [pushStatus, setPushStatus] = useState(''); // inline Feedback neben dem Button
+
   const requestPushPermission = async () => {
+    setPushStatus('⏳ Wird aktiviert…');
     if (!('Notification' in window)) {
-      setError('Push-Benachrichtigungen werden von diesem Browser nicht unterstützt');
+      setPushStatus('❌ Browser unterstützt keine Push-Benachrichtigungen');
       return;
     }
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setError('Push-Benachrichtigungen werden von diesem Browser nicht unterstützt');
+      setPushStatus('❌ Browser unterstützt keine Push-Benachrichtigungen');
+      return;
+    }
+    // Aktuellen Permission-Status prüfen
+    const currentPerm = Notification.permission;
+    if (currentPerm === 'denied') {
+      setPushStatus('❌ Benachrichtigungen blockiert! Safari: Einstellungen → Websites → Benachrichtigungen → dojo.tda-intl.org → Erlauben');
       return;
     }
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
-        setError('Push-Benachrichtigungen wurden abgelehnt');
+        setPushStatus('❌ Benachrichtigung verweigert. Bitte im Browser erlauben.');
         return;
       }
-      // Service Worker bereit warten
-      const registration = await navigator.serviceWorker.ready;
+      setPushStatus('⏳ Service Worker wird registriert…');
+      // SW registrieren falls noch nicht vorhanden
+      let registration = await navigator.serviceWorker.getRegistration('/');
+      if (!registration) {
+        registration = await navigator.serviceWorker.register('/sw.js');
+      }
+      // Warten bis SW aktiv ist (sw.js hat skipWaiting, geht schnell)
+      if (!registration.active) {
+        await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Service Worker konnte nicht aktiviert werden')), 8000))
+        ]);
+        registration = await navigator.serviceWorker.getRegistration('/');
+      }
+      setPushStatus('⏳ Abonnement wird erstellt…');
       // VAPID Public Key (muss mit Backend übereinstimmen)
       const vapidPublicKey = 'BKzKRA_Tojs8YsxKH5yR2oToWDm5uI8QvMjZNLCP6hSMBxyA3pwOIk2rc80a8kyd04T4stIUIrLXMj2O_CMCnfc';
       const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
@@ -655,6 +704,7 @@ const NotificationSystem = () => {
       }
       // Subscription ans Backend senden
       const subJson = subscription.toJSON();
+      setPushStatus('⏳ Wird gespeichert…');
       const response = await fetchWithAuth(`${config.apiBaseUrl}/notifications/push/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -667,13 +717,17 @@ const NotificationSystem = () => {
       });
       const data = await response.json();
       if (data.success) {
+        setPushStatus('✅ Push-Benachrichtigungen aktiviert!');
         setSuccess('Push-Benachrichtigungen aktiviert ✓');
         await loadDashboardData();
+        await loadPushSubscriptions();
       } else {
+        setPushStatus('❌ Fehler: ' + (data.message || 'Unbekannter Fehler'));
         setError(data.message || 'Fehler beim Aktivieren');
       }
     } catch (err) {
       console.error('Push-Subscription Fehler:', err);
+      setPushStatus('❌ Fehler: ' + err.message);
       setError('Fehler beim Aktivieren: ' + err.message);
     }
   };
@@ -1107,7 +1161,7 @@ const NotificationSystem = () => {
           </label>
         </div>
 
-        {settings.push_enabled && (
+        {!!settings.push_enabled && (
           <div className="push-config">
             <p className="ns-subtitle">Push-Notification-Konfiguration wird hier implementiert...</p>
           </div>
@@ -1304,14 +1358,19 @@ const NotificationSystem = () => {
         <div className="form-group">
           <label>Push-Berechtigung aktivieren</label>
           <div className="push-permission-section">
-            <button 
+            <button
               onClick={requestPushPermission}
               className="btn btn-secondary"
             >
               🔔 Push-Benachrichtigungen aktivieren
             </button>
+            {pushStatus && (
+              <p style={{ marginTop: '8px', padding: '8px 12px', background: pushStatus.startsWith('✅') ? '#f0fff4' : pushStatus.startsWith('❌') ? '#fff5f5' : '#fffbeb', border: '1px solid', borderColor: pushStatus.startsWith('✅') ? '#68d391' : pushStatus.startsWith('❌') ? '#fc8181' : '#f6e05e', borderRadius: '6px', fontSize: '13px', lineHeight: '1.4' }}>
+                {pushStatus}
+              </p>
+            )}
             <p className="permission-info">
-              Aktive Abonnements: {pushSubscriptions.length}
+              Aktive Abonnements: {pushSubscriptions.length} | Browser: {typeof Notification !== 'undefined' ? Notification.permission : 'n/a'}
             </p>
           </div>
         </div>
@@ -1368,8 +1427,7 @@ const NotificationSystem = () => {
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
                   placeholder="Nach Name oder Email suchen..."
-                  className="form-input"
-                  className="u-w-full ns-mb-sm"
+                  className="form-input u-w-full ns-mb-sm"
                 />
 
                 {memberSearch.length > 0 && (
@@ -1463,6 +1521,32 @@ const NotificationSystem = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Schnellvorlagen */}
+        <div className="form-group">
+          <label>Schnellvorlage wählen</label>
+          <div className="ns-push-templates">
+            {[
+              { label: '🤒 Ausfall – Krankheit', title: '⚠️ Training heute abgesagt', message: 'Das heutige Training muss leider kurzfristig wegen Krankheit des Trainers ausfallen. Wir bitten um Entschuldigung und melden uns sobald wie möglich.' },
+              { label: '⚠️ Ausfall – allgemein', title: '⚠️ Training heute abgesagt', message: 'Das heutige Training muss leider kurzfristig ausfallen. Wir bitten um Verständnis und informieren euch über den nächsten Termin.' },
+              { label: '📍 Hallenänderung', title: '📍 Hallenänderung heute', message: 'Das Training findet heute ausnahmsweise in einer anderen Halle statt. Bitte informiert euch rechtzeitig und gebt die Info weiter.' },
+              { label: '🥋 Prüfungserinnerung', title: '🥋 Gürtelprüfung – Erinnerung', message: 'Denkt an die bevorstehende Gürtelprüfung! Seid rechtzeitig vor Ort, bringt alle erforderlichen Unterlagen mit und kommt gut vorbereitet.' },
+              { label: '🏆 Lehrgang', title: '🏆 Lehrgang-Einladung', message: 'Ihr seid herzlich zum kommenden Lehrgang eingeladen! Anmeldung bitte bis zum angegebenen Datum. Weitere Details erhaltet ihr in Kürze.' },
+              { label: '📅 Terminänderung', title: '📅 Wichtige Terminänderung', message: 'Es gibt eine Änderung bei einem Termin. Bitte prüft euren Trainingsplan und tragt den neuen Termin in euren Kalender ein.' },
+              { label: '💳 Beitragsinfo', title: '💳 Wichtige Beitragsinfo', message: 'Bitte stellt sicher, dass eure Zahlungsdaten aktuell sind und der Monatsbeitrag pünktlich eingezogen werden kann. Bei Fragen meldet euch.' },
+              { label: '📢 Ankündigung', title: '📢 Wichtige Mitteilung', message: 'Bitte beachtet folgende wichtige Mitteilung vom Dojo-Team. Weitere Details folgen in Kürze oder könnt ihr direkt erfragen.' },
+            ].map((tpl) => (
+              <button
+                key={tpl.label}
+                type="button"
+                className="ns-template-btn"
+                onClick={() => setPushData({ ...pushData, title: tpl.title, message: tpl.message })}
+              >
+                {tpl.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -1602,7 +1686,7 @@ const NotificationSystem = () => {
           <p className="ns-subtitle">Übersicht über alle gesendeten Benachrichtigungen</p>
         </div>
 
-        <div className="history-list" className="u-flex-col-sm">
+        <div className="history-list u-flex-col-sm">
           {Array.isArray(groups) && groups.map((group, index) => {
             const key = `${group.subject}_${group.timestamp}`;
             const recipients = expandedNotifications[key];
@@ -1768,6 +1852,116 @@ const NotificationSystem = () => {
   };
 
   // ===================================================================
+  // 📚 KURS-NACHRICHT
+  // ===================================================================
+
+  const sendKursNachricht = async () => {
+    if (!kursNachricht.kursId || !kursNachricht.betreff || !kursNachricht.text) return;
+    setKursNachrichtSending(true);
+    setKursNachrichtResult(null);
+    try {
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/kurse/${kursNachricht.kursId}/bulk-nachricht`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ betreff: kursNachricht.betreff, nachricht: kursNachricht.text })
+        }
+      );
+      const data = await response.json();
+      if (data.success) {
+        setKursNachrichtResult({ ok: true, msg: data.message || `Nachricht an ${data.count || ''} Mitglieder gesendet.` });
+        setKursNachricht(prev => ({ ...prev, betreff: '', text: '' }));
+      } else {
+        setKursNachrichtResult({ ok: false, msg: data.error || 'Fehler beim Senden.' });
+      }
+    } catch (err) {
+      setKursNachrichtResult({ ok: false, msg: 'Netzwerkfehler beim Senden.' });
+    } finally {
+      setKursNachrichtSending(false);
+    }
+  };
+
+  const renderKursNachricht = () => {
+    const selectedKurs = kurseList.find(k => String(k.kurs_id) === String(kursNachricht.kursId));
+    return (
+      <div className="email-composer">
+        <div className="composer-header">
+          <h3>📚 Kurs-Nachricht versenden</h3>
+          <p>Nachricht an alle aktiven Mitglieder eines Kurses senden (letzte 30 Tage)</p>
+        </div>
+
+        <div className="composer-form">
+          <div className="form-group">
+            <label>Kurs auswählen</label>
+            <select
+              className="form-select"
+              value={kursNachricht.kursId}
+              onChange={e => { setKursNachricht(prev => ({ ...prev, kursId: e.target.value })); setKursNachrichtResult(null); }}
+              style={{ background: '#2d2d4a', color: '#e2e8f0', border: '1px solid rgba(255,200,0,0.35)', padding: '10px 12px', borderRadius: '8px', width: '100%', fontSize: '14px' }}
+            >
+              <option value="">— Kurs wählen —</option>
+              {kurseList.map(k => (
+                <option key={k.kurs_id} value={k.kurs_id}>
+                  {k.name}{k.stil_name ? ` (${k.stil_name})` : ''}
+                </option>
+              ))}
+            </select>
+            {selectedKurs && (
+              <div className="ns-kurs-info">
+                Empfänger: alle Mitglieder, die in den letzten 30 Tagen an <strong>{selectedKurs.name}</strong> teilgenommen haben
+              </div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label>Betreff</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Betreff der Nachricht..."
+              value={kursNachricht.betreff}
+              onChange={e => setKursNachricht(prev => ({ ...prev, betreff: e.target.value }))}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Nachricht</label>
+            <textarea
+              className="form-textarea"
+              rows={6}
+              placeholder="Nachricht eingeben..."
+              value={kursNachricht.text}
+              onChange={e => setKursNachricht(prev => ({ ...prev, text: e.target.value }))}
+            />
+          </div>
+
+          {kursNachrichtResult && (
+            <div className={`alert ${kursNachrichtResult.ok ? 'alert-success' : 'alert-error'}`}>
+              {kursNachrichtResult.ok ? <CheckCircle size={20} /> : <XCircle size={20} />}
+              {kursNachrichtResult.msg}
+            </div>
+          )}
+
+          <div className="form-actions">
+            <button
+              className="btn btn-primary"
+              onClick={sendKursNachricht}
+              disabled={kursNachrichtSending || !kursNachricht.kursId || !kursNachricht.betreff || !kursNachricht.text}
+            >
+              {kursNachrichtSending ? (
+                <><Clock size={18} /> Wird gesendet...</>
+              ) : (
+                <><Send size={18} /> Kurs-Nachricht senden</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ===================================================================
   // 🎨 MAIN RENDER
   // ===================================================================
 
@@ -1796,7 +1990,14 @@ const NotificationSystem = () => {
           <Bell size={20} />
           Push-Nachrichten
         </button>
-        <button 
+        <button
+          className={`tab-btn ${activeTab === 'kurs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('kurs')}
+        >
+          <BookOpen size={20} />
+          Kurs-Nachricht
+        </button>
+        <button
           className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => setActiveTab('settings')}
         >
@@ -1841,6 +2042,7 @@ const NotificationSystem = () => {
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'email' && renderEmailComposer()}
         {activeTab === 'push' && renderPushComposer()}
+        {activeTab === 'kurs' && renderKursNachricht()}
         {activeTab === 'settings' && renderSettings()}
         {activeTab === 'history' && renderHistory()}
         {activeTab === 'news' && isMainAdmin && <NewsVerwaltung embedded={true} />}

@@ -255,6 +255,9 @@ class StripeDataevProvider {
                 await this.exportToDatev(dbPaymentIntent);
             }
 
+            // Beiträge als bezahlt markieren + Transaktion + Batch aktualisieren
+            await this.markLastschriftTransaktionBezahlt(paymentIntent.id);
+
             logger.info(`✅ Payment succeeded: ${paymentIntent.id}`);
 
         } catch (error) {
@@ -268,6 +271,9 @@ class StripeDataevProvider {
             await this.updatePaymentIntentStatus(paymentIntent.id, 'failed');
             logger.info(`❌ Payment failed: ${paymentIntent.id}`);
 
+            // Lastschrift-Transaktion + Batch aktualisieren
+            await this.markLastschriftTransaktionFehlgeschlagen(paymentIntent.id);
+
             // Erstelle offene Zahlung für das Mitglied
             const mitgliedId = paymentIntent.metadata?.mitglied_id;
             if (mitgliedId) {
@@ -277,6 +283,107 @@ class StripeDataevProvider {
         } catch (error) {
             logger.error('❌ Error handling payment failure:', { error: error.message, stack: error.stack });
         }
+    }
+
+    /**
+     * Markiert eine Lastschrift-Transaktion als erfolgreich und setzt alle zugehörigen
+     * Beiträge auf bezahlt. Aktualisiert außerdem den Batch-Zähler.
+     */
+    async markLastschriftTransaktionBezahlt(stripePaymentIntentId) {
+        const [rows] = await db.promise().query(
+            `SELECT id, batch_id, beitrag_ids
+             FROM stripe_lastschrift_transaktion
+             WHERE stripe_payment_intent_id = ? LIMIT 1`,
+            [stripePaymentIntentId]
+        );
+        if (rows.length === 0) return; // Kein Lastschrift-Batch-Payment, überspringen
+
+        const transaktion = rows[0];
+
+        // Transaktion auf succeeded setzen
+        await db.promise().query(
+            `UPDATE stripe_lastschrift_transaktion
+             SET status = 'succeeded', processed_at = NOW()
+             WHERE id = ?`,
+            [transaktion.id]
+        );
+
+        // Beiträge als bezahlt markieren
+        const beitragIds = typeof transaktion.beitrag_ids === 'string'
+            ? JSON.parse(transaktion.beitrag_ids)
+            : transaktion.beitrag_ids;
+
+        if (Array.isArray(beitragIds) && beitragIds.length > 0) {
+            const placeholders = beitragIds.map(() => '?').join(',');
+            await db.promise().query(
+                `UPDATE beitraege SET bezahlt = 1 WHERE beitrag_id IN (${placeholders})`,
+                beitragIds
+            );
+            logger.info(`✅ ${beitragIds.length} Beiträge als bezahlt markiert (PI: ${stripePaymentIntentId})`);
+        }
+
+        // Batch-Zähler aktualisieren
+        await db.promise().query(
+            `UPDATE stripe_lastschrift_batch SET erfolgreiche = erfolgreiche + 1 WHERE batch_id = ?`,
+            [transaktion.batch_id]
+        );
+        // Batch-Status prüfen: abschließen wenn alle erledigt
+        await db.promise().query(
+            `UPDATE stripe_lastschrift_batch
+             SET status = CASE
+                     WHEN (erfolgreiche + fehlgeschlagene >= anzahl_transaktionen)
+                          THEN IF(fehlgeschlagene > 0, 'partial', 'completed')
+                     ELSE status
+                 END,
+                 completed_at = CASE
+                     WHEN (erfolgreiche + fehlgeschlagene >= anzahl_transaktionen) AND completed_at IS NULL
+                          THEN NOW()
+                     ELSE completed_at
+                 END
+             WHERE batch_id = ?`,
+            [transaktion.batch_id]
+        );
+    }
+
+    /**
+     * Markiert eine Lastschrift-Transaktion als fehlgeschlagen und aktualisiert den Batch.
+     */
+    async markLastschriftTransaktionFehlgeschlagen(stripePaymentIntentId) {
+        const [rows] = await db.promise().query(
+            `SELECT id, batch_id FROM stripe_lastschrift_transaktion
+             WHERE stripe_payment_intent_id = ? LIMIT 1`,
+            [stripePaymentIntentId]
+        );
+        if (rows.length === 0) return;
+
+        const transaktion = rows[0];
+
+        await db.promise().query(
+            `UPDATE stripe_lastschrift_transaktion
+             SET status = 'failed', processed_at = NOW()
+             WHERE id = ?`,
+            [transaktion.id]
+        );
+
+        await db.promise().query(
+            `UPDATE stripe_lastschrift_batch SET fehlgeschlagene = fehlgeschlagene + 1 WHERE batch_id = ?`,
+            [transaktion.batch_id]
+        );
+        await db.promise().query(
+            `UPDATE stripe_lastschrift_batch
+             SET status = CASE
+                     WHEN (erfolgreiche + fehlgeschlagene >= anzahl_transaktionen)
+                          THEN IF(erfolgreiche > 0, 'partial', 'failed')
+                     ELSE status
+                 END,
+                 completed_at = CASE
+                     WHEN (erfolgreiche + fehlgeschlagene >= anzahl_transaktionen) AND completed_at IS NULL
+                          THEN NOW()
+                     ELSE completed_at
+                 END
+             WHERE batch_id = ?`,
+            [transaktion.batch_id]
+        );
     }
 
     // ============================================================================

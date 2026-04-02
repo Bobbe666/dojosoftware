@@ -316,10 +316,13 @@ router.get('/kasse', (req, res) => {
       ag.name as artikelgruppe_name,
       ag.farbe as artikelgruppe_farbe,
       ag.icon as artikelgruppe_icon,
-      ag.id as artikelgruppe_id
+      ag.id as artikelgruppe_id,
+      var.rabatt_typ as mitglieder_rabatt_typ,
+      var.rabatt_wert as mitglieder_rabatt_wert
     FROM artikel a
     LEFT JOIN artikelgruppen kat ON a.kategorie_id = kat.id
     LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
+    LEFT JOIN verband_artikel_rabatte var ON a.artikel_id = var.artikel_id AND var.aktiv = 1 AND var.gilt_fuer_mitglieder = 1
     WHERE a.aktiv = TRUE AND a.sichtbar_kasse = TRUE
     ORDER BY kat.sortierung ASC, a.name ASC
   `;
@@ -379,6 +382,8 @@ router.get('/kasse', (req, res) => {
         varianten_material: parseJson(artikel.varianten_material) || [],
         varianten_bestand: parseJson(artikel.varianten_bestand) || {},
         hat_preiskategorien: artikel.hat_preiskategorien === 1,
+        mitglieder_rabatt_typ: artikel.mitglieder_rabatt_typ || null,
+        mitglieder_rabatt_wert: artikel.mitglieder_rabatt_wert ? parseFloat(artikel.mitglieder_rabatt_wert) : 0,
         preis_kids_cent: artikel.preis_kids_cent,
         preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
         preis_erwachsene_cent: artikel.preis_erwachsene_cent,
@@ -496,13 +501,18 @@ router.post('/', (req, res) => {
   });
 
   // Validierung
-  if (!kategorie_id || !name || !verkaufspreis_euro) {
-    logger.debug('❌ POST /artikel - Validierung fehlgeschlagen:', {
-      kategorie_id, name, verkaufspreis_euro,
-      hat_preiskategorien, preis_kids_euro, preis_erwachsene_euro
-    });
+  const vkMissing = verkaufspreis_euro === undefined || verkaufspreis_euro === null || String(verkaufspreis_euro).trim() === '';
+  console.log('[ARTIKEL POST] Validierung:', JSON.stringify({ kategorie_id, hasName: !!name, verkaufspreis_euro, vkMissing }));
+  logger.info('POST /artikel Validierung:', { kategorie_id, name: !!name, verkaufspreis_euro, vkMissing });
+  if (!kategorie_id || !name || vkMissing) {
     return res.status(400).json({
-      error: 'Kategorie, Name und Verkaufspreis sind erforderlich'
+      error: 'Validierung fehlgeschlagen',
+      detail: {
+        kategorie_id_fehlt: !kategorie_id,
+        name_fehlt: !name,
+        verkaufspreis_fehlt: vkMissing,
+        verkaufspreis_euro_wert: verkaufspreis_euro
+      }
     });
   }
 
@@ -935,42 +945,58 @@ router.post('/:id/lager', (req, res) => {
   }
 
   const artikel_id = req.params.id;
-  const { bewegungsart, menge, grund } = req.body;
+  const { bewegungsart, menge, grund, variante_key } = req.body;
 
   if (!bewegungsart || !menge) {
     return res.status(400).json({ error: 'Bewegungsart und Menge sind erforderlich' });
   }
 
-  // Aktuellen Bestand abrufen
-  db.query('SELECT lagerbestand FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, results) => {
+  // Aktuellen Bestand abrufen (inkl. varianten_bestand für Varianten-Support)
+  db.query('SELECT lagerbestand, varianten_bestand FROM artikel WHERE artikel_id = ? AND dojo_id = ?', [artikel_id, dojoId], (error, results) => {
     if (error) {
       logger.error('Fehler beim Abrufen des Lagerbestands:', { error: error });
       return res.status(500).json({ error: 'Fehler beim Abrufen des Lagerbestands' });
     }
-    
+
     if (results.length === 0) {
       return res.status(404).json({ error: 'Artikel nicht gefunden' });
     }
-    
-    const alterBestand = results[0].lagerbestand;
-    let neuerBestand;
-    let mengeDiff;
-    
-    if (bewegungsart === 'eingang') {
-      neuerBestand = alterBestand + parseInt(menge);
-      mengeDiff = parseInt(menge);
-    } else if (bewegungsart === 'ausgang') {
-      neuerBestand = Math.max(0, alterBestand - parseInt(menge));
-      mengeDiff = -(parseInt(menge));
+
+    const mengeDiff = bewegungsart === 'eingang' ? parseInt(menge) : -(parseInt(menge));
+    let alterBestand, neuerBestand, updateQuery, updateParams, variantenBestand;
+
+    if (variante_key) {
+      // Varianten-Bestand aktualisieren
+      try {
+        variantenBestand = results[0].varianten_bestand
+          ? (typeof results[0].varianten_bestand === 'string' ? JSON.parse(results[0].varianten_bestand) : results[0].varianten_bestand)
+          : {};
+      } catch(e) { variantenBestand = {}; }
+
+      const variantData = variantenBestand[variante_key] || { bestand: 0, mindestbestand: 0 };
+      alterBestand = variantData.bestand || 0;
+      neuerBestand = Math.max(0, alterBestand + mengeDiff);
+      variantenBestand[variante_key] = { ...variantData, bestand: neuerBestand };
+
+      // Gesamtbestand neu berechnen
+      const gesamtBestand = Object.values(variantenBestand).reduce((sum, v) => sum + (v.bestand || 0), 0);
+
+      updateQuery = 'UPDATE artikel SET lagerbestand = ?, varianten_bestand = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ?';
+      updateParams = [gesamtBestand, JSON.stringify(variantenBestand), artikel_id];
     } else {
+      // Gesamt-Bestand aktualisieren (keine Variante)
+      alterBestand = results[0].lagerbestand;
+      neuerBestand = Math.max(0, alterBestand + mengeDiff);
+      updateQuery = 'UPDATE artikel SET lagerbestand = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ?';
+      updateParams = [neuerBestand, artikel_id];
+    }
+
+    if (bewegungsart !== 'eingang' && bewegungsart !== 'ausgang') {
       return res.status(400).json({ error: 'Ungültige Bewegungsart' });
     }
     
     // Bestand aktualisieren
-    db.query(
-      'UPDATE artikel SET lagerbestand = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ?',
-      [neuerBestand, artikel_id],
-      (updateError) => {
+    db.query(updateQuery, updateParams, (updateError) => {
         if (updateError) {
           logger.error('Fehler beim Aktualisieren des Lagerbestands:', { error: updateError });
           return res.status(500).json({ error: 'Fehler beim Aktualisieren des Lagerbestands' });

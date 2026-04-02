@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mitgliedsvertrag</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 0 auto;
+            background: white;
+            page-break-after: always;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .header-left h1 {
+            font-size: 24pt;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .header-left h2 {
+            font-size: 18pt;
+            font-weight: normal;
+            margin: 0;
+            color: #666;
+        }
+
+        .logo-placeholder {
+            width: 120px;
+            height: 120px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10pt;
+            color: #999;
+        }
+
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 25px 0 15px 0;
+            text-transform: uppercase;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .data-field {
+            margin-bottom: 10px;
+        }
+
+        .data-field label {
+            display: block;
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .data-field .value {
+            background-color: #e8e8e8;
+            padding: 8px 10px;
+            border-radius: 3px;
+            min-height: 20px;
+            font-size: 11pt;
+        }
+
+        .data-field-wide {
+            grid-column: 1 / -1;
+        }
+
+        .address-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr;
+            gap: 10px;
+        }
+
+        .contract-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .total-box {
+            background-color: #e8e8e8;
+            padding: 12px;
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .legal-text {
+            font-size: 10pt;
+            line-height: 1.6;
+            margin: 20px 0;
+            color: #555;
+        }
+
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            width: 45%;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 60px;
+            padding-top: 8px;
+            font-size: 9pt;
+            color: #666;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 20mm;
+            right: 20mm;
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+
+        .footer-line {
+            margin: 3px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        table th {
+            background-color: #e8e8e8;
+            padding: 10px;
+            text-align: left;
+            font-size: 10pt;
+            border: 1px solid #ccc;
+        }
+
+        table td {
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            font-size: 10pt;
+        }
+
+        .intro-text {
+            font-size: 10pt;
+            margin-bottom: 15px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .page {
+                margin: 0;
+                border: none;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- SEITE 1: MITGLIEDSVERTRAG -->
+    <div class="page">
+        <div class="header">
+            <div class="header-left">
+                <h1>MITGLIEDSVERTRAG</h1>
+                <h2>{{dojo_name}}</h2>
+            </div>
+            <div class="logo-placeholder">
+                LOGO
+            </div>
+        </div>
+
+        <div class="section-title">PERSÖNLICHE DATEN</div>
+
+        <div class="data-grid">
+            <div class="data-field">
+                <label>Mitgliedsnummer</label>
+                <div class="value">{{mitglied_id}}</div>
+            </div>
+            <div class="data-field">
+                <label>Anrede</label>
+                <div class="value">{{anrede}}</div>
+            </div>
+            <div class="data-field">
+                <label>Vorname</label>
+                <div class="value">{{vorname}}</div>
+            </div>
+            <div class="data-field">
+                <label>Nachname</label>
+                <div class="value">{{nachname}}</div>
+            </div>
+        </div>
+
+        <div class="address-grid">
+            <div class="data-field">
+                <label>Straße</label>
+                <div class="value">{{strasse}}</div>
+            </div>
+            <div class="data-field">
+                <label>Hausnummer</label>
+                <div class="value">{{hausnummer}}</div>
+            </div>
+            <div class="data-field">
+                <label>PLZ</label>
+                <div class="value">{{plz}}</div>
+            </div>
+            <div class="data-field">
+                <label>Ort</label>
+                <div class="value">{{ort}}</div>
+            </div>
+        </div>
+
+        <div class="data-grid">
+            <div class="data-field">
+                <label>Telefonnummer</label>
+                <div class="value">{{telefon}}</div>
+            </div>
+            <div class="data-field">
+                <label>E-Mail-Adresse</label>
+                <div class="value">{{email}}</div>
+            </div>
+            <div class="data-field">
+                <label>Mobil</label>
+                <div class="value">{{mobil}}</div>
+            </div>
+            <div class="data-field">
+                <label>Geburtsdatum</label>
+                <div class="value">{{geburtsdatum}}</div>
+            </div>
+        </div>
+
+        <div class="section-title">VERTRAGSDATEN</div>
+        <p class="intro-text">Ich habe mich für den nachfolgenden Tarif entschieden:</p>
+
+        <div class="contract-grid">
+            <div class="data-field">
+                <label>Tarifname</label>
+                <div class="value">{{tarif_name}}</div>
+            </div>
+            <div class="data-field">
+                <label>Höhe Betrag</label>
+                <div class="value">{{betrag}} €</div>
+            </div>
+            <div class="data-field">
+                <label>Aufnahmegebühr</label>
+                <div class="value">{{aufnahmegebuehr}} €</div>
+            </div>
+            <div class="data-field">
+                <label>Mindestlaufzeit</label>
+                <div class="value">{{mindestlaufzeit}}</div>
+            </div>
+            <div class="data-field">
+                <label>Vertragsbeginn</label>
+                <div class="value">{{vertragsbeginn}}</div>
+            </div>
+            <div class="data-field">
+                <label>Nutzungsbeginn</label>
+                <div class="value">{{nutzungsbeginn}}</div>
+            </div>
+            <div class="data-field">
+                <label>Vertragsverlängerungsdauer</label>
+                <div class="value">{{vertragsverlaengerung}}</div>
+            </div>
+            <div class="data-field">
+                <label>Kündigungsfrist</label>
+                <div class="value">{{kuendigungsfrist}}</div>
+            </div>
+            <div class="data-field">
+                <label>Zahlweise</label>
+                <div class="value">{{zahlweise}}</div>
+            </div>
+        </div>
+
+        <div class="total-box">
+            Gesamt (inkl. Pauschalen und Zusatzmodule)<br>
+            {{betrag}} € {{zahlweise}}
+        </div>
+
+        <p class="legal-text">
+            Es gelten die beigefügten AGB des Vertragsgebers, namentlich {{dojo_name}}.<br>
+            Dieser Vertrag ist auch ohne Unterschrift von {{dojo_name}} wirksam.
+        </p>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <div style="margin-bottom: 10px;">{{ort}}, {{datum}}</div>
+                <div class="signature-line">
+                    Ort, Datum/Unterschrift Vertragsnehmer
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-line">{{dojo_adresse}}</div>
+            <div class="footer-line">{{dojo_kontakt}}</div>
+        </div>
+    </div>
+
+    <!-- SEITE 2: SEPA-LASTSCHRIFTMANDAT -->
+    <div class="page">
+        <div class="section-title">SEPA-LASTSCHRIFTMANDAT</div>
+
+        <p class="legal-text">
+            Ich ermächtige {{zahlungsdienstleister}}, Zahlungen von meinem Konto unter Angabe der Gläubiger ID-Nr {{glaeubiger_id}} mittels Lastschrift einzuziehen.<br><br>
+            Zugleich weise ich mein Kreditinstitut an, die von {{zahlungsdienstleister}} auf meinem Konto gezogenen Lastschriften einzulösen.
+        </p>
+
+        <div class="data-grid">
+            <div class="data-field data-field-wide">
+                <label>Vorname und Name (Kontoinhaber)</label>
+                <div class="value">{{kontoinhaber}}</div>
+            </div>
+            <div class="data-field">
+                <label>Kreditinstitut (Name)</label>
+                <div class="value">{{kreditinstitut}}</div>
+            </div>
+            <div class="data-field">
+                <label>BIC</label>
+                <div class="value">{{bic}}</div>
+            </div>
+            <div class="data-field data-field-wide">
+                <label>IBAN</label>
+                <div class="value">{{iban}}</div>
+            </div>
+            <div class="data-field data-field-wide">
+                <label>SEPA Mandatsreferenz-Nummer</label>
+                <div class="value">{{sepa_referenz}}</div>
+            </div>
+        </div>
+
+        <div class="signature-section">
+            <div class="signature-box">
+                <div style="margin-bottom: 10px;">{{ort}}, {{datum}}</div>
+                <div class="signature-line">
+                    Ort, Datum/Unterschrift Kontoinhaber
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-line">{{dojo_adresse}}</div>
+            <div class="footer-line">{{dojo_kontakt}}</div>
+        </div>
+    </div>
+
+    <!-- SEITE 3: ZAHLUNGSTERMINE -->
+    <div class="page">
+        <div class="section-title">ZAHLUNGSTERMINE</div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Fälligkeitsdatum</th>
+                    <th>Typ</th>
+                    <th>Beschreibung</th>
+                    <th>Betrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{zahlungstermine}}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="footer-line">{{dojo_adresse}}</div>
+            <div class="footer-line">{{dojo_kontakt}}</div>
+        </div>
+    </div>
+</body>
+</html>

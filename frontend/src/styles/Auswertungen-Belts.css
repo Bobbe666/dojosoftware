@@ -1,0 +1,314 @@
+/* ===== GÜRTEL TAB – PROFESSIONAL REDESIGN ===== */
+
+.blt-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-section-gap);
+}
+
+/* ── Page Header ── */
+.blt-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--primary-alpha-15);
+  flex-wrap: wrap;
+}
+
+.blt-page-header-left h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.blt-page-header-left p {
+  font-size: 0.825rem;
+  color: var(--text-3);
+  margin: 0;
+}
+
+.blt-assign-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  background: linear-gradient(135deg, var(--primary-alpha-20), var(--primary-alpha-10));
+  border: 1px solid var(--primary-alpha-30);
+  border-radius: var(--comp-radius-lg);
+  color: var(--primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.blt-assign-btn:hover {
+  background: linear-gradient(135deg, var(--primary-alpha-30), var(--primary-alpha-20));
+  box-shadow: 0 4px 14px var(--primary-alpha-20);
+}
+
+/* ── KPI Row ── */
+.blt-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ui-stats-gap);
+}
+
+.blt-kpi {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-stat-card-padding);
+  transition: border-color 0.2s;
+}
+
+.blt-kpi:hover {
+  border-color: var(--primary-alpha-20);
+}
+
+.blt-kpi-label {
+  font-size: var(--ui-stat-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.45rem;
+}
+
+.blt-kpi-value {
+  font-size: var(--ui-kpi-value);
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 16px var(--primary-alpha-30);
+}
+
+.blt-kpi-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.35rem;
+}
+
+/* ── Stil Section ── */
+.blt-stil-section {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.blt-stil-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.blt-stil-header:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.blt-stil-header h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.blt-stil-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.blt-stil-stats {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.blt-stil-chevron {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.22s ease;
+  display: inline-block;
+  line-height: 1;
+}
+
+.blt-stil-chevron--collapsed {
+  transform: rotate(-90deg);
+}
+
+/* ── Gürtel Grid ── */
+.blt-guertel-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+/* ── Gürtel Card ── */
+.blt-guertel-card {
+  background: var(--surface-2);
+  border-radius: var(--comp-radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.blt-guertel-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.blt-guertel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.blt-color-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: var(--badge-bg, #6b7280);
+}
+
+.blt-guertel-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.blt-guertel-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0 0 0.2rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blt-guertel-category {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: capitalize;
+}
+
+.blt-dan-badge {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.15rem 0.45rem;
+  background: linear-gradient(135deg, #ffd700, #f59e0b);
+  color: #1a1200;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.blt-member-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Member List ── */
+.blt-member-list {
+  padding: 0.25rem 0;
+}
+
+.blt-member-list-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.blt-member-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.12s;
+}
+
+.blt-member-row:last-child {
+  border-bottom: none;
+}
+
+.blt-member-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.blt-member-name {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blt-attendance {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+}
+
+.blt-attendance--highlight {
+  color: var(--primary);
+}
+
+/* ── Empty ── */
+.blt-no-members {
+  padding: 1rem 1.25rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.25);
+  font-style: italic;
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .blt-kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .blt-guertel-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .blt-kpi-row { grid-template-columns: 1fr; }
+  .blt-page-header { flex-direction: column; }
+}

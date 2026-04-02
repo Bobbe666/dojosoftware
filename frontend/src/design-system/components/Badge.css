@@ -65,9 +65,9 @@
 
 /* Gold / Premium */
 .ds-badge--gold {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: var(--color-gold);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 /* Orange */

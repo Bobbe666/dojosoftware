@@ -1,5 +1,6 @@
 // Frontend/src/components/Auswertungen.jsx - Saubere Version für Backend-Datenstruktur
 import React, { useState, useEffect, useMemo, useContext, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDojoContext } from '../context/DojoContext';
 import {
   BarChart,
@@ -26,8 +27,12 @@ import '../styles/Auswertungen-Overview.css';
 import '../styles/Auswertungen-Finanzen.css';
 import '../styles/Auswertungen-Performance.css';
 import '../styles/Auswertungen-Prognosen.css';
+import '../styles/Auswertungen-Members.css';
+import '../styles/Auswertungen-Belts.css';
+import '../styles/Auswertungen-Anmeldungen.css';
 
 function Auswertungen() {
+  const navigate = useNavigate();
   const [auswertungsData, setAuswertungsData] = useState(null);
   const [kostenvorlagen, setKostenvorlagen] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,12 +50,26 @@ function Auswertungen() {
   const [memberAnalytics, setMemberAnalytics] = useState(null);
   const [beitragsvergleich, setBeitragsvergleich] = useState(null);
   const [beltsData, setBeltsData] = useState(null);
+  const [collapsedStile, setCollapsedStile] = useState({});
+  const [kursPerformance, setKursPerformance] = useState(null);
+  const [absprungRisiko, setAbsprungRisiko] = useState(null);
+  const [vertragsablauf, setVertragsablauf] = useState(null);
+  const [zahlungsrueckstand, setZahlungsrueckstand] = useState(null);
+  const [trainingsfrequenz, setTrainingsfrequenz] = useState(null);
+  const [onboardingKohorte, setOnboardingKohorte] = useState(null);
+  const [checkinStreaks, setCheckinStreaks] = useState(null);
+  const [graduierungsPyramide, setGraduierungsPyramide] = useState(null);
+  const [trainerAuslastung, setTrainerAuslastung] = useState(null);
+  const [collapsedPerfSections, setCollapsedPerfSections] = useState({});
+  const [expandedRisikoTiers, setExpandedRisikoTiers] = useState({});
+  const [registrierungenStats, setRegistrierungenStats] = useState(null);
 
   const tabs = [
     { id: 'breakeven', label: 'Break-Even Analyse', icon: '💡' },
     { id: 'overview', label: 'Übersicht', icon: '📊' },
     { id: 'financial', label: 'Finanzen', icon: '💰' },
     { id: 'members', label: 'Mitglieder', icon: '👥' },
+    { id: 'anmeldungen', label: 'Anmeldungen', icon: '📋' },
     { id: 'belts', label: 'Gürtel', icon: '🥋' },
     { id: 'performance', label: 'Performance', icon: '📈' },
     { id: 'forecasting', label: 'Prognosen', icon: '🔮' }
@@ -77,6 +96,16 @@ function Auswertungen() {
     loadMemberAnalytics();
     loadBeitragsvergleich();
     loadBeltsData();
+    loadKursPerformance();
+    loadAbsprungRisiko();
+    loadVertragsablauf();
+    loadZahlungsrueckstand();
+    loadTrainingsfrequenz();
+    loadOnboardingKohorte();
+    loadCheckinStreaks();
+    loadGraduierungsPyramide();
+    loadTrainerAuslastung();
+    loadRegistrierungenStats();
   }, [timePeriod, activeDojoId]);
 
   const loadAuswertungen = async () => {
@@ -112,11 +141,12 @@ function Auswertungen() {
           const latestResult = latestResponse.data;
 
           if (latestResult.success && latestResult.data) {
-            // Letzte Berechnung gefunden - verwende diese Werte
+            // Letzte Berechnung gefunden - Fixkosten/variableKosten aus Speicher, aber
+            // durchschnittsbeitrag immer aus echten aktiven Verträgen (nicht gespeicherter Wert)
             setBreakEvenForm({
               fixkosten: latestResult.data.fixkosten,
               variableKosten: latestResult.data.variableKosten,
-              durchschnittsbeitrag: latestResult.data.durchschnittsbeitrag
+              durchschnittsbeitrag: result.data.durchschnittsbeitrag
             });
             setFormResetKey(k => k + 1);
           } else {
@@ -256,6 +286,71 @@ function Auswertungen() {
   };
 
 
+  const loadKursPerformance = async () => {
+    try {
+      const response = await axios.get(`/auswertungen/kurs-performance${dojoParam}`);
+      if (response.data.success) setKursPerformance(response.data.data);
+    } catch (err) {
+      console.error('Fehler beim Laden der Kurs-Performance:', err);
+    }
+  };
+
+  const loadAbsprungRisiko = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/absprung-risiko${dojoParam}`);
+      if (r.data.success) setAbsprungRisiko(r.data.data);
+    } catch (err) { console.error('absprung-risiko:', err); }
+  };
+  const loadVertragsablauf = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/vertragsablauf${dojoParam}`);
+      if (r.data.success) setVertragsablauf(r.data.data);
+    } catch (err) { console.error('vertragsablauf:', err); }
+  };
+  const loadZahlungsrueckstand = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/zahlungsrueckstand${dojoParam}`);
+      if (r.data.success) setZahlungsrueckstand(r.data.data);
+    } catch (err) { console.error('zahlungsrueckstand:', err); }
+  };
+  const loadTrainingsfrequenz = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/trainingsfrequenz${dojoParam}`);
+      if (r.data.success) setTrainingsfrequenz(r.data.data);
+    } catch (err) { console.error('trainingsfrequenz:', err); }
+  };
+  const loadOnboardingKohorte = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/onboarding-kohorte${dojoParam}`);
+      if (r.data.success) setOnboardingKohorte(r.data.data);
+    } catch (err) { console.error('onboarding-kohorte:', err); }
+  };
+  const loadCheckinStreaks = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/check-in-streaks${dojoParam}`);
+      if (r.data.success) setCheckinStreaks(r.data.data);
+    } catch (err) { console.error('check-in-streaks:', err); }
+  };
+  const loadGraduierungsPyramide = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/graduierungs-pyramide${dojoParam}`);
+      if (r.data.success) setGraduierungsPyramide(r.data.data);
+    } catch (err) { console.error('graduierungs-pyramide:', err); }
+  };
+  const loadTrainerAuslastung = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/trainer-auslastung${dojoParam}`);
+      if (r.data.success) setTrainerAuslastung(r.data.data);
+    } catch (err) { console.error('trainer-auslastung:', err); }
+  };
+
+  const loadRegistrierungenStats = async () => {
+    try {
+      const r = await axios.get(`/auswertungen/registrierungen-stats${dojoParam}`);
+      if (r.data.success) setRegistrierungenStats(r.data.data);
+    } catch (err) { console.error('registrierungen-stats:', err); }
+  };
+
   // Label-Maps für leserliche Beschriftungen
   const fixkostenLabels = {
     miete: 'Miete / Pacht', versicherung: 'Versicherung', strom: 'Strom',
@@ -356,9 +451,9 @@ function Auswertungen() {
 
   return (
     <div className="auswertungen-container">
-      <div className="auswertungen-header">
-        <div className="header-content">
-          <h1>📊 Dojo Auswertungen</h1>
+      <div className="be-page-header" style={{ marginBottom: '1.5rem' }}>
+        <div className="be-page-header-left">
+          <h2>Dojo Auswertungen</h2>
           <p>Generiert am {new Date(auswertungsData.generatedAt).toLocaleString('de-DE')}</p>
         </div>
       </div>
@@ -1153,8 +1248,14 @@ function Auswertungen() {
                     <div className="fin-opt-list">
                       {opt.niedrigeBeitraege.slice(0, 15).map((m, idx) => (
                         <div className="fin-opt-row" key={idx}>
-                          <div className="fin-opt-name" title={m.name}>{m.name}</div>
-                          <div className="fin-opt-current">{formatCurrency(m.aktuellerBeitrag / 100)}</div>
+                          <div className="fin-opt-name" title={m.name}>
+                            {m.name}
+                            {m.tarifName && <span className="fin-opt-tarif">{m.tarifName}</span>}
+                          </div>
+                          <div className="fin-opt-current">
+                            {formatCurrency(m.aktuellerBeitrag / 100)}
+                            {m.sollBeitrag && <span className="fin-opt-soll"> → {formatCurrency(m.sollBeitrag / 100)}</span>}
+                          </div>
                           <div className="fin-opt-delta">+{formatCurrency(m.potentialErhoehung / 100)}</div>
                         </div>
                       ))}
@@ -1181,236 +1282,473 @@ function Auswertungen() {
           );
         })()}
 
-        {activeTab === 'members' && (
-          <div className="tab-panel">
-            {/* Zeitraum-Umschalter */}
-            <div className="time-period-selector">
-              <h3>📊 Zeitraum-Auswahl</h3>
-              <div className="period-buttons">
-                {timePeriods.map(period => (
-                  <button
-                    key={period.id}
-                    className={`period-button ${timePeriod === period.id ? 'active' : ''}`}
-                    onClick={() => setTimePeriod(period.id)}
-                  >
-                    <span className="period-icon">{period.icon}</span>
-                    <span className="period-label">{period.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+        {activeTab === 'members' && (() => {
+          const ttStyle = { background: 'rgba(10,10,25,0.97)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12, color: '#fff' };
+          const axisStyle = { tick: { fill: 'rgba(255,255,255,0.45)', fontSize: 11 }, axisLine: { stroke: 'rgba(255,255,255,0.08)' }, tickLine: false };
+          const gridStyle = { stroke: 'rgba(255,255,255,0.06)', strokeDasharray: '0' };
+          const periodLabel = timePeriod === 'monthly' ? 'Monatlich' : timePeriod === 'quarterly' ? 'Quartal' : timePeriod === 'biannually' ? 'Halbjahr' : 'Jährlich';
+          return (
+          <div className="mem-wrapper">
 
-            {/* Kompakte Mitglieder-Statistiken */}
-            <div className="members-stats-compact">
-              <div className="stat-item-compact">
-                <div className="stat-label">Gesamtmitglieder</div>
-                <div className="stat-value">{formatNumber(auswertungsData.mitgliederAnalyse.gesamt)}</div>
-              </div>
-              <div className="stat-item-compact">
-                <div className="stat-label">Aktive Mitglieder</div>
-                <div className="stat-value">{formatNumber(auswertungsData.mitgliederAnalyse.aktiv)}</div>
-              </div>
-              <div className="stat-item-compact">
-                <div className="stat-label">Neue {timePeriod === 'monthly' ? 'diesen Monat' : timePeriod === 'quarterly' ? 'dieses Quartal' : timePeriod === 'biannually' ? 'dieses Halbjahr' : 'dieses Jahr'}</div>
-                <div className="stat-value">{formatNumber(auswertungsData.mitgliederAnalyse.neueThisMonth)}</div>
-              </div>
-              <div className="stat-item-compact">
-                <div className="stat-label">Inaktive Mitglieder</div>
-                <div className="stat-value">{formatNumber(auswertungsData.mitgliederAnalyse.inaktiv)}</div>
-              </div>
-            </div>
-
-            {/* Mitglieder-Entwicklung Charts */}
-            {memberAnalytics && (
-              <div className="member-analytics-grid">
-                <div className="analytics-chart">
-                  <h3>📈 {timePeriod === 'monthly' ? 'Monatliche' : timePeriod === 'quarterly' ? 'Vierteljährliche' : timePeriod === 'biannually' ? 'Halbjährliche' : 'Jährliche'} Zugänge</h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    {memberAnalytics.zugänge.length > 0 ? (
-                      <LineChart data={memberAnalytics.zugänge}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="periode" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="wert" stroke="#4caf50" strokeWidth={3} dot={{ fill: '#4caf50', strokeWidth: 2, r: 4 }} />
-                      </LineChart>
-                    ) : (
-                      <div className="no-data-message">
-                        <p>Keine Zugangsdaten verfügbar</p>
-                      </div>
-                    )}
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="analytics-chart">
-                  <h3>📉 Kündigungen</h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    {memberAnalytics.kündigungen.length > 0 ? (
-                      <LineChart data={memberAnalytics.kündigungen}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="periode" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="wert" stroke="#f44336" strokeWidth={3} dot={{ fill: '#f44336', strokeWidth: 2, r: 4 }} />
-                      </LineChart>
-                    ) : (
-                      <div className="no-data-message">
-                        <p>Keine Kündigungsdaten verfügbar</p>
-                      </div>
-                    )}
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="analytics-chart">
-                  <h3>⏸️ Ruhepausen</h3>
-                  <ResponsiveContainer width="100%" height={250}>
-                    {memberAnalytics.ruhepausen.length > 0 ? (
-                      <LineChart data={memberAnalytics.ruhepausen}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="periode" />
-                        <YAxis />
-                        <Tooltip />
-                        <Line type="monotone" dataKey="wert" stroke="#ff9800" strokeWidth={3} dot={{ fill: '#ff9800', strokeWidth: 2, r: 4 }} />
-                      </LineChart>
-                    ) : (
-                      <div className="no-data-message">
-                        <p>Keine Ruhepausen-Daten verfügbar</p>
-                      </div>
-                    )}
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="analytics-chart">
-                  <h3>🔮 Wachstumsprognose</h3>
-                  <div className="growth-forecast">
-                    <div className="forecast-current">
-                      <span className="forecast-label">Aktuell:</span>
-                      <span className="forecast-value">{memberAnalytics.wachstumPrognose.aktuell} Mitglieder</span>
-                    </div>
-                    <div className="forecast-item">
-                      <span className="forecast-label">3 Monate:</span>
-                      <span className="forecast-value positive">+{memberAnalytics.wachstumPrognose.prognose3Monate - memberAnalytics.wachstumPrognose.aktuell}</span>
-                    </div>
-                    <div className="forecast-item">
-                      <span className="forecast-label">6 Monate:</span>
-                      <span className="forecast-value positive">+{memberAnalytics.wachstumPrognose.prognose6Monate - memberAnalytics.wachstumPrognose.aktuell}</span>
-                    </div>
-                    <div className="forecast-item">
-                      <span className="forecast-label">12 Monate:</span>
-                      <span className="forecast-value positive">+{memberAnalytics.wachstumPrognose.prognose12Monate - memberAnalytics.wachstumPrognose.aktuell}</span>
-                    </div>
-                    <div className="forecast-growth-rate">
-                      <span className="growth-rate-label">Wachstumsrate:</span>
-                      <span className="growth-rate-value">{memberAnalytics.wachstumPrognose.wachstumsrate}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="demographics-chart-compact">
-              <h3>Demografische Verteilung</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={auswertungsData.mitgliederAnalyse.demographics}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({geschlecht, prozent}) => `${geschlecht}: ${prozent}%`}
-                    outerRadius={60}
-                    fill="#8884d8"
-                    dataKey="anzahl"
-                  >
-                    {auswertungsData.mitgliederAnalyse.demographics.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'belts' && beltsData && (
-          <div className="tab-panel">
-            <div className="belts-overview-header">
-              <h2>🥋 Gürtel-Übersicht</h2>
-              <div className="summary-stats">
-                <div className="summary-stat">
-                  <span className="stat-label">Stile:</span>
-                  <span className="stat-value">{beltsData.summary.total_stile}</span>
-                </div>
-                <div className="summary-stat">
-                  <span className="stat-label">Gürtel:</span>
-                  <span className="stat-value">{beltsData.summary.total_guertel}</span>
-                </div>
-                <div className="summary-stat">
-                  <span className="stat-label">Mitglieder:</span>
-                  <span className="stat-value">{beltsData.summary.total_mitglieder}</span>
-                </div>
-              </div>
-            </div>
-
-            {beltsData.stile.map((stil) => (
-              <div key={stil.stil_id} className="stil-section">
-                <div className="stil-header">
-                  <h3>{stil.stil_name}</h3>
-                  <span className="stil-stats">
-                    {stil.guertel.length} Gürtel • {stil.guertel.reduce((sum, g) => sum + g.mitglieder.length, 0)} Mitglieder
-                  </span>
-                </div>
-
-                <div className="guertel-grid">
-                  {stil.guertel.map((guertel) => (
-                    <div key={guertel.graduierung_id} className="guertel-card">
-                      <div className="guertel-header">
-                        <div
-                          className="guertel-color-badge"
-                          style={{
-                            '--badge-bg': guertel.farbe_sekundaer
-                              ? `linear-gradient(135deg, ${guertel.farbe_hex}, ${guertel.farbe_sekundaer})`
-                              : guertel.farbe_hex
-                          }}
-                        />
-                        <div className="guertel-info">
-                          <h4>{guertel.gurt_name}</h4>
-                          <span className="guertel-category">{guertel.kategorie}</span>
-                          {guertel.dan_grad && <span className="dan-badge">{guertel.dan_grad}. DAN</span>}
-                        </div>
-                        <span className="member-count">{guertel.mitglieder.length} Mitglieder</span>
-                      </div>
-
-                      {guertel.mitglieder.length > 0 && (
-                        <div className="members-list">
-                          <div className="members-header">
-                            <span>Name</span>
-                            <span>Anwesenheit Jahr</span>
-                            <span>Anwesenheit Monat</span>
-                          </div>
-                          {guertel.mitglieder.map((member) => (
-                            <div key={member.mitglied_id} className="member-row">
-                              <span className="member-name">
-                                {member.vorname} {member.nachname}
-                              </span>
-                              <span className="attendance-stat">{member.anwesenheit_jahr}x</span>
-                              <span className="attendance-stat">{member.anwesenheit_monat}x</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {guertel.mitglieder.length === 0 && (
-                        <div className="no-members">
-                          <p>Keine Mitglieder</p>
-                        </div>
-                      )}
-                    </div>
+            {/* ── Period Toggle + KPI Row ── */}
+            <div>
+              <div className="mem-period-header">
+                <span className="mem-period-label">Zeitraum</span>
+                <div className="mem-period-tabs">
+                  {timePeriods.map(p => (
+                    <button
+                      key={p.id}
+                      className={`mem-period-btn${timePeriod === p.id ? ' active' : ''}`}
+                      onClick={() => setTimePeriod(p.id)}
+                    >
+                      {p.label}
+                    </button>
                   ))}
                 </div>
               </div>
-            ))}
+
+              <div className="mem-kpi-row">
+                <div className="mem-kpi">
+                  <div className="mem-kpi-label">Gesamt</div>
+                  <div className="mem-kpi-value mem-kpi-value--gold">{formatNumber(auswertungsData.mitgliederAnalyse.gesamt)}</div>
+                  <div className="mem-kpi-sub">Mitglieder</div>
+                </div>
+                <div className="mem-kpi">
+                  <div className="mem-kpi-label">Aktiv</div>
+                  <div className="mem-kpi-value mem-kpi-value--green">{formatNumber(auswertungsData.mitgliederAnalyse.aktiv)}</div>
+                  <div className="mem-kpi-sub">aktive Mitglieder</div>
+                </div>
+                <div className="mem-kpi">
+                  <div className="mem-kpi-label">Neue {periodLabel}</div>
+                  <div className="mem-kpi-value">{formatNumber(auswertungsData.mitgliederAnalyse.neueThisMonth)}</div>
+                  <div className="mem-kpi-sub">Zugänge</div>
+                </div>
+                <div className="mem-kpi">
+                  <div className="mem-kpi-label">Inaktiv</div>
+                  <div className="mem-kpi-value mem-kpi-value--red">{formatNumber(auswertungsData.mitgliederAnalyse.inaktiv)}</div>
+                  <div className="mem-kpi-sub">inaktive Mitglieder</div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Charts Grid ── */}
+            {memberAnalytics && (
+              <div className="mem-charts-grid">
+
+                {/* Zugänge */}
+                <div className="mem-chart">
+                  <div className="mem-chart-header">
+                    <span className="mem-chart-title">Zugänge</span>
+                  </div>
+                  <div className="mem-chart-body">
+                    {memberAnalytics.zugänge.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <AreaChart data={memberAnalytics.zugänge}>
+                          <defs>
+                            <linearGradient id="zugGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid {...gridStyle} />
+                          <XAxis dataKey="periode" {...axisStyle} />
+                          <YAxis {...axisStyle} />
+                          <Tooltip contentStyle={ttStyle} />
+                          <Area type="monotone" dataKey="wert" stroke="#10b981" strokeWidth={2} fill="url(#zugGrad)" dot={false} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="mem-no-data">Keine Daten verfügbar</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Kündigungen */}
+                <div className="mem-chart">
+                  <div className="mem-chart-header">
+                    <span className="mem-chart-title">Kündigungen</span>
+                  </div>
+                  <div className="mem-chart-body">
+                    {memberAnalytics.kündigungen.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <AreaChart data={memberAnalytics.kündigungen}>
+                          <defs>
+                            <linearGradient id="kündGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid {...gridStyle} />
+                          <XAxis dataKey="periode" {...axisStyle} />
+                          <YAxis {...axisStyle} />
+                          <Tooltip contentStyle={ttStyle} />
+                          <Area type="monotone" dataKey="wert" stroke="#ef4444" strokeWidth={2} fill="url(#kündGrad)" dot={false} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="mem-no-data">Keine Daten verfügbar</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Ruhepausen */}
+                <div className="mem-chart">
+                  <div className="mem-chart-header">
+                    <span className="mem-chart-title">Ruhepausen</span>
+                  </div>
+                  <div className="mem-chart-body">
+                    {memberAnalytics.ruhepausen.length > 0 ? (
+                      <ResponsiveContainer width="100%" height={220}>
+                        <AreaChart data={memberAnalytics.ruhepausen}>
+                          <defs>
+                            <linearGradient id="ruheGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid {...gridStyle} />
+                          <XAxis dataKey="periode" {...axisStyle} />
+                          <YAxis {...axisStyle} />
+                          <Tooltip contentStyle={ttStyle} />
+                          <Area type="monotone" dataKey="wert" stroke="#f59e0b" strokeWidth={2} fill="url(#ruheGrad)" dot={false} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="mem-no-data">Keine Daten verfügbar</div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ── Forecast + Demographics ── */}
+            <div className="mem-demo-row">
+
+              {/* Wachstumsprognose */}
+              {memberAnalytics && (
+                <div className="mem-chart">
+                  <div className="mem-chart-header">
+                    <span className="mem-chart-title">Wachstumsprognose</span>
+                  </div>
+                  <div className="mem-forecast">
+                    <div className="mem-forecast-hero">
+                      <div className="mem-forecast-current-val">{memberAnalytics.wachstumPrognose.aktuell}</div>
+                      <div className="mem-forecast-current-label">Aktuelle Mitglieder</div>
+                    </div>
+                    <div className="mem-forecast-rows">
+                      {[
+                        { h: '3 Monate', v: memberAnalytics.wachstumPrognose.prognose3Monate },
+                        { h: '6 Monate', v: memberAnalytics.wachstumPrognose.prognose6Monate },
+                        { h: '12 Monate', v: memberAnalytics.wachstumPrognose.prognose12Monate },
+                      ].map(({ h, v }) => (
+                        <div className="mem-forecast-item" key={h}>
+                          <div className="mem-forecast-horizon">{h}</div>
+                          <div className="mem-forecast-val">+{v - memberAnalytics.wachstumPrognose.aktuell}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mem-forecast-rate">
+                      <span className="mem-forecast-rate-label">Wachstumsrate</span>
+                      <span className="mem-forecast-rate-value">{memberAnalytics.wachstumPrognose.wachstumsrate}% / Monat</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Demografische Verteilung */}
+              <div className="mem-demo-chart">
+                <div className="mem-chart-header">
+                  <span className="mem-chart-title">Demografische Verteilung</span>
+                </div>
+                <div className="mem-chart-body">
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={auswertungsData.mitgliederAnalyse.demographics}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ geschlecht, prozent }) => `${geschlecht}: ${prozent}%`}
+                        outerRadius={75}
+                        dataKey="anzahl"
+                      >
+                        {auswertungsData.mitgliederAnalyse.demographics.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#ffd700','#10b981','#63b3ed','#f59e0b','#8b5cf6'][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip contentStyle={ttStyle} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+          );
+        })()}
+
+        {activeTab === 'anmeldungen' && (() => {
+          const rs = registrierungenStats;
+          if (!rs) return <div className="loading-state">Lade Anmeldungsstatistiken…</div>;
+
+          const kpi = rs.kpi || {};
+          const dieserMonat = kpi.dieser_monat || 0;
+          const vormonat = kpi.vormonat || 0;
+          const vorjahrMonat = kpi.vorjahr_monat || 0;
+          const vmDelta = vormonat > 0 ? Math.round(((dieserMonat - vormonat) / vormonat) * 100) : null;
+          const vjDelta = vorjahrMonat > 0 ? Math.round(((dieserMonat - vorjahrMonat) / vorjahrMonat) * 100) : null;
+
+          const quelle = rs.quelle || {};
+          const gesamtQuelle = (quelle.empfehlung || 0) + (quelle.direkt || 0);
+          const quelleData = [
+            { name: 'Direkt', value: quelle.direkt || 0, color: '#6366f1' },
+            { name: 'Empfehlung', value: quelle.empfehlung || 0, color: '#22c55e' },
+            { name: 'Promo-Code', value: quelle.mit_promo || 0, color: '#f59e0b' }
+          ].filter(d => d.value > 0);
+
+          const formatMonat = (m) => {
+            if (!m) return '';
+            const [y, mo] = m.split('-');
+            const monate = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+            return `${monate[parseInt(mo) - 1]} ${y.slice(2)}`;
+          };
+
+          const funnelMax = Math.max(...(rs.funnel || []).map(f => f.anzahl), 1);
+
+          return (
+            <div className="anm-wrapper">
+
+              {/* KPI-Zeile */}
+              <div className="anm-kpi-row">
+                <div className="anm-kpi-card">
+                  <div className="anm-kpi-label">Dieser Monat</div>
+                  <div className="anm-kpi-value">{dieserMonat}</div>
+                  {vmDelta !== null && (
+                    <div className={`anm-kpi-delta ${vmDelta >= 0 ? 'pos' : 'neg'}`}>
+                      {vmDelta >= 0 ? '▲' : '▼'} {Math.abs(vmDelta)}% vs. Vormonat
+                    </div>
+                  )}
+                </div>
+                <div className="anm-kpi-card">
+                  <div className="anm-kpi-label">Vormonat</div>
+                  <div className="anm-kpi-value">{vormonat}</div>
+                </div>
+                <div className="anm-kpi-card">
+                  <div className="anm-kpi-label">Vorjahr (gleicher Monat)</div>
+                  <div className="anm-kpi-value">{vorjahrMonat}</div>
+                  {vjDelta !== null && (
+                    <div className={`anm-kpi-delta ${vjDelta >= 0 ? 'pos' : 'neg'}`}>
+                      {vjDelta >= 0 ? '▲' : '▼'} {Math.abs(vjDelta)}% YoY
+                    </div>
+                  )}
+                </div>
+                <div className="anm-kpi-card highlight">
+                  <div className="anm-kpi-label">Aktive Mitglieder</div>
+                  <div className="anm-kpi-value">{formatNumber(kpi.gesamt_aktiv || 0)}</div>
+                </div>
+              </div>
+
+              <div className="anm-main-grid">
+
+                {/* Trend-Chart: Neuanmeldungen 12 Monate */}
+                <div className="anm-card anm-card--wide">
+                  <div className="anm-card-title">Neuanmeldungen – 12 Monate</div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <ComposedChart data={rs.trendData || []} margin={{ top: 8, right: 10, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
+                      <XAxis dataKey="monat" tickFormatter={formatMonat} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                      <Tooltip
+                        contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 }}
+                        labelFormatter={formatMonat}
+                      />
+                      <Bar dataKey="anzahl" name="Anmeldungen" fill="#6366f1" radius={[3, 3, 0, 0]} />
+                      <Line dataKey="vorjahr" name="Vorjahr" stroke="#f59e0b" strokeWidth={2} dot={false} strokeDasharray="4 2" />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                  <div className="anm-legend">
+                    <span className="anm-legend-item"><span style={{background:'#6366f1'}}></span>Anmeldungen</span>
+                    <span className="anm-legend-item"><span style={{background:'#f59e0b'}}></span>Vorjahr</span>
+                  </div>
+                </div>
+
+                {/* Quelle */}
+                <div className="anm-card">
+                  <div className="anm-card-title">Herkunft (letzte 12 Monate)</div>
+                  {gesamtQuelle === 0 ? (
+                    <div className="anm-empty">Keine Daten</div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={160}>
+                        <PieChart>
+                          <Pie data={quelleData} dataKey="value" cx="50%" cy="50%" outerRadius={65} paddingAngle={3}>
+                            {quelleData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="anm-quelle-list">
+                        {quelleData.map((d, i) => (
+                          <div key={i} className="anm-quelle-item">
+                            <span className="anm-quelle-dot" style={{ background: d.color }}></span>
+                            <span className="anm-quelle-name">{d.name}</span>
+                            <span className="anm-quelle-val">{d.value}</span>
+                            <span className="anm-quelle-pct">({Math.round((d.value / gesamtQuelle) * 100)}%)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Wochentage */}
+                <div className="anm-card">
+                  <div className="anm-card-title">Anmeldetag (letzte 12 Monate)</div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <BarChart data={rs.wochentage || []} margin={{ top: 8, right: 5, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
+                      <XAxis dataKey="tag" tick={{ fill: '#9ca3af', fontSize: 11 }} />
+                      <YAxis allowDecimals={false} tick={{ fill: '#9ca3af', fontSize: 10 }} />
+                      <Tooltip
+                        contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, fontSize: 12 }}
+                      />
+                      <Bar dataKey="anzahl" name="Anmeldungen" fill="#22c55e" radius={[3, 3, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Registrierungs-Funnel */}
+                <div className="anm-card anm-card--wide">
+                  <div className="anm-card-title">Registrierungs-Funnel</div>
+                  <div className="anm-funnel">
+                    {(rs.funnel || []).map((step, i) => (
+                      <div key={i} className="anm-funnel-step">
+                        <div className="anm-funnel-label">{step.schritt}</div>
+                        <div className="anm-funnel-bar-wrap">
+                          <div
+                            className="anm-funnel-bar"
+                            style={{ width: `${Math.round((step.anzahl / funnelMax) * 100)}%` }}
+                          ></div>
+                        </div>
+                        <div className="anm-funnel-count">{step.anzahl}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="anm-funnel-hint">Zeigt wo Registrierungen abgebrochen werden. "Abgeschlossen" = vollständige Mitglieder.</p>
+                </div>
+
+              </div>
+            </div>
+          );
+        })()}
+
+        {activeTab === 'belts' && beltsData && (
+          <div className="blt-wrapper">
+
+            {/* ── Header ── */}
+            <div className="blt-page-header">
+              <div className="blt-page-header-left">
+                <h2>Gürtel-Übersicht</h2>
+                <p>Graduierungen, Mitglieder und Anwesenheiten je Kampfkunststil</p>
+              </div>
+              <button
+                className="blt-assign-btn"
+                onClick={() => navigate('/dashboard/guertel-massenzuweisung')}
+              >
+                ⚡ Massenzuweisung
+              </button>
+            </div>
+
+            {/* ── KPI Row ── */}
+            <div className="blt-kpi-row">
+              <div className="blt-kpi">
+                <div className="blt-kpi-label">Stile</div>
+                <div className="blt-kpi-value">{beltsData.summary.total_stile}</div>
+                <div className="blt-kpi-sub">Kampfkunststile</div>
+              </div>
+              <div className="blt-kpi">
+                <div className="blt-kpi-label">Gürtel</div>
+                <div className="blt-kpi-value">{beltsData.summary.total_guertel}</div>
+                <div className="blt-kpi-sub">Graduierungsstufen</div>
+              </div>
+              <div className="blt-kpi">
+                <div className="blt-kpi-label">Mitglieder</div>
+                <div className="blt-kpi-value">{beltsData.summary.total_mitglieder}</div>
+                <div className="blt-kpi-sub">mit Gürtelzuweisung</div>
+              </div>
+            </div>
+
+            {/* ── Stile ── */}
+            {beltsData.stile.map((stil) => {
+              const isCollapsed = collapsedStile[stil.stil_id];
+              const totalMembers = stil.guertel.reduce((sum, g) => sum + g.mitglieder.length, 0);
+              return (
+                <div key={stil.stil_id} className="blt-stil-section">
+                  <div
+                    className="blt-stil-header"
+                    onClick={() => setCollapsedStile(prev => ({ ...prev, [stil.stil_id]: !prev[stil.stil_id] }))}
+                  >
+                    <h3>{stil.stil_name}</h3>
+                    <div className="blt-stil-meta">
+                      <span className="blt-stil-stats">{stil.guertel.length} Gürtel · {totalMembers} Mitglieder</span>
+                      <span className={`blt-stil-chevron${isCollapsed ? ' blt-stil-chevron--collapsed' : ''}`}>▾</span>
+                    </div>
+                  </div>
+
+                  {!isCollapsed && (
+                    <div className="blt-guertel-grid">
+                      {stil.guertel.map((guertel) => (
+                        <div key={guertel.graduierung_id} className="blt-guertel-card">
+                          <div className="blt-guertel-header">
+                            <div
+                              className="blt-color-badge"
+                              style={{
+                                '--badge-bg': guertel.farbe_sekundaer
+                                  ? `linear-gradient(135deg, ${guertel.farbe_hex}, ${guertel.farbe_sekundaer})`
+                                  : guertel.farbe_hex
+                              }}
+                            />
+                            <div className="blt-guertel-info">
+                              <div className="blt-guertel-name">
+                                {guertel.gurt_name}
+                                {guertel.dan_grad && <span className="blt-dan-badge">{guertel.dan_grad}. DAN</span>}
+                              </div>
+                              <div className="blt-guertel-category">{guertel.kategorie}</div>
+                            </div>
+                            <span className="blt-member-count">{guertel.mitglieder.length} Mitgl.</span>
+                          </div>
+
+                          {guertel.mitglieder.length > 0 ? (
+                            <div className="blt-member-list">
+                              <div className="blt-member-list-header">
+                                <span>Name</span>
+                                <span>Jahr</span>
+                                <span>Monat</span>
+                              </div>
+                              {guertel.mitglieder.map((member) => (
+                                <div key={member.mitglied_id} className="blt-member-row">
+                                  <span className="blt-member-name">{member.vorname} {member.nachname}</span>
+                                  <span className="blt-attendance">{member.anwesenheit_jahr}×</span>
+                                  <span className="blt-attendance">{member.anwesenheit_monat}×</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="blt-no-members">Keine Mitglieder</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -1429,21 +1767,43 @@ function Auswertungen() {
           const aktivQuote = sum.totalMembers > 0
             ? Math.round((sum.activeMembers / sum.totalMembers) * 100) : 0;
           const DAUER_COLORS = ['#f59e0b','#ffd700','#10b981','#3b82f6','#8b5cf6'];
+          const toggleSection = (key) => setCollapsedPerfSections(p => ({ ...p, [key]: !p[key] }));
+          const toggleTier = (key) => setExpandedRisikoTiers(p => ({ ...p, [key]: !p[key] }));
+          const SectionHeader = ({ sKey, title }) => (
+            <div className="perf-section-header" onClick={() => toggleSection(sKey)}>
+              <span className="perf-section-title">{title}</span>
+              <span className={`perf-section-chevron ${collapsedPerfSections[sKey] ? 'perf-section-chevron--up' : ''}`}>›</span>
+            </div>
+          );
 
           return (
             <div className="perf-wrapper">
 
               {/* ── KPI Header ── */}
+              <SectionHeader sKey="kpis" title="📊 KPI Kennzahlen" />
+              {!collapsedPerfSections.kpis && (
               <div className="perf-kpi-row">
                 <div className="perf-kpi">
-                  <div className="perf-kpi-label">Ø Check-ins / Tag</div>
+                  <div className="perf-kpi-label">
+                    Ø Check-ins / Tag
+                    <span className="perf-tooltip-wrap">
+                      <span className="perf-info-icon">ℹ</span>
+                      <span className="perf-tooltip">Durchschnittliche Anzahl an Check-ins pro Tag über die letzten 90 Tage. Zeigt wie aktiv das Dojo genutzt wird.</span>
+                    </span>
+                  </div>
                   <div className="perf-kpi-value perf-kpi-value--gold">
                     {anw.durchschnittlicheAnwesenheit}
                   </div>
                   <div className="perf-kpi-sub">letzte 90 Tage</div>
                 </div>
                 <div className="perf-kpi">
-                  <div className="perf-kpi-label">Retention Rate</div>
+                  <div className="perf-kpi-label">
+                    Retention Rate
+                    <span className="perf-tooltip-wrap">
+                      <span className="perf-info-icon">ℹ</span>
+                      <span className="perf-tooltip">Anteil der aktiven Mitglieder, die länger als 1 Jahr dabei sind. Über 75% ist gut, über 85% ist ausgezeichnet. Niedrige Werte deuten auf hohe Fluktuation hin.</span>
+                    </span>
+                  </div>
                   <div className={`perf-kpi-value ${sum.retentionRate >= 75 ? 'perf-kpi-value--green' : 'perf-kpi-value--red'}`}>
                     {sum.retentionRate}%
                   </div>
@@ -1453,7 +1813,13 @@ function Auswertungen() {
                   </div>
                 </div>
                 <div className="perf-kpi">
-                  <div className="perf-kpi-label">Aktivquote</div>
+                  <div className="perf-kpi-label">
+                    Aktivquote
+                    <span className="perf-tooltip-wrap">
+                      <span className="perf-info-icon">ℹ</span>
+                      <span className="perf-tooltip">Anteil der aktiven Mitglieder an der Gesamtmitgliederzahl (inkl. inaktiver). Über 80% ist ein gesundes Verhältnis.</span>
+                    </span>
+                  </div>
                   <div className={`perf-kpi-value ${aktivQuote >= 80 ? 'perf-kpi-value--green' : ''}`}>
                     {aktivQuote}%
                   </div>
@@ -1463,15 +1829,24 @@ function Auswertungen() {
                   </div>
                 </div>
                 <div className="perf-kpi">
-                  <div className="perf-kpi-label">Churn Rate</div>
+                  <div className="perf-kpi-label">
+                    Churn Rate
+                    <span className="perf-tooltip-wrap">
+                      <span className="perf-info-icon">ℹ</span>
+                      <span className="perf-tooltip">Anteil der Austritte der letzten 12 Monate an der Gesamtmitgliederzahl. Unter 3% ist sehr gut, über 7% ist bedenklich.</span>
+                    </span>
+                  </div>
                   <div className={`perf-kpi-value ${ma.churnRate <= 3 ? 'perf-kpi-value--green' : ma.churnRate <= 7 ? '' : 'perf-kpi-value--red'}`}>
                     {ma.churnRate}%
                   </div>
                   <div className="perf-kpi-sub">Austritte / Gesamt</div>
                 </div>
               </div>
+              )}
 
               {/* ── Wochentag + Spitzenzeiten ── */}
+              <SectionHeader sKey="wochepeak" title="📅 Check-ins & Trainingszeiten" />
+              {!collapsedPerfSections.wochepeak && (
               <div className="perf-columns">
 
                 {/* Wochentag-Verteilung */}
@@ -1514,7 +1889,7 @@ function Auswertungen() {
                       {peaks.map((p, i) => (
                         <div className="perf-peak-row" key={i}>
                           <div className={`perf-peak-rank perf-peak-rank--${i + 1}`}>
-                            {i + 1 <= 3 ? ['①','②','③'][i] : i + 1}
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
                           </div>
                           <div className="perf-peak-time">{p.zeit}</div>
                           <div className="perf-peak-bar-bg">
@@ -1532,9 +1907,11 @@ function Auswertungen() {
                   )}
                 </div>
               </div>
+              )}
 
               {/* ── Mitgliedschaftsdauer (volle Breite) ── */}
-              {dauer.length > 0 && (
+              <SectionHeader sKey="dauer" title="⏱ Mitgliedschaftsdauer" />
+              {!collapsedPerfSections.dauer && dauer.length > 0 && (
                 <div className="perf-card">
                   <div className="perf-card-header">
                     <span className="perf-card-title">Mitgliedschaftsdauer</span>
@@ -1560,6 +1937,466 @@ function Auswertungen() {
                 </div>
               )}
 
+              {/* ── Kurs-Performance ── */}
+              <SectionHeader sKey="kurse" title="🏋 Kurs-Performance" />
+              {!collapsedPerfSections.kurse && kursPerformance && (() => {
+                const { kurse: kp, wochenplan, freieSlots } = kursPerformance;
+                const maxSchnitt = kp.length > 0 ? Math.max(...kp.map(k => k.schnitt_pro_tag)) : 1;
+                const stilFarben = {
+                  'Enso Karate':    '#ffd700',
+                  'Kickboxen':      '#f97316',
+                  'ShieldX':        '#3b82f6',
+                  'Brazilian Jiu Jitsu': '#10b981',
+                };
+                const stilColor = (stil) => stilFarben[stil] || '#8b5cf6';
+                const tageOrder = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+                const activeTage = tageOrder.filter(t => (wochenplan[t]||[]).length > 0);
+
+                return (
+                  <>
+                    {/* Kurs-Ranking */}
+                    <div className="perf-card">
+                      <div className="perf-card-header">
+                        <span className="perf-card-title">Kurs-Ranking — Ø Teilnehmer/Einheit</span>
+                        <span className="perf-card-meta">letzte 90 Tage</span>
+                      </div>
+                      <div className="perf-kurs-list">
+                        {kp.map((k, i) => (
+                          <div className="perf-kurs-row" key={k.kurs_id}>
+                            <div className="perf-kurs-rank">
+                              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : <span className="perf-kurs-rank-num">{i+1}</span>}
+                            </div>
+                            <div className="perf-kurs-info">
+                              <div className="perf-kurs-name">{k.name}</div>
+                              <div className="perf-kurs-meta">
+                                <span className="perf-kurs-stil-dot" style={{ background: stilColor(k.stil) }} />
+                                <span className="perf-kurs-stil">{k.stil}</span>
+                                <span className="perf-kurs-sep">·</span>
+                                <span>{k.tage.map(t => t.tag.slice(0,2)).join(', ')}</span>
+                                {k.checkins_gesamt > 0 && <><span className="perf-kurs-sep">·</span><span>{k.checkins_gesamt} Check-ins</span></>}
+                              </div>
+                            </div>
+                            <div className="perf-kurs-bar-wrap">
+                              <div className="perf-kurs-bar-bg">
+                                <div className="perf-kurs-bar-fill"
+                                  style={{ width: `${Math.round((k.schnitt_pro_tag / maxSchnitt) * 100)}%`, background: stilColor(k.stil) }} />
+                              </div>
+                              {k.auslastung_pct !== null && (
+                                <div className={`perf-kurs-auslastung ${k.auslastung_pct >= 80 ? 'perf-kurs-auslastung--voll' : ''}`}>
+                                  {k.auslastung_pct}% Auslastung
+                                </div>
+                              )}
+                            </div>
+                            <div className="perf-kurs-schnitt">
+                              <span className="perf-kurs-schnitt-val">{k.schnitt_pro_tag || '–'}</span>
+                              <span className="perf-kurs-schnitt-label">Ø/Einheit</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Wochenplan mit Check-in-Dichte */}
+                    <div className="perf-card">
+                      <div className="perf-card-header">
+                        <span className="perf-card-title">Kursplan nach Wochentag</span>
+                        <span className="perf-card-meta">{activeTage.length} aktive Trainingstage</span>
+                      </div>
+                      <div className="perf-wochenplan">
+                        {activeTage.map(tag => (
+                          <div className="perf-wplan-tag" key={tag}>
+                            <div className="perf-wplan-tag-label">{tag}</div>
+                            <div className="perf-wplan-kurse">
+                              {(wochenplan[tag]||[]).map((k, i) => (
+                                <div className="perf-wplan-kurs" key={i}
+                                  style={{ borderLeft: `3px solid ${stilColor(k.stil)}` }}>
+                                  <div className="perf-wplan-time">
+                                    {k.start?.slice(0,5)} – {k.ende?.slice(0,5)}
+                                  </div>
+                                  <div className="perf-wplan-kname">{k.name}</div>
+                                  <div className="perf-wplan-kmeta">
+                                    <span className="perf-wplan-stil">{k.stil}</span>
+                                    {k.checkins > 0 && (
+                                      <span className="perf-wplan-checkins">⬤ Ø {k.schnitt}/Einheit</span>
+                                    )}
+                                    {k.checkins === 0 && (
+                                      <span className="perf-wplan-leer">Noch keine Check-ins</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Freie Kapazitäten */}
+                    <div className="perf-card">
+                      <div className="perf-card-header">
+                        <span className="perf-card-title">Freie Zeitfenster — Potential für neue Kurse</span>
+                        <span className="perf-card-meta">Lücken ≥ 30 Min im Zeitraum 14:00–22:00</span>
+                      </div>
+                      <div className="perf-freie-slots">
+                        {tageOrder.map(tag => {
+                          const slots = freieSlots[tag] || [];
+                          if (slots.length === 0) return null;
+                          const istFreierTag = (wochenplan[tag]||[]).length === 0;
+                          return (
+                            <div className={`perf-freier-tag ${istFreierTag ? 'perf-freier-tag--komplett' : ''}`} key={tag}>
+                              <div className="perf-freier-tag-label">
+                                {tag}
+                                {istFreierTag && <span className="perf-freier-badge">ganzer Tag frei</span>}
+                              </div>
+                              <div className="perf-freier-slots-list">
+                                {slots.map((s, i) => (
+                                  <div className="perf-freier-slot" key={i}>
+                                    <span className="perf-freier-time">{s.start?.slice(0,5)} – {s.ende?.slice(0,5)}</span>
+                                    <span className="perf-freier-dauer">{Math.floor(s.minuten/60)}h{s.minuten%60>0?` ${s.minuten%60}min`:''} verfügbar</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        }).filter(Boolean)}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+
+              {/* ── RISIKO: Absprung + Vertragsablauf ── */}
+              <SectionHeader sKey="risiko" title="⚠ Mitglieder-Risiko" />
+              {!collapsedPerfSections.risiko && (
+                <div className="perf-columns">
+
+                  {/* Absprung-Risiko */}
+                  {absprungRisiko && (() => {
+                    const tiers = [
+                      { key: 'tier3w', data: absprungRisiko.tier3w, label: '3–6 Wochen', color: '#f59e0b' },
+                      { key: 'tier6w', data: absprungRisiko.tier6w, label: '6W – 2 Monate', color: '#ef4444' },
+                      { key: 'tier2m', data: absprungRisiko.tier2m, label: '2+ Monate / noch nie', color: '#dc2626' },
+                    ];
+                    const total = tiers.reduce((s, t) => s + t.data.length, 0);
+                    return (
+                      <div className="perf-card">
+                        <div className="perf-card-header">
+                          <span className="perf-card-title">Absprung-Risiko</span>
+                          <span className="perf-card-meta">{total} Mitglieder inaktiv</span>
+                        </div>
+                        <div className="perf-risiko-wrap">
+                          {tiers.map((tier) => {
+                            const isExpanded = expandedRisikoTiers[tier.key];
+                            const visible = isExpanded ? tier.data : tier.data.slice(0, 4);
+                            const more = tier.data.length - 4;
+                            return (
+                              <div className="perf-risiko-tier" key={tier.key}>
+                                <div className="perf-risiko-tier-header">
+                                  <span className="perf-risiko-count" style={{ color: tier.color }}>{tier.data.length}</span>
+                                  <span className="perf-risiko-tier-label">{tier.label}</span>
+                                </div>
+                                {visible.map(m => (
+                                  <div className="perf-risiko-member" key={m.mitglied_id}>
+                                    <span className="perf-risiko-name">{m.vorname} {m.nachname}</span>
+                                    <span className="perf-risiko-days" style={{ color: tier.color }}>
+                                      {m.tage_weg !== null ? `${m.tage_weg}T` : 'noch nie'}
+                                    </span>
+                                  </div>
+                                ))}
+                                {more > 0 && (
+                                  <button className="perf-risiko-expand" onClick={() => toggleTier(tier.key)}>
+                                    {isExpanded ? '▲ weniger anzeigen' : `▼ ${more} weitere anzeigen`}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Vertragsablauf */}
+                  {vertragsablauf && (() => {
+                    const buckets = [
+                      { data: vertragsablauf.in30, label: '≤ 30 Tage', color: '#dc2626' },
+                      { data: vertragsablauf.in60, label: '31–60 Tage', color: '#f59e0b' },
+                      { data: vertragsablauf.in90, label: '61–90 Tage', color: '#6b7280' },
+                    ];
+                    const total = buckets.reduce((s, b) => s + b.data.length, 0);
+                    return (
+                      <div className="perf-card">
+                        <div className="perf-card-header">
+                          <span className="perf-card-title">Vertragsablauf-Pipeline</span>
+                          <span className="perf-card-meta">{total} Verträge in 90 Tagen</span>
+                        </div>
+                        {total === 0 ? (
+                          <div className="perf-empty">Keine Verträge laufen in den nächsten 90 Tagen ab</div>
+                        ) : (
+                          <div className="perf-ablauf-wrap">
+                            {buckets.map((bucket, bi) => bucket.data.length > 0 && (
+                              <div className="perf-ablauf-bucket" key={bi}>
+                                <div className="perf-ablauf-bucket-label" style={{ color: bucket.color }}>
+                                  <span className="perf-ablauf-count">{bucket.data.length}</span>
+                                  {bucket.label}
+                                </div>
+                                {bucket.data.map(m => (
+                                  <div className="perf-ablauf-member" key={m.id}>
+                                    <span className="perf-ablauf-mname">{m.vorname} {m.nachname}</span>
+                                    <span className="perf-ablauf-date">{m.vertragsende}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* ── ENGAGEMENT: Frequenz + Streaks ── */}
+              <SectionHeader sKey="engagement" title="📊 Engagement" />
+              {!collapsedPerfSections.engagement && (
+                <div className="perf-columns">
+
+                  {trainingsfrequenz && (() => {
+                    const maxCount = Math.max(...trainingsfrequenz.buckets.map(b => b.count), 1);
+                    return (
+                      <div className="perf-card">
+                        <div className="perf-card-header">
+                          <span className="perf-card-title">Trainingsfrequenz</span>
+                          <span className="perf-card-meta">letzte 90 Tage · {trainingsfrequenz.total} Mitglieder</span>
+                        </div>
+                        <div className="perf-freq-list">
+                          {trainingsfrequenz.buckets.map((b, i) => {
+                            const pct = Math.round((b.count / trainingsfrequenz.total) * 100);
+                            return (
+                              <div className="perf-freq-row" key={i}>
+                                <div className="perf-freq-label">{b.label}</div>
+                                <div className="perf-freq-bar-bg">
+                                  <div className="perf-freq-bar-fill"
+                                    style={{ width: `${Math.round((b.count / maxCount) * 100)}%`, background: b.color }} />
+                                </div>
+                                <div className="perf-freq-count">{b.count}</div>
+                                <div className="perf-freq-pct">{pct}%</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {checkinStreaks && checkinStreaks.length > 0 && (() => {
+                    const maxStreak = checkinStreaks[0].streak;
+                    return (
+                      <div className="perf-card">
+                        <div className="perf-card-header">
+                          <span className="perf-card-title">🔥 Trainingsstreaks</span>
+                          <span className="perf-card-meta">konsekutive Wochen</span>
+                        </div>
+                        <div className="perf-streak-list">
+                          {checkinStreaks.map((s, i) => (
+                            <div className="perf-streak-row" key={i}>
+                              <span className="perf-streak-rank">
+                                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}.`}
+                              </span>
+                              <span className="perf-streak-name">{s.name}</span>
+                              <div className="perf-streak-bar-bg">
+                                <div className="perf-streak-bar-fill"
+                                  style={{ width: `${Math.round((s.streak / maxStreak) * 100)}%` }} />
+                              </div>
+                              <span className="perf-streak-weeks">{s.streak}W</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* ── FINANZEN + ONBOARDING ── */}
+              <SectionHeader sKey="finanzen" title="💰 Finanzen & Onboarding" />
+              {!collapsedPerfSections.finanzen && (
+                <div className="perf-columns">
+
+                  {zahlungsrueckstand && (() => {
+                    const zr = zahlungsrueckstand;
+                    const maxTrend = Math.max(...zr.trend.map(t => t.gesamt), 1);
+                    return (
+                      <div className="perf-card">
+                        <div className="perf-card-header">
+                          <span className="perf-card-title">Zahlungsrückstand</span>
+                          <span className="perf-card-meta">fällige Beiträge bis heute</span>
+                        </div>
+                        <div className="perf-zahlung-summary">
+                          <div className="perf-zahlung-kpi">
+                            <span className={`perf-zahlung-pct ${zr.offen_pct > 15 ? 'perf-zahlung-pct--red' : zr.offen_pct > 8 ? 'perf-zahlung-pct--amber' : 'perf-zahlung-pct--green'}`}>
+                              {zr.offen_pct}%
+                            </span>
+                            <span className="perf-zahlung-label">Ausfallquote</span>
+                          </div>
+                          <div className="perf-zahlung-kpi">
+                            <span className="perf-zahlung-pct perf-zahlung-pct--red">
+                              {zr.offen_betrag.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                            </span>
+                            <span className="perf-zahlung-label">offen</span>
+                          </div>
+                          <div className="perf-zahlung-kpi">
+                            <span className="perf-zahlung-pct">{zr.offen_count}</span>
+                            <span className="perf-zahlung-label">Einträge</span>
+                          </div>
+                        </div>
+                        {zr.trend.length > 0 && (
+                          <div className="perf-zahlung-trend">
+                            <div className="perf-zahlung-trend-label">Trend (letzte 6 Monate) — grau=gesamt, rot=offen</div>
+                            <div className="perf-zahlung-trend-bars">
+                              {zr.trend.map((t, i) => (
+                                <div className="perf-zahlung-trend-col" key={i}>
+                                  <div className="perf-zahlung-trend-bar-wrap">
+                                    <div className="perf-zahlung-trend-bar-total"
+                                      style={{ height: `${Math.round((t.gesamt / maxTrend) * 48)}px` }} />
+                                    <div className="perf-zahlung-trend-bar-offen"
+                                      style={{ height: `${Math.round((t.offen / maxTrend) * 48)}px` }} />
+                                  </div>
+                                  <div className="perf-zahlung-trend-monat">{t.monat.slice(5)}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {onboardingKohorte && onboardingKohorte.length > 0 && (() => {
+                    const MN = { '01':'Jan','02':'Feb','03':'Mär','04':'Apr','05':'Mai','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Okt','11':'Nov','12':'Dez' };
+                    return (
+                      <div className="perf-card">
+                        <div className="perf-card-header">
+                          <span className="perf-card-title">Onboarding-Kohorten</span>
+                          <span className="perf-card-meta">% trainiert in Monat 1 / 2 / 3</span>
+                        </div>
+                        <div className="perf-kohorte-table">
+                          <div className="perf-kohorte-header-row">
+                            <div className="perf-kohorte-cell perf-kohorte-cell--head">Monat</div>
+                            <div className="perf-kohorte-cell perf-kohorte-cell--head">Neu</div>
+                            <div className="perf-kohorte-cell perf-kohorte-cell--head">M1</div>
+                            <div className="perf-kohorte-cell perf-kohorte-cell--head">M2</div>
+                            <div className="perf-kohorte-cell perf-kohorte-cell--head">M3</div>
+                          </div>
+                          {onboardingKohorte.map((k, i) => {
+                            const mm = k.monat.slice(5);
+                            const yy = k.monat.slice(2,4);
+                            return (
+                              <div className="perf-kohorte-row" key={i}>
+                                <div className="perf-kohorte-cell perf-kohorte-cell--month">{MN[mm]} '{yy}</div>
+                                <div className="perf-kohorte-cell">{k.total}</div>
+                                <div className="perf-kohorte-cell">
+                                  <span className={`perf-kohorte-pct ${k.m1_pct >= 70 ? 'pct--green' : k.m1_pct >= 40 ? 'pct--amber' : 'pct--red'}`}>{k.m1_pct}%</span>
+                                </div>
+                                <div className="perf-kohorte-cell">
+                                  {k.m2_pct !== null
+                                    ? <span className={`perf-kohorte-pct ${k.m2_pct >= 60 ? 'pct--green' : k.m2_pct >= 30 ? 'pct--amber' : 'pct--red'}`}>{k.m2_pct}%</span>
+                                    : <span className="perf-kohorte-pending">–</span>}
+                                </div>
+                                <div className="perf-kohorte-cell">
+                                  {k.m3_pct !== null
+                                    ? <span className={`perf-kohorte-pct ${k.m3_pct >= 50 ? 'pct--green' : k.m3_pct >= 25 ? 'pct--amber' : 'pct--red'}`}>{k.m3_pct}%</span>
+                                    : <span className="perf-kohorte-pending">–</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* ── GRADUIERUNGS-PYRAMIDE ── */}
+              {graduierungsPyramide && graduierungsPyramide.length > 0 && (<>
+                <SectionHeader sKey="pyramide" title="🥋 Graduierungs-Pyramide" />
+                {!collapsedPerfSections.pyramide && (
+                  <div className="perf-card">
+                    <div className="perf-card-header">
+                      <span className="perf-card-title">Graduierungs-Pyramide</span>
+                      <span className="perf-card-meta">aktive Mitglieder nach Grad</span>
+                    </div>
+                    <div className="perf-pyramide-stile">
+                      {graduierungsPyramide.map(stil => {
+                        const maxCount = Math.max(...stil.stufen.map(s => s.count), 1);
+                        return (
+                          <div className="perf-pyramide-stil" key={stil.stil}>
+                            <div className="perf-pyramide-stil-title">{stil.stil}</div>
+                            <div className="perf-pyramide-total">{stil.total} Mitglieder</div>
+                            <div className="perf-pyramide-levels">
+                              {stil.stufen.map((stufe, i) => {
+                                const pct = Math.round((stufe.count / maxCount) * 100);
+                                const hex = stufe.farbe_hex || '#ffffff';
+                                const isWhite = hex.toLowerCase() === '#ffffff';
+                                return (
+                                  <div className="perf-pyramide-level" key={i}>
+                                    <div className="perf-pyramide-bar-wrap">
+                                      <div className="perf-pyramide-bar"
+                                        style={{ width: `${pct}%`, background: isWhite ? 'rgba(255,255,255,0.18)' : hex, borderColor: isWhite ? 'rgba(255,255,255,0.3)' : hex }} />
+                                    </div>
+                                    <div className="perf-pyramide-label" title={stufe.grad_name}>{stufe.grad_name}</div>
+                                    <div className="perf-pyramide-count">{stufe.count}</div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>)}
+
+              {/* ── TRAINER-AUSLASTUNG ── */}
+              {trainerAuslastung && trainerAuslastung.length > 0 && (<>
+                <SectionHeader sKey="trainer" title="👤 Trainer-Auslastung" />
+                {!collapsedPerfSections.trainer && (() => {
+                  const maxTeilnehmer = Math.max(...trainerAuslastung.map(t => t.gesamt_teilnehmer), 1);
+                  return (
+                    <div className="perf-card">
+                      <div className="perf-card-header">
+                        <span className="perf-card-title">Trainer-Auslastung</span>
+                        <span className="perf-card-meta">letzte 90 Tage</span>
+                      </div>
+                      <div className="perf-trainer-list">
+                        {trainerAuslastung.map((t) => (
+                          <div className="perf-trainer-row" key={t.trainer_id}>
+                            <div className="perf-trainer-avatar">{t.initials}</div>
+                            <div className="perf-trainer-info">
+                              <div className="perf-trainer-name">{t.name}</div>
+                              <div className="perf-trainer-stil">{t.stil}</div>
+                            </div>
+                            <div className="perf-trainer-bar-wrap">
+                              <div className="perf-trainer-bar-bg">
+                                <div className="perf-trainer-bar-fill"
+                                  style={{ width: `${Math.round((t.gesamt_teilnehmer / maxTeilnehmer) * 100)}%` }} />
+                              </div>
+                            </div>
+                            <div className="perf-trainer-stats">
+                              <span className="perf-trainer-avg">{t.avg_teilnehmer}</span>
+                              <span className="perf-trainer-avg-label">Ø/Einheit</span>
+                            </div>
+                            <div className="perf-trainer-einheiten">{t.einheiten} Einh.</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </>)}
+
             </div>
           );
         })()}
@@ -1575,11 +2412,14 @@ function Auswertungen() {
           const revenuePerMember = sum.activeMembers > 0
             ? sum.monthlyRevenue / sum.activeMembers : 0;
 
+          // Forecast aus member-analytics (absolut) — Deltas daraus ableiten
+          const mp = memberAnalytics?.wachstumPrognose || {};
+          const heute = mp.aktuell || sum.activeMembers;
           const stages = [
-            { period: 'Heute',        members: sum.activeMembers,                          delta: null },
-            { period: '+ 3 Monate',   members: sum.activeMembers + (prog.naechsterMonat * 3 || 0),  delta: prog.naechsterMonat * 3 || 0 },
-            { period: '+ 6 Monate',   members: sum.activeMembers + (prog.naechstesQuartal * 2 || 0), delta: prog.naechstesQuartal * 2 || 0 },
-            { period: '+ 12 Monate',  members: sum.activeMembers + (prog.naechstesJahr || 0),        delta: prog.naechstesJahr || 0 },
+            { period: 'Heute',       members: heute,                     delta: null },
+            { period: '+ 3 Monate',  members: mp.prognose3Monate  || heute, delta: (mp.prognose3Monate  || heute) - heute },
+            { period: '+ 6 Monate',  members: mp.prognose6Monate  || heute, delta: (mp.prognose6Monate  || heute) - heute },
+            { period: '+ 12 Monate', members: mp.prognose12Monate || heute, delta: (mp.prognose12Monate || heute) - heute },
           ];
 
           const wachstumsrate = memberAnalytics?.wachstumPrognose?.wachstumsrate ?? 0;

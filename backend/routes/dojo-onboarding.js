@@ -245,6 +245,43 @@ router.post('/register-dojo', async (req, res) => {
     // ===== COMMIT =====
     await connection.commit();
 
+    // ===== Early Bird Promo Registrierung (im Backend – zuverlässig) =====
+    try {
+      const PROMO_NAME = 'early-bird-2026';
+      const PROMO_MAX = 50;
+      const PROMO_START_COUNT = 9; // Simulierte Vorab-Registrierungen
+
+      await db.promise().query(`
+        CREATE TABLE IF NOT EXISTS promo_registrations (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          promo_name VARCHAR(100) NOT NULL,
+          dojo_id INT,
+          registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          discount_percent INT DEFAULT 50,
+          discount_months INT DEFAULT 12,
+          free_months INT DEFAULT 2,
+          UNIQUE KEY unique_dojo_promo (dojo_id, promo_name)
+        )
+      `);
+
+      const [promoCount] = await db.promise().query(
+        'SELECT COUNT(*) as count FROM promo_registrations WHERE promo_name = ?',
+        [PROMO_NAME]
+      );
+
+      if (promoCount[0].count + PROMO_START_COUNT < PROMO_MAX) {
+        await db.promise().query(
+          `INSERT IGNORE INTO promo_registrations
+           (promo_name, dojo_id, discount_percent, discount_months, free_months)
+           VALUES (?, ?, 50, 12, 2)`,
+          [PROMO_NAME, dojo_id]
+        );
+        logger.info(`✅ Early Bird Promo registriert für Dojo ${dojo_id} (${dojo_name})`);
+      }
+    } catch (promoErr) {
+      logger.warn('⚠️ Early Bird Promo-Registrierung fehlgeschlagen (Dojo wurde trotzdem angelegt):', promoErr.message);
+    }
+
     // ===== Super-Admin Benachrichtigung =====
     try {
       await db.promise().query(`

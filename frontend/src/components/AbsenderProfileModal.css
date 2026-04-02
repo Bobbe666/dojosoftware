@@ -5,22 +5,24 @@
   inset: 0;
   background: rgba(0,0,0,0.65);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 1.5rem 1rem;
   overflow-y: auto;
 }
 
+/* Solid background — theme CSS vars (--bg-card) can be semi-transparent */
 .apm-card {
-  background: var(--bg-card, #1e1e2e);
+  background: #1e1e2e;
   border-radius: 12px;
   width: 100%;
   max-width: 680px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--pc44, rgba(139,0,0,0.27));
+  border: 1px solid rgba(201,162,39,0.25);
+  margin: auto 0;
 }
 
 .apm-header {
@@ -29,8 +31,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: var(--text-primary);
-  background: var(--pc, #8B0000);
+  color: #fff;
+  background: #2a2a3a;
+  border-bottom: 2px solid rgba(201,162,39,0.3);
 }
 
 .apm-header-title {
@@ -44,7 +47,7 @@
 .apm-close-btn {
   background: none;
   border: none;
-  color: var(--text-primary);
+  color: #fff;
   cursor: pointer;
 }
 
@@ -96,7 +99,7 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
-  background: var(--typ-farbe, #8B0000);
+  background: var(--typ-farbe, #c9a227);
 }
 
 /* Input */
@@ -105,7 +108,7 @@
   padding: 0.55rem 0.75rem;
   border-radius: 6px;
   border: 1px solid var(--border, #333);
-  background: var(--bg-secondary, #141420);
+  background: #141420;
   color: var(--text-primary, #eee);
   font-size: 0.88rem;
   outline: none;
@@ -214,7 +217,7 @@
   width: 8px;
   align-self: stretch;
   flex-shrink: 0;
-  background: var(--pc, #8B0000);
+  background: var(--pc, #c9a227);
 }
 
 .apm-color-preview-label {
@@ -231,7 +234,7 @@
   gap: 1rem;
   padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: var(--bg-secondary, #141420);
+  background: #141420;
   border: 1px solid var(--border, #333);
   flex-wrap: wrap;
 }
@@ -251,8 +254,8 @@
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 600;
-  border: 1px solid var(--pc, #8B0000);
-  color: var(--pc, #8B0000);
+  border: 1px solid var(--pc, var(--primary));
+  color: var(--pc, var(--primary));
 }
 
 /* Footer */
@@ -276,13 +279,13 @@
 
 .apm-btn-save {
   padding: 0.6rem 1.4rem;
-  color: var(--text-primary, #fff);
+  color: #1a1a1a;
   border: none;
   border-radius: 7px;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  background: var(--pc, #8B0000);
+  background: var(--pc, #c9a227);
 }
 .apm-btn-save:disabled {
   opacity: 0.7;
@@ -302,11 +305,20 @@
   color: var(--text-primary, #eee);
   font-weight: 400;
   transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
 }
 .apm-typ-opt-label--active {
-  border-color: var(--typ-farbe, #8B0000);
-  background: color-mix(in srgb, var(--typ-farbe, #8B0000) 13%, transparent);
+  border-color: var(--typ-farbe, var(--primary));
   font-weight: 600;
+}
+.apm-typ-opt-label--active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--typ-farbe, #c9a227);
+  opacity: 0.13;
+  pointer-events: none;
 }
 
 /* Shared utility classes used in this file */

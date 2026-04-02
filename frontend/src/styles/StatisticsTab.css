@@ -173,11 +173,11 @@
 /* ── MIGRATED INLINE STYLES (2026-03-07) ─────────────────── */
 
 /* Status badge per-status colors */
-.mst-status-badge--active    { background: #10B98115; border-left: 4px solid #10B981; }
-.mst-status-badge--trial     { background: #3B82F615; border-left: 4px solid #3B82F6; }
-.mst-status-badge--expired   { background: #EF444415; border-left: 4px solid #EF4444; }
+.mst-status-badge--active    { background: var(--status-success)15; border-left: 4px solid var(--status-success); }
+.mst-status-badge--trial     { background: var(--status-indigo)15; border-left: 4px solid var(--status-indigo); }
+.mst-status-badge--expired   { background: var(--status-error)15; border-left: 4px solid var(--status-error); }
 .mst-status-badge--cancelled { background: #64748B15; border-left: 4px solid #64748B; }
-.mst-status-badge--pending   { background: #F59E0B15; border-left: 4px solid #F59E0B; }
+.mst-status-badge--pending   { background: var(--status-warning)15; border-left: 4px solid var(--status-warning); }
 .mst-status-badge--default   { background: #64748B15; border-left: 4px solid #64748B; }
 
 .mst-status-dot--active    { background: #10B981; }
@@ -187,11 +187,11 @@
 .mst-status-dot--pending   { background: #F59E0B; }
 .mst-status-dot--default   { background: #64748B; }
 
-.mst-status-count--active    { color: #10B981; }
-.mst-status-count--trial     { color: #3B82F6; }
-.mst-status-count--expired   { color: #EF4444; }
+.mst-status-count--active    { color: var(--status-success); }
+.mst-status-count--trial     { color: var(--status-indigo); }
+.mst-status-count--expired   { color: var(--status-error); }
 .mst-status-count--cancelled { color: #64748B; }
-.mst-status-count--pending   { color: #F59E0B; }
+.mst-status-count--pending   { color: var(--status-warning); }
 .mst-status-count--default   { color: #64748B; }
 
 /* Rank badge: top 3 podium colors */
@@ -219,24 +219,24 @@
 
 /* Dojo count primary color */
 .mst-dojo-count-num {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 /* KPI icon per-color variants */
-.kpi-icon--success { background: #10B98120; color: #10B981; }
-.kpi-icon--primary { background: #3B82F620; color: #3B82F6; }
+.kpi-icon--success { background: var(--status-success)20; color: var(--status-success); }
+.kpi-icon--primary { background: var(--status-indigo)20; color: var(--status-indigo); }
 .kpi-icon--purple  { background: #8B5CF620; color: #8B5CF6; }
 .kpi-icon--teal    { background: #14B8A620; color: #14B8A6; }
 
 /* Member status card per-color variants */
-.mst-member-status-card--success { background: #10B98115; border: 1px solid #10B98130; }
+.mst-member-status-card--success { background: var(--status-success)15; border: 1px solid var(--status-success)30; }
 .mst-member-status-card--slate   { background: #64748B15; border: 1px solid #64748B30; }
-.mst-member-status-card--primary { background: #3B82F615; border: 1px solid #3B82F630; }
+.mst-member-status-card--primary { background: var(--status-indigo)15; border: 1px solid var(--status-indigo)30; }
 
-.mst-member-status-icon--success { color: #10B981; }
+.mst-member-status-icon--success { color: var(--status-success); }
 .mst-member-status-icon--slate   { color: #64748B; }
-.mst-member-status-icon--primary { color: #3B82F6; }
+.mst-member-status-icon--primary { color: var(--status-indigo); }
 
-.mst-member-status-num--success { color: #10B981; }
+.mst-member-status-num--success { color: var(--status-success); }
 .mst-member-status-num--slate   { color: #64748B; }
-.mst-member-status-num--primary { color: #3B82F6; }
+.mst-member-status-num--primary { color: var(--status-indigo); }

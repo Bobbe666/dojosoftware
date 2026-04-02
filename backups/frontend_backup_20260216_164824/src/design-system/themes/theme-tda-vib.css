@@ -1,0 +1,1065 @@
+/* ===========================================
+   DESIGN SYSTEM - TDA-VIB THEME
+   Helles Theme mit traditionellem japanischem Design
+   Washi Paper, Sumi Ink, Gold & Vermillion
+   =========================================== */
+
+[data-theme="tda-vib"] {
+  /* ===== PRIMARY COLORS ===== */
+  --primary: var(--color-gold);
+  --primary-hover: var(--color-gold-dark);
+  --primary-gradient: linear-gradient(135deg, var(--color-gold) 0%, var(--color-gold-dark) 100%);
+  --secondary: var(--color-vermillion);
+
+  /* ===== PRIMARY ALPHA VALUES (Light Theme) ===== */
+  --primary-alpha-10: rgba(201, 162, 39, 0.1);
+  --primary-alpha-15: rgba(201, 162, 39, 0.15);
+  --primary-alpha-20: rgba(201, 162, 39, 0.2);
+  --primary-alpha-25: rgba(201, 162, 39, 0.25);
+  --primary-alpha-30: rgba(201, 162, 39, 0.3);
+  --primary-alpha-35: rgba(201, 162, 39, 0.35);
+  --primary-alpha-40: rgba(201, 162, 39, 0.4);
+  --primary-alpha-50: rgba(201, 162, 39, 0.5);
+  --primary-alpha-60: rgba(201, 162, 39, 0.6);
+
+  /* ===== SECONDARY ALPHA VALUES ===== */
+  --secondary-alpha-10: rgba(199, 62, 58, 0.1);
+  --secondary-alpha-20: rgba(199, 62, 58, 0.2);
+  --secondary-alpha-30: rgba(199, 62, 58, 0.3);
+
+  /* ===== COLOR ALPHA VALUES ===== */
+  --color-orange-500-alpha-25: rgba(199, 62, 58, 0.25);
+  --color-orange-500-alpha-50: rgba(199, 62, 58, 0.5);
+
+  /* ===== ACCENT COLORS ===== */
+  --accent: var(--color-vermillion);
+  --accent-hover: var(--color-vermillion-dark);
+
+  /* ===== BACKGROUND ===== */
+  --bg-body: var(--color-washi);
+  --bg-body-solid: var(--color-washi);
+  --bg-surface: var(--color-white);
+  --bg-elevated: var(--color-white);
+  --bg-overlay: rgba(26, 26, 26, 0.6);
+  --bg-overlay-blur: rgba(245, 240, 230, 0.9);
+  --bg-primary: #f5f0e6;
+  --bg-secondary: #e8e0d0;
+  --bg-tertiary: #f5f0e6;
+  --bg-gradient: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+
+  /* Washi Paper Texture */
+  --bg-texture: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+
+  /* ===== TEXT ===== */
+  --text-primary: var(--color-sumi);
+  --text-secondary: rgba(26, 26, 26, 0.7);
+  --text-muted: rgba(26, 26, 26, 0.5);
+  --text-disabled: rgba(26, 26, 26, 0.3);
+  --text-inverse: var(--color-white);
+  --text-accent: var(--color-gold-dark);
+  --text-accent-secondary: var(--color-vermillion);
+
+  /* ===== BORDERS ===== */
+  --border-default: rgba(26, 26, 26, 0.1);
+  --border-hover: rgba(26, 26, 26, 0.2);
+  --border-focus: var(--color-gold);
+  --border-accent: rgba(201, 162, 39, 0.3);
+  --border-accent-hover: rgba(201, 162, 39, 0.5);
+  --border-accent-active: var(--color-gold);
+
+  /* ===== CARDS ===== */
+  --bg-card: var(--color-white);
+  --bg-card-hover: var(--color-white);
+  --bg-card-active: var(--color-washi-light);
+  --card-bg: var(--color-white);
+  --card-border: 1px solid rgba(26, 26, 26, 0.08);
+  --card-border-hover: 1px solid rgba(26, 26, 26, 0.2);
+  --card-shadow: 0 1px 3px rgba(26, 26, 26, 0.04);
+  --card-shadow-hover: 0 4px 12px rgba(26, 26, 26, 0.08);
+
+  /* ===== BUTTON GHOST VARIANT ===== */
+  --btn-ghost-bg: rgba(26, 26, 26, 0.05);
+  --btn-ghost-bg-hover: rgba(26, 26, 26, 0.1);
+
+  /* ===== BUTTONS ===== */
+  --btn-bg: var(--color-sumi);
+  --btn-bg-hover: transparent;
+  --btn-bg-active: rgba(26, 26, 26, 0.05);
+  --btn-border: 1px solid var(--color-sumi);
+  --btn-text: var(--color-washi);
+  --btn-text-hover: var(--color-sumi);
+
+  --btn-primary-bg: var(--color-sumi);
+  --btn-primary-bg-hover: transparent;
+  --btn-primary-text: var(--color-washi);
+  --btn-primary-text-hover: var(--color-sumi);
+  --btn-primary-shadow: none;
+  --btn-primary-shadow-hover: none;
+
+  /* ===== INPUTS ===== */
+  --input-bg: var(--color-white);
+  --input-bg-focus: var(--color-white);
+  --input-border: 1px solid rgba(26, 26, 26, 0.2);
+  --input-border-hover: 1px solid rgba(26, 26, 26, 0.3);
+  --input-border-focus: 1px solid var(--color-gold);
+  --input-text: var(--text-primary);
+  --input-placeholder: var(--text-muted);
+
+  /* ===== MODALS ===== */
+  --modal-bg: var(--color-white);
+  --modal-border: 1px solid rgba(26, 26, 26, 0.1);
+  --modal-shadow: 0 20px 60px rgba(26, 26, 26, 0.2);
+  --modal-header-border: 1px solid rgba(26, 26, 26, 0.1);
+
+  /* ===== TABLES ===== */
+  --table-header-bg: var(--color-washi-dark);
+  --table-row-bg: var(--color-white);
+  --table-row-bg-hover: var(--color-washi-light);
+  --table-row-bg-alt: var(--color-washi-light);
+  --table-border: 1px solid rgba(26, 26, 26, 0.1);
+
+  /* ===== TABS ===== */
+  --tab-bg: transparent;
+  --tab-bg-hover: rgba(26, 26, 26, 0.03);
+  --tab-bg-active: transparent;
+  --tab-border: none;
+  --tab-border-active: 2px solid var(--color-vermillion);
+  --tab-text: var(--text-muted);
+  --tab-text-hover: var(--text-secondary);
+  --tab-text-active: var(--text-primary);
+
+  /* ===== BADGES ===== */
+  --badge-default-bg: var(--color-washi-dark);
+  --badge-default-text: var(--text-secondary);
+  --badge-primary-bg: rgba(201, 162, 39, 0.15);
+  --badge-primary-text: var(--color-gold-dark);
+  --badge-success-bg: rgba(92, 107, 76, 0.15);
+  --badge-success-text: var(--color-bamboo);
+  --badge-warning-bg: rgba(201, 162, 39, 0.15);
+  --badge-warning-text: var(--color-gold-dark);
+  --badge-error-bg: rgba(199, 62, 58, 0.1);
+  --badge-error-text: var(--color-vermillion);
+
+  /* New Badge */
+  --badge-new-bg: rgba(199, 62, 58, 0.1);
+  --badge-new-text: var(--color-vermillion);
+  --badge-new-border: 1px solid var(--color-vermillion);
+
+  /* Live Badge - Vermillion für TDA-Vib */
+  --badge-live-bg: rgba(199, 62, 58, 0.1);
+  --badge-live-text: var(--color-vermillion);
+  --badge-live-border: 1px solid var(--color-vermillion);
+
+  /* ===== ALERTS ===== */
+  --alert-success-bg: rgba(92, 107, 76, 0.1);
+  --alert-success-border: 1px solid var(--color-bamboo);
+  --alert-warning-bg: rgba(201, 162, 39, 0.1);
+  --alert-warning-border: 1px solid var(--color-gold);
+  --alert-error-bg: rgba(199, 62, 58, 0.1);
+  --alert-error-border: 1px solid var(--color-vermillion);
+  --alert-info-bg: rgba(38, 70, 83, 0.1);
+  --alert-info-border: 1px solid var(--color-indigo);
+
+  /* ===== DROPDOWN ===== */
+  --dropdown-bg: var(--color-white);
+  --dropdown-border: 1px solid rgba(26, 26, 26, 0.1);
+  --dropdown-item-hover: var(--color-washi-light);
+  --dropdown-shadow: 0 10px 30px rgba(26, 26, 26, 0.15);
+
+  /* ===== TOOLTIP ===== */
+  --tooltip-bg: var(--color-sumi);
+  --tooltip-text: var(--color-washi);
+  --tooltip-border: none;
+
+  /* ===== GLASSMORPHISM (disabled for light theme) ===== */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-bg-hover: rgba(255, 255, 255, 0.95);
+  --glass-bg-strong: rgba(255, 255, 255, 0.95);
+  --glass-border: 1px solid rgba(26, 26, 26, 0.1);
+  --glass-blur: blur(10px);
+
+  /* ===== SCROLLBAR ===== */
+  --scrollbar-track: rgba(26, 26, 26, 0.05);
+  --scrollbar-thumb: rgba(201, 162, 39, 0.4);
+  --scrollbar-thumb-hover: rgba(201, 162, 39, 0.6);
+
+  /* ===== SHADOWS ===== */
+  --shadow-default: 0 2px 6px rgba(26, 26, 26, 0.06);
+  --shadow-hover: 0 4px 12px rgba(26, 26, 26, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(201, 162, 39, 0.3);
+  --shadow-glow: none;
+  --shadow-sm: 0 1px 4px rgba(26, 26, 26, 0.08);
+  --shadow-md: 0 2px 8px rgba(26, 26, 26, 0.1);
+  --shadow-lg: 0 4px 16px rgba(26, 26, 26, 0.12);
+  --shadow-gold: 0 2px 8px rgba(201, 162, 39, 0.2);
+  --shadow-gold-lg: 0 4px 16px rgba(201, 162, 39, 0.3);
+
+  /* ===== GLOWS (minimal for light theme) ===== */
+  --glow-gold: 0 0 8px rgba(201, 162, 39, 0.3);
+  --glow-gold-sm: 0 0 4px rgba(201, 162, 39, 0.2);
+  --glow-gold-lg: 0 0 12px rgba(201, 162, 39, 0.4);
+  --glow-orange: 0 0 8px rgba(199, 62, 58, 0.3);
+
+  /* ===== GRADIENTS ===== */
+  --gradient-gold: linear-gradient(135deg, var(--color-gold), var(--color-gold-dark));
+
+  /* ===== TEXT SHADOWS (minimal for light theme) ===== */
+  --text-shadow-glow: none;
+
+  /* ===== SPECIAL EFFECTS ===== */
+  --shimmer-gradient: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(201, 162, 39, 0.1) 50%,
+    transparent 100%
+  );
+
+  /* Gold Accent Line */
+  --accent-line: linear-gradient(90deg, transparent, var(--color-gold), transparent);
+}
+
+/* ========== BODY STYLES ========== */
+
+[data-theme="tda-vib"] body {
+  background-color: var(--bg-body);
+  background-image: var(--bg-texture);
+  color: var(--text-primary);
+}
+
+/* ========== HEADINGS ========== */
+
+[data-theme="tda-vib"] h1,
+[data-theme="tda-vib"] h2,
+[data-theme="tda-vib"] h3 {
+  color: var(--text-primary);
+  text-shadow: none;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ========== GOLD ACCENT LINE ========== */
+
+[data-theme="tda-vib"] .accent-line::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  background: var(--color-gold);
+  margin-top: var(--spacing-2);
+}
+
+[data-theme="tda-vib"] .accent-line-center::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ========== HEADER STYLES ========== */
+
+[data-theme="tda-vib"] .dashboard-header {
+  background: var(--color-white) !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.08) !important;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.04) !important;
+  backdrop-filter: none !important;
+}
+
+/* Remove shimmer effect */
+[data-theme="tda-vib"] .dashboard-header::before {
+  display: none !important;
+}
+
+/* Gold accent line at bottom */
+[data-theme="tda-vib"] .dashboard-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-gold-dark), var(--color-gold), var(--color-gold-dark));
+  opacity: 0.6;
+}
+
+/* Header Title - Sumi instead of gold gradient */
+[data-theme="tda-vib"] .header-left h1,
+[data-theme="tda-vib"] .dashboard-header h1,
+[data-theme="tda-vib"] .dashboard-header h2,
+[data-theme="tda-vib"] .dashboard-title {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--color-sumi) !important;
+  background-clip: unset !important;
+  color: var(--color-sumi) !important;
+  text-shadow: none !important;
+}
+
+/* Verein Name / Subtitle */
+[data-theme="tda-vib"] .header-left p,
+[data-theme="tda-vib"] .verein-name {
+  color: rgba(26, 26, 26, 0.6) !important;
+  text-shadow: none !important;
+}
+
+/* Logo styling */
+[data-theme="tda-vib"] .dashboard-logo,
+[data-theme="tda-vib"] .dashboard-header img {
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* ========== NAVIGATION CARDS ========== */
+
+[data-theme="tda-vib"] .nav-card {
+  background: var(--color-white);
+  border: 1px solid rgba(26, 26, 26, 0.06);
+  border-left: 3px solid var(--color-gold-dark);
+  box-shadow: 0 1px 2px rgba(26, 26, 26, 0.03);
+  transition: all var(--transition-base);
+  border-radius: 2px;
+}
+
+[data-theme="tda-vib"] .nav-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.08);
+  border-color: rgba(26, 26, 26, 0.12);
+}
+
+[data-theme="tda-vib"] .nav-card.featured {
+  border-left: 2px solid var(--color-vermillion);
+}
+
+/* Card Title - Dark text for readability */
+[data-theme="tda-vib"] .nav-card h3,
+[data-theme="tda-vib"] .nav-card-title,
+[data-theme="tda-vib"] .nav-content h3 {
+  color: var(--color-sumi) !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: var(--color-sumi) !important;
+  background: none !important;
+}
+
+/* Card Description */
+[data-theme="tda-vib"] .nav-content p,
+[data-theme="tda-vib"] .nav-card-description {
+  color: rgba(26, 26, 26, 0.7) !important;
+  text-shadow: none !important;
+}
+
+/* ========== BUTTON OVERRIDES ========== */
+
+[data-theme="tda-vib"] .btn {
+  background: var(--color-white) !important;
+  color: var(--color-sumi) !important;
+  border: 1px solid rgba(26, 26, 26, 0.2) !important;
+  border-radius: 2px !important;
+  font-weight: var(--font-weight-medium);
+  transition: all var(--transition-base);
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .btn:hover {
+  background: rgba(26, 26, 26, 0.05) !important;
+  border-color: rgba(26, 26, 26, 0.3) !important;
+}
+
+/* Primary Button - Gold accent */
+[data-theme="tda-vib"] .btn-primary,
+[data-theme="tda-vib"] .btn.btn-primary {
+  background: var(--color-gold-dark) !important;
+  color: var(--color-white) !important;
+  border: 1px solid var(--color-gold-dark) !important;
+}
+
+[data-theme="tda-vib"] .btn-primary:hover,
+[data-theme="tda-vib"] .btn.btn-primary:hover {
+  background: var(--color-gold) !important;
+  border-color: var(--color-gold) !important;
+}
+
+/* Secondary/Danger Button */
+[data-theme="tda-vib"] .btn-danger {
+  background: var(--color-white) !important;
+  color: var(--color-vermillion) !important;
+  border: 1px solid var(--color-vermillion) !important;
+}
+
+[data-theme="tda-vib"] .btn-danger:hover {
+  background: rgba(199, 62, 58, 0.1) !important;
+}
+
+/* ========== DASHBOARD TABS ========== */
+
+[data-theme="tda-vib"] .dashboard-tabs {
+  background: var(--color-white) !important;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.08) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .dashboard-tab {
+  background: transparent !important;
+  color: rgba(26, 26, 26, 0.5) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  transition: all var(--transition-base);
+}
+
+[data-theme="tda-vib"] .dashboard-tab:hover {
+  background: rgba(26, 26, 26, 0.03) !important;
+  color: rgba(26, 26, 26, 0.7) !important;
+}
+
+[data-theme="tda-vib"] .dashboard-tab.active {
+  background: transparent !important;
+  color: var(--color-sumi) !important;
+  border-bottom: 2px solid var(--color-gold-dark) !important;
+}
+
+/* Tab icons */
+[data-theme="tda-vib"] .dashboard-tab .tab-icon {
+  filter: none !important;
+}
+
+[data-theme="tda-vib"] .dashboard-tab.active .tab-icon {
+  filter: none !important;
+}
+
+/* ========== NAVIGATION ARROW ========== */
+
+[data-theme="tda-vib"] .nav-arrow {
+  color: rgba(26, 26, 26, 0.4);
+  transition: all var(--transition-base);
+}
+
+[data-theme="tda-vib"] .nav-card:hover .nav-arrow {
+  color: var(--color-vermillion);
+  transform: translateX(4px);
+}
+
+/* ========== COUNT BADGE ========== */
+
+[data-theme="tda-vib"] .nav-count {
+  color: var(--color-vermillion);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* ========== DASHBOARD CARD OVERRIDES ========== */
+
+/* Remove gold glow effects on hover */
+[data-theme="tda-vib"] .nav-card:hover {
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.1) !important;
+}
+
+/* Remove rotating gold border effect */
+[data-theme="tda-vib"] .nav-card::after {
+  display: none !important;
+}
+
+/* Remove shimmer effect */
+[data-theme="tda-vib"] .nav-card::before {
+  display: none !important;
+}
+
+/* Featured card - dezentes Gold */
+[data-theme="tda-vib"] .nav-card.featured {
+  border-color: rgba(26, 26, 26, 0.1) !important;
+  border-left: 3px solid var(--color-gold-dark) !important;
+}
+
+/* Badge overrides for dashboard - Gold für LIVE */
+[data-theme="tda-vib"] .nav-badge.live,
+[data-theme="tda-vib"] .nav-card .nav-badge.live {
+  background: rgba(201, 162, 39, 0.15) !important;
+  color: var(--color-gold-dark) !important;
+  border: 1px solid var(--color-gold-dark) !important;
+}
+
+/* NEU Badge bleibt Vermillion als Kontrast */
+[data-theme="tda-vib"] .nav-badge.new,
+[data-theme="tda-vib"] .nav-card .nav-badge.new {
+  background: rgba(199, 62, 58, 0.1) !important;
+  color: var(--color-vermillion) !important;
+  border: 1px solid var(--color-vermillion) !important;
+}
+
+/* Dashboard title - use sumi instead of gold gradient */
+[data-theme="tda-vib"] .dashboard-title,
+[data-theme="tda-vib"] .section-text,
+[data-theme="tda-vib"] .section-header .section-text {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--color-sumi) !important;
+  background-clip: unset !important;
+  color: var(--color-sumi) !important;
+}
+
+/* Section count - vermillion accent */
+[data-theme="tda-vib"] .section-count {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--color-vermillion) !important;
+  color: var(--color-vermillion) !important;
+}
+
+/* Filter buttons - sumi style */
+[data-theme="tda-vib"] .filter-button-active {
+  background: var(--color-sumi) !important;
+  color: var(--color-washi) !important;
+}
+
+/* ========== DOJO SWITCHER ========== */
+
+[data-theme="tda-vib"] .dojo-switcher-trigger {
+  background: var(--color-washi-dark) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  border-radius: 4px !important;
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] .dojo-switcher-trigger:hover {
+  background: var(--color-washi) !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-switcher-label {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+[data-theme="tda-vib"] .dojo-switcher-name {
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] .dojo-switcher-trigger span,
+[data-theme="tda-vib"] .dojo-switcher-content span {
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] .chevron {
+  color: rgba(26, 26, 26, 0.5) !important;
+}
+
+[data-theme="tda-vib"] .dojo-color-indicator {
+  box-shadow: none !important;
+}
+
+/* Dojo Switcher Dropdown */
+[data-theme="tda-vib"] .dojo-switcher-dropdown {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.15) !important;
+  border-radius: 4px !important;
+}
+
+[data-theme="tda-vib"] .dojo-switcher-overlay {
+  background: rgba(26, 26, 26, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-header {
+  border-bottom: 1px solid rgba(26, 26, 26, 0.1) !important;
+  background: var(--color-washi-light) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-header h3 {
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-header p {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-item {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.08) !important;
+  border-radius: 4px !important;
+}
+
+[data-theme="tda-vib"] .dropdown-item:hover {
+  background: var(--color-washi-light) !important;
+  border-color: var(--color-gold-dark) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-item.active {
+  border-left: 3px solid var(--color-gold-dark) !important;
+  background: rgba(201, 162, 39, 0.08) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-item-name,
+[data-theme="tda-vib"] .dropdown-item span,
+[data-theme="tda-vib"] .dojo-item-name {
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] .dropdown-item-info,
+[data-theme="tda-vib"] .dojo-item-info {
+  color: rgba(26, 26, 26, 0.5) !important;
+}
+
+/* ========== LOGOUT & HEADER BUTTONS ========== */
+
+[data-theme="tda-vib"] .logout-button,
+[data-theme="tda-vib"] .dashboard-button {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: var(--color-sumi) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .logout-button::before,
+[data-theme="tda-vib"] .dashboard-button::before {
+  display: none !important;
+}
+
+[data-theme="tda-vib"] .logout-button:hover,
+[data-theme="tda-vib"] .dashboard-button:hover {
+  background: rgba(26, 26, 26, 0.05) !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+  color: var(--color-sumi) !important;
+  transform: none !important;
+}
+
+[data-theme="tda-vib"] .logout-text,
+[data-theme="tda-vib"] .dashboard-text {
+  color: var(--color-sumi) !important;
+}
+
+/* ========== USER INFO / WELCOME ========== */
+
+[data-theme="tda-vib"] .user-welcome,
+[data-theme="tda-vib"] .welcome-text {
+  color: rgba(26, 26, 26, 0.7) !important;
+}
+
+[data-theme="tda-vib"] .user-name {
+  color: var(--color-sumi) !important;
+}
+
+/* ========== DARK MODE TOGGLE ========== */
+
+[data-theme="tda-vib"] .theme-toggle,
+[data-theme="tda-vib"] .dark-mode-toggle {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: var(--color-sumi) !important;
+  border-radius: 4px !important;
+}
+
+[data-theme="tda-vib"] .theme-toggle:hover,
+[data-theme="tda-vib"] .dark-mode-toggle:hover {
+  background: rgba(26, 26, 26, 0.05) !important;
+}
+
+/* ========== TABLES ========== */
+
+[data-theme="tda-vib"] table,
+[data-theme="tda-vib"] .table,
+[data-theme="tda-vib"] .data-table {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.08) !important;
+  border-radius: 4px !important;
+  overflow: hidden;
+}
+
+[data-theme="tda-vib"] thead,
+[data-theme="tda-vib"] .table-header {
+  background: var(--color-washi-dark) !important;
+}
+
+[data-theme="tda-vib"] th {
+  background: var(--color-washi-dark) !important;
+  color: var(--color-sumi) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--color-gold-dark) !important;
+  text-shadow: none !important;
+}
+
+[data-theme="tda-vib"] td {
+  background: var(--color-white) !important;
+  color: var(--color-sumi) !important;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.06) !important;
+}
+
+[data-theme="tda-vib"] tr:nth-child(even) td {
+  background: var(--color-washi-light) !important;
+}
+
+[data-theme="tda-vib"] tr:hover td {
+  background: rgba(201, 162, 39, 0.08) !important;
+}
+
+[data-theme="tda-vib"] .table-row-selected td,
+[data-theme="tda-vib"] tr.selected td {
+  background: rgba(201, 162, 39, 0.15) !important;
+  border-left: 3px solid var(--color-gold-dark) !important;
+}
+
+/* ========== FORMS & INPUTS ========== */
+
+[data-theme="tda-vib"] input,
+[data-theme="tda-vib"] .form-input,
+[data-theme="tda-vib"] input[type="text"],
+[data-theme="tda-vib"] input[type="email"],
+[data-theme="tda-vib"] input[type="password"],
+[data-theme="tda-vib"] input[type="number"],
+[data-theme="tda-vib"] input[type="date"],
+[data-theme="tda-vib"] input[type="tel"] {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.2) !important;
+  border-radius: 2px !important;
+  color: var(--color-sumi) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] input:focus,
+[data-theme="tda-vib"] .form-input:focus {
+  border-color: var(--color-gold-dark) !important;
+  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.2) !important;
+  outline: none !important;
+}
+
+[data-theme="tda-vib"] input::placeholder {
+  color: rgba(26, 26, 26, 0.4) !important;
+}
+
+/* Select/Dropdown */
+[data-theme="tda-vib"] select,
+[data-theme="tda-vib"] .form-select {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.2) !important;
+  border-radius: 2px !important;
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] select:focus,
+[data-theme="tda-vib"] .form-select:focus {
+  border-color: var(--color-gold-dark) !important;
+  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.2) !important;
+}
+
+/* Textarea */
+[data-theme="tda-vib"] textarea,
+[data-theme="tda-vib"] .form-textarea {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.2) !important;
+  border-radius: 2px !important;
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] textarea:focus {
+  border-color: var(--color-gold-dark) !important;
+  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.2) !important;
+}
+
+/* Labels */
+[data-theme="tda-vib"] label,
+[data-theme="tda-vib"] .form-label {
+  color: var(--color-sumi) !important;
+}
+
+/* Checkbox & Radio */
+[data-theme="tda-vib"] input[type="checkbox"],
+[data-theme="tda-vib"] input[type="radio"] {
+  accent-color: var(--color-gold-dark) !important;
+}
+
+/* Form Groups */
+[data-theme="tda-vib"] .form-group {
+  background: transparent !important;
+}
+
+/* Search Input */
+[data-theme="tda-vib"] .search-input,
+[data-theme="tda-vib"] input[type="search"] {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+}
+
+[data-theme="tda-vib"] .search-input:focus {
+  border-color: var(--color-gold-dark) !important;
+}
+
+/* ========== MITGLIEDERLISTE ========== */
+
+/* Container */
+[data-theme="tda-vib"] .mitglieder-container {
+  background: var(--color-washi) !important;
+}
+
+/* Page Header */
+[data-theme="tda-vib"] .mitglieder-header,
+[data-theme="tda-vib"] .page-header,
+[data-theme="tda-vib"] .header-card {
+  background: var(--color-white) !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.04) !important;
+}
+
+/* Page Title - all variations */
+[data-theme="tda-vib"] .mitglieder-title,
+[data-theme="tda-vib"] .page-title,
+[data-theme="tda-vib"] .content-header h1,
+[data-theme="tda-vib"] .content-header h2,
+[data-theme="tda-vib"] .header-card h1,
+[data-theme="tda-vib"] .header-card h2 {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--color-sumi) !important;
+  background-clip: unset !important;
+  color: var(--color-sumi) !important;
+  text-shadow: none !important;
+}
+
+/* Subtitle */
+[data-theme="tda-vib"] .mitglieder-subtitle,
+[data-theme="tda-vib"] .page-subtitle,
+[data-theme="tda-vib"] .header-card p {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Member Cards - mitglieder-card */
+[data-theme="tda-vib"] .mitglieder-card {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.08) !important;
+  border-left: 3px solid var(--color-gold-dark) !important;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.04) !important;
+  border-radius: 4px !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="tda-vib"] .mitglieder-card::before,
+[data-theme="tda-vib"] .mitglieder-card::after {
+  display: none !important;
+}
+
+[data-theme="tda-vib"] .mitglieder-card:hover {
+  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.08) !important;
+  transform: translateY(-2px) !important;
+  border-color: rgba(26, 26, 26, 0.15) !important;
+}
+
+/* Member Name in cards */
+[data-theme="tda-vib"] .mitglied-details h3,
+[data-theme="tda-vib"] .mitglieder-card h3 {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: var(--color-sumi) !important;
+  color: var(--color-sumi) !important;
+  text-shadow: none !important;
+}
+
+/* Member Info */
+[data-theme="tda-vib"] .mitglied-details p {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Filter Buttons (A-Z) */
+[data-theme="tda-vib"] .filter-button,
+[data-theme="tda-vib"] .filter-container button {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.12) !important;
+  color: var(--color-sumi) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .filter-button:hover,
+[data-theme="tda-vib"] .filter-container button:hover {
+  background: var(--color-washi-dark) !important;
+  border-color: rgba(26, 26, 26, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .filter-button.active,
+[data-theme="tda-vib"] .filter-container button.active {
+  background: var(--color-gold-dark) !important;
+  color: var(--color-white) !important;
+  border-color: var(--color-gold-dark) !important;
+}
+
+/* Filter Label */
+[data-theme="tda-vib"] .filter-label,
+[data-theme="tda-vib"] .filter-container span {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Action Buttons in Header */
+[data-theme="tda-vib"] .action-button,
+[data-theme="tda-vib"] .add-button,
+[data-theme="tda-vib"] button[class*="add"],
+[data-theme="tda-vib"] button[class*="create"] {
+  background: var(--color-gold-dark) !important;
+  color: var(--color-white) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .action-button:hover,
+[data-theme="tda-vib"] .add-button:hover {
+  background: var(--color-gold) !important;
+}
+
+/* Card Container */
+[data-theme="tda-vib"] .card-container {
+  background: transparent !important;
+}
+
+/* Member Avatar */
+[data-theme="tda-vib"] .mitglied-avatar {
+  background: var(--color-washi-dark) !important;
+  border: 2px solid rgba(26, 26, 26, 0.1) !important;
+}
+
+/* Stat Cards (used in MitgliederListe) - override inline styles */
+[data-theme="tda-vib"] .stat-card {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.08) !important;
+  border-left: 3px solid var(--color-gold-dark) !important;
+  box-shadow: 0 1px 3px rgba(26, 26, 26, 0.04) !important;
+}
+
+[data-theme="tda-vib"] .stat-card:hover {
+  box-shadow: 0 4px 12px rgba(26, 26, 26, 0.1) !important;
+}
+
+/* Override inline h3 color in stat-card */
+[data-theme="tda-vib"] .stat-card h3,
+[data-theme="tda-vib"] .stat-card h3[style],
+[data-theme="tda-vib"] .stats-grid .stat-card h3 {
+  color: var(--color-sumi) !important;
+  text-shadow: none !important;
+  -webkit-text-fill-color: var(--color-sumi) !important;
+}
+
+/* Override inline p color in stat-card */
+[data-theme="tda-vib"] .stat-card p,
+[data-theme="tda-vib"] .stat-card div[style] p,
+[data-theme="tda-vib"] .stats-grid .stat-card p {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Stats Grid */
+[data-theme="tda-vib"] .stats-grid {
+  background: transparent !important;
+}
+
+/* Member Name class (MitgliederListe) */
+[data-theme="tda-vib"] .member-name {
+  color: var(--color-sumi) !important;
+  text-shadow: none !important;
+}
+
+/* Member Info class (MitgliederListe) */
+[data-theme="tda-vib"] .member-info,
+[data-theme="tda-vib"] .member-info p,
+[data-theme="tda-vib"] .member-info strong {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+[data-theme="tda-vib"] .member-info strong {
+  color: rgba(26, 26, 26, 0.8) !important;
+}
+
+/* Letter Filter Buttons (A-Z) */
+[data-theme="tda-vib"] .letter-filter-btn {
+  background: var(--color-white) !important;
+  border: 1px solid rgba(26, 26, 26, 0.12) !important;
+  color: var(--color-sumi) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .letter-filter-btn:hover {
+  background: var(--color-washi-dark) !important;
+  border-color: rgba(26, 26, 26, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .letter-filter-btn.active {
+  background: var(--color-gold-dark) !important;
+  color: var(--color-white) !important;
+  border-color: var(--color-gold-dark) !important;
+}
+
+/* Filter Select Dropdowns */
+[data-theme="tda-vib"] .filter-select {
+  background: var(--color-white) !important;
+  color: var(--color-sumi) !important;
+  border: 1px solid rgba(26, 26, 26, 0.2) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="tda-vib"] .filter-select:hover {
+  border-color: rgba(26, 26, 26, 0.3) !important;
+}
+
+[data-theme="tda-vib"] .filter-select.active {
+  border: 2px solid var(--color-gold-dark) !important;
+}
+
+[data-theme="tda-vib"] .filter-select option {
+  background: var(--color-white) !important;
+  color: var(--color-sumi) !important;
+}
+
+[data-theme="tda-vib"] .filter-select option.option-warning {
+  color: var(--color-vermillion) !important;
+}
+
+/* Filter Reset Button */
+[data-theme="tda-vib"] .filter-reset-btn {
+  background: rgba(199, 62, 58, 0.1) !important;
+  color: var(--color-vermillion) !important;
+  border: 1px solid rgba(199, 62, 58, 0.3) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="tda-vib"] .filter-reset-btn:hover {
+  background: rgba(199, 62, 58, 0.2) !important;
+  border-color: rgba(199, 62, 58, 0.5) !important;
+}
+
+/* Letter Filter Reset Button (✖ Alle) */
+[data-theme="tda-vib"] .letter-filter-reset-btn {
+  background: rgba(199, 62, 58, 0.1) !important;
+  color: var(--color-vermillion) !important;
+  border: 1px solid var(--color-vermillion) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="tda-vib"] .letter-filter-reset-btn:hover {
+  background: var(--color-vermillion) !important;
+  color: var(--color-white) !important;
+  transform: translateY(-2px);
+}
+
+/* Filter Result Count */
+[data-theme="tda-vib"] .filter-result-count {
+  color: rgba(26, 26, 26, 0.6) !important;
+}
+
+/* Add Member Button */
+[data-theme="tda-vib"] .add-member-btn,
+[data-theme="tda-vib"] button.add-member-btn,
+[data-theme="tda-vib"] .mitglieder-container .add-member-btn {
+  background: var(--color-washi-dark) !important;
+  color: var(--color-sumi) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-theme="tda-vib"] .add-member-btn:hover,
+[data-theme="tda-vib"] button.add-member-btn:hover {
+  background: var(--color-washi) !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+/* Actions Button */
+[data-theme="tda-vib"] .actions-btn {
+  background: var(--color-washi-dark) !important;
+  color: var(--color-sumi) !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="tda-vib"] .actions-btn:hover {
+  background: var(--color-washi) !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}

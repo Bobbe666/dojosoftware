@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, Shield, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
-import { CURRENT_VERSION } from './SystemChangelog';
+import { CURRENT_VERSION } from '../version.js';
 import config from '../config/config.js';
 import dojoLogo from '../assets/dojo-logo.png';
 import '../styles/themes.css';

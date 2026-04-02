@@ -17,49 +17,7 @@ export const DojoProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'current', 'all', 'compare' - Standard: alle Dojos anzeigen
 
-  // Lade alle Dojos beim Start
-  useEffect(() => {
-    loadDojos();
-  }, []);
-
-  // Setze das aktive Dojo aus LocalStorage oder wähle das erste/Haupt-Dojo
-  useEffect(() => {
-    if (dojos.length > 0 && !activeDojo) {
-      console.log('🔄 DojoContext: Setze aktives Dojo...', { dojos: dojos.length, activeDojo });
-
-      const savedDojoId = localStorage.getItem('activeDojoId');
-      if (savedDojoId) {
-        // Prüfe ob 'super-admin' gespeichert ist
-        if (savedDojoId === 'super-admin') {
-          console.log('✅ DojoContext: Super-Admin Modus aus LocalStorage');
-          setActiveDojo('super-admin');
-          return;
-        }
-
-        // Prüfe ob 'verband' gespeichert ist
-        if (savedDojoId === 'verband') {
-          console.log('✅ DojoContext: Verband Modus aus LocalStorage');
-          setActiveDojo('verband');
-          return;
-        }
-
-        // Ansonsten suche normales Dojo
-        const saved = dojos.find(d => d.id === parseInt(savedDojoId));
-        if (saved) {
-          console.log('✅ DojoContext: Gespeichertes Dojo gefunden:', saved.dojoname);
-          setActiveDojo(saved);
-          return;
-        }
-      }
-
-      // Fallback: Haupt-Dojo oder erstes Dojo
-      const hauptDojo = dojos.find(d => d.ist_hauptdojo);
-      const dojoToSet = hauptDojo || dojos[0];
-      console.log('✅ DojoContext: Setze Fallback-Dojo:', dojoToSet?.dojoname);
-      setActiveDojo(dojoToSet);
-    }
-  }, [dojos, activeDojo]);
-
+  // loadDojos MUSS vor dem ersten useEffect deklariert sein (TDZ-Schutz: const in deps-Array)
   const loadDojos = useCallback(async () => {
     try {
       // 🔒 Prüfe beide Token-Namen (dojo_auth_token und authToken)
@@ -144,6 +102,59 @@ export const DojoProvider = ({ children }) => {
     }
   }, []);
 
+  // Lade alle Dojos beim Start + nach Login (userLoggedIn Event)
+  useEffect(() => {
+    loadDojos();
+    const handleUserLoggedIn = () => loadDojos();
+    window.addEventListener('userLoggedIn', handleUserLoggedIn);
+    return () => window.removeEventListener('userLoggedIn', handleUserLoggedIn);
+  }, [loadDojos]);
+
+  // Setze das aktive Dojo aus LocalStorage oder wähle das erste/Haupt-Dojo
+  useEffect(() => {
+    if (dojos.length > 0 && !activeDojo) {
+      console.log('🔄 DojoContext: Setze aktives Dojo...', { dojos: dojos.length, activeDojo });
+
+      const savedDojoId = localStorage.getItem('activeDojoId');
+      if (savedDojoId) {
+        // Prüfe ob 'super-admin' gespeichert ist
+        if (savedDojoId === 'super-admin') {
+          console.log('✅ DojoContext: Super-Admin Modus aus LocalStorage');
+          setActiveDojo('super-admin');
+          return;
+        }
+
+        // Prüfe ob 'verband' gespeichert ist
+        if (savedDojoId === 'verband') {
+          console.log('✅ DojoContext: Verband Modus aus LocalStorage');
+          setActiveDojo('verband');
+          return;
+        }
+
+        // Prüfe ob 'shop' gespeichert ist
+        if (savedDojoId === 'shop') {
+          console.log('✅ DojoContext: Shop Modus aus LocalStorage');
+          setActiveDojo('shop');
+          return;
+        }
+
+        // Ansonsten suche normales Dojo
+        const saved = dojos.find(d => d.id === parseInt(savedDojoId));
+        if (saved) {
+          console.log('✅ DojoContext: Gespeichertes Dojo gefunden:', saved.dojoname);
+          setActiveDojo(saved);
+          return;
+        }
+      }
+
+      // Fallback: Haupt-Dojo oder erstes Dojo
+      const hauptDojo = dojos.find(d => d.ist_hauptdojo);
+      const dojoToSet = hauptDojo || dojos[0];
+      console.log('✅ DojoContext: Setze Fallback-Dojo:', dojoToSet?.dojoname);
+      setActiveDojo(dojoToSet);
+    }
+  }, [dojos, activeDojo]);
+
   const switchDojo = useCallback((dojo) => {
     setActiveDojo(dojo);
     // Speichere entweder dojo.id, 'super-admin' oder 'verband'
@@ -153,6 +164,9 @@ export const DojoProvider = ({ children }) => {
     } else if (dojo === 'verband') {
       localStorage.setItem('activeDojoId', 'verband');
       console.log('✅ Gewechselt zu: TDA Verband');
+    } else if (dojo === 'shop') {
+      localStorage.setItem('activeDojoId', 'shop');
+      console.log('✅ Gewechselt zu: TDA Shop');
     } else {
       localStorage.setItem('activeDojoId', dojo.id);
       console.log('✅ Gewechselt zu Dojo:', dojo.dojoname);
@@ -198,6 +212,11 @@ export const DojoProvider = ({ children }) => {
 
     // Verband Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
     if (activeDojo === 'verband') {
+      return '';
+    }
+
+    // Shop Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
+    if (activeDojo === 'shop') {
       return '';
     }
 

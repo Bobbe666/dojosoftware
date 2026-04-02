@@ -53,7 +53,7 @@ router.get("/", (req, res) => {
 });
 
 // FIXED: UNION-basierte Query für Kurs-Mitglieder
-router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
+router.get("/kurs/:stundenplan_id/:datum", async (req, res) => {
     // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const dojoId = getSecureDojoId(req);
@@ -77,18 +77,84 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
         const show_style_only = req.query.show_style_only === 'true'; // NEU: Nur Stil-Filter (ohne Gruppe)
 
         if (isNaN(stundenplan_id)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                error: "Ungültige Stundenplan-ID" 
+                error: "Ungültige Stundenplan-ID"
             });
         }
 
         if (!datum || !datum.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 success: false,
-                error: "Ungültiges Datumsformat. Erwartet: YYYY-MM-DD" 
+                error: "Ungültiges Datumsformat. Erwartet: YYYY-MM-DD"
             });
         }
+
+        // ── SONDERTRAINING: eigener Zweig ────────────────────────────────────────
+        const pool = db.promise();
+        const [[spInfo]] = await pool.query(
+            'SELECT typ, event_name, stil_id, sonder_dojo_id FROM stundenplan WHERE stundenplan_id = ?',
+            [stundenplan_id]
+        );
+
+        if (spInfo && spInfo.typ === 'sonder') {
+            const sonderDojoId = spInfo.sonder_dojo_id;
+            if (!sonderDojoId && !allowWithoutDojo) {
+                return res.status(400).json({ success: false, error: 'Sondertraining ohne Dojo-Zuordnung' });
+            }
+            let memberQuery = `
+                SELECT
+                    m.mitglied_id,
+                    m.vorname,
+                    m.nachname,
+                    CONCAT(m.vorname, ' ', m.nachname) as full_name,
+                    m.gurtfarbe,
+                    m.aktiv,
+                    'nicht_eingecheckt' as checkin_status,
+                    NULL as checkin_time,
+                    NULL as checkout_time,
+                    NULL as checkin_db_status,
+                    NULL as checkin_id,
+                    COALESCE(a.anwesend, 0) as anwesend,
+                    a.erstellt_am as anwesenheit_eingetragen,
+                    ? as kurs_name,
+                    '' as kurs_zeit
+                FROM mitglieder m
+                LEFT JOIN anwesenheit a ON (
+                    m.mitglied_id = a.mitglied_id
+                    AND a.stundenplan_id = ?
+                    AND DATE(a.datum) = DATE(?)
+                )
+                WHERE m.aktiv = 1
+            `;
+            const memberParams = [spInfo.event_name || 'Sondertraining', stundenplan_id, datum];
+            if (sonderDojoId) {
+                memberQuery += ' AND m.dojo_id = ?';
+                memberParams.push(sonderDojoId);
+            }
+            memberQuery += ' ORDER BY CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END, m.nachname, m.vorname';
+
+            const [members] = await pool.query(memberQuery, memberParams);
+            return res.json({
+                success: true,
+                stundenplan_id,
+                datum,
+                show_all: true,
+                show_style_only: false,
+                typ: 'sonder',
+                event_name: spInfo.event_name,
+                stil_id: spInfo.stil_id,
+                stats: {
+                    total_members: members.length,
+                    eingecheckt: 0,
+                    anwesend_markiert: members.filter(r => r.anwesend === 1).length,
+                    noch_aktiv: 0,
+                    trainer_hinzugefuegt: 0
+                },
+                members
+            });
+        }
+        // ── Ende Sondertraining-Zweig ─────────────────────────────────────────────
 
         let query;
         let params;
@@ -407,15 +473,16 @@ router.get("/kurs/:stundenplan_id/:datum", (req, res) => {
 });
 
 // 🆕 NEU: Kursliste für Datum abrufen (für Frontend Dropdown)
-router.get("/kurse/:datum", (req, res) => {
-    // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
-    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+router.get("/kurse/:datum", async (req, res) => {
     const dojoId = getSecureDojoId(req);
-    const userRole = req.user?.role || req.user?.rolle;
-    const isSuperAdmin = userRole === 'super_admin' || userRole === 'admin';
-
-    // Super-Admin ohne spezifisches Dojo oder "all" = alle Kurse zeigen
     const showAllDojos = !dojoId || dojoId === 'all' || dojoId === 'null';
+
+    // dojo_ids (plural, komma-separiert) kommt von getDojoFilterParam() wenn filter='all'
+    // z.B. ?dojo_ids=1,2,3 — diese Dojos anzeigen, Demo-Dojos ausschließen
+    const dojoIdsParam = req.query.dojo_ids;
+    const dojoIdsList = dojoIdsParam
+        ? dojoIdsParam.split(',').map(id => parseInt(id, 10)).filter(Boolean)
+        : null;
 
     if (!showAllDojos && !dojoId) {
         return res.status(403).json({ error: 'No tenant - dojo_id fehlt' });
@@ -426,65 +493,200 @@ router.get("/kurse/:datum", (req, res) => {
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
     const todayName = dayNames[today.getDay()];
 
-    logger.debug('📅 Lade Kurse für ${datum} (${todayName}), dojo_id=${dojoId}, showAll=${showAllDojos}');
+    try {
+        const pool = db.promise();
 
-    // Query mit optionalem Dojo-Filter
-    let query = `
-        SELECT
-            s.stundenplan_id,
-            s.tag as wochentag,
-            s.uhrzeit_start,
-            s.uhrzeit_ende,
-            CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as zeit,
-            k.gruppenname as kurs_name,
-            k.stil,
-            k.dojo_id,
-            d.dojoname,
-            CONCAT(t.vorname, ' ', t.nachname) as trainer_name,
-
-            -- Check-in Statistiken für heute
-            (SELECT COUNT(*) FROM checkins c
-             WHERE c.stundenplan_id = s.stundenplan_id
-             AND DATE(c.checkin_time) = ?) as checkins_heute,
-
-            (SELECT COUNT(*) FROM checkins c
-             WHERE c.stundenplan_id = s.stundenplan_id
-             AND DATE(c.checkin_time) = ?
-             AND c.status = 'active') as aktive_checkins
-
-        FROM stundenplan s
-        LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-        LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
-        LEFT JOIN dojo d ON k.dojo_id = d.id
-        WHERE LOWER(s.tag) = LOWER(?)
-    `;
-
-    const params = [datum, datum, todayName];
-
-    // Dojo-Filter nur wenn nicht "alle" angezeigt werden sollen
-    if (!showAllDojos) {
-        query += ` AND k.dojo_id = ?`;
-        params.push(dojoId);
-    }
-
-    query += ` ORDER BY d.dojoname, s.uhrzeit_start`;
-
-    db.query(query, params, (err, results) => {
-        if (err) {
-            logger.error('Fehler beim Abrufen der Kurse:', { error: err });
-            return res.status(500).json({ 
-                error: "Fehler beim Abrufen der Kurse", 
-                details: err.message 
-            });
+        // Query 1: Reguläre Wochenstunden
+        let regularQuery = `
+            SELECT
+                s.stundenplan_id,
+                'regulaer' as typ,
+                s.tag as wochentag,
+                s.uhrzeit_start,
+                s.uhrzeit_ende,
+                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as zeit,
+                k.gruppenname as kurs_name,
+                k.stil,
+                k.dojo_id,
+                d.dojoname,
+                CONCAT(t.vorname, ' ', t.nachname) as trainer_name,
+                (SELECT COUNT(*) FROM checkins c WHERE c.stundenplan_id = s.stundenplan_id AND DATE(c.checkin_time) = ?) as checkins_heute,
+                (SELECT COUNT(*) FROM checkins c WHERE c.stundenplan_id = s.stundenplan_id AND DATE(c.checkin_time) = ? AND c.status = 'active') as aktive_checkins
+            FROM stundenplan s
+            LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+            LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
+            LEFT JOIN dojo d ON k.dojo_id = d.id
+            WHERE LOWER(s.tag) = LOWER(?) AND (s.typ IS NULL OR s.typ = 'regulaer')
+        `;
+        const regularParams = [datum, datum, todayName];
+        if (!showAllDojos) {
+            regularQuery += ' AND k.dojo_id = ?';
+            regularParams.push(dojoId);
+        } else if (dojoIdsList && dojoIdsList.length > 0) {
+            regularQuery += ` AND k.dojo_id IN (${dojoIdsList.map(() => '?').join(',')})`;
+            regularParams.push(...dojoIdsList);
         }
+        regularQuery += ' ORDER BY d.dojoname, s.uhrzeit_start';
+
+        // Query 2: Sondertraining für dieses Datum
+        let sonderQuery = `
+            SELECT
+                s.stundenplan_id,
+                'sonder' as typ,
+                DATE_FORMAT(s.einmalig_datum, '%d.%m.%Y') as wochentag,
+                '00:00:00' as uhrzeit_start,
+                '00:00:00' as uhrzeit_ende,
+                '—' as zeit,
+                COALESCE(s.event_name, 'Sondertraining') as kurs_name,
+                st.name as stil,
+                s.sonder_dojo_id as dojo_id,
+                d.dojoname,
+                NULL as trainer_name,
+                0 as checkins_heute,
+                0 as aktive_checkins
+            FROM stundenplan s
+            LEFT JOIN stile st ON s.stil_id = st.stil_id
+            LEFT JOIN dojo d ON s.sonder_dojo_id = d.id
+            WHERE s.typ = 'sonder' AND s.einmalig_datum = ?
+        `;
+        const sonderParams = [datum];
+        if (!showAllDojos) {
+            sonderQuery += ' AND s.sonder_dojo_id = ?';
+            sonderParams.push(dojoId);
+        } else if (dojoIdsList && dojoIdsList.length > 0) {
+            sonderQuery += ` AND s.sonder_dojo_id IN (${dojoIdsList.map(() => '?').join(',')})`;
+            sonderParams.push(...dojoIdsList);
+        }
+
+        const [[regularResults], [sonderResults]] = await Promise.all([
+            pool.query(regularQuery, regularParams),
+            pool.query(sonderQuery, sonderParams)
+        ]);
 
         res.json({
             success: true,
-            datum: datum,
+            datum,
             wochentag: todayName,
-            kurse: results
+            kurse: [...regularResults, ...sonderResults]
         });
-    });
+    } catch (err) {
+        logger.error('Fehler beim Abrufen der Kurse:', { error: err });
+        res.status(500).json({ error: 'Fehler beim Abrufen der Kurse', details: err.message });
+    }
+});
+
+// ── SONDERTRAINING ANLEGEN ────────────────────────────────────────────────────
+router.post('/sondertraining', async (req, res) => {
+    const { event_name, datum, stil_id } = req.body;
+    const secureDojoId = getSecureDojoId(req);
+
+    logger.info('POST /sondertraining:', { event_name, datum, stil_id, secureDojoId, query: req.query });
+
+    if (!event_name || !datum || !stil_id) {
+        return res.status(400).json({ error: 'event_name, datum und stil_id sind erforderlich' });
+    }
+    if (!secureDojoId) {
+        return res.status(400).json({ error: 'Bitte zuerst ein Dojo auswählen (Super-Admin: Dojo-ID fehlt)' });
+    }
+    if (!datum.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return res.status(400).json({ error: 'Ungültiges Datumsformat. Erwartet: YYYY-MM-DD' });
+    }
+
+    try {
+        const pool = db.promise();
+        const [result] = await pool.query(
+            `INSERT INTO stundenplan (typ, einmalig_datum, event_name, stil_id, sonder_dojo_id, tag, uhrzeit_start, uhrzeit_ende)
+             VALUES ('sonder', ?, ?, ?, ?, '-', '00:00:00', '00:00:00')`,
+            [datum, event_name.trim(), parseInt(stil_id, 10), secureDojoId]
+        );
+        res.json({
+            success: true,
+            stundenplan_id: result.insertId,
+            event_name: event_name.trim(),
+            datum,
+            stil_id: parseInt(stil_id, 10)
+        });
+    } catch (err) {
+        logger.error('Fehler beim Anlegen des Sondertrainings:', { error: err });
+        res.status(500).json({ error: 'Fehler beim Anlegen des Sondertrainings', details: err.message });
+    }
+});
+
+
+// ── STIL-STATISTIKEN: Anwesenheitsquote pro Stil ────────────────────────────
+router.get('/stil-statistiken/:mitglied_id', async (req, res) => {
+  try {
+    const mitglied_id = parseInt(req.params.mitglied_id, 10);
+    const secureDojoId = getSecureDojoId(req);
+    const pool = db.promise();
+
+    const [[member]] = await pool.query(
+      `SELECT eintrittsdatum, dojo_id FROM mitglieder WHERE mitglied_id = ? ${secureDojoId ? 'AND dojo_id = ?' : ''}`,
+      secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id]
+    );
+    if (!member) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+
+    const dojoId = member.dojo_id;
+    const eintrittsdatum = member.eintrittsdatum;
+
+    const [stile] = await pool.query(
+      `SELECT msd.stil_id, s.name AS stil_name
+       FROM mitglied_stil_data msd
+       JOIN stile s ON msd.stil_id = s.stil_id
+       WHERE msd.mitglied_id = ?`,
+      [mitglied_id]
+    );
+    if (stile.length === 0) return res.json([]);
+
+    const dayMap = { Montag: 1, Dienstag: 2, Mittwoch: 3, Donnerstag: 4, Freitag: 5, Samstag: 6, Sonntag: 0 };
+    function countOccurrences(tagName, startDate) {
+      if (!startDate || dayMap[tagName] === undefined) return 0;
+      const targetDow = dayMap[tagName];
+      const start = new Date(startDate); start.setHours(0, 0, 0, 0);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      if (start > today) return 0;
+      const diff = (targetDow - start.getDay() + 7) % 7;
+      const first = new Date(start); first.setDate(start.getDate() + diff);
+      if (first > today) return 0;
+      return Math.floor((today - first) / 86400000 / 7) + 1;
+    }
+
+    const result = [];
+    for (const stil of stile) {
+      const [schedule] = await pool.query(
+        `SELECT sp.tag, COUNT(DISTINCT sp.stundenplan_id) AS sessions
+         FROM stundenplan sp
+         JOIN kurse k ON sp.kurs_id = k.kurs_id
+         WHERE k.dojo_id = ? AND k.stil = ?
+         GROUP BY sp.tag`,
+        [dojoId, stil.stil_name]
+      );
+
+      let moeglich = 0;
+      for (const row of schedule) {
+        moeglich += countOccurrences(row.tag, eintrittsdatum) * row.sessions;
+      }
+
+      const [[{ anwesend }]] = await pool.query(
+        `SELECT COUNT(*) AS anwesend
+         FROM anwesenheit a
+         JOIN stundenplan sp ON a.stundenplan_id = sp.stundenplan_id
+         JOIN kurse k ON sp.kurs_id = k.kurs_id
+         WHERE a.mitglied_id = ? AND k.dojo_id = ? AND k.stil = ?
+           AND a.anwesend = 1
+           ${eintrittsdatum ? 'AND a.datum >= ?' : ''}`,
+        eintrittsdatum ? [mitglied_id, dojoId, stil.stil_name, eintrittsdatum] : [mitglied_id, dojoId, stil.stil_name]
+      );
+
+      const quote = moeglich > 0 ? Math.round((anwesend / moeglich) * 100) : null;
+      result.push({ stil_id: stil.stil_id, stil_name: stil.stil_name, anwesend, moeglich, quote, eintrittsdatum });
+    }
+
+    res.json(result);
+  } catch (err) {
+    logger.error('Fehler bei stil-statistiken:', { error: err });
+    res.status(500).json({ error: 'Interner Fehler', details: err.message });
+  }
 });
 
 // Anwesenheit für ein bestimmtes Mitglied abrufen (STIL-SPEZIFISCH)
@@ -531,7 +733,7 @@ router.get("/:mitglied_id", (req, res) => {
     if (dojoId === null || dojoId === undefined) {
         // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
         query += ` AND m.dojo_id NOT IN (
-            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
         )`;
     } else {
         // Normaler Admin: Nur eigenes Dojo
@@ -736,13 +938,8 @@ router.get("/:mitglied_id", (req, res) => {
 
     logger.debug('📊 Lade Anwesenheitsdaten für Mitglied ${mitgliedId}');
 
-    // Dojo-ID aus Tenant oder User ermitteln (für Multi-Tenant-Support)
-    let dojoId = null;
-    if (req.tenant?.dojo_id) {
-        dojoId = dojoId;
-    } else if (req.user?.dojo_id) {
-        dojoId = req.user.dojo_id;
-    }
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
 
     const query = `
         SELECT

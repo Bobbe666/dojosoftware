@@ -9,6 +9,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // =============================================================================
 // EMAIL CONFIGURATION
@@ -168,6 +169,10 @@ const queryAsync = (db, sql, params = []) => {
 // GET /api/buddy/groups - Alle Buddy-Gruppen abrufen (Admin)
 router.get('/groups', async (req, res) => {
     try {
+        const dojoId = getSecureDojoId(req);
+        const dojoFilter = dojoId ? 'AND bg.dojo_id = ?' : '';
+        const params = dojoId ? [dojoId] : [];
+
         const query = `
             SELECT
                 bg.*,
@@ -176,12 +181,12 @@ router.get('/groups', async (req, res) => {
                 SUM(CASE WHEN be.status IN ('eingeladen', 'email_gesendet') THEN 1 ELSE 0 END) as pending_einladungen
             FROM buddy_gruppen bg
             LEFT JOIN buddy_einladungen be ON bg.id = be.buddy_gruppe_id
-            WHERE bg.status != 'geloescht'
+            WHERE bg.status != 'geloescht' ${dojoFilter}
             GROUP BY bg.id
             ORDER BY bg.erstellt_am DESC
         `;
 
-        const groups = await queryAsync(req.db, query);
+        const groups = await queryAsync(req.db, query, params);
         res.json(groups);
     } catch (error) {
         logger.error('Fehler beim Abrufen der Buddy-Gruppen:', { error: error });
@@ -194,10 +199,13 @@ router.get('/groups/:id', async (req, res) => {
     try {
         const groupId = req.params.id;
 
-        // Gruppen-Details abrufen
+        // Gruppen-Details abrufen (mit Dojo-Sicherheitsprüfung)
+        const dojoId = getSecureDojoId(req);
+        const dojoCheck = dojoId ? 'AND bg.dojo_id = ?' : '';
+        const groupCheckParams = dojoId ? [groupId, dojoId] : [groupId];
         const groupResult = await queryAsync(req.db,
-            'SELECT * FROM buddy_gruppen WHERE id = ? AND status != "geloescht"',
-            [groupId]
+            `SELECT * FROM buddy_gruppen bg WHERE bg.id = ? AND bg.status != 'geloescht' ${dojoCheck}`,
+            groupCheckParams
         );
 
         if (groupResult.length === 0) {

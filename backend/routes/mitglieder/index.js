@@ -12,6 +12,8 @@ const stileRouter = require('./stile');
 const crudRouter = require('./crud');
 const medicalRouter = require('./medical');
 const archivRouter = require('./archiv');
+const extrasRouter = require("./extras");
+const anlegenRouter = require("./anlegen");
 
 // Sub-Router einbinden
 // WICHTIG: Reihenfolge beachten!
@@ -22,6 +24,8 @@ router.use('/', sepaRouter);        // /:id/sepa-mandate
 router.use('/', stileRouter);       // /:id/stile, /:id/graduierung
 router.use('/', archivRouter);      // /archiv, /archiv/:archivId, /:id/archivieren (MUSS VOR crud!)
 router.use('/', medicalRouter);     // /compliance/missing, /pruefung/kandidaten, /:id/medizinisch
+router.use("/", extrasRouter);      // /:id/mitgliedsausweis, /:id/kurse, /:id/beitrag
+router.use("/", anlegenRouter);     // POST / - Neues Mitglied anlegen (MUSS VOR crudRouter!)
 router.use('/', crudRouter);        // /, /all, /:id (MUSS ZULETZT!)
 
 module.exports = router;

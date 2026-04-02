@@ -28,9 +28,398 @@ import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
 import PasswortVerwaltung from './PasswortVerwaltung';
 import DojoLizenzverwaltung from './DojoLizenzverwaltung';
+import AdminChatPage from './chat/AdminChatPage';
+import BesucherChat from './chat/BesucherChat';
 import SecurityDashboard from './SecurityDashboard';
 import DokumentenZentrale from './DokumentenZentrale';
+import Auswertungen from './Auswertungen';
+import PlattformZentrale from './PlattformZentrale';
+import PlattformZugangsdaten from './PlattformZugangsdaten';
 import '../styles/SuperAdminDashboard.css';
+
+// ── EventSoftware-Sektion ──────────────────────────────────────────────────
+function EventSoftwareSection({ token }) {
+  const [subTab, setSubTab] = useState('uebersicht');
+  const [turniere, setTurniere] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [suchbegriff, setSuchbegriff] = useState('');
+
+  useEffect(() => {
+    if (!token) return;
+    axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setTurniere(r.data.turniere || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const heute = new Date();
+  heute.setHours(0, 0, 0, 0);
+
+  const upcoming = turniere
+    .filter(t => new Date(t.start_datum || t.datum) >= heute)
+    .sort((a, b) => new Date(a.start_datum || a.datum) - new Date(b.start_datum || b.datum));
+  const vergangen = turniere
+    .filter(t => new Date(t.start_datum || t.datum) < heute)
+    .sort((a, b) => new Date(b.start_datum || b.datum) - new Date(a.start_datum || a.datum));
+  const mitOffenemAnmeldung = turniere.filter(t => t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute);
+  const naechstes = upcoming[0];
+
+  const gefiltert = [...upcoming, ...vergangen].filter(t =>
+    !suchbegriff || t.name?.toLowerCase().includes(suchbegriff.toLowerCase()) || t.ort?.toLowerCase().includes(suchbegriff.toLowerCase())
+  );
+
+  const SCHNELLZUGRIFF = [
+    { icon: '🏠', label: 'Dashboard',    url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '🥊', label: 'Turniere',     url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '🎓', label: 'Lehrgänge',    url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '📊', label: 'Ranglisten',   url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '⚖️', label: 'Einwaage',     url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '👥', label: 'Teilnehmer',   url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '📈', label: 'Statistiken',  url: 'https://events.tda-intl.org/dashboard' },
+    { icon: '🏆', label: 'Ergebnisse',   url: 'https://events.tda-intl.org/dashboard' },
+  ];
+
+  return (
+    <div>
+      {/* Header + Links */}
+      <div className="sad-hof-header">
+        <h2 className="sad-hof-title">🗓️ EventSoftware — events.tda-intl.org</h2>
+        <div className="sad-hof-btn-row">
+          <a href="https://events.tda-intl.org/login" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
+            🔐 Admin Login
+          </a>
+          <a href="https://events.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
+            ↗ Öffentlich
+          </a>
+        </div>
+      </div>
+
+      {/* Sub-Tabs */}
+      <div className="sub-tabs-horizontal sad2-mb-15">
+        {[
+          { id: 'uebersicht', icon: '📊', label: 'Übersicht' },
+          { id: 'turniere',   icon: '🥊', label: 'Turniere & Events' },
+          { id: 'vorschau',   icon: '🌐', label: 'Live-Vorschau' },
+        ].map(t => (
+          <button key={t.id} className={`sub-tab-btn ${subTab === t.id ? 'active' : ''}`} onClick={() => setSubTab(t.id)}>
+            <span>{t.icon}</span><span>{t.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Übersicht ─────────────────────────────────────────────── */}
+      {subTab === 'uebersicht' && (
+        <div>
+          {/* KPI-Karten */}
+          <div className="sad-sw-kpi-grid">
+            {[
+              { label: 'Events gesamt',       val: loading ? '…' : turniere.length,           color: '#6366f1', icon: '🗓️' },
+              { label: 'Bevorstehend',         val: loading ? '…' : upcoming.length,           color: '#22c55e', icon: '⏳' },
+              { label: 'Anmeldung offen',      val: loading ? '…' : mitOffenemAnmeldung.length, color: '#f59e0b', icon: '📋' },
+              { label: 'Abgeschlossen',        val: loading ? '…' : vergangen.length,           color: '#64748b', icon: '✅' },
+            ].map(k => (
+              <div key={k.label} className="sad-sw-kpi-card" style={{ borderLeftColor: k.color }}>
+                <div className="sad-sw-kpi-icon">{k.icon}</div>
+                <div>
+                  <div className="sad-sw-kpi-val" style={{ color: k.color }}>{k.val}</div>
+                  <div className="sad-sw-kpi-label">{k.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="sad-sw-cols">
+            {/* Nächste Events */}
+            <div className="sad-sw-panel">
+              <div className="sad-sw-panel-header">
+                <span>⏳ Nächste Events</span>
+                <button className="sad-sw-panel-btn" onClick={() => setSubTab('turniere')}>Alle ansehen →</button>
+              </div>
+              {loading ? (
+                <div className="sad-sw-loading">Lade Events…</div>
+              ) : upcoming.length === 0 ? (
+                <div className="sad-sw-empty">Keine bevorstehenden Events</div>
+              ) : (
+                upcoming.slice(0, 7).map(t => {
+                  const d = new Date(t.start_datum || t.datum);
+                  const isOpen = t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute;
+                  return (
+                    <div key={t.turnier_id || t.id} className="sad-sw-event-row">
+                      <div className="sad-sw-event-date">
+                        <span className="sad-sw-ev-day">{d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</span>
+                        <span className="sad-sw-ev-year">{d.getFullYear()}</span>
+                      </div>
+                      <div className="sad-sw-event-info">
+                        <div className="sad-sw-event-name">{t.name}</div>
+                        {t.ort && <div className="sad-sw-event-ort">📍 {t.ort}</div>}
+                      </div>
+                      {isOpen && <span className="sad-sw-badge sad-sw-badge--open">Offen</span>}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Schnellzugriff + Nächstes Highlight */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="sad-sw-panel">
+                <div className="sad-sw-panel-header"><span>⚡ Schnellzugriff</span></div>
+                <div className="sad-sw-links-grid">
+                  {SCHNELLZUGRIFF.map(link => (
+                    <a key={link.label} href={link.url} target="_blank" rel="noreferrer" className="sad-sw-link">
+                      <span>{link.icon}</span> {link.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {naechstes && (
+                <div className="sad-sw-highlight">
+                  <div className="sad-sw-highlight-label">Nächstes Event</div>
+                  <div className="sad-sw-highlight-name">{naechstes.name}</div>
+                  <div className="sad-sw-highlight-date">
+                    {new Date(naechstes.start_datum || naechstes.datum).toLocaleDateString('de-DE', {
+                      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                    })}
+                  </div>
+                  {naechstes.ort && <div className="sad-sw-highlight-ort">📍 {naechstes.ort}</div>}
+                  {naechstes.anmeldeschluss && (
+                    <div className="sad-sw-highlight-meta">
+                      Anmeldeschluss: {new Date(naechstes.anmeldeschluss).toLocaleDateString('de-DE')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Turniere & Events ──────────────────────────────────────── */}
+      {subTab === 'turniere' && (
+        <div>
+          <div className="sad-sw-turniere-header">
+            <input
+              className="sad-sw-search"
+              placeholder="Suche nach Name oder Ort…"
+              value={suchbegriff}
+              onChange={e => setSuchbegriff(e.target.value)}
+            />
+            <a href="https://events.tda-intl.org/dashboard" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
+              + Neu auf events.tda-intl.org
+            </a>
+          </div>
+
+          {loading ? (
+            <div className="sad-sw-loading">Lade Turniere…</div>
+          ) : gefiltert.length === 0 ? (
+            <div className="sad2-empty-center">
+              <span className="sad2-big-icon">🗓️</span>
+              <p className="sad2-text-secondary-maxw">Keine Events gefunden.</p>
+            </div>
+          ) : (
+            <div className="sad-sw-turniere-list">
+              {gefiltert.map(t => {
+                const d = new Date(t.start_datum || t.datum);
+                const isPast = d < heute;
+                const isOpen = !isPast && t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute;
+                const isClosed = !isPast && t.anmeldeschluss && new Date(t.anmeldeschluss) < heute;
+                return (
+                  <div key={t.turnier_id || t.id} className={`sad-sw-turnier-card ${isPast ? 'sad-sw-tc--past' : ''}`}>
+                    <div className="sad-sw-tc-datum">
+                      <div className="sad-sw-tc-day">{d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</div>
+                      <div className="sad-sw-tc-year">{d.getFullYear()}</div>
+                    </div>
+                    <div className="sad-sw-tc-body">
+                      <div className="sad-sw-tc-name">{t.name}</div>
+                      <div className="sad-sw-tc-meta">
+                        {t.ort && <span>📍 {t.ort}</span>}
+                        {t.datum_ende && t.datum_ende !== t.start_datum && (
+                          <span>bis {new Date(t.datum_ende).toLocaleDateString('de-DE')}</span>
+                        )}
+                        {t.max_teilnehmer > 0 && <span>👥 max. {t.max_teilnehmer} TN</span>}
+                        {t.anmeldegebuehr > 0 && <span>💶 {t.anmeldegebuehr} €</span>}
+                        {t.anmeldeschluss && (
+                          <span>Anmeldeschluss: {new Date(t.anmeldeschluss).toLocaleDateString('de-DE')}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="sad-sw-tc-right">
+                      {isPast  && <span className="sad-sw-badge sad-sw-badge--past">Abgeschlossen</span>}
+                      {isOpen  && <span className="sad-sw-badge sad-sw-badge--open">Anmeldung offen</span>}
+                      {isClosed && <span className="sad-sw-badge sad-sw-badge--closed">Anmeldung geschlossen</span>}
+                      {!isPast && !t.anmeldeschluss && <span className="sad-sw-badge sad-sw-badge--upcoming">Bevorstehend</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Live-Vorschau ─────────────────────────────────────────── */}
+      {subTab === 'vorschau' && (
+        <div className="sad-hof-preview-wrapper">
+          <div className="sad-hof-preview-bar">
+            <span className="sad-hof-live-dot" />
+            Live-Vorschau — events.tda-intl.org
+          </div>
+          <iframe
+            src="https://events.tda-intl.org"
+            title="EventSoftware"
+            className="sad-hof-iframe"
+            loading="lazy"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Academy-Sektion ───────────────────────────────────────────────────────
+function AcademySection() {
+  const [subTab, setSubTab] = useState('uebersicht');
+  const [stats, setStats] = useState(null);
+  const [kurse, setKurse] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('https://academy.tda-intl.org/api/admin/public-stats').then(r => r.json()).catch(() => null),
+      fetch('https://academy.tda-intl.org/api/kurse').then(r => r.json()).catch(() => null),
+    ]).then(([s, k]) => {
+      if (s?.success) setStats(s.stats);
+      if (k?.success) {
+        const heute = new Date(); heute.setHours(0, 0, 0, 0);
+        const upcoming = (k.kurse || [])
+          .filter(c => new Date(c.start_datum) >= heute)
+          .sort((a, b) => new Date(a.start_datum) - new Date(b.start_datum))
+          .slice(0, 5);
+        setKurse(upcoming);
+      }
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const SCHNELLZUGRIFF = [
+    { icon: '🏠', label: 'Dashboard',    url: 'https://academy.tda-intl.org/admin' },
+    { icon: '📚', label: 'Kurse',        url: 'https://academy.tda-intl.org/admin' },
+    { icon: '📋', label: 'Buchungen',    url: 'https://academy.tda-intl.org/admin' },
+    { icon: '👥', label: 'Teilnehmer',   url: 'https://academy.tda-intl.org/admin' },
+    { icon: '🎓', label: 'Zertifikate',  url: 'https://academy.tda-intl.org/admin' },
+    { icon: '↗',  label: 'Zur Academy',  url: 'https://academy.tda-intl.org' },
+  ];
+
+  return (
+    <div>
+      <div className="sad-hof-header">
+        <h2 className="sad-hof-title">🎓 TDA Academy — academy.tda-intl.org</h2>
+        <div className="sad-hof-btn-row">
+          <a href="https://academy.tda-intl.org/admin" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
+            🔐 Academy Admin
+          </a>
+          <a href="https://academy.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
+            ↗ academy.tda-intl.org
+          </a>
+        </div>
+      </div>
+
+      {/* Sub-Tabs */}
+      <div className="sad-sw-tabs">
+        {[
+          { id: 'uebersicht', label: '📊 Übersicht' },
+          { id: 'kurse',      label: '📚 Bevorstehende Kurse' },
+          { id: 'vorschau',   label: '👁 Vorschau' },
+        ].map(t => (
+          <button key={t.id} className={`sad-sw-tab${subTab === t.id ? ' active' : ''}`} onClick={() => setSubTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'uebersicht' && (
+        <div>
+          {loading ? <div className="sad-hof-loading">Lade…</div> : stats && (
+            <div className="sad-sw-stats-grid">
+              {[
+                { label: 'Kurse aktiv',        val: stats.kurse_aktiv },
+                { label: 'Bevorstehend',        val: stats.kurse_upcoming },
+                { label: 'Buchungen gesamt',    val: stats.buchungen_gesamt },
+                { label: 'Buchungen offen',     val: stats.buchungen_offen },
+                { label: 'Teilnehmer',          val: stats.teilnehmer_gesamt },
+                { label: 'Zertifikate',         val: stats.zertifikate },
+                { label: 'Umsatz gesamt',       val: `${parseFloat(stats.umsatz_gesamt || 0).toFixed(2)} €` },
+              ].map(s => (
+                <div key={s.label} className="sad-sw-stat-box">
+                  <div className="sad-sw-stat-val">{s.val}</div>
+                  <div className="sad-sw-stat-lbl">{s.label}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="sad-hof-nav-grid" style={{ marginTop: '1.5rem' }}>
+            {SCHNELLZUGRIFF.map(item => (
+              <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="sad-hof-nav-link">
+                <span className="sad2-fs-12">{item.icon}</span>
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {subTab === 'kurse' && (
+        <div>
+          {loading ? <div className="sad-hof-loading">Lade…</div> : kurse.length === 0 ? (
+            <div className="sad2-empty-center"><p className="sad2-text-secondary-maxw">Keine bevorstehenden Kurse</p></div>
+          ) : (
+            <div className="sad-sw-turnier-cards">
+              {kurse.map(k => {
+                const d = new Date(k.start_datum);
+                return (
+                  <div key={k.id} className="sad-sw-turnier-card">
+                    <div className="sad-sw-tc-date">
+                      <div className="sad-sw-tc-month">{d.toLocaleDateString('de-DE', { month: 'short' })}</div>
+                      <div className="sad-sw-tc-day">{d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</div>
+                      <div className="sad-sw-tc-year">{d.getFullYear()}</div>
+                    </div>
+                    <div className="sad-sw-tc-body">
+                      <div className="sad-sw-tc-name">{k.titel}</div>
+                      <div className="sad-sw-tc-meta">
+                        {k.ort && <span>📍 {k.ort}</span>}
+                        {k.max_teilnehmer > 0 && <span>👥 max. {k.max_teilnehmer} TN</span>}
+                        {k.preis > 0 && <span>💶 {parseFloat(k.preis).toFixed(2)} €</span>}
+                        {k.buchungen_count !== undefined && <span>📋 {k.buchungen_count} Buchungen</span>}
+                      </div>
+                    </div>
+                    <div className="sad-sw-tc-right">
+                      <span className="sad-sw-badge sad-sw-badge--upcoming">{k.typ || 'Kurs'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {subTab === 'vorschau' && (
+        <div className="sad-hof-preview-wrapper">
+          <div className="sad-hof-preview-bar">
+            <span className="sad-hof-live-dot" />
+            Live-Vorschau — academy.tda-intl.org
+          </div>
+          <iframe
+            src="https://academy.tda-intl.org"
+            title="TDA Academy"
+            className="sad-hof-iframe"
+            loading="lazy"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 const SuperAdminDashboard = () => {
   const { token } = useAuth();
@@ -43,6 +432,8 @@ const SuperAdminDashboard = () => {
   const [dojos, setDojos] = useState([]);
   const [overviewSummary, setOverviewSummary] = useState(null);
   const [hofStats, setHofStats] = useState(null);
+  const [eventStats, setEventStats] = useState(null);
+  const [academyStats, setAcademyStats] = useState(null);
 
   // State für Dojo-Management
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -75,13 +466,16 @@ const SuperAdminDashboard = () => {
     dojosoftware: 'lizenzen',
     verband: 'verbandsmitglieder',
     finanzen: 'finanzen',
-    system: 'benutzer'
+    system: 'benutzer',
+    plattform: 'zentrale',
   });
   const setSubTab = (group, tab) => setSubActiveTab(prev => ({ ...prev, [group]: tab }));
   // State für Lastschrift Sub-Tab
   const [lastschriftSubTab, setLastschriftSubTab] = useState('automatisch');
   // State für Kommunikation Sub-Tab (innerhalb DojoSoftware)
   const [kommunikationSubTab, setKommunikationSubTab] = useState('pushnachrichten');
+  // State für Software-Sektion (Landing → Unterbereich)
+  const [softwareSection, setSoftwareSection] = useState(null);
   // State für Pläne-Verwaltung
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [editingPlan, setEditingPlan] = useState(null);
@@ -109,6 +503,12 @@ const SuperAdminDashboard = () => {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailMessage, setEmailMessage] = useState('');
   const [testEmail, setTestEmail] = useState('');
+
+  // iCloud Kalender
+  const [icalUrl, setIcalUrl] = useState('');
+  const [icalEvents, setIcalEvents] = useState([]);
+  const [icalLoading, setIcalLoading] = useState(false);
+  const [icalSaveMsg, setIcalSaveMsg] = useState('');
 
   // State für Aktivitäten und Pushnachrichten
   const [activities, setActivities] = useState([]);
@@ -178,6 +578,24 @@ const SuperAdminDashboard = () => {
         const hofRes = await fetch('https://hof.tda-intl.org/api/stats/overview');
         const hofData = await hofRes.json();
         if (hofData.success) setHofStats(hofData.stats);
+      } catch (_) {}
+
+      // EventSoftware Stats
+      try {
+        const evRes = await axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } });
+        const turniere = evRes.data.turniere || [];
+        const heute = new Date(); heute.setHours(0, 0, 0, 0);
+        const upcoming = turniere.filter(t => new Date(t.start_datum || t.datum) >= heute);
+        const offen = turniere.filter(t => t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute);
+        const naechstes = upcoming.sort((a, b) => new Date(a.start_datum || a.datum) - new Date(b.start_datum || b.datum))[0];
+        setEventStats({ gesamt: turniere.length, upcoming: upcoming.length, offen: offen.length, naechstes });
+      } catch (_) {}
+
+      // Academy Stats (public endpoint — kein Auth nötig)
+      try {
+        const acRes = await fetch('https://academy.tda-intl.org/api/admin/public-stats');
+        const acData = await acRes.json();
+        if (acData.success) setAcademyStats(acData.stats);
       } catch (_) {}
 
       // Daily Briefing: einmal pro Tag anzeigen
@@ -338,10 +756,47 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  // iCloud Kalender laden
+  const loadIcalSettings = async () => {
+    try {
+      const r = await axios.get('/admin/calendar/settings', { headers: { Authorization: `Bearer ${token}` } });
+      if (r.data.success) setIcalUrl(r.data.ical_url || '');
+    } catch (e) { console.error('ical settings:', e); }
+  };
+
+  const loadIcalEvents = async () => {
+    setIcalLoading(true);
+    try {
+      const r = await axios.get('/admin/calendar/events', { headers: { Authorization: `Bearer ${token}` } });
+      if (r.data.success) setIcalEvents(r.data.events || []);
+    } catch (e) { console.error('ical events:', e); }
+    finally { setIcalLoading(false); }
+  };
+
+  const saveIcalUrl = async () => {
+    try {
+      await axios.put('/admin/calendar/settings', { ical_url: icalUrl }, { headers: { Authorization: `Bearer ${token}` } });
+      setIcalSaveMsg('✅ URL gespeichert');
+      loadIcalEvents();
+      setTimeout(() => setIcalSaveMsg(''), 3000);
+    } catch (e) {
+      const errRaw = e.response?.data?.error ?? e.response?.data?.message ?? e.message;
+      setIcalSaveMsg('❌ ' + (typeof errRaw === 'object' ? JSON.stringify(errRaw) : errRaw));
+    }
+  };
+
   // Lade E-Mail-Einstellungen wenn Tab aktiv
   useEffect(() => {
     if (activeTab === 'system' && subActiveTab.system === 'email') {
       loadEmailSettings();
+    }
+  }, [activeTab, subActiveTab.system]);
+
+  // Lade iCloud Kalender nur wenn Kalender-Tab aktiv
+  useEffect(() => {
+    if (activeTab === 'system' && subActiveTab.system === 'kalender') {
+      loadIcalSettings();
+      loadIcalEvents();
     }
   }, [activeTab, subActiveTab.system]);
 
@@ -703,16 +1158,14 @@ const SuperAdminDashboard = () => {
 
   // Tab Definitions — produkt-basierte Hauptnavigation
   const tabs = [
-    { id: 'overview',      label: 'Übersicht',     icon: '📊' },
-    { id: 'dojosoftware',  label: 'DojoSoftware',  icon: '🥋' },
-    { id: 'verband',       label: 'Verband',        icon: '🏆' },
-    { id: 'dojos',         label: 'Dojos',          icon: '🏯' },
-    { id: 'eventsoftware', label: 'EventSoftware',  icon: '🗓️' },
-    { id: 'halloffame',    label: 'Hall of Fame',   icon: '🌟' },
-    { id: 'kommunikation', label: 'Kommunikation',  icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
-    { id: 'entwicklung',   label: 'Entwicklung',    icon: '🎯' },
-    { id: 'finanzen',      label: 'Finanzen',       icon: '💰' },
-    { id: 'system',        label: 'System',         icon: '⚙️' }
+    { id: 'overview',      label: 'Cockpit',            icon: '🎛️' },
+    { id: 'software',      label: 'Software',           icon: '💻' },
+    { id: 'verband',       label: 'Verband',            icon: '🏆' },
+    { id: 'kommunikation', label: 'Kommunikation',      icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
+    { id: 'entwicklung',   label: 'Entwicklung',        icon: '🎯' },
+    { id: 'finanzen',      label: 'Finanzen',           icon: '💰' },
+    { id: 'plattform',     label: 'Plattform-Zentrale', icon: '🌐' },
+    { id: 'system',        label: 'System',             icon: '⚙️' }
   ];
 
   // Sub-Tab-Navigation rendern
@@ -908,7 +1361,7 @@ const SuperAdminDashboard = () => {
                 <span className="compact-stat-label">Check-ins heute</span>
               </div>
               <div className={`compact-stat ${globalStats?.payments?.open_payments > 0 ? 'compact-stat--warning' : ''}`}>
-                <DollarSign size={18} />
+                <Euro size={18} />
                 <span className="compact-stat-value">{globalStats?.payments?.open_payments || 0}</span>
                 <span className="compact-stat-label">Offene Zahlungen</span>
               </div>
@@ -999,13 +1452,57 @@ const SuperAdminDashboard = () => {
               </div>
 
               {/* EventSoftware */}
-              <div onClick={() => setActiveTab('eventsoftware')} className="sad-eventsoftware-card">
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('eventsoftware'); }} className="sad2-clickable-card">
                 <div className="sad2-icon-15">🗓️</div>
                 <div className="sad-gold-heading">EventSoftware</div>
                 <div className="sad-text-secondary-sm">
-                  <div className="sad-eventsoftware-placeholder">
-                    🚧 In Entwicklung
-                  </div>
+                  {eventStats ? (
+                    <div className="sad2-flex-col-04">
+                      <div className="sad2-flex-between-mb03">
+                        <span>Events gesamt</span><strong className="mds-info-value">{eventStats.gesamt}</strong>
+                      </div>
+                      <div className="sad2-flex-between-mb03">
+                        <span>Bevorstehend</span><strong className={(eventStats.upcoming > 0) ? 'sad-new-count--positive' : 'mds-info-value'}>{eventStats.upcoming}</strong>
+                      </div>
+                      <div className="u-flex-between">
+                        <span>Anmeldung offen</span><strong className="mds-info-value">{eventStats.offen}</strong>
+                      </div>
+                      {eventStats.naechstes && (
+                        <div className="sad-hof-next-event" style={{ marginTop: '0.5rem' }}>
+                          <div className="sad-hof-next-event-title">Nächstes Event</div>
+                          <div className="sad-hof-next-event-name">{eventStats.naechstes.name}</div>
+                          <div className="u-text-secondary">
+                            {new Date(eventStats.naechstes.start_datum || eventStats.naechstes.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="sad-hof-loading">Lade…</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Academy */}
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('academy'); }} className="sad2-clickable-card">
+                <div className="sad2-icon-15">🎓</div>
+                <div className="sad-gold-heading">TDA Academy</div>
+                <div className="sad-text-secondary-sm">
+                  {academyStats ? (
+                    <div className="sad2-flex-col-04">
+                      <div className="sad2-flex-between-mb03">
+                        <span>Kurse aktiv</span><strong className="mds-info-value">{academyStats.kurse_aktiv}</strong>
+                      </div>
+                      <div className="sad2-flex-between-mb03">
+                        <span>Buchungen</span><strong className="mds-info-value">{academyStats.buchungen_gesamt}</strong>
+                      </div>
+                      <div className="u-flex-between">
+                        <span>Umsatz</span><strong className="mds-info-value">{parseFloat(academyStats.umsatz_gesamt || 0).toFixed(0)} €</strong>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="sad-hof-loading">Lade…</div>
+                  )}
                 </div>
               </div>
 
@@ -1226,311 +1723,150 @@ const SuperAdminDashboard = () => {
               </section>
             </div>
 
+            {/* ── Dojo-Auswertungen ── */}
+            <div style={{ marginTop: '2.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem' }}>
+              <div style={{ marginBottom: '1rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: 0 }}>
+                  📈 Dojo-Auswertungen
+                </h2>
+                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', margin: '0.25rem 0 0' }}>
+                  Aktualisiert sich automatisch bei Dojo-Wechsel
+                </p>
+              </div>
+              <div className="sad-auswertungen-embed">
+                <Auswertungen />
+              </div>
+            </div>
+
+
           </>
         )}
 
-        {/* ═══ DojoSoftware ════════════════════════════════════════ */}
-        {activeTab === 'dojosoftware' && (
+        {/* ═══ Software ═════════════════════════════════════════════ */}
+        {activeTab === 'software' && (
           <div>
+            {/* Breadcrumb / Zurück-Button */}
+            {softwareSection && (
+              <div className="sad-software-breadcrumb">
+                <button className="sad-software-back-btn" onClick={() => setSoftwareSection(null)}>
+                  ← Software-Übersicht
+                </button>
+                <span className="sad-software-breadcrumb-sep">/</span>
+                <span className="sad-software-breadcrumb-cur">
+                  {softwareSection === 'lizenzen' ? '🥋 Lizenzen (DojoSoftware)' :
+                   softwareSection === 'eventsoftware' ? '🗓️ EventSoftware' :
+                   softwareSection === 'halloffame' ? '🌟 Hall of Fame' :
+                   softwareSection === 'academy' ? '🎓 TDA Academy' :
+                   softwareSection === 'dojos' ? '🏯 TDA-Dojos' : ''}
+                </span>
+              </div>
+            )}
+
+            {/* Landing — 4 Kacheln */}
+            {!softwareSection && (
+              <div className="sad-software-landing">
+                <h2 className="sad-software-landing-title">Software-Übersicht</h2>
+                <div className="sad-software-cards">
+                  {[
+                    { id: 'lizenzen',      icon: '🥋', title: 'Lizenzen',           subtitle: 'Dojos, Abonnements, Dokumente',         color: '#6366f1' },
+                    { id: 'eventsoftware', icon: '🗓️', title: 'EventSoftware',      subtitle: 'Turniere, Lehrgänge, Seminare',          color: '#f59e0b' },
+                    { id: 'academy',       icon: '🎓', title: 'TDA Academy',         subtitle: 'Ausbildungen, Weiterbildungen, Buchungen', color: '#22c55e' },
+                    { id: 'halloffame',    icon: '🌟', title: 'Hall of Fame',        subtitle: 'Nominierungen, Sportler, Veranstaltungen', color: '#eab308' },
+                    { id: 'dojos',         icon: '🏯', title: 'TDA-Dojos',          subtitle: 'Eigene Standorte & Trainer',            color: '#10b981' },
+                  ].map(card => (
+                    <div key={card.id} className="sad-software-card" onClick={() => setSoftwareSection(card.id)} style={{ borderTopColor: card.color }}>
+                      <div className="sad-software-card-icon" style={{ color: card.color }}>{card.icon}</div>
+                      <div className="sad-software-card-title">{card.title}</div>
+                      <div className="sad-software-card-sub">{card.subtitle}</div>
+                      <div className="sad-software-card-arrow">→</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Lizenzen (ehemals DojoSoftware) ───────────────────── */}
+            {softwareSection === 'lizenzen' && (
+              <div>
             {renderSubTabs('dojosoftware', [
               { id: 'lizenzen', icon: '📜', label: 'Lizenzen' },
               { id: 'dokumente', icon: '📂', label: 'Dokumente' }
             ])}
 
             {subActiveTab.dojosoftware === 'lizenzen' && (
-              <>
-                <section className="dojos-section">
-                  <div className="section-header">
-                    <h2 className="section-title">
-                      <BarChart3 size={20} />
-                      Dojo-Verwaltung
-                    </h2>
-                    <div className="header-actions">
-                      <button onClick={handleCreateDojo} className="btn btn-primary">
-                        <Plus size={16} />
-                        Neues Dojo anlegen
-                      </button>
-                    </div>
-                  </div>
-
-        <div className="dojos-table-container">
-          <table className="dojos-table">
-            <thead>
-              <tr>
-                <th className="sad-th-expand"></th>
-                <th>Status</th>
-                <th>Dojo-Name</th>
-                <th>Subdomain</th>
-                <th>Inhaber</th>
-                <th>Ort</th>
-                <th className="text-center">Mitglieder</th>
-                <th className="text-center">Kurse</th>
-                <th className="text-center">Speicher</th>
-                <th className="text-center">Abo-Status</th>
-                <th className="text-center">Trial/Abo Ende</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dojos.map((dojo) => {
-                const isExpanded = expandedDojos.has(dojo.id);
-                return (
-                  <React.Fragment key={dojo.id}>
-                    <tr 
-                      className={`dojo-row ${!dojo.ist_aktiv ? 'inactive' : ''} ${isExpanded ? 'expanded' : ''}`}
-                      onClick={() => toggleDojoExpand(dojo.id)}
-                    >
-                      <td>
-                        <button 
-                          className="expand-toggle"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDojoExpand(dojo.id);
-                          }}
-                        >
-                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </button>
-                      </td>
-                      <td>
-                        {dojo.ist_aktiv ? (
-                          <span className="status-badge active">
-                            <CheckCircle size={14} /> Aktiv
-                          </span>
-                        ) : (
-                          <span className="status-badge inactive">
-                            <XCircle size={14} /> Inaktiv
-                          </span>
-                        )}
-                      </td>
-                      <td className="font-bold">{dojo.dojoname}</td>
-                      <td>
-                        <code className="subdomain">{dojo.subdomain}</code>
-                      </td>
-                      <td>{dojo.inhaber}</td>
-                      <td>{dojo.ort || '-'}</td>
-                      <td className="text-center">{dojo.mitglieder_count || 0}</td>
-                      <td className="text-center">{dojo.kurse_count || 0}</td>
-                      <td className="text-center">
-                        {dojo.storage_mb >= 1024
-                          ? `${dojo.storage_gb} GB`
-                          : `${dojo.storage_mb} MB`}
-                      </td>
-                      <td className="text-center">
-                        {getSubscriptionStatusBadge(dojo)}
-                      </td>
-                      <td className="text-center">
-                        {getSubscriptionEndInfo(dojo)}
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr className="expandable-row">
-                        <td colSpan={11} className="expandable-cell">
-                          <div className="dojo-details-panel">
-                            {/* Kontaktdaten */}
-                            <div className="details-card">
-                              <div className="details-card-header">
-                                <span className="details-card-icon">📍</span>
-                                <h4>Kontaktdaten</h4>
-                              </div>
-                              <div className="details-card-body">
-                                <div className="details-row">
-                                  <span className="details-label">E-Mail</span>
-                                  <span className="details-value">{dojo.email || '-'}</span>
-                                </div>
-                                <div className="details-row">
-                                  <span className="details-label">Telefon</span>
-                                  <span className="details-value">{dojo.telefon || '-'}</span>
-                                </div>
-                                <div className="details-row">
-                                  <span className="details-label">Adresse</span>
-                                  <span className="details-value">
-                                    {dojo.strasse || dojo.plz || dojo.ort
-                                      ? `${dojo.strasse || ''} ${dojo.hausnummer || ''}, ${dojo.plz || ''} ${dojo.ort || ''}`
-                                      : '-'}
-                                  </span>
-                                </div>
-                                <div className="details-row">
-                                  <span className="details-label">Land</span>
-                                  <span className="details-value">{dojo.land || 'Deutschland'}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Abonnement Details */}
-                            <div className="details-card">
-                              <div className="details-card-header">
-                                <span className="details-card-icon">💳</span>
-                                <h4>Abonnement</h4>
-                              </div>
-                              <div className="details-card-body">
-                                <div className="details-row">
-                                  <span className="details-label">Status</span>
-                                  <span className="details-value">{getSubscriptionStatusBadge(dojo)}</span>
-                                </div>
-                                {dojo.subscription_status === 'trial' && (
-                                  <>
-                                    <div className="details-row">
-                                      <span className="details-label">Trial Start</span>
-                                      <span className="details-value">
-                                        {dojo.trial_starts_at ? new Date(dojo.trial_starts_at).toLocaleDateString('de-DE') : '-'}
-                                      </span>
-                                    </div>
-                                    <div className="details-row">
-                                      <span className="details-label">Trial Ende</span>
-                                      <span className="details-value">
-                                        {dojo.trial_ends_at ? new Date(dojo.trial_ends_at).toLocaleDateString('de-DE') : '-'}
-                                      </span>
-                                    </div>
-                                    <div className="details-row highlight">
-                                      <span className="details-label">Verbleibend</span>
-                                      <span className="details-value countdown">
-                                        {dojo.trial_days_remaining !== null ? `${dojo.trial_days_remaining} Tage` : '-'}
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-                                {dojo.subscription_status === 'active' && (
-                                  <>
-                                    <div className="details-row">
-                                      <span className="details-label">Plan</span>
-                                      <span className="details-value plan-badge">{dojo.subscription_plan || '-'}</span>
-                                    </div>
-                                    <div className="details-row">
-                                      <span className="details-label">Intervall</span>
-                                      <span className="details-value">{dojo.subscription_interval || '-'}</span>
-                                    </div>
-                                    <div className="details-row">
-                                      <span className="details-label">Abo Start</span>
-                                      <span className="details-value">
-                                        {dojo.subscription_starts_at ? new Date(dojo.subscription_starts_at).toLocaleDateString('de-DE') : '-'}
-                                      </span>
-                                    </div>
-                                    <div className="details-row">
-                                      <span className="details-label">Abo Ende</span>
-                                      <span className="details-value">
-                                        {dojo.subscription_ends_at ? new Date(dojo.subscription_ends_at).toLocaleDateString('de-DE') : '-'}
-                                      </span>
-                                    </div>
-                                    {dojo.subscription_days_remaining !== null && (
-                                      <div className="details-row highlight">
-                                        <span className="details-label">Verbleibend</span>
-                                        <span className="details-value countdown">{dojo.subscription_days_remaining} Tage</span>
-                                      </div>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Aktionen */}
-                            <div className="details-card actions-card">
-                              <div className="details-card-header">
-                                <span className="details-card-icon">⚡</span>
-                                <h4>Aktionen</h4>
-                              </div>
-                              <div className="details-card-body">
-                                <div className="action-buttons-grid">
-                                  {dojo.subscription_status === 'trial' && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleExtendTrial(dojo);
-                                      }}
-                                      className="action-btn warning"
-                                      title="Trial verlängern"
-                                    >
-                                      <Clock size={16} />
-                                      <span>Trial verlängern</span>
-                                    </button>
-                                  )}
-                                  {(dojo.subscription_status === 'trial' || dojo.subscription_status === 'expired') && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleActivateSubscription(dojo);
-                                      }}
-                                      className="action-btn success"
-                                      title="Abo aktivieren"
-                                    >
-                                      <CheckCircle size={16} />
-                                      <span>Abo aktivieren</span>
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditDojo(dojo);
-                                    }}
-                                    className="action-btn secondary"
-                                    title="Bearbeiten"
-                                  >
-                                    <Edit size={16} />
-                                    <span>Bearbeiten</span>
-                                  </button>
-                                  {dojo.id !== 2 && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteDojo(dojo);
-                                      }}
-                                      className="action-btn danger"
-                                      title="Deaktivieren"
-                                    >
-                                      <Trash2 size={16} />
-                                      <span>Deaktivieren</span>
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-
-          {dojos.length === 0 && (
-            <div className="empty-state">
-              <Building2 size={48} />
-              <p>Keine Dojos gefunden</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Top Dojos Ranking */}
-      {globalStats?.top_dojos && globalStats.top_dojos.length > 0 && (
-        <section className="top-dojos-section">
-          <h2 className="section-title">
-            <TrendingUp size={20} />
-            Top Dojos nach Mitgliederzahl
-          </h2>
-          <div className="top-dojos-grid">
-            {globalStats.top_dojos.slice(0, 5).map((dojo, index) => (
-              <div key={dojo.id} className="top-dojo-card">
-                <div className="ranking-badge">#{index + 1}</div>
-                <div className="dojo-info">
-                  <h3>{dojo.dojoname}</h3>
-                  <div className="dojo-stats">
-                    <span><Users size={14} /> {dojo.member_count} Mitglieder</span>
-                    <span><Activity size={14} /> {dojo.course_count} Kurse</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-                <DojoLizenzverwaltung />
-              </>
+              <DojoLizenzverwaltung />
             )}
 
             {subActiveTab.dojosoftware === 'dokumente' && (
               <DokumentenZentrale embedded />
+            )}
+
+              </div>
+            )}
+
+            {/* ── EventSoftware ──────────────────────────────────────── */}
+            {softwareSection === 'eventsoftware' && (
+              <EventSoftwareSection token={token} />
+            )}
+
+            {/* ── TDA Academy ────────────────────────────────────────── */}
+            {softwareSection === 'academy' && (
+              <AcademySection />
+            )}
+
+            {/* ── Hall of Fame ───────────────────────────────────────── */}
+            {softwareSection === 'halloffame' && (
+              <div>
+                <div className="sad-hof-header">
+                  <h2 className="sad-hof-title">🌟 TDA Hall of Fame</h2>
+                  <div className="sad-hof-btn-row">
+                    <a href="https://hof.tda-intl.org/login" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
+                      🔐 HoF Admin Login
+                    </a>
+                    <a href="https://hof.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
+                      ↗ hof.tda-intl.org
+                    </a>
+                  </div>
+                </div>
+                <div className="sad-hof-nav-grid">
+                  {[
+                    { icon: '🏠', label: 'Übersicht',       url: 'https://hof.tda-intl.org/dashboard' },
+                    { icon: '🏅', label: 'Sportler',        url: 'https://hof.tda-intl.org/dashboard/sportler' },
+                    { icon: '🏷️', label: 'Kategorien',      url: 'https://hof.tda-intl.org/dashboard/kategorien' },
+                    { icon: '📋', label: 'Nominierungen',   url: 'https://hof.tda-intl.org/dashboard/nominierungen' },
+                    { icon: '🏟️', label: 'Veranstaltungen', url: 'https://hof.tda-intl.org/dashboard/veranstaltungen' },
+                  ].map(item => (
+                    <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="sad-hof-nav-link">
+                      <span className="sad2-fs-12">{item.icon}</span>
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+                <div className="sad-hof-preview-wrapper">
+                  <div className="sad-hof-preview-bar">
+                    <span className="sad-hof-live-dot" />
+                    Live-Vorschau — hof.tda-intl.org
+                  </div>
+                  <iframe
+                    src="https://hof.tda-intl.org"
+                    title="Hall of Fame"
+                    className="sad-hof-iframe"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ── TDA-Dojos ──────────────────────────────────────────── */}
+            {softwareSection === 'dojos' && (
+              <div className="sad2-empty-center">
+                <span className="sad2-big-icon">🏯</span>
+                <h2 className="sad2-primary-mb">TDA-eigene Dojos</h2>
+                <p className="sad2-text-secondary-maxw">
+                  Verwaltung der eigenen TDA-Dojos — Standorte, Trainer, Stundenpläne.<br />
+                  Diese Sektion wird gerade aufgebaut.
+                </p>
+              </div>
             )}
 
           </div>
@@ -1548,6 +1884,9 @@ const SuperAdminDashboard = () => {
               </button>
               <button className={`sub-tab-btn ${kommunikationSubTab === 'support' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('support')}>
                 <MessageSquare size={16} /><span>Support</span>
+              </button>
+              <button className={`sub-tab-btn ${kommunikationSubTab === 'besucher-chat' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('besucher-chat')}>
+                <Globe size={16} /><span>Besucher-Chat</span>
               </button>
             </div>
 
@@ -1645,11 +1984,17 @@ const SuperAdminDashboard = () => {
             )}
 
             {kommunikationSubTab === 'chat-zentrale' && (
-              <SuperAdminChatZentrale token={token} />
+              <SuperAdminChatZentraleWrapper token={token} />
             )}
 
             {kommunikationSubTab === 'support' && (
               <SupportTickets bereich="org" showAllBereiche={true} />
+            )}
+
+            {kommunikationSubTab === 'besucher-chat' && (
+              <div style={{ height: 600 }}>
+                <BesucherChat />
+              </div>
             )}
           </div>
         )}
@@ -1663,80 +2008,6 @@ const SuperAdminDashboard = () => {
             {subActiveTab.verband === 'verbandsmitglieder' && (
               <VerbandsMitglieder />
             )}
-          </div>
-        )}
-
-        {/* ═══ Dojos (TDA-eigene) ════════════════════════════════════ */}
-        {activeTab === 'dojos' && (
-          <div className="sad2-empty-center">
-            <span className="sad2-big-icon">🏯</span>
-            <h2 className="sad2-primary-mb">TDA-eigene Dojos</h2>
-            <p className="sad2-text-secondary-maxw">
-              Verwaltung der eigenen TDA-Dojos — Standorte, Trainer, Stundenpläne.<br />
-              Diese Sektion wird gerade aufgebaut.
-            </p>
-          </div>
-        )}
-
-        {/* ═══ EventSoftware ════════════════════════════════════════ */}
-        {activeTab === 'eventsoftware' && (
-          <div className="sad2-empty-center">
-            <span className="sad2-big-icon">🗓️</span>
-            <h2 className="sad2-primary-mb">EventSoftware</h2>
-            <p className="sad2-text-secondary-maxw">
-              Zentrales Dashboard für die TDA-Eventsoftware (Turniere, Lehrgänge, Seminare).<br />
-              Integration in Kürze verfügbar.
-            </p>
-          </div>
-        )}
-
-        {/* ═══ Hall of Fame ═════════════════════════════════════════ */}
-        {activeTab === 'halloffame' && (
-          <div>
-            {/* Header */}
-            <div className="sad-hof-header">
-              <h2 className="sad-hof-title">
-                🌟 TDA Hall of Fame
-              </h2>
-              <div className="sad-hof-btn-row">
-                <a href="https://hof.tda-intl.org/login" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
-                  🔐 HoF Admin Login
-                </a>
-                <a href="https://hof.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
-                  ↗ hof.tda-intl.org
-                </a>
-              </div>
-            </div>
-
-            {/* Schnellzugriff Admin-Bereiche */}
-            <div className="sad-hof-nav-grid">
-              {[
-                { icon: '🏠', label: 'Übersicht',      url: 'https://hof.tda-intl.org/dashboard' },
-                { icon: '🏅', label: 'Sportler',       url: 'https://hof.tda-intl.org/dashboard/sportler' },
-                { icon: '🏷️', label: 'Kategorien',     url: 'https://hof.tda-intl.org/dashboard/kategorien' },
-                { icon: '📋', label: 'Nominierungen',  url: 'https://hof.tda-intl.org/dashboard/nominierungen' },
-                { icon: '🏟️', label: 'Veranstaltungen',url: 'https://hof.tda-intl.org/dashboard/veranstaltungen' },
-              ].map(item => (
-                <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="sad-hof-nav-link">
-                  <span className="sad2-fs-12">{item.icon}</span>
-                  {item.label}
-                </a>
-              ))}
-            </div>
-
-            {/* Live-Vorschau */}
-            <div className="sad-hof-preview-wrapper">
-              <div className="sad-hof-preview-bar">
-                <span className="sad-hof-live-dot" />
-                Live-Vorschau — hof.tda-intl.org
-              </div>
-              <iframe
-                src="https://hof.tda-intl.org"
-                title="Hall of Fame"
-                className="sad-hof-iframe"
-                loading="lazy"
-              />
-            </div>
           </div>
         )}
 
@@ -1977,6 +2248,18 @@ const SuperAdminDashboard = () => {
           </div>
         )}
 
+        {/* ═══ Plattform-Zentrale ═══════════════════════════════════ */}
+        {activeTab === 'plattform' && (
+          <div>
+            {renderSubTabs('plattform', [
+              { id: 'zentrale',     icon: '🌐', label: 'Plattform-Zentrale' },
+              { id: 'zugangsdaten', icon: '🔐', label: 'Zugangsdaten' },
+            ])}
+            {(subActiveTab.plattform ?? 'zentrale') === 'zentrale' && <PlattformZentrale />}
+            {subActiveTab.plattform === 'zugangsdaten' && <PlattformZugangsdaten />}
+          </div>
+        )}
+
         {/* ═══ System ════════════════════════════════════════════════ */}
         {activeTab === 'system' && (
           <div>
@@ -1984,7 +2267,8 @@ const SuperAdminDashboard = () => {
               { id: 'benutzer',    icon: '👤', label: 'Benutzer' },
               { id: 'email',       icon: '✉️', label: 'E-Mail' },
               { id: 'passwoerter', icon: '🔑', label: 'Passwörter' },
-              { id: 'security',    icon: '🛡️', label: 'Security' }
+              { id: 'security',    icon: '🛡️', label: 'Security' },
+              { id: 'kalender',    icon: '📅', label: 'iCloud Kalender' }
             ])}
 
             {subActiveTab.system === 'benutzer' && (
@@ -2041,6 +2325,61 @@ const SuperAdminDashboard = () => {
 
             {subActiveTab.system === 'security' && (
               <SecurityDashboard />
+            )}
+
+            {subActiveTab.system === 'kalender' && (
+              <div className="section-card">
+                <h3 style={{ marginBottom: '0.5rem' }}>📅 Privater iCloud Kalender</h3>
+                <p style={{ color: 'var(--text-3)', fontSize: '13px', marginBottom: '1.2rem' }}>
+                  Trage die private iCal-URL deines Apple iCloud Kalenders ein. Du findest sie in der iCloud-Kalender-App unter
+                  <strong> Kalender → ⓘ → Kalender-Abo-Link</strong> (privater Link aktivieren).
+                  Termine werden stündlich gecacht und beim Anlegen neuer Termine automatisch auf Konflikte geprüft.
+                </p>
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '0.75rem' }}>
+                  <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                    <label>iCal-URL (webcal:// oder https://)</label>
+                    <input
+                      type="url"
+                      value={icalUrl}
+                      onChange={e => setIcalUrl(e.target.value)}
+                      placeholder="webcal://p62-caldav.icloud.com/published/2/..."
+                      style={{ fontFamily: 'monospace', fontSize: '12px' }}
+                    />
+                  </div>
+                  <button className="btn-primary" onClick={saveIcalUrl} style={{ whiteSpace: 'nowrap' }}>
+                    Speichern &amp; Laden
+                  </button>
+                </div>
+                {icalSaveMsg && (
+                  <div className={`sad-feedback-box ${icalSaveMsg.includes('✅') ? 'sad-feedback-box--success' : 'sad-feedback-box--error'}`}>
+                    {icalSaveMsg}
+                  </div>
+                )}
+                {icalLoading && <div style={{ color: 'var(--text-3)', fontSize: '13px', marginTop: '1rem' }}>Lade Kalender…</div>}
+                {!icalLoading && icalEvents.length > 0 && (
+                  <>
+                    <hr className="sad2-hr" />
+                    <h4 style={{ marginBottom: '0.6rem' }}>Nächste Termine (90 Tage)</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {icalEvents.slice(0, 20).map((ev, i) => (
+                        <div key={i} className="ical-event-row">
+                          <span className="ical-event-date">
+                            {new Date(ev.start).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                            {!ev.allDay && ' ' + new Date(ev.start).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <span className="ical-event-summary">{ev.summary}</span>
+                          {ev.location && <span className="ical-event-location">📍 {ev.location}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {!icalLoading && icalEvents.length === 0 && icalUrl && (
+                  <p style={{ color: 'var(--text-3)', fontSize: '13px', marginTop: '1rem' }}>
+                    Keine Termine in den nächsten 90 Tagen — oder URL noch nicht gespeichert.
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -2394,10 +2733,9 @@ const SuperAdminDashboard = () => {
 
               <div className="sad2-flex-gap-1-mb2">
                 <button
-                  className="btn-primary"
+                  className="btn-primary u-flex-row-sm"
                   onClick={saveEmailSettings}
                   disabled={emailLoading}
-                  className="u-flex-row-sm"
                 >
                   <Save size={18} />
                   {emailLoading ? 'Speichern...' : 'Einstellungen speichern'}
@@ -2421,10 +2759,9 @@ const SuperAdminDashboard = () => {
                   />
                 </div>
                 <button
-                  className="btn-secondary"
+                  className="btn-secondary sad2-mb-05"
                   onClick={sendTestEmail}
                   disabled={emailLoading || !testEmail}
-                  className="sad2-mb-05"
                 >
                   {emailLoading ? 'Sende...' : 'Test senden'}
                 </button>
@@ -2869,6 +3206,38 @@ const DojoFormModal = ({ dojo, onClose, onSuccess, token }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SUPER-ADMIN CHAT-ZENTRALE WRAPPER
+// Kombiniert Monitoring-Ansicht + Eigener Chat (AdminChatPage)
+// ─────────────────────────────────────────────────────────────────────────────
+const SuperAdminChatZentraleWrapper = ({ token }) => {
+  const [chatTab, setChatTab] = useState('monitoring'); // 'monitoring' | 'eigener-chat'
+  return (
+    <div>
+      <div className="sad-chat-sub-tabs">
+        <button
+          className={`sad-chat-sub-tab ${chatTab === 'monitoring' ? 'sad-chat-sub-tab--active' : ''}`}
+          onClick={() => setChatTab('monitoring')}
+        >
+          📊 Monitoring
+        </button>
+        <button
+          className={`sad-chat-sub-tab ${chatTab === 'eigener-chat' ? 'sad-chat-sub-tab--active' : ''}`}
+          onClick={() => setChatTab('eigener-chat')}
+        >
+          💬 Eigener Chat
+        </button>
+      </div>
+      {chatTab === 'monitoring' && <SuperAdminChatZentrale token={token} />}
+      {chatTab === 'eigener-chat' && (
+        <div className="sad-chat-embedded">
+          <AdminChatPage />
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SUPER-ADMIN CHAT-ZENTRALE
 // Zeigt alle Chat-Räume aller Dojos — nur für Super-Admins
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3064,8 +3433,19 @@ const SuperAdminChatZentrale = ({ token }) => {
                       className={`sad-chat-room-item ${isActive ? 'sad-chat-room-item--active' : ''}`}
                       style={{ '--tc-bg': tc.bg, '--tc-border': tc.border, '--tc-color': tc.color }}
                     >
-                      <div className="sad-chat-room-icon">
-                        {tc.icon}
+                      <div
+                        className="sad-chat-room-icon"
+                        style={room.type === 'group' && room.avatar_emoji ? {
+                          background: room.avatar_color || '#4f7cff',
+                          color: 'white',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.1rem'
+                        } : {}}
+                      >
+                        {room.type === 'group' && room.avatar_emoji ? room.avatar_emoji : tc.icon}
                       </div>
                       <div className="u-flex-1-min0">
                         <div className="sad-chat-room-item-row">

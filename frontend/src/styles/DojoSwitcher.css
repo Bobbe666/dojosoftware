@@ -6,22 +6,18 @@
   z-index: 10000;
 }
 
-.dojo-switcher.loading {
-  padding: 10px;
-}
+.dojo-switcher.loading { padding: 10px; }
 
 .spinner-small {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--primary-alpha-20);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Trigger Button ── */
 .dojo-switcher-trigger {
@@ -41,17 +37,17 @@
 
 .dojo-switcher-trigger:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .dojo-switcher-indicator {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  border: 2px solid;
-  border-color: var(--mode-color, #ffd700);
+  background: var(--mode-color, var(--primary));
+  box-shadow: 0 0 6px var(--mode-color, var(--primary));
   flex-shrink: 0;
-  transition: border-color 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dojo-switcher-name {
@@ -69,53 +65,125 @@
   flex-shrink: 0;
   color: var(--text-4);
 }
-
-.chevron.open {
-  transform: rotate(180deg);
-}
+.chevron.open { transform: rotate(180deg); }
 
 /* ── Overlay ── */
 .dojo-switcher-overlay {
   position: fixed;
   inset: 0;
   z-index: 2147483646;
-  background: rgba(0, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: dsOverlayIn 0.18s ease-out;
 }
 
-/* ── Dropdown ── */
-.dojo-switcher-dropdown {
+@keyframes dsOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Zentriertes Modal ── */
+.dojo-switcher-modal {
   position: fixed !important;
-  background: var(--modal-bg-dark);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  /* Heller als modal-bg-dark — eher Slate-800 Charakter */
+  background: #1e1c2e;
+  border: 1px solid rgba(255, 215, 0, 0.22);
+  border-radius: 20px;
+  box-shadow:
+    0 40px 100px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
   z-index: 2147483647 !important;
-  width: 300px;
-  animation: dsSlide 0.14s ease-out;
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  max-height: 80vh;
+  width: 500px;
+  max-width: calc(100vw - 32px);
+  max-height: 94vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: dsModalIn 0.22s cubic-bezier(0.34, 1.45, 0.64, 1);
 }
 
-@keyframes dsSlide {
-  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes dsModalIn {
+  from { opacity: 0; transform: translate(-50%, -48%) scale(0.93); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ── Modal Header ── */
+.ds-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(255,215,0,0.04) 0%, transparent 100%);
+}
+
+.ds-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+
+.ds-modal-icon { font-size: 1.3rem; }
+
+.ds-modal-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+  padding-left: 2px;
+}
+
+.ds-modal-current-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.ds-modal-close {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.ds-modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 /* ── Search ── */
 .dropdown-search {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 12px 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .dropdown-search .search-icon {
-  color: var(--text-4);
+  color: rgba(255, 255, 255, 0.35);
   flex-shrink: 0;
 }
 
@@ -124,183 +192,227 @@
   background: transparent;
   border: none;
   outline: none;
-  color: var(--text-1);
-  font-size: 0.83rem;
+  color: #fff;
+  font-size: 0.9rem;
   padding: 0;
 }
 
-.dropdown-search input::placeholder {
-  color: var(--text-4);
-}
+.dropdown-search input::placeholder { color: rgba(255, 255, 255, 0.3); }
 
 /* ── List ── */
 .dropdown-list {
-  padding: 6px;
+  padding: 12px;
   overflow-y: auto;
   flex: 1;
 }
 
 .dropdown-list::-webkit-scrollbar { width: 3px; }
 .dropdown-list::-webkit-scrollbar-track { background: transparent; }
-.dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+.dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
 /* ── Section Header ── */
 .dropdown-section-header {
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 8px 4px;
-  font-size: 0.68rem;
-  font-weight: 600;
+  padding: 4px 6px 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-4);
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.3);
 }
 
-/* ── Admin 2×2 Icon Grid ── */
+/* ── Admin 3-Spalten-Grid ── */
 .ds-admin-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 5px;
-  padding: 10px 8px 5px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
+/* Basis-Kachel */
 .ds-admin-btn {
-  background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  padding: 12px 8px 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  padding: 16px 8px 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  color: var(--text-3);
-  transition: all 0.15s ease;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: all 0.18s ease;
   width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.ds-admin-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  border-radius: inherit;
 }
 
 .ds-admin-btn:hover {
-  background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--text-1);
+  transform: translateY(-2px);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.ds-admin-btn:hover::before { opacity: 1; }
+
+/* Farbvarianten */
+.ds-color-gold { --btn-color: #ffd700; --btn-rgb: 255,215,0; }
+.ds-color-purple { --btn-color: #a78bfa; --btn-rgb: 167,139,250; }
+.ds-color-blue { --btn-color: #60a5fa; --btn-rgb: 96,165,250; }
+.ds-color-green { --btn-color: #34d399; --btn-rgb: 52,211,153; }
+.ds-color-amber { --btn-color: #fbbf24; --btn-rgb: 251,191,36; }
+.ds-color-orange { --btn-color: #fb923c; --btn-rgb: 251,146,60; }
+.ds-color-red { --btn-color: #f87171; --btn-rgb: 248,113,113; }
+.ds-color-teal { --btn-color: #2dd4bf; --btn-rgb: 45,212,191; }
+
+/* Volle Breite (Grid-Span) */
+.ds-btn-full { grid-column: 1 / -1; }
+
+.ds-admin-btn[class*="ds-color-"]::before {
+  background: radial-gradient(ellipse at 50% 0%, rgba(var(--btn-rgb), 0.14) 0%, transparent 70%);
+}
+
+.ds-admin-btn[class*="ds-color-"]:hover {
+  border-color: rgba(var(--btn-rgb), 0.35);
+  background: rgba(var(--btn-rgb), 0.08);
+  box-shadow: 0 8px 28px rgba(var(--btn-rgb), 0.15);
+}
+
+.ds-admin-btn[class*="ds-color-"]:hover .ds-btn-label {
+  color: var(--btn-color);
 }
 
 .ds-admin-btn.active {
-  background: rgba(255, 215, 0, 0.08);
-  border-color: rgba(255, 215, 0, 0.3);
-  color: var(--primary);
+  background: rgba(var(--btn-rgb, 255,215,0), 0.12);
+  border-color: rgba(var(--btn-rgb, 255,215,0), 0.4);
+  color: var(--btn-color, #ffd700);
+}
+
+.ds-admin-btn.active .ds-btn-label {
+  color: var(--btn-color, #ffd700);
 }
 
 .ds-btn-icon {
-  font-size: 1.3rem;
+  font-size: 1.7rem;
   line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
 }
 
 .ds-btn-label {
-  font-size: 0.72rem;
-  font-weight: 500;
+  font-size: 0.73rem;
+  font-weight: 600;
   white-space: nowrap;
   letter-spacing: 0.01em;
+  transition: color 0.15s ease;
 }
 
 .ds-admin-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.3;
   cursor: not-allowed;
-}
-
-.ds-admin-btn:disabled:hover {
-  background: var(--surface-2);
-  border-color: rgba(255, 255, 255, 0.06);
-  color: var(--text-3);
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* ── Alle Dojos Button ── */
 .ds-alle-dojos-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: calc(100% - 16px);
-  margin: 6px 8px 4px;
-  padding: 10px 14px;
-  background: rgba(255, 107, 53, 0.07);
-  border: 1px solid rgba(255, 107, 53, 0.18);
-  border-radius: 10px;
-  color: var(--text-2);
-  font-size: 0.88rem;
-  font-weight: 500;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 215, 0, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: left;
+  margin-bottom: 10px;
 }
 
 .ds-alle-dojos-btn:hover {
-  background: rgba(255, 107, 53, 0.13);
-  border-color: rgba(255, 107, 53, 0.3);
-  color: var(--text-1);
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.3);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.1);
 }
 
 .ds-alle-dojos-btn.active {
-  background: rgba(255, 107, 53, 0.15);
-  border-color: rgba(255, 107, 53, 0.4);
-  color: #ff7a4d;
+  background: rgba(255, 215, 0, 0.1);
+  border-color: rgba(255, 215, 0, 0.35);
+  color: #ffd700;
 }
 
 .ds-alle-badge {
   margin-left: auto;
   font-size: 0.62rem;
-  background: rgba(255, 107, 53, 0.12);
-  color: #ff7a4d;
-  border: 1px solid rgba(255, 107, 53, 0.25);
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-weight: 600;
+  background: rgba(255, 215, 0, 0.1);
+  color: rgba(255, 215, 0, 0.8);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 /* ── Divider ── */
 .ds-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.07);
-  margin: 4px 6px;
+  margin: 4px 0 10px;
 }
 
 /* ── Dojo Color Dot ── */
 .ds-dojo-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
   margin-top: 3px;
   background: var(--accent-color, #ffd700);
+  box-shadow: 0 0 6px var(--accent-color, rgba(255,215,0,0.5));
 }
 
-/* ── Dropdown Item ── */
+/* ── Dojo List Item ── */
 .dropdown-item {
   background: transparent;
-  border: none;
-  border-radius: 8px;
-  padding: 9px 12px;
-  margin-bottom: 2px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 3px;
   cursor: pointer;
   transition: all 0.12s ease;
   display: flex;
   align-items: flex-start;
-  gap: 9px;
+  gap: 10px;
   width: 100%;
   text-align: left;
-  border-left: 2px solid transparent;
 }
 
 .dropdown-item:hover {
-  background: var(--surface-2);
-  border-left-color: var(--accent-color, rgba(255, 255, 255, 0.25));
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .dropdown-item.active {
-  background: var(--surface-3);
-  border-left-color: var(--accent-color, #ffd700);
+  background: rgba(var(--accent-rgb, 255,215,0), 0.07);
+  border-color: rgba(var(--accent-rgb, 255,215,0), 0.2);
 }
 
 /* ── Item Elements ── */
@@ -308,7 +420,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
@@ -320,85 +432,94 @@
 
 .item-name {
   flex: 1;
-  color: var(--text-1);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.dropdown-item.active .item-name { color: #fff; }
+
 .item-info {
-  font-size: 0.7rem;
-  opacity: 0.85;
-  color: var(--info-color, rgba(255, 255, 255, 0.7));
+  font-size: 0.72rem;
+  color: var(--info-color, rgba(255, 255, 255, 0.45));
+  font-weight: 500;
 }
 
-.item-percent {
-  opacity: 0.75;
-}
+.item-percent { opacity: 0.8; }
 
 .item-badge {
   display: inline-block;
-  padding: 1px 5px;
-  border-radius: 4px;
-  font-size: 0.62rem;
-  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.6rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   flex-shrink: 0;
 }
 
-.item-badge.gold   { background: rgba(255,215,0,0.1);  color: var(--primary);  border: 1px solid rgba(255,215,0,0.25); }
-.item-badge.blue   { background: rgba(59,130,246,0.1); color: #60a5fa;         border: 1px solid rgba(59,130,246,0.25); }
-.item-badge.green  { background: rgba(16,185,129,0.1); color: #34d399;         border: 1px solid rgba(16,185,129,0.25); }
-.item-badge.orange { background: rgba(255,107,53,0.1); color: #ff7a4d;         border: 1px solid rgba(255,107,53,0.25); }
-.item-badge.purple { background: rgba(139,92,246,0.1); color: #a78bfa;         border: 1px solid rgba(139,92,246,0.25); }
-.item-badge.primary{ background: rgba(255,215,0,0.12); color: #ffd700;         border: 1px solid rgba(255,215,0,0.3); }
+.item-badge.gold   { background: rgba(255,215,0,0.12);  color: #ffd700; border: 1px solid rgba(255,215,0,0.25); }
+.item-badge.blue   { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.25); }
+.item-badge.green  { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+.item-badge.orange { background: rgba(255,107,53,0.12); color: #ff7a4d; border: 1px solid rgba(255,107,53,0.25); }
+.item-badge.purple { background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.25); }
+.item-badge.primary{ background: rgba(255,215,0,0.12);  color: #ffd700; border: 1px solid rgba(255,215,0,0.25); }
 
 /* ── Empty State ── */
 .dropdown-empty {
-  padding: 16px;
+  padding: 24px;
   text-align: center;
-  color: var(--text-4);
-  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.85rem;
 }
 
 /* ── Footer ── */
 .dropdown-footer {
-  padding: 8px 10px;
+  padding: 10px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .footer-link {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-4);
+  color: rgba(255, 255, 255, 0.35);
   text-decoration: none;
-  font-size: 0.73rem;
-  font-weight: 500;
+  font-size: 0.75rem;
+  font-weight: 600;
   transition: color 0.15s ease;
+  letter-spacing: 0.01em;
 }
 
-.footer-link:hover {
-  color: var(--text-2);
-}
+.footer-link:hover { color: rgba(255, 255, 255, 0.7); }
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .dojo-switcher-trigger {
-    min-width: 130px;
+    min-width: 120px;
+    max-width: 160px;
     padding: 7px 10px;
   }
-
-  .dojo-switcher-dropdown {
-    width: calc(100vw - 32px);
-    left: 16px !important;
+  .dojo-switcher-modal {
+    width: calc(100vw - 24px);
+    border-radius: 16px;
   }
 }
 
-/* Migrated from inline styles */
+@media (max-width: 480px) {
+  .dojo-switcher-trigger {
+    min-width: 0;
+    max-width: 140px;
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+}
+
 .dojo-switcher-message {
   color: var(--secondary);
   font-size: 0.85rem;

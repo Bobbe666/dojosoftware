@@ -4,6 +4,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 // Promise-Wrapper fuer db.query
 const queryAsync = (sql, params = []) => {
@@ -83,12 +84,10 @@ const hasNotificationToday = async (recipientId, notificationType) => {
  * Hauptfunktion: Prueft Geburtstage und sendet Benachrichtigungen
  */
 const checkBirthdays = async () => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] Birthday-Check gestartet...`);
-
   try {
+    logger.info('Birthday-Check gestartet');
     const birthdays = await getBirthdaysToday();
-    console.log(`[${timestamp}] ${birthdays.length} Geburtstag(e) heute gefunden`);
+    logger.info(`${birthdays.length} Geburtstag(e) heute gefunden`);
 
     let notificationsSent = 0;
 
@@ -107,7 +106,7 @@ const checkBirthdays = async () => {
               { type: 'birthday', mitglied_id: member.mitglied_id, role: 'member' }
             );
             notificationsSent++;
-            console.log(`[${timestamp}] Geburtstagswunsch an ${member.vorname} ${member.nachname} gesendet`);
+            logger.info(`Geburtstagswunsch an ${member.vorname} ${member.nachname} gesendet`);
           }
         }
 
@@ -128,20 +127,20 @@ const checkBirthdays = async () => {
                 { type: 'birthday', mitglied_id: member.mitglied_id, admin_id: admin.id, role: 'admin' }
               );
               notificationsSent++;
-              console.log(`[${timestamp}] Admin-Benachrichtigung fuer ${member.vorname} ${member.nachname} gesendet`);
+              logger.info(`Admin-Benachrichtigung fuer ${member.vorname} ${member.nachname} gesendet`);
             }
           }
         }
       } catch (memberError) {
-        console.error(`[${timestamp}] Fehler bei Mitglied ${member.mitglied_id}:`, memberError.message);
+        logger.error(`Fehler bei Mitglied ${member.mitglied_id}:`, { error: memberError.message });
       }
     }
 
-    console.log(`[${timestamp}] Geburtstags-Check abgeschlossen. ${notificationsSent} Benachrichtigung(en) erstellt.`);
+    logger.info(`Geburtstags-Check abgeschlossen. ${notificationsSent} Benachrichtigung(en) erstellt.`);
     return { success: true, birthdays: birthdays.length, notifications: notificationsSent };
 
   } catch (error) {
-    console.error(`[${timestamp}] Geburtstags-Check Fehler:`, error.message);
+    logger.error('Geburtstags-Check Fehler:', { error: error.message });
     return { success: false, error: error.message };
   }
 };

@@ -4,6 +4,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 // Kategorien für Audit-Logs
 const KATEGORIE = {
@@ -60,6 +61,8 @@ const AKTION = {
   // SEPA
   SEPA_MANDAT_ERSTELLT: 'SEPA_MANDAT_ERSTELLT',
   SEPA_MANDAT_AKTUALISIERT: 'SEPA_MANDAT_AKTUALISIERT',
+  SEPA_MANDAT_WIDERRUFEN: 'SEPA_MANDAT_WIDERRUFEN',
+  SEPA_MANDAT_ABGERUFEN: 'SEPA_MANDAT_ABGERUFEN',
   SEPA_BATCH_ERSTELLT: 'SEPA_BATCH_ERSTELLT',
   SEPA_XML_EXPORTIERT: 'SEPA_XML_EXPORTIERT',
 
@@ -166,14 +169,11 @@ async function log(options) {
       ]
     );
 
-    // Debug-Logging in Entwicklung
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`[AUDIT] ${kategorie}/${aktion}: ${entityType || ''}${entityId ? '#' + entityId : ''} ${entityName || ''} - User: ${userEmail || 'System'}`);
-    }
+    logger.debug(`[AUDIT] ${kategorie}/${aktion}: ${entityType || ''}${entityId ? '#' + entityId : ''} ${entityName || ''} - User: ${userEmail || 'System'}`);
 
   } catch (error) {
     // Fehler beim Logging sollten die Hauptaktion nicht blockieren
-    console.error('[AUDIT ERROR] Fehler beim Schreiben des Audit-Logs:', error);
+    logger.error('[AUDIT ERROR] Fehler beim Schreiben des Audit-Logs:', { error: error.message });
   }
 }
 
@@ -306,9 +306,9 @@ async function getLogs(options = {}) {
   }
 
   if (suchbegriff) {
-    query += ' AND (beschreibung LIKE ? OR entity_name LIKE ? OR user_name LIKE ? OR user_email LIKE ?)';
+    query += ' AND (beschreibung LIKE ? OR entity_name LIKE ? OR user_name LIKE ? OR user_email LIKE ? OR aktion LIKE ? OR kategorie LIKE ?)';
     const like = `%${suchbegriff}%`;
-    params.push(like, like, like, like);
+    params.push(like, like, like, like, like, like);
   }
 
   query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';

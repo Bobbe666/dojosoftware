@@ -826,13 +826,13 @@ const generateVerbandRechnungPdf = async (zahlungsId, res, typ = 'beitrag') => {
         let posNr = 1;
         for (const pos of positionen) {
           doc.text(String(posNr), leftMargin + 5, tableY);
-          doc.text(pos.beschreibung || pos.artikel_name || 'Position', leftMargin + 35, tableY, { width: 155 });
+          doc.text(pos.bezeichnung || pos.beschreibung || pos.artikel_name || 'Position', leftMargin + 35, tableY, { width: 155 });
           doc.text(pos.artikelnummer || '-', 200, tableY);
           doc.text(String(pos.menge || 1), 260, tableY);
           doc.text(pos.einheit || 'Stk', 300, tableY);
           doc.text(formatCurrency(pos.einzelpreis || 0), 350, tableY);
-          doc.text(`${(pos.mwst_satz || mwstSatz).toFixed(0)}%`, 410, tableY);
-          doc.text(formatCurrency(pos.gesamt_netto || pos.einzelpreis * (pos.menge || 1)), 470, tableY, { width: 70, align: 'right' });
+          doc.text(`${(Number(pos.mwst_satz) || mwstSatz).toFixed(0)}%`, 410, tableY);
+          doc.text(formatCurrency(pos.netto !== undefined ? pos.netto : pos.einzelpreis * (pos.menge || 1)), 470, tableY, { width: 70, align: 'right' });
           tableY += 18;
           posNr++;
         }
@@ -936,6 +936,9 @@ const generateVerbandRechnungPdf = async (zahlungsId, res, typ = 'beitrag') => {
     logger.error('Rechnungs-PDF-Generierung fehlgeschlagen:', { error: error.message, stack: error.stack, zahlungsId, typ });
     if (!res.headersSent) {
       res.status(500).json({ error: 'PDF konnte nicht erstellt werden' });
+    } else {
+      // Headers already sent (PDF stream started) - end the document to close the stream
+      try { doc.end(); } catch (e) { /* ignore secondary error */ }
     }
   }
 };

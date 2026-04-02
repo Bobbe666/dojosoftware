@@ -25,19 +25,32 @@ const SLIDES = [
   }
 ];
 
+const getSlideWidth = () => {
+  if (window.innerWidth <= 640) return 100;
+  if (window.innerWidth <= 1024) return 50;
+  return 100 / 3;
+};
+
+// Für unendliches Scrollen: Slides am Ende wiederholen
+const extendedSlides = [...SLIDES, ...SLIDES.slice(0, 3)];
+
 const HeroSlider = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(true);
+  const [slideWidth, setSlideWidth] = useState(getSlideWidth);
   const trackRef = useRef(null);
 
-  // Für unendliches Scrollen: Slides am Ende wiederholen
-  const extendedSlides = [...SLIDES, ...SLIDES.slice(0, 3)];
+  // Slide-Breite bei Viewport-Änderung aktualisieren
+  useEffect(() => {
+    const handleResize = () => setSlideWidth(getSlideWidth());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prev) => {
       const next = prev + 1;
-      // Wenn wir am Ende sind (nach dem 4. Original-Slide), reset
       if (next >= SLIDES.length) {
         setTimeout(() => {
           setIsTransitioning(false);
@@ -55,8 +68,6 @@ const HeroSlider = () => {
     return () => clearInterval(interval);
   }, [nextSlide]);
 
-  // Berechne die Verschiebung (jedes Slide ist 33.333% breit)
-  const slideWidth = 100 / 3;
   const translateX = currentIndex * slideWidth;
 
   return (

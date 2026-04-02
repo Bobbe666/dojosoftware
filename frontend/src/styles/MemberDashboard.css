@@ -93,43 +93,43 @@
 .member-stat-column {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.5rem;
 }
 
 .member-stat-card {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border-accent);
-  border-radius: 12px;
-  padding: 1rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
   text-align: center;
 }
 
 .member-stat-icon {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   color: var(--primary);
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.15rem;
 }
 
 .member-stat-label {
   color: var(--text-primary);
-  margin-bottom: 0.3rem;
-  font-size: 0.9rem;
+  margin-bottom: 0.15rem;
+  font-size: 0.72rem;
 }
 
 .member-stat-value {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: bold;
   color: var(--primary);
 }
 
 .member-stat-value.sm {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
 }
 
 .member-stat-sublabel {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--text-muted);
-  margin-top: 0.2rem;
+  margin-top: 0.1rem;
 }
 
 /* =============================================
@@ -150,37 +150,70 @@
    ============================================= */
 
 .member-quick-actions-grid {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 0.8rem;
+  gap: 0.5rem;
 }
 
+/* Modernes kompaktes Tile — überschreibt .cta-tile Basis */
 .cta-tile-quick {
-  cursor: pointer;
-  padding: 0.8rem;
-  min-height: 60px;
-  position: relative;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0.5rem;
+  min-height: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  box-shadow: none;
+  animation: none;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s;
+}
+
+/* Keine Shimmer-Linie und keine rotierende Animation auf Quick-Tiles */
+.cta-tile-quick::before,
+.cta-tile-quick::after {
+  display: none;
+}
+
+.cta-tile-quick:hover {
+  background: rgba(255, 215, 0, 0.09);
+  border-color: rgba(255, 215, 0, 0.28);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.cta-tile-quick svg {
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
 .cta-tile-quick-label {
-  font-size: 0.85rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.01em;
+}
+
+/* Aktiv-Zustand (z.B. Abwesenheit offen) */
+.cta-tile-quick.cta-tile--active {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.cta-tile-quick.cta-tile--active svg {
+  color: #ef4444;
+  opacity: 1;
 }
 
 .cta-tile-qr {
-  background: linear-gradient(135deg, var(--primary-alpha-15), var(--secondary-alpha-10));
-  border: 1px solid var(--primary-alpha-30);
+  background: rgba(255, 215, 0, 0.07);
+  border-color: rgba(255, 215, 0, 0.2);
 }
-
-.cta-tile-install {
-  background: linear-gradient(135deg, var(--primary-alpha-15), rgba(255, 237, 78, 0.15));
-  border: 1px solid var(--primary-alpha-30);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
-}
+.cta-tile-qr svg { color: var(--primary, #FFD700); opacity: 1; }
 
 /* Notification badge im Quick Action Tile */
 .member-notif-badge {
@@ -295,7 +328,7 @@
 .member-event-badge.register {
   background: var(--primary-alpha-10);
   color: var(--primary);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--primary-alpha-25);
 }
 
 /* =============================================
@@ -304,7 +337,7 @@
 
 .member-referral-wrap {
   margin-top: 1.2rem;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.14) 0%, rgba(255, 215, 0, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.14) 0%, var(--primary-alpha-08) 100%);
   border: 1px solid rgba(249, 115, 22, 0.4);
   border-radius: 16px;
   padding: 1.4rem;
@@ -350,9 +383,10 @@
 
 /* 6x  color: var(--primary), marginBottom: '0.3rem', fontSize: '0.9rem' */
 .mb-value-primary {
-  color: var(--primary);
+  color: var(--text-primary, #f1f5f9);
   margin-bottom: 0.3rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 /* 4x  display: 'flex', alignItems: 'center', gap: '0.8rem' */
@@ -375,10 +409,21 @@
 
 .md-stats-grid {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: 160px 480px 160px;
   gap: 1rem;
   margin-bottom: 1.5rem;
   align-items: center;
+  justify-content: center;
+}
+
+/* Ausweis im MemberDashboard: grid-column:1/-1 aus MitgliedDetail.css überschreiben */
+.md-stats-grid > .mitgliedsausweis-container {
+  grid-column: auto;
+}
+
+.md-stats-grid .mitgliedsausweis {
+  width: 480px !important;
+  max-width: 480px !important;
 }
 
 /* =============================================
@@ -386,9 +431,75 @@
    ============================================= */
 
 .md-navigation-grid {
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0.8rem;
-  margin-bottom: 1.2rem;
+  grid-template-columns: repeat(7, 1fr);
+  max-width: none;
+  padding: 0;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.md-navigation-grid .cta-tile {
+  padding: 0.7rem 0.4rem;
+  min-height: 70px;
+  font-size: 0.85rem;
+  gap: 0.35rem;
+}
+
+.md-navigation-grid .cta-tile svg {
+  width: 20px;
+  height: 20px;
+}
+
+.member-quick-actions-grid {
+  max-width: none;
+  padding: 0;
+}
+
+/* Belt list in stat card */
+.member-belt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-top: 0.15rem;
+}
+
+.member-belt-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.05rem;
+}
+
+.member-belt-stilname {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.member-belt-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.member-belt-stripe {
+  display: inline-block;
+  width: 18px;
+  height: 4px;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+.member-belt-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+  line-height: 1.2;
 }
 
 /* =============================================
@@ -399,8 +510,8 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 10px;
   padding: 0.8rem 1rem;
 }
@@ -491,44 +602,126 @@
 }
 
 /* =============================================
+   BADGES SECTION
+   ============================================= */
+
+.md-badges-section {
+  margin: 1.5rem 0;
+}
+
+/* =============================================
+   EHRUNGEN PLATZHALTER KARTE
+   ============================================= */
+
+.md-ehrungen-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-top: 1.5rem;
+  opacity: 0.65;
+}
+.md-hof-icon { font-size: 2rem; flex-shrink: 0; }
+.md-hof-title { color: var(--primary); font-weight: 700; margin: 0 0 0.2rem; }
+.md-hof-sub { color: var(--text-secondary); font-size: 0.82rem; margin: 0; }
+
+/* =============================================
    PERSONAL INFO SECTION
    ============================================= */
 
 .md-info-section {
   margin-top: 1.5rem;
+  max-width: 880px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0;
 }
 
+/* Subtile Abschnitts-Beschriftung statt großem Heading */
 .md-info-section-title {
-  margin-bottom: 0.8rem;
-  color: var(--primary);
-  font-size: 1.2rem;
+  margin-bottom: 0.75rem;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.md-info-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,0.07);
 }
 
 .md-info-list {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.65rem;
+}
+
+/* TrainingReminders: margin-bottom entfernen */
+.md-info-list > .training-reminders {
+  margin-bottom: 0;
+}
+
+/* TrainingReminders im Info-Grid: Titel-Größe angleichen */
+.md-info-list > .training-reminders .reminders-title h3 {
+  font-size: 0.85rem;
+}
+
+/* BuddyGruppen — gleiche Optik wie TrainingReminders */
+.buddy-gruppen-widget {
+  background: var(--bg-card, rgba(255,255,255,0.06));
+  border: 1px solid rgba(255, 215, 0, 0.18);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.buddy-gruppen-widget h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #FFD700;
+  font-weight: 600;
+}
+
+.buddy-gruppen-widget p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
 }
 
 /* Shared info card pattern */
 .md-info-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.85rem 1rem;
   display: flex;
-  gap: 0.8rem;
+  gap: 0.75rem;
+  transition: border-color 0.2s;
+}
+.md-info-card:hover {
+  border-color: rgba(255,215,0,0.2);
 }
 
 /* Variant: column layout for card body */
 .md-info-card-col {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.85rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.75rem;
 }
 
 /* Approved exams purple card variant */
@@ -570,7 +763,7 @@
 .md-progress-row {
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
 }
 
 .md-progress-header {
@@ -608,7 +801,7 @@
 
 .md-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border-radius: 2px;
   transition: width 0.5s ease;
 }
@@ -639,7 +832,7 @@
 .md-graduation-badge {
   color: var(--primary);
   font-weight: 600;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 0.2rem 0.5rem;
   border-radius: 6px;
   font-size: 0.8rem;
@@ -848,6 +1041,24 @@
   margin: 0;
 }
 
+.md-notif-readmore {
+  background: none;
+  border: none;
+  color: var(--primary, #ffd700);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  margin-left: 0.15rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.md-notif-readmore:hover {
+  opacity: 1;
+}
+
 /* =============================================
    MODAL OVERLAY & BOX
    ============================================= */
@@ -999,10 +1210,10 @@
 }
 
 .md-modal-fee-card {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-radius: 8px;
   padding: 0.8rem;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .md-modal-fee-value {
@@ -1117,6 +1328,7 @@
 /* Stat value color based on open fees */
 .md-stat-value--error   { color: var(--error); }
 .md-stat-value--success { color: var(--success); }
+.md-stat-sublabel--error { color: var(--error); }
 
 /* Event card – angemeldet vs. not */
 .md-event-card {
@@ -1124,7 +1336,7 @@
   align-items: center;
   gap: 0.75rem;
   background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,215,0,0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: 10px;
   padding: 0.6rem 0.8rem;
   cursor: pointer;
@@ -1153,19 +1365,81 @@
 .md-referral-copy-btn--copied {
   background: rgba(16,185,129,0.2);
   border-color: rgba(16,185,129,0.5);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 /* Stil item separator (last item has no border) */
 .md-stil-item {
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255,215,0,0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
 }
 .md-stil-item:last-child {
   margin-bottom: 0;
   padding-bottom: 0;
   border-bottom: none;
+}
+
+/* =============================================
+   KAMPFKUNST-STILE CARD (modernized full-width)
+   ============================================= */
+
+.md-stile-card {
+  flex-direction: column !important;
+  gap: 0.6rem !important;
+}
+
+.md-stile-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.md-stile-card__icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.md-stile-card__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  flex: 1;
+}
+
+.md-hint-inline {
+  font-style: italic;
+  margin-top: 0 !important;
+  font-size: 0.72rem !important;
+}
+
+.md-stile-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.md-stil-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  flex-wrap: wrap;
+}
+
+.md-stil-chip__name {
+  font-size: 0.85rem;
+  color: #f1f5f9;
+  font-weight: 500;
+}
+
+.md-stil-chip__exam {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  margin-left: 0.2rem;
 }
 
 /* Belt color dot (dynamic background via CSS var) */
@@ -1192,8 +1466,8 @@
   font-size: 0.85rem;
   margin-bottom: 0.2rem;
 }
-.md-exam-result-stil--pass { color: #10b981; }
-.md-exam-result-stil--fail { color: #ef4444; }
+.md-exam-result-stil--pass { color: var(--status-success); }
+.md-exam-result-stil--fail { color: var(--status-error); }
 
 /* Notification item */
 .md-notif-item {
@@ -1203,8 +1477,8 @@
   padding: 0.6rem;
 }
 .md-notif-item--unread {
-  background: rgba(255,215,0,0.1);
-  border-color: rgba(255,215,0,0.3);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
 }
 
 /* Notification title */
@@ -1216,7 +1490,7 @@
 }
 .md-notif-title--unread {
   font-weight: bold;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 /* Exam registration confirm button */
@@ -1236,4 +1510,222 @@
   background: rgba(139,92,246,0.3);
   color: rgba(255,255,255,0.4);
   cursor: not-allowed;
+}
+
+/* =============================================
+   MEMBER NEWS WIDGET
+   ============================================= */
+.member-news-wrap {
+  margin: 1.25rem 0;
+  background: var(--bg-card, rgba(255,255,255,0.05));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.member-news-header {
+  padding: 0.875rem 1.1rem 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.member-news-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.member-news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.member-news-card {
+  display: flex;
+  gap: 0.875rem;
+  align-items: flex-start;
+  padding: 0.875rem 1.1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.member-news-card:last-child { border-bottom: none; }
+
+/* Slideshow — kleines Thumbnail links */
+.member-news-slideshow {
+  position: relative;
+  flex-shrink: 0;
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.25);
+}
+.member-news-slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.member-news-slide.aktiv { opacity: 1; }
+.member-news-slide-dots {
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+.member-slide-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.member-slide-dot.aktiv { background: #fff; }
+
+.member-news-card-content {
+  flex: 1;
+  min-width: 0;
+}
+.member-news-date {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.member-news-card-titel {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.3rem;
+  line-height: 1.3;
+}
+.member-news-card-excerpt {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 0.4rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.member-news-weiterlesen {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.member-news-weiterlesen:hover { opacity: 0.75; }
+
+/* NEWS MODAL */
+.member-news-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+  animation: mnFadeIn 0.2s ease;
+}
+@keyframes mnFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.member-news-modal-box {
+  position: relative;
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+  animation: mnSlideUp 0.25s ease;
+}
+@keyframes mnSlideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.member-news-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 10;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.member-news-modal-close:hover { background: rgba(0,0,0,0.85); }
+
+.member-news-modal-bild {
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
+.member-news-modal-bild .member-news-slideshow {
+  aspect-ratio: 16/9;
+}
+
+.member-news-modal-inhalt {
+  padding: 1.35rem 1.6rem 1.75rem;
+}
+.member-news-modal-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.member-news-modal-titel {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-bottom: 1rem;
+}
+.member-news-modal-text p {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin-bottom: 0.85rem;
+  white-space: pre-wrap;
+}
+.member-news-modal-text p:last-child { margin-bottom: 0; }
+
+@media (max-width: 480px) {
+  .member-news-modal-box { border-radius: 12px; }
+  .member-news-modal-inhalt { padding: 1rem 1.1rem 1.4rem; }
+  .member-news-modal-titel { font-size: 1.1rem; }
+}
+
+/* Vertragsstatus / Tarif-Anpassung Section */
+.md-anpassung-section {
+  background: var(--bg-card, rgba(255,255,255,0.05));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin: 1.25rem 0;
 }

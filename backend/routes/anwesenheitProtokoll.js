@@ -3,6 +3,7 @@ const express = require("express");
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require("../db");
+const { getSecureDojoId } = require("../middleware/tenantSecurity");
 
 // POST: Anwesenheit speichern (mehrere Einträge) - Verbessert
 router.post("/", (req, res) => {
@@ -64,15 +65,18 @@ router.post("/", (req, res) => {
 
 // GET: Anwesenheiten für Kursstunde + Datum abrufen - Verbessert
 router.get("/", (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
+
   const { stundenplan_id, datum, mitglied_id, status } = req.query;
 
   // Base Query
   let sql = `
-    SELECT 
-      ap.mitglied_id, 
+    SELECT
+      ap.mitglied_id,
       ap.stundenplan_id,
       ap.datum,
-      ap.status, 
+      ap.status,
       ap.bemerkung,
       ap.erstellt_am,
       m.vorname,
@@ -89,6 +93,12 @@ router.get("/", (req, res) => {
   `;
 
   const params = [];
+
+  // 🔒 Dojo-Isolation: Nur eigene Einträge
+  if (secureDojoId) {
+    sql += " AND m.dojo_id = ?";
+    params.push(secureDojoId);
+  }
 
   // Filter anwenden
   if (stundenplan_id) {

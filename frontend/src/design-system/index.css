@@ -15,7 +15,8 @@
 
 /* ========== THEME VARIANTS ========== */
 @import './themes/theme-midnight.css';
-@import './themes/theme-tda-vib.css';
+/* theme-tda-vib.css wird in main.jsx NACH allen Legacy-CSS geladen —
+   so gewinnt [data-theme="tda-vib"] über :root Dark-Values in themes.css */
 
 /* ========== COMPONENT STYLES ========== */
 @import './components/Button.css';

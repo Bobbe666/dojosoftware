@@ -287,8 +287,7 @@ const TresenUebersicht = () => {
         className="stats-floating-bar tu-stats-floating-bar"
       >
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">👥</span>
           <span className="u-heading-primary">
@@ -300,8 +299,7 @@ const TresenUebersicht = () => {
         </div>
 
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">✅</span>
           <span className="u-heading-primary">
@@ -313,8 +311,7 @@ const TresenUebersicht = () => {
         </div>
 
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">📱</span>
           <span className="u-heading-primary">
@@ -326,8 +323,7 @@ const TresenUebersicht = () => {
         </div>
 
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">🥋</span>
           <span className="u-heading-primary">
@@ -339,8 +335,7 @@ const TresenUebersicht = () => {
         </div>
 
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">🎖️</span>
           <span className="u-heading-primary">
@@ -352,8 +347,7 @@ const TresenUebersicht = () => {
         </div>
 
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">👨‍🏫</span>
           <span className="u-heading-primary">
@@ -365,8 +359,7 @@ const TresenUebersicht = () => {
         </div>
 
         <div 
-          className="stat-item"
-          className="tu-stat-item"
+          className="stat-item tu-stat-item"
         >
           <span className="tu-icon-sm">💰</span>
           <span className="u-heading-primary">

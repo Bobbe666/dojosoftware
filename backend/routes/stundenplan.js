@@ -2,26 +2,37 @@ const express = require("express");
 const logger = require('../utils/logger');
 const db = require("../db"); // mysql2 pool
 const router = express.Router();
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
 
 // Stundenplan abrufen
 router.get("/", async (req, res) => {
-  // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
-  let dojo_id = req.query.dojo_id;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token (ignoriert Query-Params für normale User)
+  const secureDojoId = getSecureDojoId(req);
+  const isAdmin = isSuperAdmin(req);
   const { standort_id } = req.query; // Optional standort filter
 
-  if (req.user && req.user.dojo_id) {
-      dojo_id = req.user.dojo_id.toString();
-      logger.debug('🔒 Stundenplan Tenant-Filter erzwungen:', { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
-  }
+  logger.debug('🔒 Stundenplan Tenant-Filter:', { secureDojoId, isAdmin });
 
   // 🔒 DOJO-FILTER: Baue WHERE-Bedingung
   const whereConditions = [];
   const queryParams = [];
 
-  if (dojo_id) {
+  if (secureDojoId) {
+    // Einzelnes Dojo (normaler Admin oder Super-Admin mit gewähltem Dojo)
     whereConditions.push('k.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
+  } else if (isAdmin && req.query.dojo_ids) {
+    // Super-Admin "Alle Dojos" Modus: nur zugeordnete Dojos
+    const ids = req.query.dojo_ids.split(',').map(Number).filter(n => n > 0 && !isNaN(n));
+    if (ids.length > 0) {
+      whereConditions.push(`k.dojo_id IN (${ids.map(() => '?').join(',')})`);
+      queryParams.push(...ids);
+    }
+  } else if (!isAdmin) {
+    // Kein Dojo-Filter für normalen User → nichts zurückgeben
+    return res.json([]);
   }
+  // Super-Admin ohne jeglichen Filter → alle Daten (wird durch Frontend-Guard verhindert)
 
   // Add standort filter if provided
   if (standort_id && standort_id !== 'all') {
@@ -46,7 +57,8 @@ router.get("/", async (req, res) => {
       t.nachname AS trainer_nachname,
       r.name AS raumname,
       st.name AS standort_name,
-      st.farbe AS standort_farbe
+      st.farbe AS standort_farbe,
+      k.max_teilnehmer
     FROM stundenplan s
     LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
     LEFT JOIN trainer t ON k.trainer_id = t.trainer_id

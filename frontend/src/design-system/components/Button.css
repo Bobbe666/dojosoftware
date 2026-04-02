@@ -94,11 +94,11 @@
 .ds-btn--outline-gold {
   background: transparent;
   color: var(--color-gold);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 .ds-btn--outline-gold:hover:not(:disabled) {
-  background: rgba(255, 215, 0, 0.08);
-  border-color: rgba(255, 215, 0, 0.5);
+  background: var(--primary-alpha-08);
+  border-color: var(--primary-alpha-50);
 }
 
 /* Success — Grün */

@@ -10,11 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const { promisify } = require('util');
 
-const logger = {
-  info: (...args) => console.log('[INFO]', ...args),
-  warn: (...args) => console.warn('[WARN]', ...args),
-  error: (...args) => console.error('[ERROR]', ...args)
-};
+const logger = require('../utils/logger');
 
 const queryAsync = promisify(db.query).bind(db);
 
@@ -416,7 +412,7 @@ const generatePruefungenSection = (doc, exams, currentY, logoPath, mitglied) => 
   } else {
     // Nur die letzten 10 Prüfungen anzeigen
     const recentExams = exams.slice(0, 10);
-    console.log(`📊 Prüfungen: Zeige ${recentExams.length} von ${exams.length} Prüfungen`);
+    logger.debug(`Prüfungen: Zeige ${recentExams.length} von ${exams.length} Prüfungen`);
     if (exams.length > 10) {
       doc.fontSize(7).fillColor('#999999').font('Helvetica-Oblique')
          .text(`Hinweis: Es werden nur die letzten 10 von ${exams.length} Prüfungen angezeigt`, margin, currentY);
@@ -709,8 +705,7 @@ async function generateMitgliedDetailPDF(mitgliedId, options = {}) {
       doc.on('end', () => {
         const pdfBuffer = Buffer.concat(chunks);
         const pageCount = doc.bufferedPageRange().count;
-        logger.info(`✅ Vollständiges PDF generiert: ${pageCount} Seiten, ${pdfBuffer.length} bytes`);
-        console.log(`📄 PDF-Statistik: ${pageCount} Seiten generiert`);
+        logger.info(`PDF generiert: ${pageCount} Seiten, ${pdfBuffer.length} bytes`);
         resolve(pdfBuffer);
       });
       doc.on('error', reject);

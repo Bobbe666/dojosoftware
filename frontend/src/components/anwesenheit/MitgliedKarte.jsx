@@ -7,7 +7,9 @@ const MitgliedKarte = ({
   mitglied,
   anwesenheitEintrag = { status: '', bemerkung: '', gespeichert: false },
   isFromSearch = false,
-  onClick
+  onClick,
+  onVerletzung,
+  onVerkauf,
 }) => {
   const navigate = useNavigate();
   const id = mitglied.mitglied_id || mitglied.id;
@@ -97,6 +99,24 @@ const MitgliedKarte = ({
               <span>👤</span>
               <span>Mitglied öffnen</span>
             </button>
+            {onVerkauf && (
+              <button
+                onClick={(e) => { e.stopPropagation(); closeMenu(); onVerkauf(mitglied); }}
+                className="mk-context-btn"
+              >
+                <span>🛒</span>
+                <span>Verkauf starten</span>
+              </button>
+            )}
+            {onVerletzung && (
+              <button
+                onClick={(e) => { e.stopPropagation(); closeMenu(); onVerletzung(mitglied); }}
+                className="mk-context-btn"
+              >
+                <span>🤕</span>
+                <span>Verletzung erfassen</span>
+              </button>
+            )}
           </div>
         </>,
         document.body

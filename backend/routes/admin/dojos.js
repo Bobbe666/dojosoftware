@@ -97,7 +97,7 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
 
     const whereClause = filter === 'managed'
       ? `WHERE d.ist_aktiv = TRUE AND (d.id = 2 OR d.id NOT IN (
-          SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2
+          SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2 AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
         ))`
       : '';
 

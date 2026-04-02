@@ -2,10 +2,18 @@ const express = require("express");
 const logger = require('../utils/logger');
 const db = require("../db");
 const router = express.Router();
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // Alle Trainer abrufen (inkl. Mehrfachzuordnung der Stile)
 router.get("/", (req, res) => {
     const dojoId = req.user?.dojo_id || req.dojo_id;
+
+    // Debug logging
+    logger.info('Trainer GET Request:', {
+        user: req.user,
+        dojo_id: req.dojo_id,
+        calculated_dojoId: dojoId
+    });
 
     // Super-Admin (dojo_id = null): Kann Trainer aller zentral verwalteten Dojos sehen
     // Normaler Admin: Muss dojo_id haben
@@ -25,7 +33,7 @@ router.get("/", (req, res) => {
     if (dojoId === null || dojoId === undefined) {
         // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
         query += ` WHERE t.dojo_id NOT IN (
-            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
         )`;
     } else {
         // Normaler Admin: Nur eigenes Dojo
@@ -187,96 +195,94 @@ router.delete("/:id", (req, res) => {
 
 router.get('/notification-recipients', async (req, res) => {
   try {
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const secureDojoId = getSecureDojoId(req);
 
-    const db = require('../db');
     let memberEmails = [];
     let trainerEmails = [];
     let personalEmails = [];
 
-    // Hole Mitglieder mit Email
+    const dojoCondition = secureDojoId ? ' AND dojo_id = ?' : '';
+    const dojoParam = secureDojoId ? [secureDojoId] : [];
+
+    // Hole Mitglieder mit Email (nur eigenes Dojo)
     try {
       memberEmails = await new Promise((resolve, reject) => {
         db.query(`
-          SELECT DISTINCT 
-            COALESCE(email, '') as email, 
-            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
+          SELECT DISTINCT
+            COALESCE(email, '') as email,
+            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name,
             'mitglied' as type
-          FROM mitglieder 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM mitglieder
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoCondition}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoParam, (err, results) => {
           if (err) {
-
             resolve([]);
           } else {
-
             resolve(results);
           }
         });
       });
     } catch (error) {
-
       memberEmails = [];
     }
 
-    // Hole Trainer mit Email
+    // Hole Trainer mit Email (nur eigenes Dojo)
     try {
       trainerEmails = await new Promise((resolve, reject) => {
         db.query(`
-          SELECT DISTINCT 
-            COALESCE(email, '') as email, 
-            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
+          SELECT DISTINCT
+            COALESCE(email, '') as email,
+            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name,
             'trainer' as type
-          FROM trainer 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM trainer
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoCondition}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoParam, (err, results) => {
           if (err) {
-
             resolve([]);
           } else {
-
             resolve(results);
           }
         });
       });
     } catch (error) {
-
       trainerEmails = [];
     }
 
-    // Hole Personal mit Email
+    // Hole Personal mit Email (nur eigenes Dojo)
     try {
       personalEmails = await new Promise((resolve, reject) => {
         db.query(`
-          SELECT DISTINCT 
-            COALESCE(email, '') as email, 
-            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name, 
+          SELECT DISTINCT
+            COALESCE(email, '') as email,
+            CONCAT(COALESCE(vorname, ''), ' ', COALESCE(nachname, '')) as name,
             'personal' as type
-          FROM personal 
-          WHERE email IS NOT NULL 
-            AND email != '' 
+          FROM personal
+          WHERE email IS NOT NULL
+            AND email != ''
             AND email != 'NULL'
             AND email LIKE '%@%'
+            ${dojoCondition}
           ORDER BY name
-        `, (err, results) => {
+        `, dojoParam, (err, results) => {
           if (err) {
-
             resolve([]);
           } else {
-
             resolve(results);
           }
         });
       });
     } catch (error) {
-
       personalEmails = [];
     }
 

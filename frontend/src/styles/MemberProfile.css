@@ -72,7 +72,7 @@
     top: auto !important;
     min-height: unset !important;
     border-right: none !important;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 1px solid var(--primary-alpha-20);
     padding: 0 !important;
     overflow: visible;
   }

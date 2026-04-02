@@ -278,7 +278,8 @@ router.post("/", (req, res) => {
         csv_datei_pfad,
         xml_datei_pfad,
         ersteller_user_id,
-        notizen
+        notizen,
+        dojo_id
     } = req.body;
 
     if (!buchungsnummer || !anzahl_buchungen || !betrag) {
@@ -289,6 +290,7 @@ router.post("/", (req, res) => {
 
     const insertQuery = `
         INSERT INTO zahllaeufe (
+            dojo_id,
             buchungsnummer,
             forderungen_bis,
             geplanter_einzug,
@@ -300,14 +302,15 @@ router.post("/", (req, res) => {
             xml_datei_pfad,
             ersteller_user_id,
             notizen
-        ) VALUES (?, ?, ?, ?, 'geplant', ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, 'geplant', ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
+        dojo_id || null,
         buchungsnummer,
         forderungen_bis,
         geplanter_einzug,
-        zahlungsanbieter || 'SEPA (Finion AG)',
+        zahlungsanbieter || 'SEPA (Lastschrift)',
         anzahl_buchungen,
         betrag,
         csv_datei_pfad,

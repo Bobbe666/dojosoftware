@@ -24,12 +24,16 @@ import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Lastschriftlauf.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import openApiBlob from '../utils/openApiBlob';
+import LastschriftAutomatik from './LastschriftAutomatik';
+import '../styles/LastschriftAutomatik.css';
 
 
 const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const navigate = useNavigate();
   const { activeDojo } = useDojoContext();
   const dojoId = dojoIdOverride || activeDojo?.id || activeDojo;
+  const [activeTab, setActiveTab] = useState('manuell');
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [missingMandates, setMissingMandates] = useState([]);
@@ -40,11 +44,77 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [selectedBank, setSelectedBank] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
 
+  // Zahllauf erstellen State
+  const [zahllaufCreating, setZahllaufCreating] = useState(false);
+  const [zahllaufCreated, setZahllaufCreated] = useState(null);
+
   // Stripe SEPA State
   const [stripeStatus, setStripeStatus] = useState(null);
   const [stripeProcessing, setStripeProcessing] = useState(false);
   const [stripeSetupProgress, setStripeSetupProgress] = useState(null);
   const [stripeBatchResult, setStripeBatchResult] = useState(null);
+
+  // Vorschau ein-/ausklappen
+  const [previewOpen, setPreviewOpen] = useState(true);
+
+  // Nicht-im-Lauf Übersicht
+  const [notInRun, setNotInRun] = useState(null);
+  const [notInRunOpen, setNotInRunOpen] = useState(false);
+  const [notInRunLoading, setNotInRunLoading] = useState(false);
+
+  const loadNotInRun = async () => {
+    setNotInRunLoading(true);
+    try {
+      const dojoParam = numericDojoId ? `&dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/lastschriftlauf/not-in-run?monat=${selectedMonth}&jahr=${selectedYear}${dojoParam}`
+      );
+      const data = await response.json();
+      setNotInRun(data);
+    } catch (e) {
+      setNotInRun({ success: false, error: e.message });
+    } finally {
+      setNotInRunLoading(false);
+    }
+  };
+
+  // Suche + Sortierung
+  const [previewSearch, setPreviewSearch] = useState('');
+  const [previewMonthFilter, setPreviewMonthFilter] = useState('');
+  const [previewSort, setPreviewSort] = useState({ field: 'name', dir: 'asc' });
+
+  const toggleSort = (field) => {
+    setPreviewSort(prev => ({
+      field,
+      dir: prev.field === field && prev.dir === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const filteredPreview = React.useMemo(() => {
+    if (!preview?.preview) return [];
+    let items = [...preview.preview];
+    if (previewSearch.trim()) {
+      const q = previewSearch.toLowerCase();
+      items = items.filter(i =>
+        i.name?.toLowerCase().includes(q) ||
+        String(i.mitglied_id).includes(q) ||
+        i.iban?.toLowerCase().includes(q)
+      );
+    }
+    if (previewMonthFilter) {
+      items = items.filter(i => i.offene_monate?.includes(previewMonthFilter));
+    }
+    items.sort((a, b) => {
+      let va, vb;
+      if (previewSort.field === 'name') { va = a.name || ''; vb = b.name || ''; }
+      else if (previewSort.field === 'betrag') { va = parseFloat(a.betrag || 0); vb = parseFloat(b.betrag || 0); }
+      else if (previewSort.field === 'monate') { va = a.anzahl_monate || 0; vb = b.anzahl_monate || 0; }
+      else { va = a.name || ''; vb = b.name || ''; }
+      if (typeof va === 'string') return previewSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      return previewSort.dir === 'asc' ? va - vb : vb - va;
+    });
+    return items;
+  }, [preview, previewSearch, previewMonthFilter, previewSort]);
 
   // Toggle für Beiträge-Details Dropdown
   const toggleRowExpanded = (mitgliedId) => {
@@ -59,11 +129,17 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     });
   };
 
+  const parsedDojoId = dojoId && parseInt(dojoId, 10) ? parseInt(dojoId, 10) : null;
+  // Fallback: dojo_id der gewählten Bank verwenden wenn kein Dojo-Kontext (Super-Admin global)
+  const selectedBankObj = availableBanks.find(b => b.id === selectedBank);
+  const numericDojoId = parsedDojoId || selectedBankObj?.dojo_id || null;
+
   const loadPreview = async () => {
     try {
       setLoading(true);
+      const dojoParam = numericDojoId ? `&dojo_id=${numericDojoId}` : '';
       // Monat und Jahr als Query-Parameter übergeben
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview?monat=${selectedMonth}&jahr=${selectedYear}`);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/preview?monat=${selectedMonth}&jahr=${selectedYear}${dojoParam}`);
 
       if (!response.ok) {
         let errorMessage = 'Fehler beim Laden der Vorschau';
@@ -99,7 +175,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   const loadMissingMandates = async () => {
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/missing-mandates`);
+      const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/missing-mandates${dojoParam}`);
       if (response.ok) {
         const data = await response.json();
         setMissingMandates(data.members || []);
@@ -111,7 +188,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   const loadBanks = async () => {
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/banken`);
+      const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/banken${dojoParam}`);
       if (response.ok) {
         const data = await response.json();
         const banken = data.banken || [];
@@ -129,9 +207,9 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   // Stripe Status laden
   const loadStripeStatus = async () => {
-    if (!dojoId) return;
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/status?dojo_id=${dojoId}`);
+      const params = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/status${params}`);
       if (response.ok) {
         const data = await response.json();
         setStripeStatus(data);
@@ -151,10 +229,11 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     setStripeSetupProgress({ status: 'running', message: 'Setup wird durchgeführt...' });
 
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/setup-all`, {
+      const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/setup-all${dojoParam}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dojo_id: dojoId })
+        body: JSON.stringify({ dojo_id: numericDojoId })
       });
 
       const data = await response.json();
@@ -183,6 +262,35 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     }
   };
 
+  // Stripe: Status letzten Monat bei Stripe abfragen und Beiträge aktualisieren
+  const [stripeSyncing, setStripeSyncing] = useState(false);
+  const [stripeSyncResult, setStripeSyncResult] = useState(null);
+
+  const handleStripeSyncVormonat = async () => {
+    if (!window.confirm(
+      `Alle offenen Stripe-Lastschriften prüfen?\n\n` +
+      `Alle noch offenen Lastschriften (alle Monate) werden bei Stripe geprüft ` +
+      `und erfolgreich eingezogene Beiträge automatisch auf "bezahlt" gesetzt.`
+    )) return;
+
+    setStripeSyncing(true);
+    setStripeSyncResult(null);
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/payment-provider/stripe/sync-lastschriften`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: numericDojoId })
+      });
+      const data = await response.json();
+      setStripeSyncResult(data);
+      if (data.succeeded > 0) await loadPreview();
+    } catch (error) {
+      setStripeSyncResult({ success: false, error: error.message });
+    } finally {
+      setStripeSyncing(false);
+    }
+  };
+
   // Stripe Lastschrift ausführen
   const handleStripeExecute = async () => {
     if (!preview || !preview.preview || preview.preview.length === 0) {
@@ -205,11 +313,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     setStripeBatchResult(null);
 
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/execute`, {
+      const dojoParam = numericDojoId ? `?dojo_id=${numericDojoId}` : '';
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/stripe/execute${dojoParam}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dojo_id: dojoId,
+          dojo_id: numericDojoId,
           monat: selectedMonth,
           jahr: selectedYear,
           mitglieder: preview.preview.map(m => ({
@@ -256,11 +365,68 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     loadBanks();
     loadMissingMandates();
     loadStripeStatus();
-  }, [dojoId]);
+  }, [activeDojo]);
 
   useEffect(() => {
     loadPreview();
   }, [selectedMonth, selectedYear]);
+
+  const handleCreateZahllauf = async () => {
+    if (!preview || preview.count === 0) {
+      alert('Keine Lastschriften vorhanden – Vorschau zuerst laden.');
+      return;
+    }
+    if (!selectedBank) {
+      alert('Bitte eine Einzugsbank auswählen.');
+      return;
+    }
+    const bankInfo = availableBanks.find(b => b.id === selectedBank);
+    const monatStr = String(selectedMonth).padStart(2, '0');
+    // Buchungsnummer mit Zeitstempel eindeutig machen (UNIQUE constraint in DB)
+    const ts = Date.now().toString().slice(-4);
+    const buchungsnummer = `LS-${selectedYear}-${monatStr}-${ts}`;
+    // Letzter Tag des Abrechnungsmonats als forderungen_bis
+    const forderungen_bis = new Date(selectedYear, selectedMonth, 0).toISOString().substring(0, 10);
+    // 5. des Folgemonats als geplanter Einzug
+    const einzugDate = new Date(selectedYear, selectedMonth, 5);
+    const geplanter_einzug = einzugDate.toISOString().substring(0, 10);
+
+    const confirm = window.confirm(
+      `Zahllauf in der Datenbank speichern?\n\n` +
+      `Buchungsnummer: ${buchungsnummer}\n` +
+      `Forderungen bis: ${forderungen_bis}\n` +
+      `Geplanter Einzug: ${geplanter_einzug}\n` +
+      `Anzahl: ${preview.count} Mandate\n` +
+      `Betrag: ${preview.total_amount} €\n` +
+      `Bank: ${bankInfo?.bank_name || 'Unbekannt'}`
+    );
+    if (!confirm) return;
+
+    try {
+      setZahllaufCreating(true);
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/zahllaeufe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          buchungsnummer,
+          forderungen_bis,
+          geplanter_einzug,
+          zahlungsanbieter: bankInfo?.bank_typ === 'stripe' ? 'Stripe SEPA' : 'SEPA (Lastschrift)',
+          anzahl_buchungen: preview.count,
+          betrag: preview.total_amount,
+          dojo_id: dojoId || null,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Fehler beim Erstellen');
+      setZahllaufCreated(data.zahllauf_id);
+      alert(`✅ Zahllauf #${data.zahllauf_id} erfolgreich gespeichert!\nBuchungsnummer: ${buchungsnummer}`);
+    } catch (err) {
+      alert('Fehler beim Erstellen des Zahllaufs: ' + err.message);
+    } finally {
+      setZahllaufCreating(false);
+    }
+  };
 
   const handleExport = () => {
     if (!preview || preview.count === 0) {
@@ -291,9 +457,9 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     const exportParams = `?monat=${selectedMonth}&jahr=${selectedYear}&bank_id=${selectedBank}`;
 
     if (selectedFormat === 'csv') {
-      window.open(`${config.apiBaseUrl}/lastschriftlauf${exportParams}`, '_blank');
+      openApiBlob(`${config.apiBaseUrl}/lastschriftlauf${exportParams}`, { download: true, filename: `lastschrift-${selectedYear}-${selectedMonth}.csv` });
     } else if (selectedFormat === 'xml') {
-      window.open(`${config.apiBaseUrl}/lastschriftlauf/xml${exportParams}`, '_blank');
+      openApiBlob(`${config.apiBaseUrl}/lastschriftlauf/xml${exportParams}`, { download: true, filename: `lastschrift-${selectedYear}-${selectedMonth}.xml` });
     }
   };
 
@@ -344,6 +510,31 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         </div>
       </div>
       )}
+
+      {/* Tab-Navigation */}
+      <div className="ll-tab-nav">
+        <button
+          className={`ll-tab-btn${activeTab === 'manuell' ? ' ll-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('manuell')}
+        >
+          <CreditCard size={15} /> Manueller Lauf
+        </button>
+        <button
+          className={`ll-tab-btn${activeTab === 'automatik' ? ' ll-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('automatik')}
+        >
+          <Zap size={15} /> Automatischer Einzug
+        </button>
+      </div>
+
+      {/* Tab: Automatischer Einzug */}
+      {activeTab === 'automatik' && (
+        <LastschriftAutomatik dojoId={dojoId} />
+      )}
+
+      {/* Tab: Manueller Lauf — bestehender Inhalt */}
+      {activeTab === 'manuell' && (
+      <>
 
       {/* Hauptcontainer: Links Info + Stats, Rechts Warning */}
       <div className="main-layout-container">
@@ -551,6 +742,15 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           </button>
 
           <button
+            className="logout-button ll-nowrap ll-create-btn"
+            onClick={handleCreateZahllauf}
+            disabled={zahllaufCreating || !preview || preview.count === 0}
+          >
+            {zahllaufCreating ? <Loader size={16} className="spin" /> : <CheckCircle size={16} />}
+            {zahllaufCreated ? `✓ Lauf #${zahllaufCreated}` : 'Zahllauf erstellen'}
+          </button>
+
+          <button
             className="logout-button ll-nowrap"
             onClick={handleExport}
             disabled={loading || !preview || preview.count === 0}
@@ -583,6 +783,16 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               >
                 {stripeProcessing ? <Loader size={16} className="spin" /> : <Zap size={16} />}
                 Mit Stripe einziehen
+              </button>
+
+              <button
+                className="logout-button ll-stripe-sync-btn"
+                onClick={handleStripeSyncVormonat}
+                disabled={stripeSyncing}
+                title="Alle offenen Lastschriften bei Stripe abfragen und Beiträge automatisch auf bezahlt setzen"
+              >
+                {stripeSyncing ? <Loader size={16} className="spin" /> : <RefreshCw size={16} />}
+                Stripe Sync
               </button>
             </>
           )}
@@ -637,28 +847,89 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
             )}
           </div>
         )}
+
+        {/* Sync-Ergebnis */}
+        {stripeSyncResult && (
+          <div className={`ll-stripe-result${!stripeSyncResult.success ? ' ll-stripe-result--error' : ' ll-stripe-result--ok'}`}>
+            <div className="ll-flex-between">
+              <div className="u-flex-row-sm">
+                {!stripeSyncResult.success ? (
+                  <AlertCircle size={16} className="u-text-error" />
+                ) : (
+                  <CheckCircle size={16} className="u-text-success" />
+                )}
+                <span>
+                  {!stripeSyncResult.success
+                    ? `Sync-Fehler: ${stripeSyncResult.error || stripeSyncResult.details}`
+                    : `Sync abgeschlossen (${stripeSyncResult.synced} geprüft): ` +
+                      `${stripeSyncResult.succeeded} bezahlt, ` +
+                      `${stripeSyncResult.failed} fehlgeschlagen, ` +
+                      `${stripeSyncResult.still_processing} noch offen`
+                  }
+                </span>
+              </div>
+              <button onClick={() => setStripeSyncResult(null)} className="ll-dismiss-btn">×</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Vorschau Tabelle */}
       {preview && preview.preview && preview.preview.length > 0 && (
         <div className="preview-card">
-          <h2>Vorschau ({preview.count} Einträge) - Gesamtsumme: {formatCurrency(preview.total_amount)}</h2>
+          <div className="ll-not-in-run-header" onClick={() => setPreviewOpen(o => !o)}>
+            <h2 style={{margin:0}}>Vorschau ({preview.count} Einträge) - Gesamtsumme: {formatCurrency(preview.total_amount)}</h2>
+            {previewOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </div>
+
+          {previewOpen && <>
+          {/* Such- und Filterleiste */}
+          <div className="ll-filter-bar">
+            <input
+              type="text"
+              className="ll-filter-input"
+              placeholder="Name, ID oder IBAN suchen…"
+              value={previewSearch}
+              onChange={e => setPreviewSearch(e.target.value)}
+            />
+            <input
+              type="text"
+              className="ll-filter-input ll-filter-input--sm"
+              placeholder="Monat (z.B. 03/2026)"
+              value={previewMonthFilter}
+              onChange={e => setPreviewMonthFilter(e.target.value)}
+            />
+            {(previewSearch || previewMonthFilter) && (
+              <button className="ll-filter-clear" onClick={() => { setPreviewSearch(''); setPreviewMonthFilter(''); }}>
+                ✕ Filter löschen
+              </button>
+            )}
+            {(previewSearch || previewMonthFilter) && (
+              <span className="ll-filter-count">{filteredPreview.length} von {preview.count}</span>
+            )}
+          </div>
 
           <div className="table-container">
             <table className="preview-table">
               <thead>
                 <tr>
                   <th className="ll-th-expand"></th>
-                  <th>Mitglied</th>
+                  <th className="ll-th-sortable" onClick={() => toggleSort('name')}>
+                    Mitglied {previewSort.field === 'name' ? (previewSort.dir === 'asc' ? '↑' : '↓') : '↕'}
+                  </th>
                   <th>IBAN</th>
-                  <th>Offene Monate</th>
-                  <th>Gesamtbetrag</th>
+                  <th className="ll-th-sortable" onClick={() => toggleSort('monate')}>
+                    Offene Monate {previewSort.field === 'monate' ? (previewSort.dir === 'asc' ? '↑' : '↓') : '↕'}
+                  </th>
+                  <th className="ll-th-sortable" onClick={() => toggleSort('betrag')}>
+                    Gesamtbetrag {previewSort.field === 'betrag' ? (previewSort.dir === 'asc' ? '↑' : '↓') : '↕'}
+                  </th>
                   <th>Mandatsreferenz</th>
                   <th>Tarif</th>
                 </tr>
               </thead>
               <tbody>
-                {preview.preview.map((item, index) => (
+                {filteredPreview.map((item, index) => (
                   <React.Fragment key={index}>
                     <tr>
                       <td className="ll-td-expand"
@@ -732,6 +1003,50 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               </tbody>
             </table>
           </div>
+          </>}
+        </div>
+      )}
+
+      {/* Nicht im Lauf */}
+      {preview && (
+        <div className="preview-card ll-not-in-run-card">
+          <div className="ll-not-in-run-header" onClick={() => { setNotInRunOpen(o => !o); if (!notInRun) loadNotInRun(); }}>
+            <h3>Wer fehlt im Einzug? {notInRun ? `(${notInRun.count})` : ''}</h3>
+            {notInRunOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </div>
+          {notInRunOpen && (
+            <div className="ll-not-in-run-body">
+              {notInRunLoading && <p className="u-text-secondary">Lade…</p>}
+              {notInRun && notInRun.success && notInRun.members?.length === 0 && (
+                <p className="u-text-secondary">Alle SEPA-Mitglieder sind im Lauf enthalten.</p>
+              )}
+              {notInRun && notInRun.success && notInRun.members?.length > 0 && (
+                <table className="preview-table">
+                  <thead>
+                    <tr>
+                      <th>Mitglied</th>
+                      <th>Vertragsstatus</th>
+                      <th>Offene Beiträge</th>
+                      <th>Grund</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {notInRun.members.map(m => (
+                      <tr key={m.mitglied_id}>
+                        <td><strong>{m.name}</strong><br /><small>ID: {m.mitglied_id}</small></td>
+                        <td><span className={`badge badge-${m.vertrag_status === 'aktiv' ? 'success' : 'warning'}`}>{m.vertrag_status || '—'}</span></td>
+                        <td>{m.offene_beitraege}</td>
+                        <td><span className="badge badge-danger">{m.grund}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {notInRun && !notInRun.success && (
+                <p className="u-text-error">Fehler: {notInRun.error}</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -756,6 +1071,9 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           </li>
         </ul>
       </div>
+
+      </>
+      )}
     </div>
   );
 };

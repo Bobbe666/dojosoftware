@@ -142,38 +142,6 @@
         }
       }
 
-      /* TDA Corner Badge */
-      .tda-corner-badge {
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        z-index: 999;
-        width: 70px;
-        height: 70px;
-        border-radius: 50%;
-        overflow: hidden;
-        background: linear-gradient(145deg, rgba(20,20,25,0.95), rgba(10,10,12,0.98));
-        border: 2px solid rgba(255, 215, 0, 0.3);
-        box-shadow:
-          0 0 20px rgba(255, 107, 53, 0.15),
-          0 0 30px rgba(255, 215, 0, 0.08);
-      }
-
-      .tda-corner-badge img {
-        width: 110%;
-        height: 110%;
-        object-fit: cover;
-        margin: -5%;
-      }
-
-      @media (max-width: 768px) {
-        .tda-corner-badge {
-          top: 80px;
-          right: 15px;
-          width: 55px;
-          height: 55px;
-        }
-      }
     </style>
   </head>
   <body>
@@ -185,11 +153,6 @@
       </div>
     </div>
 
-    <!-- TDA Systems Logo oben rechts - Nur auf Startseite -->
-    <div class="tda-corner-badge" id="cornerBadge" style="display: none;">
-      <img src="/tda-systems-logo.png" alt="TDA Systems" />
-    </div>
-    
     <div id="root"></div>
 
     <script type="module" src="/src/main.jsx"></script>

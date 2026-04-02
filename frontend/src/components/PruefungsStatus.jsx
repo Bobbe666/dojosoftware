@@ -1,32 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar, Edit3, Save, X, Award, Clock, CheckCircle, AlertCircle, FileText, Download } from 'lucide-react';
+import { X, CheckCircle, Printer, Clock, Calendar, TrendingUp, Plus } from 'lucide-react';
 import '../styles/PruefungsStatus.css';
 
-const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
+const API_BASE = '/api';
+
+const PruefungsStatus = ({ mitgliedId, readOnly = false, mitglied = null }) => {
   const [stileDaten, setStileDaten] = useState([]);
+  const [graduierungenProStil, setGraduierungenProStil] = useState({}); // stil_id → [{ graduierung_id, name, farbe_hex, reihenfolge }]
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAnmerkungenModal, setShowAnmerkungenModal] = useState(false);
-  const [anmerkungen, setAnmerkungen] = useState('');
-  const [tempAnmerkungen, setTempAnmerkungen] = useState('');
+  const [druckenId, setDruckenId] = useState(null); // pruefung_id die gerade gedruckt wird
 
-  // Teilnahme-Bestätigung Modal State
+  // Historische Prüfung Modal
+  const [showHistorischModal, setShowHistorischModal] = useState(false);
+  const [historischForm, setHistorischForm] = useState({ stil_name: '', graduierung_name: '', pruefungsdatum: '', bemerkung: '' });
+  const [historischePruefungen, setHistorischePruefungen] = useState([]);
+
+  // Teilnahme Modal
   const [showTeilnahmeModal, setShowTeilnahmeModal] = useState(false);
   const [selectedPruefung, setSelectedPruefung] = useState(null);
   const [teilnahmeBedingungAkzeptiert, setTeilnahmeBedingungAkzeptiert] = useState(false);
   const [teilnahmeLoading, setTeilnahmeLoading] = useState(false);
-
-  // Historische Prüfung Modal State (einfache Freitextfelder)
-  const [showHistorischModal, setShowHistorischModal] = useState(false);
-  const [historischForm, setHistorischForm] = useState({
-    stil_name: '',
-    graduierung_name: '',
-    pruefungsdatum: '',
-    bemerkung: ''
-  });
-  const [historischePruefungen, setHistorischePruefungen] = useState([]);
-
 
   useEffect(() => {
     if (mitgliedId) {
@@ -39,714 +34,482 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false }) => {
     try {
       setLoading(true);
       setError(null);
-
-      console.log('🔄 Lade Prüfungsdaten für Mitglied:', mitgliedId);
-
-      // ✅ GEÄNDERT: Lade nur die dem Mitglied zugewiesenen Stile
       const mitgliedStileResponse = await axios.get(`/mitglieder/${mitgliedId}/stile`);
       const zugewieseneStile = mitgliedStileResponse.data?.stile || [];
+      if (zugewieseneStile.length === 0) { setStileDaten([]); setLoading(false); return; }
 
-      console.log('📌 Dem Mitglied zugewiesene Stile:', zugewieseneStile);
-
-      // Wenn keine Stile zugewiesen sind, zeige leere Liste
-      if (zugewieseneStile.length === 0) {
-        console.log('⚠️ Keine Stile zugewiesen');
-        setStileDaten([]);
-        setLoading(false);
-        return;
-      }
-
-      // Lade Prüfungshistorie für alle Stile
-      const historieResponse = await axios.get(`/pruefungen/mitglied/${mitgliedId}/historie`);
+      const [historieResponse, trainingsResponse, ...gradResponses] = await Promise.all([
+        axios.get(`/pruefungen/mitglied/${mitgliedId}/historie`),
+        axios.get(`/anwesenheitProtokoll/pruefung/${mitgliedId}`),
+        ...zugewieseneStile.map(s => axios.get(`/stile/${s.stil_id}/graduierungen`).catch(() => ({ data: [] })))
+      ]);
       const historie = historieResponse.data?.historie || historieResponse.data || [];
-
-      // Lade Trainingsstunden für alle Stile
-      const trainingsResponse = await axios.get(`/anwesenheitProtokoll/pruefung/${mitgliedId}`);
       const trainings = trainingsResponse.data || {};
 
-      console.log('📊 Geladene Daten:', {
-        zugewieseneStile: zugewieseneStile?.length,
-        zugewieseneStileNamen: zugewieseneStile?.map(s => s.stil_name),
-        historie: historie?.length,
-        trainings: trainings,
-        trainingsKeys: Object.keys(trainings || {}),
-        trainingsType: typeof trainings,
-        trainingsStile: trainings.stile,
-        trainingsStatistiken: trainings.statistiken
+      // Graduierungen pro Stil speichern (nach reihenfolge sortiert)
+      // Endpoint gibt Array direkt zurück (nicht { graduierungen: [] })
+      const gradMap = {};
+      zugewieseneStile.forEach((s, i) => {
+        const raw = gradResponses[i]?.data;
+        const grads = Array.isArray(raw) ? raw : (raw?.graduierungen || []);
+        gradMap[s.stil_id] = grads.sort((a, b) => a.reihenfolge - b.reihenfolge);
       });
+      setGraduierungenProStil(gradMap);
 
-      // Gruppiere Daten nach Stilen - ZEIGE NUR ZUGEWIESENE STILE
       const stileMitDaten = zugewieseneStile.map(stil => {
         const stilHistorie = historie.filter(p => p.stil_id === stil.stil_id);
-
-        // 🆕 NEU: Lade stil-spezifische Trainingsstunden
         const stilTrainings = trainings.stile?.[stil.stil_name] || trainings.statistiken || trainings || {};
-
-        console.log(`🔍 Stil ${stil.stil_name} (ID: ${stil.stil_id}):`, {
-          historie: stilHistorie.length,
-          trainings: stilTrainings,
-          trainingsKeys: Object.keys(stilTrainings || {}),
-          stileDaten: trainings.stile
-        });
-
-        // Finde die letzte bestandene Prüfung
         const letztePruefung = stilHistorie
           .filter(p => p.bestanden === true || p.status === 'bestanden')
           .sort((a, b) => new Date(b.pruefungsdatum) - new Date(a.pruefungsdatum))[0];
-
         const naechstePruefung = stilHistorie.find(p => p.status === 'geplant');
-
         return {
           stil_id: stil.stil_id,
           stil_name: stil.stil_name,
-          stil_farbe: '#FFD700', // Standardfarbe für Stile
+          stil_emoji: stil.stil_emoji || '🥋',
           historie: stilHistorie,
           trainingsstunden: stilTrainings,
-          letztePruefung: letztePruefung,
-          naechstePruefung: naechstePruefung,
+          letztePruefung,
+          naechstePruefung,
           aktuelleGraduierung: letztePruefung?.graduierung_nachher || stil.graduierung_name || 'Anfänger',
-          graduierungFarbe: letztePruefung?.farbe_nachher || stil.farbe || '#FFFFFF'
+          graduierungFarbe: letztePruefung?.farbe_nachher || stil.farbe || '#888',
         };
       });
-
-      console.log('🎯 Verarbeitete Stildaten:', stileMitDaten.map(s => ({
-        stil_id: s.stil_id,
-        stil_name: s.stil_name,
-        historie_anzahl: s.historie.length,
-        aktuelle_graduierung: s.aktuelleGraduierung,
-        trainingsstunden_vorhanden: !!s.trainingsstunden
-      })));
-
       setStileDaten(stileMitDaten);
-
-    } catch (error) {
-      console.error('Fehler beim Laden der Prüfungsdaten:', error);
+    } catch (e) {
+      console.error('Fehler beim Laden der Prüfungsdaten:', e);
       setError('Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDatum = (datum) => {
-    if (!datum) return '-';
-    return new Date(datum).toLocaleDateString('de-DE');
-  };
-
-  const getFortschrittsProzent = (stilDaten) => {
-    if (!stilDaten.trainingsstunden) return 0;
-    
-    // Verwende die korrekte Datenstruktur der API
-    const anwesend = parseInt(
-      stilDaten.trainingsstunden.anwesend_stunden || 
-      stilDaten.trainingsstunden.total_stunden || 
-      0
-    );
-    
-    const benoetigt = parseInt(
-      stilDaten.trainingsstunden.requirements?.min_stunden || 
-      20
-    );
-    
-    return Math.round((anwesend / benoetigt) * 100);
-  };
-
-  const getFortschrittsStatus = (prozent) => {
-    if (prozent >= 80) return 'Bereit für Prüfung';
-    if (prozent >= 60) return 'Gut auf dem Weg';
-    if (prozent >= 40) return 'Fortschritt sichtbar';
-    return 'Mehr Training nötig';
-  };
-
-  const handleAnmerkungenSpeichern = async () => {
-    try {
-      const letztePruefung = stileDaten.find(s => s.letztePruefung)?.letztePruefung;
-      if (letztePruefung) {
-        await axios.put(`/pruefungen/${letztePruefung.pruefung_id}`, {
-          anmerkungen: tempAnmerkungen
-        });
-        setAnmerkungen(tempAnmerkungen);
-        setShowAnmerkungenModal(false);
-        loadPruefungsdaten(); // Daten neu laden
-      }
-    } catch (error) {
-      console.error('Fehler beim Speichern der Anmerkungen:', error);
-    }
-  };
-
-  const handleUrkundeDownload = async (pruefungId) => {
-    try {
-      const response = await axios.get(`/pruefungen/${pruefungId}/urkunde/download`, {
-        responseType: 'blob'
-      });
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `urkunde_${pruefungId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('Fehler beim Download der Urkunde:', error);
-    }
-  };
-
-  // Lade historische Prüfungen
   const loadHistorischePruefungen = async () => {
     try {
-      const response = await axios.get('/pruefungen-historisch/mitglied/' + mitgliedId);
-      setHistorischePruefungen(response.data?.data || []);
-    } catch (error) {
-      console.error('Fehler beim Laden historischer Prüfungen:', error);
-    }
+      const r = await axios.get('/pruefungen-historisch/mitglied/' + mitgliedId);
+      setHistorischePruefungen(r.data?.data || []);
+    } catch {}
   };
 
-  // Teilnahme bestätigen
-  const openTeilnahmeModal = (pruefung) => {
-    setSelectedPruefung(pruefung);
-    setTeilnahmeBedingungAkzeptiert(false);
-    setShowTeilnahmeModal(true);
+  const fmt = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+
+  const getFortschritt = (td) => {
+    const anwesend = parseInt(td.trainingsstunden?.anwesend_stunden || td.trainingsstunden?.total_stunden || 0);
+    const benoetigt = parseInt(td.trainingsstunden?.requirements?.min_stunden || 20);
+    return Math.min(100, Math.round((anwesend / benoetigt) * 100));
+  };
+
+  const getMemberName = (pruefung) =>
+    mitglied ? `${mitglied.vorname || ''} ${mitglied.nachname || ''}`.trim()
+      : pruefung?.vorname ? `${pruefung.vorname} ${pruefung.nachname}` : '—';
+
+  const certCSS = `
+  @page { size: A4 landscape; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: transparent; }
+  .cert-page { width: 297mm; height: 210mm; position: relative; break-inside: avoid; page-break-inside: avoid; }
+  .cert-name { position: absolute; width: 100%; top: 64mm; text-align: center; font-family: 'Times New Roman', Georgia, serif; font-size: 22pt; font-style: italic; color: #000; letter-spacing: 0.5px; }
+  .cert-rank { position: absolute; width: 100%; top: 102mm; text-align: center; font-family: 'Times New Roman', Georgia, serif; font-size: 22pt; font-style: italic; color: #000; letter-spacing: 0.5px; }
+  .cert-nummer { position: absolute; width: 100%; top: 165mm; text-align: center; font-family: 'Times New Roman', Georgia, serif; font-size: 11pt; color: #000; letter-spacing: 1px; }
+  .cert-datum { position: absolute; width: 100%; top: 173mm; text-align: center; font-family: 'Times New Roman', Georgia, serif; font-size: 11pt; color: #000; }
+  @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } @page { size: A4 landscape; margin: 0; } }`;
+
+  const buildCertPage = (name, grad, datum, nummer, index) => `
+    <div class="cert-page" style="${index > 0 ? 'page-break-before: always; break-before: page;' : ''}">
+      <div class="cert-name">${name}</div>
+      <div class="cert-rank">${grad}</div>
+      ${nummer ? `<div class="cert-nummer">${nummer}</div>` : ''}
+      <div class="cert-datum">${datum}</div>
+    </div>`;
+
+  // Einzelne Urkunde drucken
+  const druckeUrkunde = async (entry) => {
+    setDruckenId(entry._key);
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) { alert('Bitte Popup-Blocker deaktivieren'); setDruckenId(null); return; }
+
+    const name = getMemberName(entry);
+    const datum = fmt(entry.pruefungsdatum);
+    const grad = entry._displayGrad || '—';
+
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    let urkundennummer = null;
+    try {
+      const r = await fetch(`${API_BASE}/verband-urkunden/naechste-nummer`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const d = await r.json();
+      if (d.success && d.nummer) urkundennummer = d.nummer;
+    } catch {}
+
+    const html = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Urkunde – ${name}</title><style>${certCSS}</style></head><body>${buildCertPage(name, grad, datum, urkundennummer, 0)}</body></html>`;
+    win.document.open(); win.document.write(html); win.document.close(); win.focus();
+    setTimeout(() => { win.print(); setDruckenId(null); }, 400);
+  };
+
+  // Alle Urkunden eines Stils drucken (eine Seite pro Urkunde)
+  const druckeAlleUrkunden = async (entries) => {
+    setDruckenId('alle');
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) { alert('Bitte Popup-Blocker deaktivieren'); setDruckenId(null); return; }
+
+    const name = getMemberName(entries[0]);
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    let baseNr = 0, datePart = '';
+    try {
+      const r = await fetch(`${API_BASE}/verband-urkunden/naechste-nummer`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const d = await r.json();
+      if (d.success && d.nummer) { const p = d.nummer.split('-'); datePart = p[0]; baseNr = parseInt(p[1], 10); }
+    } catch {}
+
+    // Älteste zuerst drucken (chronologisch)
+    const chronoEntries = [...entries].reverse();
+    const pages = chronoEntries.map((e, i) => {
+      const nummer = baseNr > 0 ? `${datePart}-${String(baseNr + i).padStart(5, '0')}` : null;
+      return buildCertPage(name, e._displayGrad || '—', fmt(e.pruefungsdatum), nummer, i);
+    }).join('');
+
+    const html = `<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Urkunden – ${name}</title><style>${certCSS}</style></head><body>${pages}</body></html>`;
+    win.document.open(); win.document.write(html); win.document.close(); win.focus();
+    setTimeout(() => { win.print(); setDruckenId(null); }, 400);
+  };
+
+  // Bestandene Prüfungen expandieren: übersprungene Gurte werden automatisch erkannt
+  const expandBestandene = (bestandene) => {
+    const entries = [];
+    bestandene.forEach((p) => {
+      const grads = graduierungenProStil[p.stil_id] || [];
+
+      // Automatisch übersprungene Graduierungen erkennen
+      let uebersprungene = [];
+      if (grads.length > 0 && p.graduierung_vorher_id && p.graduierung_nachher_id) {
+        const vorherIdx = grads.findIndex(g => g.graduierung_id === p.graduierung_vorher_id);
+        const nachherIdx = grads.findIndex(g => g.graduierung_id === p.graduierung_nachher_id);
+        if (vorherIdx >= 0 && nachherIdx > vorherIdx + 1) {
+          // Alle Stufen zwischen vorher (exkl.) und nachher (exkl.)
+          uebersprungene = grads.slice(vorherIdx + 1, nachherIdx);
+        }
+      } else if (p.graduierung_zwischen) {
+        // Fallback: manuell gesetzter Zwischengurt
+        uebersprungene = [{ name: p.graduierung_zwischen, farbe_hex: '#888' }];
+      }
+
+      // Übersprungene als eigene Einträge hinzufügen (älteste/niedrigste zuerst)
+      uebersprungene.forEach((g, i) => {
+        entries.push({
+          ...p,
+          _key: `${p.pruefung_id}_skip_${i}`,
+          _displayGrad: g.name,
+          _displayFarbe: g.farbe_hex || '#888',
+          _isLatest: false,
+          _isZwischen: true,
+        });
+      });
+
+      // Eigentliche Prüfungsgraduierung
+      entries.push({
+        ...p,
+        _key: `${p.pruefung_id}`,
+        _displayGrad: p.graduierung_nachher,
+        _displayFarbe: p.farbe_nachher || '#888',
+        _isLatest: false,
+        _isZwischen: false,
+      });
+    });
+
+    // Aktuellsten Eintrag (höchster Gurt = letzter Eintrag der neuesten Prüfung) markieren
+    if (bestandene.length > 0) {
+      const neuesteId = `${bestandene[0].pruefung_id}`;
+      const latest = entries.find(e => e._key === neuesteId);
+      if (latest) latest._isLatest = true;
+    }
+    return entries;
   };
 
   const handleTeilnahmeBestaetigen = async () => {
     if (!selectedPruefung || !teilnahmeBedingungAkzeptiert) return;
     setTeilnahmeLoading(true);
     try {
-      await axios.post(`/pruefungen/${selectedPruefung.pruefung_id}/teilnahme-bestaetigen`, {
-        mitglied_id: mitgliedId
-      });
+      await axios.post(`/pruefungen/${selectedPruefung.pruefung_id}/teilnahme-bestaetigen`, { mitglied_id: mitgliedId });
       setShowTeilnahmeModal(false);
       setSelectedPruefung(null);
       loadPruefungsdaten();
     } catch (err) {
-      const msg = err.response?.data?.error || 'Fehler beim Bestätigen';
-      alert('❌ ' + msg);
+      alert('❌ ' + (err.response?.data?.error || 'Fehler beim Bestätigen'));
     } finally {
       setTeilnahmeLoading(false);
     }
   };
 
-  // Öffne Modal für historische Prüfung
-  const openHistorischModal = () => {
-    setHistorischForm({
-      stil_name: '',
-      graduierung_name: '',
-      pruefungsdatum: '',
-      bemerkung: ''
-    });
-    setShowHistorischModal(true);
-  };
-
-  // Speichere historische Prüfung
   const handleSaveHistorisch = async () => {
     if (!historischForm.stil_name || !historischForm.graduierung_name || !historischForm.pruefungsdatum) {
-      alert('Bitte Stil, Graduierung und Datum eingeben');
-      return;
+      alert('Bitte Stil, Graduierung und Datum eingeben'); return;
     }
-
     try {
-      await axios.post('/pruefungen-historisch', {
-        mitglied_id: mitgliedId,
-        ...historischForm
-      });
-
+      await axios.post('/pruefungen-historisch', { mitglied_id: mitgliedId, ...historischForm });
       setShowHistorischModal(false);
       loadHistorischePruefungen();
-    } catch (error) {
-      console.error('Fehler beim Speichern:', error);
-      alert('Fehler beim Speichern');
-    }
+    } catch { alert('Fehler beim Speichern'); }
   };
 
-  // Lösche historische Prüfung
   const handleDeleteHistorisch = async (id) => {
     if (!window.confirm('Wirklich löschen?')) return;
-
-    try {
-      await axios.delete('/pruefungen-historisch/' + id);
-      loadHistorischePruefungen();
-    } catch (error) {
-      console.error('Fehler beim Löschen:', error);
-    }
+    try { await axios.delete('/pruefungen-historisch/' + id); loadHistorischePruefungen(); } catch {}
   };
 
-  if (loading) {
-    return (
-      <div className="pruefungsstatus-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Lade Prüfungsdaten...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="ps2-loading">
+      <div className="ps2-spinner" />
+      <span>Lade Prüfungsdaten…</span>
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="pruefungsstatus-container">
-        <div className="error-message">
-          <AlertCircle size={24} />
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
+  if (error) return (
+    <div className="ps2-error">⚠️ {error}</div>
+  );
+
+  if (stileDaten.length === 0) return (
+    <div className="ps2-empty">
+      <div className="ps2-empty-icon">🎓</div>
+      <p>{readOnly ? 'Noch keine Stile zugewiesen.' : 'Diesem Mitglied wurden noch keine Stile zugewiesen. Bitte im Tab "Stile" einen Stil zuweisen.'}</p>
+    </div>
+  );
 
   return (
-    <div className="pruefungsstatus-wrapper">
-      {stileDaten.length === 0 ? (
-        <div className="grid-container">
-          <div className="field-group card">
-            <h3>🎓 Prüfungsstatus</h3>
-            <p className="ps-no-data">
-              {readOnly
-                ? 'Ihnen wurden noch keine Stile zugewiesen.'
-                : 'Diesem Mitglied wurden noch keine Stile zugewiesen. Weisen Sie im Tab "Stile" einen Stil zu.'}
-            </p>
-          </div>
-        </div>
-      ) : (
-        stileDaten.map((stilDaten) => (
-          <div key={stilDaten.stil_id} className="stil-pruefung-section">
-            {/* Stil Überschrift */}
-            <div className="stil-titel-header">
-              <h2 className="ps-stil-title">
-                🥋 {stilDaten.stil_name}
-              </h2>
+    <div className="ps2-wrapper">
+      {stileDaten.map(sd => {
+        const bestandene = sd.historie.filter(p => p.bestanden === true || p.status === 'bestanden')
+          .sort((a, b) => new Date(b.pruefungsdatum) - new Date(a.pruefungsdatum));
+        const urkundenEntries = expandBestandene(bestandene);
+        const fortschritt = getFortschritt(sd);
+        const anwesend = parseInt(sd.trainingsstunden?.anwesend_stunden || sd.trainingsstunden?.total_stunden || 0);
+        const benoetigt = parseInt(sd.trainingsstunden?.requirements?.min_stunden || 20);
+        const nochBenoetigt = Math.max(0, benoetigt - anwesend);
+
+        return (
+          <div key={sd.stil_id} className="ps2-stil-section">
+            {/* Stil Header */}
+            <div className="ps2-stil-header">
+              <span className="ps2-stil-emoji">{sd.stil_emoji}</span>
+              <h2 className="ps2-stil-name">{sd.stil_name}</h2>
+              <div className="ps2-stil-belt" style={{ background: sd.graduierungFarbe }} />
+              <span className="ps2-stil-current-grad">{sd.aktuelleGraduierung}</span>
             </div>
 
-            {/* Grid Layout - 2 Spalten */}
-            <div className="grid-container zwei-spalten">
-
-              {/* Karte 1: Aktuelle Graduierung */}
-              <div className="field-group card">
-                <h3>🎖️ Aktuelle Graduierung</h3>
-                <div>
-                  <label>Gurtfarbe:</label>
-                  <div className="ps-gurt-row">
-                    <div
-                      className="ps-gurt-swatch"
-                      style={{ '--gurt-farbe': stilDaten.graduierungFarbe }}
-                    />
-                    <span className="ps-gurt-label">
-                      {stilDaten.aktuelleGraduierung}
-                    </span>
+            <div className="ps2-grid">
+              {/* Status Card */}
+              <div className="ps2-card ps2-card-status">
+                <div className="ps2-card-head">
+                  <TrendingUp size={15} />
+                  <span>Training & Fortschritt</span>
+                </div>
+                <div className="ps2-stat-row">
+                  <span className="ps2-stat-label">Absolviert</span>
+                  <span className="ps2-stat-value ps2-stat-ok">{anwesend} Std.</span>
+                </div>
+                <div className="ps2-stat-row">
+                  <span className="ps2-stat-label">Benötigt</span>
+                  <span className="ps2-stat-value">{benoetigt} Std.</span>
+                </div>
+                <div className="ps2-stat-row">
+                  <span className="ps2-stat-label">Noch fehlend</span>
+                  <span className={`ps2-stat-value ${nochBenoetigt === 0 ? 'ps2-stat-ok' : 'ps2-stat-warn'}`}>{nochBenoetigt} Std.</span>
+                </div>
+                <div className="ps2-progress-wrap">
+                  <div className="ps2-progress-track">
+                    <div className="ps2-progress-fill" style={{ width: `${fortschritt}%`, background: fortschritt >= 80 ? '#22c55e' : fortschritt >= 50 ? '#f59e0b' : '#ef4444' }} />
                   </div>
+                  <span className="ps2-progress-pct">{fortschritt}%</span>
                 </div>
-                <div>
-                  <label>Letzte Prüfung:</label>
-                  <span>{formatDatum(stilDaten.letztePruefung?.pruefungsdatum)}</span>
-                </div>
-                {stilDaten.letztePruefung?.status === 'bestanden' && (
-                  <div>
-                    <button
-                      className="download-urkunde-btn"
-                      onClick={() => handleUrkundeDownload(stilDaten.letztePruefung.pruefung_id)}
-                      className="ps-btn-urkunde-main"
-                    >
-                      <Download size={16} />
-                      Urkunde herunterladen
-                    </button>
+                {sd.letztePruefung && (
+                  <div className="ps2-stat-row ps2-stat-row-top">
+                    <span className="ps2-stat-label"><Calendar size={12} /> Letzte Prüfung</span>
+                    <span className="ps2-stat-value">{fmt(sd.letztePruefung.pruefungsdatum)}</span>
                   </div>
                 )}
               </div>
 
-              {/* Karte 2: Trainingsstunden */}
-              <div className="field-group card">
-                <h3>📊 Trainingsstunden</h3>
-                <div>
-                  <label>Absolviert:</label>
-                  <span className="ps-stat-success">
-                    {stilDaten.trainingsstunden?.anwesend_stunden ||
-                     stilDaten.trainingsstunden?.total_stunden || 0} Stunden
-                  </span>
-                </div>
-                <div>
-                  <label>Benötigt für nächste Prüfung:</label>
-                  <span className="ps-stat-info">
-                    {stilDaten.trainingsstunden?.requirements?.min_stunden || 20} Stunden
-                  </span>
-                </div>
-                <div>
-                  <label>Noch benötigt:</label>
-                  <span className="ps-stat-error">
-                    {Math.max(0,
-                      (stilDaten.trainingsstunden?.requirements?.min_stunden || 20) -
-                      (parseInt(stilDaten.trainingsstunden?.anwesend_stunden ||
-                                stilDaten.trainingsstunden?.total_stunden || 0))
-                    )} Stunden
-                  </span>
-                </div>
-
-                {/* Fortschrittsbalken */}
-                <div className="ps-mt-1">
-                  <label>Fortschritt:</label>
-                  <div className="ps-progress-track">
-                    <div
-                      className={`ps-progress-fill${getFortschrittsProzent(stilDaten) >= 80 ? ' ps-progress-fill--high' : getFortschrittsProzent(stilDaten) >= 60 ? ' ps-progress-fill--mid' : ' ps-progress-fill--low'}`}
-                      style={{ width: `${getFortschrittsProzent(stilDaten)}%` }}
-                    >
-                      <span className="ps-progress-text">
-                        {getFortschrittsProzent(stilDaten)}%
-                      </span>
-                    </div>
+              {/* Nächste Prüfung Card */}
+              {sd.naechstePruefung ? (
+                <div className="ps2-card ps2-card-next">
+                  <div className="ps2-card-head">
+                    <Clock size={15} />
+                    <span>Nächste Prüfung</span>
                   </div>
-                  <div className="ps-progress-label">
-                    {getFortschrittsStatus(getFortschrittsProzent(stilDaten))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Karte 3: Nächste Prüfung */}
-              <div className="field-group card">
-                <h3>📅 Nächste Prüfung</h3>
-                <div>
-                  <label>Geplantes Datum:</label>
-                  <span className="ps-stat-label">
-                    {formatDatum(stilDaten.naechstePruefung?.pruefungsdatum) || 'Keine Prüfung geplant'}
-                  </span>
-                </div>
-                {stilDaten.naechstePruefung && (
-                  <>
-                    <div>
-                      <label>Ziel-Graduierung:</label>
-                      <span>{stilDaten.naechstePruefung?.graduierung_nachher || stilDaten.naechstePruefung?.graduierung || '-'}</span>
-                    </div>
-                    {stilDaten.naechstePruefung.pruefungsort && (
-                      <div>
-                        <label>Ort:</label>
-                        <span>{stilDaten.naechstePruefung.pruefungsort}</span>
-                      </div>
-                    )}
-                    <div className="ps-mt-075">
-                      {stilDaten.naechstePruefung.teilnahme_bestaetigt ? (
-                        <div className="ps-teilnahme-confirmed">
-                          <CheckCircle size={16} />
-                          Teilnahme bestätigt
-                        </div>
+                  <div className="ps2-next-date">{fmt(sd.naechstePruefung.pruefungsdatum)}</div>
+                  <div className="ps2-next-grad">{sd.naechstePruefung.graduierung_nachher || sd.naechstePruefung.graduierung || '—'}</div>
+                  {sd.naechstePruefung.pruefungsort && (
+                    <div className="ps2-next-ort">📍 {sd.naechstePruefung.pruefungsort}</div>
+                  )}
+                  {!readOnly && (
+                    <div className="ps2-mt">
+                      {sd.naechstePruefung.teilnahme_bestaetigt ? (
+                        <div className="ps2-confirmed"><CheckCircle size={14} /> Teilnahme bestätigt</div>
                       ) : (
-                        <button
-                          onClick={() => openTeilnahmeModal(stilDaten.naechstePruefung)}
-                          className="ps-btn-teilnahme"
-                        >
-                          <CheckCircle size={16} />
-                          Teilnahme bestätigen
+                        <button className="ps2-btn-confirm" onClick={() => { setSelectedPruefung(sd.naechstePruefung); setTeilnahmeBedingungAkzeptiert(false); setShowTeilnahmeModal(true); }}>
+                          <CheckCircle size={14} /> Teilnahme bestätigen
                         </button>
                       )}
                     </div>
-                  </>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div className="ps2-card ps2-card-next ps2-card-no-exam">
+                  <div className="ps2-card-head">
+                    <Clock size={15} />
+                    <span>Nächste Prüfung</span>
+                  </div>
+                  <p className="ps2-no-exam-text">Keine Prüfung geplant</p>
+                </div>
+              )}
+            </div>
 
-              {/* Karte 4: Prüfungshistorie */}
-              <div className="field-group card ps-full-col">
-                <div className="ps-section-header">
-                  <h3>📋 Prüfungshistorie</h3>
-                  {!readOnly && (
+            {/* Urkunden-Archiv */}
+            <div className="ps2-card ps2-card-full">
+              <div className="ps2-card-head ps2-card-head-row">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>🎖️</span>
+                  <span>Urkunden-Archiv</span>
+                  {urkundenEntries.length > 0 && <span className="ps2-badge">{urkundenEntries.length}</span>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {urkundenEntries.length > 1 && (
                     <button
-                      onClick={() => openHistorischModal()}
-                      className="ps-btn-add-historic"
+                      className={`ps2-btn-print-all ${druckenId === 'alle' ? 'ps2-btn-print-all--loading' : ''}`}
+                      onClick={() => druckeAlleUrkunden(urkundenEntries)}
+                      disabled={druckenId === 'alle'}
+                      title="Alle Urkunden nacheinander drucken"
                     >
-                      + Historische Prüfung
+                      <Printer size={13} />
+                      {druckenId === 'alle' ? 'Druckt…' : `Alle drucken (${urkundenEntries.length})`}
+                    </button>
+                  )}
+                  {!readOnly && (
+                    <button className="ps2-btn-add" onClick={() => { setHistorischForm({ stil_name: sd.stil_name, graduierung_name: '', pruefungsdatum: '', bemerkung: '' }); setShowHistorischModal(true); }}>
+                      <Plus size={13} /> Historisch
                     </button>
                   )}
                 </div>
-                {stilDaten.historie.length > 0 ? (
-                  <div className="ps-table-scroll">
-                    <table className="ps-table">
-                      <thead>
-                        <tr className="ps-thead-row">
-                          <th className="ps-th-left">Datum</th>
-                          <th className="ps-th-left">Graduierung</th>
-                          <th className="ps-th-left">Status</th>
-                          <th className="ps-th-left">Punkte</th>
-                          <th className="ps-th-center">Aktion</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stilDaten.historie.map((pruefung, index) => (
-                          <tr key={pruefung.pruefung_id} className="ps-histoire-row">
-                            <td className="ps-td">{formatDatum(pruefung.pruefungsdatum)}</td>
-                            <td className="ps-td">{pruefung.graduierung_nachher}</td>
-                            <td className="ps-td">
-                              <span
-                                className={`ps-pruefung-badge${pruefung.status === 'bestanden' ? ' ps-pruefung-badge--bestanden' : pruefung.status === 'geplant' ? ' ps-pruefung-badge--geplant' : ' ps-pruefung-badge--nicht-bestanden'}`}
-                              >
-                                {pruefung.status}
-                                {pruefung.ist_historisch && ' (hist.)'}
-                              </span>
-                            </td>
-                            <td className="ps-td">{pruefung.punktzahl || '-'}</td>
-                            <td className="ps-td-center">
-                              <div className="ps-td-actions">
-                                {pruefung.status === 'bestanden' && !pruefung.ist_historisch && (
-                                  <button
-                                    onClick={() => handleUrkundeDownload(pruefung.pruefung_id)}
-                                    className="ps-btn-urkunde"
-                                    title="Urkunde herunterladen"
-                                  >
-                                    <Download size={14} />
-                                  </button>
-                                )}
-                                {pruefung.ist_historisch && !readOnly && (
-                                  <button
-                                    onClick={() => handleDeleteHistorisch(pruefung.pruefung_id)}
-                                    className="ps-btn-delete-sm"
-                                    title="Historische Prüfung löschen"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="ps-empty">
-                    Noch keine Prüfungen dokumentiert. Klicken Sie auf "+ Historische Prüfung" um vergangene Prüfungen zu erfassen.
-                  </p>
-                )}
-                </div>
-
-            </div>
-          </div>
-        ))
-      )}
-
-      {/* Anmerkungen Modal */}
-      {showAnmerkungenModal && (
-        <div className="modal-overlay" onClick={() => setShowAnmerkungenModal(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="ps-modal-header">
-              <h3>Prüfungsanmerkungen bearbeiten</h3>
-              <button className="close-btn" onClick={() => setShowAnmerkungenModal(false)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <textarea
-                value={tempAnmerkungen}
-                onChange={(e) => setTempAnmerkungen(e.target.value)}
-                placeholder="Anmerkungen zur Prüfung..."
-                rows={4}
-              />
-            </div>
-            <div className="modal-footer">
-              <button className="btn-secondary" onClick={() => setShowAnmerkungenModal(false)}>
-                Abbrechen
-              </button>
-              <button className="btn-primary" onClick={handleAnmerkungenSpeichern}>
-                <Save size={16} />
-                Speichern
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-{/* Historische Prüfung Modal - Einfache Freitextfelder */}
-      {showHistorischModal && (
-        <div className="ps-modal-overlay" onClick={() => setShowHistorischModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="ps-modal-dialog">
-            <div className="ps-modal-header">
-              <h3 className="u-text-accent">📜 Historische Prüfung</h3>
-              <button onClick={() => setShowHistorischModal(false)} className="ps-btn-close">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body ps-modal-body">
-
-              <div className="ps-form-field">
-                <label className="u-form-label-secondary">
-                  Stil *
-                </label>
-                <input
-                  type="text"
-                  value={historischForm.stil_name}
-                  onChange={(e) => setHistorischForm({...historischForm, stil_name: e.target.value})}
-                  placeholder="z.B. Karate, Judo, Taekwondo..."
-                  className="ps-input"
-                />
               </div>
 
-              <div className="ps-form-field">
-                <label className="u-form-label-secondary">
-                  Graduierung *
-                </label>
-                <input
-                  type="text"
-                  value={historischForm.graduierung_name}
-                  onChange={(e) => setHistorischForm({...historischForm, graduierung_name: e.target.value})}
-                  placeholder="z.B. Gelbgurt, 5. Kyu, 1. Dan..."
-                  className="ps-input"
-                />
-              </div>
-
-              <div className="ps-form-field">
-                <label className="u-form-label-secondary">
-                  Datum *
-                </label>
-                <input
-                  type="date"
-                  value={historischForm.pruefungsdatum}
-                  onChange={(e) => setHistorischForm({...historischForm, pruefungsdatum: e.target.value})}
-                  className="ps-input"
-                />
-              </div>
-
-              <div className="ps-form-field">
-                <label className="u-form-label-secondary">
-                  Bemerkung (optional)
-                </label>
-                <input
-                  type="text"
-                  value={historischForm.bemerkung}
-                  onChange={(e) => setHistorischForm({...historischForm, bemerkung: e.target.value})}
-                  placeholder="Optional..."
-                  className="ps-input"
-                />
-              </div>
-
-            </div>
-            <div className="modal-footer ps-modal-footer">
-              <button
-                onClick={() => setShowHistorischModal(false)}
-                className="ps-btn-cancel"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleSaveHistorisch}
-                className="ps-btn-save"
-              >
-                Speichern
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Historische Prüfungen Liste */}
-      {/* Teilnahme-Bestätigung Modal */}
-      {showTeilnahmeModal && selectedPruefung && (
-        <div className="ps-modal-overlay" onClick={() => setShowTeilnahmeModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="ps-modal-dialog-purple">
-            <div className="ps-modal-header-purple">
-              <h3 className="ps-modal-title-purple">🎓 Prüfungsanmeldung bestätigen</h3>
-              <button onClick={() => setShowTeilnahmeModal(false)} className="ps-btn-close-light">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="ps-modal-body">
-              {/* Prüfungsdetails */}
-              <div className="ps-detail-card">
-                <div className="ps-detail-label">Stil</div>
-                <div className="ps-detail-value-lg">{selectedPruefung.stil_name}</div>
-                <div className="ps-detail-label">Ziel-Graduierung</div>
-                <div className="ps-detail-value-accent">{selectedPruefung.graduierung_nachher || selectedPruefung.graduierung || '-'}</div>
-                {selectedPruefung.pruefungsdatum && (
-                  <>
-                    <div className="ps-detail-label">Datum</div>
-                    <div className="ps-detail-value">
-                      📅 {new Date(selectedPruefung.pruefungsdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      {selectedPruefung.pruefungszeit && ` um ${selectedPruefung.pruefungszeit} Uhr`}
+              {urkundenEntries.length === 0 ? (
+                <p className="ps2-empty-hist">Noch keine bestandenen Prüfungen in {sd.stil_name}.</p>
+              ) : (
+                <div className="ps2-urkunden-list">
+                  {urkundenEntries.map((entry) => (
+                    <div key={entry._key} className={`ps2-urkunde-row ${entry._isLatest ? 'ps2-urkunde-row--latest' : ''}`}>
+                      <div className="ps2-urkunde-left">
+                        <div className="ps2-urkunde-belt" style={{ background: entry._displayFarbe }} />
+                        <div className="ps2-urkunde-info">
+                          <span className="ps2-urkunde-grad">{entry._displayGrad || '—'}</span>
+                          <span className="ps2-urkunde-date">{fmt(entry.pruefungsdatum)}</span>
+                        </div>
+                        {entry._isLatest && <span className="ps2-urkunde-current-badge">Aktuell</span>}
+                        {entry._isZwischen && <span className="ps2-urkunde-zw-badge">Zwischengurt</span>}
+                      </div>
+                      <button
+                        className={`ps2-btn-print ${druckenId === entry._key ? 'ps2-btn-print--loading' : ''}`}
+                        onClick={() => druckeUrkunde(entry)}
+                        disabled={!!druckenId}
+                        title="Urkunde nachdrucken"
+                      >
+                        <Printer size={14} />
+                        {druckenId === entry._key ? 'Druckt…' : 'Nachdrucken'}
+                      </button>
                     </div>
-                  </>
-                )}
-                {selectedPruefung.pruefungsort && (
-                  <>
-                    <div className="ps-detail-label">Ort</div>
-                    <div className="ps-detail-value">📍 {selectedPruefung.pruefungsort}</div>
-                  </>
-                )}
-                {selectedPruefung.pruefungsgebuehr && (
-                  <>
-                    <div className="ps-detail-label">Prüfungsgebühr</div>
-                    <div className="ps-detail-value-price">💰 {parseFloat(selectedPruefung.pruefungsgebuehr).toFixed(2)} €</div>
-                  </>
-                )}
-              </div>
-              {/* Teilnahmebedingungen */}
-              {selectedPruefung.teilnahmebedingungen && (
-                <div className="ps-bedingungen-box">
-                  <div className="ps-bedingungen-title">📋 Teilnahmebedingungen</div>
-                  {selectedPruefung.teilnahmebedingungen}
+                  ))}
                 </div>
               )}
-              {/* Checkbox */}
-              <label className="ps-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={teilnahmeBedingungAkzeptiert}
-                  onChange={e => setTeilnahmeBedingungAkzeptiert(e.target.checked)}
-                  className="ps-checkbox"
-                />
-                <span>Ich bestätige meine Teilnahme an der Prüfung und akzeptiere die Teilnahmebedingungen. Mir ist bewusst, dass die Prüfungsgebühr fällig wird.</span>
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Historische Prüfungen (vor Systemeinführung) */}
+      {historischePruefungen.length > 0 && (
+        <div className="ps2-card ps2-card-full ps2-card-historisch">
+          <div className="ps2-card-head">
+            <span>📜</span>
+            <span>Vor Systemeinführung</span>
+          </div>
+          <div className="ps2-hist-list">
+            {historischePruefungen.map(p => (
+              <div key={p.id} className="ps2-hist-row">
+                <span className="ps2-hist-date">{new Date(p.pruefungsdatum).toLocaleDateString('de-DE')}</span>
+                <span className="ps2-hist-stil">{p.stil_name}</span>
+                <span className="ps2-hist-grad">{p.graduierung_name}</span>
+                {p.bemerkung && <span className="ps2-hist-note">{p.bemerkung}</span>}
+                {!readOnly && (
+                  <button className="ps2-btn-delete" onClick={() => handleDeleteHistorisch(p.id)} title="Löschen">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Historische Prüfung Modal */}
+      {showHistorischModal && (
+        <div className="ps2-modal-overlay" onClick={() => setShowHistorischModal(false)}>
+          <div className="ps2-modal" onClick={e => e.stopPropagation()}>
+            <div className="ps2-modal-head">
+              <h3>📜 Historische Prüfung</h3>
+              <button className="ps2-modal-close" onClick={() => setShowHistorischModal(false)}><X size={18} /></button>
+            </div>
+            <div className="ps2-modal-body">
+              {[
+                { label: 'Stil', key: 'stil_name', placeholder: 'z.B. Kickboxen, Karate…' },
+                { label: 'Graduierung', key: 'graduierung_name', placeholder: 'z.B. Gelbgurt, 5. Kyu…' },
+                { label: 'Bemerkung (optional)', key: 'bemerkung', placeholder: 'Optional…' },
+              ].map(({ label, key, placeholder }) => (
+                <div key={key} className="ps2-field">
+                  <label>{label}</label>
+                  <input type="text" value={historischForm[key]} onChange={e => setHistorischForm(f => ({ ...f, [key]: e.target.value }))} placeholder={placeholder} className="ps2-input" />
+                </div>
+              ))}
+              <div className="ps2-field">
+                <label>Datum *</label>
+                <input type="date" value={historischForm.pruefungsdatum} onChange={e => setHistorischForm(f => ({ ...f, pruefungsdatum: e.target.value }))} className="ps2-input" />
+              </div>
+            </div>
+            <div className="ps2-modal-foot">
+              <button className="ps2-btn-cancel" onClick={() => setShowHistorischModal(false)}>Abbrechen</button>
+              <button className="ps2-btn-save" onClick={handleSaveHistorisch}>Speichern</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Teilnahme bestätigen Modal */}
+      {showTeilnahmeModal && selectedPruefung && (
+        <div className="ps2-modal-overlay" onClick={() => setShowTeilnahmeModal(false)}>
+          <div className="ps2-modal" onClick={e => e.stopPropagation()}>
+            <div className="ps2-modal-head">
+              <h3>🎓 Prüfungsanmeldung</h3>
+              <button className="ps2-modal-close" onClick={() => setShowTeilnahmeModal(false)}><X size={18} /></button>
+            </div>
+            <div className="ps2-modal-body">
+              <div className="ps2-detail-grid">
+                <span className="ps2-dl">Stil</span><span className="ps2-dv">{selectedPruefung.stil_name}</span>
+                <span className="ps2-dl">Ziel-Graduierung</span><span className="ps2-dv ps2-dv-accent">{selectedPruefung.graduierung_nachher || '—'}</span>
+                {selectedPruefung.pruefungsdatum && (<><span className="ps2-dl">Datum</span><span className="ps2-dv">📅 {new Date(selectedPruefung.pruefungsdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}{selectedPruefung.pruefungszeit && ` um ${selectedPruefung.pruefungszeit} Uhr`}</span></>)}
+                {selectedPruefung.pruefungsort && (<><span className="ps2-dl">Ort</span><span className="ps2-dv">📍 {selectedPruefung.pruefungsort}</span></>)}
+                {selectedPruefung.pruefungsgebuehr && (<><span className="ps2-dl">Gebühr</span><span className="ps2-dv">💰 {parseFloat(selectedPruefung.pruefungsgebuehr).toFixed(2)} €</span></>)}
+              </div>
+              <label className="ps2-checkbox-row">
+                <input type="checkbox" checked={teilnahmeBedingungAkzeptiert} onChange={e => setTeilnahmeBedingungAkzeptiert(e.target.checked)} />
+                <span>Ich bestätige meine Teilnahme und bin mir bewusst, dass die Prüfungsgebühr fällig wird.</span>
               </label>
-              {/* Buttons */}
-              <div className="ps-btn-row">
-                <button
-                  onClick={() => setShowTeilnahmeModal(false)}
-                  className="ps-btn-cancel-flex"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  onClick={handleTeilnahmeBestaetigen}
-                  disabled={!teilnahmeBedingungAkzeptiert || teilnahmeLoading}
-                  className={`ps-btn-confirm${teilnahmeBedingungAkzeptiert ? ' ps-btn-confirm--active' : ''}`}
-                >
-                  {teilnahmeLoading ? '...' : '✅ Jetzt anmelden'}
+              <div className="ps2-modal-actions">
+                <button className="ps2-btn-cancel" onClick={() => setShowTeilnahmeModal(false)}>Abbrechen</button>
+                <button className={`ps2-btn-confirm-modal ${teilnahmeBedingungAkzeptiert ? 'ps2-btn-confirm-modal--active' : ''}`} onClick={handleTeilnahmeBestaetigen} disabled={!teilnahmeBedingungAkzeptiert || teilnahmeLoading}>
+                  {teilnahmeLoading ? '…' : '✅ Jetzt anmelden'}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
-
-      {historischePruefungen.length > 0 && (
-        <div className="field-group card ps-mt-1">
-          <h3>📜 Vergangene Prüfungen (vor Systemeinführung)</h3>
-          <div className="ps-table-scroll">
-            <table className="ps-table">
-              <thead>
-                <tr className="ps-thead-row">
-                  <th className="ps-th-left">Datum</th>
-                  <th className="ps-th-left">Stil</th>
-                  <th className="ps-th-left">Graduierung</th>
-                  <th className="ps-th-left">Bemerkung</th>
-                  <th className="ps-th-center">Aktion</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historischePruefungen.map((p) => (
-                  <tr key={p.id} className="ps-tbody-row">
-                    <td className="ps-td">{new Date(p.pruefungsdatum).toLocaleDateString('de-DE')}</td>
-                    <td className="ps-td">{p.stil_name}</td>
-                    <td className="ps-td">{p.graduierung_name}</td>
-                    <td className="ps-td-muted">{p.bemerkung || '-'}</td>
-                    <td className="ps-td-center">
-                      {!readOnly && (
-                        <button
-                          onClick={() => handleDeleteHistorisch(p.id)}
-                          className="ps-btn-delete-sm"
-                        >
-                          <X size={14} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-
     </div>
   );
 };

@@ -15,7 +15,10 @@
   --secondary-hover: var(--color-orange-400);
 
   /* ===== PRIMARY ALPHA VALUES ===== */
+  --primary-alpha-05: rgba(255, 215, 0, 0.05);
+  --primary-alpha-08: rgba(255, 215, 0, 0.08);
   --primary-alpha-10: rgba(255, 215, 0, 0.1);
+  --primary-alpha-12: rgba(255, 215, 0, 0.12);
   --primary-alpha-15: rgba(255, 215, 0, 0.15);
   --primary-alpha-20: rgba(255, 215, 0, 0.2);
   --primary-alpha-25: rgba(255, 215, 0, 0.25);
@@ -213,7 +216,7 @@
 .nav-card-header h3,
 .nav-content h3,
 .nav-card-title {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e) !important;
+  background: var(--gradient-gold);
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
@@ -241,6 +244,7 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   scroll-behavior: smooth;
+  overflow-x: hidden; /* iOS Safari: muss auf html UND body gesetzt sein */
 }
 
 body {
@@ -252,6 +256,7 @@ body {
   color: var(--text-primary);
   background: var(--bg-body);
   min-height: 100vh;
+  overflow-x: hidden;
   transition: background-color var(--duration-slow) var(--ease-in-out),
               color var(--duration-slow) var(--ease-in-out);
 }

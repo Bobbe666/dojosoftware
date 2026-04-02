@@ -7,16 +7,19 @@
 
 import '../styles/VorlagenEditor.css';
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import axios from 'axios';
+import { useDojoContext } from '../context/DojoContext';
 import {
   X, Bold, Italic, Underline as UnderlineIcon, AlignLeft, AlignCenter,
-  AlignRight, List, ListOrdered, Link as LinkIcon, Eye, Save, Copy
+  AlignRight, List, ListOrdered, Link as LinkIcon, Eye, Save, Copy, FileText, Bookmark, Search, UserRound, History, RotateCcw
 } from 'lucide-react';
+import TextbausteinSidebar from './TextbausteinSidebar';
 
 // ── Kategorien-Gruppen ─────────────────────────────────────────────────────────
 const KATEGORIEN = [
@@ -53,7 +56,9 @@ const KATEGORIEN = [
 // ── Platzhalter-Gruppen ────────────────────────────────────────────────────────
 const PLATZHALTER = [
   { gruppe: 'Empfänger', items: [
-    { key: '{{anrede}}', label: 'Anrede' },
+    { key: '{{anrede_formal}}', label: 'Anrede (Sie)' },
+    { key: '{{anrede_persoenlich}}', label: 'Anrede (Du)' },
+    { key: '{{anrede}}', label: 'Anrede (Titel)' },
     { key: '{{vorname}}', label: 'Vorname' },
     { key: '{{nachname}}', label: 'Nachname' },
     { key: '{{vollname}}', label: 'Vollname' },
@@ -164,7 +169,10 @@ function PlatzhalterLeiste({ onInsert }) {
 }
 
 // ── Haupt-Komponente ───────────────────────────────────────────────────────────
-export default function VorlagenEditor({ vorlage = null, profile = [], onClose, onSaved }) {
+export default function VorlagenEditor({ vorlage = null, profile = [], onClose, onSaved, asPage = false }) {
+  const { activeDojo } = useDojoContext();
+  const withDojo = (url) => activeDojo?.id ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}` : url;
+
   const [form, setForm] = useState({
     name: vorlage?.name || '',
     kategorie: vorlage?.kategorie || 'sonstiges',
@@ -174,12 +182,71 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
     mit_pdf_anhang: vorlage?.mit_pdf_anhang || 0,
   });
 
+  // Standard-Profil aus Brief-Einstellungen vorbelegen (nur bei neuen Vorlagen)
+  useEffect(() => {
+    if (vorlage?.id) return; // existierende Vorlage: kein Überschreiben
+    axios.get(withDojo('/brief-einstellungen'))
+      .then(res => {
+        const standardId = res.data.einstellungen?.standard_profil_id;
+        if (standardId) {
+          setForm(f => f.absender_profil_id ? f : { ...f, absender_profil_id: String(standardId) });
+        }
+      })
+      .catch(() => {}); // silent — defaults bleiben
+  }, [activeDojo]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [gleicheTexte, setGleicheTexte] = useState(
     !vorlage?.id || vorlage?.email_html === vorlage?.brief_html
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [aktiveTab, setAktiveTab] = useState('email'); // 'email' | 'brief'
+  const [showA4Preview, setShowA4Preview] = useState(false);
+  const [showBausteine, setShowBausteine] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // ── Versionen (Phase 7) ───────────────────────────────────────────────────
+  const [showVersionen, setShowVersionen] = useState(false);
+  const [versionen, setVersionen] = useState([]);
+  const [versionenLaedt, setVersionenLaedt] = useState(false);
+  const [versionenFehler, setVersionenFehler] = useState('');
+  const [wiederherstelltId, setWiederherstelltId] = useState(null);
+
+  async function ladeVersionen() {
+    if (!vorlage?.id) return;
+    setVersionenLaedt(true);
+    setVersionenFehler('');
+    try {
+      const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/versionen`));
+      setVersionen(res.data.versionen || []);
+    } catch {
+      setVersionenFehler('Versionen konnten nicht geladen werden.');
+    } finally {
+      setVersionenLaedt(false);
+    }
+  }
+
+  async function handleWiederherstellen(ver) {
+    if (!window.confirm(`Version ${ver.version_nr} vom ${new Date(ver.geaendert_am).toLocaleString('de-DE')} wiederherstellen?`)) return;
+    setWiederherstelltId(ver.id);
+    try {
+      await axios.post(withDojo(`/vorlagen/${vorlage.id}/versionen/${ver.id}/wiederherstellen`));
+      setShowVersionen(false);
+      if (onSaved) onSaved();
+    } catch {
+      setVersionenFehler('Fehler beim Wiederherstellen.');
+    } finally {
+      setWiederherstelltId(null);
+    }
+  }
+
+  // ── Vorschau-Mitglied-Picker ──────────────────────────────────────────────
+  const [vorschauMitglied, setVorschauMitglied] = useState(null);
+  const [vorschauSuche, setVorschauSuche] = useState('');
+  const [vorschauSuchergebnisse, setVorschauSuchergebnisse] = useState([]);
+  const [vorschauSucheOffen, setVorschauSucheOffen] = useState(false);
+  const vorschauSucheTimer = React.useRef(null);
 
   const briefEditor = useEditor({
     extensions: [
@@ -215,12 +282,39 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
     setForm(f => ({ ...f, [name]: type === 'checkbox' ? (checked ? 1 : 0) : value }));
   }
 
+  function handleVorschauSucheChange(val) {
+    setVorschauSuche(val);
+    setVorschauSucheOffen(true);
+    clearTimeout(vorschauSucheTimer.current);
+    if (!val.trim()) { setVorschauSuchergebnisse([]); return; }
+    vorschauSucheTimer.current = setTimeout(async () => {
+      try {
+        const res = await axios.get(withDojo(`/mitglieder?search=${encodeURIComponent(val)}&limit=8`));
+        setVorschauSuchergebnisse(res.data.mitglieder || res.data || []);
+      } catch { setVorschauSuchergebnisse([]); }
+    }, 300);
+  }
+
   async function handlePreview() {
     if (!vorlage?.id) {
       alert('Zuerst speichern, dann Vorschau öffnen.');
       return;
     }
-    window.open(`/api/vorlagen/${vorlage.id}/preview-html`, '_blank');
+    setPreviewLoading(true);
+    setPreviewHtml(null);
+    try {
+      const mitgliedParam = vorschauMitglied ? `mitglied_id=${vorschauMitglied.mitglied_id || vorschauMitglied.id}` : '';
+      let previewUrl = `/vorlagen/${vorlage.id}/preview-html`;
+      if (mitgliedParam) previewUrl += `?${mitgliedParam}`;
+      previewUrl = withDojo(previewUrl);
+      const res = await axios.get(previewUrl, { responseType: 'text' });
+      setPreviewHtml(res.data);
+    } catch (err) {
+      console.error('Vorschau-Fehler:', err);
+      setError('Vorschau konnte nicht geladen werden');
+    } finally {
+      setPreviewLoading(false);
+    }
   }
 
   async function handleSave() {
@@ -253,17 +347,18 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
 
   // Primärfarbe vom gewählten Profil
   const gewaehltesProfilel = profile.find(p => p.id === Number(form.absender_profil_id));
-  const primaryColor = gewaehltesProfilel?.farbe_primaer || '#8B0000';
+  const primaryColor = gewaehltesProfilel?.farbe_primaer || '#c9a227';
 
   const isReadOnly = vorlage?.system_vorlage === 1;
+  const isA4Mode = showA4Preview && (aktiveTab === 'brief' || gleicheTexte);
 
   return (
-    <div className="ve-overlay">
-      <div className="ve-dialog" style={{ '--pc': primaryColor, '--pc33': `${primaryColor}33`, '--pc44': `${primaryColor}44` }}>
+    <div className={asPage ? 've-page-root' : 've-overlay'}>
+      <div className={`${asPage ? 've-page-dialog' : 've-dialog'}${showBausteine ? ' ve-dialog--wide' : ''}`} style={{ '--pc': primaryColor, '--pc33': `${primaryColor}33`, '--pc44': `${primaryColor}44` }}>
         {/* Header */}
         <div className="ve-modal-header-bar">
           <div className="ve-modal-title">
-            {isReadOnly ? '📋 System-Vorlage (nur Lesezugriff)' : vorlage?.id ? '✏️ Vorlage bearbeiten' : '➕ Neue Vorlage'}
+            {isReadOnly ? 'System-Vorlage (nur Lesezugriff)' : vorlage?.id ? 'Vorlage bearbeiten' : 'Neue Vorlage'}
           </div>
           <button onClick={onClose} className="ve-close-btn">
             <X size={20} />
@@ -272,7 +367,7 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
 
         {isReadOnly && (
           <div className="ve-warn-bar">
-            ⚠️ System-Vorlagen können nicht bearbeitet werden. Erstellen Sie eine Kopie mit "Duplizieren".
+            System-Vorlagen können nicht bearbeitet werden. Erstellen Sie eine Kopie mit "Duplizieren".
           </div>
         )}
 
@@ -351,27 +446,114 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
 
           {/* Editor-Tabs */}
           <div>
-            <div className="ve-tab-bar">
-              {!gleicheTexte && (
-                <>
-                  <button onClick={() => setAktiveTab('email')} className={`ve-tab-btn${aktiveTab === 'email' ? ' ve-tab-btn--active' : ''}`}>📧 E-Mail-Text</button>
-                  <button onClick={() => setAktiveTab('brief')} className={`ve-tab-btn${aktiveTab === 'brief' ? ' ve-tab-btn--active' : ''}`}>📄 Brief-Text (PDF)</button>
-                </>
+            <div className="ve-tab-bar-row">
+              <div className="ve-tab-bar">
+                {!gleicheTexte && (
+                  <>
+                    <button onClick={() => setAktiveTab('email')} className={`ve-tab-btn${aktiveTab === 'email' ? ' ve-tab-btn--active' : ''}`}>📧 E-Mail-Text</button>
+                    <button onClick={() => setAktiveTab('brief')} className={`ve-tab-btn${aktiveTab === 'brief' ? ' ve-tab-btn--active' : ''}`}>📄 Brief-Text (PDF)</button>
+                  </>
+                )}
+                {gleicheTexte && (
+                  <div className="ve-tab-btn ve-tab-btn--active">
+                    📧📄 E-Mail &amp; Brief-Text
+                  </div>
+                )}
+              </div>
+              {(aktiveTab === 'brief' || gleicheTexte) && (
+                <button
+                  onClick={() => setShowA4Preview(v => !v)}
+                  className={`ve-a4-toggle-btn${showA4Preview ? ' ve-a4-toggle-btn--active' : ''}`}
+                  title="A4 Briefkopf-Vorschau ein-/ausblenden"
+                >
+                  <FileText size={13} /> A4-Vorschau
+                </button>
               )}
-              {gleicheTexte && (
-                <div className="ve-tab-btn ve-tab-btn--active">
-                  📧📄 E-Mail &amp; Brief-Text
-                </div>
-              )}
+              <button
+                onClick={() => setShowBausteine(v => !v)}
+                className={`ve-a4-toggle-btn${showBausteine ? ' ve-a4-toggle-btn--active' : ''}`}
+                title="Textbausteine-Seitenleiste ein-/ausblenden"
+              >
+                <Bookmark size={13} /> Textbausteine
+              </button>
             </div>
 
+            <div className={showBausteine ? 've-editor-with-sidebar' : undefined}>
             <div className="ve-editor-border">
               <Toolbar editor={aktiveEditor} primaryColor={primaryColor} />
               <PlatzhalterLeiste onInsert={insertPlatzhalter} />
-              <EditorContent
-                editor={aktiveEditor}
-                className="ve-editor-content"
+              {isA4Mode ? (
+                <div className="ve-a4-preview-container">
+                  <div className="ve-a4-page">
+                    <div className="ve-a4-header-bar" style={{ background: primaryColor }} />
+                    <div className="ve-a4-header-content">
+                      <div>
+                        <div className="ve-a4-absender-klein">
+                          {[
+                            gewaehltesProfilel?.organisation || gewaehltesProfilel?.name,
+                            gewaehltesProfilel?.strasse,
+                            gewaehltesProfilel?.ort
+                          ].filter(Boolean).join(' · ') || '— Kein Absender-Profil gewählt —'}
+                        </div>
+                        <div className="ve-a4-empfaenger-block">
+                          <div className="ve-a4-empf-zeile ve-a4-empf-anrede">{'{{anrede}}'}</div>
+                          <div className="ve-a4-empf-zeile">{'{{vorname}} {{nachname}}'}</div>
+                          <div className="ve-a4-empf-zeile">{'{{strasse}} {{hausnummer}}'}</div>
+                          <div className="ve-a4-empf-zeile">{'{{plz}} {{ort}}'}</div>
+                        </div>
+                      </div>
+                      <div className="ve-a4-datum-block">
+                        <div className="ve-a4-datum-ort" style={{ color: primaryColor }}>
+                          {gewaehltesProfilel?.ort || '—'}, {new Date().toLocaleDateString('de-DE')}
+                        </div>
+                      </div>
+                    </div>
+                    {form.brief_titel ? (
+                      <div className="ve-a4-betreff" style={{ color: primaryColor }}>{form.brief_titel}</div>
+                    ) : (
+                      <div className="ve-a4-betreff ve-a4-betreff--placeholder" style={{ color: `${primaryColor}88` }}>(Betreff / Titel eingeben...)</div>
+                    )}
+                    <div className="ve-a4-body">
+                      <EditorContent editor={aktiveEditor} className="ve-editor-content-a4" />
+                    </div>
+                    <div className="ve-a4-footer">
+                      <div className="ve-a4-footer-content">
+                        <div className="ve-a4-footer-col">
+                          <span className="ve-a4-footer-label">Kontakt</span>
+                          {gewaehltesProfilel?.telefon && <span>{gewaehltesProfilel.telefon}</span>}
+                          {gewaehltesProfilel?.email && <span>{gewaehltesProfilel.email}</span>}
+                        </div>
+                        <div className="ve-a4-footer-col">
+                          <span className="ve-a4-footer-label">Bankverbindung</span>
+                          {gewaehltesProfilel?.bank_iban && <span>IBAN: {gewaehltesProfilel.bank_iban}</span>}
+                          {gewaehltesProfilel?.bank_bic && <span>BIC: {gewaehltesProfilel.bank_bic}</span>}
+                        </div>
+                        {gewaehltesProfilel?.inhaber && (
+                          <div className="ve-a4-footer-col">
+                            <span className="ve-a4-footer-label">Inhaber</span>
+                            <span>{gewaehltesProfilel.inhaber}</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="ve-a4-footer-bar" style={{ background: primaryColor }} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <EditorContent
+                  editor={aktiveEditor}
+                  className="ve-editor-content"
+                />
+              )}
+            </div>
+            {showBausteine && (
+              <TextbausteinSidebar
+                briefEditor={briefEditor}
+                emailEditor={emailEditor}
+                withDojo={withDojo}
+                onClose={() => setShowBausteine(false)}
               />
+            )}
             </div>
           </div>
 
@@ -379,14 +561,61 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
 
         {/* Footer */}
         <div className="ve-modal-footer-bar">
-          <div className="u-flex-gap-sm">
+          <div className="u-flex-gap-sm" style={{ alignItems: 'center', position: 'relative' }}>
             {vorlage?.id && (
-              <button onClick={handlePreview} className="ve-preview-btn">
-                <Eye size={14} /> Vorschau
-              </button>
+              <>
+                {/* Mitglied-Picker für Vorschau mit echten Daten */}
+                <div className="ve-member-picker">
+                  {vorschauMitglied ? (
+                    <span className="ve-member-badge">
+                      <UserRound size={12} />
+                      {vorschauMitglied.vorname} {vorschauMitglied.nachname}
+                      <button className="ve-member-badge-remove" onClick={() => { setVorschauMitglied(null); setVorschauSuche(''); }} title="Entfernen">×</button>
+                    </span>
+                  ) : (
+                    <div className="ve-member-search-wrap">
+                      <Search size={13} className="ve-member-search-icon" />
+                      <input
+                        className="ve-member-search-input"
+                        placeholder="Mitglied für Vorschau…"
+                        value={vorschauSuche}
+                        onChange={e => handleVorschauSucheChange(e.target.value)}
+                        onFocus={() => setVorschauSucheOffen(true)}
+                        onBlur={() => setTimeout(() => setVorschauSucheOffen(false), 150)}
+                      />
+                    </div>
+                  )}
+                  {vorschauSucheOffen && vorschauSuchergebnisse.length > 0 && (
+                    <div className="ve-member-results">
+                      {vorschauSuchergebnisse.map(m => (
+                        <button
+                          key={m.mitglied_id || m.id}
+                          className="ve-member-result-btn"
+                          onMouseDown={() => { setVorschauMitglied(m); setVorschauSuche(''); setVorschauSucheOffen(false); setVorschauSuchergebnisse([]); }}
+                        >
+                          <span>{m.vorname} {m.nachname}</span>
+                          <span className="ve-member-result-nr">#{m.mitgliedsnummer || m.mitglied_id}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={handlePreview} disabled={previewLoading} className="ve-preview-btn">
+                  <Eye size={14} /> {previewLoading ? 'Lädt…' : vorschauMitglied ? `Vorschau (${vorschauMitglied.vorname})` : 'Vorschau'}
+                </button>
+              </>
             )}
           </div>
           <div className="ve-footer-actions">
+            {vorlage?.id && (
+              <button
+                onClick={() => { setShowVersionen(true); ladeVersionen(); }}
+                className="ve-versions-btn"
+                title="Versionshistorie"
+              >
+                <History size={14} /> Versionen
+              </button>
+            )}
             <button onClick={onClose} className="ve-cancel-btn">Schließen</button>
             {!isReadOnly && (
               <button onClick={handleSave} disabled={saving} className="ve-save-btn">
@@ -415,6 +644,80 @@ export default function VorlagenEditor({ vorlage = null, profile = [], onClose, 
         .ProseMirror strong { font-weight: 700; }
         .ProseMirror em { font-style: italic; }
       `}</style>
+
+      {/* Versionen-Modal */}
+      {showVersionen && ReactDOM.createPortal(
+        <div className="ve-preview-overlay" onClick={() => setShowVersionen(false)}>
+          <div className="ve-versions-modal" onClick={e => e.stopPropagation()}>
+            <div className="ve-preview-modal-bar">
+              <span><History size={14} style={{ verticalAlign: 'middle', marginRight: 6 }} />Versionshistorie — {vorlage?.name}</span>
+              <button onClick={() => setShowVersionen(false)} className="ve-preview-modal-close">✕ Schließen</button>
+            </div>
+            <div className="ve-versions-body">
+              {versionenLaedt ? (
+                <div className="ve-preview-modal-loading">Versionen werden geladen…</div>
+              ) : versionenFehler ? (
+                <div className="ve-versions-error">{versionenFehler}</div>
+              ) : versionen.length === 0 ? (
+                <div className="ve-versions-empty">
+                  <History size={32} style={{ opacity: 0.3, display: 'block', margin: '0 auto 0.75rem' }} />
+                  <p>Noch keine Versionen gespeichert.<br />Versionen werden automatisch beim Speichern angelegt.</p>
+                </div>
+              ) : (
+                <table className="ve-versions-table">
+                  <thead>
+                    <tr>
+                      <th>Version</th>
+                      <th>Gespeichert am</th>
+                      <th>E-Mail-Betreff</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {versionen.map(ver => (
+                      <tr key={ver.id}>
+                        <td>
+                          <span className="ve-version-badge">v{ver.version_nr}</span>
+                        </td>
+                        <td>{new Date(ver.geaendert_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                        <td className="ve-versions-betreff">{ver.email_betreff || '–'}</td>
+                        <td>
+                          <button
+                            onClick={() => handleWiederherstellen(ver)}
+                            disabled={wiederherstelltId === ver.id}
+                            className="ve-versions-restore-btn"
+                            title="Diese Version wiederherstellen"
+                          >
+                            <RotateCcw size={13} /> {wiederherstelltId === ver.id ? 'Stellt her…' : 'Wiederherstellen'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Vorschau-Modal via Portal — direkt in document.body, kein z-index-Konflikt */}
+      {(previewLoading || previewHtml) && ReactDOM.createPortal(
+        <div className="ve-preview-overlay" onClick={() => setPreviewHtml(null)}>
+          <div className="ve-preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="ve-preview-modal-bar">
+              <span>Vorschau — {vorlage?.name || 'Brief'}</span>
+              <button onClick={() => setPreviewHtml(null)} className="ve-preview-modal-close">✕ Schließen</button>
+            </div>
+            {previewLoading
+              ? <div className="ve-preview-modal-loading">Vorschau wird geladen…</div>
+              : <iframe srcDoc={previewHtml} title="Vorschau" className="ve-preview-modal-iframe" sandbox="allow-scripts" />
+            }
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

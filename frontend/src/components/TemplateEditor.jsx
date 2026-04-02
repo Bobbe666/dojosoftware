@@ -276,6 +276,18 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
               right: 0;
               width: 100%;
             }
+
+            @media print {
+              body { background: white !important; padding: 0 !important; }
+              body > div, body > section, body > article {
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: always;
+              }
+              body > div:not(:last-child)::after,
+              body > section:not(:last-child)::after,
+              body > article:not(:last-child)::after { display: none !important; }
+            }
           `;
           canvasDoc.head.appendChild(styleEl);
         }
@@ -1021,11 +1033,10 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
           </label>
           <input
             type="text"
-            className="form-control"
+            className="form-control te-dark-input"
             value={templateName}
             onChange={(e) => setTemplateName(e.target.value)}
             placeholder="z.B. Standard Mitgliedsvertrag"
-            className="te-dark-input"
           />
         </div>
         <div>
@@ -1107,12 +1118,11 @@ const TemplateEditor = ({ templateId, dojoId, onSave, onClose }) => {
             <div className="te-preview-header">
               <h3>👁️ Vorschau</h3>
               <button
-                className="btn btn-danger"
+                className="btn btn-danger te-preview-close-btn"
                 onClick={() => {
                   URL.revokeObjectURL(previewUrl);
                   setPreviewUrl(null);
                 }}
-                className="te-preview-close-btn"
               >
                 ✕ Schließen
               </button>

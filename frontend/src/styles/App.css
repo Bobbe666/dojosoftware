@@ -43,7 +43,7 @@
 /* DashboardNotFound button */
 .app-not-found-btn {
   padding: 0.5rem 1.5rem;
-  background: #ffd700;
+  background: var(--gradient-gold);
   color: #000;
   border: none;
   border-radius: 6px;

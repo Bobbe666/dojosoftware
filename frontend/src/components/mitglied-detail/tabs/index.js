@@ -6,6 +6,7 @@ export { default as MemberAdditionalDataTab } from './MemberAdditionalDataTab';
 export { default as MemberMedicalTab } from './MemberMedicalTab';
 export { default as MemberFamilyTab } from './MemberFamilyTab';
 export { default as MemberStatisticsTab } from './MemberStatisticsTab';
+export { default as MemberInjuryTab } from './MemberInjuryTab';
 
 // Zukuenftige Exports (nach Extraktion):
 // export { default as MemberGeneralInfoTab } from './MemberGeneralInfoTab';

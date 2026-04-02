@@ -18,7 +18,7 @@
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   padding: 2rem;
   border-radius: 16px;
-  border: 3px solid #ffd700;
+  border: 3px solid var(--primary);
   margin-bottom: 1.5rem;
 }
 
@@ -53,8 +53,8 @@
 
 /* Usage hint box */
 .mqr-hint-box {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   padding: 1rem;
   margin-bottom: 1.5rem;
@@ -85,8 +85,8 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1rem;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 53, 0.2));
-  border: 2px solid #ffd700;
+  background: linear-gradient(135deg, var(--primary-alpha-20), rgba(255, 107, 53, 0.2));
+  border: 2px solid var(--primary);
   color: var(--primary);
 }
 

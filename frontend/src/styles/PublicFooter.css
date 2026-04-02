@@ -5,7 +5,7 @@
   backdrop-filter: blur(20px);
   color: var(--text-1);
   padding: 4rem 0 2rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-20);
   margin-top: auto;
 }
 
@@ -21,7 +21,7 @@
   gap: 3rem;
   margin-bottom: 3rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .footer-col h4 {

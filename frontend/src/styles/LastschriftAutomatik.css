@@ -1,0 +1,483 @@
+/* ────────────────────────────────────────────────────────────
+   LastschriftAutomatik.css — Automatischer SEPA-Lastschrift
+   ──────────────────────────────────────────────────────────── */
+
+/* Container */
+.ls-auto-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+}
+
+/* ── Header ── */
+.ls-auto-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ls-auto-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary, #f0f0f0);
+  margin: 0;
+}
+.ls-auto-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #aaa);
+}
+.ls-auto-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ── */
+.ls-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+.ls-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.ls-btn--primary {
+  background: var(--color-primary, #c9a84c);
+  color: #000;
+}
+.ls-btn--primary:hover:not(:disabled) { filter: brightness(1.1); }
+.ls-btn--secondary {
+  background: var(--bg-card, #2a2a2a);
+  color: var(--text-primary, #f0f0f0);
+  border: 1px solid var(--border-color, #444);
+}
+.ls-btn--secondary:hover:not(:disabled) { background: var(--bg-hover, #333); }
+.ls-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary, #aaa);
+  border: 1px solid var(--border-color, #444);
+}
+.ls-btn--ghost:hover:not(:disabled) { background: var(--bg-hover, #333); }
+.ls-btn--icon {
+  background: var(--bg-card, #2a2a2a);
+  color: var(--text-secondary, #aaa);
+  border: 1px solid var(--border-color, #444);
+  padding: 6px 10px;
+}
+.ls-btn--icon:hover:not(:disabled) { background: var(--bg-hover, #333); color: var(--text-primary, #f0f0f0); }
+.ls-btn--run {
+  border-color: var(--color-primary, #c9a84c);
+  color: var(--color-primary, #c9a84c);
+}
+.ls-btn--run:hover:not(:disabled) { background: var(--color-primary, #c9a84c); color: #000; }
+.ls-btn--danger:hover:not(:disabled) { border-color: #ef4444; color: #ef4444; }
+.ls-btn-label { font-size: 0.8rem; }
+
+/* Toggle */
+.ls-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-color, #444);
+  background: transparent;
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.ls-toggle-btn--on {
+  border-color: #22c55e;
+  color: #22c55e;
+}
+.ls-toggle-btn--sm { padding: 4px 8px; font-size: 0.78rem; }
+
+/* ── Badges ── */
+.ls-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.ls-badge--sm { padding: 1px 6px; font-size: 0.7rem; }
+.ls-badge--success { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+.ls-badge--warning { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+.ls-badge--error   { background: rgba(239, 68, 68, 0.15);  color: #ef4444; }
+.ls-badge--info    { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.ls-badge--neutral { background: rgba(156, 163, 175, 0.15); color: #9ca3af; }
+.ls-badge--blue    { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+
+/* ── Alerts ── */
+.ls-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+.ls-alert--error { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* ── Leer-Zustand ── */
+.ls-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary, #aaa);
+}
+.ls-empty-icon { margin-bottom: 16px; opacity: 0.3; }
+.ls-empty-state h3 { color: var(--text-primary, #f0f0f0); margin-bottom: 8px; }
+.ls-empty-state p { margin-bottom: 24px; }
+.ls-loading { display: flex; align-items: center; gap: 10px; padding: 40px 20px; color: var(--text-secondary, #aaa); justify-content: center; }
+
+/* ── Zeitplan-Karte ── */
+.ls-zeitplan-card {
+  background: var(--bg-card, #1e1e1e);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+.ls-zeitplan-card:hover { border-color: var(--color-primary, #c9a84c); }
+.ls-zeitplan-card--inactive { opacity: 0.65; }
+
+.ls-zp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ls-zp-header-left { flex: 1; min-width: 0; }
+.ls-zp-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.ls-zp-name { font-size: 1rem; font-weight: 700; color: var(--text-primary, #f0f0f0); margin: 0; }
+.ls-zp-desc { font-size: 0.82rem; color: var(--text-secondary, #aaa); margin: 0 0 8px; }
+.ls-zp-meta-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.ls-zp-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #aaa);
+}
+
+.ls-zp-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* Vorlauf-Hinweis */
+.ls-vorlauf-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+.ls-vorlauf-hint--warning { background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.25); }
+.ls-vorlauf-hint--error   { background: rgba(239, 68, 68, 0.1);  color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+
+/* Nächste Ausführungen */
+.ls-next-dates { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.78rem; }
+.ls-next-dates-label { color: var(--text-secondary, #888); }
+.ls-next-date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-input, #2a2a2a);
+  border: 1px solid var(--border-color, #444);
+  padding: 2px 8px;
+  border-radius: 12px;
+  color: var(--text-primary, #f0f0f0);
+}
+.ls-next-date-einzug { color: var(--text-secondary, #888); font-size: 0.72rem; }
+
+/* Ausführungs-Ergebnis */
+.ls-exec-result {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  position: relative;
+}
+.ls-exec-result--success { background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.25); }
+.ls-exec-result--error   { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); }
+.ls-exec-result-close { margin-left: auto; background: none; border: none; cursor: pointer; color: inherit; font-size: 0.85rem; opacity: 0.7; }
+
+/* ── History ── */
+.ls-history { border-top: 1px solid var(--border-color, #333); padding-top: 12px; }
+.ls-history-title { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary, #aaa); margin: 0 0 10px; }
+.ls-history-empty { font-size: 0.82rem; color: var(--text-secondary, #888); padding: 8px 0; }
+.ls-history-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.ls-history-table th, .ls-history-table td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border-color, #2a2a2a); color: var(--text-secondary, #aaa); }
+.ls-history-table th { font-weight: 700; color: var(--text-primary, #f0f0f0); background: var(--bg-input, #222); }
+.ls-history-success { color: #22c55e; font-weight: 700; }
+.ls-history-error   { color: #ef4444; font-weight: 700; }
+
+/* ── SEPA Info Panel ── */
+.ls-sepa-info-panel {
+  background: var(--bg-card, #1a1a1a);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 12px;
+  padding: 20px;
+}
+.ls-sepa-info-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #f0f0f0);
+  margin: 0 0 16px;
+}
+.ls-sepa-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.ls-sepa-info-card {
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+.ls-sepa-info-card h4 { font-size: 0.88rem; font-weight: 700; margin: 0 0 10px; }
+.ls-sepa-info-card--blue  { background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.25); color: var(--text-primary, #f0f0f0); }
+.ls-sepa-info-card--yellow { background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.25); }
+.ls-sepa-info-card--green { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.25); }
+.ls-sepa-info-card--red   { background: rgba(239, 68, 68, 0.08);  border-color: rgba(239, 68, 68, 0.25); }
+.ls-sepa-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.ls-sepa-table th, .ls-sepa-table td { padding: 4px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.ls-sepa-table th { opacity: 0.7; font-weight: 600; }
+.ls-sepa-info-note { font-size: 0.75rem; margin: 8px 0 0; opacity: 0.8; }
+.ls-sepa-info-list { list-style: none; padding: 0; margin: 0; font-size: 0.8rem; }
+.ls-sepa-info-list li { padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.ls-sepa-info-example {
+  background: var(--bg-input, #222);
+  border-radius: 10px;
+  padding: 14px;
+}
+.ls-sepa-info-example h4 { font-size: 0.88rem; font-weight: 700; margin: 0 0 12px; color: var(--text-primary, #f0f0f0); }
+.ls-sepa-example-row { display: flex; align-items: baseline; gap: 12px; padding: 5px 0; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.ls-sepa-example-step { min-width: 160px; font-weight: 700; color: var(--color-primary, #c9a84c); }
+.ls-sepa-example-desc { color: var(--text-secondary, #aaa); }
+
+/* ── Modal ── */
+.ls-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.ls-modal {
+  background: var(--bg-main, #141414);
+  border: 1px solid var(--border-color, #333);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ls-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border-color, #333);
+}
+.ls-modal-header h2 { margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary, #f0f0f0); }
+.ls-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--text-secondary, #888);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.ls-modal-close:hover { background: var(--bg-hover, #2a2a2a); }
+.ls-modal-body { flex: 1; overflow-y: auto; padding: 20px 22px; display: flex; flex-direction: column; gap: 4px; }
+.ls-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 22px;
+  border-top: 1px solid var(--border-color, #333);
+}
+
+/* Form Sections */
+.ls-form-section {
+  background: var(--bg-card, #1a1a1a);
+  border: 1px solid var(--border-color, #2e2e2e);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ls-form-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary, #c9a84c);
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color, #2e2e2e);
+}
+.ls-form-group { display: flex; flex-direction: column; gap: 6px; }
+.ls-form-group--flex { flex: 1; }
+.ls-form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.ls-form-label {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text-primary, #e0e0e0);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ls-label-hint { font-weight: 400; color: var(--text-secondary, #888); font-size: 0.78rem; }
+.ls-required { color: #ef4444; }
+.ls-form-input {
+  background: var(--bg-input, #222);
+  border: 1px solid var(--border-color, #3a3a3a);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary, #f0f0f0);
+  font-size: 0.875rem;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.ls-form-input:focus { outline: none; border-color: var(--color-primary, #c9a84c); }
+.ls-form-input--sm { width: 90px; }
+.ls-form-textarea { min-height: 60px; resize: vertical; }
+.ls-form-hint { font-size: 0.76rem; color: var(--text-secondary, #888); margin: 0; }
+.ls-day-input-wrap { display: flex; align-items: center; gap: 8px; }
+.ls-day-suffix { font-size: 0.82rem; color: var(--text-secondary, #888); white-space: nowrap; }
+
+/* Schnellwahl-Tage */
+.ls-day-quickselect { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.ls-day-chip {
+  padding: 3px 9px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color, #444);
+  background: var(--bg-input, #222);
+  color: var(--text-secondary, #aaa);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ls-day-chip:hover { border-color: var(--color-primary, #c9a84c); color: var(--color-primary, #c9a84c); }
+.ls-day-chip--active { background: var(--color-primary, #c9a84c); color: #000; border-color: transparent; font-weight: 700; }
+
+/* Radio + Checkbox Buttons */
+.ls-radio-group, .ls-checkbox-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.ls-radio-btn, .ls-checkbox-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1.5px solid var(--border-color, #444);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-secondary, #aaa);
+  transition: all 0.15s;
+}
+.ls-radio-btn input, .ls-checkbox-btn input { display: none; }
+.ls-radio-btn--active, .ls-checkbox-btn--active {
+  border-color: var(--color-primary, #c9a84c);
+  color: var(--color-primary, #c9a84c);
+  background: rgba(201, 168, 76, 0.1);
+}
+
+/* Vorlauf-Block im Formular */
+.ls-vorlauf-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  border: 1px solid;
+}
+.ls-vorlauf-block--ok      { background: rgba(34, 197, 94, 0.08);  border-color: rgba(34, 197, 94, 0.25);  color: #22c55e; }
+.ls-vorlauf-block--warning { background: rgba(251, 191, 36, 0.08); border-color: rgba(251, 191, 36, 0.25); color: #fbbf24; }
+.ls-vorlauf-block--error   { background: rgba(239, 68, 68, 0.08);  border-color: rgba(239, 68, 68, 0.25);  color: #ef4444; }
+.ls-vorlauf-next { margin-top: 4px; font-size: 0.78rem; opacity: 0.85; }
+
+/* Vorschau-Daten */
+.ls-preview-dates { background: var(--bg-input, #1e1e1e); border-radius: 8px; padding: 10px 12px; font-size: 0.8rem; }
+.ls-preview-dates-label { font-weight: 700; color: var(--text-secondary, #aaa); display: block; margin-bottom: 8px; }
+.ls-preview-date-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; color: var(--text-primary, #f0f0f0); }
+.ls-preview-date-sep { color: var(--text-secondary, #666); }
+.ls-preview-date-einzug { font-size: 0.75rem; color: var(--text-secondary, #888); }
+
+/* Toggle Label */
+.ls-toggle-label { display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+
+/* Zusammenfassung */
+.ls-summary-box {
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 10px;
+  padding: 14px;
+}
+.ls-summary-title { font-size: 0.82rem; font-weight: 700; color: var(--color-primary, #c9a84c); margin: 0 0 6px; }
+.ls-summary-box p { margin: 0; font-size: 0.85rem; color: var(--text-primary, #e0e0e0); line-height: 1.5; }
+
+/* Spin-Animation */
+@keyframes ls-spin { to { transform: rotate(360deg); } }
+.ls-spin { animation: ls-spin 0.9s linear infinite; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .ls-zp-header { flex-direction: column; }
+  .ls-zp-actions { width: 100%; justify-content: flex-start; }
+  .ls-auto-header { flex-direction: column; }
+  .ls-auto-header-actions { width: 100%; }
+  .ls-form-row { flex-direction: column; }
+  .ls-sepa-info-grid { grid-template-columns: 1fr; }
+}

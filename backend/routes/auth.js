@@ -168,7 +168,7 @@ router.post('/login',
   try {
     // Zuerst in users Tabelle suchen (Mitglieder)
     const userQuery = `
-      SELECT id, username, email, password, role, dojo_id, mitglied_id, created_at
+      SELECT id, username, email, password, role, dojo_id, mitglied_id, created_at, msg_app_enabled
       FROM users
       WHERE email = ? OR username = ?
       LIMIT 1
@@ -322,13 +322,6 @@ router.post('/login',
               message: 'Sie haben keine Berechtigung, sich bei diesem Dojo anzumelden'
             });
           }
-        } else {
-          if (user.dojo_id && user.role !== 'super_admin') {
-            return res.status(403).json({
-              login: false,
-              message: 'Sie müssen sich bei Ihrer Dojo-Subdomain anmelden'
-            });
-          }
         }
 
         // ===================================================================
@@ -369,14 +362,18 @@ router.post('/login',
           vorname: user.vorname || null,
           nachname: user.nachname || null,
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
+          msg_app_enabled: isAdmin ? true : (user.msg_app_enabled !== 0),
           iat: Math.floor(Date.now() / 1000)
         };
 
-        const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "8h" });
+        const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "30d" });
 
         // Record successful login
         if (isAdmin) {
           await recordSuccessfulLogin(db, user.id, clientInfo.ipAddress);
+        } else {
+          // last_login_at für Mitglieder tracken
+          db.query('UPDATE users SET last_login_at = NOW() WHERE id = ?', [user.id]);
         }
 
         // Prepare response
@@ -603,15 +600,15 @@ router.post('/refresh', authenticateHybrid, async (req, res) => {
       iat: Math.floor(Date.now() / 1000)
     };
 
-    const newToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '2h' });
+    const newToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '30d' });
 
     logger.info(`[Auth] Token refreshed for user: ${user.username}`);
 
     res.json({
       success: true,
       token: newToken,
-      message: 'Token um 2 Stunden verlängert',
-      expiresIn: '2h',
+      message: 'Token um 30 Tage verlängert',
+      expiresIn: '30d',
       sessionExtended: !!req.session?.userId
     });
 
@@ -874,10 +871,85 @@ if (process.env.NODE_ENV === 'development') {
 // USER MANAGEMENT (Production)
 // ===================================================================
 
-router.get('/users', (req, res) => {
-  const query = 'SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC';
+// ─── Benutzer erstellen ────────────────────────────────────────────────────
+router.post('/users', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
 
-  db.query(query, (err, results) => {
+  const { username, email, password, role } = req.body;
+  if (!username || !email || !password || !role) {
+    return res.status(400).json({ error: 'Username, E-Mail, Passwort und Rolle sind erforderlich' });
+  }
+  if (!['admin', 'supervisor', 'trainer', 'verkauf', 'member'].includes(role)) {
+    return res.status(400).json({ error: 'Ungültige Rolle' });
+  }
+  const validation = validatePasswordPolicy(password);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.errors[0] });
+  }
+
+  try {
+    // Duplizierungsprüfung
+    const [existing] = await db.promise().query(
+      'SELECT id FROM users WHERE username = ? OR email = ?',
+      [username, email]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'Benutzername oder E-Mail bereits vergeben' });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    // dojo_id aus dem eingeloggten Admin-Account (oder aus Query-Param für Super-Admin)
+    const dojo_id = req.user.dojo_id || req.query.dojo_id || req.body.dojo_id || null;
+
+    const [result] = await db.promise().query(
+      `INSERT INTO users (username, email, password, role, dojo_id, msg_app_enabled, created_at)
+       VALUES (?, ?, ?, ?, ?, 1, NOW())`,
+      [username, email, hashedPassword, role, dojo_id]
+    );
+
+    logger.info(`Benutzer erstellt: ${username} (${role}) für Dojo ${dojo_id}`);
+    res.status(201).json({
+      success: true,
+      message: 'Benutzer erfolgreich erstellt',
+      id: result.insertId,
+      username, email, role, dojo_id, msg_app_enabled: true
+    });
+  } catch (error) {
+    logger.error('Fehler beim Erstellen des Benutzers', { error: error.message });
+    res.status(500).json({ error: 'Serverfehler beim Erstellen des Benutzers' });
+  }
+});
+
+// ─── Benutzer löschen ─────────────────────────────────────────────────────
+router.delete('/users/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
+  const { id } = req.params;
+  try {
+    const [result] = await db.promise().query('DELETE FROM users WHERE id = ?', [id]);
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+    res.json({ success: true, message: 'Benutzer gelöscht' });
+  } catch (error) {
+    logger.error('Fehler beim Löschen des Benutzers', { error: error.message });
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+router.get('/users', authenticateToken, (req, res) => {
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
+  const isSuperAdmin = req.user.role === 'super_admin';
+  const dojoId = isSuperAdmin ? (req.query.dojo_id || null) : req.user.dojo_id;
+  const query = dojoId
+    ? 'SELECT id, username, email, role, msg_app_enabled, created_at FROM users WHERE dojo_id = ? ORDER BY created_at DESC'
+    : 'SELECT id, username, email, role, msg_app_enabled, created_at FROM users ORDER BY created_at DESC';
+  const params = dojoId ? [dojoId] : [];
+
+  db.query(query, params, (err, results) => {
     if (err) {
       logger.error('Error fetching users', { error: err.message, stack: err.stack });
       return res.status(500).json({ error: 'Database error' });
@@ -886,9 +958,22 @@ router.get('/users', (req, res) => {
   });
 });
 
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
   const { id } = req.params;
-  const { username, email, role } = req.body;
+  const { username, email, role, msg_app_enabled } = req.body;
+
+  // Nur msg_app_enabled Toggle (ohne andere Felder)
+  if (msg_app_enabled !== undefined && !username && !email && !role) {
+    db.query('UPDATE users SET msg_app_enabled = ? WHERE id = ?', [msg_app_enabled ? 1 : 0, id], (err, result) => {
+      if (err) return res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      res.json({ success: true, msg_app_enabled: !!msg_app_enabled });
+    });
+    return;
+  }
 
   if (!username || !email || !role) {
     return res.status(400).json({ error: 'Username, Email und Rolle sind erforderlich' });
@@ -921,7 +1006,10 @@ router.put('/users/:id', async (req, res) => {
   }
 });
 
-router.put('/users/:id/password', async (req, res) => {
+router.put('/users/:id/password', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'super_admin' && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Keine Berechtigung' });
+  }
   const { id } = req.params;
   const { newPassword } = req.body;
 
@@ -1135,6 +1223,123 @@ router.post('/sso-login', async (req, res) => {
   } catch (error) {
     logger.error('SSO-Login-Fehler:', error);
     res.status(500).json({ success: false, error: 'SSO-Login fehlgeschlagen' });
+  }
+});
+
+// ===================================================================
+// MY-DOJO: Dojo-Daten für eingeloggten Nutzer
+// ===================================================================
+
+router.get('/my-dojo', authenticateToken, async (req, res) => {
+  const dojoId = req.user.dojo_id;
+
+  if (!dojoId) {
+    return res.status(400).json({ success: false, error: 'Kein Dojo zugeordnet' });
+  }
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT d.id, d.dojoname, d.ort, d.strasse, d.hausnummer, d.plz,
+              d.logo_url, d.theme_farbe, d.subdomain, d.ist_hauptdojo,
+              dl.file_path as haupt_logo_path, dl.file_name as haupt_logo_file
+       FROM dojo d
+       LEFT JOIN dojo_logos dl ON dl.dojo_id = d.id AND dl.logo_type = 'haupt'
+       WHERE d.id = ?
+       LIMIT 1`,
+      [dojoId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Dojo nicht gefunden' });
+    }
+
+    const dojo = rows[0];
+    // Logo-URL aufbauen
+    if (!dojo.logo_url && dojo.haupt_logo_file) {
+      dojo.logo_url = `/uploads/logos/${dojo.haupt_logo_file}`;
+    }
+    delete dojo.haupt_logo_path;
+    delete dojo.haupt_logo_file;
+
+    res.json({ success: true, dojo });
+  } catch (error) {
+    logger.error('Fehler bei my-dojo', { error: error.message });
+    res.status(500).json({ success: false, error: 'Fehler beim Laden des Dojos' });
+  }
+});
+
+
+// ===================================================================
+// FAMILIEN-ACCOUNT: Mitglieder mit gleicher Email
+// ===================================================================
+
+// GET /api/auth/family-members — alle Mitglieder der Familie zurückgeben
+router.get('/family-members', authenticateToken, async (req, res) => {
+  try {
+    const email = req.user.email;
+    if (!email) return res.status(400).json({ success: false, error: 'Keine Email im Token' });
+
+    const pool = db.promise();
+    const [rows] = await pool.query(
+      `SELECT m.mitglied_id, m.vorname, m.nachname, m.dojo_id
+       FROM mitglieder m
+       WHERE m.email = ? AND m.aktiv = 1
+       ORDER BY m.vorname`,
+      [email]
+    );
+
+    res.json({ success: true, members: rows });
+  } catch (err) {
+    logger.error('family-members Fehler', { error: err.message });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
+  }
+});
+
+// POST /api/auth/family-switch — Token für anderes Familienmitglied ausstellen
+router.post('/family-switch', authenticateToken, async (req, res) => {
+  try {
+    const { mitglied_id } = req.body;
+    const email = req.user.email;
+
+    if (!mitglied_id) return res.status(400).json({ success: false, error: 'mitglied_id fehlt' });
+
+    const pool = db.promise();
+    // Sicherheit: Ziel-Mitglied muss dieselbe Email haben
+    const [rows] = await pool.query(
+      'SELECT mitglied_id, vorname, nachname, dojo_id FROM mitglieder WHERE mitglied_id = ? AND email = ? AND aktiv = 1',
+      [mitglied_id, email]
+    );
+
+    if (rows.length === 0) {
+      return res.status(403).json({ success: false, error: 'Kein Zugriff auf dieses Mitglied' });
+    }
+
+    const target = rows[0];
+    const { exp, iat, ...userBase } = req.user;
+    const newPayload = {
+      ...userBase,
+      mitglied_id: target.mitglied_id,
+      vorname: target.vorname,
+      nachname: target.nachname,
+      dojo_id: target.dojo_id || req.user.dojo_id,
+      iat: Math.floor(Date.now() / 1000)
+    };
+
+    const newToken = jwt.sign(newPayload, JWT_SECRET, { expiresIn: '30d' });
+
+    res.json({
+      success: true,
+      token: newToken,
+      user: {
+        ...newPayload,
+        mitglied_id: target.mitglied_id,
+        vorname: target.vorname,
+        nachname: target.nachname
+      }
+    });
+  } catch (err) {
+    logger.error('family-switch Fehler', { error: err.message });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
   }
 });
 

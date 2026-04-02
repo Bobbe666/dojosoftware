@@ -1,0 +1,188 @@
+{
+  "management": {
+    "title": "Course Management",
+    "tabs": {
+      "courses": "Manage Courses",
+      "settings": "Master Data Settings"
+    },
+    "sortBy": "Sort courses by:",
+    "sortGroup": "Group",
+    "sortRoom": "Room",
+    "sortTrainer": "Trainer",
+    "filterTrainer": "Filter by trainer:",
+    "allTrainers": "Show all trainers",
+    "csvExport": "CSV Export"
+  },
+  "stats": {
+    "totalCourses": "Total Courses",
+    "filteredResults": "Filtered Results",
+    "activeTrainers": "Active Trainers",
+    "rooms": "Rooms",
+    "childrenCourses": "Children Courses",
+    "adultCourses": "Adult Courses"
+  },
+  "list": {
+    "title": "Courses",
+    "subtitle": "All courses and training groups",
+    "create": "New Course",
+    "noCourses": "No courses available",
+    "noCoursesFound": "No courses found",
+    "noCoursesFilter": "No courses found with the current filters.",
+    "courseCount": "{{count}} Course",
+    "courseCountPlural": "{{count}} Courses",
+    "columns": {
+      "name": "Course Name",
+      "style": "Style",
+      "trainer": "Trainer",
+      "schedule": "Schedule",
+      "participants": "Participants",
+      "status": "Status"
+    }
+  },
+  "detail": {
+    "title": "Edit Course",
+    "participants": "Participants",
+    "schedule": "Schedule",
+    "waitlist": "Waitlist"
+  },
+  "form": {
+    "name": "Course Name",
+    "description": "Description",
+    "style": "Martial Arts Style",
+    "trainer": "Trainer",
+    "maxParticipants": "Max. Participants",
+    "minAge": "Minimum Age",
+    "maxAge": "Maximum Age",
+    "level": "Level",
+    "color": "Color",
+    "selectStyle": "Select style...",
+    "selectGroup": "Select group...",
+    "selectRoom": "No room assigned",
+    "noRoom": "No room assigned",
+    "noGroup": "No Group",
+    "noTrainer": "No Trainers",
+    "unknownTrainer": "Unknown Trainer",
+    "unknownRoom": "Unknown Room",
+    "unknownStyle": "Unknown Style",
+    "createCourse": "Create Course",
+    "createNewCourse": "Create New Course",
+    "enterStyle": "Enter style"
+  },
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "all": "All Levels"
+  },
+  "timetable": {
+    "title": "Timetable",
+    "subtitle": "Weekly training schedule",
+    "addSlot": "Add Time Slot",
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "time": {
+      "start": "Start",
+      "end": "End",
+      "duration": "Duration"
+    },
+    "room": "Room",
+    "recurring": "Recurring"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "present": "Present",
+    "absent": "Absent",
+    "excused": "Excused",
+    "markAll": "Mark All",
+    "statistics": "Statistics"
+  },
+  "groups": {
+    "title": "Manage Groups",
+    "subtitle": "Manage groups",
+    "create": "New Group",
+    "members": "Members in Group",
+    "existing": "Existing Groups:",
+    "addNew": "Add New Group:",
+    "enterName": "Enter group name"
+  },
+  "styles": {
+    "title": "Manage Styles",
+    "subtitle": "Styles and graduations",
+    "create": "Create New Style",
+    "graduations": "Graduations",
+    "techniques": "Techniques",
+    "examContent": "Exam Content",
+    "existing": "Existing Styles:",
+    "addNew": "Add New Style:",
+    "enterName": "Enter style name (e.g. BJJ, Karate)",
+    "hint": "Here you can manage styles and select from existing ones or add new ones when creating courses."
+  },
+  "trainers": {
+    "title": "Manage Trainers",
+    "existing": "Existing Trainers:",
+    "addNew": "Add New Trainer:",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email (optional)",
+    "phone": "Phone (optional)",
+    "addTrainer": "Add Trainer"
+  },
+  "rooms": {
+    "title": "Manage Rooms",
+    "existing": "Existing Rooms:",
+    "addNew": "Add New Room:",
+    "createRoom": "Create New Room",
+    "name": "Room Name",
+    "namePlaceholder": "Room Name (e.g. Main Hall)",
+    "description": "Description (optional)",
+    "size": "Size (optional, e.g. 50m²)",
+    "capacity": "Capacity (optional)",
+    "persons": "Persons",
+    "hint": "Here you can manage rooms and select from existing ones or add new ones when creating courses."
+  },
+  "errors": {
+    "loadingError": "Error loading courses",
+    "loadingRoomsError": "Error loading rooms",
+    "savingError": "Error saving",
+    "deletingError": "Error deleting",
+    "addingError": "Error adding",
+    "courseNotFound": "Course not found",
+    "noDojo": "Error: No dojo selected. Please select a dojo.",
+    "fillRequired": "Please enter group name, style and at least one trainer.",
+    "enterFirstLastName": "Please enter first and last name.",
+    "enterGroupName": "Please enter group name.",
+    "enterStyleName": "Please enter style name.",
+    "enterRoomName": "Please enter room name."
+  },
+  "messages": {
+    "saved": "Course saved",
+    "deleted": "Course deleted",
+    "participantAdded": "Participant added",
+    "participantRemoved": "Participant removed",
+    "courseAdded": "Course added successfully!",
+    "trainerAdded": "Trainer added successfully!",
+    "groupAdded": "Group added successfully!",
+    "styleAdded": "Style added successfully!",
+    "roomAdded": "Room added successfully!",
+    "confirmDelete": "Do you really want to delete this course?",
+    "movedUp": "moved up!",
+    "movedDown": "moved down!"
+  },
+  "tooltips": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save changes",
+    "cancel": "Cancel editing",
+    "editCourse": "Edit course",
+    "deleteCourse": "Delete course",
+    "moveUp": "Move up",
+    "moveDown": "Move down"
+  }
+}

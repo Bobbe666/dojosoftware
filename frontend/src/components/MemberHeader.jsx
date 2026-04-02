@@ -19,6 +19,8 @@ const MemberHeader = () => {
   const { unreadCount } = useChatContext();
   const { activeDojo } = useDojoContext();
   const [userDisplayName, setUserDisplayName] = useState('');
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [familySwitching, setFamilySwitching] = useState(false);
 
   const dojoName = activeDojo?.dojoname || null;
   const dojoLogo = activeDojo?.logo_url || '/dojo-logo.png';
@@ -50,9 +52,47 @@ const MemberHeader = () => {
     loadUserDisplayName();
   }, [user]);
 
+  useEffect(() => {
+    const loadFamily = async () => {
+      try {
+        const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/family-members`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.members.length > 1) setFamilyMembers(data.members);
+        }
+      } catch (e) { /* ignore */ }
+    };
+    loadFamily();
+  }, [user]);
+
+  const handleFamilySwitch = async (targetId) => {
+    if (targetId === user?.mitglied_id || familySwitching) return;
+    setFamilySwitching(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/family-switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: targetId })
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        const expiryTime = payload.exp ? payload.exp * 1000 : Date.now() + (30 * 24 * 60 * 60 * 1000);
+        localStorage.setItem('dojo_auth_token', data.token);
+        localStorage.setItem('dojo_user', JSON.stringify(data.user));
+        localStorage.setItem('dojo_session_expiry', expiryTime.toString());
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error('Familie-Wechsel fehlgeschlagen:', e);
+    } finally {
+      setFamilySwitching(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const handleDashboardClick = () => {
@@ -90,15 +130,6 @@ const MemberHeader = () => {
         </button>
 
         <button
-          onClick={() => window.open('https://hof.tda-intl.org', '_blank')}
-          className="logout-button header-btn-mr"
-          title="Hall of Fame"
-        >
-          <span className="header-icon-mr">🌟</span>
-          <span className="logout-text">Hall of Fame</span>
-        </button>
-
-        <button
           onClick={() => navigate('/member/support')}
           className="logout-button header-btn-mr"
           title={t('header.support')}
@@ -114,12 +145,26 @@ const MemberHeader = () => {
           <span className="header-icon-mr">💡</span>
           <span className="logout-text">{t('header.wishlist')}</span>
         </button>
-        {userDisplayName && (
+        {familyMembers.length > 1 ? (
+          <div className="family-switcher-header">
+            {familyMembers.map(m => (
+              <button
+                key={m.mitglied_id}
+                className={`family-switcher-header-btn${m.mitglied_id === user?.mitglied_id ? ' family-switcher-header-btn--active' : ''}`}
+                onClick={() => handleFamilySwitch(m.mitglied_id)}
+                disabled={familySwitching}
+                title={`Zu ${m.vorname} wechseln`}
+              >
+                {m.vorname}
+              </button>
+            ))}
+          </div>
+        ) : userDisplayName ? (
           <div className="user-display">
             <span className="user-icon">👤</span>
             <span className="user-name">{userDisplayName}</span>
           </div>
-        )}
+        ) : null}
         <LanguageSwitcher compact={true} showLabel={false} />
         <button className="logout-button" onClick={handleLogout}>
           <svg

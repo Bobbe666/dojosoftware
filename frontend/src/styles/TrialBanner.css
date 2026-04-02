@@ -111,7 +111,7 @@
 .trial-banner-button:hover {
   opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 8px var(--primary-alpha-30);
 }
 
 .trial-banner-button:active {

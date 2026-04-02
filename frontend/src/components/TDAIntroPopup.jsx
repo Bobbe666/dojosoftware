@@ -23,21 +23,21 @@ const TDAIntroPopup = ({ onComplete }) => {
   }, []);
 
   useEffect(() => {
-    // Einflug: 1.5s
+    // Einflug: 0.4s
     const enterTimer = setTimeout(() => {
       setPhase('visible');
-    }, 1500);
+    }, 400);
 
-    // Sichtbar: 1s (total: 2.5s)
+    // Sichtbar: 0.7s (total: 1.1s)
     const visibleTimer = setTimeout(() => {
       setPhase('exiting');
-    }, 2500);
+    }, 1100);
 
-    // Exit: 1s (total: 3.5s)
+    // Exit: 0.4s (total: 1.5s)
     const exitTimer = setTimeout(() => {
       setPhase('done');
       if (onComplete) onComplete();
-    }, 3500);
+    }, 1500);
 
     return () => {
       clearTimeout(enterTimer);

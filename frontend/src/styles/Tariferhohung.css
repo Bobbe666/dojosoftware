@@ -14,7 +14,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid var(--border-default, rgba(255,255,255,0.1));
-  border-top: 3px solid var(--color-gold, #f59e0b);
+  border-top: 3px solid var(--color-gold, var(--status-warning));
   border-radius: 50%;
   animation: te-spin 1s linear infinite;
 }
@@ -61,7 +61,7 @@
 .te-title-icon {
   vertical-align: middle;
   margin-right: 0.5rem;
-  color: var(--color-gold, #f59e0b);
+  color: var(--color-gold, var(--status-warning));
 }
 
 /* ── Page subtitle ── */
@@ -98,7 +98,7 @@
 .te-stat-bamboo {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--color-bamboo, #10b981);
+  color: var(--color-bamboo, var(--status-success));
 }
 
 /* ── Card stat value — indigo/purple ── */
@@ -199,7 +199,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--color-bamboo, #10b981);
+  color: var(--color-bamboo, var(--status-success));
 }
 
 /* ── Error alert banner ── */
@@ -212,7 +212,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--color-vermillion, #ef4444);
+  color: var(--color-vermillion, var(--status-error));
 }
 
 /* ── Action buttons row ── */
@@ -398,7 +398,7 @@
   padding: 1rem;
   text-align: right;
   font-family: monospace;
-  color: var(--color-bamboo, #10b981);
+  color: var(--color-bamboo, var(--status-success));
 }
 
 /* ── Monospace right-aligned cell — vermillion/red ── */
@@ -406,7 +406,7 @@
   padding: 1rem;
   text-align: right;
   font-family: monospace;
-  color: var(--color-vermillion, #ef4444);
+  color: var(--color-vermillion, var(--status-error));
 }
 
 /* ── New-amount number input ── */
@@ -447,7 +447,7 @@
 
 /* ── Empty-state icon ── */
 .te-empty-icon {
-  color: var(--color-bamboo, #10b981);
+  color: var(--color-bamboo, var(--status-success));
   margin-bottom: 1rem;
 }
 
@@ -466,12 +466,12 @@
 
 /* ── Icon color: gold ── */
 .te-icon-gold {
-  color: var(--color-gold, #f59e0b);
+  color: var(--color-gold, var(--status-warning));
 }
 
 /* ── Icon color: bamboo/green ── */
 .te-icon-bamboo {
-  color: var(--color-bamboo, #10b981);
+  color: var(--color-bamboo, var(--status-success));
 }
 
 /* ── Icon color: indigo/purple ── */

@@ -569,12 +569,16 @@ const SuperAdminFinanzen = () => {
               <YAxis stroke="rgba(255,255,255,0.6)" fontSize={12} tickFormatter={formatCurrencyCompact} />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                  border: '1px solid rgba(255,215,0,0.3)',
-                  borderRadius: '8px',
-                  color: 'var(--text-primary)'
+                  background: 'var(--surface-3, rgba(12,18,36,0.97))',
+                  border: '1px solid rgba(255,215,0,0.2)',
+                  borderRadius: '10px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                  fontSize: '0.82rem',
+                  padding: '10px 14px',
                 }}
-                formatter={(value) => formatCurrency(value)}
+                labelStyle={{ color: 'var(--text-1, #fff)', fontWeight: 700, marginBottom: '4px' }}
+                itemStyle={{ color: 'var(--text-2, rgba(255,255,255,0.7))' }}
+                formatter={(value) => [formatCurrency(value)]}
               />
               <Legend />
               <Area
@@ -638,13 +642,17 @@ const SuperAdminFinanzen = () => {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    border: '1px solid rgba(255,215,0,0.3)',
-                    borderRadius: '8px',
-                    color: 'var(--text-primary)'
+                    background: 'var(--surface-3, rgba(12,18,36,0.97))',
+                    border: '1px solid rgba(255,215,0,0.2)',
+                    borderRadius: '10px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                    fontSize: '0.82rem',
+                    padding: '10px 14px',
                   }}
-                formatter={(value) => formatCurrency(value)}
-              />
+                  labelStyle={{ color: 'var(--text-1, #fff)', fontWeight: 700 }}
+                  itemStyle={{ color: 'var(--text-2, rgba(255,255,255,0.7))' }}
+                  formatter={(value) => [formatCurrency(value)]}
+                />
             </PieChart>
           </ResponsiveContainer>
           <div className="saf__pie-legend">

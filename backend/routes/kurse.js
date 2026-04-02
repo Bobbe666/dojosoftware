@@ -5,7 +5,12 @@ const router = express.Router();
 
 // Alle Kurse abrufen
 router.get("/", (req, res) => {
-    const dojoId = req.tenant?.dojo_id || req.dojo_id;
+    // Basis: dojo_id aus JWT/Tenant-Middleware
+    let dojoId = req.tenant?.dojo_id || req.dojo_id;
+    // Super-Admin kann über Query-Param ein spezifisches Dojo filtern
+    if ((dojoId === null || dojoId === undefined) && req.query.dojo_id) {
+        dojoId = parseInt(req.query.dojo_id, 10);
+    }
 
     // Super-Admin (dojo_id = null): Kann Kurse aller zentral verwalteten Dojos sehen
     // Normaler Admin: Muss dojo_id haben
@@ -36,18 +41,15 @@ router.get("/", (req, res) => {
         let queryParams = [];
 
         // Dojo-Filter
-        if (dojoId === null || dojoId === undefined) {
-            query += ` WHERE k.dojo_id NOT IN (
-                SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
-            )`;
-        } else {
+        if (dojoId !== null && dojoId !== undefined) {
             query += ' WHERE k.dojo_id = ?';
             queryParams.push(dojoId);
         }
+        // Super-Admin ohne dojo_id: alle Kurse (kein WHERE-Filter)
 
         // Add standort filter if provided
         if (standort_id && standort_id !== 'all') {
-            query += ' AND k.standort_id = ?';
+            query += (dojoId !== null && dojoId !== undefined) ? ' AND k.standort_id = ?' : ' WHERE k.standort_id = ?';
             queryParams.push(standort_id);
         }
 
@@ -156,21 +158,16 @@ router.get("/", (req, res) => {
     `;
     let queryParams = [];
 
-    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
-    if (dojoId === null || dojoId === undefined) {
-        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
-        query += ` WHERE k.dojo_id NOT IN (
-            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
-        )`;
-    } else {
-        // Normaler Admin: Nur eigenes Dojo
+    // Dojo-Filter: Normaler Admin sieht nur eigenes Dojo; Super-Admin ohne dojo_id sieht alle
+    if (dojoId !== null && dojoId !== undefined) {
         query += ' WHERE k.dojo_id = ?';
         queryParams.push(dojoId);
     }
+    // Super-Admin ohne dojo_id: kein WHERE → alle Kurse
 
     // Add standort filter if provided
     if (standort_id && standort_id !== 'all') {
-        query += ' AND k.standort_id = ?';
+        query += (dojoId !== null && dojoId !== undefined) ? ' AND k.standort_id = ?' : ' WHERE k.standort_id = ?';
         queryParams.push(standort_id);
     }
 

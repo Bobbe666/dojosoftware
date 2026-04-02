@@ -388,14 +388,14 @@
 .progress-step.active .step-number {
   background: #3b82f6 !important;
   color: white !important;
-  border-color: #3b82f6 !important;
+  border-color: var(--status-indigo) !important;
   transform: scale(1.05) !important;
 }
 
 .progress-step.completed .step-number {
   background: #10b981 !important;
   color: white !important;
-  border-color: #10b981 !important;
+  border-color: var(--status-success) !important;
 }
 
 .step-label {
@@ -409,12 +409,12 @@
 }
 
 .progress-step.active .step-label {
-  color: #3b82f6 !important;
+  color: var(--status-indigo) !important;
   font-weight: 600 !important;
 }
 
 .progress-step.completed .step-label {
-  color: #10b981 !important;
+  color: var(--status-success) !important;
 }
 
 .step-content {
@@ -905,8 +905,8 @@ select.input-field option {
 /* Completed Schritt Styling - Weißer Hintergrund mit grünem Border */
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed .step-number {
   background: #ffffff !important;
-  color: #10b981 !important;
-  border: 3px solid #10b981 !important;
+  color: var(--status-success) !important;
+  border: 3px solid var(--status-success) !important;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2) !important;
 }
 
@@ -931,7 +931,7 @@ select.input-field option {
   margin: 0 !important;
   line-height: 1.2 !important;
   font-weight: 500 !important;
-  color: #10b981 !important;
+  color: var(--status-success) !important;
   text-align: center !important;
   transition: all 0.3s ease !important;
   white-space: nowrap !important;
@@ -1022,12 +1022,12 @@ select.input-field option {
 }
 
 .vertrag-checkbox:hover {
-  border-color: #10B981;
+  border-color: var(--status-success);
 }
 
 .vertrag-checkbox:checked {
   background: #10B981;
-  border-color: #10B981;
+  border-color: var(--status-success);
 }
 
 /* Grünes Häkchen */
@@ -1312,7 +1312,7 @@ select.input-field option {
   width: 22px;
   height: 22px;
   cursor: pointer;
-  accent-color: #3B82F6;
+  accent-color: var(--status-indigo);
 }
 
 /* Schüler label text */
@@ -1854,7 +1854,7 @@ select.input-field option {
   padding: 1rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 /* Step 7: confirm box heading */
@@ -2038,7 +2038,7 @@ select.input-field option {
 
 /* Price display: assigned vs unassigned */
 .nma-price-assigned {
-  color: #10b981;
+  color: var(--status-success);
 }
 .nma-price-unassigned {
   color: rgba(255, 255, 255, 0.5);
@@ -2115,8 +2115,8 @@ select.input-field option {
 }
 .nma-progress-step-number--completed {
   background: #ffffff;
-  color: #10b981;
-  border: 3px solid #10b981;
+  color: var(--status-success);
+  border: 3px solid var(--status-success);
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2);
 }
 
@@ -2126,7 +2126,7 @@ select.input-field option {
   color: #1f2937;
 }
 .nma-step-label--completed {
-  color: #10b981;
+  color: var(--status-success);
 }
 .nma-step-label--pending {
   color: #6b7280;

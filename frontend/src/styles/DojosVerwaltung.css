@@ -2,7 +2,6 @@
 /* Dark Theme als Standard */
 
 .dojos-verwaltung {
-  background: linear-gradient(135deg, #0f0f23 0%, var(--modal-bg-dark) 50%, #16213e 100%);
   min-height: 100vh;
   padding: var(--ui-page-padding);
   color: var(--text-1);
@@ -19,13 +18,10 @@
 }
 
 .dojos-verwaltung .page-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 600;
   margin: 0;
-  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-1);
 }
 
 .dojos-verwaltung .page-header p {
@@ -60,22 +56,19 @@
 /* Gesamt-Statistiken */
 .gesamt-statistiken {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-card-padding);
   margin-bottom: var(--ui-stats-margin-b);
-  backdrop-filter: blur(10px);
 }
 
 .gesamt-statistiken h2 {
-  color: var(--text-1);
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
+  color: var(--text-2);
+  font-size: 0.78rem;
   font-weight: 600;
-  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .stat-content {
@@ -96,14 +89,12 @@
 }
 
 .dojos-list h2 {
-  color: var(--text-1);
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
+  color: var(--text-2);
+  font-size: 0.78rem;
   font-weight: 600;
-  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 .dojos-grid {
@@ -114,19 +105,16 @@
 
 .dojo-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  border-left: 4px solid var(--dojo-color, var(--primary));
+  border: 1px solid var(--primary-alpha-15);
+  border-left: 3px solid var(--dojo-color, var(--primary));
   border-radius: var(--comp-radius-xl);
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
+  padding: 1.1rem 1.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .dojo-card:hover {
-  background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--primary-alpha-30);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .dojo-header {
@@ -137,15 +125,16 @@
 }
 
 .dojo-icon {
-  width: 50px;
-  height: 50px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--comp-radius-lg);
-  font-size: 1.5rem;
+  border-radius: var(--comp-radius-md);
+  font-size: 1.1rem;
   flex-shrink: 0;
   background-color: var(--dojo-color, var(--primary));
+  opacity: 0.85;
 }
 
 .dojo-info {
@@ -153,10 +142,12 @@
 }
 
 .dojo-info h3 {
-  color: var(--primary, #ffd700);
-  font-size: 1.2rem;
-  margin: 0 0 0.25rem 0;
+  color: var(--text-1);
+  font-size: 0.95rem;
+  margin: 0 0 0.2rem 0;
   font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .dojo-inhaber {
@@ -167,12 +158,14 @@
 
 .badge {
   display: inline-block;
-  padding: 4px 10px;
+  padding: 2px 7px;
   border-radius: var(--comp-radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-right: 0.5rem;
-  margin-top: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-right: 0.4rem;
+  margin-top: 0.2rem;
 }
 
 .badge-primary {
@@ -199,7 +192,7 @@
 }
 
 .badge-info {
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   border: 1px solid var(--primary);
   color: var(--primary);
 }
@@ -255,7 +248,7 @@
 }
 
 .btn-edit:hover {
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   border-color: var(--primary);
   color: var(--primary);
 }
@@ -268,22 +261,22 @@
 
 /* Buttons */
 .dojos-verwaltung .btn-primary {
-  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffed4a));
-  color: var(--modal-bg-dark);
+  background: var(--primary, #ffd700);
+  color: #111;
   border: none;
-  padding: 12px 24px;
-  border-radius: var(--comp-radius-lg);
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--comp-radius-md);
   font-weight: 600;
+  font-size: 0.88rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: var(--ui-btn-gap);
-  transition: all 0.3s ease;
+  transition: filter 0.15s;
 }
 
 .dojos-verwaltung .btn-primary:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  filter: brightness(1.08);
 }
 
 .dojos-verwaltung .btn-primary:disabled {
@@ -304,7 +297,7 @@
 
 .dojos-verwaltung .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 /* Modal */
@@ -325,7 +318,7 @@
 
 .modal-content {
   background: linear-gradient(135deg, var(--modal-bg-dark) 0%, #16213e 100%);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-xl);
   padding: 0;
   width: 95vw !important;
@@ -345,7 +338,7 @@
   justify-content: space-between;
   align-items: center;
   padding: var(--ui-card-padding);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .modal-header h2 {
@@ -377,11 +370,11 @@
 .modal-tabs {
   display: flex;
   gap: 0;
-  border-bottom: 2px solid rgba(255,215,0,0.1);
+  border-bottom: 2px solid var(--primary-alpha-10);
   background: rgba(0, 0, 0, 0.2);
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 215, 0, 0.3) transparent;
+  scrollbar-color: var(--primary-alpha-30) transparent;
 }
 
 .modal-tabs::-webkit-scrollbar {
@@ -393,7 +386,7 @@
 }
 
 .modal-tabs::-webkit-scrollbar-thumb {
-  background: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-30);
   border-radius: 2px;
 }
 
@@ -418,9 +411,9 @@
 }
 
 .tab-button.active {
-  color: var(--primary, #ffd700);
-  background: rgba(255, 215, 0, 0.05);
-  border-bottom-color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
+  background: var(--primary-alpha-05);
+  border-bottom-color: var(--primary, var(--primary));
 }
 
 .tab-button.active::after {
@@ -453,7 +446,7 @@
 .form-section textarea {
   width: 100%;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-md);
   padding: 12px 16px;
   color: var(--text-1);
@@ -466,12 +459,12 @@
 
 .form-section textarea:focus {
   outline: none;
-  border-color: var(--primary, #ffd700);
+  border-color: var(--primary, var(--primary));
   background: var(--surface-3);
 }
 
 .form-section h3 {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: 1.2rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
@@ -499,7 +492,7 @@
 .form-group input,
 .form-group select {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-md);
   padding: 10px 14px;
   color: var(--text-1);
@@ -510,7 +503,7 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: var(--primary, #ffd700);
+  border-color: var(--primary, var(--primary));
   background: var(--surface-3);
 }
 
@@ -539,11 +532,11 @@
   flex: 1;
   height: 60px;
   border-radius: var(--comp-radius-md);
-  background-color: var(--preview-color, rgba(255, 215, 0, 0.1));
+  background-color: var(--preview-color, var(--primary-alpha-10));
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   transition: all 0.3s ease;
 }
 
@@ -580,7 +573,7 @@
 
 .color-button:hover {
   transform: scale(1.1);
-  border-color: rgba(255, 215, 0, 0.5);
+  border-color: var(--primary-alpha-50);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
@@ -593,7 +586,7 @@
   gap: 1rem;
   justify-content: flex-end;
   padding: var(--ui-card-padding);
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-20);
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   margin: 0;
@@ -616,7 +609,7 @@
 }
 
 .empty-state svg {
-  color: rgba(255, 215, 0, 0.3);
+  color: var(--primary-alpha-30);
   margin-bottom: 1rem;
 }
 

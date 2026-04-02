@@ -1,0 +1,114 @@
+/* MarketingZentrale.css */
+
+.mz-container {
+  min-height: 100vh;
+  background: var(--bg-primary, #0e0e1a);
+  color: var(--text-primary, #eee);
+}
+
+/* Header */
+.mz-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-default, #2a2a3a);
+  background: var(--bg-card, #141420);
+}
+
+.mz-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  background: none;
+  border: 1px solid var(--border-default, #333);
+  color: var(--text-secondary, #aaa);
+  border-radius: 7px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.mz-back-btn:hover {
+  border-color: var(--primary, #ffd700);
+  color: var(--primary, #ffd700);
+}
+
+.mz-header-info {
+  flex: 1;
+}
+
+.mz-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #eee);
+  margin: 0 0 0.2rem 0;
+}
+
+.mz-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #888);
+  margin: 0;
+}
+
+/* Tab-Navigation */
+.mz-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.75rem 2rem 0;
+  border-bottom: 1px solid var(--border-default, #2a2a3a);
+  background: var(--bg-card, #141420);
+  overflow-x: auto;
+}
+
+.mz-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.1rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary, #888);
+  font-size: 0.88rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+.mz-tab:hover {
+  color: var(--text-primary, #eee);
+}
+.mz-tab.active {
+  color: var(--primary, #ffd700);
+  border-bottom-color: var(--primary, #ffd700);
+  font-weight: 600;
+}
+
+/* Content */
+.mz-content {
+  padding: 2rem;
+}
+
+/* Lazy-Fallback */
+.mz-lazy-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 0.75rem;
+  color: var(--text-secondary, #888);
+  font-size: 0.9rem;
+}
+
+.mz-spinner {
+  animation: mz-spin 1s linear infinite;
+  color: var(--primary, #ffd700);
+}
+
+@keyframes mz-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}

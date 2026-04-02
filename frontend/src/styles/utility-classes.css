@@ -70,7 +70,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-text-primary { color: var(--text-1) !important; }
 .ds-text-secondary { color: var(--text-2) !important; }
 .ds-text-muted { color: var(--text-4) !important; }
-.ds-text-gold { color: var(--primary, #FFD700) !important; }
+.ds-text-gold { color: var(--primary, var(--primary)) !important; }
 .ds-text-success { color: var(--status-success) !important; }
 .ds-text-warning { color: var(--status-warning) !important; }
 .ds-text-danger { color: var(--status-error) !important; }
@@ -89,7 +89,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 
 /* ===== BORDERS ===== */
 .ds-border { border: 1px solid rgba(255,255,255,0.1) !important; }
-.ds-border-gold { border-color: var(--primary, #FFD700) !important; }
+.ds-border-gold { border-color: var(--primary, var(--primary)) !important; }
 .ds-border-0 { border: none !important; }
 .ds-rounded-sm { border-radius: 4px !important; }
 .ds-rounded { border-radius: 8px !important; }
@@ -123,7 +123,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-shadow-sm { box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important; }
 .ds-shadow { box-shadow: 0 4px 8px rgba(0,0,0,0.15) !important; }
 .ds-shadow-lg { box-shadow: 0 8px 16px rgba(0,0,0,0.2) !important; }
-.ds-shadow-gold { box-shadow: 0 4px 12px rgba(255,215,0,0.3) !important; }
+.ds-shadow-gold { box-shadow: 0 4px 12px var(--primary-alpha-30) !important; }
 .ds-shadow-none { box-shadow: none !important; }
 
 /* ===== CURSOR ===== */
@@ -160,12 +160,12 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-btn-primary {
   background: linear-gradient(135deg, var(--primary, #FFD700), var(--primary-dark, #b8860b));
   color: #1a1a2e;
-  box-shadow: 0 4px 12px rgba(255,215,0,0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .ds-btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(255,215,0,0.4);
+  box-shadow: 0 6px 16px var(--primary-alpha-40);
 }
 
 .ds-btn-secondary {
@@ -176,7 +176,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 
 .ds-btn-secondary:hover {
   background: var(--surface-hover);
-  border-color: rgba(255,215,0,0.35);
+  border-color: var(--primary-alpha-35);
 }
 
 .ds-btn-danger {
@@ -238,8 +238,8 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-form-select:focus,
 .ds-form-textarea:focus {
   outline: none;
-  border-color: var(--primary, #FFD700);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.2);
+  border-color: var(--primary, var(--primary));
+  box-shadow: 0 0 0 3px var(--primary-alpha-20);
 }
 
 .ds-form-input::placeholder {
@@ -257,7 +257,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-card:hover {
-  border-color: rgba(255,215,0,0.35);
+  border-color: var(--primary-alpha-35);
   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
 
@@ -274,7 +274,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-card-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--primary, #FFD700);
+  color: var(--primary, var(--primary));
   margin: 0;
 }
 
@@ -322,7 +322,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 .ds-modal-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--primary, #FFD700);
+  color: var(--primary, var(--primary));
   margin: 0;
 }
 
@@ -349,8 +349,8 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-badge-primary {
-  background: rgba(255,215,0,0.2);
-  color: var(--primary, #FFD700);
+  background: var(--primary-alpha-20);
+  color: var(--primary, var(--primary));
 }
 
 .ds-badge-success {
@@ -381,7 +381,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
 }
 
 .ds-stat-card:hover {
-  border-color: rgba(255,215,0,0.35);
+  border-color: var(--primary-alpha-35);
   transform: translateY(-2px);
 }
 
@@ -392,8 +392,8 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,215,0,0.2);
-  color: var(--primary, #FFD700);
+  background: var(--primary-alpha-20);
+  color: var(--primary, var(--primary));
 }
 
 .ds-stat-content {
@@ -446,7 +446,7 @@ Verwendung: Einheitliche Utility-Klassen ohne Konflikte mit Komponenten-Styles
   width: 40px;
   height: 40px;
   border: 3px solid var(--surface-3);
-  border-top-color: var(--primary, #FFD700);
+  border-top-color: var(--primary, var(--primary));
   border-radius: 50%;
   animation: ds-spin 0.8s linear infinite;
 }

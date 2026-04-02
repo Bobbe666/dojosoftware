@@ -132,7 +132,7 @@
   background: rgba(234, 179, 8, 0.15);
   border: 1px solid rgba(234, 179, 8, 0.3);
   border-radius: var(--comp-radius-pill);
-  color: #fbbf24;
+  color: var(--status-warning);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -146,7 +146,7 @@
 
 .toggle-without-login.active {
   background: rgba(234, 179, 8, 0.3);
-  border-color: #fbbf24;
+  border-color: var(--status-warning);
 }
 
 /* Without Login Section */
@@ -160,7 +160,7 @@
 
 .without-login-section h3 {
   margin: 0 0 16px 0;
-  color: #fbbf24;
+  color: var(--status-warning);
   font-size: 16px;
   display: flex;
   align-items: center;
@@ -454,7 +454,7 @@
 
 .badge-warning {
   background: rgba(234, 179, 8, 0.2);
-  color: #fbbf24;
+  color: var(--status-warning);
   border: 1px solid rgba(234, 179, 8, 0.3);
 }
 
@@ -923,7 +923,7 @@
 
 .badge-rolle-dojo-admin {
   background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  color: var(--status-warning);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 

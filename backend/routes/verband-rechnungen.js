@@ -67,6 +67,39 @@ const requireTDAAdmin = (req, res, next) => {
   next();
 };
 
+// GET /:id/pdf - PDF generieren
+router.get('/:id/pdf', async (req, res) => {
+  try {
+    const [rechnung] = await queryAsync(`
+      SELECT * FROM verband_rechnungen WHERE id = ?
+    `, [req.params.id]);
+
+    if (!rechnung) {
+      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+    }
+
+    const positionen = await queryAsync(`
+      SELECT * FROM verband_rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr
+    `, [req.params.id]);
+
+    // TDA Bankdaten laden
+    const [tdaDojo] = await queryAsync(`SELECT * FROM dojo WHERE id = 2`);
+    const [tdaBank] = await queryAsync(`
+      SELECT * FROM dojo_banken WHERE dojo_id = 2 AND ist_standard = 1 AND ist_aktiv = 1 LIMIT 1
+    `);
+
+    // HTML für PDF erstellen
+    const html = generateInvoiceHTML(rechnung, positionen, tdaDojo, tdaBank);
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+
+  } catch (err) {
+    logger.error('Fehler beim PDF-Generieren:', { error: err });
+    res.status(500).json({ error: 'Fehler beim Generieren' });
+  }
+});
+
 // Alle Routen erfordern Authentifizierung + TDA-Admin
 router.use(authenticateToken);
 router.use(requireTDAAdmin);
@@ -427,40 +460,6 @@ router.post('/:id/euer-buchen', async (req, res) => {
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
   }
 });
-
-// GET /:id/pdf - PDF generieren
-router.get('/:id/pdf', async (req, res) => {
-  try {
-    const [rechnung] = await queryAsync(`
-      SELECT * FROM verband_rechnungen WHERE id = ?
-    `, [req.params.id]);
-
-    if (!rechnung) {
-      return res.status(404).json({ error: 'Rechnung nicht gefunden' });
-    }
-
-    const positionen = await queryAsync(`
-      SELECT * FROM verband_rechnungspositionen WHERE rechnung_id = ? ORDER BY position_nr
-    `, [req.params.id]);
-
-    // TDA Bankdaten laden
-    const [tdaDojo] = await queryAsync(`SELECT * FROM dojo WHERE id = 2`);
-    const [tdaBank] = await queryAsync(`
-      SELECT * FROM dojo_banken WHERE dojo_id = 2 AND ist_standard = 1 AND ist_aktiv = 1 LIMIT 1
-    `);
-
-    // HTML für PDF erstellen
-    const html = generateInvoiceHTML(rechnung, positionen, tdaDojo, tdaBank);
-
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(html);
-
-  } catch (err) {
-    logger.error('Fehler beim PDF-Generieren:', { error: err });
-    res.status(500).json({ error: 'Fehler beim Generieren' });
-  }
-});
-
 // HTML-Generator für Rechnung
 function generateInvoiceHTML(rechnung, positionen, tda, bank) {
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '-';

@@ -11,35 +11,32 @@ import '../styles/Buttons.css';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    loginField: '',  // Kann Email oder Username sein
+    loginField: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loginType, setLoginType] = useState('email'); // 'email' oder 'username'
+  const [loginType, setLoginType] = useState('email');
   const [successMessage, setSuccessMessage] = useState('');
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 
   const { login, logout, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Bei wrong_dojo-Fehler: stale Token sofort löschen (bricht Redirect-Schleife)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('error') === 'wrong_dojo') {
-      logout(true); // silent logout - löscht localStorage ohne API-Call
+      logout(true);
       setError('Ihr Konto ist einem anderen Dojo zugeordnet. Bitte melden Sie sich mit Ihrem Dojo-Konto an.');
     }
   }, []);
 
-  // Redirect wenn bereits eingeloggt - basierend auf Rolle
   const { user } = useAuth();
   if (isAuthenticated && !authLoading) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Automatische Erkennung ob Email oder Username
   const detectLoginType = (value) => {
     if (value.includes('@')) {
       setLoginType('email');
@@ -59,7 +56,6 @@ const Login = () => {
       detectLoginType(value);
     }
 
-    // Error und Success-Messages zur�cksetzen bei Eingabe
     if (error) setError('');
     if (successMessage) setSuccessMessage('');
   };
@@ -70,7 +66,6 @@ const Login = () => {
     setError('');
     setSuccessMessage('');
 
-    // Eingabe-Validierung
     if (!formData.loginField.trim()) {
       setError('Bitte geben Sie Ihren Benutzernamen oder Ihre E-Mail-Adresse ein');
       setLoading(false);
@@ -84,12 +79,10 @@ const Login = () => {
     }
 
     try {
-      // Login-Daten vorbereiten
       const loginData = {
         password: formData.password.trim()
       };
 
-      // Email oder Username setzen
       if (loginType === 'email') {
         loginData.email = formData.loginField.trim().toLowerCase();
       } else {
@@ -97,23 +90,22 @@ const Login = () => {
       }
 
       const userData = await login(loginData);
-      
-      setSuccessMessage(`Willkommen zur�ck, ${userData.username}!`);
 
-      // Weiterleitung zu Dashboard (funktioniert f�r Admin und Mitglieder)
-      navigate('/dashboard', { replace: true });
-      
+      setSuccessMessage(`Willkommen zurück, ${userData.username}!`);
+      const isCheckinDomain = ['checkin.dojo.tda-intl.org', 'checkin.tda-intl.org'].includes(window.location.hostname);
+      navigate(isCheckinDomain ? '/dashboard/checkin' : '/dashboard', { replace: true });
+
     } catch (err) {
-      console.error('? Login-Fehler:', err);
-      
+      console.error('Login-Fehler:', err);
+
       if (err.response?.status === 401) {
-        setError('Ung�ltige Anmeldedaten. Bitte pr�fen Sie Username/Email und Passwort.');
+        setError('Ungültige Anmeldedaten. Bitte prüfen Sie Username/Email und Passwort.');
       } else if (err.response?.status === 400) {
-        setError('Bitte f�llen Sie alle Felder korrekt aus.');
+        setError('Bitte füllen Sie alle Felder korrekt aus.');
       } else if (err.response?.status === 500) {
-        setError('Server-Fehler. Bitte versuchen Sie es sp�ter erneut.');
+        setError('Server-Fehler. Bitte versuchen Sie es später erneut.');
       } else if (err.code === 'ERR_NETWORK') {
-        setError('Verbindung zum Server fehlgeschlagen. Pr�fen Sie Ihre Internetverbindung.');
+        setError('Verbindung zum Server fehlgeschlagen. Prüfen Sie Ihre Internetverbindung.');
       } else {
         setError(err.response?.data?.message || 'Ein unbekannter Fehler ist aufgetreten.');
       }
@@ -137,14 +129,16 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <div className="japanese-title">Tiger & Dragon Association - International</div>
+          <div className="japanese-title">Tiger & Dragon Association – International</div>
           <div className="logo">
-            <img src={dojoLogo} alt="Dojo Logo" className="logo-image" />
+            <div className="logo-circle">
+              <img src={dojoLogo} alt="Dojo Logo" className="logo-image" />
+            </div>
             <h1 className="title">DojoSoftware</h1>
           </div>
           <div className="security-badge">
-            <Shield size={16} />
-            <span>Sicher verschl�sselt</span>
+            <Shield size={14} />
+            <span>Sicher verschlüsselt</span>
           </div>
         </div>
 
@@ -176,7 +170,7 @@ const Login = () => {
             />
             <small className="input-hint">
               <Info size={12} />
-              Sie k�nnen sich mit E-Mail oder Benutzername anmelden
+              E-Mail oder Benutzername möglich
             </small>
           </div>
 
@@ -249,7 +243,7 @@ const Login = () => {
           </button>
         </form>
 
-        {/* Passwort vergessen Link */}
+        {/* Passwort vergessen */}
         <div className="forgot-password">
           <button
             type="button"
@@ -257,11 +251,11 @@ const Login = () => {
             onClick={() => navigate('/password-reset')}
             disabled={loading}
           >
-            Passwort vergessen? Passwort zur�cksetzen
+            Passwort vergessen? Zurücksetzen
           </button>
         </div>
 
-        {/* Registrierungsbutton */}
+        {/* Registrierung */}
         <div className="registration-section">
           <div className="registration-divider">
             <span>oder</span>
@@ -275,33 +269,27 @@ const Login = () => {
             <UserPlus size={16} />
             <span>Neues Mitglied registrieren</span>
           </button>
-          <p className="registration-info">
-            <Info size={12} />
-            Vollst�ndige Registrierung inkl. Vertrag erforderlich
-          </p>
         </div>
 
         {/* Footer */}
         <div className="login-footer">
-          <p className="version-info">
-            DojoSoftware v2.0 | � 2024-2025
-          </p>
+          <p className="version-info">DojoSoftware v2.8.1 &nbsp;|&nbsp; © 2024–2026</p>
           <div className="security-info">
             <Shield size={12} />
-            <span>JWT-Authentication | bcrypt-Verschl�sselung</span>
+            <span>JWT-Authentication | bcrypt-Verschlüsselung</span>
           </div>
         </div>
       </div>
 
       {/* Registrierungs-Modal */}
       {showRegistrationModal && (
-        <NeuesMitgliedAnlegen 
+        <NeuesMitgliedAnlegen
           onClose={() => setShowRegistrationModal(false)}
           isRegistrationFlow={true}
           onRegistrationComplete={(success) => {
             if (success) {
               setShowRegistrationModal(false);
-              setSuccessMessage('Registrierung erfolgreich abgeschlossen! Sie k�nnen sich jetzt anmelden.');
+              setSuccessMessage('Registrierung erfolgreich! Sie können sich jetzt anmelden.');
             }
           }}
         />

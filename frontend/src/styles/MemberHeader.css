@@ -9,3 +9,39 @@
 .header-icon-mr {
   margin-right: 0.25rem;
 }
+
+/* Familien-Switcher im Header */
+.family-switcher-header {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.family-switcher-header-btn {
+  padding: 4px 14px;
+  border-radius: 16px;
+  border: 1.5px solid var(--color-primary, #c9a84c);
+  background: transparent;
+  color: var(--color-primary, #c9a84c);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.family-switcher-header-btn:hover:not(:disabled) {
+  background: var(--color-primary, #c9a84c);
+  color: #000;
+}
+
+.family-switcher-header-btn--active {
+  background: var(--color-primary, #c9a84c);
+  color: #000;
+  cursor: default;
+}
+
+.family-switcher-header-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

@@ -13,7 +13,8 @@ router.get('/stats', (req, res) => {
   if (dojo_ids) {
     dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
   } else if (dojo_id && dojo_id !== 'all') {
-    dojoIdList = [parseInt(dojo_id)];
+    const id = parseInt(dojo_id);
+    if (!isNaN(id)) dojoIdList = [id];
   }
   // Bei dojo_id=all OHNE dojo_ids: Keine Filterung (Legacy-Verhalten)
   
@@ -464,7 +465,8 @@ router.get('/timeline', (req, res) => {
   if (dojo_ids) {
     dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
   } else if (dojo_id && dojo_id !== 'all') {
-    dojoIdList = [parseInt(dojo_id)];
+    const id = parseInt(dojo_id);
+    if (!isNaN(id)) dojoIdList = [id];
   }
 
   const monthsNum = parseInt(months) || 12;
@@ -543,7 +545,8 @@ router.get('/tarif-breakdown', (req, res) => {
   if (dojo_ids) {
     dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
   } else if (dojo_id && dojo_id !== 'all') {
-    dojoIdList = [parseInt(dojo_id)];
+    const id = parseInt(dojo_id);
+    if (!isNaN(id)) dojoIdList = [id];
   }
 
   let whereConditions = ['v.status = "aktiv"'];
@@ -585,5 +588,86 @@ router.get('/tarif-breakdown', (req, res) => {
   });
 });
 
-module.exports = router;
 
+// GET /api/finanzcockpit/member-stats - Mitglieder-Kennzahlen
+router.get('/member-stats', (req, res) => {
+  const { period = 'month', start_date, end_date, dojo_id, dojo_ids } = req.query;
+  let dojoIdList = [];
+  if (dojo_ids) {
+    dojoIdList = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+  } else if (dojo_id && dojo_id !== 'all') {
+    const id = parseInt(dojo_id);
+    if (!isNaN(id)) dojoIdList = [id];
+  }
+  let dateStart, dateEnd;
+  const now = new Date();
+  if (start_date && end_date) {
+    dateStart = start_date; dateEnd = end_date;
+  } else if (period === 'month') {
+    dateStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+  } else if (period === 'quarter') {
+    const quarter = Math.floor(now.getMonth() / 3);
+    dateStart = new Date(now.getFullYear(), quarter * 3, 1).toISOString().slice(0, 10);
+    dateEnd = new Date(now.getFullYear(), (quarter + 1) * 3, 0).toISOString().slice(0, 10);
+  } else {
+    dateStart = new Date(now.getFullYear(), 0, 1).toISOString().slice(0, 10);
+    dateEnd = new Date(now.getFullYear(), 11, 31).toISOString().slice(0, 10);
+  }
+  const buildFilter = (alias) => dojoIdList.length === 0
+    ? { clause: '', params: [] }
+    : { clause: ' AND ' + alias + '.dojo_id IN (' + dojoIdList.map(() => '?').join(',') + ')', params: [...dojoIdList] };
+
+  Promise.all([
+    new Promise((resolve, reject) => {
+      const { clause, params } = buildFilter('v');
+      db.query(
+        "SELECT AVG(v.monatsbeitrag) as avg_beitrag, COUNT(*) as total_vertraege, SUM(CASE WHEN LOWER(COALESCE(m.zahlungsmethode,'')) IN ('lastschrift','sepa-lastschrift','sepa') THEN 1 ELSE 0 END) as sepa_count FROM vertraege v LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id WHERE v.status = 'aktiv'" + clause,
+        params, (err, r) => { if (err) return reject(err); resolve(r[0] || {}); }
+      );
+    }),
+    new Promise((resolve, reject) => {
+      const { clause, params } = buildFilter('m');
+      db.query(
+        "SELECT COUNT(*) as total, SUM(CASE WHEN r.status = 'bezahlt' THEN 1 ELSE 0 END) as bezahlt FROM rechnungen r LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id WHERE r.archiviert = 0 AND r.faelligkeitsdatum >= ? AND r.faelligkeitsdatum <= ?" + clause,
+        [dateStart, dateEnd, ...params], (err, r) => { if (err) return reject(err); resolve(r[0] || {}); }
+      );
+    }),
+    new Promise((resolve, reject) => {
+      const { clause, params } = buildFilter('v');
+      db.query(
+        "SELECT COUNT(*) as cnt FROM vertraege v WHERE v.vertragsbeginn >= ? AND v.vertragsbeginn <= ?" + clause,
+        [dateStart, dateEnd, ...params], (err, r) => { if (err) return reject(err); resolve(parseInt(r[0]?.cnt) || 0); }
+      );
+    }),
+    new Promise((resolve, reject) => {
+      const { clause, params } = buildFilter('v');
+      db.query(
+        "SELECT COUNT(*) as cnt FROM vertraege v WHERE v.vertragsende >= ? AND v.vertragsende <= ?" + clause,
+        [dateStart, dateEnd, ...params], (err, r) => { if (err) return reject(err); resolve(parseInt(r[0]?.cnt) || 0); }
+      );
+    })
+  ]).then(([vs, is, neueV, verloreneV]) => {
+    const total = parseInt(vs.total_vertraege) || 0;
+    const sepaCount = parseInt(vs.sepa_count) || 0;
+    const totalR = parseInt(is.total) || 0;
+    const bezahlt = parseInt(is.bezahlt) || 0;
+    res.json({ success: true, data: {
+      avgMonatsbeitrag: parseFloat(vs.avg_beitrag) || 0,
+      totalVertraege: total,
+      sepaRate: total > 0 ? Math.round((sepaCount / total) * 100) : 0,
+      sepaCount,
+      inkassoQuote: totalR > 0 ? Math.round((bezahlt / totalR) * 100) : 100,
+      totalRechnungen: totalR,
+      bezahltRechnungen: bezahlt,
+      neueMitglieder: neueV,
+      verloreneMitglieder: verloreneV,
+      nettoWachstum: neueV - verloreneV
+    }});
+  }).catch(err => {
+    logger.error('Fehler bei member-stats:', { error: err });
+    res.status(500).json({ success: false, error: err.message });
+  });
+});
+
+module.exports = router;

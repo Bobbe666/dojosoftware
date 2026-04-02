@@ -3,23 +3,35 @@
 // =====================================================================================
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, ArrowLeft, Users } from 'lucide-react';
+import { Send, ArrowLeft, Users, Settings, Trash2, Archive, X, MoreVertical } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useChatContext } from '../../context/ChatContext.jsx';
 import ChatMessage from './ChatMessage.jsx';
+import ChatRoomSettings from './ChatRoomSettings.jsx';
 
-const ChatWindow = ({ room, onBack }) => {
-  const { token } = useAuth();
+const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
+  const { token, user } = useAuth();
   const { socket, joinRoom, leaveRoom, markRoomAsRead, sendMessage } = useChatContext();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const isMessenger = room.source === 'messenger';
+  const messengerWindowOpen = !isMessenger || room.window_open !== false;
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDirectMenu, setShowDirectMenu] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesTopRef = useRef(null);
   const isLoadingMore = useRef(false);
   const inputRef = useRef(null);
+
+  // Bestimme ob aktueller User Owner/Admin im Raum ist (für Settings-Button)
+  const myRole = room.my_role; // 'owner', 'admin', 'member'
+  const isAdminUser = user?.role === 'admin' || user?.role === 'super_admin';
+  const canManageRoom = room.type === 'group' && (myRole === 'owner' || myRole === 'admin' || isAdminUser);
 
   // Nachrichten laden
   const loadMessages = useCallback(async (beforeId = null) => {
@@ -100,28 +112,81 @@ const ChatWindow = ({ room, onBack }) => {
     setInput('');
     setIsSending(true);
     try {
-      await sendMessage(room.id, content);
-    } catch (e) {
-      // Socket fehlgeschlagen → REST-Fallback
-      try {
-        const res = await fetch(`/api/chat/rooms/${room.id}/messages`, {
+      if (isMessenger) {
+        // Messenger: Senden über Graph API via Backend
+        const res = await fetch('/api/messenger/send', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ content })
+          body: JSON.stringify({ chat_room_id: room.id, text: content })
         });
         const data = await res.json();
-        if (data.success) {
-          setMessages(prev => [...prev, data.message]);
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+        if (!data.success) throw new Error(data.error || 'Senden fehlgeschlagen');
+      } else {
+        await sendMessage(room.id, content);
+      }
+    } catch (e) {
+      if (!isMessenger) {
+        // Socket fehlgeschlagen → REST-Fallback
+        try {
+          const res = await fetch(`/api/chat/rooms/${room.id}/messages`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ content })
+          });
+          const data = await res.json();
+          if (data.success) {
+            setMessages(prev => [...prev, data.message]);
+            setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+          }
+        } catch (restErr) {
+          setInput(content); // Inhalt zurückstellen
         }
-      } catch (restErr) {
+      } else {
         setInput(content); // Inhalt zurückstellen
       }
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleSetStatus = async (status) => {
+    setShowDirectMenu(false);
+    try {
+      const res = await fetch(`/api/chat/rooms/${room.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ status })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (onRoomUpdated) onRoomUpdated(null, 'deleted'); // zurück zur Liste
+      }
+    } catch (e) {}
+  };
+
+  const handleDeleteDirectChat = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/chat/rooms/${room.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (onRoomUpdated) onRoomUpdated(null, 'deleted');
+      } else {
+        setShowDeleteConfirm(false);
+      }
+    } catch (e) {
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -139,7 +204,24 @@ const ChatWindow = ({ room, onBack }) => {
     }
   };
 
-  const roomIcon = room.type === 'announcement' ? '📣' : room.type === 'group' ? '👥' : '💬';
+  // Avatar-Darstellung im Header
+  const HeaderAvatar = () => {
+    if (room.type === 'direct') {
+      const initial = (room.name || '?')[0].toUpperCase();
+      return <div className="chat-header-avatar chat-header-avatar--direct">{initial}</div>;
+    }
+    if (room.type === 'announcement') {
+      return <div className="chat-header-avatar chat-header-avatar--announcement">📣</div>;
+    }
+    // Gruppe mit Emoji + Farbe
+    const emoji = room.avatar_emoji || '👥';
+    const color = room.avatar_color || '#4f7cff';
+    return (
+      <div className="chat-header-avatar chat-header-avatar--group" style={{ background: color }}>
+        {emoji}
+      </div>
+    );
+  };
 
   return (
     <div className="chat-window">
@@ -148,17 +230,62 @@ const ChatWindow = ({ room, onBack }) => {
         <button className="chat-back-btn" onClick={onBack} title="Zurück">
           <ArrowLeft size={18} />
         </button>
+        <HeaderAvatar />
         <div className="chat-window-header-info">
-          <span className="chat-window-room-icon">{roomIcon}</span>
-          <div>
-            <div className="chat-window-room-name">{room.name || 'Chat'}</div>
-            {room.member_count > 0 && (
-              <div className="chat-window-member-count">
-                <Users size={11} /> {room.member_count} Mitglieder
+          <div className="chat-window-room-name">
+            {isMessenger && <span style={{ marginRight: 5 }}>📘</span>}
+            {room.name || 'Chat'}
+          </div>
+          {isMessenger ? (
+            <div className="chat-window-member-count">
+              {messengerWindowOpen
+                ? <span style={{ color: 'var(--color-success, #22c55e)' }}>● 24h-Fenster offen</span>
+                : <span style={{ color: 'var(--color-muted, #94a3b8)' }}>🔒 Fenster abgelaufen</span>
+              }
+            </div>
+          ) : room.member_count > 0 && (
+            <div className="chat-window-member-count">
+              <Users size={11} /> {room.member_count} Mitglieder
+            </div>
+          )}
+        </div>
+        {room.type === 'direct' && (
+          <div style={{ position: 'relative' }}>
+            <button
+              className="chat-settings-btn"
+              onClick={() => setShowDirectMenu(v => !v)}
+              title="Chat-Optionen"
+            >
+              <MoreVertical size={17} />
+            </button>
+            {showDirectMenu && (
+              <div className="chat-direct-menu" onClick={e => e.stopPropagation()}>
+                <button className="chat-direct-menu-item" onClick={() => handleSetStatus('active')}>
+                  🟢 Als Aktiv markieren
+                </button>
+                <button className="chat-direct-menu-item" onClick={() => handleSetStatus('archived')}>
+                  📦 Archivieren
+                </button>
+                <button className="chat-direct-menu-item" onClick={() => handleSetStatus('closed')}>
+                  🔒 Schließen
+                </button>
+                <div className="chat-direct-menu-divider" />
+                <button className="chat-direct-menu-item chat-direct-menu-item--danger" onClick={() => { setShowDirectMenu(false); setShowDeleteConfirm(true); }}>
+                  <Trash2 size={13} /> Löschen
+                </button>
               </div>
             )}
           </div>
-        </div>
+        )}
+        {canManageRoom && (
+          <button
+            className="chat-settings-btn"
+            onClick={() => setShowSettings(true)}
+            title="Gruppeneinstellungen"
+          >
+            <Settings size={18} />
+          </button>
+        )}
       </div>
 
       {/* Nachrichten */}
@@ -213,30 +340,70 @@ const ChatWindow = ({ room, onBack }) => {
 
       {/* Eingabe (nur wenn kein Ankündigungs-Kanal oder Nutzer kein Mitglied) */}
       {room.type !== 'announcement' ? (
-        <div className="chat-input-bar">
-          <textarea
-            ref={inputRef}
-            className="chat-input"
-            placeholder="Nachricht schreiben…"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={1}
-            maxLength={2000}
-          />
-          <button
-            className="chat-send-btn"
-            onClick={handleSend}
-            disabled={!input.trim() || isSending}
-            title="Senden (Enter)"
-          >
-            <Send size={18} />
-          </button>
-        </div>
+        isMessenger && !messengerWindowOpen ? (
+          <div className="chat-readonly-bar">
+            🔒 24-Stunden-Fenster abgelaufen — Nutzer muss zuerst eine neue Nachricht senden
+          </div>
+        ) : (
+          <div className="chat-input-bar">
+            <textarea
+              ref={inputRef}
+              className="chat-input"
+              placeholder={isMessenger ? 'Antwort an Facebook-Nutzer…' : 'Nachricht schreiben…'}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              rows={1}
+              maxLength={2000}
+            />
+            <button
+              className="chat-send-btn"
+              onClick={handleSend}
+              disabled={!input.trim() || isSending}
+              title="Senden (Enter)"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        )
       ) : (
         <div className="chat-readonly-bar">
           📣 Nur Admins können hier schreiben
         </div>
+      )}
+
+      {/* Direktchat löschen — Bestätigungsdialog */}
+      {showDeleteConfirm && (
+        <div className="chat-delete-overlay" onClick={() => !isDeleting && setShowDeleteConfirm(false)}>
+          <div className="chat-delete-modal" onClick={e => e.stopPropagation()}>
+            <div className="chat-delete-modal-icon">🗑️</div>
+            <h4 className="chat-delete-modal-title">Chat löschen?</h4>
+            <p className="chat-delete-modal-text">
+              Diese Unterhaltung und alle Nachrichten werden <strong>dauerhaft gelöscht</strong> und sind nicht mehr verfügbar.
+            </p>
+            <div className="chat-delete-modal-btns">
+              <button className="crs-btn-cancel-delete" onClick={() => setShowDeleteConfirm(false)} disabled={isDeleting}>
+                Abbrechen
+              </button>
+              <button className="crs-btn-confirm-delete" onClick={handleDeleteDirectChat} disabled={isDeleting}>
+                {isDeleting ? '…' : 'Ja, löschen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gruppeneinstellungen-Modal */}
+      {showSettings && (
+        <ChatRoomSettings
+          room={room}
+          token={token}
+          onClose={() => setShowSettings(false)}
+          onUpdated={(updatedRoom) => {
+            setShowSettings(false);
+            if (onRoomUpdated) onRoomUpdated(updatedRoom);
+          }}
+        />
       )}
     </div>
   );

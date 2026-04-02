@@ -696,11 +696,20 @@ async function sendBadgeNotification(mitglied_id, badge_id) {
           dojoname: data.dojo_name
         });
 
-        // Markiere Badge als benachrichtigt
+        // Markiere Badge als benachrichtigt + In-App-Benachrichtigung
         if (result.success) {
           db.query(
             'UPDATE mitglieder_badges SET benachrichtigt = TRUE WHERE mitglied_id = ? AND badge_id = ?',
             [mitglied_id, badge_id]
+          );
+          // In-App: erscheint in der Benachrichtigungs-Glocke des Mitglieds
+          db.query(
+            "INSERT INTO notifications (type, recipient, subject, message, created_at, `read`) VALUES ('push', ?, ?, ?, NOW(), FALSE)",
+            [
+              data.email,
+              `🏆 Neuer Badge: ${data.badge_name}`,
+              `Herzlichen Glückwunsch! Du hast den Badge "${data.badge_name}" erhalten.${data.badge_beschreibung ? ' ' + data.badge_beschreibung : ''}`
+            ]
           );
         }
 

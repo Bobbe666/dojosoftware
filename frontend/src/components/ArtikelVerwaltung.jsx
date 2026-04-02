@@ -6,18 +6,25 @@
 // =====================================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import '../styles/components.css';
 import '../styles/ArtikelVerwaltung.css';
 import '../styles/ArtikelVerwaltungOverrides.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { useDojoContext } from '../context/DojoContext';
+import { useTheme } from '../context/ThemeContext';
 import BestellungenTab from './BestellungenTab';
 import VerbandRabatteTab from './VerbandRabatteTab';
+import Rabattsystem from './Rabattsystem';
 
 
 const ArtikelVerwaltung = () => {
   const navigate = useNavigate();
+  const { activeDojo } = useDojoContext();
+  const { isDarkMode } = useTheme();
+  const isVerbandLevel = activeDojo === 'super-admin' || activeDojo === 'verband';
 
   // =====================================================================================
   // STATE MANAGEMENT
@@ -41,6 +48,7 @@ const ArtikelVerwaltung = () => {
   const [selectedKategorie, setSelectedKategorie] = useState('');
   const [showOnlyActive, setShowOnlyActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [selectedGruppe, setSelectedGruppe] = useState(null); // null = Alle, id = Gruppe, 'none' = ohne Gruppe
 
   // Tab Navigation States (ersetzt Steps)
   const [activeTab, setActiveTab] = useState('basis'); // 'basis', 'preise', 'lager', 'einstellungen'
@@ -182,14 +190,19 @@ const ArtikelVerwaltung = () => {
   // Lagerbestand ändern
   const updateLagerbestand = async () => {
     try {
+      const { variante_groesse, variante_farbe, ...bewegungBase } = lagerBewegung;
+      const varianteKey = selectedArtikel?.hat_varianten && variante_groesse
+        ? `${variante_groesse}|${variante_farbe || ''}|`
+        : null;
+      const payload = varianteKey ? { ...bewegungBase, variante_key: varianteKey } : bewegungBase;
       const response = await apiCall(`/${selectedArtikel.artikel_id}/lager`, {
         method: 'POST',
-        body: JSON.stringify(lagerBewegung)
+        body: JSON.stringify(payload)
       });
-      
+
       if (response.success) {
         setShowModal(false);
-        setLagerBewegung({ bewegungsart: 'eingang', menge: '', grund: '' });
+        setLagerBewegung({ bewegungsart: 'eingang', menge: '', grund: '', variante_groesse: '', variante_farbe: '' });
         loadArtikel();
         setError(null);
       } else {
@@ -215,7 +228,7 @@ const ArtikelVerwaltung = () => {
   const handleLager = (artikel) => {
     setModalMode('lager');
     setSelectedArtikel(artikel);
-    setLagerBewegung({ bewegungsart: 'eingang', menge: '', grund: '' });
+    setLagerBewegung({ bewegungsart: 'eingang', menge: '', grund: '', variante_groesse: '', variante_farbe: '' });
     setShowModal(true);
   };
   
@@ -271,15 +284,27 @@ const ArtikelVerwaltung = () => {
   // FILTER & SEARCH
   // =====================================================================================
   
-  const filteredArtikel = artikel.filter(artikel => {
-    const matchesSearch = artikel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         artikel.artikel_nummer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         artikel.ean_code?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredArtikel = artikel.filter(a => {
+    const matchesSearch = a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         a.artikel_nummer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         a.ean_code?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesKategorie = !selectedKategorie || artikel.kategorie_id == selectedKategorie;
+    const matchesKategorie = !selectedKategorie || a.kategorie_id == selectedKategorie;
 
-    return matchesSearch && matchesKategorie;
+    const matchesGruppe = selectedGruppe === null
+      ? true
+      : selectedGruppe === 'none'
+        ? !a.artikelgruppe_id
+        : a.artikelgruppe_id == selectedGruppe;
+
+    return matchesSearch && matchesKategorie && matchesGruppe;
   });
+
+  const gruppenMitAnzahl = artikelgruppen.map(g => ({
+    ...g,
+    count: artikel.filter(a => a.artikelgruppe_id == g.id).length
+  }));
+  const ohneGruppeCount = artikel.filter(a => !a.artikelgruppe_id).length;
 
   const handleSort = (key) => {
     setSortConfig(prev => ({
@@ -309,8 +334,8 @@ const ArtikelVerwaltung = () => {
   });
 
   const SortIcon = ({ col }) => {
-    if (sortConfig.key !== col) return <span className="sort-icon sort-icon--idle">↕</span>;
-    return <span className="sort-icon sort-icon--active">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
+    if (sortConfig.key !== col) return <span className="sort-icon sort-icon--idle" style={{ pointerEvents: 'none' }}>↕</span>;
+    return <span className="sort-icon sort-icon--active" style={{ pointerEvents: 'none' }}>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>;
   };
   
   // =====================================================================================
@@ -768,9 +793,7 @@ const ArtikelVerwaltung = () => {
 
     // Lager modal - kompakt, theme-aware
     if (modalMode === 'lager') {
-      console.log('LAGER MODAL GERENDERT - NEUE VERSION');
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      console.log('isDark:', isDark);
+      const isDark = isDarkMode;
       const modalStyle = {
         maxWidth: '420px',
         width: '420px',
@@ -780,8 +803,8 @@ const ArtikelVerwaltung = () => {
         padding: '0',
         background: isDark ? '#1a1a2e' : '#ffffff',
         border: isDark ? '1px solid #2d2d44' : '1px solid #dee2e6',
-        animation: 'none',
-        backdropFilter: 'none'
+        margin: 'auto',
+        flexShrink: 0
       };
       const headerStyle = {
         padding: '14px 16px',
@@ -932,7 +955,7 @@ const ArtikelVerwaltung = () => {
         padding: '10px',
         textAlign: 'center'
       };
-      return (
+      return createPortal(
         <div style={overlayStyle} onClick={() => setShowModal(false)}>
           <div onClick={e => e.stopPropagation()} style={modalStyle}>
             <div style={headerStyle}>
@@ -943,16 +966,77 @@ const ArtikelVerwaltung = () => {
             <div style={bodyStyle}>
               <div style={infoCardStyle}>
                 <h4 style={infoTitleStyle}>{selectedArtikel?.name}</h4>
-                <div className="av-stock-info-row">
-                  <div style={infoBoxStyle}>
-                    <div className="av-stock-label">Aktueller Bestand</div>
-                    <div className="av-stock-value">{selectedArtikel?.lagerbestand}</div>
+
+                {/* Varianten-Auswahl */}
+                {selectedArtikel?.hat_varianten && (() => {
+                  const groessen = selectedArtikel.varianten_groessen || [];
+                  const farben = selectedArtikel.varianten_farben || [];
+                  const vKey = `${lagerBewegung.variante_groesse}|${lagerBewegung.variante_farbe || ''}|`;
+                  const vData = (selectedArtikel.varianten_bestand || {})[vKey] || {};
+                  return (
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        {groessen.length > 0 && (
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: isDark ? '#a0a0a0' : '#6c757d', marginBottom: '4px' }}>Größe</div>
+                            <select
+                              value={lagerBewegung.variante_groesse}
+                              onChange={e => setLagerBewegung(p => ({ ...p, variante_groesse: e.target.value }))}
+                              style={selectStyle}
+                            >
+                              <option value="">– wählen –</option>
+                              {groessen.map(g => <option key={g} value={g}>{g}</option>)}
+                            </select>
+                          </div>
+                        )}
+                        {farben.length > 0 && (
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '11px', color: isDark ? '#a0a0a0' : '#6c757d', marginBottom: '4px' }}>Farbe</div>
+                            <select
+                              value={lagerBewegung.variante_farbe}
+                              onChange={e => setLagerBewegung(p => ({ ...p, variante_farbe: e.target.value }))}
+                              style={selectStyle}
+                            >
+                              <option value="">– wählen –</option>
+                              {farben.map(f => <option key={typeof f === 'object' ? f.name : f} value={typeof f === 'object' ? f.name : f}>{typeof f === 'object' ? f.name : f}</option>)}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                      {lagerBewegung.variante_groesse && (
+                        <div className="av-stock-info-row">
+                          <div style={infoBoxStyle}>
+                            <div className="av-stock-label">Bestand (Variante)</div>
+                            <div className="av-stock-value">{vData.bestand ?? '—'}</div>
+                          </div>
+                          <div style={infoBoxStyle}>
+                            <div className="av-stock-label">Mindestbestand</div>
+                            <div className="av-stock-value">{vData.mindestbestand ?? 0}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Gesamt-Bestand (immer sichtbar) */}
+                {!selectedArtikel?.hat_varianten && (
+                  <div className="av-stock-info-row">
+                    <div style={infoBoxStyle}>
+                      <div className="av-stock-label">Aktueller Bestand</div>
+                      <div className="av-stock-value">{selectedArtikel?.lagerbestand}</div>
+                    </div>
+                    <div style={infoBoxStyle}>
+                      <div className="av-stock-label">Mindestbestand</div>
+                      <div className="av-stock-value">{selectedArtikel?.mindestbestand}</div>
+                    </div>
                   </div>
-                  <div style={infoBoxStyle}>
-                    <div className="av-stock-label">Mindestbestand</div>
-                    <div className="av-stock-value">{selectedArtikel?.mindestbestand}</div>
+                )}
+                {selectedArtikel?.hat_varianten && (
+                  <div style={{ fontSize: '11px', color: isDark ? '#a0a0a0' : '#6c757d', marginTop: '4px' }}>
+                    Gesamt-Lagerbestand: <strong style={{ color: isDark ? '#fff' : '#333' }}>{selectedArtikel?.lagerbestand}</strong>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="av-form-col">
@@ -1009,13 +1093,13 @@ const ArtikelVerwaltung = () => {
             </div>
           </div>
         </div>
-      );
+      , document.body);
     }
 
     // Neues Tab-basiertes Modal für Create/Edit
     return (
-      <div className="modal-overlay fullscreen-modal" onClick={() => setShowModal(false)} className="av-fullscreen-overlay">
-        <div className="modal-content artikel-modal" onClick={e => e.stopPropagation()} className="av-fullscreen-modal">
+      <div className="modal-overlay fullscreen-modal av-fullscreen-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-content artikel-modal av-fullscreen-modal" onClick={e => e.stopPropagation()}>
           <div className="modal-header artikel-modal-header">
             <div className="modal-header-content">
               <h2 className="modal-title">
@@ -1085,15 +1169,15 @@ const ArtikelVerwaltung = () => {
       </div>
 
       {/* Haupt-Tab Navigation */}
-      <div className="main-tabs-navigation">
+      <div className="sub-tabs">
         <button
-          className={`main-tab-btn ${mainTab === 'artikel' ? 'active' : ''}`}
+          className={`sub-tab-btn ${mainTab === 'artikel' ? 'active' : ''}`}
           onClick={() => setMainTab('artikel')}
         >
           Artikel
         </button>
         <button
-          className={`main-tab-btn ${mainTab === 'bestellungen' ? 'active' : ''}`}
+          className={`sub-tab-btn ${mainTab === 'bestellungen' ? 'active' : ''}`}
           onClick={() => setMainTab('bestellungen')}
         >
           Bestellungen
@@ -1102,11 +1186,19 @@ const ArtikelVerwaltung = () => {
           )}
         </button>
         <button
-          className={`main-tab-btn ${mainTab === 'rabatte' ? 'active' : ''}`}
+          className={`sub-tab-btn ${mainTab === 'rabatte' ? 'active' : ''}`}
           onClick={() => setMainTab('rabatte')}
         >
-          Mitglieder-Rabatte
+          Rabatte
         </button>
+        {isVerbandLevel && (
+          <button
+            className={`sub-tab-btn ${mainTab === 'verbandrabatte' ? 'active' : ''}`}
+            onClick={() => setMainTab('verbandrabatte')}
+          >
+            Verbands-Rabatte
+          </button>
+        )}
       </div>
 
       {/* Bestellungen Tab */}
@@ -1114,21 +1206,63 @@ const ArtikelVerwaltung = () => {
         <BestellungenTab />
       )}
 
-      {/* Mitglieder-Rabatte Tab */}
+      {/* Rabatte Tab - für alle Admins (dojo-spezifisch) */}
       {mainTab === 'rabatte' && (
+        <Rabattsystem />
+      )}
+
+      {/* Verbands-Rabatte Tab - nur SuperAdmin + Verband */}
+      {mainTab === 'verbandrabatte' && isVerbandLevel && (
         <VerbandRabatteTab />
       )}
 
       {/* Artikel Tab (bestehender Inhalt) */}
       {mainTab === 'artikel' && (
-        <>
+        <div className="av-layout">
+
+          {/* SIDEBAR LINKS - Artikelgruppen */}
+          <aside className="av-sidebar">
+            <div className="av-sidebar-title">Artikelgruppen</div>
+
+            <button
+              className={`av-sidebar-item ${selectedGruppe === null ? 'active' : ''}`}
+              onClick={() => setSelectedGruppe(null)}
+            >
+              <span>Alle Artikel</span>
+              <span className="av-sidebar-count">{artikel.length}</span>
+            </button>
+
+            {gruppenMitAnzahl.map(g => (
+              <button
+                key={g.id}
+                className={`av-sidebar-item ${selectedGruppe == g.id ? 'active' : ''}`}
+                onClick={() => setSelectedGruppe(g.id)}
+              >
+                <span>{g.vollstaendiger_name || g.name}</span>
+                <span className="av-sidebar-count">{g.count}</span>
+              </button>
+            ))}
+
+            {ohneGruppeCount > 0 && (
+              <button
+                className={`av-sidebar-item ${selectedGruppe === 'none' ? 'active' : ''}`}
+                onClick={() => setSelectedGruppe('none')}
+              >
+                <span>Ohne Gruppe</span>
+                <span className="av-sidebar-count">{ohneGruppeCount}</span>
+              </button>
+            )}
+          </aside>
+
+          {/* HAUPTINHALT RECHTS */}
+          <div className="av-content">
       {error && (
         <div className="error-message">
           <span>{error}</span>
           <button onClick={() => setError(null)}>x</button>
         </div>
       )}
-      
+
       {/* Controls */}
       <div className="controls-section">
         <div className="search-filters">
@@ -1141,7 +1275,7 @@ const ArtikelVerwaltung = () => {
             />
             <span className="search-icon">🔍</span>
           </div>
-          
+
           <select
             value={selectedKategorie}
             onChange={(e) => setSelectedKategorie(e.target.value)}
@@ -1153,7 +1287,7 @@ const ArtikelVerwaltung = () => {
               </option>
             ))}
           </select>
-          
+
           <label className="checkbox-label">
             <input
               type="checkbox"
@@ -1163,20 +1297,18 @@ const ArtikelVerwaltung = () => {
             Nur aktive Artikel
           </label>
         </div>
-        
-        <button className="sub-tab-btn" onClick={handleCreate}>
-          ➕ Neuer Artikel
+
+        <button className="av-btn-create" onClick={handleCreate}>
+          + Neuer Artikel
         </button>
       </div>
-      
+
       {/* Artikel Tabelle */}
       <div className="artikel-table-container">
         <table className="artikel-table">
           <thead>
             <tr>
               <th className="sortable-th" onClick={() => handleSort('name')}>Artikel <SortIcon col="name" /></th>
-              <th className="sortable-th" onClick={() => handleSort('gruppe')}>Artikelgruppe <SortIcon col="gruppe" /></th>
-              <th className="sortable-th" onClick={() => handleSort('kategorie')}>Kategorie <SortIcon col="kategorie" /></th>
               <th className="sortable-th" onClick={() => handleSort('ek')}>EK <SortIcon col="ek" /></th>
               <th className="sortable-th" onClick={() => handleSort('vk')}>VK Netto <SortIcon col="vk" /></th>
               <th>VK Brutto</th>
@@ -1195,18 +1327,14 @@ const ArtikelVerwaltung = () => {
                     {item.artikel_nummer && `#${item.artikel_nummer}`}
                     {item.ean_code && ` • EAN: ${item.ean_code}`}
                   </div>
-                </td>
-
-                <td>
-                  <span className="artikelgruppe-badge">
-                    {item.artikelgruppe_name || 'Keine Gruppe'}
-                  </span>
-                </td>
-
-                <td>
-                  <span className="kategorie-badge">
-                    {item.kategorie_name || '-'}
-                  </span>
+                  <div className="artikel-badges">
+                    {selectedGruppe === null && item.artikelgruppe_name && (
+                      <span className="artikelgruppe-badge">{item.artikelgruppe_name}</span>
+                    )}
+                    {item.kategorie_name && (
+                      <span className="kategorie-badge">{item.kategorie_name}</span>
+                    )}
+                  </div>
                 </td>
 
                 <td className="preis-cell">
@@ -1265,30 +1393,27 @@ const ArtikelVerwaltung = () => {
 
                 <td className="actions">
                   <button
-                    className="sub-tab-btn"
+                    className="sub-tab-btn av-btn-sm"
                     onClick={() => handleEdit(item)}
                     title="Bearbeiten"
-                    className="av-btn-sm"
                   >
                     ✏️
                   </button>
 
                   {item.lager_tracking && (
                     <button
-                      className="sub-tab-btn"
+                      className="sub-tab-btn av-btn-sm"
                       onClick={() => handleLager(item)}
                       title="Lagerbestand ändern"
-                      className="av-btn-sm"
                     >
                       📦
                     </button>
                   )}
 
                   <button
-                    className="sub-tab-btn"
+                    className="sub-tab-btn av-btn-sm"
                     onClick={() => deleteArtikel(item.artikel_id)}
                     title="Deaktivieren"
-                    className="av-btn-sm"
                   >
                     🗑️
                   </button>
@@ -1308,7 +1433,8 @@ const ArtikelVerwaltung = () => {
         )}
       </div>
 
-        </>
+          </div>
+        </div>
       )}
 
       {/* Modal - außerhalb der Tab-Bedingung */}

@@ -4,7 +4,7 @@
   bottom: 20px;
   right: 20px;
   background: #1e1e2d;
-  border: 2px solid #ffd700;
+  border: 2px solid var(--primary);
   border-radius: 12px;
   padding: 1.5rem;
   z-index: 9999;
@@ -30,9 +30,9 @@
   margin-bottom: 0.5rem;
 }
 .tnb-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.tnb-btn--gold { background: #ffd700; color: #1e1e2d; }
-.tnb-btn--amber { background: #F59E0B; color: var(--text-primary); }
-.tnb-btn--blue { background: #3B82F6; color: var(--text-primary); }
+.tnb-btn--gold { background: var(--gradient-gold); color: #1e1e2d; }
+.tnb-btn--amber { background: var(--status-warning); color: var(--text-primary); }
+.tnb-btn--blue { background: var(--status-indigo); color: var(--text-primary); }
 
 /* Message box */
 .tnb-message {
@@ -42,5 +42,5 @@
   font-size: 0.9rem;
   white-space: pre-wrap;
 }
-.tnb-message--ok { background: #1a3d2e; border: 2px solid #22c55e; color: #4ade80; }
+.tnb-message--ok { background: #1a3d2e; border: 2px solid var(--status-success); color: #4ade80; }
 .tnb-message--error { background: #3d1a1a; border: 2px solid #ff4545; color: #ff6b6b; }

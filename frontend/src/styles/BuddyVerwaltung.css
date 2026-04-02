@@ -37,8 +37,8 @@
 
 /* Buddy-Gruppen Header - Sichtbarer Text ohne Gradient */
 .page-header h1 span:last-child {
-  color: #FFD700 !important;
-  -webkit-text-fill-color: #FFD700 !important;
+  color: var(--primary) !important;
+  -webkit-text-fill-color: var(--primary) !important;
   background-image: none !important;
   -webkit-background-clip: unset !important;
   background-clip: unset !important;
@@ -222,7 +222,7 @@
 
 .status-active {
   background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  color: var(--status-success);
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
@@ -234,7 +234,7 @@
 
 .status-deleted {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--status-error);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
@@ -256,7 +256,7 @@
 
 .invitation-pending {
   background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  color: var(--status-indigo);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
@@ -268,19 +268,19 @@
 
 .invitation-registered {
   background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+  color: var(--status-success);
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 .invitation-active {
   background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  color: var(--status-success);
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .invitation-declined {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--status-error);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
@@ -749,360 +749,8 @@
     border-color: var(--border-dark);
   }
 }
+/* (MarketingJahresplan styles ausgelagert nach MarketingJahresplan.css) */
 
-/* =============================================================================
-   MARKETING-JAHRESPLAN STYLES — Elegant Dark
-   ============================================================================= */
-
-.marketing-jahresplan {
-  padding: 0.5rem 0;
-}
-
-/* Message Banner */
-.jahresplan-message {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--comp-radius-lg);
-  margin-bottom: 1.25rem;
-}
-.jahresplan-message.success { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); color: #34d399; }
-.jahresplan-message.error   { background: rgba(239,68,68,0.08);  border: 1px solid rgba(239,68,68,0.25);  color: #f87171; }
-
-/* Header */
-.jahresplan-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.jahresplan-header h2 {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: rgba(255, 215, 0, 0.9);
-  margin: 0;
-  text-transform: uppercase;
-}
-
-.jahresplan-header .btn {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.4);
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.jahresplan-header .btn:hover {
-  border-color: rgba(255,215,0,0.4);
-  color: #FFD700;
-  background: rgba(255,215,0,0.06);
-}
-
-/* Stats — elegant pill row */
-.jahresplan-stats {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2.5rem;
-  margin-bottom: 2rem;
-  padding: 0.85rem 2rem;
-  background: rgba(255,255,255,0.025);
-  border-radius: 100px;
-  border: 1px solid rgba(255,255,255,0.06);
-  width: fit-content;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.jahresplan-stats .stat-item {
-  display: flex;
-  align-items: baseline;
-  gap: 0.45rem;
-  cursor: default;
-}
-
-.jahresplan-stats .stat-number {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #FFD700;
-  line-height: 1;
-}
-
-.jahresplan-stats .stat-label {
-  font-size: 0.7rem;
-  color: rgba(255,255,255,0.3);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  font-weight: 500;
-}
-
-/* Kalender-Grid */
-.jahresplan-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.85rem;
-  margin-bottom: 2rem;
-}
-@media (max-width: 1200px) { .jahresplan-grid { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 900px)  { .jahresplan-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px)  { .jahresplan-grid { grid-template-columns: 1fr; } }
-
-/* Monat-Card */
-.monat-card {
-  background: rgba(255,255,255,0.025);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 16px;
-  overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.monat-card:hover {
-  border-color: rgba(255,215,0,0.18);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-}
-.monat-card.current-month {
-  border-color: rgba(255,215,0,0.35);
-  box-shadow: 0 0 0 1px rgba(255,215,0,0.1), 0 4px 20px rgba(0,0,0,0.25);
-}
-
-.monat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.7rem 0.85rem;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-.monat-header h3 {
-  margin: 0;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  color: rgba(255,215,0,0.8);
-  text-transform: uppercase;
-}
-
-/* Monat "+"-Button */
-.monat-header .btn-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  padding: 0;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.monat-header .btn-icon:hover {
-  background: rgba(255,215,0,0.12);
-  border-color: rgba(255,215,0,0.35);
-  color: #FFD700;
-}
-
-.monat-content {
-  padding: 0.65rem 0.65rem 0.75rem;
-  min-height: 100px;
-}
-
-.monat-empty {
-  text-align: center;
-  color: rgba(255,255,255,0.2);
-  font-size: 0.75rem;
-  padding: 0.5rem 0;
-}
-.monat-empty p { margin: 0 0 0.5rem; }
-
-/* Vorschläge */
-.vorschlaege {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem;
-  justify-content: center;
-  margin-top: 0.35rem;
-}
-.vorschlaege-label {
-  width: 100%;
-  font-size: 0.65rem;
-  color: rgba(255,255,255,0.2);
-  margin-bottom: 0.2rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.vorschlag-chip {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.3);
-  padding: 0.15rem 0.4rem;
-  border-radius: var(--comp-radius-md);
-  font-size: 0.65rem;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.vorschlag-chip:hover {
-  border-color: rgba(255,215,0,0.3);
-  color: rgba(255,215,0,0.8);
-  background: rgba(255,215,0,0.06);
-}
-
-/* Aktionen Liste */
-.aktionen-liste {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-/* ——— Aktionskarte: schlank, hover zeigt Buttons ——— */
-.aktion-item {
-  position: relative;
-  padding: 0.5rem 0.6rem;
-  border-radius: var(--comp-radius-md);
-  border-left: 2px solid transparent;
-  border-left-color: var(--typ-color, transparent);
-  transition: background 0.15s;
-  cursor: default;
-}
-.aktion-item:hover {
-  background: rgba(255,255,255,0.04);
-}
-
-.aktion-icon { display: none; color: var(--typ-color, #ffd700); }
-
-.aktion-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding-right: 2.5rem; /* Platz für hover-Buttons */
-}
-.aktion-info strong {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.88);
-  line-height: 1.3;
-  word-break: break-word;
-}
-.aktion-datum {
-  font-size: 0.68rem;
-  color: rgba(255,255,255,0.28);
-}
-
-/* Buttons — nur bei Hover sichtbar, rechts oben */
-.aktion-actions {
-  position: absolute;
-  top: 50%;
-  right: 0.35rem;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-.aktion-item:hover .aktion-actions {
-  opacity: 1;
-}
-
-/* Status Badges */
-.jahresplan-status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0.1rem 0.35rem;
-  border-radius: var(--comp-radius-sm);
-  font-size: 0.62rem;
-  font-weight: 500;
-  margin-top: 0.1rem;
-}
-.jahresplan-status-badge.status-planned    { background: rgba(107,114,128,0.15); color: #9ca3af; }
-.jahresplan-status-badge.status-preparing  { background: rgba(59,130,246,0.15);  color: #60a5fa; }
-.jahresplan-status-badge.status-active     { background: rgba(16,185,129,0.15);  color: #34d399; }
-.jahresplan-status-badge.status-completed  { background: rgba(139,92,246,0.15);  color: #a78bfa; }
-.jahresplan-status-badge.status-cancelled  { background: rgba(239,68,68,0.15);   color: #f87171; }
-
-/* Legende */
-.jahresplan-legende {
-  padding: 0.75rem 1rem;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-.jahresplan-legende h4 {
-  margin: 0 0 0.5rem;
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.25);
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-.legende-items {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-}
-.legende-item {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.78rem;
-  color: var(--legende-color, rgba(255, 255, 255, 0.45));
-}
-
-/* Modal */
-.jahresplan-modal { max-width: 580px; width: 95%; }
-.jahresplan-modal .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 500px) { .jahresplan-modal .form-row { grid-template-columns: 1fr; } }
-
-/* ——— Button Styles ——— */
-.btn-icon {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.45);
-  padding: 0.4rem;
-  border-radius: var(--comp-radius-md);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.18s;
-  line-height: 1;
-}
-.btn-icon:hover {
-  background: rgba(255,215,0,0.1);
-  border-color: rgba(255,215,0,0.35);
-  color: #FFD700;
-}
-.btn-icon.btn-sm { padding: 0.3rem; }
-.btn-icon.btn-xs {
-  padding: 0.2rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: var(--comp-radius-sm);
-  color: rgba(255,255,255,0.4);
-}
-.btn-icon.btn-xs:hover {
-  background: rgba(255,215,0,0.1);
-  border-color: rgba(255,215,0,0.3);
-  color: #FFD700;
-}
-.btn-icon.btn-danger.btn-xs:hover {
-  background: rgba(239,68,68,0.1);
-  border-color: rgba(239,68,68,0.3);
-  color: #f87171;
-}
-.btn-icon.btn-danger:hover {
-  background: rgba(239,68,68,0.1);
-  border-color: rgba(239,68,68,0.35);
-  color: #f87171;
-}
 /* =============================================================================
    FREUNDE WERBEN FREUNDE STYLES
    ============================================================================= */
@@ -1124,14 +772,14 @@
 
 .referral-message.success {
   background: rgba(16, 185, 129, 0.1);
-  border: 1px solid #10b981;
-  color: #10b981;
+  border: 1px solid var(--status-success);
+  color: var(--status-success);
 }
 
 .referral-message.error {
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
-  color: #ef4444;
+  border: 1px solid var(--status-error);
+  color: var(--status-error);
 }
 
 /* Header */
@@ -1153,7 +801,7 @@
 .referral-title h2 {
   margin: 0;
   font-size: 1.4rem;
-  color: #FFD700;
+  color: var(--primary);
 }
 
 .status-indicator {
@@ -1165,7 +813,7 @@
 
 .status-indicator.active {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .status-indicator.inactive {
@@ -1196,14 +844,14 @@
 }
 
 .referral-tab:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
 }
 
 .referral-tab.active {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: #FFD700;
-  color: #FFD700;
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* Stats Grid */
@@ -1235,7 +883,7 @@
 }
 
 .referral-stat-card .stat-icon {
-  color: #FFD700;
+  color: var(--primary);
   margin-bottom: 0.5rem;
 }
 
@@ -1250,9 +898,9 @@
   color: var(--text-secondary);
 }
 
-.referral-stat-card.success .stat-icon { color: #10b981; }
-.referral-stat-card.warning .stat-icon { color: #f59e0b; }
-.referral-stat-card.info .stat-icon { color: #3b82f6; }
+.referral-stat-card.success .stat-icon { color: var(--status-success); }
+.referral-stat-card.warning .stat-icon { color: var(--status-warning); }
+.referral-stat-card.info .stat-icon { color: var(--status-indigo); }
 
 /* Prämien Summen */
 .referral-praemien-summen {
@@ -1270,13 +918,13 @@
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.3);
   border-radius: var(--comp-radius-xl);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .praemien-card.pending {
   background: rgba(245, 158, 11, 0.1);
   border-color: rgba(245, 158, 11, 0.3);
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .praemien-card .amount {
@@ -1311,7 +959,7 @@ body .referral-codes .section-header h3 {
   margin: 0;
   font-size: 1.2rem !important;
   font-weight: 600 !important;
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
   text-transform: none !important;
   letter-spacing: normal !important;
@@ -1334,7 +982,7 @@ body .referral-codes .section-header h3 {
 
 .top-werber-item .rang {
   font-weight: 700;
-  color: #FFD700;
+  color: var(--primary);
   width: 30px;
 }
 
@@ -1349,7 +997,7 @@ body .referral-codes .section-header h3 {
 }
 
 .top-werber-item .erfolg {
-  color: #10b981;
+  color: var(--status-success);
   font-size: 0.85rem;
 }
 
@@ -1413,11 +1061,11 @@ body .referral-codes .section-header h3 {
 }
 
 .werbungen-table code {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 0.2rem 0.5rem;
   border-radius: var(--comp-radius-xs);
   font-family: monospace;
-  color: #FFD700;
+  color: var(--primary);
 }
 
 /* Prämien List */
@@ -1456,7 +1104,7 @@ body .referral-codes .section-header h3 {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 600;
   margin-top: 0.25rem;
 }
@@ -1498,10 +1146,10 @@ body .referral-codes .section-header h3 {
 
 .code-header .aktion {
   font-size: 0.75rem;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 0.2rem 0.5rem;
   border-radius: var(--comp-radius-xs);
-  color: #FFD700;
+  color: var(--primary);
 }
 
 .code-value {
@@ -1518,7 +1166,7 @@ body .referral-codes .section-header h3 {
   border-radius: var(--comp-radius-sm);
   font-family: monospace;
   font-size: 1.1rem;
-  color: #FFD700;
+  color: var(--primary);
   letter-spacing: 1px;
 }
 
@@ -1549,7 +1197,7 @@ body .freunde-werben-freunde h4 {
   margin: 0 0 1rem 0;
   font-size: 1.2rem !important;
   font-weight: 600 !important;
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
   -webkit-text-stroke: 0 !important;
   text-transform: none !important;
@@ -1558,7 +1206,7 @@ body .freunde-werben-freunde h4 {
   background: none !important;
   -webkit-background-clip: unset !important;
   background-clip: unset !important;
-  -webkit-text-fill-color: #FFD700 !important;
+  -webkit-text-fill-color: var(--primary) !important;
 }
 
 /* BUTTONS - Sichtbarer Text auf goldenem Hintergrund */
@@ -1588,14 +1236,14 @@ body .freunde-werben-freunde .btn:hover {
 .freunde-werben-freunde .btn-secondary,
 body .freunde-werben-freunde .btn-secondary {
   background: transparent !important;
-  border: 1px solid rgba(255, 215, 0, 0.4) !important;
-  color: #ffd700 !important;
-  -webkit-text-fill-color: #ffd700 !important;
+  border: 1px solid var(--primary-alpha-40) !important;
+  color: var(--primary) !important;
+  -webkit-text-fill-color: var(--primary) !important;
 }
 
 .freunde-werben-freunde .btn-secondary:hover {
-  background: rgba(255, 215, 0, 0.1) !important;
-  border-color: rgba(255, 215, 0, 0.6) !important;
+  background: var(--primary-alpha-10) !important;
+  border-color: var(--primary-alpha-60) !important;
 }
 
 /* Danger Buttons */
@@ -1650,7 +1298,7 @@ body .freunde-werben-freunde .btn-danger {
 
 .staffel-info .praemie {
   display: block;
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 600;
   margin-top: 0.25rem;
 }
@@ -1689,7 +1337,7 @@ body .freunde-werben-freunde .btn-danger {
 }
 
 .setting-item .value.active {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 /* Neue Einstellungen Cards */
@@ -1708,8 +1356,8 @@ body .freunde-werben-freunde .btn-danger {
 }
 
 .settings-card.highlight {
-  border-color: rgba(255, 215, 0, 0.3);
-  background: rgba(255, 215, 0, 0.05);
+  border-color: var(--primary-alpha-30);
+  background: var(--primary-alpha-05);
 }
 
 .settings-card-header {
@@ -1720,7 +1368,7 @@ body .freunde-werben-freunde .btn-danger {
 }
 
 .settings-card-icon {
-  color: #FFD700;
+  color: var(--primary);
   display: flex;
 }
 
@@ -1739,7 +1387,7 @@ body .freunde-werben-freunde .btn-danger {
 }
 
 .settings-card-value.success {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .settings-card-value.muted {
@@ -1753,8 +1401,8 @@ body .freunde-werben-freunde .btn-danger {
 
 /* Bonus System Info */
 .bonus-system-info {
-  background: rgba(255, 215, 0, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-08);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: 1.25rem;
 }
@@ -1765,7 +1413,7 @@ body .bonus-system-info h4,
   align-items: center;
   gap: 0.5rem;
   margin: 0 0 0.75rem 0;
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   font-size: 1.1rem !important;
   font-weight: 600 !important;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
@@ -1779,7 +1427,7 @@ body .bonus-system-info h4,
 }
 
 .bonus-system-info strong {
-  color: #FFD700;
+  color: var(--primary);
 }
 
 .bonus-scale {
@@ -1799,7 +1447,7 @@ body .bonus-system-info h4,
 .bonus-item.highlight {
   background: rgba(16, 185, 129, 0.2);
   border: 1px solid rgba(16, 185, 129, 0.3);
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 600;
 }
 
@@ -1874,7 +1522,7 @@ body .info-section h3,
 
 .process-step.success {
   background: rgba(16, 185, 129, 0.1);
-  border-left-color: #10b981;
+  border-left-color: var(--status-success);
 }
 
 .step-number {
@@ -1883,16 +1531,16 @@ body .info-section h3,
   justify-content: center;
   min-width: 28px;
   height: 28px;
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   border-radius: 50%;
-  color: #FFD700;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.85rem;
 }
 
 .process-step.success .step-number {
   background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .step-content strong {
@@ -1939,7 +1587,7 @@ body .info-section h3,
 .toggle-label input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  accent-color: #FFD700;
+  accent-color: var(--primary);
 }
 
 .info-text {
@@ -1992,7 +1640,7 @@ body .info-section h3,
 .freie-aktion-card {
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 3px solid #FFD700;
+  border-left: 3px solid var(--primary);
   border-radius: var(--comp-radius-lg);
   padding: 1rem 1.1rem;
   transition: background 0.2s;
@@ -2050,7 +1698,7 @@ body .info-section h3,
 
 .buddy-title-icon {
   font-size: 1.8rem;
-  filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3));
+  filter: drop-shadow(0 2px 8px var(--primary-alpha-30));
   position: relative;
   z-index: 1000;
   line-height: 1;
@@ -2067,7 +1715,7 @@ body .info-section h3,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: var(--primary);
-  -webkit-text-fill-color: #FFD700;
+  -webkit-text-fill-color: var(--primary);
   background-image: none;
   -webkit-background-clip: unset;
   background-clip: unset;

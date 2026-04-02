@@ -93,8 +93,8 @@
 }
 
 .dz-tab.active {
-  background: var(--primary-alpha-20, rgba(255, 215, 0, 0.15));
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-20, var(--primary-alpha-15));
+  color: var(--primary, var(--primary));
   font-weight: 600;
 }
 
@@ -151,7 +151,7 @@
 
 .dz-stat-card:hover {
   background: var(--glass-bg-hover, rgba(255, 255, 255, 0.07));
-  border-color: var(--accent, var(--primary, #ffd700));
+  border-color: var(--accent, var(--primary, var(--primary)));
   transform: translateY(-2px);
 }
 
@@ -163,7 +163,7 @@
   height: 48px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--accent, var(--primary, #ffd700)) 15%, transparent);
-  color: var(--accent, var(--primary, #ffd700));
+  color: var(--accent, var(--primary, var(--primary)));
   flex-shrink: 0;
 }
 
@@ -213,12 +213,12 @@
 }
 
 .dz-quick-card:hover {
-  background: var(--primary-alpha-10, rgba(255, 215, 0, 0.08));
-  border-color: var(--primary-alpha-30, rgba(255, 215, 0, 0.3));
+  background: var(--primary-alpha-10, var(--primary-alpha-08));
+  border-color: var(--primary-alpha-30, var(--primary-alpha-30));
 }
 
 .dz-quick-card > svg {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   flex-shrink: 0;
   margin-top: 2px;
 }

@@ -13,5 +13,5 @@
   cursor: not-allowed;
 }
 
-.scs-status-value--ok { color: #22c55e; }
+.scs-status-value--ok { color: var(--status-success); }
 .scs-status-value--pending { color: #eab308; }

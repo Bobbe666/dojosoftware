@@ -24,7 +24,7 @@
 .zahllaeufe-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--status-warning);
   margin-bottom: 0.2rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
 }
@@ -49,7 +49,7 @@
 }
 
 .info-box svg {
-  color: #f59e0b;
+  color: var(--status-warning);
   flex-shrink: 0;
   margin-top: 0.2rem;
 }
@@ -57,7 +57,7 @@
 .info-box h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--status-warning);
   margin: 0 0 0.5rem 0;
 }
 
@@ -91,7 +91,7 @@
 }
 
 .search-bar svg {
-  color: #f59e0b;
+  color: var(--status-warning);
   flex-shrink: 0;
 }
 
@@ -127,7 +127,7 @@
 
 .status-filter:focus {
   outline: none;
-  border-color: #f59e0b;
+  border-color: var(--status-warning);
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
@@ -154,7 +154,7 @@
   text-align: left;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #f59e0b;
+  color: var(--status-warning);
   border-bottom: 1px solid rgba(245, 158, 11, 0.3);
   white-space: nowrap;
 }
@@ -177,7 +177,7 @@
 .zahllaeufe-table code {
   font-family: 'Courier New', monospace;
   font-size: 0.8rem;
-  color: #f59e0b;
+  color: var(--status-warning);
   background: rgba(245, 158, 11, 0.1);
   padding: 0.2rem 0.4rem;
   border-radius: var(--comp-radius-xs);
@@ -211,19 +211,19 @@
 
 .btn-icon:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-color: #f59e0b;
-  color: #f59e0b;
+  border-color: var(--status-warning);
+  color: var(--status-warning);
   transform: scale(1.05);
 }
 
 .btn-icon.btn-info:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
+  border-color: var(--status-warning);
+  color: var(--status-warning);
 }
 
 .btn-icon.btn-secondary:hover {
-  border-color: #f59e0b;
-  color: #f59e0b;
+  border-color: var(--status-warning);
+  color: var(--status-warning);
 }
 
 /* ===== BADGES ===== */
@@ -245,19 +245,19 @@
 
 .badge-success {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--status-warning);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-warning {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--status-warning);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .badge-info {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--status-warning);
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
@@ -285,7 +285,7 @@
 }
 
 .empty-state h3 {
-  color: #f59e0b;
+  color: var(--status-warning);
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
 }
@@ -308,7 +308,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid rgba(245, 158, 11, 0.2);
-  border-top-color: #f59e0b;
+  border-top-color: var(--status-warning);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -371,7 +371,7 @@
 }
 
 .btn-expand:hover {
-  color: #f59e0b;
+  color: var(--status-warning);
   background: rgba(245, 158, 11, 0.1);
 }
 
@@ -421,7 +421,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid rgba(245, 158, 11, 0.2);
-  border-top-color: #f59e0b;
+  border-top-color: var(--status-warning);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -430,7 +430,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #f59e0b;
+  color: var(--status-warning);
   font-size: 0.9rem;
   font-weight: 500;
   margin-bottom: 0.75rem;
@@ -518,7 +518,7 @@
 }
 
 .beitrag-betrag {
-  color: #f59e0b;
+  color: var(--status-warning);
   font-weight: 500;
   min-width: 70px;
 }

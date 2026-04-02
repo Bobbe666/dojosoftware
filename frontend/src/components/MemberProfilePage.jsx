@@ -207,7 +207,7 @@ const MemberProfilePage = () => {
           setVertr(list.filter(v => v.mitglied_id === id))
         }
       } catch (err) {
-        if (err.message?.includes('401')) { logout(); navigate('/login') }
+        if (err.message?.includes('401')) { logout(); window.location.href = '/login'; }
         else setError('Daten konnten nicht geladen werden.')
       } finally {
         setLoading(false)
@@ -294,6 +294,11 @@ const MemberProfilePage = () => {
   const handleFotoUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('Foto ist zu groß. Bitte maximal 15 MB.', 'error')
+      e.target.value = ''
+      return
+    }
     const fd = new FormData()
     fd.append('foto', file)
     try {
@@ -302,7 +307,7 @@ const MemberProfilePage = () => {
       })
       if (!res.ok) throw new Error()
       const j = await res.json()
-      setData(prev => ({ ...prev, foto_pfad: j.foto_pfad || prev.foto_pfad }))
+      setData(prev => ({ ...prev, foto_pfad: j.fotoPfad || j.foto_pfad || prev.foto_pfad }))
       showToast('Foto gespeichert ✓')
     } catch {
       showToast('Fehler beim Hochladen', 'error')
@@ -357,7 +362,7 @@ const MemberProfilePage = () => {
           </svg>
         </button>
         <span className="mp-topbar-title">Mein Profil</span>
-        <button className="mp-logout-btn" onClick={() => { logout(); navigate('/login') }} title="Abmelden">
+        <button className="mp-logout-btn" onClick={() => { logout(); window.location.href = '/login'; }} title="Abmelden">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
             <polyline points="16 17 21 12 16 7"/>

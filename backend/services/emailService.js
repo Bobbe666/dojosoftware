@@ -789,6 +789,230 @@ Ihr Team von ${dojoName}
   });
 };
 
+/**
+ * Sendet Bestätigungs-E-Mail an Anmelder nach Prüfungsanmeldung
+ * @param {Object} anmeldung - Anmeldedaten
+ * @param {Object} termin - Prüfungstermin-Details
+ */
+const sendPruefungsAnmeldungBestaetigung = async (anmeldung, termin) => {
+  const { vorname, nachname, email, aktueller_gurt, angestrebter_gurt, verein } = anmeldung;
+  const pruefungsdatum = termin.pruefungsdatum
+    ? new Date(termin.pruefungsdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : 'Unbekannt';
+
+  const subject = `✅ Prüfungsanmeldung bestätigt – ${termin.stil_name} am ${pruefungsdatum}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #FFD700; margin: 0;">🥋 Prüfungsanmeldung bestätigt</h1>
+        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">${termin.dojoname}</p>
+      </div>
+
+      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p style="font-size: 16px; color: #333;">Hallo ${vorname} ${nachname},</p>
+
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          Ihre Anmeldung zur Prüfung wurde erfolgreich registriert. Wir freuen uns, Sie zu diesem Termin begrüßen zu dürfen.
+        </p>
+
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #166534;"><strong>Ihre Prüfungsdetails:</strong></p>
+          <table style="width: 100%; font-size: 14px; color: #333; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 4px 0; color: #555; width: 45%;">Kampfkunst-Stil:</td>
+              <td style="padding: 4px 0; font-weight: bold;">${termin.stil_name}</td>
+            </tr>
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Datum:</td>
+              <td style="padding: 4px 0; font-weight: bold;">${pruefungsdatum}</td>
+            </tr>
+            ${termin.pruefungszeit ? `
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Uhrzeit:</td>
+              <td style="padding: 4px 0; font-weight: bold;">${termin.pruefungszeit} Uhr</td>
+            </tr>
+            ` : ''}
+            ${termin.pruefungsort ? `
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Ort:</td>
+              <td style="padding: 4px 0; font-weight: bold;">${termin.pruefungsort}</td>
+            </tr>
+            ` : ''}
+            ${aktueller_gurt ? `
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Aktueller Gurt:</td>
+              <td style="padding: 4px 0;">${aktueller_gurt}</td>
+            </tr>
+            ` : ''}
+            ${angestrebter_gurt ? `
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Angestrebter Gurt:</td>
+              <td style="padding: 4px 0;">${angestrebter_gurt}</td>
+            </tr>
+            ` : ''}
+            ${verein ? `
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Verein/Dojo:</td>
+              <td style="padding: 4px 0;">${verein}</td>
+            </tr>
+            ` : ''}
+            ${termin.pruefungsgebuehr ? `
+            <tr>
+              <td style="padding: 4px 0; color: #555;">Prüfungsgebühr:</td>
+              <td style="padding: 4px 0; font-weight: bold;">${termin.pruefungsgebuehr} €</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+
+        ${termin.teilnahmebedingungen ? `
+        <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #1e40af;"><strong>Teilnahmebedingungen:</strong></p>
+          <p style="margin: 0; font-size: 13px; color: #1e40af; white-space: pre-line;">${termin.teilnahmebedingungen}</p>
+        </div>
+        ` : ''}
+
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          Bei Fragen wenden Sie sich bitte direkt an ${termin.dojoname}.<br><br>
+          Wir wünschen Ihnen viel Erfolg bei der Prüfung!<br><br>
+          Mit sportlichen Grüßen<br>
+          <strong>TDA International</strong>
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          Diese E-Mail wurde automatisch versendet.<br>
+          Bei Fragen antworten Sie einfach auf diese E-Mail.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const text = `
+Hallo ${vorname} ${nachname},
+
+Ihre Prüfungsanmeldung wurde erfolgreich registriert.
+
+Prüfungsdetails:
+- Stil: ${termin.stil_name}
+- Datum: ${pruefungsdatum}
+${termin.pruefungszeit ? `- Uhrzeit: ${termin.pruefungszeit} Uhr\n` : ''}${termin.pruefungsort ? `- Ort: ${termin.pruefungsort}\n` : ''}${termin.pruefungsgebuehr ? `- Gebühr: ${termin.pruefungsgebuehr} €\n` : ''}
+
+Wir wünschen Ihnen viel Erfolg!
+
+Mit sportlichen Grüßen
+TDA International
+  `;
+
+  return sendEmail({ to: email, subject, text, html });
+};
+
+/**
+ * Sendet Admin-Benachrichtigung bei neuer externer Prüfungsanmeldung
+ * @param {Object} anmeldung - Anmeldedaten
+ * @param {Object} termin - Prüfungstermin-Details
+ */
+const sendPruefungsAnmeldungAdminNotification = async (anmeldung, termin) => {
+  const { vorname, nachname, email, telefon, verein, aktueller_gurt, angestrebter_gurt, bemerkungen } = anmeldung;
+  const pruefungsdatum = termin.pruefungsdatum
+    ? new Date(termin.pruefungsdatum).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : 'Unbekannt';
+
+  const subject = `🥋 Neue externe Prüfungsanmeldung: ${vorname} ${nachname}`;
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="color: #FFD700; margin: 0;">🥋 Neue Prüfungsanmeldung</h1>
+        <p style="color: rgba(255,255,255,0.8); margin-top: 10px;">${termin.dojoname}</p>
+      </div>
+
+      <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p style="font-size: 15px; color: #333;">Es gibt eine neue externe Anmeldung für Ihre Prüfung:</p>
+
+        <div style="background: #fef9e7; border: 1px solid #fde68a; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #92400e;"><strong>Prüfungstermin:</strong></p>
+          <p style="margin: 0; font-size: 15px; color: #78350f; font-weight: bold;">
+            ${termin.stil_name} – ${pruefungsdatum}
+            ${termin.pruefungsort ? ` | ${termin.pruefungsort}` : ''}
+          </p>
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <p style="margin: 0 0 12px 0; font-size: 14px; color: #475569;"><strong>Angaben des Teilnehmers:</strong></p>
+          <table style="width: 100%; font-size: 14px; color: #333; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 5px 0; color: #555; width: 45%;">Name:</td>
+              <td style="padding: 5px 0; font-weight: bold;">${vorname} ${nachname}</td>
+            </tr>
+            <tr>
+              <td style="padding: 5px 0; color: #555;">E-Mail:</td>
+              <td style="padding: 5px 0;"><a href="mailto:${email}">${email}</a></td>
+            </tr>
+            ${telefon ? `
+            <tr>
+              <td style="padding: 5px 0; color: #555;">Telefon:</td>
+              <td style="padding: 5px 0;">${telefon}</td>
+            </tr>
+            ` : ''}
+            ${verein ? `
+            <tr>
+              <td style="padding: 5px 0; color: #555;">Verein/Dojo:</td>
+              <td style="padding: 5px 0;">${verein}</td>
+            </tr>
+            ` : ''}
+            ${aktueller_gurt ? `
+            <tr>
+              <td style="padding: 5px 0; color: #555;">Aktueller Gurt:</td>
+              <td style="padding: 5px 0;">${aktueller_gurt}</td>
+            </tr>
+            ` : ''}
+            ${angestrebter_gurt ? `
+            <tr>
+              <td style="padding: 5px 0; color: #555;">Angestrebter Gurt:</td>
+              <td style="padding: 5px 0;">${angestrebter_gurt}</td>
+            </tr>
+            ` : ''}
+            ${bemerkungen ? `
+            <tr>
+              <td style="padding: 5px 0; color: #555; vertical-align: top;">Bemerkungen:</td>
+              <td style="padding: 5px 0;">${bemerkungen}</td>
+            </tr>
+            ` : ''}
+          </table>
+        </div>
+
+        <p style="font-size: 14px; color: #555; line-height: 1.6;">
+          Die Anmeldung ist im Dojo-Admin unter Prüfungen → Termine → Externe Anmeldungen einsehbar.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+        <p style="font-size: 12px; color: #999; text-align: center;">
+          Diese E-Mail wurde automatisch durch das TDA Dojo-Verwaltungssystem versendet.
+        </p>
+      </div>
+    </div>
+  `;
+
+  const text = `
+Neue externe Prüfungsanmeldung
+
+Prüfungstermin: ${termin.stil_name} – ${pruefungsdatum}${termin.pruefungsort ? ` | ${termin.pruefungsort}` : ''}
+
+Teilnehmer:
+- Name: ${vorname} ${nachname}
+- E-Mail: ${email}
+${telefon ? `- Telefon: ${telefon}\n` : ''}${verein ? `- Verein: ${verein}\n` : ''}${aktueller_gurt ? `- Aktueller Gurt: ${aktueller_gurt}\n` : ''}${angestrebter_gurt ? `- Angestrebter Gurt: ${angestrebter_gurt}\n` : ''}${bemerkungen ? `- Bemerkungen: ${bemerkungen}\n` : ''}
+
+Die Anmeldung ist im Dojo-Admin einsehbar.
+  `;
+
+  return sendEmail({ to: termin.dojo_email, subject, text, html });
+};
+
 module.exports = {
   sendEmail,
   sendEmailForDojo,
@@ -796,6 +1020,8 @@ module.exports = {
   sendBadgeEmail,
   sendProbetrainingAnfrageEmail,
   sendProbetrainingBestaetigung,
+  sendPruefungsAnmeldungBestaetigung,
+  sendPruefungsAnmeldungAdminNotification,
   createEmailTransporter,
   createEmailTransporterForDojo,
   getEmailSettings,

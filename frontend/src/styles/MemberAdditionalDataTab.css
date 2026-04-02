@@ -41,7 +41,7 @@
   align-items: center;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid var(--primary-alpha-20);
 }
 
 /* Section heading h2 */
@@ -55,7 +55,7 @@
 /* Add-entry button */
 .mad-btn-add {
   padding: 0.6rem 1.2rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   color: #000;
@@ -97,7 +97,7 @@
 
 /* Table header row border */
 .mad-thead-row {
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-30);
 }
 
 /* Table header cell: centered */
@@ -122,7 +122,7 @@
 /* Delete button */
 .mad-btn-delete {
   background: rgba(239, 68, 68, 0.2);
-  border: 1px solid #ef4444;
+  border: 1px solid var(--status-error);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   color: var(--error);
@@ -150,7 +150,7 @@
   border-radius: 16px;
   width: 90%;
   max-width: 450px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
@@ -160,7 +160,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 /* Modal title h3 */
@@ -188,7 +188,7 @@
   width: 100%;
   padding: 0.75rem;
   background: #1a1a1a;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: var(--text-primary);
 }
@@ -199,7 +199,7 @@
   gap: 1rem;
   justify-content: flex-end;
   padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-20);
 }
 
 /* Cancel button */
@@ -215,7 +215,7 @@
 /* Save button */
 .mad-btn-save {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   color: #000;

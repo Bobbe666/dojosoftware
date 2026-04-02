@@ -28,6 +28,8 @@ router.use(authenticateToken);
 const isSuperAdmin = (user) => {
   return user.rolle === 'super_admin' ||
          user.role === 'super_admin' ||
+         user.username === 'admin' ||
+         user.id === 1 || user.id === '1' ||
          (user.dojo_id === 2 || user.dojo_id === '2');
 };
 
@@ -282,17 +284,48 @@ router.get('/:id/anmeldungen', async (req, res) => {
     ORDER BY ea.anmeldedatum ASC
   `;
 
-  db.query(query, [eventId], (err, anmeldungen) => {
-    if (err) {
-      logger.error('Fehler beim Abrufen der Anmeldungen:', { error: err });
-      return res.status(500).json({
-        error: 'Fehler beim Abrufen der Anmeldungen',
-        details: err.message
-      });
+  try {
+    const [anmeldungen] = await db.promise().query(query, [eventId]);
+
+    // Bestellungen pro Anmeldung nachladen
+    for (const a of anmeldungen) {
+      const [bestellungen] = await db.promise().query(
+        `SELECT eb.menge, bo.name, bo.preis, bo.einheit, bo.option_id
+         FROM event_bestellungen eb
+         JOIN event_bestelloptionen bo ON eb.option_id = bo.option_id
+         WHERE eb.anmeldung_id = ?
+         ORDER BY bo.reihenfolge ASC`,
+        [a.anmeldung_id]
+      );
+      a.bestellungen = bestellungen;
     }
 
-    res.json(anmeldungen);
-  });
+    // Externe Gäste laden
+    const [gaeste] = await db.promise().query(
+      `SELECT g.*, GROUP_CONCAT(CONCAT(bo.name, ':', gb.menge, ':', bo.preis) ORDER BY bo.reihenfolge SEPARATOR '|') as bestellungen_raw
+       FROM event_gaeste g
+       LEFT JOIN event_gast_bestellungen gb ON g.gast_id = gb.gast_id
+       LEFT JOIN event_bestelloptionen bo ON gb.option_id = bo.option_id
+       WHERE g.event_id = ?
+       GROUP BY g.gast_id
+       ORDER BY g.anmeldedatum ASC`,
+      [eventId]
+    );
+
+    // bestellungen_raw → Array parsen
+    for (const g of gaeste) {
+      g.ist_gast = true;
+      g.bestellungen = g.bestellungen_raw
+        ? g.bestellungen_raw.split('|').map(s => { const [name, menge, preis] = s.split(':'); return { name, menge: parseInt(menge), preis: parseFloat(preis || 0) }; })
+        : [];
+      delete g.bestellungen_raw;
+    }
+
+    res.json([...anmeldungen, ...gaeste]);
+  } catch (err) {
+    logger.error('Fehler beim Abrufen der Anmeldungen:', { error: err });
+    res.status(500).json({ error: 'Fehler beim Abrufen der Anmeldungen', details: err.message });
+  }
 });
 
 /**
@@ -790,6 +823,7 @@ router.put('/anmeldungen/:anmeldung_id', (req, res) => {
  */
 router.delete('/:id', requireFeature('events'), (req, res) => {
   const eventId = req.params.id;
+  const force = req.query.force === 'true';
 
   // Prüfe ob Anmeldungen existieren
   db.query(
@@ -804,30 +838,46 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
         });
       }
 
-      if (results[0].count > 0) {
-        return res.status(400).json({
-          error: 'Event kann nicht gelöscht werden',
-          message: 'Es existieren noch Anmeldungen für dieses Event',
-          anmeldungen: results[0].count
+      const anmeldungsCount = results[0].count;
+
+      if (anmeldungsCount > 0 && !force) {
+        return res.status(409).json({
+          error: 'Event hat Anmeldungen',
+          message: `Es existieren noch ${anmeldungsCount} Anmeldung${anmeldungsCount !== 1 ? 'en' : ''} für dieses Event`,
+          anmeldungen: anmeldungsCount
         });
       }
 
-      // Lösche Event
-      db.query('DELETE FROM events WHERE event_id = ?', [eventId], (err, result) => {
-        if (err) {
-          logger.error('Fehler beim Löschen des Events:', { error: err });
-          return res.status(500).json({
-            error: 'Fehler beim Löschen des Events',
-            details: err.message
-          });
-        }
+      // Bei force=true: Anmeldungen zuerst löschen
+      const doDelete = () => {
+        db.query('DELETE FROM events WHERE event_id = ?', [eventId], (err, result) => {
+          if (err) {
+            logger.error('Fehler beim Löschen des Events:', { error: err });
+            return res.status(500).json({
+              error: 'Fehler beim Löschen des Events',
+              details: err.message
+            });
+          }
 
-        if (result.affectedRows === 0) {
-          return res.status(404).json({ error: 'Event nicht gefunden' });
-        }
+          if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Event nicht gefunden' });
+          }
 
-        res.json({ message: 'Event erfolgreich gelöscht' });
-      });
+          res.json({ message: 'Event erfolgreich gelöscht' });
+        });
+      };
+
+      if (anmeldungsCount > 0 && force) {
+        db.query('DELETE FROM event_anmeldungen WHERE event_id = ?', [eventId], (delErr) => {
+          if (delErr) {
+            logger.error('Fehler beim Löschen der Anmeldungen:', { error: delErr });
+            return res.status(500).json({ error: 'Fehler beim Löschen der Anmeldungen' });
+          }
+          doDelete();
+        });
+      } else {
+        doDelete();
+      }
     }
   );
 });
@@ -843,7 +893,7 @@ router.delete('/:id', requireFeature('events'), (req, res) => {
  */
 router.post('/:id/anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { mitglied_id, notizen, payment_intent_id, bezahlt } = req.body;
+  const { mitglied_id, notizen, payment_intent_id, bezahlt, bestellungen, gaeste_anzahl } = req.body;
 
   if (!mitglied_id) {
     return res.status(400).json({ error: 'Mitglied-ID fehlt' });
@@ -874,6 +924,20 @@ router.post('/:id/anmelden', async (req, res) => {
     );
 
     if (existingRows.length > 0) {
+      // Wenn Bestellungen mitgegeben → für bestehende Anmeldung speichern/updaten
+      if (Array.isArray(bestellungen) && bestellungen.length > 0) {
+        const anmeldungId = existingRows[0].anmeldung_id;
+        await db.promise().query('DELETE FROM event_bestellungen WHERE anmeldung_id = ?', [anmeldungId]);
+        for (const b of bestellungen) {
+          if (b.option_id && b.menge > 0) {
+            await db.promise().query(
+              'INSERT INTO event_bestellungen (anmeldung_id, option_id, menge) VALUES (?, ?, ?)',
+              [anmeldungId, b.option_id, b.menge]
+            );
+          }
+        }
+        return res.json({ success: true, message: 'Bestellung aktualisiert', anmeldung_id: anmeldungId });
+      }
       return res.status(400).json({ error: 'Sie sind bereits für dieses Event angemeldet' });
     }
 
@@ -906,14 +970,26 @@ router.post('/:id/anmelden', async (req, res) => {
     const istBezahlt = bezahlt || !!payment_intent_id;
     const [result] = await db.promise().query(
       `INSERT INTO event_anmeldungen
-       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung, bezahlt, bezahldatum, stripe_payment_intent_id)
-       VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)`,
-      [eventId, mitglied_id, status, wartelistePosition, notizen || null, istBezahlt ? 1 : 0, istBezahlt ? new Date() : null, payment_intent_id || null]
+       (event_id, mitglied_id, status, warteliste_position, anmeldedatum, bemerkung, bezahlt, bezahldatum, stripe_payment_intent_id, gaeste_anzahl)
+       VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)`,
+      [eventId, mitglied_id, status, wartelistePosition, notizen || null, istBezahlt ? 1 : 0, istBezahlt ? new Date() : null, payment_intent_id || null, parseInt(gaeste_anzahl) || 0]
     );
 
     logger.info(`Mitglied ${mitglied_id} für Event ${eventId} angemeldet (Status: ${status})`);
 
-    // 7. Email senden
+    // 7. Bestelloptionen speichern (falls vorhanden)
+    if (Array.isArray(bestellungen) && bestellungen.length > 0) {
+      for (const b of bestellungen) {
+        if (b.option_id && b.menge > 0) {
+          await db.promise().query(
+            'INSERT INTO event_bestellungen (anmeldung_id, option_id, menge) VALUES (?, ?, ?)',
+            [result.insertId, b.option_id, b.menge]
+          );
+        }
+      }
+    }
+
+    // 9. Email senden
     try {
       const eventEmailService = require('../services/eventEmailService');
 
@@ -1017,13 +1093,36 @@ router.get('/member/:mitglied_id', async (req, res) => {
         AND ea_member.mitglied_id = ?
       LEFT JOIN dojo d ON e.dojo_id = d.id
       LEFT JOIN raeume r ON e.raum_id = r.id
-      WHERE e.status = 'aktiv'
+      WHERE e.status NOT IN ('abgeschlossen', 'abgesagt')
         AND e.datum >= CURDATE()
       GROUP BY e.event_id
       ORDER BY e.datum ASC, e.uhrzeit_beginn ASC
     `;
 
     const [rows] = await db.promise().query(query, [mitgliedId]);
+
+    // Bestelloptionen und eigene Bestellungen nachladen
+    for (const event of rows) {
+      const [optionen] = await db.promise().query(
+        'SELECT * FROM event_bestelloptionen WHERE event_id = ? ORDER BY reihenfolge ASC, option_id ASC',
+        [event.event_id]
+      );
+      event.bestelloptionen = optionen;
+
+      if (event.ist_angemeldet && optionen.length > 0) {
+        const [meineBestellungen] = await db.promise().query(
+          `SELECT eb.option_id, eb.menge, bo.name, bo.preis, bo.einheit
+           FROM event_bestellungen eb
+           JOIN event_anmeldungen ea ON eb.anmeldung_id = ea.anmeldung_id
+           JOIN event_bestelloptionen bo ON eb.option_id = bo.option_id
+           WHERE ea.event_id = ? AND ea.mitglied_id = ?`,
+          [event.event_id, mitgliedId]
+        );
+        event.meine_bestellungen = meineBestellungen;
+      } else {
+        event.meine_bestellungen = [];
+      }
+    }
 
     res.json({
       success: true,
@@ -1041,7 +1140,7 @@ router.get('/member/:mitglied_id', async (req, res) => {
  */
 router.post('/:id/admin-anmelden', async (req, res) => {
   const eventId = parseInt(req.params.id);
-  const { mitglied_id, bemerkung, bezahlt } = req.body;
+  const { mitglied_id, bemerkung, bezahlt, bestellungen } = req.body;
 
   if (!mitglied_id) {
     return res.status(400).json({ error: 'Mitglied-ID fehlt' });
@@ -1114,6 +1213,22 @@ router.post('/:id/admin-anmelden', async (req, res) => {
       }
     }
 
+    // 6. Bestellungen speichern falls vorhanden
+    if (bestellungen && bestellungen.length > 0) {
+      for (const b of bestellungen) {
+        if (b.menge > 0) {
+          try {
+            await db.promise().query(
+              'INSERT INTO event_bestellungen (anmeldung_id, option_id, menge) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE menge = ?',
+              [result.insertId, b.option_id, b.menge, b.menge]
+            );
+          } catch (bErr) {
+            logger.warn('Fehler beim Speichern der Bestellung:', { error: bErr.message });
+          }
+        }
+      }
+    }
+
     res.json({
       success: true,
       message: `${member.vorname} ${member.nachname} wurde erfolgreich zum Event hinzugefügt`,
@@ -1170,7 +1285,7 @@ const fs = require('fs');
 const eventStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const eventId = req.params.id;
-    const dir = path.join(__dirname, '../../uploads/events', String(eventId));
+    const dir = path.join(__dirname, '../uploads/events', String(eventId));
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -1460,6 +1575,30 @@ router.get('/:id/dateien', async (req, res) => {
  * POST /api/events/:id/dateien
  * Datei hochladen (Admin)
  */
+/**
+ * POST /api/events/:id/bild
+ * Eventbild hochladen (Admin)
+ */
+router.post('/:id/bild', eventUpload.single('bild'), async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'Keine Bilddatei hochgeladen' });
+  }
+
+  try {
+    const relativePath = `/uploads/events/${eventId}/${req.file.filename}`;
+    await db.promise().query(
+      'UPDATE events SET bild_url = ? WHERE event_id = ?',
+      [relativePath, eventId]
+    );
+    res.json({ success: true, bild_url: relativePath });
+  } catch (error) {
+    logger.error('Fehler beim Hochladen des Eventbilds:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Speichern des Bilds' });
+  }
+});
+
 router.post('/:id/dateien', requireFeature('events'), eventUpload.single('datei'), async (req, res) => {
   const eventId = parseInt(req.params.id);
 
@@ -1920,55 +2059,98 @@ router.get('/stats/dashboard', requireFeature('events'), async (req, res) => {
 
   try {
     let dojoFilter = dojo_id ? 'AND e.dojo_id = ?' : '';
+    let dojoFilterPlain = dojo_id ? 'AND dojo_id = ?' : '';
     const params = dojo_id ? [dojo_id] : [];
 
-    // Aktive Events
-    const [activeEvents] = await db.promise().query(
-      `SELECT COUNT(*) as count FROM events e
-       WHERE e.status IN ('geplant', 'anmeldung_offen') AND e.datum >= CURDATE() ${dojoFilter}`,
-      params
-    );
-
-    // Offene Zahlungen
-    const [openPayments] = await db.promise().query(
-      `SELECT COUNT(*) as count, COALESCE(SUM(e.teilnahmegebuehr), 0) as summe
-       FROM event_anmeldungen ea
-       JOIN events e ON ea.event_id = e.event_id
-       WHERE ea.bezahlt = 0 AND ea.status IN ('angemeldet', 'bestaetigt')
-         AND e.teilnahmegebuehr > 0 ${dojoFilter}`,
-      params
-    );
-
-    // Anmeldungen diese Woche
-    const [weekRegistrations] = await db.promise().query(
-      `SELECT COUNT(*) as count FROM event_anmeldungen ea
-       JOIN events e ON ea.event_id = e.event_id
-       WHERE ea.anmeldedatum >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ${dojoFilter}`,
-      params
-    );
-
-    // Wartelisten-Einträge
-    const [waitlist] = await db.promise().query(
-      `SELECT COUNT(*) as count FROM event_anmeldungen ea
-       JOIN events e ON ea.event_id = e.event_id
-       WHERE ea.status = 'warteliste' ${dojoFilter}`,
-      params
-    );
-
-    // Top Events (nach Anmeldungen)
-    const [topEvents] = await db.promise().query(
-      `SELECT e.event_id, e.titel, e.datum, e.max_teilnehmer, e.teilnahmegebuehr,
-              COUNT(ea.anmeldung_id) as anmeldungen,
-              SUM(CASE WHEN ea.bezahlt = 1 THEN 1 ELSE 0 END) as bezahlt,
-              SUM(CASE WHEN ea.bezahlt = 0 THEN e.teilnahmegebuehr ELSE 0 END) as offen_summe
-       FROM events e
-       LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id AND ea.status IN ('angemeldet', 'bestaetigt')
-       WHERE e.datum >= CURDATE() ${dojoFilter}
-       GROUP BY e.event_id
-       ORDER BY anmeldungen DESC
-       LIMIT 10`,
-      params
-    );
+    const [
+      [activeEvents],
+      [openPayments],
+      [weekRegistrations],
+      [waitlist],
+      [revenue],
+      [totalAnmeldungen],
+      [naechstesEvent],
+      [vergangeneEvents],
+      [topEvents]
+    ] = await Promise.all([
+      // Aktive Events
+      db.promise().query(
+        `SELECT COUNT(*) as count FROM events e
+         WHERE e.status IN ('geplant', 'anmeldung_offen') AND e.datum >= CURDATE() ${dojoFilter}`,
+        params
+      ),
+      // Offene Zahlungen
+      db.promise().query(
+        `SELECT COUNT(*) as count, COALESCE(SUM(e.teilnahmegebuehr), 0) as summe
+         FROM event_anmeldungen ea
+         JOIN events e ON ea.event_id = e.event_id
+         WHERE ea.bezahlt = 0 AND ea.status IN ('angemeldet', 'bestaetigt')
+           AND e.teilnahmegebuehr > 0 ${dojoFilter}`,
+        params
+      ),
+      // Anmeldungen diese Woche
+      db.promise().query(
+        `SELECT COUNT(*) as count FROM event_anmeldungen ea
+         JOIN events e ON ea.event_id = e.event_id
+         WHERE ea.anmeldedatum >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) ${dojoFilter}`,
+        params
+      ),
+      // Wartelisten-Einträge
+      db.promise().query(
+        `SELECT COUNT(*) as count FROM event_anmeldungen ea
+         JOIN events e ON ea.event_id = e.event_id
+         WHERE ea.status = 'warteliste' ${dojoFilter}`,
+        params
+      ),
+      // Einnahmen (bezahlte Anmeldungen)
+      db.promise().query(
+        `SELECT COALESCE(SUM(e.teilnahmegebuehr), 0) as gesamt,
+                COUNT(*) as anzahl_bezahlt
+         FROM event_anmeldungen ea
+         JOIN events e ON ea.event_id = e.event_id
+         WHERE ea.bezahlt = 1 AND ea.status IN ('angemeldet', 'bestaetigt') ${dojoFilter}`,
+        params
+      ),
+      // Gesamt-Anmeldungen aktive Events (Mitglieder + Gäste)
+      db.promise().query(
+        `SELECT SUM(1 + COALESCE(ea.gaeste_anzahl, 0)) as count FROM event_anmeldungen ea
+         JOIN events e ON ea.event_id = e.event_id
+         WHERE ea.status IN ('angemeldet', 'bestaetigt') AND e.datum >= CURDATE() ${dojoFilter}`,
+        params
+      ),
+      // Nächstes Event
+      db.promise().query(
+        `SELECT e.event_id, e.titel, e.datum, e.uhrzeit_beginn,
+                (COUNT(ea.anmeldung_id) + COALESCE(SUM(ea.gaeste_anzahl), 0)) as anmeldungen, e.max_teilnehmer
+         FROM events e
+         LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id AND ea.status IN ('angemeldet', 'bestaetigt')
+         WHERE e.datum >= CURDATE() ${dojoFilter}
+         GROUP BY e.event_id ORDER BY e.datum ASC LIMIT 1`,
+        params
+      ),
+      // Events in den letzten 30 Tagen
+      db.promise().query(
+        `SELECT COUNT(*) as count FROM events e
+         WHERE e.datum >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND e.datum < CURDATE() ${dojoFilter}`,
+        params
+      ),
+      // Top Events (nach Datum)
+      db.promise().query(
+        `SELECT e.event_id, e.titel, e.datum, e.uhrzeit_beginn, e.ort, e.max_teilnehmer, e.teilnahmegebuehr, e.status,
+                SUM(CASE WHEN ea.status IN ('angemeldet','bestaetigt') THEN 1 + COALESCE(ea.gaeste_anzahl, 0) ELSE 0 END) as anmeldungen,
+                COUNT(CASE WHEN ea.status = 'warteliste' THEN 1 END) as warteliste,
+                SUM(CASE WHEN ea.bezahlt = 1 AND ea.status IN ('angemeldet','bestaetigt') THEN 1 ELSE 0 END) as bezahlt,
+                SUM(CASE WHEN ea.bezahlt = 0 AND ea.status IN ('angemeldet','bestaetigt') THEN e.teilnahmegebuehr ELSE 0 END) as offen_summe,
+                SUM(CASE WHEN ea.bezahlt = 1 AND ea.status IN ('angemeldet','bestaetigt') THEN e.teilnahmegebuehr ELSE 0 END) as einnahmen
+         FROM events e
+         LEFT JOIN event_anmeldungen ea ON e.event_id = ea.event_id
+         WHERE e.datum >= CURDATE() ${dojoFilter}
+         GROUP BY e.event_id
+         ORDER BY e.datum ASC
+         LIMIT 10`,
+        params
+      )
+    ]);
 
     res.json({
       success: true,
@@ -1977,7 +2159,12 @@ router.get('/stats/dashboard', requireFeature('events'), async (req, res) => {
         offene_zahlungen: openPayments[0].count,
         offene_summe: parseFloat(openPayments[0].summe) || 0,
         anmeldungen_woche: weekRegistrations[0].count,
-        warteliste: waitlist[0].count
+        warteliste: waitlist[0].count,
+        einnahmen_gesamt: parseFloat(revenue[0].gesamt) || 0,
+        anzahl_bezahlt: revenue[0].anzahl_bezahlt || 0,
+        gesamt_anmeldungen: totalAnmeldungen[0].count || 0,
+        vergangene_events_30d: vergangeneEvents[0].count || 0,
+        naechstes_event: naechstesEvent[0] || null
       },
       top_events: topEvents
     });
@@ -2040,6 +2227,305 @@ router.post('/:id/send-reminder', requireFeature('events'), async (req, res) => 
   } catch (error) {
     logger.error('Fehler beim Senden der Erinnerungen:', { error: error.message });
     res.status(500).json({ error: 'Fehler beim Senden' });
+  }
+});
+
+// ============================================================================
+// BESTELLOPTIONEN (Weißwurstfrühstück, etc.)
+// ============================================================================
+
+/**
+ * GET /api/events/:id/bestelloptionen
+ * Alle Bestelloptionen für ein Event laden
+ */
+router.get('/:id/bestelloptionen', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT * FROM event_bestelloptionen WHERE event_id = ? ORDER BY reihenfolge ASC, option_id ASC',
+      [eventId]
+    );
+    res.json({ success: true, optionen: rows });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Bestelloptionen:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Bestelloptionen' });
+  }
+});
+
+/**
+ * POST /api/events/:id/bestelloptionen
+ * Neue Bestelloption für ein Event anlegen (Admin)
+ */
+router.post('/:id/bestelloptionen', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { name, beschreibung, preis, einheit, reihenfolge } = req.body;
+
+  if (!name) {
+    return res.status(400).json({ error: 'Name ist erforderlich' });
+  }
+
+  try {
+    const [result] = await db.promise().query(
+      'INSERT INTO event_bestelloptionen (event_id, name, beschreibung, preis, einheit, reihenfolge) VALUES (?, ?, ?, ?, ?, ?)',
+      [eventId, name, beschreibung || null, parseFloat(preis) || 0, einheit || 'Stk', reihenfolge || 0]
+    );
+    const [rows] = await db.promise().query(
+      'SELECT * FROM event_bestelloptionen WHERE option_id = ?',
+      [result.insertId]
+    );
+    res.json({ success: true, option: rows[0] });
+  } catch (error) {
+    logger.error('Fehler beim Anlegen der Bestelloption:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Anlegen der Bestelloption' });
+  }
+});
+
+/**
+ * PUT /api/events/:id/bestelloptionen/:optId
+ * Bestelloption bearbeiten (Admin)
+ */
+router.put('/:id/bestelloptionen/:optId', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const optId = parseInt(req.params.optId);
+  const { name, beschreibung, preis, einheit, reihenfolge } = req.body;
+
+  try {
+    const [result] = await db.promise().query(
+      'UPDATE event_bestelloptionen SET name=?, beschreibung=?, preis=?, einheit=?, reihenfolge=? WHERE option_id=? AND event_id=?',
+      [name, beschreibung || null, parseFloat(preis) || 0, einheit || 'Stk', reihenfolge || 0, optId, eventId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Option nicht gefunden' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Fehler beim Bearbeiten der Bestelloption:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Bearbeiten der Bestelloption' });
+  }
+});
+
+/**
+ * DELETE /api/events/:id/bestelloptionen/:optId
+ * Bestelloption löschen (Admin)
+ */
+router.delete('/:id/bestelloptionen/:optId', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const optId = parseInt(req.params.optId);
+
+  try {
+    const [result] = await db.promise().query(
+      'DELETE FROM event_bestelloptionen WHERE option_id=? AND event_id=?',
+      [optId, eventId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Option nicht gefunden' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Fehler beim Löschen der Bestelloption:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Löschen der Bestelloption' });
+  }
+});
+
+/**
+ * GET /api/events/:id/bestellungen/summary
+ * Bestellübersicht für ein Event (Admin) — Summe aller Bestellungen pro Artikel
+ */
+router.get('/:id/bestellungen/summary', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT
+         bo.option_id,
+         bo.name,
+         bo.preis,
+         bo.einheit,
+         COALESCE(SUM(combined.menge), 0) AS menge_gesamt,
+         COALESCE(SUM(combined.menge * bo.preis), 0) AS preis_gesamt
+       FROM event_bestelloptionen bo
+       LEFT JOIN (
+         SELECT option_id, menge FROM event_bestellungen
+         UNION ALL
+         SELECT option_id, menge FROM event_gast_bestellungen
+       ) combined ON bo.option_id = combined.option_id
+       WHERE bo.event_id = ?
+       GROUP BY bo.option_id
+       ORDER BY bo.reihenfolge ASC, bo.option_id ASC`,
+      [eventId]
+    );
+
+    const gesamtbetrag = rows.reduce((sum, r) => sum + parseFloat(r.preis_gesamt), 0);
+
+    // Detaildaten: Wer hat was bestellt?
+    const [details] = await db.promise().query(
+      `SELECT
+         m.vorname, m.nachname,
+         bo.name AS artikel,
+         eb.menge,
+         bo.preis,
+         (eb.menge * bo.preis) AS betrag
+       FROM event_bestellungen eb
+       JOIN event_anmeldungen ea ON eb.anmeldung_id = ea.anmeldung_id
+       JOIN mitglieder m ON ea.mitglied_id = m.mitglied_id
+       JOIN event_bestelloptionen bo ON eb.option_id = bo.option_id
+       WHERE bo.event_id = ?
+       ORDER BY m.nachname ASC, m.vorname ASC, bo.reihenfolge ASC`,
+      [eventId]
+    );
+
+    res.json({ success: true, summary: rows, gesamtbetrag, details });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Bestellübersicht:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Bestellübersicht' });
+  }
+});
+
+// ============================================================================
+// MEMBER POPUP: Neue Events die noch nicht gesehen wurden
+// ============================================================================
+
+/**
+ * GET /api/events/member/:mitglied_id/neu
+ * Gibt Events zurück für die der Member noch keinen Popup gesehen hat
+ * und wo er sich noch nicht angemeldet hat
+ */
+router.get('/member/:mitglied_id/neu', async (req, res) => {
+  const mitgliedId = parseInt(req.params.mitglied_id);
+  try {
+    const dojoId = req.tenant?.dojo_id || req.user?.dojo_id || null;
+
+    const [events] = await db.promise().query(
+      `SELECT e.event_id, e.titel, e.beschreibung, e.event_typ, e.datum,
+              e.uhrzeit_beginn, e.uhrzeit_ende, e.ort, e.max_teilnehmer,
+              e.teilnahmegebuehr, e.anmeldefrist, e.status, e.bild_url, e.anforderungen,
+              (SELECT COUNT(*) FROM event_anmeldungen ea2
+               WHERE ea2.event_id = e.event_id AND ea2.status NOT IN ('abgesagt')) AS anmeldungen_count
+       FROM events e
+       WHERE e.datum >= CURDATE()
+         AND e.status NOT IN ('abgesagt', 'abgeschlossen')
+         AND (? IS NULL OR e.dojo_id = ?)
+         AND e.event_id NOT IN (
+           SELECT eg.event_id FROM event_gesehen eg WHERE eg.mitglied_id = ?
+         )
+         AND e.event_id NOT IN (
+           SELECT ea.event_id FROM event_anmeldungen ea
+           WHERE ea.mitglied_id = ? AND ea.status NOT IN ('abgesagt')
+         )
+       ORDER BY e.datum ASC`,
+      [dojoId, dojoId, mitgliedId, mitgliedId]
+    );
+
+    // Bestelloptionen für jedes Event laden
+    for (const event of events) {
+      const [optionen] = await db.promise().query(
+        `SELECT option_id, name, beschreibung, preis, einheit
+         FROM event_bestelloptionen WHERE event_id = ? ORDER BY reihenfolge ASC`,
+        [event.event_id]
+      );
+      event.bestelloptionen = optionen;
+    }
+
+    res.json({ success: true, events });
+  } catch (error) {
+    logger.error('Fehler beim Laden neuer Events:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden neuer Events' });
+  }
+});
+
+/**
+ * POST /api/events/:id/gesehen
+ * Markiert ein Event als gesehen/beantwortet für diesen Member
+ * aktion: 'gesehen' (popup wegklicken), 'angemeldet', 'abgelehnt'
+ */
+router.post('/:id/gesehen', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { mitglied_id, aktion = 'gesehen' } = req.body;
+
+  if (!mitglied_id) {
+    return res.status(400).json({ error: 'mitglied_id erforderlich' });
+  }
+
+  try {
+    await db.promise().query(
+      `INSERT INTO event_gesehen (mitglied_id, event_id, aktion)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE aktion = VALUES(aktion), zeitpunkt = NOW()`,
+      [mitglied_id, eventId, aktion]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Fehler beim Speichern event_gesehen:', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Speichern' });
+  }
+});
+
+/**
+ * GET /api/events/:id/oeffentlich
+ * Öffentliche Event-Info für Gast-Anmeldung (kein Auth erforderlich)
+ */
+router.get('/:id/oeffentlich', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT event_id, titel, beschreibung, datum, uhrzeit_beginn, uhrzeit_ende, ort, max_teilnehmer, teilnahmegebuehr, status
+       FROM events WHERE event_id = ?`,
+      [eventId]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Event nicht gefunden' });
+    const event = rows[0];
+    const [optionen] = await db.promise().query(
+      'SELECT option_id, name, preis, einheit FROM event_bestelloptionen WHERE event_id = ? ORDER BY reihenfolge ASC',
+      [eventId]
+    );
+    res.json({ ...event, bestelloptionen: optionen });
+  } catch (err) {
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+/**
+ * POST /api/events/:id/gast-anmelden
+ * Externe Gast-Anmeldung (kein Auth erforderlich)
+ */
+router.post('/:id/gast-anmelden', async (req, res) => {
+  const eventId = parseInt(req.params.id);
+  const { vorname, nachname, email, telefon, anzahl, bemerkung, bestellungen } = req.body;
+
+  if (!vorname || !nachname) {
+    return res.status(400).json({ error: 'Vor- und Nachname sind erforderlich' });
+  }
+
+  try {
+    const [eventRows] = await db.promise().query(
+      'SELECT event_id, titel, status FROM events WHERE event_id = ?',
+      [eventId]
+    );
+    if (eventRows.length === 0) return res.status(404).json({ error: 'Event nicht gefunden' });
+    if (eventRows[0].status === 'abgesagt') return res.status(400).json({ error: 'Event wurde abgesagt' });
+
+    const [result] = await db.promise().query(
+      `INSERT INTO event_gaeste (event_id, vorname, nachname, email, telefon, anzahl, bemerkung)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [eventId, vorname.trim(), nachname.trim(), email || null, telefon || null, parseInt(anzahl) || 1, bemerkung || null]
+    );
+
+    // Bestellungen speichern
+    if (Array.isArray(bestellungen)) {
+      for (const b of bestellungen) {
+        if (b.option_id && b.menge > 0) {
+          await db.promise().query(
+            'INSERT INTO event_gast_bestellungen (gast_id, option_id, menge) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE menge = ?',
+            [result.insertId, b.option_id, b.menge, b.menge]
+          );
+        }
+      }
+    }
+
+    res.json({ success: true, gast_id: result.insertId });
+  } catch (err) {
+    logger.error('Fehler bei Gast-Anmeldung:', { error: err.message });
+    res.status(500).json({ error: 'Fehler bei der Anmeldung' });
   }
 });
 

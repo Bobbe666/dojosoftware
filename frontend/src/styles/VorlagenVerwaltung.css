@@ -121,10 +121,11 @@
 
 /* Card title */
 .vv-card-title {
-  color: var(--text-primary);
-  font-size: 0.95rem;
-  font-weight: 600;
+  color: var(--text-1, var(--text-primary, #e2e8f0));
+  font-size: 0.9rem;
+  font-weight: 500;
   margin: 0 0 0.3rem 0;
+  line-height: 1.35;
 }
 
 /* Vorlage meta row */
@@ -347,15 +348,14 @@
   color: var(--text-secondary, #aaa);
 }
 .vv-tab-btn--active {
-  border-bottom-color: var(--primary, #ffd700);
-  color: var(--primary, #ffd700);
+  border-bottom-color: var(--primary, var(--primary));
+  color: var(--primary, var(--primary));
   font-weight: 600;
 }
 
-/* Color bar atop vorlage card (background via CSS var) */
+/* Color bar atop vorlage card — entfernt, zu dominant */
 .vv-color-bar-sm {
-  height: 4px;
-  background: var(--pc, var(--primary, #ffd700));
+  display: none;
 }
 
 /* Color bar atop profile card */
@@ -370,8 +370,8 @@
   border-radius: 4px;
   font-size: 0.7rem;
   font-weight: 600;
-  background: var(--pc22, var(--primary-alpha-10, rgba(255,215,0,0.1)));
-  color: var(--pc, var(--primary, #ffd700));
+  background: var(--pc22, var(--primary-alpha-10, var(--primary-alpha-10)));
+  color: var(--pc, var(--primary, var(--primary)));
 }
 
 /* Tab count badge */
@@ -384,8 +384,8 @@
   color: var(--text-secondary, #666);
 }
 .vv-tab-count--active {
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-20, var(--primary-alpha-20));
+  color: var(--primary, var(--primary));
 }
 
 /* Profile type badge */
@@ -397,8 +397,8 @@
   display: inline-block;
   font-weight: 600;
   text-transform: uppercase;
-  background: var(--pc22, var(--primary-alpha-10, rgba(255,215,0,0.1)));
-  color: var(--pc, var(--primary, #ffd700));
+  background: var(--pc22, var(--primary-alpha-10, var(--primary-alpha-10)));
+  color: var(--pc, var(--primary, var(--primary)));
 }
 
 /* ActionBtn base and variants */
@@ -421,8 +421,8 @@
   background: rgba(255,255,255,0.06);
 }
 .vv-action-btn--primary {
-  background: var(--primary-alpha-10, rgba(255,215,0,0.1));
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-10, var(--primary-alpha-10));
+  color: var(--primary, var(--primary));
 }
 .vv-action-btn--primary:hover {
   background: var(--primary, #ffd700);
@@ -430,7 +430,7 @@
 }
 .vv-action-btn--danger {
   background: transparent;
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
 }
 .vv-action-btn--danger:hover {
   background: var(--error, #ef4444);
@@ -438,7 +438,7 @@
 }
 .vv-action-btn--primary-custom {
   background: var(--c22, rgba(255,215,0,0.13));
-  color: var(--c, var(--primary, #ffd700));
+  color: var(--c, var(--primary, var(--primary)));
 }
 .vv-action-btn--primary-custom:hover {
   background: var(--c, var(--primary, #ffd700));
@@ -471,3 +471,52 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   animation: fadeIn 0.2s ease;
 }
+
+/* ── Verlauf-Tabelle ─────────────────────────────────────────────────────────── */
+.vv-verlauf-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+.vv-verlauf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.vv-verlauf-table th {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  color: var(--text-secondary, #888);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-default, #2a2a3a);
+  background: var(--bg-card, #1e1e2e);
+}
+.vv-verlauf-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-default, #2a2a3a);
+  color: var(--text-primary, #e0e0e0);
+  vertical-align: top;
+}
+.vv-verlauf-table tr:last-child td { border-bottom: none; }
+.vv-verlauf-table tr:hover td { background: var(--bg-hover, rgba(255,255,255,0.03)); }
+.vv-tbl-name { display: block; font-weight: 600; }
+.vv-tbl-email { display: block; font-size: 0.78rem; color: var(--text-secondary, #888); }
+.vv-td-betreff { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary, #888); font-size: 0.83rem; }
+.vv-td-date { white-space: nowrap; font-size: 0.82rem; color: var(--text-secondary, #888); }
+
+/* Versand-Badges */
+.vv-versand-badge {
+  display: inline-block;
+  padding: 0.18em 0.55em;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.vv-versand-pdf { background: rgba(99,102,241,0.15); color: #818cf8; }
+.vv-versand-email { background: rgba(16,185,129,0.15); color: #34d399; }
+.vv-versand-email_mit_pdf { background: rgba(245,158,11,0.15); color: var(--status-warning); }
+.vv-versand-unbekannt { background: rgba(255,255,255,0.05); color: var(--text-secondary, #888); }

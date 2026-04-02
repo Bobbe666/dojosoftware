@@ -1,10 +1,22 @@
 const express = require('express');
 const logger = require('../utils/logger');
 const nodemailer = require('nodemailer');
+const webpush = require('web-push');
 const db = require('../db');
+const pool = db.promise(); // Promise-basierte API von mysql2
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const enc = require('../services/encryptionService');
 const router = express.Router();
+
+// VAPID konfigurieren für Web Push
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL || 'mailto:admin@dojo.tda-intl.org',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 // ===================================================================
 // EMAIL TRANSPORTER KONFIGURATION
@@ -318,11 +330,26 @@ router.post('/email/send', authenticateToken, async (req, res) => {
 // Web Push Service Worker Registration
 router.post('/push/subscribe', authenticateToken, async (req, res) => {
   try {
-    const { subscription, user_id } = req.body;
-    
-    if (!subscription || !subscription.endpoint) {
+    // Akzeptiert beide Formate:
+    // Altes Format: { subscription: { endpoint, keys: { p256dh, auth } }, user_id }
+    // Neues flaches Format: { endpoint, p256dh, auth }
+    const body = req.body;
+    let endpoint, p256dh, auth;
+
+    if (body.subscription && body.subscription.endpoint) {
+      endpoint = body.subscription.endpoint;
+      p256dh = body.subscription.keys?.p256dh || null;
+      auth = body.subscription.keys?.auth || null;
+    } else if (body.endpoint) {
+      endpoint = body.endpoint;
+      p256dh = body.p256dh || null;
+      auth = body.auth || null;
+    } else {
       return res.status(400).json({ success: false, message: 'Ungültige Subscription-Daten' });
     }
+
+    // user_id sicher aus JWT ableiten (nicht aus Body)
+    const userId = req.user.mitglied_id || req.user.user_id || req.user.id || null;
 
     // Subscription in Datenbank speichern
     await new Promise((resolve, reject) => {
@@ -330,16 +357,17 @@ router.post('/push/subscribe', authenticateToken, async (req, res) => {
         INSERT INTO push_subscriptions (user_id, endpoint, p256dh_key, auth_key, user_agent, is_active)
         VALUES (?, ?, ?, ?, ?, TRUE)
         ON DUPLICATE KEY UPDATE
+        user_id = VALUES(user_id),
         p256dh_key = VALUES(p256dh_key),
         auth_key = VALUES(auth_key),
         user_agent = VALUES(user_agent),
         is_active = TRUE,
         updated_at = NOW()
       `, [
-        user_id,
-        subscription.endpoint,
-        subscription.keys?.p256dh || null,
-        subscription.keys?.auth || null,
+        userId,
+        endpoint,
+        p256dh,
+        auth,
         req.get('User-Agent') || 'Unknown'
       ], (err, result) => {
         if (err) reject(err);
@@ -357,7 +385,7 @@ router.post('/push/subscribe', authenticateToken, async (req, res) => {
 // Push-Notification senden
 router.post('/push/send', authenticateToken, async (req, res) => {
   try {
-    const { recipients, title, message, data, icon, badge, url } = req.body;
+    const { recipients, title, message, data, icon, badge, url, send_to_chat } = req.body;
 
     if (!title || !message) {
       return res.status(400).json({ success: false, message: 'Titel und Nachricht sind erforderlich' });
@@ -367,61 +395,152 @@ router.post('/push/send', authenticateToken, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mindestens ein Empfänger erforderlich' });
     }
 
+    const dojo_id = req.user.dojo_id;
     const results = [];
     let sentCount = 0;
+    let notificationDbId = null;
 
-    // Sende Push-Notification an jeden Empfänger
+    // Zuerst in DB loggen (für send_to_chat Referenz)
+    try {
+      const [logResult] = await pool.query(
+        `INSERT INTO notifications (type, recipient, subject, message, status, created_at)
+         VALUES ('push', 'broadcast', ?, ?, 'sent', NOW())`,
+        [title, message]
+      );
+      notificationDbId = logResult.insertId;
+    } catch (e) {
+      logger.warn('Notification-Log Fehler', { error: e.message });
+    }
+
+    // Option A: Push-Nachricht auch im Ankündigungs-Chat anzeigen
+    if (send_to_chat && dojo_id) {
+      try {
+        const adminId = req.user.user_id || req.user.admin_id;
+
+        // Ankündigungs-Raum suchen oder erstellen
+        let [announcementRooms] = await pool.query(
+          `SELECT id FROM chat_rooms WHERE dojo_id = ? AND type = 'announcement' LIMIT 1`,
+          [dojo_id]
+        );
+
+        let announcement_room_id;
+        if (announcementRooms[0]) {
+          announcement_room_id = announcementRooms[0].id;
+        } else {
+          // Ankündigungsraum anlegen
+          const [newRoom] = await pool.query(
+            `INSERT INTO chat_rooms (dojo_id, type, name, description, created_by_id, created_by_type)
+             VALUES (?, 'announcement', 'Ankündigungen', 'Offizielle Mitteilungen vom Dojo', ?, 'admin')`,
+            [dojo_id, adminId]
+          );
+          announcement_room_id = newRoom.insertId;
+
+          // Alle Mitglieder des Dojos zum Ankündigungsraum hinzufügen
+          const [allMembers] = await pool.query(
+            `SELECT mitglied_id FROM mitglieder WHERE dojo_id = ? AND status = 'aktiv'`,
+            [dojo_id]
+          );
+          if (allMembers.length) {
+            const memberValues = allMembers.map(m => [announcement_room_id, m.mitglied_id, 'mitglied', 'member']);
+            await pool.query(
+              `INSERT IGNORE INTO chat_room_members (room_id, member_id, member_type, role) VALUES ?`,
+              [memberValues]
+            );
+          }
+        }
+
+        // Nachricht im Chat speichern (als push_ref)
+        const chatContent = `📣 **${title}**\n\n${message}`;
+        const [chatMsg] = await pool.query(
+          `INSERT INTO chat_messages (room_id, sender_id, sender_type, message_type, content, push_notification_id)
+           VALUES (?, ?, 'admin', 'push_ref', ?, ?)`,
+          [announcement_room_id, adminId, chatContent, notificationDbId]
+        );
+
+        // Via Socket.io broadcasten
+        const io = req.app.get('io');
+        if (io) {
+          io.to(`dojo:${dojo_id}`).emit('chat:message', {
+            id: chatMsg.insertId,
+            room_id: announcement_room_id,
+            sender_id: adminId,
+            sender_type: 'admin',
+            message_type: 'push_ref',
+            content: chatContent,
+            sent_at: new Date(),
+            sender_name: req.user.username || 'Admin',
+            reactions: []
+          });
+        }
+
+        logger.info('Push-Nachricht in Chat gespiegelt', { room_id: announcement_room_id, dojo_id });
+      } catch (chatError) {
+        logger.error('send_to_chat Fehler', { error: chatError.message });
+      }
+    }
+
+    // Sende Push-Notification an jeden Empfänger via Web Push
     for (const recipient of recipients) {
       try {
-        // Hier würde der echte Push-Versand stattfinden (web-push)
-        // const pushPayload = JSON.stringify({
-        //   title: title,
-        //   body: message,
-        //   icon: icon || '/icons/icon-192x192.png',
-        //   badge: badge || '/icons/badge-72x72.png',
-        //   data: data || { url: url || '/' }
-        // });
+        // Push-Subscriptions des Empfängers laden
+        const [subscriptions] = await pool.query(
+          `SELECT endpoint, p256dh_key, auth_key FROM push_subscriptions
+           WHERE user_id = ? AND is_active = TRUE`,
+          [recipient]
+        );
 
-        // await webpush.sendNotification(subscription, pushPayload);
-
-        // Push-Notification in Datenbank loggen
-        await new Promise((resolve, reject) => {
-          db.query(`
-            INSERT INTO notifications (type, recipient, subject, message, status, created_at)
-            VALUES (?, ?, ?, ?, 'sent', NOW())
-          `, ['push', recipient, title, message], (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          });
+        const pushPayload = JSON.stringify({
+          title,
+          body: message,
+          icon: icon || '/icons/icon-192x192.png',
+          badge: badge || '/icons/badge-72x72.png',
+          data: data || { url: url || '/member/dashboard' }
         });
 
-        results.push({ recipient: recipient, status: 'sent' });
-        sentCount++;
+        let recipientSent = false;
+        for (const sub of subscriptions) {
+          try {
+            await webpush.sendNotification(
+              { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh_key, auth: sub.auth_key } },
+              pushPayload
+            );
+            recipientSent = true;
+          } catch (pushError) {
+            if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+              await pool.query(
+                `UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?`,
+                [sub.endpoint]
+              );
+            }
+          }
+        }
+
+        results.push({ recipient, status: recipientSent ? 'sent' : 'no_subscription' });
+        if (recipientSent) sentCount++;
       } catch (error) {
-        logger.error('Fehler beim Senden an ${recipient}:', { error: error });
-
-        // Fehlerhafte Push-Notification loggen
-        await new Promise((resolve, reject) => {
-          db.query(`
-            INSERT INTO notifications (type, recipient, subject, message, status, error_message, created_at)
-            VALUES (?, ?, ?, ?, 'failed', ?, NOW())
-          `, ['push', recipient, title, message, error.message], (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          });
-        });
-
-        results.push({
-          recipient: recipient,
-          status: 'failed',
-          error: error.message
-        });
+        logger.error(`Push-Senden Fehler für Empfänger ${recipient}`, { error: error.message });
+        results.push({ recipient, status: 'failed', error: error.message });
       }
+    }
+
+    // In-App Benachrichtigung für alle Empfänger (erscheint in Glocke im MemberDashboard)
+    try {
+      if (recipients && recipients.length > 0) {
+        const uniqueEmails = [...new Set(recipients.map(e => String(e).toLowerCase().trim()))];
+        for (const email of uniqueEmails) {
+          await pool.query(
+            "INSERT INTO notifications (type, recipient, subject, message, status, created_at) VALUES (?, ?, ?, ?, 'unread', NOW())",
+            ['push', email, title, message]
+          );
+        }
+      }
+    } catch (inAppErr) {
+      logger.warn('In-App Notification Insert Fehler:', { error: inAppErr.message });
     }
 
     res.json({
       success: true,
-      message: `${sentCount} von ${recipients.length} Push-Nachrichten erfolgreich gesendet`,
+      message: `${sentCount} von ${recipients.length} Push-Nachrichten gesendet, alle in Benachrichtigungen gespeichert`,
       results,
       sentCount,
       totalRecipients: recipients.length
@@ -617,7 +736,7 @@ router.get('/recipients', authenticateToken, async (req, res) => {
     let adminEmails = [];
 
     // Erstelle WHERE clause für dojo_id Filter
-    const dojoFilter = secureDojoId ? 'AND dojo_id = ?' : '';
+    const dojoFilter = secureDojoId ? 'AND dojo_id = ?' : 'AND dojo_id NOT IN (SELECT id FROM dojo WHERE ist_aktiv = 0)';
     const dojoParams = secureDojoId ? [secureDojoId] : [];
 
     // Prüfe ob mitglieder Tabelle existiert und hole Daten
@@ -823,6 +942,7 @@ router.get('/member/:email', authenticateToken, async (req, res) => {
       db.query(`
         SELECT * FROM notifications
         WHERE recipient = ? AND type = 'push'
+          AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
         ORDER BY created_at DESC
         LIMIT 50
       `, [email], (err, results) => {
@@ -839,7 +959,7 @@ router.get('/member/:email', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       notifications: notifications,
-      unreadCount: notifications.filter(n => !n.read).length
+      unreadCount: notifications.filter(n => n.status === 'unread').length
     });
   } catch (error) {
     logger.error('Member Notifications Fehler:', { error: error });
@@ -947,6 +1067,84 @@ router.get('/admin/unread', authenticateToken, async (req, res) => {
   } catch (error) {
     logger.error('Admin Notifications Fehler:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Benachrichtigungen' });
+  }
+});
+
+// Erstcheck: Vollständige Registrierungsdaten für einen Admin-Alert laden
+router.get('/admin/registration-check/:email', authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    const [regRows] = await pool.query(`
+      SELECT r.*,
+             t.name AS tarif_name, t.price_cents, t.duration_months
+      FROM registrierungen r
+      LEFT JOIN tarife t ON r.tarif_id = t.id
+      WHERE r.email = ?
+      ORDER BY r.created_at DESC
+      LIMIT 1
+    `, [email]);
+
+    if (regRows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Keine Registrierung gefunden' });
+    }
+
+    const reg = regRows[0];
+
+    // Mitglied in mitglieder-Tabelle nachschlagen (falls bereits angelegt)
+    const [mitgliedRows] = await pool.query(`
+      SELECT mitglied_id, status, mitgliedsnummer
+      FROM mitglieder WHERE email = ? LIMIT 1
+    `, [email]);
+
+    const mitglied = mitgliedRows[0] || null;
+
+    // Gesundheitsfragen entschlüsseln + parsen
+    let gesundheit = null;
+    if (reg.gesundheitsfragen) {
+      gesundheit = enc.decryptJSON(reg.gesundheitsfragen);
+    }
+
+    res.json({
+      success: true,
+      registration: {
+        id: reg.id,
+        email: reg.email,
+        vorname: reg.vorname,
+        nachname: reg.nachname,
+        geburtsdatum: reg.geburtsdatum,
+        geschlecht: reg.geschlecht,
+        strasse: reg.strasse,
+        hausnummer: reg.hausnummer,
+        plz: reg.plz,
+        ort: reg.ort,
+        telefon: reg.telefon,
+        iban: reg.iban ? reg.iban.replace(/(.{4})/g, '$1 ').trim() : null,
+        bic: reg.bic,
+        bank_name: reg.bank_name,
+        kontoinhaber: reg.kontoinhaber,
+        tarif_name: reg.tarif_name,
+        price_cents: reg.price_cents,
+        duration_months: reg.duration_months,
+        billing_cycle: reg.billing_cycle,
+        payment_method: reg.payment_method,
+        vertragsbeginn: reg.vertragsbeginn,
+        gesundheitsfragen: gesundheit,
+        agb_accepted: !!reg.agb_accepted,
+        dsgvo_accepted: !!reg.dsgvo_accepted,
+        widerrufsrecht_acknowledged: !!reg.widerrufsrecht_acknowledged,
+        kuendigungshinweise_acknowledged: !!reg.kuendigungshinweise_acknowledged,
+        vertreter1_name: reg.vertreter1_name,
+        vertreter1_telefon: reg.vertreter1_telefon,
+        vertreter1_email: reg.vertreter1_email,
+        status: reg.status,
+        created_at: reg.created_at
+      },
+      mitglied
+    });
+  } catch (error) {
+    logger.error('Registration Check Fehler:', { error: error });
+    res.status(500).json({ success: false, error: 'Serverfehler' });
   }
 });
 
@@ -1133,7 +1331,37 @@ router.get('/admin/debug', authenticateToken, async (req, res) => {
   }
 });
 
-// Email Transporter beim Start initialisieren
-initEmailTransporter();
+// ─── Mitglied: gesehene Notifications als gelesen markieren ──────────────────
+router.post('/member/mark-read', authenticateToken, async (req, res) => {
+  try {
+    const { email, ids } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'email fehlt' });
+
+    await new Promise((resolve, reject) => {
+      if (ids && ids.length) {
+        db.query(
+          `UPDATE notifications SET status = 'read'
+           WHERE recipient = ? AND type = 'push' AND (requires_confirmation IS NULL OR requires_confirmation = 0)
+             AND id IN (?)`,
+          [email, ids],
+          (err) => err ? reject(err) : resolve()
+        );
+      } else {
+        db.query(
+          `UPDATE notifications SET status = 'read'
+           WHERE recipient = ? AND type = 'push' AND (requires_confirmation IS NULL OR requires_confirmation = 0)`,
+          [email],
+          (err) => err ? reject(err) : resolve()
+        );
+      }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('mark-read Fehler', { error: error.message });
+    res.status(500).json({ success: false });
+  }
+});
+
 
 module.exports = router;

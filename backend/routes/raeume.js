@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
         if (dojoId === null || dojoId === undefined) {
             // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
             query += ` WHERE r.dojo_id NOT IN (
-                SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+                SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
             )`;
         } else {
             // Normaler Admin: Nur eigenes Dojo

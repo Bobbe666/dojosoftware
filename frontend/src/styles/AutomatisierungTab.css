@@ -1,0 +1,292 @@
+/* AutomatisierungTab.css */
+
+.at-container {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.at-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.at-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #eee;
+  margin: 0 0 0.3rem 0;
+}
+
+.at-subtitle {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 0;
+}
+
+.at-btn-add {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: var(--primary, #ffd700);
+  color: #000;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.at-btn-add:hover { opacity: 0.9; }
+
+.at-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(231,76,60,0.1);
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.at-error-retry {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+
+/* Neuer Trigger Form */
+.at-new-form {
+  background: #141420;
+  border: 1px solid var(--primary, #ffd700);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.at-new-form-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary, #ffd700);
+  margin-bottom: 1rem;
+}
+
+.at-new-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .at-new-form-grid { grid-template-columns: 1fr; }
+}
+
+.at-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.at-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.at-select {
+  padding: 0.5rem 0.7rem;
+  background: #1a1a2e;
+  border: 1px solid #3a3a5a;
+  border-radius: 6px;
+  color: #eee;
+  font-size: 0.85rem;
+}
+.at-select:focus { outline: none; border-color: var(--primary, #ffd700); }
+
+.at-new-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.at-btn-cancel {
+  padding: 0.5rem 1rem;
+  background: none;
+  border: 1px solid #444;
+  color: #aaa;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.at-btn-save {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary, #ffd700);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.at-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Loading & Empty */
+.at-loading {
+  text-align: center;
+  color: #888;
+  padding: 3rem;
+  font-size: 0.9rem;
+}
+
+.at-empty {
+  text-align: center;
+  color: #888;
+  padding: 3rem 1.5rem;
+}
+
+.at-empty-icon {
+  margin: 0 auto 1rem;
+  display: block;
+  opacity: 0.4;
+}
+
+.at-empty h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #aaa;
+  margin: 0 0 0.5rem 0;
+}
+
+.at-empty p {
+  font-size: 0.85rem;
+  margin: 0 0 1.5rem 0;
+}
+
+/* Trigger-Liste */
+.at-trigger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.at-trigger-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #141420;
+  border: 1px solid #2a2a4a;
+  border-radius: 10px;
+  transition: border-color 0.15s;
+}
+
+.at-trigger-card:hover { border-color: #3a3a5a; }
+
+.at-trigger-card--inaktiv {
+  opacity: 0.55;
+}
+
+.at-trigger-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 2.2rem;
+  text-align: center;
+}
+
+.at-trigger-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.at-trigger-typ {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #eee;
+  margin-bottom: 0.25rem;
+}
+
+.at-trigger-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #888;
+  flex-wrap: wrap;
+}
+
+.at-trigger-vorlage {
+  color: var(--primary, #ffd700);
+}
+
+.at-trigger-sep { color: #555; }
+
+.at-trigger-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.at-status-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.at-status-badge--aktiv {
+  background: rgba(39,174,96,0.15);
+  color: #27ae60;
+  border: 1px solid rgba(39,174,96,0.3);
+}
+
+.at-status-badge--inaktiv {
+  background: rgba(150,150,150,0.1);
+  color: #888;
+  border: 1px solid #444;
+}
+
+.at-btn-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.at-toggle-on { color: #27ae60; }
+.at-toggle-off { color: #666; }
+
+.at-btn-delete {
+  background: none;
+  border: 1px solid transparent;
+  color: #777;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+}
+.at-btn-delete:hover { color: #e74c3c; border-color: rgba(231,76,60,0.3); background: rgba(231,76,60,0.07); }

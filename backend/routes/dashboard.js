@@ -8,12 +8,15 @@ const { getSecureDojoId } = require('../middleware/tenantSecurity');
 // GET /api/dashboard/batch - Optimized batch endpoint for all dashboard data
 router.get('/batch', async (req, res) => {
   try {
-    let { dojo_id } = req.query;
+    let { dojo_id, dojo_ids } = req.query;
 
     // 🔒 KRITISCH: Erzwinge Tenant-Isolation basierend auf req.user.dojo_id
     if (req.user && req.user.dojo_id) {
         dojo_id = req.user.dojo_id.toString();
         logger.debug('🔒 Tenant-Filter erzwungen:', { user_dojo_id: req.user.dojo_id, forced_dojo_id: dojo_id });
+    } else if (!dojo_id && dojo_ids) {
+        // Super-Admin mit mehreren Dojos (z.B. dojo_ids=2,3)
+        dojo_id = dojo_ids;
     }
 
     logger.debug(`🚀 Dashboard-Batch-Endpoint wird geladen (dojo_id=${dojo_id || 'all'})...`);
@@ -64,17 +67,24 @@ async function getDashboardStats(dojo_id) {
     let dojoFilter = '';
     let dojoJoinFilter = '';
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (dojo_id && dojo_id !== 'all' && String(dojo_id).includes(',')) {
+      // Mehrere Dojos (dojo_ids=2,3)
+      const dojoIds = String(dojo_id).split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+      if (dojoIds.length > 0) {
+        dojoFilter = ` AND dojo_id IN (${dojoIds.join(',')})`;
+        dojoJoinFilter = ` AND m.dojo_id IN (${dojoIds.join(',')})`;
+      }
+    } else if (dojo_id && dojo_id !== 'all') {
       // Spezifisches Dojo
       dojoFilter = ` AND dojo_id = ${parseInt(dojo_id)}`;
       dojoJoinFilter = ` AND m.dojo_id = ${parseInt(dojo_id)}`;
     } else if (dojo_id === 'all') {
       // Alle zentral verwalteten Dojos (ohne separate Tenants wie Demo)
       dojoFilter = ` AND dojo_id NOT IN (
-        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
       )`;
       dojoJoinFilter = ` AND m.dojo_id NOT IN (
-        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
       )`;
     }
     // Wenn dojo_id === undefined/null, keine Filterung (sollte nicht vorkommen)

@@ -166,7 +166,7 @@
 .suchfeld:focus {
   border-color: var(--border-hover);
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.25);
+  box-shadow: 0 0 0 2px var(--primary-alpha-25);
 }
 
 .filter-optionen {
@@ -264,7 +264,7 @@
 }
 
 .person-card.selbst_eingecheckt {
-  border-left: 5px solid rgba(255, 215, 0, 0.5);
+  border-left: 5px solid var(--primary-alpha-50);
 }
 
 .person-card.trainer_hinzugefuegt {
@@ -287,9 +287,9 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  background: rgba(255, 215, 0, 0.12);
+  background: var(--primary-alpha-12);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .person-info {
@@ -311,7 +311,7 @@
 }
 
 .gurtfarbe {
-  background: rgba(255, 215, 0, 0.15);
+  background: var(--primary-alpha-15);
   color: var(--primary);
   padding: 2px 8px;
   border-radius: var(--comp-radius-lg);
@@ -363,8 +363,8 @@
   font-size: 0.75rem;
   padding: 0.25rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 215, 0, 0.35);
-  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid var(--primary-alpha-35);
+  background: var(--primary-alpha-12);
   color: var(--text-1);
   text-transform: none;
 }
@@ -608,7 +608,7 @@
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border-radius: 8px;
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   flex-wrap: wrap;
 }
 
@@ -619,7 +619,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--primary-alpha-10);
   flex: 1 1 auto;
   min-width: fit-content;
 }

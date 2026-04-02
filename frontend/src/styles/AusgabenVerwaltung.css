@@ -157,7 +157,7 @@
 .av-card-error-border {
   background: var(--bg-card);
   border: 1px solid var(--border-primary);
-  border-left: 3px solid var(--error, #ef4444);
+  border-left: 3px solid var(--error, var(--status-error));
   border-radius: 12px;
   padding: 1.25rem;
 }
@@ -166,7 +166,7 @@
 .av-stat-value-error {
   font-size: 1.55rem;
   font-weight: 700;
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
 }
 
 /* Vorjahr delta row (partially dynamic — color stays inline) */
@@ -288,7 +288,7 @@
 
 .av-summary-total {
   font-weight: 700;
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
 }
 
 /* Table card */
@@ -376,7 +376,7 @@
   padding: 0.7rem 0.85rem;
   text-align: right;
   font-weight: 600;
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
   white-space: nowrap;
 }
 
@@ -391,7 +391,7 @@
 }
 
 .av-btn-delete {
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
 }
 
 /* Modal */
@@ -500,14 +500,14 @@
   transition: all 0.15s;
 }
 .av-tab-btn--active {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-weight: 600;
-  border-bottom-color: var(--primary, #ffd700);
+  border-bottom-color: var(--primary, var(--primary));
 }
 
 /* Delta row modifiers */
-.av-delta-row--neg { color: var(--error, #ef4444); }
-.av-delta-row--pos { color: #10b981; }
+.av-delta-row--neg { color: var(--error, var(--status-error)); }
+.av-delta-row--pos { color: var(--status-success); }
 
 /* Category button hover */
 .av-kat-btn:hover { background: var(--bg-secondary); }

@@ -18,7 +18,7 @@
   background: var(--surface-3);
   backdrop-filter: blur(20px);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255,215,0,0.2);
+  border: 1px solid var(--primary-alpha-20);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
@@ -72,8 +72,8 @@
 }
 
 .view-tabs .tab.active {
-  background: rgba(255, 215, 0, 0.15);
-  border-color: rgba(255,215,0,0.2);
+  background: var(--primary-alpha-15);
+  border-color: var(--primary-alpha-20);
   color: var(--primary);
 }
 
@@ -84,7 +84,7 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-md);
   margin-bottom: 1.5rem;
 }
@@ -112,7 +112,7 @@
   background: var(--surface-2);
   backdrop-filter: blur(10px);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   overflow: hidden;
 }
 
@@ -131,7 +131,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--primary);
-  border-bottom: 1px solid rgba(255,215,0,0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   white-space: nowrap;
 }
 
@@ -163,7 +163,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid rgba(255,215,0,0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-sm);
   background: var(--surface-2);
   color: var(--text-2);
@@ -240,7 +240,7 @@
 }
 
 .empty-state svg {
-  color: rgba(255,215,0,0.2);
+  color: var(--primary-alpha-20);
   margin-bottom: 1rem;
 }
 
@@ -271,7 +271,7 @@
   padding: 1rem 2rem;
   background: rgba(0, 0, 0, 0.2);
   border: none;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+  border-bottom: 1px solid var(--primary-alpha-15);
   border-radius: 0;
   gap: 1rem;
 }
@@ -293,7 +293,7 @@
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem 2rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.15);
+  border-top: 1px solid var(--primary-alpha-15);
   background: var(--surface-1);
 }
 
@@ -305,7 +305,7 @@
   padding: 0.75rem 1.5rem;
   background: var(--surface-2);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255,215,0,0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   margin-bottom: 1.5rem;
 }
 
@@ -318,7 +318,7 @@
 
 .detail-tabs .tab {
   background: transparent !important;
-  border: 1px solid rgba(255,215,0,0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   color: var(--text-2) !important;
   padding: 10px 20px !important;
   border-radius: var(--comp-radius-xl) !important;
@@ -340,7 +340,7 @@
   left: -100% !important;
   width: 100% !important;
   height: 100% !important;
-  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent) !important;
   transition: left 0.5s !important;
 }
 
@@ -350,16 +350,16 @@
 
 .detail-tabs .tab:hover {
   background: var(--surface-3) !important;
-  border-color: rgba(255, 215, 0, 0.4) !important;
+  border-color: var(--primary-alpha-40) !important;
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .detail-tabs .tab.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
   color: var(--text-1) !important;
   font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.4) !important;
+  box-shadow: 0 2px 8px var(--primary-alpha-20) !important;
+  border: 1px solid var(--primary-alpha-40) !important;
 }
 
 .tab-content {
@@ -370,7 +370,7 @@
   background: var(--surface-2);
   backdrop-filter: blur(10px);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   padding: 1.5rem;
 }
 
@@ -406,7 +406,7 @@
   color: var(--text-1);
   padding: 0.75rem;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-md);
 }
 

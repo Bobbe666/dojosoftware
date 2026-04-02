@@ -108,6 +108,11 @@ const MitgliederFilter = () => {
   const [terminiertResult, setTerminiertResult] = useState(null);
   const [testMailLoading, setTestMailLoading] = useState(false);
   const [testMailSent, setTestMailSent] = useState(false);
+  const [verfuegbareTarife, setVerfuegbareTarife] = useState([]);
+  const [migrationMap, setMigrationMap] = useState({}); // {vertrag_id: neuer_tarif_id}
+  const [migrationLoading, setMigrationLoading] = useState(false);
+  const [migrationResult, setMigrationResult] = useState(null);
+  const [showMigrationPanel, setShowMigrationPanel] = useState(false);
 
   useEffect(() => {
     loadFilteredMembers();
@@ -196,7 +201,7 @@ const MitgliederFilter = () => {
     if (valid.length === 0) return GRUND_TEXTE.schrittweise.text;
     const fmtDate = (d) => { const [y, m, day] = d.split('-'); return `${day}.${m}.${y}`; };
     const fmtEur = (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(parseFloat(v));
-    const stepsText = valid.map(s => `• Ab ${fmtDate(s.datum)}: + ${fmtEur(s.betrag)}/Monat`).join('\n');
+    const stepsText = valid.map(s => `• Ab ${fmtDate(s.datum)}`).join('\n');
     return `Um die finanzielle Belastung für unsere Mitglieder so gering wie möglich zu halten, findet diese Anpassung nicht auf einmal, sondern in mehreren Schritten statt:\n\n${stepsText}\n\nWir sind überzeugt, dass dies der fairste Weg ist, notwendige Anpassungen umzusetzen – ohne dass der volle Betrag auf einmal anfällt.`;
   };
 
@@ -333,7 +338,7 @@ const MitgliederFilter = () => {
               ...(massenGrund.includes('eigene') && massenGrundCustom ? [massenGrundCustom] : [])
             ].join('\n\n'),
             ausschluss: [...ausgeschlossen],
-            sendPush: massenSendPush
+            sendPush: true
           })
         }
       );
@@ -439,6 +444,55 @@ const MitgliederFilter = () => {
     }
   };
 
+  const loadVerfuegbareTarife = async (mitgliederMitArchivTarif) => {
+    try {
+      const dojoFilterParam = getDojoFilterParam();
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/filter-options/tarife${dojoFilterParam ? '?' + dojoFilterParam : ''}`);
+      const data = await res.json();
+      setVerfuegbareTarife(data);
+      // Nachfolger-Tarife auto-vorausfüllen
+      const map = {};
+      (mitgliederMitArchivTarif || []).forEach(m => {
+        if (m.nachfolger_tarif_id) map[m.vertrag_id] = m.nachfolger_tarif_id;
+      });
+      setMigrationMap(map);
+    } catch (e) {
+      console.error('Tarife laden fehlgeschlagen:', e);
+    }
+  };
+
+  const sendMigration = async () => {
+    const migrationen = Object.entries(migrationMap)
+      .filter(([, tarif_id]) => tarif_id)
+      .map(([vertrag_id, neuer_tarif_id]) => ({
+        vertrag_id: parseInt(vertrag_id),
+        neuer_tarif_id: parseInt(neuer_tarif_id)
+      }));
+    if (migrationen.length === 0) return;
+    setMigrationLoading(true);
+    try {
+      const dojoFilterParam = getDojoFilterParam();
+      const res = await fetchWithAuth(
+        `${config.apiBaseUrl}/mitglieder/filter/tarif-migration${dojoFilterParam ? '?' + dojoFilterParam : ''}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ migrationen })
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fehler');
+      setMigrationResult(data);
+      setShowMigrationPanel(false);
+      setMigrationMap({});
+      await loadFilteredMembers();
+    } catch (e) {
+      alert('Fehler bei Migration: ' + e.message);
+    } finally {
+      setMigrationLoading(false);
+    }
+  };
+
   const exportToCSV = () => {
     const headers = ['ID', 'Vorname', 'Nachname', 'Email', 'Zahlungsmethode', 'Monatsbeitrag', 'Status'];
     const rows = mitglieder.map(m => [
@@ -524,9 +578,9 @@ const MitgliederFilter = () => {
             {/* Kompakte Übersichtsleiste */}
             <div className="mf-overview-bar">
               {[
-                { label: 'Gesamt', value: stats.gesamt || mitglieder.length, color: 'var(--text-secondary)' },
-                { label: 'Abweichend', value: stats.zuWenig + stats.zuViel, color: stats.zuWenig + stats.zuViel > 0 ? '#f87171' : 'rgba(255,255,255,0.8)', sub: netto !== 0 ? `${netto > 0 ? '+' : ''}${formatCurrency(netto)}` : null },
-                { label: 'Archivierter Tarif', value: stats.archivierterTarif, color: stats.archivierterTarif > 0 ? '#fb923c' : 'rgba(255,255,255,0.8)' },
+                { label: 'Gesamt', value: stats.gesamt || mitglieder.length, color: 'rgba(255,255,255,0.65)' },
+                { label: 'Abweichend', value: stats.zuWenig + stats.zuViel, color: stats.zuWenig + stats.zuViel > 0 ? 'var(--status-warning)' : 'rgba(255,255,255,0.8)', sub: netto !== 0 ? `${netto > 0 ? '+' : ''}${formatCurrency(netto)}` : null },
+                { label: 'Archivierter Tarif', value: stats.archivierterTarif, color: stats.archivierterTarif > 0 ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.8)' },
                 { label: 'Kein Tarif', value: stats.keinTarif, color: stats.keinTarif > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.8)' },
               ].map((item, i, arr) => (
                 <div key={item.label} className="mf-overview-bar-item">
@@ -552,9 +606,15 @@ const MitgliederFilter = () => {
                     {stats.archivierterTarif} Mitglieder nutzen noch archivierte Tarife
                   </span>
                   <button
-                    onClick={() => navigate('/dashboard/tarife')} className="mf-archiv-nav-btn"
+                    onClick={() => {
+                      const archivierteMitglieder = mitglieder.filter(m => m.ist_archiviert === 1);
+                      setShowMigrationPanel(true);
+                      setMigrationResult(null);
+                      loadVerfuegbareTarife(archivierteMitglieder);
+                    }}
+                    className="btn btn-secondary"
                   >
-                    Tarife verwalten →
+                    Tarife migrieren →
                   </button>
                 </div>
               )}
@@ -566,12 +626,97 @@ const MitgliederFilter = () => {
                 <span className="mf-massen-trigger-text">
                   <Zap size={13} /> {stats.zuWenig} Mitglieder zahlen unter Tarif-Preis
                 </span>
-                <button onClick={openMassenModal} className="mf-massen-plan-btn">
+                <button onClick={openMassenModal} className="btn btn-primary">
                   Beitragserhöhung planen →
                 </button>
               </div>
             )}
           </>
+        );
+      })()}
+
+      {/* Tarif-Migration Panel */}
+      {filterType === 'tarif-abweichung' && showMigrationPanel && (() => {
+        const archivierteMitglieder = mitglieder.filter(m => m.ist_archiviert === 1);
+        const mitNachfolger = archivierteMitglieder.filter(m => m.nachfolger_tarif_id);
+        const assignedCount = Object.values(migrationMap).filter(Boolean).length;
+        const fmtPreis = t => {
+          const p = t.billing_cycle === 'MONTHLY' ? t.price_cents / 100
+            : t.billing_cycle === 'QUARTERLY' ? t.price_cents / 300
+            : t.price_cents / 1200;
+          return p.toFixed(2).replace('.', ',') + ' €/Mo';
+        };
+        return (
+          <div className="mf-migration-panel">
+            <div className="mf-migration-header">
+              <div>
+                <div className="mf-migration-title">Tarif-Migration</div>
+                <div className="mf-migration-subtitle">
+                  Tarif-Zuordnung korrigieren — Beitrag bleibt unverändert, Cap greift danach korrekt
+                </div>
+              </div>
+              <button onClick={() => setShowMigrationPanel(false)} className="mf-migration-close">✕</button>
+            </div>
+
+            {mitNachfolger.length > 0 && (
+              <button
+                onClick={() => {
+                  const map = { ...migrationMap };
+                  mitNachfolger.forEach(m => { map[m.vertrag_id] = m.nachfolger_tarif_id; });
+                  setMigrationMap(map);
+                }}
+                className="ds-btn ds-btn--sm ds-btn--ghost mf-migration-auto-btn"
+              >
+                ⚡ Alle mit Nachfolger auto-zuweisen ({mitNachfolger.length})
+              </button>
+            )}
+
+            <div className="mf-migration-list">
+              {archivierteMitglieder.map(m => (
+                <div key={m.vertrag_id} className="mf-migration-row">
+                  <div className="mf-migration-name">{m.vorname} {m.nachname}</div>
+                  <div className="mf-migration-old">
+                    <span className="mf-migration-old-name">{m.tarif_name}</span>
+                    <span className="mf-badge-archiv">archiviert</span>
+                    {m.mindestlaufzeit_monate && (
+                      <span className="mf-migration-laufzeit">{m.mindestlaufzeit_monate} Mo.</span>
+                    )}
+                    {m.nachfolger_tarif_name && (
+                      <span className="mf-migration-hint">→ {m.nachfolger_tarif_name}</span>
+                    )}
+                  </div>
+                  <select
+                    value={migrationMap[m.vertrag_id] || ''}
+                    onChange={e => setMigrationMap(prev => ({ ...prev, [m.vertrag_id]: parseInt(e.target.value) || '' }))}
+                    className="mf-migration-select"
+                  >
+                    <option value="">— Tarif wählen —</option>
+                    {verfuegbareTarife.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.name} ({fmtPreis(t)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+
+            <div className="mf-migration-footer">
+              {migrationResult && (
+                <span className="mf-migration-result-txt">
+                  ✓ {migrationResult.migriert} migriert{migrationResult.fehler > 0 ? ` · ${migrationResult.fehler} Fehler` : ''}
+                </span>
+              )}
+              <span className="mf-migration-count">{assignedCount} von {archivierteMitglieder.length} zugewiesen</span>
+              <button
+                onClick={sendMigration}
+                disabled={migrationLoading || assignedCount === 0}
+                className="ds-btn ds-btn--primary ds-btn--sm"
+              >
+                {migrationLoading ? 'Migriere…' : `${assignedCount} Verträge migrieren`}
+              </button>
+            </div>
+          </div>
         );
       })()}
 
@@ -596,9 +741,8 @@ const MitgliederFilter = () => {
           {mitglieder.map(mitglied => (
             <div
               key={mitglied.mitglied_id}
-              className="mitglied-card"
+              className="mitglied-card mf-cursor-pointer"
               onClick={() => navigate(`/dashboard/mitglieder/${mitglied.mitglied_id}`)}
-              className="mf-cursor-pointer"
             >
               {/* Card Header */}
               <div className="mf-card-header">
@@ -1174,8 +1318,8 @@ ${grundText ? `\n${grundText}\n` : ''}
                       return (
                         <div className="mf-stats-grid">
                           {[
-                            { label: 'Aktuell/Monat', value: fmt(sumAlt), color: 'var(--text-muted)' },
-                            { label: 'Neu/Monat', value: fmt(sumNeu), color: 'var(--color-success-400)' },
+                            { label: 'Aktuell/Monat', value: fmt(sumAlt), color: 'rgba(255,255,255,0.45)' },
+                            { label: 'Neu/Monat', value: fmt(sumNeu), color: 'var(--status-success)' },
                             { label: 'Mehreinnahmen', value: `+${fmt(sumDiff)}`, color: '#86efac' },
                           ].map(({ label, value, color }) => (
                             <div key={label} className="mf-stat-card">
@@ -1294,22 +1438,6 @@ ${grundText ? `\n${grundText}\n` : ''}
                     </div>
 
                     {/* Kündigungsantwort — nur bei kommerziell + koennte5Prozent */}
-                    {/* Push-Benachrichtigung Option */}
-                    <div className={`mf-push-toggle ${massenSendPush ? 'mf-push-toggle--on' : 'mf-push-toggle--off'}`} onClick={() => setMassenSendPush(v => !v)}>
-                      <div>
-                        <div className={`mf-push-title ${massenSendPush ? 'mf-push-title--on' : 'mf-push-title--off'}`}>
-                          🔔 Push-Benachrichtigung zusätzlich senden
-                        </div>
-                        <div className="mf-push-hint">
-                          Mitglieder mit aktivierten App-Benachrichtigungen erhalten eine Systemmeldung
-                        </div>
-                      </div>
-                      <div className={`mf-push-switch ${massenSendPush ? 'mf-push-switch--on' : 'mf-push-switch--off'}`}>
-                        <div className={`mf-push-knob ${massenSendPush ? 'mf-push-knob--on' : 'mf-push-knob--off'}`} />
-                      </div>
-                    </div>
-
-                    {/* Kündigungsantwort — nur bei kommerziell + koennte5Prozent */}
                     {massenOrgTyp === 'kommerziell' && koennte5Prozent && (() => {
                       const kuendigungsText = `Sehr geehrte/r [Vorname] [Nachname],
 
@@ -1340,7 +1468,7 @@ Mit freundlichen Grüßen
                                 setTimeout(() => setKuendigungKopiert(false), 2500);
                               }}
                               className={`ds-btn ds-btn--sm ${kuendigungKopiert ? 'ds-btn--success' : ''}`}
-                              style={kuendigungKopiert ? {} : { background: 'rgba(251,146,60,0.15)', borderColor: 'rgba(251,146,60,0.3)', color: 'var(--secondary)' }}
+                              style={kuendigungKopiert ? {} : { background: 'rgba(251,146,60,0.15)', borderColor: 'rgba(251,146,60,0.3)', color: 'rgba(251,146,60,0.9)' }}
                             >
                               {kuendigungKopiert ? '✓ Kopiert' : 'Kopieren'}
                             </button>

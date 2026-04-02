@@ -313,7 +313,7 @@
 /* Error box */
 .ju-error-box {
   background: #ef444420;
-  border: 1px solid #ef444440;
+  border: 1px solid var(--status-error)40;
   border-radius: 8px;
   padding: 1rem;
   color: var(--error);
@@ -390,8 +390,8 @@
   font-size: 0.75rem;
   font-weight: 600;
 }
-.ju-delta-span--pos { color: #10b981; }
-.ju-delta-span--neg { color: #ef4444; }
+.ju-delta-span--pos { color: var(--status-success); }
+.ju-delta-span--neg { color: var(--status-error); }
 
 /* KPI value (dynamic color via CSS var) */
 .ju-kpi-value {
@@ -405,8 +405,8 @@
 .ju-tooltip-gewinn {
   font-weight: 700;
 }
-.ju-tooltip-gewinn--pos { color: #10b981; }
-.ju-tooltip-gewinn--neg { color: #ef4444; }
+.ju-tooltip-gewinn--pos { color: var(--status-success); }
+.ju-tooltip-gewinn--neg { color: var(--status-error); }
 
 /* Year nav button: dim when disabled */
 .ju-btn-year-nav:disabled {
@@ -423,10 +423,10 @@
 }
 
 /* Result cell color modifiers */
-.ju-td-result--pos { color: #10b981; }
-.ju-td-result--neg { color: #ef4444; }
-.ju-td-total-result--pos { color: #10b981; }
-.ju-td-total-result--neg { color: #ef4444; }
+.ju-td-result--pos { color: var(--status-success); }
+.ju-td-result--neg { color: var(--status-error); }
+.ju-td-total-result--pos { color: var(--status-success); }
+.ju-td-total-result--neg { color: var(--status-error); }
 
 /* Bar fill (width set inline, rest in CSS) */
 .ju-bar-fill {
@@ -437,5 +437,5 @@
 }
 
 /* Vorjahr gewinn strong */
-.ju-gewinn-strong--pos { color: #10b981; }
-.ju-gewinn-strong--neg { color: #ef4444; }
+.ju-gewinn-strong--pos { color: var(--status-success); }
+.ju-gewinn-strong--neg { color: var(--status-error); }

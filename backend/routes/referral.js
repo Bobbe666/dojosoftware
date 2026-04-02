@@ -77,6 +77,7 @@ router.get('/settings', async (req, res) => {
 router.put('/settings', async (req, res) => {
     try {
         const dojoId = getSecureDojoId(req);
+        if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
         const {
             aktiv,
             standard_praemie,
@@ -152,6 +153,7 @@ router.get('/staffel', async (req, res) => {
 router.post('/staffel', async (req, res) => {
     try {
         const dojoId = getSecureDojoId(req);
+        if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
         const { min_vertragslaufzeit_monate, praemie_betrag, beschreibung } = req.body;
 
         const result = await queryAsync(`
@@ -179,6 +181,7 @@ router.post('/staffel', async (req, res) => {
 router.put('/staffel/:id', async (req, res) => {
     try {
         const dojoId = getSecureDojoId(req);
+        if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
         const { id } = req.params;
         const { min_vertragslaufzeit_monate, praemie_betrag, beschreibung } = req.body;
 
@@ -203,6 +206,7 @@ router.put('/staffel/:id', async (req, res) => {
 router.delete('/staffel/:id', async (req, res) => {
     try {
         const dojoId = getSecureDojoId(req);
+        if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
         const { id } = req.params;
 
         await queryAsync(`
@@ -326,18 +330,19 @@ router.post('/codes', async (req, res) => {
 router.post('/codes/generate-bulk', async (req, res) => {
     try {
         const dojoId = getSecureDojoId(req);
+        if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
         const { marketing_aktion_id, gueltig_von, gueltig_bis } = req.body;
 
         // Alle aktiven Mitglieder ohne Code für diese Aktion holen
         const mitglieder = await queryAsync(`
             SELECT m.mitglied_id
             FROM mitglieder m
-            WHERE m.dojo_id = ? AND m.status = 'aktiv'
+            WHERE m.dojo_id = ? AND m.aktiv = 1
             AND m.mitglied_id NOT IN (
                 SELECT mitglied_id FROM referral_codes
-                WHERE marketing_aktion_id = ? AND aktiv = 1
+                WHERE dojo_id = ? AND (marketing_aktion_id = ? OR (? IS NULL AND marketing_aktion_id IS NULL)) AND aktiv = 1
             )
-        `, [dojoId, marketing_aktion_id]);
+        `, [dojoId, dojoId, marketing_aktion_id, marketing_aktion_id]);
 
         let generated = 0;
         for (const m of mitglieder) {

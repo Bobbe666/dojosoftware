@@ -246,7 +246,7 @@
 }
 
 .euer-table .kategorie-row.clickable:hover {
-  background-color: rgba(255, 215, 0, 0.1);
+  background-color: var(--primary-alpha-10);
 }
 
 .euer-table .kategorie-row.clickable td span {

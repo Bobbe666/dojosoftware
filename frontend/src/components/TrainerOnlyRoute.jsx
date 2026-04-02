@@ -10,7 +10,7 @@ const TrainerOnlyRoute = ({ children }) => {
   }
 
   // Check if user is trainer (rolle = 'eingeschraenkt' with checkin/anwesenheit permissions)
-  const isTrainer = user?.rolle === 'eingeschraenkt' ||
+  const isTrainer = user?.role === 'eingeschraenkt' || user?.rolle === 'eingeschraenkt' ||
                     user?.username === 'TrainerloginTDA' ||
                     (user?.berechtigungen && (user.berechtigungen.checkin || user.berechtigungen.anwesenheit));
 

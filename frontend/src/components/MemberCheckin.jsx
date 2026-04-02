@@ -18,7 +18,8 @@ const MemberCheckin = ({ onClose }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [step, setStep] = useState(1); // 1: Course Selection, 2: Confirmation
-  const [checkedInCourses, setCheckedInCourses] = useState([]); // Bereits eingecheckte Kurse
+  const [checkedInCourses, setCheckedInCourses] = useState([]); // Aktiv eingecheckte Kurse (status=active)
+  const [trainerCheckedInCourses, setTrainerCheckedInCourses] = useState([]); // Vom Trainer eingecheckt (completed+manual)
   
   const API_BASE = config.apiBaseUrl;
 
@@ -60,6 +61,11 @@ const MemberCheckin = ({ onClose }) => {
         if (checkinsResult.success) {
           const checkedInStundenplanIds = checkinsResult.stundenplan_ids || [];
           setCheckedInCourses(checkedInStundenplanIds);
+          // Trainer-eingecheckte Kurse: completed + manual (nicht selbst eingecheckt)
+          const trainerIds = (checkinsResult.checkins || [])
+            .filter(c => c.status === 'completed' && c.checkin_method === 'manual')
+            .map(c => c.stundenplan_id);
+          setTrainerCheckedInCourses(trainerIds);
         }
       }
 
@@ -246,10 +252,25 @@ const MemberCheckin = ({ onClose }) => {
                     const available = isCourseAvailable(course);
                     const isSelected = selectedCourses.some(c => c.stundenplan_id === course.stundenplan_id);
                     const isAlreadyCheckedIn = checkedInCourses.includes(course.stundenplan_id);
+                    const isTrainerCheckedIn = trainerCheckedInCourses.includes(course.stundenplan_id);
 
-                    // Bereits eingecheckte Kurse ausblenden
+                    // Aktiv selbst-eingecheckte Kurse ausblenden
                     if (isAlreadyCheckedIn) {
                       return null;
+                    }
+
+                    // Vom Trainer eingecheckt → anzeigen mit Hinweis
+                    if (isTrainerCheckedIn) {
+                      return (
+                        <div key={course.stundenplan_id} className="course-item unavailable" style={{opacity:0.75}}>
+                          <div className="course-checkbox" style={{color:'#16a34a',fontSize:'18px'}}>✓</div>
+                          <div className="course-info">
+                            <div className="course-name">{course.kurs_name || course.gruppenname}</div>
+                            <div className="course-time"><Clock size={16} />{formatTime(course.uhrzeit_start)} - {formatTime(course.uhrzeit_ende)}</div>
+                          </div>
+                          <div style={{fontSize:'12px',color:'#16a34a',fontWeight:600,whiteSpace:'nowrap'}}>✅ bereits durch Trainer eingecheckt</div>
+                        </div>
+                      );
                     }
 
                     return (

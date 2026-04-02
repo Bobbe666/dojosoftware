@@ -184,19 +184,17 @@ export const AuthProvider = ({ children }) => {
     const checkExpiry = () => {
       const now = Date.now();
       const timeToExpiry = sessionExpiry - now;
-      
+
       if (timeToExpiry <= 0) {
         debugLog('Session abgelaufen - automatischer Logout');
         logout();
-      } else if (timeToExpiry <= 5 * 60 * 1000) { // 5 Minuten vor Ablauf
-        debugLog('Session läuft bald ab', {
-          minutesLeft: Math.floor(timeToExpiry / 1000 / 60)
-        });
-        // Hier könnte eine Warnung angezeigt oder die Session erneuert werden
+      } else if (timeToExpiry <= 24 * 60 * 60 * 1000) { // < 24h übrig → still renew
+        debugLog('Session läuft in < 24h ab — Auto-Refresh');
+        refreshSession().catch(() => {});
       }
     };
 
-    const interval = setInterval(checkExpiry, 60000); // Jede Minute prüfen
+    const interval = setInterval(checkExpiry, 60 * 60 * 1000); // Jede Stunde prüfen
     return () => clearInterval(interval);
   }, [sessionExpiry]);
 
@@ -270,28 +268,21 @@ export const AuthProvider = ({ children }) => {
   }, [debugLog, saveSession]);
 
   // Logout-Funktion
-  const logout = useCallback(async (silent = false) => {
+  const logout = useCallback((silent = false) => {
+    // Session SOFORT leeren - kein Warten auf Backend
+    clearSession();
     if (!silent) {
-      debugLog('Logout gestartet');
+      debugLog('Logout: Session geleert');
     }
-    
-    try {
-      // Backend über Logout informieren (falls Token noch gültig)
-      if (token && isTokenValid(token)) {
-        await axios.post('/auth/logout', {}, {
-          headers: { Authorization: `Bearer ${token}` },
-          timeout: 5000
-        });
-        debugLog('Backend-Logout erfolgreich');
-      }
-    } catch (error) {
-      // Logout-Fehler sind nicht kritisch
-      debugLog('Backend-Logout fehlgeschlagen (nicht kritisch)', error.response?.status);
-    } finally {
-      clearSession();
-      if (!silent) {
-        debugLog('Logout abgeschlossen');
-      }
+
+    // Backend im Hintergrund informieren (fire & forget)
+    if (!silent && token && isTokenValid(token)) {
+      axios.post('/auth/logout', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000
+      }).catch(() => {
+        // Logout-Fehler sind nicht kritisch
+      });
     }
   }, [token, isTokenValid, clearSession, debugLog]);
 

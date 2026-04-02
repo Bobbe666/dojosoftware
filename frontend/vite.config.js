@@ -32,27 +32,51 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false, // Für Production auf false setzen
+    sourcemap: false,
     minify: 'terser',
     // CSS Minify auf esbuild umstellen (unterdrückt die Warnungen)
     cssMinify: 'esbuild',
     // Chunk Size Warnungslimit erhöhen (da wir bewusst größere Chunks haben)
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         // Manuelle Chunks für große Libraries
-        manualChunks: {
-          // Core React - wird immer gebraucht
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-router': ['react-router-dom'],
+        // WICHTIG: React + Router + Query MÜSSEN in einem Chunk sein um
+        // mehrfache React-Instanziierung und TDZ-Fehler zu vermeiden!
+        // WICHTIG: Funktions-Form verwenden! Array-Form matcht Paketnamen nicht korrekt.
+        // Jedes Paket SEPARAT um intra-chunk TDZ durch zirkuläre Deps zu verhindern.
+        manualChunks(id) {
+          // React core (react + react-dom + scheduler) - MUSS als erstes evaluiert werden
+          if (id.includes('/node_modules/react/') ||
+              id.includes('/node_modules/react-dom/') ||
+              id.includes('/node_modules/scheduler/')) {
+            return 'vendor-react';
+          }
+          // React Router - separater Chunk, importiert von vendor-react
+          if (id.includes('/node_modules/react-router') ||
+              id.includes('/node_modules/@remix-run/')) {
+            return 'vendor-router';
+          }
+          // React Query - separater Chunk, importiert von vendor-react
+          if (id.includes('/node_modules/@tanstack/')) {
+            return 'vendor-query';
+          }
           // UI Libraries
-          'icons': ['lucide-react'],
-          'charts': ['recharts'],
-          'animation': ['framer-motion'],
-          // Heavy Libraries - selten genutzt
-          'editor': ['grapesjs', 'grapesjs-preset-webpage'],
-          // React Query für API-Caching
-          'query': ['@tanstack/react-query'],
+          if (id.includes('/node_modules/lucide-react')) {
+            return 'icons';
+          }
+          if (id.includes('/node_modules/recharts') ||
+              id.includes('/node_modules/victory-') ||
+              id.includes('/node_modules/d3-') ||
+              id.includes('/node_modules/d3/')) {
+            return 'charts';
+          }
+          if (id.includes('/node_modules/framer-motion')) {
+            return 'animation';
+          }
+          if (id.includes('/node_modules/grapesjs')) {
+            return 'editor';
+          }
         },
         // Bessere Chunk-Namen
         chunkFileNames: (chunkInfo) => {

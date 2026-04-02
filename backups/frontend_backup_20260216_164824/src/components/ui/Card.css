@@ -1,0 +1,289 @@
+/* ===========================================
+   UI COMPONENT - CARD
+   Zentrale Card-Styles
+   =========================================== */
+
+/* ========== BASE CARD ========== */
+
+.ds-card {
+  background: var(--bg-card);
+  border: var(--card-border, 1px solid var(--border-default));
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  transition: all var(--transition-base);
+}
+
+/* ========== VARIANTS ========== */
+
+.ds-card--default {
+  background: var(--bg-card);
+}
+
+.ds-card--glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+}
+
+.ds-card--elevated {
+  background: var(--bg-card);
+  box-shadow: var(--card-shadow);
+}
+
+.ds-card--outlined {
+  background: transparent;
+  border: 2px solid var(--border-accent);
+}
+
+/* ========== STATES ========== */
+
+.ds-card--hoverable:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-accent-hover);
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-4px);
+}
+
+.ds-card--clickable {
+  cursor: pointer;
+}
+
+/* ========== SECTIONS ========== */
+
+.ds-card__header {
+  padding: var(--spacing-4) var(--spacing-5);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.ds-card__body {
+  padding: var(--spacing-5);
+}
+
+.ds-card__footer {
+  padding: var(--spacing-4) var(--spacing-5);
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-elevated);
+}
+
+/* ========== STAT CARD ========== */
+
+.ds-stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-5);
+}
+
+.ds-stat-card .ds-card__body {
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  width: 100%;
+}
+
+.ds-stat-card__icon {
+  font-size: var(--font-size-3xl);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ds-stat-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+  flex: 1;
+}
+
+.ds-stat-card__value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.ds-stat-card__label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.ds-stat-card__trend {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--spacing-1) var(--spacing-2);
+  border-radius: var(--radius-md);
+}
+
+.ds-stat-card__trend--up {
+  color: var(--color-success-500);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.ds-stat-card__trend--down {
+  color: var(--color-error-500);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ========== NAV CARD ========== */
+
+.ds-nav-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.ds-nav-card .ds-card__body {
+  padding: var(--spacing-5);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  width: 100%;
+}
+
+.ds-nav-card--featured {
+  border-left: 3px solid var(--primary);
+}
+
+.ds-nav-card__badge {
+  position: absolute;
+  top: var(--spacing-3);
+  right: var(--spacing-3);
+}
+
+.ds-nav-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ds-nav-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+}
+
+.ds-nav-card__icon {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ds-nav-card__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  line-height: var(--line-height-tight);
+}
+
+.ds-nav-card__count {
+  color: var(--text-accent-secondary, var(--color-orange));
+  font-weight: var(--font-weight-semibold);
+  margin-left: var(--spacing-1);
+}
+
+.ds-nav-card__description {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  line-height: var(--line-height-relaxed);
+}
+
+.ds-nav-card__arrow {
+  font-size: var(--font-size-xl);
+  color: var(--primary);
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.ds-nav-card:hover .ds-nav-card__arrow {
+  transform: translateX(4px);
+  color: var(--accent, var(--primary-hover));
+}
+
+/* ========== BADGE (inline) ========== */
+
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-md);
+}
+
+.ds-badge--default {
+  background: var(--badge-default-bg);
+  color: var(--badge-default-text);
+}
+
+.ds-badge--primary {
+  background: var(--badge-primary-bg);
+  color: var(--badge-primary-text);
+}
+
+.ds-badge--success {
+  background: var(--badge-success-bg);
+  color: var(--badge-success-text);
+}
+
+.ds-badge--warning {
+  background: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
+}
+
+.ds-badge--error {
+  background: var(--badge-error-bg);
+  color: var(--badge-error-text);
+}
+
+.ds-badge--new {
+  background: var(--badge-new-bg, var(--badge-error-bg));
+  color: var(--badge-new-text, var(--badge-error-text));
+  border: var(--badge-new-border, none);
+}
+
+.ds-badge--live {
+  background: var(--badge-live-bg, var(--badge-primary-bg));
+  color: var(--badge-live-text, var(--badge-primary-text));
+  border: var(--badge-live-border, none);
+}
+
+/* ========== TDA-VIB THEME ========== */
+
+[data-theme="tda-vib"] .ds-card {
+  background: var(--color-white);
+  border: 1px solid rgba(26, 26, 26, 0.1);
+  border-radius: 0;
+  box-shadow: 0 2px 6px rgba(26, 26, 26, 0.04);
+}
+
+[data-theme="tda-vib"] .ds-card--hoverable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(26, 26, 26, 0.1);
+  border-color: var(--color-gold);
+}
+
+[data-theme="tda-vib"] .ds-nav-card--featured {
+  border-left: 3px solid var(--color-gold);
+}
+
+[data-theme="tda-vib"] .ds-nav-card__count {
+  color: var(--color-vermillion);
+}
+
+[data-theme="tda-vib"] .ds-nav-card__arrow {
+  color: var(--color-gold);
+}
+
+[data-theme="tda-vib"] .ds-nav-card:hover .ds-nav-card__arrow {
+  color: var(--color-vermillion);
+}
+
+[data-theme="tda-vib"] .ds-badge {
+  border-radius: 0;
+}

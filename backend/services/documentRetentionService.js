@@ -8,6 +8,7 @@
 const db = require('../db');
 const fs = require('fs').promises;
 const path = require('path');
+const logger = require('../utils/logger');
 
 /**
  * Berechnet das Ablaufdatum der Aufbewahrungsfrist
@@ -30,14 +31,14 @@ async function loescheDatei(dateipfad) {
   try {
     const absoluterPfad = path.join(__dirname, '..', dateipfad);
     await fs.unlink(absoluterPfad);
-    console.log(`✅ Datei gelöscht: ${dateipfad}`);
+    logger.info(`Datei gelöscht: ${dateipfad}`);
     return true;
   } catch (error) {
     if (error.code === 'ENOENT') {
-      console.warn(`⚠️ Datei existiert nicht mehr: ${dateipfad}`);
+      logger.warn(`Datei existiert nicht mehr: ${dateipfad}`);
       return true; // Datei ist schon weg, also erfolgreich
     }
-    console.error(`❌ Fehler beim Löschen der Datei ${dateipfad}:`, error);
+    logger.error(`Fehler beim Löschen der Datei ${dateipfad}:`, { error: error.message });
     return false;
   }
 }
@@ -57,18 +58,18 @@ async function loescheAbgelaufeneDokumente() {
 
     db.query(query, async (err, dokumente) => {
       if (err) {
-        console.error('❌ Fehler beim Abrufen abgelaufener Dokumente:', err);
+        logger.error('Fehler beim Abrufen abgelaufener Dokumente:', { error: err.message });
         reject(err);
         return;
       }
 
       if (dokumente.length === 0) {
-        console.log('ℹ️ Keine abgelaufenen Dokumente zum Löschen gefunden');
+        logger.info('Keine abgelaufenen Dokumente zum Löschen gefunden');
         resolve({ geloescht: 0, fehler: 0 });
         return;
       }
 
-      console.log(`🗑️ Gefunden: ${dokumente.length} abgelaufene(s) Dokument(e)`);
+      logger.info(`Gefunden: ${dokumente.length} abgelaufene(s) Dokument(e)`);
 
       let geloescht = 0;
       let fehler = 0;
@@ -88,18 +89,18 @@ async function loescheAbgelaufeneDokumente() {
               });
             });
 
-            console.log(`✅ Dokument gelöscht: ${dok.dokumentname} (ID: ${dok.id}, erstellt: ${new Date(dok.erstellt_am).toLocaleDateString('de-DE')})`);
+            logger.info(`Dokument gelöscht: ${dok.dokumentname} (ID: ${dok.id})`);
             geloescht++;
           } else {
             fehler++;
           }
         } catch (error) {
-          console.error(`❌ Fehler beim Löschen von Dokument ${dok.id}:`, error);
+          logger.error(`Fehler beim Löschen von Dokument ${dok.id}:`, { error: error.message });
           fehler++;
         }
       }
 
-      console.log(`📊 Dokumente-Löschung abgeschlossen: ${geloescht} gelöscht, ${fehler} Fehler`);
+      logger.info(`Dokumente-Löschung abgeschlossen: ${geloescht} gelöscht, ${fehler} Fehler`);
       resolve({ geloescht, fehler });
     });
   });
@@ -120,18 +121,18 @@ async function loescheAbgelaufeneRechnungen() {
 
     db.query(query, async (err, rechnungen) => {
       if (err) {
-        console.error('❌ Fehler beim Abrufen abgelaufener Rechnungen:', err);
+        logger.error('Fehler beim Abrufen abgelaufener Rechnungen:', { error: err.message });
         reject(err);
         return;
       }
 
       if (rechnungen.length === 0) {
-        console.log('ℹ️ Keine abgelaufenen Rechnungen zum Löschen gefunden');
+        logger.info('Keine abgelaufenen Rechnungen zum Löschen gefunden');
         resolve({ geloescht: 0, fehler: 0 });
         return;
       }
 
-      console.log(`🗑️ Gefunden: ${rechnungen.length} abgelaufene Rechnung(en)`);
+      logger.info(`Gefunden: ${rechnungen.length} abgelaufene Rechnung(en)`);
 
       let geloescht = 0;
       let fehler = 0;
@@ -160,15 +161,15 @@ async function loescheAbgelaufeneRechnungen() {
             });
           });
 
-          console.log(`✅ Rechnung gelöscht: ${rechnung.rechnungsnummer} (ID: ${rechnung.rechnung_id}, Datum: ${new Date(rechnung.datum).toLocaleDateString('de-DE')})`);
+          logger.info(`Rechnung gelöscht: ${rechnung.rechnungsnummer} (ID: ${rechnung.rechnung_id})`);
           geloescht++;
         } catch (error) {
-          console.error(`❌ Fehler beim Löschen von Rechnung ${rechnung.rechnung_id}:`, error);
+          logger.error(`Fehler beim Löschen von Rechnung ${rechnung.rechnung_id}:`, { error: error.message });
           fehler++;
         }
       }
 
-      console.log(`📊 Rechnungen-Löschung abgeschlossen: ${geloescht} gelöscht, ${fehler} Fehler`);
+      logger.info(`Rechnungen-Löschung abgeschlossen: ${geloescht} gelöscht, ${fehler} Fehler`);
       resolve({ geloescht, fehler });
     });
   });
@@ -178,11 +179,7 @@ async function loescheAbgelaufeneRechnungen() {
  * Hauptfunktion: Führt die komplette Aufbewahrungsfristen-Prüfung durch
  */
 async function pruefeDokumentenAufbewahrung() {
-  console.log('\n' + '='.repeat(60));
-  console.log('🔍 Starte automatische Aufbewahrungsfristen-Prüfung');
-  console.log('   Gesetzliche Frist: 10 Jahre nach § 147 AO');
-  console.log('   Zeitpunkt: ' + new Date().toLocaleString('de-DE'));
-  console.log('='.repeat(60) + '\n');
+  logger.info('Starte automatische Aufbewahrungsfristen-Prüfung (§ 147 AO, 10 Jahre)');
 
   try {
     // Lösche abgelaufene Dokumente
@@ -195,13 +192,11 @@ async function pruefeDokumentenAufbewahrung() {
     const gesamtGeloescht = dokumenteResult.geloescht + rechnungenResult.geloescht;
     const gesamtFehler = dokumenteResult.fehler + rechnungenResult.fehler;
 
-    console.log('\n' + '='.repeat(60));
-    console.log('✅ Aufbewahrungsfristen-Prüfung abgeschlossen');
-    console.log(`   Gesamt gelöscht: ${gesamtGeloescht} (${dokumenteResult.geloescht} Dokumente, ${rechnungenResult.geloescht} Rechnungen)`);
     if (gesamtFehler > 0) {
-      console.log(`   ⚠️ Fehler: ${gesamtFehler}`);
+      logger.warn(`Aufbewahrungsfristen-Prüfung: ${gesamtGeloescht} gelöscht, ${gesamtFehler} Fehler`);
+    } else {
+      logger.info(`Aufbewahrungsfristen-Prüfung abgeschlossen: ${gesamtGeloescht} gelöscht (${dokumenteResult.geloescht} Dokumente, ${rechnungenResult.geloescht} Rechnungen)`);
     }
-    console.log('='.repeat(60) + '\n');
 
     return {
       dokumente: dokumenteResult,

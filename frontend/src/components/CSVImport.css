@@ -32,7 +32,7 @@
 
 .btn-back:hover {
   background: rgba(59, 130, 246, 0.1);
-  border-color: #3b82f6;
+  border-color: var(--status-indigo);
 }
 
 .header-title {
@@ -42,7 +42,7 @@
 }
 
 .header-title svg {
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .header-title h1 {
@@ -108,14 +108,14 @@
 
 .progress-step.active .step-circle {
   background: #3b82f6;
-  border-color: #3b82f6;
+  border-color: var(--status-indigo);
   color: white;
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
 }
 
 .progress-step.completed .step-circle {
   background: #10b981;
-  border-color: #10b981;
+  border-color: var(--status-success);
   color: white;
 }
 
@@ -165,11 +165,11 @@
 }
 
 .step-icon-large svg {
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .step-icon-large.success svg {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 /* Info Cards */
@@ -188,7 +188,7 @@
 }
 
 .info-card svg {
-  color: #3b82f6;
+  color: var(--status-indigo);
   margin-bottom: 0.75rem;
 }
 
@@ -217,7 +217,7 @@
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.3);
   border-radius: 8px;
-  color: #3b82f6;
+  color: var(--status-indigo);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -259,12 +259,12 @@
 }
 
 .upload-zone:hover {
-  border-color: #3b82f6;
+  border-color: var(--status-indigo);
   background: rgba(59, 130, 246, 0.08);
 }
 
 .upload-zone.has-file {
-  border-color: #10b981;
+  border-color: var(--status-success);
   background: rgba(16, 185, 129, 0.05);
 }
 
@@ -291,7 +291,7 @@
 }
 
 .file-info .success-icon {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .file-name {
@@ -328,7 +328,7 @@
   background: rgba(59, 130, 246, 0.15);
   border-radius: 4px;
   font-size: 0.8rem;
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 /* Mapping Grid */
@@ -350,7 +350,7 @@
 
 .mapping-row.required {
   background: rgba(59, 130, 246, 0.05);
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--status-indigo);
 }
 
 .mapping-row label {
@@ -359,7 +359,7 @@
 }
 
 .mapping-row .asterisk {
-  color: #ef4444;
+  color: var(--status-error);
   margin-left: 0.25rem;
 }
 
@@ -380,13 +380,13 @@
 }
 
 .mapping-row select.missing {
-  border-color: #ef4444;
+  border-color: var(--status-error);
 }
 
 .required-hint {
   display: block;
   font-size: 0.8rem;
-  color: #ef4444;
+  color: var(--status-error);
   margin-top: 0.25rem;
 }
 
@@ -416,7 +416,7 @@
 .checkbox-option input {
   width: 18px;
   height: 18px;
-  accent-color: #3b82f6;
+  accent-color: var(--status-indigo);
 }
 
 /* Validation */
@@ -444,8 +444,8 @@
   font-size: 0.9rem;
 }
 
-.validation-section.errors h4 { color: #ef4444; }
-.validation-section.warnings h4 { color: #f59e0b; }
+.validation-section.errors h4 { color: var(--status-error); }
+.validation-section.warnings h4 { color: var(--status-warning); }
 
 .validation-section ul {
   margin: 0;
@@ -479,7 +479,7 @@
 .summary-card .number {
   font-size: 2rem;
   font-weight: 700;
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .summary-card .label {
@@ -514,7 +514,7 @@
 
 .preview-table th {
   background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  color: var(--status-indigo);
   font-weight: 600;
 }
 
@@ -571,7 +571,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
-  color: #ef4444;
+  color: var(--status-error);
   margin-top: 1rem;
 }
 
@@ -618,10 +618,10 @@
   font-weight: 700;
 }
 
-.result-card.success .number { color: #10b981; }
-.result-card.warning .number { color: #f59e0b; }
-.result-card.error .number { color: #ef4444; }
-.result-card.info .number { color: #3b82f6; }
+.result-card.success .number { color: var(--status-success); }
+.result-card.warning .number { color: var(--status-warning); }
+.result-card.error .number { color: var(--status-error); }
+.result-card.info .number { color: var(--status-indigo); }
 
 .result-card .label {
   font-size: 0.85rem;

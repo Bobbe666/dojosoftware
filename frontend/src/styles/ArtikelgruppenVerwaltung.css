@@ -111,7 +111,7 @@
 .artikelgruppen-verwaltung .header-controls .search-box input:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .artikelgruppen-verwaltung .header-controls .search-box input::placeholder {
@@ -145,7 +145,7 @@
 .artikelgruppen-verwaltung .header-controls .filter-select:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .artikelgruppen-verwaltung .btn-primary {
@@ -264,7 +264,7 @@
 .group-card:hover {
   border-color: var(--farbe-hauptfarbe);
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(255,215,0,0.1);
+  box-shadow: 0 12px 40px var(--primary-alpha-10);
 }
 
 .group-header {
@@ -385,12 +385,12 @@
 .artikelgruppen-verwaltung .details-btn {
   background: rgba(59, 130, 246, 0.1) !important;
   border-color: rgba(59, 130, 246, 0.3) !important;
-  color: #3b82f6 !important;
+  color: var(--status-indigo) !important;
 }
 
 .artikelgruppen-verwaltung .details-btn:hover {
   background: #3b82f6 !important;
-  border-color: #3b82f6 !important;
+  border-color: var(--status-indigo) !important;
   color: var(--text-1) !important;
 }
 
@@ -402,7 +402,7 @@
 
 .artikelgruppen-verwaltung .edit-btn:hover {
   background: #f59e0b !important;
-  border-color: #f59e0b !important;
+  border-color: var(--status-warning) !important;
   color: var(--text-1) !important;
 }
 
@@ -414,7 +414,7 @@
 
 .artikelgruppen-verwaltung .delete-btn:hover {
   background: #ef4444 !important;
-  border-color: #ef4444 !important;
+  border-color: var(--status-error) !important;
   color: var(--text-1) !important;
 }
 
@@ -581,7 +581,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255,215,0,0.1);
+  background: var(--primary-alpha-10);
 }
 
 .modal-header h2 {
@@ -657,7 +657,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--hintergrund-hover);
 }
 
@@ -871,7 +871,7 @@
 .unterkategorie-detail-card:hover {
   border-color: var(--farbe-hauptfarbe);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255,215,0,0.1);
+  box-shadow: 0 8px 24px var(--primary-alpha-10);
 }
 
 .unterkategorie-detail-header {
@@ -1113,7 +1113,7 @@ body:not(.dark-mode):not(.dark) .detail-icon {
 .dark-mode .artikelgruppen-verwaltung .details-btn {
   background: rgba(59, 130, 246, 0.2) !important;
   border-color: rgba(59, 130, 246, 0.4) !important;
-  color: #3b82f6 !important;
+  color: var(--status-indigo) !important;
 }
 
 [data-theme="dark"] .artikelgruppen-verwaltung .edit-btn,

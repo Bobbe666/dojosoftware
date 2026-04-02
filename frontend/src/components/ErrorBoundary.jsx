@@ -21,8 +21,14 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    // Log error für Debugging
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Log error für Debugging — explizit sichtbar auch in Production
+    console.group('%c🚨 ErrorBoundary: Uncaught Error', 'color: red; font-size: 14px; font-weight: bold');
+    console.error('Fehler:', error.message);
+    console.error('Stack:', error.stack);
+    if (errorInfo?.componentStack) {
+      console.error('Komponenten-Stack:', errorInfo.componentStack);
+    }
+    console.groupEnd();
 
     this.setState({
       error,
@@ -101,11 +107,11 @@ class ErrorBoundary extends React.Component {
               </button>
             </div>
 
-            {isDev && this.state.error && (
+            {this.state.error && (
               <details style={styles.details}>
                 <summary style={styles.summary}>
                   <Bug size={16} />
-                  Technische Details (nur Development)
+                  Technische Details
                 </summary>
                 <div style={styles.errorDetails}>
                   <p style={styles.errorMessage}>

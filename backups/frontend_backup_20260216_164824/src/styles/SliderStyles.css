@@ -1,0 +1,73 @@
+/* Einfache Slider Styles - Kein Flackern, besseres Drag */
+.skill-slider {
+  flex: 1;
+  height: 20px;
+  background: #333;
+  border-radius: 10px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid var(--primary);
+  min-width: 200px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+/* Webkit Slider Thumb */
+.skill-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: grab;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.skill-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  background: #ffed4e;
+  transform: scale(1.1);
+}
+
+/* Mozilla Slider Thumb */
+.skill-slider::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: grab;
+  border: 2px solid var(--bg-secondary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.skill-slider::-moz-range-thumb:active {
+  cursor: grabbing;
+  background: #ffed4e;
+  transform: scale(1.1);
+}
+
+/* Track Styles */
+.skill-slider::-webkit-slider-track {
+  background: #333;
+  height: 20px;
+  border-radius: 10px;
+}
+
+.skill-slider::-moz-range-track {
+  background: #333;
+  height: 20px;
+  border-radius: 10px;
+  border: none;
+}
+
+/* Focus */
+.skill-slider:focus {
+  outline: none;
+  border-color: #ffed4e;
+}

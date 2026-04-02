@@ -10,16 +10,19 @@ const dojoLogo = '/dojo-logo.png';
 function LandingPage() {
   const navigate = useNavigate();
 
-  // Intro Popup State - TEMPORÄR: immer zeigen zum Testen
-  const [showIntro, setShowIntro] = useState(true);
-  // const [showIntro, setShowIntro] = useState(() => {
-  //   return !sessionStorage.getItem('tda-intro-shown');
-  // });
-
+  // Intro Popup: einmalig pro Session
+  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('tda-intro-shown'));
   const handleIntroComplete = () => {
     sessionStorage.setItem('tda-intro-shown', 'true');
     setShowIntro(false);
   };
+
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Early Bird Promo State
   const [promoData, setPromoData] = useState(null);
@@ -187,7 +190,7 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
-      {/* TDA Systems Intro Animation */}
+      {/* TDA Systems Intro - einmalig pro Session */}
       {showIntro && <TDAIntroPopup onComplete={handleIntroComplete} />}
 
       {/* Early Bird Promo Banner - VOR der Navigation */}
@@ -327,23 +330,25 @@ function LandingPage() {
 
               {/* Right - Counter */}
               <div className="eb-counter">
-                <svg className="eb-progress-ring" viewBox="0 0 120 120">
-                  <circle className="eb-progress-bg" cx="60" cy="60" r="52" />
-                  <circle
-                    className="eb-progress-bar"
-                    cx="60"
-                    cy="60"
-                    r="52"
-                    style={{
-                      strokeDasharray: `${2 * Math.PI * 52}`,
-                      strokeDashoffset: `${2 * Math.PI * 52 * (1 - (promoData.maxDojos - promoData.spotsRemaining) / promoData.maxDojos)}`
-                    }}
-                  />
-                </svg>
-                <div className="eb-counter-text">
-                  <span className="eb-counter-current">{promoData.maxDojos - promoData.spotsRemaining}</span>
-                  <span className="eb-counter-divider">/</span>
-                  <span className="eb-counter-max">{promoData.maxDojos}</span>
+                <div className="eb-ring-wrapper">
+                  <svg className="eb-progress-ring" viewBox="0 0 120 120">
+                    <circle className="eb-progress-bg" cx="60" cy="60" r="52" />
+                    <circle
+                      className="eb-progress-bar"
+                      cx="60"
+                      cy="60"
+                      r="52"
+                      style={{
+                        strokeDasharray: `${2 * Math.PI * 52}`,
+                        strokeDashoffset: `${2 * Math.PI * 52 * (1 - (promoData.maxDojos - promoData.spotsRemaining) / promoData.maxDojos)}`
+                      }}
+                    />
+                  </svg>
+                  <div className="eb-counter-text">
+                    <span className="eb-counter-current">{promoData.maxDojos - promoData.spotsRemaining}</span>
+                    <span className="eb-counter-divider">/</span>
+                    <span className="eb-counter-max">{promoData.maxDojos}</span>
+                  </div>
                 </div>
                 <div className="eb-spots-remaining">
                   Noch <strong>{promoData.spotsRemaining}</strong> Plätze!
@@ -379,11 +384,6 @@ function LandingPage() {
       <section className="mockup-section">
         <div className="container">
           <div className="dashboard-mockup">
-            <div className="mockup-header">
-              <div className="mockup-dot"></div>
-              <div className="mockup-dot"></div>
-              <div className="mockup-dot"></div>
-            </div>
             <div className="mockup-content">
               <div className="mockup-sidebar">
                 <div className="sidebar-content">
@@ -714,6 +714,16 @@ function LandingPage() {
           </div>
         </div>
       </footer>
+      {/* Scroll-to-top Button */}
+      {showScrollTop && (
+        <button
+          className="scroll-top-btn"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label="Nach oben scrollen"
+        >
+          ↑
+        </button>
+      )}
     </div>
   );
 }

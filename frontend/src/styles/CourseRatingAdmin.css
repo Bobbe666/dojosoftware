@@ -48,7 +48,7 @@
 
 .course-rating-admin .stat-card:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -84,7 +84,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: var(--ui-stats-margin-b);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .course-rating-admin .tab {
@@ -125,7 +125,7 @@
 
 .course-rating-admin .filter-section select {
   background: var(--surface-3);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-sm);
   padding: 0.5rem 1rem;
   color: var(--text-1);
@@ -156,7 +156,7 @@
 
 .course-rating-admin .rating-card:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
@@ -184,7 +184,7 @@
   display: flex;
   gap: 0.2rem;
 }
-.course-rating-admin .rating-stars .filled { color: #ffd700; fill: #ffd700; }
+.course-rating-admin .rating-stars .filled { color: var(--primary); fill: var(--primary); }
 .course-rating-admin .rating-stars .empty { color: rgba(255,255,255,0.3); fill: none; }
 
 .course-rating-admin .rating-details {
@@ -215,7 +215,7 @@
 
 .course-rating-admin .rating-comment {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-md);
   padding: var(--ui-page-padding-sm);
   display: flex;
@@ -260,7 +260,7 @@
 
 .course-rating-admin .course-stat-card:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-2px);
 }
 
@@ -316,7 +316,7 @@
 .course-rating-admin .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255, 215, 0, 0.3);
+  border: 3px solid var(--primary-alpha-30);
   border-top: 3px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;

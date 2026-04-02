@@ -1,0 +1,118 @@
+{
+  "list": {
+    "title": "Member Overview",
+    "subtitle": "Manage all active members",
+    "searchPlaceholder": "Search...",
+    "noMembers": "No members found",
+    "addMember": "Add New Member",
+    "printList": "Print Member List",
+    "bulkArchive": "Bulk Archive",
+    "endSelection": "End Selection",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "selectedCount": "{{count}} selected",
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "memberNumber": "Member No.",
+      "status": "Status",
+      "entryDate": "Entry Date",
+      "course": "Course",
+      "belt": "Belt",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "cancelled": "Cancelled",
+      "paused": "Paused"
+    },
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive",
+      "trial": "Trial",
+      "allStyles": "All Styles",
+      "noStyle": "No Style",
+      "age": "Age",
+      "allBelts": "All Belts"
+    }
+  },
+  "detail": {
+    "title": "Edit Member",
+    "tabs": {
+      "personal": "Personal Data",
+      "contact": "Contact",
+      "contract": "Contract",
+      "training": "Training",
+      "payments": "Payments",
+      "documents": "Documents",
+      "notes": "Notes"
+    },
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "phone": "Phone",
+      "mobile": "Mobile",
+      "birthDate": "Date of Birth",
+      "gender": "Gender",
+      "street": "Street",
+      "houseNumber": "House Number",
+      "zip": "ZIP Code",
+      "city": "City",
+      "country": "Country",
+      "memberNumber": "Member Number",
+      "entryDate": "Entry Date",
+      "exitDate": "Exit Date"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "diverse": "Diverse"
+    }
+  },
+  "create": {
+    "title": "Create New Member",
+    "subtitle": "Enter the new member's data",
+    "steps": {
+      "personal": "Personal Data",
+      "contact": "Contact Details",
+      "contract": "Contract",
+      "summary": "Summary"
+    },
+    "success": "Member created successfully",
+    "error": "Error creating member"
+  },
+  "former": {
+    "title": "Former Members",
+    "subtitle": "Cancelled and departed members",
+    "reactivate": "Reactivate",
+    "delete": "Delete permanently",
+    "confirmDelete": "Are you sure you want to permanently delete this member?",
+    "exitReason": "Exit Reason"
+  },
+  "prospects": {
+    "title": "Prospects",
+    "subtitle": "Potential new members",
+    "convert": "Convert to Member",
+    "source": "Source",
+    "notes": "Notes",
+    "contacted": "Contacted",
+    "trialBooked": "Trial Booked"
+  },
+  "errors": {
+    "loadingError": "Error loading members",
+    "savingError": "Error saving",
+    "deletingError": "Error deleting",
+    "notFound": "Member not found",
+    "emailExists": "Email address already exists"
+  },
+  "messages": {
+    "saved": "Member saved",
+    "deleted": "Member deleted",
+    "reactivated": "Member reactivated",
+    "confirmCancel": "Discard changes?"
+  }
+}

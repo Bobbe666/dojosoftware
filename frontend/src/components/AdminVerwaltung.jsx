@@ -3,6 +3,7 @@ import { Users, UserPlus, Edit3, Trash2, Lock, Shield, Settings, ChevronDown, Ch
 import '../styles/AdminVerwaltung.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import CreateUserModal from './CreateUserModal';
 
 
 const AdminVerwaltung = () => {
@@ -20,6 +21,8 @@ const AdminVerwaltung = () => {
   // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createRole, setCreateRole] = useState('trainer');
   const [selectedUser, setSelectedUser] = useState(null);
   const [editForm, setEditForm] = useState({ username: '', email: '', role: '' });
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirmPassword: '' });
@@ -31,6 +34,30 @@ const AdminVerwaltung = () => {
     { key: 'trainer', label: 'Trainer', icon: '🥋', color: 'var(--success)' },
     { key: 'verkauf', label: 'Verkauf', icon: '💰', color: 'var(--warning)' }
   ];
+
+  // Msg-App Rolle ableiten aus System-Rolle
+  const getMsgAppRolle = (role) => {
+    if (role === 'admin') return { label: 'Admin', icon: '💬', desc: 'Alle Rechte + Besucher-Chat' };
+    if (role === 'supervisor' || role === 'trainer') return { label: 'Trainer', icon: '🥋', desc: 'Kurs-Chats + DMs, kein Besucher-Chat' };
+    return { label: 'Mitglied', icon: '👤', desc: 'Ankündigungen lesen + DMs' };
+  };
+
+  // Msg-App Zugang togglen
+  const handleMsgAppToggle = async (user) => {
+    const newVal = !user.msg_app_enabled;
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/auth/users/${user.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ msg_app_enabled: newVal })
+      });
+      if (!response.ok) throw new Error('Fehler');
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, msg_app_enabled: newVal } : u));
+      showMessage(`Msg-App Zugang für ${user.username} ${newVal ? 'aktiviert' : 'deaktiviert'}`, 'success');
+    } catch {
+      showMessage('Fehler beim Aktualisieren', 'error');
+    }
+  };
 
   // Berechtigungsbereiche
   const berechtigungsBereiche = [
@@ -155,6 +182,13 @@ const AdminVerwaltung = () => {
     }));
   };
 
+  // Benutzer erstellt (Callback vom CreateUserModal)
+  const handleCreated = (data) => {
+    showMessage(`Benutzer "${data.username}" erfolgreich erstellt`, 'success');
+    setShowCreateModal(false);
+    loadUsers();
+  };
+
   // Benutzer bearbeiten
   const handleEdit = (user) => {
     setSelectedUser(user);
@@ -245,15 +279,9 @@ const AdminVerwaltung = () => {
 
   // Benutzer löschen
   const handleDelete = async (user) => {
-    if (user.id === 1) {
-      showMessage('Super-Admin kann nicht gelöscht werden', 'error');
-      return;
-    }
-
     const confirmed = window.confirm(
-      `Möchten Sie den Benutzer "${user.username}" (${user.email}) wirklich löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden!`
+      `Benutzer "${user.username}" (${user.email}) wirklich löschen?\n\nDieser Vorgang kann nicht rückgängig gemacht werden!`
     );
-
     if (!confirmed) return;
 
     setLoading(true);
@@ -261,15 +289,10 @@ const AdminVerwaltung = () => {
       const response = await fetchWithAuth(`${config.apiBaseUrl}/auth/users/${user.id}`, {
         method: 'DELETE'
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Fehler beim Löschen');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Fehler beim Löschen');
       showMessage(data.message || 'Benutzer erfolgreich gelöscht', 'success');
-      loadUsers(); // Reload users
+      loadUsers();
     } catch (err) {
       showMessage(err.message, 'error');
     } finally {
@@ -356,7 +379,7 @@ const AdminVerwaltung = () => {
             </h2>
             <p>{roleUsers.length} Benutzer mit dieser Rolle</p>
           </div>
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={() => { setCreateRole(rolle); setShowCreateModal(true); }}>
             <UserPlus size={18} />
             Benutzer hinzufügen
           </button>
@@ -369,29 +392,47 @@ const AdminVerwaltung = () => {
           </div>
         ) : (
           <div className="users-grid">
-            {roleUsers.map(user => (
-              <div key={user.id} className="user-card">
-                <div className="user-avatar">
-                  {(user.vorname?.[0] || user.username?.[0] || 'U').toUpperCase()}
+            {roleUsers.map(user => {
+              const msgRolle = getMsgAppRolle(user.role);
+              const msgEnabled = user.msg_app_enabled !== false && user.msg_app_enabled !== 0;
+              return (
+                <div key={user.id} className={`user-card${!msgEnabled ? ' user-card--msg-disabled' : ''}`}>
+                  <div className="user-avatar">
+                    {(user.vorname?.[0] || user.username?.[0] || 'U').toUpperCase()}
+                  </div>
+                  <div className="user-info">
+                    <h3>{user.vorname} {user.nachname}</h3>
+                    <p className="username">@{user.username}</p>
+                    <p className="email">{user.email}</p>
+                    <div className="msg-app-badge" title={msgRolle.desc}>
+                      <span className="msg-app-badge-icon">💬</span>
+                      <span className="msg-app-badge-role">{msgRolle.icon} {msgRolle.label}</span>
+                    </div>
+                  </div>
+                  <div className="user-actions">
+                    <div className="msg-app-toggle" title={`Msg-App Zugang: ${msgEnabled ? 'aktiv' : 'deaktiviert'}`}>
+                      <span className="msg-app-toggle-label">Msg</span>
+                      <button
+                        className={`toggle-btn${msgEnabled ? ' toggle-btn--on' : ''}`}
+                        onClick={() => handleMsgAppToggle(user)}
+                        aria-label={`Msg-App ${msgEnabled ? 'deaktivieren' : 'aktivieren'}`}
+                      >
+                        <span className="toggle-knob" />
+                      </button>
+                    </div>
+                    <button className="btn-icon" title="Bearbeiten" onClick={() => handleEdit(user)}>
+                      <Edit3 size={16} />
+                    </button>
+                    <button className="btn-icon" title="Passwort ändern" onClick={() => handlePasswordReset(user)}>
+                      <Lock size={16} />
+                    </button>
+                    <button className="btn-icon btn-danger" title="Löschen" onClick={() => handleDelete(user)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="user-info">
-                  <h3>{user.vorname} {user.nachname}</h3>
-                  <p className="username">@{user.username}</p>
-                  <p className="email">{user.email}</p>
-                </div>
-                <div className="user-actions">
-                  <button className="btn-icon" title="Bearbeiten" onClick={() => handleEdit(user)}>
-                    <Edit3 size={16} />
-                  </button>
-                  <button className="btn-icon" title="Passwort ändern" onClick={() => handlePasswordReset(user)}>
-                    <Lock size={16} />
-                  </button>
-                  <button className="btn-icon btn-danger" title="Löschen" onClick={() => handleDelete(user)}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -494,6 +535,15 @@ const AdminVerwaltung = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Benutzer erstellen Modal */}
+      {showCreateModal && (
+        <CreateUserModal
+          rolle={createRole}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={handleCreated}
+        />
       )}
 
       {/* Password Reset Modal */}

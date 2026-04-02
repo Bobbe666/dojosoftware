@@ -1,0 +1,215 @@
+/* =====================================================================================
+   ARTIKEL-VERWALTUNG OVERRIDES
+   =====================================================================================
+   Diese Datei wird NACH components.css geladen um Styles zu überschreiben
+   ===================================================================================== */
+
+/* Modal Header - Icons nicht von Gradient überlagern */
+.artikel-modal .modal-header h2 {
+  color: var(--primary) !important;
+  background: none !important;
+  -webkit-text-fill-color: var(--primary) !important;
+  background-clip: initial !important;
+  -webkit-background-clip: initial !important;
+  text-shadow: none !important;
+}
+
+/* Sub-Tabs Container - EXAKT wie in MitgliedDetailShared */
+.artikel-modal .sub-tabs {
+  display: flex !important;
+  gap: 0.5rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0.25rem !important;
+  background: var(--glass-bg) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  flex-wrap: wrap !important;
+}
+
+/* Sub-Tab Buttons - EXAKT wie in components.css */
+.artikel-modal .sub-tab-btn {
+  flex: 1 !important;
+  padding: 0.75rem 1.5rem !important;
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  white-space: nowrap !important;
+}
+
+.artikel-modal .sub-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+}
+
+.artikel-modal .sub-tab-btn.active {
+  background: var(--gradient-gold) !important;
+  color: var(--bg-secondary) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Formularfelder - korrekte Höhe und Rahmen, KEINE grünen/roten Umrandungen */
+.tab-content-section .form-input,
+.tab-content-section .form-select,
+.tab-content-section .form-textarea {
+  padding: 0.45rem 0.65rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 0.9rem !important;
+  height: 38px !important;
+  font-family: var(--schriftart-haupt) !important;
+  box-shadow: none !important;
+}
+
+.tab-content-section .form-select {
+  cursor: pointer !important;
+}
+
+.tab-content-section .form-textarea {
+  height: auto !important;
+  min-height: 80px !important;
+  resize: vertical !important;
+  padding: 0.75rem !important;
+}
+
+.tab-content-section .form-input:focus,
+.tab-content-section .form-select:focus,
+.tab-content-section .form-textarea:focus {
+  outline: none !important;
+  border-color: var(--primary) !important;
+  background: rgba(0, 0, 0, 0.4) !important;
+  box-shadow: none !important;
+}
+
+/* WICHTIG: Keine Validierungs-Farben (grün/rot) */
+.tab-content-section .form-input:valid,
+.tab-content-section .form-select:valid,
+.tab-content-section .form-textarea:valid,
+.tab-content-section .form-input:invalid,
+.tab-content-section .form-select:invalid,
+.tab-content-section .form-textarea:invalid {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: none !important;
+}
+
+.tab-content-section .form-input:focus:valid,
+.tab-content-section .form-select:focus:valid,
+.tab-content-section .form-textarea:focus:valid,
+.tab-content-section .form-input:focus:invalid,
+.tab-content-section .form-select:focus:invalid,
+.tab-content-section .form-textarea:focus:invalid {
+  border-color: var(--primary) !important;
+  box-shadow: none !important;
+}
+
+/* Checkbox Labels - nicht grell weiß */
+.tab-content-section .checkbox-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 1rem !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.95rem !important;
+}
+
+.tab-content-section .checkbox-label:hover {
+  background: var(--primary-alpha-10) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+}
+
+.tab-content-section .checkbox-label input[type="checkbox"],
+.artikel-formular-page input[type="checkbox"] {
+  width: 22px !important;
+  height: 22px !important;
+  cursor: pointer !important;
+  accent-color: #6B4423 !important;
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+  -moz-appearance: checkbox !important;
+  opacity: 1 !important;
+  position: relative !important;
+}
+
+/* Modal Hintergrund - keine Transparenz */
+.modal-content.artikel-modal {
+  background: var(--bg-secondary) !important;
+  max-width: 100% !important;
+  max-height: 100vh !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.artikel-modal .modal-body {
+  background: var(--bg-secondary) !important;
+  flex: 1 !important;
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+  padding: 1rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.tab-content-section {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.preiskalkulation-container {
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.preis-eingabe-section,
+.preis-kalkulation-section {
+  overflow-y: auto !important;
+  max-height: 100% !important;
+}
+
+/* Kompaktere Labels für mehr Platz */
+.tab-content-section .form-group label {
+  font-size: 0.8rem !important;
+  margin-bottom: 0.2rem !important;
+}
+
+/* Kompaktere Abstände */
+.tab-content-section .form-grid {
+  gap: 1rem !important;
+}
+
+.preiskalkulation-container {
+  gap: 1rem !important;
+}
+
+.preis-eingabe-section,
+.preis-kalkulation-section {
+  padding: 0.85rem !important;
+}
+
+.preis-eingabe-section h3,
+.preis-kalkulation-section h3 {
+  font-size: 0.95rem !important;
+  margin-bottom: 0.6rem !important;
+}

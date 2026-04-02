@@ -9,17 +9,18 @@
    ===================================================================================== */
 
 .artikel-verwaltung .page-header {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.08) 0%, rgba(255, 107, 53, 0.05) 100%) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  background: linear-gradient(135deg, var(--primary-alpha-08) 0%, rgba(255, 107, 53, 0.05) 100%) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xl) !important;
   padding: var(--ui-page-padding) !important;
   margin-bottom: 1.5rem !important;
 }
 
 .artikel-verwaltung .page-header h1 {
-  font-size: 2rem !important;
-  letter-spacing: 3px !important;
-  margin-bottom: 0.5rem !important;
+  font-size: 1.25rem !important;
+  letter-spacing: 0 !important;
+  margin-bottom: 0.25rem !important;
+  color: var(--text-primary) !important;
 }
 
 .artikel-verwaltung .page-header p {
@@ -31,135 +32,183 @@
    MAIN TABS - Komplett überarbeitet
    ===================================================================================== */
 
-.main-tabs-navigation {
-  display: flex !important;
-  gap: 0 !important;
-  margin-bottom: 1.5rem !important;
-  background: rgba(0, 0, 0, 0.4) !important;
-  padding: 6px !important;
-  border-radius: var(--comp-radius-xl) !important;
-  border: 1px solid rgba(255, 215, 0, 0.15) !important;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
-}
-
-.main-tab-btn {
-  flex: 1 !important;
-  padding: 0.875rem 1.5rem !important;
-  background: transparent !important;
-  border: none !important;
-  color: var(--text-3) !important;
-  font-size: var(--ui-page-subtitle) !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  border-radius: var(--comp-radius-md) !important;
-  transition: all 0.3s ease !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.75rem !important;
-  position: relative !important;
-}
-
-.main-tab-btn:hover {
-  background: var(--surface-2) !important;
-  color: var(--text-2) !important;
-}
-
-.main-tab-btn.active {
-  background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%) !important;
-  color: #1a1a2e !important;
-  border: none !important;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
-  transform: none !important;
-}
-
-.main-tab-btn.active::after {
-  display: none !important;
+/* sub-tab-btn im Artikel-Kontext: nicht flex:1, kompakte Breite */
+.artikel-verwaltung .sub-tab-btn {
+  flex: 0 0 auto !important;
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
 }
 
 /* Badge im Tab */
-.main-tab-btn .low-stock-badge,
-.main-tab-btn .order-badge {
+.artikel-verwaltung .sub-tab-btn .low-stock-badge,
+.artikel-verwaltung .sub-tab-btn .order-badge {
   background: #ef4444 !important;
   color: white !important;
-  padding: 0.15rem 0.5rem !important;
+  padding: 0.1rem 0.4rem !important;
   border-radius: var(--comp-radius-lg) !important;
   font-size: 0.7rem !important;
   font-weight: 700 !important;
-  min-width: 20px !important;
+  min-width: 18px !important;
   text-align: center !important;
 }
 
-.main-tab-btn.active .low-stock-badge,
-.main-tab-btn.active .order-badge {
-  background: #1a1a2e !important;
-  color: var(--primary) !important;
+.artikel-verwaltung .sub-tab-btn.active .low-stock-badge,
+.artikel-verwaltung .sub-tab-btn.active .order-badge {
+  background: rgba(0,0,0,0.3) !important;
+  color: var(--bg-primary) !important;
 }
 
 /* =====================================================================================
-   CONTROLS / FILTER SECTION - Aufgeräumter
+   CONTROLS / FILTER SECTION - Schlanke Toolbar
    ===================================================================================== */
 
 .artikel-verwaltung .controls-section {
-  background: rgba(0, 0, 0, 0.2) !important;
-  padding: 1rem 1.25rem !important;
-  border-radius: var(--comp-radius-xl) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  margin-bottom: 1.5rem !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+}
+
+.artikel-verwaltung .search-filters {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  flex: 1 !important;
+}
+
+/* Search Box */
+.artikel-verwaltung .search-box {
+  position: relative !important;
+  flex: 1 !important;
+  max-width: 260px !important;
 }
 
 .artikel-verwaltung .search-box input {
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: var(--comp-radius-md) !important;
+  width: 100% !important;
+  height: 34px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
   color: var(--text-1) !important;
-  padding: 0.65rem 1rem !important;
-  font-size: 0.9rem !important;
+  padding: 0 0.75rem 0 2.1rem !important;
+  font-size: 0.83rem !important;
+  outline: none !important;
+  transition: border-color 0.15s !important;
+}
+
+.artikel-verwaltung .search-box input::placeholder {
+  color: var(--text-muted) !important;
+  opacity: 0.6 !important;
 }
 
 .artikel-verwaltung .search-box input:focus {
-  border-color: var(--primary) !important;
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15) !important;
-  background: rgba(0, 0, 0, 0.5) !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
 }
 
+.artikel-verwaltung .search-icon {
+  position: absolute !important;
+  left: 0.6rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 0.75rem !important;
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+  line-height: 1 !important;
+}
+
+/* Kategorie Select */
 .artikel-verwaltung .search-filters select {
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  border-radius: var(--comp-radius-md) !important;
-  color: var(--text-1) !important;
-  padding: 0.65rem 1rem !important;
-  font-size: 0.9rem !important;
+  height: 34px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  color: var(--text-2) !important;
+  padding: 0 0.65rem !important;
+  font-size: 0.83rem !important;
+  cursor: pointer !important;
+  outline: none !important;
+  transition: border-color 0.15s !important;
 }
 
 .artikel-verwaltung .search-filters select:focus {
-  border-color: var(--primary) !important;
-  outline: none !important;
+  border-color: rgba(255, 215, 0, 0.4) !important;
 }
 
-.artikel-verwaltung .checkbox-label {
-  background: rgba(0, 0, 0, 0.3) !important;
-  padding: 0.5rem 1rem !important;
-  border-radius: var(--comp-radius-md) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  color: var(--text-2) !important;
-  font-size: 0.85rem !important;
+/* Toggle Switch für "Nur aktive Artikel" */
+.artikel-verwaltung .controls-section .checkbox-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.45rem !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 0.8rem !important;
+  color: var(--text-muted) !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+}
+
+.artikel-verwaltung .controls-section .checkbox-label input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 32px !important;
+  height: 17px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: none !important;
+  border-radius: 9px !important;
+  position: relative !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: background 0.2s ease !important;
+}
+
+.artikel-verwaltung .controls-section .checkbox-label input[type="checkbox"]::after {
+  content: '' !important;
+  position: absolute !important;
+  width: 13px !important;
+  height: 13px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  top: 2px !important;
+  left: 2px !important;
+  transition: left 0.2s ease, background 0.2s ease !important;
+}
+
+.artikel-verwaltung .controls-section .checkbox-label input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, #ffd700, #f7931e) !important;
+}
+
+.artikel-verwaltung .controls-section .checkbox-label input[type="checkbox"]:checked::after {
+  left: 17px !important;
+  background: #1a1a2e !important;
 }
 
 /* Neuer Artikel Button */
-.artikel-verwaltung .btn-primary {
+.av-btn-create {
+  height: 34px !important;
+  padding: 0 1rem !important;
   background: linear-gradient(135deg, #ffd700 0%, #f7931e 100%) !important;
   color: #1a1a2e !important;
   border: none !important;
-  padding: 0.65rem 1.25rem !important;
+  border-radius: 6px !important;
+  font-size: 0.83rem !important;
   font-weight: 600 !important;
-  border-radius: var(--comp-radius-md) !important;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: opacity 0.15s !important;
+  letter-spacing: 0.01em !important;
 }
 
-.artikel-verwaltung .btn-primary:hover {
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5) !important;
-  transform: translateY(-2px) !important;
+.av-btn-create:hover {
+  opacity: 0.85 !important;
 }
 
 /* =====================================================================================
@@ -168,9 +217,10 @@
 
 .artikel-table-container {
   background: rgba(0, 0, 0, 0.25) !important;
-  border: 1px solid rgba(255, 215, 0, 0.12) !important;
+  border: 1px solid var(--primary-alpha-12) !important;
   border-radius: var(--comp-radius-xl) !important;
-  overflow: hidden !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
 }
 
@@ -180,17 +230,17 @@
 }
 
 .artikel-table thead {
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, rgba(255, 215, 0, 0.05) 100%) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
 .artikel-table th {
-  padding: 1rem 0.75rem !important;
-  font-size: 0.75rem !important;
-  font-weight: 700 !important;
+  padding: 0.75rem 0.75rem !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
   text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-  color: var(--primary) !important;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2) !important;
+  letter-spacing: 0.5px !important;
+  color: var(--text-muted) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   background: transparent !important;
 }
 
@@ -227,37 +277,42 @@
   font-family: 'Courier New', monospace !important;
 }
 
+.artikel-info .artikel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
 /* =====================================================================================
    BADGES - Neu mit besserer Lesbarkeit
    ===================================================================================== */
 
-/* Artikelgruppe Badge - Warmes Braun/Orange */
+/* Artikelgruppe Badge */
 .artikelgruppe-badge {
   display: inline-flex !important;
   align-items: center !important;
-  padding: 0.35rem 0.75rem !important;
+  padding: 0.2rem 0.6rem !important;
   border-radius: var(--comp-radius-sm) !important;
-  font-size: var(--ui-badge-size-sm) !important;
-  font-weight: 600 !important;
-  background: linear-gradient(135deg, rgba(180, 83, 9, 0.4) 0%, rgba(146, 64, 14, 0.4) 100%) !important;
-  color: var(--status-warning) !important;
-  border: 1px solid rgba(251, 191, 36, 0.3) !important;
-  text-shadow: none !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
   white-space: nowrap !important;
 }
 
-/* Kategorie Badge - Kühles Blau/Cyan */
+/* Kategorie Badge */
 .kategorie-badge {
   display: inline-flex !important;
   align-items: center !important;
-  padding: 0.35rem 0.75rem !important;
+  padding: 0.2rem 0.6rem !important;
   border-radius: var(--comp-radius-sm) !important;
-  font-size: var(--ui-badge-size-sm) !important;
-  font-weight: 600 !important;
-  background: linear-gradient(135deg, rgba(6, 95, 70, 0.4) 0%, rgba(4, 120, 87, 0.4) 100%) !important;
-  color: #34d399 !important;
-  border: 1px solid rgba(52, 211, 153, 0.3) !important;
-  text-shadow: none !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  background: rgba(99, 179, 237, 0.1) !important;
+  color: #63b3ed !important;
+  border: 1px solid rgba(99, 179, 237, 0.2) !important;
   white-space: nowrap !important;
 }
 
@@ -266,9 +321,9 @@
    ===================================================================================== */
 
 .preis-cell {
-  font-family: 'Courier New', monospace !important;
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
+  font-family: inherit !important;
+  font-size: 0.88rem !important;
+  font-weight: 500 !important;
   color: var(--text-1) !important;
   text-align: right !important;
 }
@@ -279,7 +334,7 @@
   flex-direction: column !important;
   gap: 2px !important;
   font-size: 0.8rem !important;
-  font-family: 'Courier New', monospace !important;
+  font-family: inherit !important;
 }
 
 .preis-kategorien .preis-kids {
@@ -298,13 +353,13 @@
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 0.4rem 0.75rem !important;
+  padding: 0.25rem 0.6rem !important;
   border-radius: var(--comp-radius-sm) !important;
-  font-size: 0.7rem !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.5px !important;
-  min-width: 90px !important;
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  min-width: 80px !important;
 }
 
 .lager-status.in-stock {
@@ -360,8 +415,8 @@
 
 .artikel-table .actions .btn:hover,
 .artikel-table .actions button:hover {
-  background: rgba(255, 215, 0, 0.15) !important;
-  border-color: rgba(255, 215, 0, 0.3) !important;
+  background: var(--primary-alpha-15) !important;
+  border-color: var(--primary-alpha-30) !important;
   color: var(--primary) !important;
   transform: scale(1.1) !important;
 }
@@ -465,14 +520,14 @@
 .artikel-modal .sub-tab-btn:hover {
   background: rgba(255, 255, 255, 0.1) !important;
   color: var(--text-1) !important;
-  border-color: rgba(255, 215, 0, 0.3) !important;
+  border-color: var(--primary-alpha-30) !important;
 }
 
 .artikel-modal .sub-tab-btn.active {
   background: var(--gradient-gold) !important;
   color: #000 !important;
   border-color: var(--primary) !important;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3) !important;
+  box-shadow: 0 4px 12px var(--primary-alpha-30) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -548,8 +603,8 @@
 }
 
 .tab-content-section .checkbox-label:hover {
-  background: rgba(255,215,0,0.1) !important;
-  border-color: rgba(255, 215, 0, 0.4) !important;
+  background: var(--primary-alpha-10) !important;
+  border-color: var(--primary-alpha-40) !important;
 }
 
 .tab-content-section .checkbox-label input[type="checkbox"],
@@ -629,4 +684,91 @@
 .preis-kalkulation-section h3 {
   font-size: var(--ui-page-subtitle) !important;
   margin-bottom: 0.6rem !important;
+}
+
+/* =====================================================================================
+   SIDEBAR LAYOUT (Option C) - ERP-Stil wie Lexware/DATEV
+   ===================================================================================== */
+
+.av-layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.av-sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: 0.4rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.av-sidebar-title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 0.5rem 0.75rem 0.25rem;
+}
+
+.av-sidebar-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--comp-radius-md);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  gap: 0.5rem;
+}
+
+.av-sidebar-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+}
+
+.av-sidebar-item.active {
+  background: var(--gradient-gold);
+  color: var(--bg-primary);
+  font-weight: 600;
+}
+
+.av-sidebar-count {
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 0.1rem 0.45rem;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.av-sidebar-item.active .av-sidebar-count {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.av-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .av-layout {
+    flex-direction: column;
+  }
+  .av-sidebar {
+    width: 100%;
+    position: static;
+  }
 }

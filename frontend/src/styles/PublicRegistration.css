@@ -279,7 +279,7 @@
 
 .checkbox-label a:hover {
   color: #ffed4e;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 8px var(--primary-alpha-50);
 }
 
 .checkbox-label strong {
@@ -313,7 +313,7 @@
   background: #1a3d2e;
   padding: 1.5rem;
   border-radius: var(--comp-radius-xl);
-  border: 2px solid #22c55e;
+  border: 2px solid var(--status-success);
   text-align: center;
   margin-top: 1rem;
 }
@@ -415,7 +415,7 @@
 .success-message {
   background: #1a3d2e;
   color: var(--status-success);
-  border: 2px solid #22c55e;
+  border: 2px solid var(--status-success);
   text-shadow: none;
 }
 
@@ -943,7 +943,7 @@
   margin-top: 0.5rem;
   padding: 0.75rem;
   background-color: rgba(16, 185, 129, 0.1);
-  border: 1px solid #10b981;
+  border: 1px solid var(--status-success);
   border-radius: 6px;
   color: var(--success);
 }
@@ -959,7 +959,7 @@
   margin-top: 0.5rem;
   padding: 0.5rem;
   background-color: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
+  border: 1px solid var(--status-error);
   border-radius: 6px;
   color: var(--error);
   font-size: 0.9rem;
@@ -1088,4 +1088,107 @@
   gap: 1rem;
   flex-wrap: wrap;
   margin-top: 1rem;
+}
+
+/* ============================================
+   PRE-STEP: Vorabfrage Erziehungsberechtigte
+   ============================================ */
+
+.pre-step {
+  padding: 0.5rem 0;
+}
+
+.pre-step-subtitle {
+  color: var(--text-secondary, #888);
+  margin-bottom: 2rem;
+}
+
+.registrant-type-cards {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.registrant-type-card {
+  flex: 1;
+  min-width: 220px;
+  background: var(--card-bg, #1a1a1a);
+  border: 2px solid var(--border-color, #333);
+  border-radius: 12px;
+  padding: 2rem 1.5rem;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.registrant-type-card:hover {
+  border-color: var(--primary-color, #ffd700);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.15);
+}
+
+.registrant-type-card:focus {
+  outline: 2px solid var(--primary-color, #ffd700);
+  outline-offset: 2px;
+}
+
+.type-card-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.registrant-type-card h4 {
+  margin: 0;
+  color: var(--text-color, #fff);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.registrant-type-card p {
+  margin: 0;
+  color: var(--text-secondary, #aaa);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.type-card-select-btn {
+  margin-top: 0.5rem;
+  color: var(--primary-color, #ffd700);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   GUARDIAN MODE: Banner + Hinweise
+   ============================================ */
+
+.guardian-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1.2rem;
+  font-size: 0.9rem;
+  color: var(--primary-color, #ffd700);
+  font-weight: 500;
+}
+
+.guardian-mode-icon {
+  font-size: 1.3rem;
+}
+
+.field-warning {
+  display: block;
+  margin-top: 0.4rem;
+  color: #ff9900;
+  font-size: 0.85rem;
+  font-weight: 500;
 }

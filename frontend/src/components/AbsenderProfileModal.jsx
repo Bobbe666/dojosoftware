@@ -5,9 +5,10 @@
  * Typ: Dojo (Dunkelrot), Verband (Gold), Lizenzen (Gold).
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { X, Building2, Phone, Globe, CreditCard, Palette, Download } from 'lucide-react';
+import { useDojoContext } from '../context/DojoContext';
 import './AbsenderProfileModal.css';
 
 const LEER = {
@@ -34,6 +35,9 @@ const LEER = {
 const TYP_FARBEN = { dojo: '#8B0000', verband: '#c9a227', lizenzen: '#c9a227' };
 
 export default function AbsenderProfileModal({ profil = null, onClose, onSaved }) {
+  const { activeDojo } = useDojoContext();
+  const withDojo = (url) => activeDojo?.id ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}` : url;
+
   const [form, setForm] = useState(profil ? { ...profil } : { ...LEER });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -57,7 +61,7 @@ export default function AbsenderProfileModal({ profil = null, onClose, onSaved }
 
   async function ausDojo() {
     try {
-      const res = await axios.post('/absender-profile/aus-dojo-einstellungen', { typ: form.typ });
+      const res = await axios.post(withDojo('/absender-profile/aus-dojo-einstellungen'), { typ: form.typ });
       if (res.data.success) {
         onSaved && onSaved();
         onClose();
@@ -73,9 +77,9 @@ export default function AbsenderProfileModal({ profil = null, onClose, onSaved }
     setError('');
     try {
       if (profil?.id) {
-        await axios.put(`/absender-profile/${profil.id}`, form);
+        await axios.put(withDojo(`/absender-profile/${profil.id}`), form);
       } else {
-        await axios.post('/absender-profile', form);
+        await axios.post(withDojo('/absender-profile'), form);
       }
       onSaved && onSaved();
       onClose();

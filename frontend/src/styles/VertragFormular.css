@@ -36,7 +36,7 @@
   min-height: 44px;
   height: auto;
 }
-.vf-select--error { border-color: #EF4444; }
+.vf-select--error { border-color: var(--status-error); }
 
 /* Form group with bottom margin */
 .vf-form-group-mb {
@@ -62,17 +62,17 @@
 }
 .vf-price-box--standard {
   background: rgba(255,255,255,0.08);
-  border: 2px solid rgba(255,215,0,0.3);
+  border: 2px solid var(--primary-alpha-30);
 }
 
 /* Price box heading */
 .vf-price-heading {
   margin: 0 0 0.3rem 0;
-  color: #ffd700;
+  color: var(--primary);
   font-size: 0.85rem;
   font-weight: 700;
 }
-.vf-price-heading--discount { color: #10B981; }
+.vf-price-heading--discount { color: var(--status-success); }
 
 /* Tarif price row */
 .vf-price-row {
@@ -149,8 +149,8 @@
   padding: 0.2rem 0.5rem;
   font-size: 0.75rem;
   cursor: pointer;
-  background: rgba(255, 215, 0, 0.2);
-  border: 1px solid rgba(255, 215, 0, 0.5);
+  background: var(--primary-alpha-20);
+  border: 1px solid var(--primary-alpha-50);
   border-radius: 4px;
   color: var(--primary);
 }
@@ -251,13 +251,13 @@
   max-height: 80vh;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 /* Document modal header bar */
 .vf-modal-header {
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   display: flex;
   justify-content: space-between;
   align-items: center;

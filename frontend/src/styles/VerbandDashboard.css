@@ -65,7 +65,7 @@
 }
 
 .subheader-icon {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .btn-refresh-small {
@@ -104,7 +104,8 @@
 /* Tab Navigation */
 .verband-tabs {
   display: flex;
-  gap: 0.5rem;
+  flex-wrap: wrap;
+  gap: 0.4rem;
   padding: 0.5rem;
   background: var(--surface-2);
   border-radius: var(--comp-radius-xl);
@@ -115,8 +116,8 @@
 .verband-tab {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.25rem;
+  gap: 0.4rem;
+  padding: 0.625rem 1rem;
   background: transparent;
   border: none;
   border-radius: var(--comp-radius-lg);
@@ -188,7 +189,7 @@
 
 .verband-stat-card.primary .stat-icon {
   background: rgba(59, 130, 246, 0.15);
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .verband-stat-card.secondary .stat-icon {
@@ -198,12 +199,12 @@
 
 .verband-stat-card.success .stat-icon {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 .verband-stat-card.warning .stat-icon {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .verband-stat-card.gold .stat-icon {
@@ -309,7 +310,7 @@
   gap: 0.25rem;
   background: none;
   border: none;
-  color: #3B82F6;
+  color: var(--status-indigo);
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
@@ -371,7 +372,7 @@
   justify-content: center;
   background: rgba(59, 130, 246, 0.1);
   border-radius: var(--comp-radius-lg);
-  color: #3B82F6;
+  color: var(--status-indigo);
   flex-shrink: 0;
 }
 
@@ -512,13 +513,13 @@
 
 .quick-action-btn:hover {
   background: var(--surface-hover);
-  border-color: #3B82F6;
+  border-color: var(--status-indigo);
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
 }
 
 .quick-action-btn svg {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .quick-action-btn span {
@@ -538,7 +539,7 @@
 
 .info-banner > svg {
   flex-shrink: 0;
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .info-banner h4 {

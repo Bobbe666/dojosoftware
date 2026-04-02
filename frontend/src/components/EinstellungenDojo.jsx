@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Save, X, Edit3, Building, CreditCard, Shield, Globe, Settings, Award, Clock, FileText, FileSignature, Palette, MapPin, BookOpen, UserCog, Zap } from "lucide-react";
+import { Save, X, Edit3, Building, CreditCard, Shield, Globe, Settings, Award, Clock, FileText, FileSignature, Palette, MapPin, BookOpen, UserCog, Zap, CheckCircle, Code } from "lucide-react";
 import RaumVerwaltung from "./RaumVerwaltung";
 import FinanzamtSelector from "./FinanzamtSelector";
 import AdminVerwaltung from "./AdminVerwaltung";
 import PlanUpgradeSection from "./PlanUpgradeSection";
+import MarketingAktionen from "./MarketingAktionen";
 import "../styles/EinstellungenDojo.css";
 import "../styles/designsystem.css";
 import "../styles/themes.css";
@@ -12,6 +13,199 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import { useTheme, THEMES } from '../context/ThemeContext';
 
+
+/* ─────────────────────────────────────────────────────────────
+   DesignTab — Tab-Stil Auswahl & Farbpicker
+   ───────────────────────────────────────────────────────────── */
+const DesignTab = () => {
+  const [activeStyle, setActiveStyle] = useState(
+    localStorage.getItem('dojo-tab-style') || 'glass'
+  );
+  const [accentColor, setAccentColor] = useState(
+    localStorage.getItem('dojo-tab-accent') || '#ffd700'
+  );
+  const [saved, setSaved] = useState(false);
+
+  const STYLES = [
+    {
+      id: 'glass',
+      label: 'Glass',
+      desc: 'Gradient & Glassmorphism',
+      previewTrack: null,
+      previewNormal: {
+        background: 'linear-gradient(135deg, rgba(255,215,0,0.12), rgba(255,215,0,0.04), transparent)',
+        borderRadius: '16px', color: 'rgba(255,255,255,0.85)', border: 'none',
+      },
+      previewActive: (color) => ({
+        background: `linear-gradient(135deg, ${color}33, ${color}18, rgba(255,107,53,0.1))`,
+        borderRadius: '16px', color, border: 'none',
+      }),
+    },
+    {
+      id: 'underline',
+      label: 'Underline',
+      desc: 'Minimal mit Unterstrich',
+      previewTrack: null,
+      previewNormal: {
+        background: 'transparent', borderRadius: '0', color: 'rgba(255,255,255,0.5)',
+        borderBottom: '2px solid transparent', paddingBottom: '5px',
+      },
+      previewActive: (color) => ({
+        background: 'transparent', borderRadius: '0', color,
+        borderBottom: `2px solid ${color}`, paddingBottom: '5px',
+      }),
+    },
+    {
+      id: 'pill-solid',
+      label: 'Pill',
+      desc: 'Solide Pill mit Akzentfarbe',
+      previewTrack: {
+        background: 'rgba(255,255,255,0.04)', padding: '3px', borderRadius: '100px',
+        border: '1px solid rgba(255,255,255,0.07)',
+      },
+      previewNormal: {
+        background: 'transparent', borderRadius: '100px', color: 'rgba(255,255,255,0.55)', border: 'none',
+      },
+      previewActive: (color) => ({
+        background: color, borderRadius: '100px', color: '#1a1a0a', border: 'none',
+      }),
+    },
+    {
+      id: 'frosted',
+      label: 'Frosted',
+      desc: 'Tabs auf matter Glasfläche',
+      previewTrack: {
+        background: 'rgba(255,255,255,0.03)', padding: '3px', borderRadius: '10px',
+        border: '1px solid rgba(255,255,255,0.06)',
+      },
+      previewNormal: {
+        background: 'transparent', borderRadius: '7px', color: 'rgba(255,255,255,0.55)',
+        border: '1px solid transparent',
+      },
+      previewActive: (color) => ({
+        background: `${color}1a`, borderRadius: '7px', color,
+        border: `1px solid ${color}55`, boxShadow: `0 0 0 1px ${color}22 inset`,
+      }),
+    },
+    {
+      id: 'bordered',
+      label: 'Bordered',
+      desc: 'Klare Rahmen-Ansicht',
+      previewTrack: null,
+      previewNormal: {
+        background: 'transparent', borderRadius: '7px', color: 'rgba(255,255,255,0.55)',
+        border: '1px solid rgba(255,255,255,0.1)',
+      },
+      previewActive: (color) => ({
+        background: `${color}14`, borderRadius: '7px', color,
+        border: `1px solid ${color}`,
+      }),
+    },
+  ];
+
+  const handleStyleSelect = (id) => {
+    setActiveStyle(id);
+    if (id === 'glass') {
+      delete document.documentElement.dataset.tabStyle;
+    } else {
+      document.documentElement.dataset.tabStyle = id;
+    }
+  };
+
+  const handleColorChange = (e) => {
+    const color = e.target.value;
+    setAccentColor(color);
+    document.documentElement.style.setProperty('--tab-accent', color);
+  };
+
+  const handleColorReset = () => {
+    setAccentColor('#ffd700');
+    document.documentElement.style.setProperty('--tab-accent', '#ffd700');
+  };
+
+  const handleSave = () => {
+    if (activeStyle === 'glass') {
+      localStorage.removeItem('dojo-tab-style');
+    } else {
+      localStorage.setItem('dojo-tab-style', activeStyle);
+    }
+    localStorage.setItem('dojo-tab-accent', accentColor);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
+  return (
+    <div className="tab-content">
+      <h3>🎨 Tab-Design</h3>
+      <p className="dtab-live-hint">
+        <span>👁</span> Änderungen wirken sofort als Vorschau — "Übernehmen" speichert dauerhaft.
+      </p>
+
+      {/* Stil-Auswahl */}
+      <div className="dtab-style-grid">
+        {STYLES.map((style) => {
+          const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
+          const trackStyle = style.previewTrack || {};
+          return (
+            <div
+              key={style.id}
+              className={`dtab-style-card${activeStyle === style.id ? ' active' : ''}`}
+              onClick={() => handleStyleSelect(style.id)}
+            >
+              {/* Mini Tab Vorschau */}
+              <div className="dtab-preview-strip" style={trackStyle}>
+                {tabs.map((t, i) => (
+                  <span
+                    key={t}
+                    className="dtab-preview-tab"
+                    style={i === 1 ? style.previewActive(accentColor) : style.previewNormal}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+              <div className="dtab-style-label">
+                {activeStyle === style.id && <span className="dtab-active-check">✓ </span>}
+                {style.label}
+              </div>
+              <div className="dtab-style-desc">{style.desc}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Akzentfarbe */}
+      <div className="dtab-color-section">
+        <div className="dtab-color-label">
+          Akzentfarbe
+          <small>Farbe der aktiven Tabs und Hover-Effekte</small>
+        </div>
+        <input
+          type="color"
+          value={accentColor}
+          onChange={handleColorChange}
+          className="dtab-color-input"
+          title="Tab-Akzentfarbe"
+        />
+        <span className="dtab-color-hex">{accentColor}</span>
+        <button type="button" onClick={handleColorReset} className="dtab-color-reset">
+          Gold zurücksetzen
+        </button>
+      </div>
+
+      {/* Speichern */}
+      <div className="dtab-save-row">
+        <button type="button" onClick={handleSave} className="dtab-save-btn">
+          <CheckCircle size={16} />
+          Übernehmen
+        </button>
+        {saved && (
+          <span className="dtab-saved-msg">✓ Tab-Design gespeichert!</span>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const EinstellungenDojo = () => {
   // Theme-Context nutzen
@@ -199,7 +393,10 @@ const EinstellungenDojo = () => {
     { id: "zeiten", label: "Öffnungszeiten", icon: Clock, color: "#84CC16" },
     { id: "admins", label: "Admin-Accounts", icon: UserCog, color: "#DC2626" },
     { id: "subscription", label: "Plan & Abo", icon: Zap, color: "#8B5CF6" },
-    { id: "system", label: "System", icon: Settings, color: "#6B7280" }
+    { id: "system", label: "System", icon: Settings, color: "#6B7280" },
+    { id: "design", label: "Design", icon: Palette, color: "#EC4899" },
+    { id: "socialmedia", label: "Social Media", icon: Globe, color: "#1877F2" },
+    { id: "webintegration", label: "Website & Integration", icon: Code, color: "#0EA5E9" }
   ];
 
   // Daten laden (Theme wird jetzt vom ThemeContext verwaltet)
@@ -1085,6 +1282,23 @@ const EinstellungenDojo = () => {
                     <span className="u-text-secondary">Monate</span>
                   </div>
                 </div>
+                <div className="form-group short">
+                  <label>Max. Ruhepause-Dauer</label>
+                  <div className="u-flex-row-sm">
+                    <input
+                      name="ruhepause_max_monate"
+                      type="number"
+                      min="1"
+                      max="12"
+                      value={dojo.ruhepause_max_monate || 3}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                      className="ed-w-80"
+                    />
+                    <span className="u-text-secondary">Monate</span>
+                  </div>
+                  <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>z.B. 12 bei Schwangerschaft</small>
+                </div>
               </div>
 
               <div className="checkbox-group ed-mt-1rem">
@@ -1415,6 +1629,64 @@ const EinstellungenDojo = () => {
           </div>
         );
 
+      case "design":
+        return <DesignTab />;
+
+      case "socialmedia":
+        return <MarketingAktionen />;
+
+      case "webintegration": {
+        const dojoId = dojo.id || '';
+        const baseUrl = 'https://app.tda-vib.de/api/public/news';
+        const embedCode = `<iframe src="${baseUrl}/widget?dojo_id=${dojoId}" width="100%" height="480" frameborder="0" style="border-radius:8px;"></iframe>`;
+        const rssUrl = `${baseUrl}/feed.rss?dojo_id=${dojoId}`;
+        const jsonUrl = `${baseUrl}?dojo_id=${dojoId}`;
+        const copyToClipboard = (text) => {
+          navigator.clipboard.writeText(text).catch(() => {});
+        };
+        return (
+          <div className="tab-content">
+            <h3>🌐 Website & Integration</h3>
+            <p className="section-description">
+              Binde deine aktuellen News auf deiner eigenen Homepage ein — per Iframe-Widget, RSS-Feed oder JSON-API.
+            </p>
+
+            <div className="integration-section">
+              <div className="integration-block">
+                <label className="integration-label">Iframe Embed-Code</label>
+                <p className="integration-hint">Kopiere diesen Code in deine Homepage, um aktuelle News einzubetten.</p>
+                <div className="integration-code-row">
+                  <code className="integration-code">{embedCode}</code>
+                  <button className="btn-copy" onClick={() => copyToClipboard(embedCode)}>Kopieren</button>
+                </div>
+              </div>
+
+              <div className="integration-block">
+                <label className="integration-label">RSS Feed URL</label>
+                <p className="integration-hint">Für RSS-Reader und CMS-Systeme (WordPress, Typo3 etc.)</p>
+                <div className="integration-code-row">
+                  <code className="integration-code">{rssUrl}</code>
+                  <button className="btn-copy" onClick={() => copyToClipboard(rssUrl)}>Kopieren</button>
+                </div>
+              </div>
+
+              <div className="integration-block">
+                <label className="integration-label">JSON API <span className="integration-badge">Entwickler</span></label>
+                <p className="integration-hint">Für eigene Entwickler-Lösungen — liefert die letzten 10 News als JSON.</p>
+                <div className="integration-code-row">
+                  <code className="integration-code">{jsonUrl}</code>
+                  <button className="btn-copy" onClick={() => copyToClipboard(jsonUrl)}>Kopieren</button>
+                </div>
+              </div>
+
+              {!dojoId && (
+                <p className="integration-warning">⚠️ Dojo-ID konnte nicht ermittelt werden. Bitte Seite neu laden.</p>
+              )}
+            </div>
+          </div>
+        );
+      }
+
       default:
         return <div>Tab nicht gefunden</div>;
     }
@@ -1453,8 +1725,8 @@ const EinstellungenDojo = () => {
         <form onSubmit={handleSave}>
           {renderTabContent()}
 
-          {/* Action Buttons - Nur anzeigen wenn nicht Admin oder Räume Tab */}
-          {activeTab !== 'admins' && activeTab !== 'raeume' && activeTab !== 'subscription' && (
+          {/* Action Buttons - Nur anzeigen wenn nicht Admin, Räume, Subscription oder Design Tab */}
+          {activeTab !== 'admins' && activeTab !== 'raeume' && activeTab !== 'subscription' && activeTab !== 'design' && (
             <div className="form-actions">
               {!isEditing ? (
                 <button

@@ -633,9 +633,20 @@ async function handlePaymentFailed(paymentIntent) {
 
 async function handleInvoicePaid(invoice) {
   logger.info("Rechnung bezahlt:", invoice.id);
-  // Mitgliedschaft verlängern bei Subscription
   if (invoice.subscription) {
-    // TODO: Mitgliedschaft Status aktualisieren
+    try {
+      const subscription = await stripe.subscriptions.retrieve(invoice.subscription);
+      const mitgliedId = subscription.metadata && subscription.metadata.mitglied_id;
+      if (mitgliedId) {
+        await db.promise().query(
+          "UPDATE mitglieder SET stripe_subscription_status = 'active', aktiv = 1 WHERE mitglied_id = ?",
+          [mitgliedId]
+        );
+        logger.info("Mitglied " + mitgliedId + " nach invoice.paid auf aktiv gesetzt");
+      }
+    } catch (err) {
+      logger.error("Fehler bei Mitglied-Update nach invoice.paid:", err.message);
+    }
   }
 }
 

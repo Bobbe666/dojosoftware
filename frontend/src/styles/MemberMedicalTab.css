@@ -1,38 +1,267 @@
 /* MemberMedicalTab.css */
 
-.mmt-archiv-box {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: rgba(255, 165, 0, 0.05);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 165, 0, 0.2);
-}
-
-.mmt-archiv-label {
-  font-size: 0.85rem;
-  color: rgba(255, 165, 0, 0.8);
-  font-weight: 600;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.mmt-archiv-list {
+.mmt-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Zeile 1: Allergien + Hinweise */
+.mmt-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Zeile 2: 3 Kontaktkarten */
+.mmt-contacts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* Section-Titel wie im Gurt-Tab */
+.mmt-section-title {
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #FFD700 !important;
+  margin: 0 0 0.85rem 0 !important;
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
-.mmt-archiv-item {
-  background: rgba(255, 165, 0, 0.1);
-  padding: 0.5rem 0.75rem;
+/* Primär-Badge */
+.mmt-badge-primary {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #FFD700;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.35);
   border-radius: 4px;
-  border: 1px solid rgba(255, 165, 0, 0.3);
-  font-size: 0.85rem;
+  padding: 0.1rem 0.45rem;
+  margin-left: auto;
 }
 
-.mmt-archiv-date {
-  margin-left: 0.5rem;
-  font-size: 0.75rem;
-  color: rgba(255, 165, 0, 0.6);
+/* Primär-Karte leicht hervorgehoben */
+.mmt-contact-card--primary {
+  border-color: rgba(255, 215, 0, 0.25) !important;
+}
+
+/* Key-Value Zeile */
+.mmt-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.7rem;
+}
+
+.mmt-kv:last-child {
+  margin-bottom: 0;
+}
+
+.mmt-kv-label {
+  font-size: 0.67rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.mmt-kv-value {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.88);
+  font-weight: 500;
+}
+
+.mmt-kv-empty {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.mmt-tel-link {
+  color: #FFD700;
+  text-decoration: none;
+}
+
+.mmt-tel-link:hover {
+  opacity: 0.75;
+}
+
+/* Allergien Tags */
+.mmt-tags-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-height: 28px;
+  margin-bottom: 0.5rem;
+}
+
+.mmt-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.mmt-tag--red {
+  background: rgba(255, 90, 90, 0.12);
+  border: 1px solid rgba(255, 90, 90, 0.28);
+  color: #ffaaaa;
+}
+
+.mmt-tag--dim {
+  background: rgba(255, 165, 0, 0.08);
+  border: 1px solid rgba(255, 165, 0, 0.2);
+  color: rgba(255, 165, 0, 0.65);
+}
+
+.mmt-tag-x {
+  background: none;
+  border: none;
+  color: rgba(255, 90, 90, 0.55);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.mmt-tag-x:hover { color: #ff5555; }
+
+.mmt-placeholder {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.28);
   font-style: italic;
+}
+
+/* Neue Allergie */
+.mmt-add-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Archiv */
+.mmt-archiv-box {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mmt-archiv-label {
+  display: block;
+  font-size: 0.67rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 165, 0, 0.55);
+  margin-bottom: 0.4rem;
+}
+
+/* Inputs */
+.mmt-input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.82rem !important;
+  padding: 0.42rem 0.7rem !important;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.mmt-input:focus {
+  border-color: rgba(255, 215, 0, 0.45) !important;
+}
+
+.mmt-select {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.82rem !important;
+  padding: 0.42rem 0.7rem !important;
+  flex: 1;
+  min-width: 140px;
+  outline: none;
+}
+
+.mmt-select--sm {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mmt-textarea {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 6px !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-size: 0.83rem !important;
+  line-height: 1.6 !important;
+  padding: 0.6rem 0.8rem !important;
+  resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.mmt-textarea:focus {
+  border-color: rgba(255, 215, 0, 0.45) !important;
+}
+
+.mmt-text {
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.mmt-btn {
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 6px;
+  color: #FFD700;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.42rem 0.9rem;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.mmt-btn:hover:not(:disabled) {
+  background: rgba(255, 215, 0, 0.22);
+}
+
+.mmt-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .mmt-contacts-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .mmt-top-row,
+  .mmt-contacts-row {
+    grid-template-columns: 1fr;
+  }
 }

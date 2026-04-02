@@ -60,7 +60,7 @@
   gap: var(--ui-form-gap);
   margin-bottom: var(--ui-section-gap-sm);
   padding-bottom: var(--ui-form-gap);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 1px solid var(--primary-alpha-30);
 }
 
 .ausweis-header .dojo-logo,
@@ -73,7 +73,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.75rem;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .ausweis-title h3 {
@@ -100,7 +100,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid rgba(255, 215, 0, 0.5);
+  border: 3px solid var(--primary-alpha-50);
 }
 
 .ausweis-foto img {
@@ -220,7 +220,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.25rem;
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   border: 1px solid var(--primary);
   border-radius: var(--comp-radius-md);
   color: var(--primary);
@@ -230,7 +230,7 @@
 }
 
 .btn-ausweis:hover {
-  background: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-30);
 }
 
 /* Print Styles */

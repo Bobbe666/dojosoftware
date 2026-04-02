@@ -1,0 +1,243 @@
+/* AnhangBibliothek.css */
+
+.ab-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.ab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.ab-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #eee;
+  margin: 0 0 0.3rem 0;
+}
+
+.ab-subtitle {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 0;
+}
+
+.ab-btn-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  background: var(--primary, #ffd700);
+  color: #000;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ab-btn-upload:hover { opacity: 0.9; }
+
+.ab-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(231,76,60,0.1);
+  border: 1px solid #c0392b;
+  border-radius: 6px;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.ab-error-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Dropzone */
+.ab-dropzone {
+  border: 2px dashed #2a2a4a;
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-bottom: 1.5rem;
+  background: #0e0e1a;
+}
+
+.ab-dropzone:hover {
+  border-color: var(--primary, #ffd700);
+  background: rgba(255,215,0,0.03);
+}
+
+.ab-dropzone--drag {
+  border-color: var(--primary, #ffd700);
+  background: rgba(255,215,0,0.07);
+}
+
+.ab-dropzone--uploading {
+  cursor: default;
+}
+
+.ab-dropzone-icon {
+  color: #555;
+  margin-bottom: 0.75rem;
+}
+
+.ab-dropzone-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 0.3rem;
+}
+
+.ab-dropzone-hint {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.ab-upload-progress {
+  width: 100%;
+}
+
+.ab-upload-bar {
+  background: #2a2a4a;
+  border-radius: 4px;
+  height: 6px;
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.ab-upload-fill {
+  height: 100%;
+  background: var(--primary, #ffd700);
+  transition: width 0.3s;
+  border-radius: 4px;
+}
+
+.ab-upload-text {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+/* Loading & Empty */
+.ab-loading {
+  text-align: center;
+  color: #888;
+  padding: 2rem;
+  font-size: 0.9rem;
+}
+
+.ab-empty {
+  text-align: center;
+  color: #888;
+  padding: 2.5rem 1.5rem;
+}
+
+.ab-empty-icon {
+  margin: 0 auto 0.75rem;
+  display: block;
+  opacity: 0.35;
+}
+
+.ab-empty p {
+  font-size: 0.88rem;
+  margin: 0;
+}
+
+/* Datei-Liste */
+.ab-list {}
+
+.ab-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ab-refresh-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.2rem;
+}
+.ab-refresh-btn:hover { color: #eee; }
+
+.ab-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ab-file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #141420;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  transition: border-color 0.15s;
+}
+
+.ab-file-row:hover { border-color: #3a3a5a; }
+
+.ab-file-icon { flex-shrink: 0; color: #888; }
+.ab-icon-pdf { color: #e74c3c; }
+.ab-icon-img { color: #3498db; }
+.ab-icon-file { color: #888; }
+
+.ab-file-info { flex: 1; min-width: 0; }
+
+.ab-file-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ab-file-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.15rem;
+}
+
+.ab-meta-sep { color: #444; }
+
+.ab-file-actions { display: flex; gap: 0.3rem; }
+
+.ab-btn-action {
+  background: none;
+  border: 1px solid transparent;
+  color: #777;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+}
+
+.ab-btn-dl:hover { color: #3498db; border-color: rgba(52,152,219,0.3); background: rgba(52,152,219,0.07); }
+.ab-btn-del:hover { color: #e74c3c; border-color: rgba(231,76,60,0.3); background: rgba(231,76,60,0.07); }

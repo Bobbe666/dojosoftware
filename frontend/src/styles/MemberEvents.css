@@ -55,7 +55,7 @@
 /* empty-state container */
 .me-empty-state {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 12px;
   padding: 3rem 2rem;
   text-align: center;
@@ -63,7 +63,7 @@
 
 /* empty-state icon */
 .me-empty-icon {
-  color: rgba(255, 215, 0, 0.5);
+  color: var(--primary-alpha-50);
   margin: 0 auto 1rem;
 }
 
@@ -126,7 +126,7 @@
 /* modal box */
 .me-modal-box {
   background: linear-gradient(135deg, #1e1e2e 0%, #16213e 100%);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 16px;
   padding: 2rem;
   max-width: 480px;
@@ -264,8 +264,8 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 215, 0, 0.5);
-  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-50);
+  background: var(--primary-alpha-15);
   color: var(--primary);
   cursor: pointer;
   font-size: 1.2rem;
@@ -277,8 +277,8 @@
 
 /* total amount box */
 .me-total-box {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   padding: 0.75rem 1rem;
   margin-bottom: 1.25rem;
@@ -315,11 +315,11 @@
   padding: 0.75rem;
   border-radius: 8px;
   border: none;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: var(--gradient-gold);
   color: #000;
   font-weight: 700;
   font-size: 1rem;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .me-btn-submit:disabled {
@@ -328,7 +328,7 @@
 
 /* register/anmelden button */
 .me-btn-register {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   padding: 0.75rem 2rem;
@@ -336,7 +336,7 @@
   font-weight: 700;
   font-size: 1rem;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
   cursor: pointer;
 }
 .me-btn-register--full {
@@ -353,7 +353,7 @@
   font-weight: 700;
   color: rgba(255, 255, 255, 0.5);
 }
-.me-counter-value--active { color: #FFD700; }
+.me-counter-value--active { color: var(--primary); }
 
 /* event card */
 .me-event-card {
@@ -371,7 +371,7 @@
 
 /* event card: not enrolled */
 .me-event-card--default {
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 /* event type badge */
@@ -379,7 +379,7 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: var(--badge-bg, rgba(255, 215, 0, 0.2));
+  background: var(--badge-bg, var(--primary-alpha-20));
   color: var(--text-primary);
   padding: 0.5rem 1rem;
   border-radius: 8px;
@@ -400,8 +400,8 @@
 
 /* Teilnahmegebuehr box */
 .me-fee-box {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   padding: 0.75rem;
   margin-bottom: 1rem;
@@ -463,3 +463,80 @@
 .me-btn-abmelden:disabled {
   cursor: not-allowed;
 }
+
+/* Tab-Umschalter */
+.me-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--border-color, rgba(255,255,255,0.1));
+  padding-bottom: 0;
+}
+
+.me-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 0.6rem 1.2rem;
+  margin-bottom: -2px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary, rgba(255,255,255,0.5));
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.me-tab-btn.active {
+  color: var(--accent, #cd3131);
+  border-bottom-color: var(--accent, #cd3131);
+}
+
+.me-tab-badge {
+  background: var(--accent, #cd3131);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  font-weight: 700;
+}
+
+/* TDA Turnier Status Badge */
+.me-turnier-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+.me-turnier-status--angemeldet {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+}
+.me-turnier-status--bestaetigt {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3B82F6;
+}
+.me-turnier-status--abgelehnt {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+}
+
+.me-status-text--rejected {
+  color: #EF4444;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.me-btn-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: me-spin 0.7s linear infinite;
+}
+
+@keyframes me-spin { to { transform: rotate(360deg); } }

@@ -273,7 +273,7 @@
 }
 
 .text-danger {
-  color: var(--danger, #dc2626);
+  color: var(--danger, var(--status-error));
 }
 
 /* Modal */
@@ -361,7 +361,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.15);
+  box-shadow: 0 0 0 3px var(--primary-alpha-15);
 }
 
 .form-row {

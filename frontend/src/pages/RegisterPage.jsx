@@ -41,7 +41,7 @@ function RegisterPage() {
     const loadPromoData = async () => {
       try {
         setPromoLoading(true);
-        const res = await axios.get(`${config.apiBaseUrl}/promo/early-bird`);
+        const res = await axios.get('/promo/early-bird');
 
         if (res.data.success && res.data.promo && res.data.promo.active) {
           setPromoData(res.data.promo);
@@ -206,7 +206,7 @@ function RegisterPage() {
         // Bei Early Bird Promo: Dojo für Promo registrieren
         if (hasEarlyBirdPromo && response.data.dojo_id) {
           try {
-            await axios.post(`${config.apiBaseUrl}/promo/early-bird/register`, {
+            await axios.post('/promo/early-bird/register', {
               dojo_id: response.data.dojo_id
             });
             console.log('✅ Early Bird Promo registriert!');
@@ -397,20 +397,6 @@ function RegisterPage() {
               : '14 Tage kostenlos testen - keine Kreditkarte erforderlich'
             }
           </p>
-        </div>
-
-        {/* Plan Selection Pills */}
-        <div className="plan-pills">
-          {['starter', 'professional', 'premium', 'enterprise'].map((plan) => (
-            <button
-              key={plan}
-              className={`plan-pill ${formData.selectedPlan === plan ? 'active' : ''}`}
-              onClick={() => setFormData({ ...formData, selectedPlan: plan })}
-            >
-              {plan.charAt(0).toUpperCase() + plan.slice(1)}
-              {plan === 'professional' && <span className="popular-tag">Beliebt</span>}
-            </button>
-          ))}
         </div>
 
         {/* Registration Form */}

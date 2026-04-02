@@ -31,7 +31,7 @@
 /* ── Small add-button (compact view) ─────────────────────── */
 .fb-btn-add-compact {
   padding: 0.5rem 1rem;
-  background: #ffd700;
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   color: #000;
@@ -67,9 +67,9 @@
   color: rgba(255,255,255,0.7);
 }
 .fb-vote-btn-compact--voted {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-20);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* ── Vote count compact ──────────────────────────────────── */
@@ -123,7 +123,7 @@
   padding: 2rem;
   width: 90%;
   max-width: 500px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 /* ── Modal title (plain) ─────────────────────────────────── */
@@ -177,7 +177,7 @@
 .fb-btn-submit {
   flex: 1;
   padding: 0.75rem;
-  background: #ffd700;
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   color: #000;
@@ -210,7 +210,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #ffd700;
+  color: var(--primary);
 }
 .fb-page-title--admin {
   color: #a5b4fc;
@@ -236,7 +236,7 @@
 /* ── Primary add button (full view) ─────────────────────── */
 .fb-btn-add-primary {
   padding: 0.75rem 1.5rem;
-  background: #ffd700;
+  background: var(--gradient-gold);
   border: none;
   border-radius: 8px;
   color: #000;
@@ -340,9 +340,9 @@
   color: rgba(255,255,255,0.7);
 }
 .fb-vote-btn--voted {
-  background: rgba(255, 215, 0, 0.2);
-  border: 2px solid #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-20);
+  border: 2px solid var(--primary);
+  color: var(--primary);
 }
 
 /* ── Vote count full ─────────────────────────────────────── */
@@ -408,7 +408,7 @@
   padding: 0.75rem;
   background: rgba(59, 130, 246, 0.1);
   border-radius: 8px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--status-indigo);
 }
 
 /* ── Admin comment label ─────────────────────────────────── */
@@ -555,7 +555,7 @@
 
 /* ── Error message ───────────────────────────────────────── */
 .fb-error-msg {
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
   font-size: 0.9rem;
   margin-bottom: 0.75rem;
 }

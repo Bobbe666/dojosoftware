@@ -98,7 +98,7 @@
 /* Error / alert banner */
 .rv-error-banner {
   background: #ef444420;
-  border: 1px solid #ef444440;
+  border: 1px solid var(--status-error)40;
   border-radius: 8px;
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
@@ -232,19 +232,19 @@
 
 .rv-action-btn-warning {
   background: #f59e0b15;
-  border: 1px solid #f59e0b40;
+  border: 1px solid var(--status-warning)40;
   color: var(--warning);
 }
 
 .rv-action-btn-info {
   background: #3b82f615;
-  border: 1px solid #3b82f640;
+  border: 1px solid var(--status-indigo)40;
   color: var(--info);
 }
 
 .rv-action-btn-success {
   background: #10b98115;
-  border: 1px solid #10b98140;
+  border: 1px solid var(--status-success)40;
   color: var(--success);
 }
 
@@ -304,7 +304,7 @@
 
 .rv-modal-error {
   background: #ef444420;
-  border: 1px solid #ef444440;
+  border: 1px solid var(--status-error)40;
   border-radius: 8px;
   padding: 0.75rem;
   margin-bottom: 1rem;
@@ -446,8 +446,8 @@
   font-size: 0.9rem;
   max-width: 360px;
 }
-.rlv-toast--error { background: #ef444420; border: 1px solid #ef444440; color: #ef4444; }
-.rlv-toast--ok { background: #10b98120; border: 1px solid #10b98140; color: #10b981; }
+.rlv-toast--error { background: var(--status-error)20; border: 1px solid var(--status-error)40; color: var(--status-error); }
+.rlv-toast--ok { background: var(--status-success)20; border: 1px solid var(--status-success)40; color: var(--status-success); }
 
 /* Filter pill buttons */
 .rlv-filter-btn {

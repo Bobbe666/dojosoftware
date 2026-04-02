@@ -1,0 +1,1136 @@
+/* ================================================================
+   MemberDashboardMobile.css
+   Native App-Look für das Mitglieder-Dashboard auf Mobilgeräten
+   Route: /member-app
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   GRUNDGERÜST
+   ---------------------------------------------------------------- */
+
+.mapp-root {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary, #0a0a0f);
+  color: var(--text-primary, #fff);
+  font-family: inherit;
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------------------
+   TOP BAR
+   ---------------------------------------------------------------- */
+
+.mapp-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 1rem;
+  padding-top: max(0.6rem, env(safe-area-inset-top, 0.6rem));
+  background: var(--bg-card, #13131a);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 10;
+  gap: 0.5rem;
+}
+
+.mapp-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.mapp-topbar-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mapp-topbar-dojo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--primary, #ffd700);
+  opacity: 0.85;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mapp-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.mapp-notif-btn {
+  position: relative;
+  background: rgba(255, 255, 255, 0.07);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mapp-notif-btn:active { background: rgba(255, 255, 255, 0.15); }
+
+.mapp-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: var(--error, #ff4444);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border-radius: 99px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+/* ----------------------------------------------------------------
+   SCROLLBARER INHALT
+   ---------------------------------------------------------------- */
+
+.mapp-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.mapp-scroll::-webkit-scrollbar { display: none; }
+
+.mapp-content {
+  padding: 1rem;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
+/* ----------------------------------------------------------------
+   HERO / NAME SECTION
+   ---------------------------------------------------------------- */
+
+.mapp-hero {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.mapp-hero-kanji {
+  font-size: 1.1rem;
+  color: var(--primary, #ffd700);
+  opacity: 0.5;
+  letter-spacing: 8px;
+  margin-bottom: 0.2rem;
+}
+
+.mapp-hero-name {
+  font-size: 1.6rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, var(--primary, #ffd700) 0%, #ffaa00 50%, var(--primary, #ffd700) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.1;
+  margin-bottom: 0.35rem;
+}
+
+.mapp-hero-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mapp-belt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 99px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+.mapp-belt-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mapp-member-id {
+  font-size: 0.68rem;
+  color: var(--text-secondary, #a0a0b0);
+  opacity: 0.6;
+}
+
+/* ----------------------------------------------------------------
+   ZAHLUNGSHINWEIS-BANNER
+   ---------------------------------------------------------------- */
+
+.mapp-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 68, 68, 0.1);
+  border: 1px solid rgba(255, 68, 68, 0.35);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.mapp-alert-text { flex: 1; min-width: 0; }
+.mapp-alert-title { font-weight: 700; font-size: 0.85rem; color: var(--error, #ff4444); }
+.mapp-alert-sub { font-size: 0.75rem; color: var(--text-secondary, #a0a0b0); }
+
+.mapp-alert-btn {
+  background: var(--error, #ff4444);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------------
+   APP-UPDATE-BANNER
+   ---------------------------------------------------------------- */
+
+.mapp-update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(90deg, rgba(255,215,0,0.12), rgba(255,170,0,0.08));
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+  flex-shrink: 0;
+}
+
+.mapp-update-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary, #ffd700);
+}
+
+.mapp-update-btn {
+  background: var(--primary, #ffd700);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.mapp-update-btn:active { opacity: 0.8; }
+
+/* ----------------------------------------------------------------
+   PULL-TO-REFRESH
+   ---------------------------------------------------------------- */
+
+.mapp-ptr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+/* ----------------------------------------------------------------
+   MINI-MITGLIEDSAUSWEIS
+   ---------------------------------------------------------------- */
+
+.mapp-ausweis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 10px;
+  padding: 0.45rem 0.65rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  max-width: 280px;
+}
+
+/* Dekorativer Hintergrund-Kanji */
+.mapp-ausweis::before {
+  content: '武道';
+  position: absolute;
+  right: 72px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2rem;
+  color: rgba(255, 215, 0, 0.05);
+  font-weight: 900;
+  pointer-events: none;
+  line-height: 1;
+}
+
+/* Goldener Akzent-Streifen oben */
+.mapp-ausweis::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--primary, #ffd700), transparent);
+}
+
+.mapp-ausweis-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.mapp-ausweis-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.mapp-ausweis-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.mapp-ausweis-dojo {
+  font-size: 0.5rem;
+  letter-spacing: 1.5px;
+  color: var(--primary, #ffd700);
+  opacity: 0.7;
+  text-transform: uppercase;
+  margin-bottom: 0.05rem;
+}
+
+.mapp-ausweis-name {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.3px;
+  margin-bottom: 0.1rem;
+}
+
+.mapp-ausweis-meta {
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.1rem;
+}
+
+.mapp-ausweis-belt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.mapp-ausweis-belt-stripe {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.mapp-ausweis-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.mapp-ausweis-foto {
+  width: 30px;
+  height: 37px;
+  border-radius: 4px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.mapp-ausweis-foto--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.mapp-ausweis-qr {
+  border-radius: 3px;
+  opacity: 0.85;
+}
+
+/* ----------------------------------------------------------------
+   STATS GRID (2x2)
+   ---------------------------------------------------------------- */
+
+.mapp-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.mapp-stat {
+  background: var(--bg-card, #13131a);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 0.9rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.2rem;
+  transition: transform 0.15s;
+  cursor: default;
+}
+
+.mapp-stat:active { transform: scale(0.97); }
+
+.mapp-stat-icon { font-size: 1.3rem; line-height: 1; margin-bottom: 0.1rem; }
+
+.mapp-stat-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+.mapp-stat-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--primary, #ffd700);
+  line-height: 1;
+}
+
+.mapp-stat-value--ok { color: #4caf50; }
+.mapp-stat-value--err { color: var(--error, #ff4444); }
+
+.mapp-stat-sub {
+  font-size: 0.65rem;
+  color: var(--text-secondary, #a0a0b0);
+  opacity: 0.8;
+}
+
+.mapp-belt-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  justify-content: center;
+}
+
+.mapp-belt-mini-stripe {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ----------------------------------------------------------------
+   QUICK ACTIONS (2 große Buttons)
+   ---------------------------------------------------------------- */
+
+.mapp-quick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.mapp-qa-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--bg-card, #13131a);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  border-radius: 14px;
+  padding: 1rem 0.75rem;
+  min-height: 80px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-primary, #fff);
+}
+
+.mapp-qa-btn:active {
+  transform: scale(0.96);
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.mapp-qa-btn--primary {
+  background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,170,0,0.08) 100%);
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.mapp-qa-icon {
+  color: var(--primary, #ffd700);
+}
+
+.mapp-qa-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-primary, #fff);
+}
+
+/* ----------------------------------------------------------------
+   SECTION WRAPPER
+   ---------------------------------------------------------------- */
+
+.mapp-section {
+  background: var(--bg-card, #13131a);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  margin-bottom: 0.85rem;
+  overflow: hidden;
+}
+
+.mapp-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mapp-section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #a0a0b0);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.mapp-section-link {
+  font-size: 0.72rem;
+  color: var(--primary, #ffd700);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.mapp-section-body {
+  padding: 0.5rem 0;
+}
+
+/* ----------------------------------------------------------------
+   EVENT LISTE
+   ---------------------------------------------------------------- */
+
+.mapp-event {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mapp-event:active { background: rgba(255, 255, 255, 0.04); }
+.mapp-event + .mapp-event { border-top: 1px solid rgba(255, 255, 255, 0.04); }
+
+.mapp-event-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 38px;
+  background: rgba(255, 215, 0, 0.08);
+  border-radius: 8px;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.mapp-event-day {
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--primary, #ffd700);
+  line-height: 1;
+}
+
+.mapp-event-month {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary, #a0a0b0);
+  letter-spacing: 1px;
+}
+
+.mapp-event-info { flex: 1; min-width: 0; }
+
+.mapp-event-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mapp-event-loc {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #a0a0b0);
+  margin-top: 0.1rem;
+}
+
+.mapp-event-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 0.2rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.mapp-event-badge--reg {
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.4);
+  color: #4caf50;
+}
+
+.mapp-event-badge--open {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: var(--primary, #ffd700);
+}
+
+/* ----------------------------------------------------------------
+   NEWS LISTE
+   ---------------------------------------------------------------- */
+
+.mapp-news {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.mapp-news:active { background: rgba(255, 255, 255, 0.04); }
+.mapp-news + .mapp-news { border-top: 1px solid rgba(255, 255, 255, 0.04); }
+
+.mapp-news-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.mapp-news-img-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.mapp-news-body { flex: 1; min-width: 0; }
+
+.mapp-news-date {
+  font-size: 0.65rem;
+  color: var(--text-secondary, #a0a0b0);
+  margin-bottom: 0.15rem;
+}
+
+.mapp-news-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.15rem;
+}
+
+.mapp-news-excerpt {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #a0a0b0);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------------------
+   REFERRAL KARTE
+   ---------------------------------------------------------------- */
+
+.mapp-referral {
+  background: var(--bg-card, #13131a);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.mapp-referral-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.mapp-referral-emoji { font-size: 1.4rem; }
+
+.mapp-referral-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+}
+
+.mapp-referral-sub {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+.mapp-referral-praemie {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.mapp-referral-praemie-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary, #ffd700);
+}
+
+.mapp-referral-praemie-sub {
+  font-size: 0.68rem;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+.mapp-referral-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+}
+
+.mapp-referral-code {
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--primary, #ffd700);
+}
+
+.mapp-referral-copy {
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary, #ffd700);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.mapp-referral-copy:active { transform: scale(0.95); }
+.mapp-referral-copy--copied { color: #4caf50; border-color: rgba(76,175,80,0.4); background: rgba(76,175,80,0.08); }
+
+/* ----------------------------------------------------------------
+   VERTRAGSSTATUS
+   ---------------------------------------------------------------- */
+
+.mapp-vertrag {
+  background: var(--bg-card, #13131a);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.85rem;
+}
+
+.mapp-vertrag-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.mapp-vertrag-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #a0a0b0);
+}
+
+.mapp-vertrag-btn {
+  font-size: 0.72rem;
+  color: var(--primary, #ffd700);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mapp-vertrag-aktiv {
+  background: rgba(76,175,80,0.08);
+  border: 1px solid rgba(76,175,80,0.3);
+  border-radius: 10px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.82rem;
+  color: #4caf50;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.mapp-vertrag-pending {
+  background: rgba(255,152,0,0.08);
+  border: 1px solid rgba(255,152,0,0.3);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  color: #ff9800;
+}
+
+/* ----------------------------------------------------------------
+   NEWS MODAL
+   ---------------------------------------------------------------- */
+
+.mapp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+}
+
+.mapp-modal-sheet {
+  background: var(--modal-bg-dark, #13131f);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: 1.25rem 1rem;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 1.25rem));
+  animation: mapp-sheet-up 0.25s ease;
+}
+
+@keyframes mapp-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.mapp-modal-close {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.mapp-modal-close-btn {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 0.85rem;
+  color: var(--text-primary, #fff);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mapp-modal-date {
+  font-size: 0.7rem;
+  color: var(--text-secondary, #a0a0b0);
+  margin-bottom: 0.4rem;
+}
+
+.mapp-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin-bottom: 0.75rem;
+}
+
+.mapp-modal-text {
+  font-size: 0.88rem;
+  color: var(--text-secondary, #a0a0b0);
+  line-height: 1.6;
+}
+
+.mapp-modal-text p { margin: 0 0 0.75rem; }
+
+/* ----------------------------------------------------------------
+   MEHR-DRAWER
+   ---------------------------------------------------------------- */
+
+.mapp-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 150;
+  display: flex;
+  align-items: flex-end;
+}
+
+.mapp-drawer {
+  background: var(--modal-bg-dark, #13131f);
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  padding: 1rem;
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 0.5rem);
+  animation: mapp-sheet-up 0.22s ease;
+}
+
+.mapp-drawer-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 0 auto 1rem;
+}
+
+.mapp-drawer-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #a0a0b0);
+  margin-bottom: 0.5rem;
+  padding: 0 0.25rem;
+}
+
+.mapp-drawer-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.mapp-drawer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 0.75rem 0.4rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mapp-drawer-item:active {
+  transform: scale(0.95);
+  background: rgba(255,215,0,0.08);
+}
+
+.mapp-drawer-item-icon {
+  color: var(--primary, #ffd700);
+}
+
+.mapp-drawer-item-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.mapp-drawer-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(255,68,68,0.08);
+  border: 1px solid rgba(255,68,68,0.25);
+  border-radius: 12px;
+  color: var(--error, #ff4444);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mapp-drawer-logout:active { background: rgba(255,68,68,0.18); }
+
+/* ----------------------------------------------------------------
+   BOTTOM TAB BAR
+   ---------------------------------------------------------------- */
+
+.mapp-tabbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--bg-card, #13131a);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 100;
+}
+
+.mapp-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.55rem 0.25rem;
+  cursor: pointer;
+  color: var(--text-secondary, #a0a0b0);
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mapp-tab:active { background: rgba(255, 255, 255, 0.04); }
+
+.mapp-tab.active { color: var(--primary, #ffd700); }
+
+.mapp-tab.active .mapp-tab-icon-wrap {
+  background: rgba(255, 215, 0, 0.12);
+  border-radius: 10px;
+}
+
+.mapp-tab-icon-wrap {
+  width: 36px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: background 0.15s;
+}
+
+.mapp-tab-dot {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  background: var(--error, #ff4444);
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-card, #13131a);
+}
+
+.mapp-tab-label {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ----------------------------------------------------------------
+   LEERZUSTAND
+   ---------------------------------------------------------------- */
+
+.mapp-empty {
+  padding: 1rem;
+  text-align: center;
+  color: var(--text-secondary, #a0a0b0);
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* ----------------------------------------------------------------
+   LOADING SPINNER
+   ---------------------------------------------------------------- */
+
+.mapp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 3rem 1rem;
+  color: var(--text-secondary, #a0a0b0);
+  font-size: 0.85rem;
+}
+
+.mapp-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,215,0,0.15);
+  border-top-color: var(--primary, #ffd700);
+  border-radius: 50%;
+  animation: mapp-spin 0.8s linear infinite;
+}
+
+@keyframes mapp-spin {
+  to { transform: rotate(360deg); }
+}

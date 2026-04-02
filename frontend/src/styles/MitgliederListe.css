@@ -62,8 +62,8 @@ h2 {
 
 .mitglieder-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 20px 40px var(--primary-alpha-20);
+  border-color: var(--primary-alpha-40);
 }
 
 /* Rotating Border Effekt */
@@ -77,7 +77,7 @@ h2 {
   background: conic-gradient(
     from 0deg,
     transparent,
-    rgba(255, 215, 0, 0.08),
+    var(--primary-alpha-08),
     transparent,
     rgba(255, 107, 53, 0.06),
     transparent
@@ -105,7 +105,7 @@ h2 {
   object-fit: cover;
   margin-bottom: 1rem;
   border: 3px solid var(--primary);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 10px var(--primary-alpha-20);
 }
 
 /* Mitgliedsdaten */
@@ -188,11 +188,10 @@ h2 {
 
 /* ml-member-card: stat-card base overrides for member cards */
 .ml-member-card {
-  padding: 0.8rem;
+  padding: 0.6rem 0.7rem;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 130px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -224,7 +223,7 @@ h2 {
 
 /* ml-card-top: wrapper div above member info */
 .ml-card-top {
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
 }
 
 /* ml-card-header-row: flex row with avatar + name */
@@ -237,23 +236,42 @@ h2 {
 
 /* ml-avatar: small circular avatar in card header */
 .ml-avatar {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #e5e7eb;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
 }
 
-/* ml-member-name: name heading inside card */
+/* ml-avatar--initials: neutral dark circle with gold initials */
+.ml-avatar--initials {
+  background: rgba(255, 215, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 215, 0, 0.85);
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+}
+
+/* ml-member-name: name heading inside card — override global ALL CAPS gold */
 .ml-member-name {
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   font-weight: 600;
   margin: 0;
   white-space: normal;
   overflow: visible;
   text-overflow: unset;
   line-height: 1.3;
+  text-transform: none !important;
+  color: var(--text-1, #fff) !important;
+  -webkit-text-fill-color: var(--text-1, #fff) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
 }
 
 /* ml-member-info: small text block below name */
@@ -344,6 +362,14 @@ h2 {
   justify-content: center;
 }
 
+/* ml-status-chips-inline: status tabs inside toolbar */
+.ml-status-chips-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
 /* ml-search-input: text search field */
 .ml-search-input {
   width: 160px;
@@ -402,10 +428,17 @@ h2 {
   height: 34px;
 }
 
-/* ml-kebab-icon: ⋮ icon span */
-.ml-kebab-icon {
-  font-size: 1rem;
-  font-weight: 900;
+/* ml-chevron-icon: ▾ dropdown arrow */
+.ml-chevron-icon {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* ml-dropdown-divider: separator line in dropdown */
+.ml-dropdown-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+  margin: 0.25rem 0;
 }
 
 /* ml-dropdown: floating actions dropdown portal */
@@ -591,4 +624,771 @@ h2 {
 .ml-bulk-archive-btn:not(:disabled):hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* ── Karten: Gurt + Stile + Alter ───────────────────────────────────────── */
+
+/* ml-card-gurt: Gurt Wrapper in Karten */
+.ml-card-gurt {
+  margin-bottom: 0.25rem;
+}
+
+/* ml-card-stile: Stile Pills Wrapper in Karten */
+.ml-card-stile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+}
+
+/* ml-card-alter: Altersanzeige in Karte */
+.ml-card-alter {
+  font-size: 0.68rem;
+  color: var(--text-3, rgba(255,255,255,0.4));
+  margin-top: 0.25rem;
+}
+
+/* ml-info-stile-none: Kein Stil Text */
+.ml-info-stile-none {
+  font-size: 0.68rem;
+  color: var(--text-3, rgba(255,255,255,0.35));
+  font-style: italic;
+}
+
+/* ── Stile Pills (verwendet in Listen- und Kartenansicht) ───────────────── */
+
+.ml-stile-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 100px;
+  padding: 0.12rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-2, rgba(255,255,255,0.65));
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.ml-stile-pill--more {
+  background: rgba(255, 215, 0, 0.08);
+  color: rgba(255, 215, 0, 0.7);
+  border-color: rgba(255, 215, 0, 0.15);
+}
+
+/* ── Gurt: Dot + Text (dezent, kein buntes Badge) ───────────────────────── */
+
+.ml-gurt-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.76rem;
+  color: var(--text-2, rgba(255,255,255,0.62));
+  white-space: nowrap;
+}
+
+.ml-gurt-text--none {
+  color: var(--text-3, rgba(255,255,255,0.3));
+}
+
+.ml-gurt-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── View Toggle Button ─────────────────────────────────────────────────── */
+
+.ml-view-toggle-btn {
+  height: 34px;
+  width: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-2, rgba(255,255,255,0.6));
+  flex-shrink: 0;
+}
+
+.ml-view-toggle-btn:hover {
+  background: rgba(255, 215, 0, 0.12);
+  border-color: rgba(255, 215, 0, 0.25);
+  color: var(--primary, #ffd700);
+}
+
+/* ── Listen-Ansicht Container ───────────────────────────────────────────── */
+
+.ml-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 0.3rem;
+  margin-bottom: 0.5rem;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Listen-Zeile ───────────────────────────────────────────────────────── */
+
+.ml-list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  transition: background 0.1s ease;
+  background: rgba(255, 255, 255, 0.025);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 2px solid transparent;
+  position: relative;
+}
+
+.ml-list-row:last-child {
+  border-bottom: none;
+}
+
+.ml-list-row:hover {
+  background: rgba(255, 215, 0, 0.05);
+  border-left-color: rgba(255, 215, 0, 0.35);
+}
+
+.ml-list-row--selected {
+  background: rgba(139, 92, 246, 0.08) !important;
+  border-left-color: rgba(139, 92, 246, 0.5) !important;
+}
+
+/* Avatar Wrapper */
+.ml-list-avatar-wrap {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+/* Bild-Avatar in Listenzeile */
+.ml-list-avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Initialen-Kreis in Listenzeile — neutral, kein Regenbogen */
+.ml-list-avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255, 215, 0, 0.85);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+/* Name + Metainfo 2-zeilig */
+.ml-list-name-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+/* Name (Zeile 1) */
+.ml-list-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-1, rgba(255,255,255,0.92));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+
+/* Metainfo: DOB + Age + Email (Zeile 2) */
+.ml-list-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+.ml-list-meta span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ml-list-email {
+  color: rgba(255, 255, 255, 0.45) !important;
+  max-width: 160px;
+}
+
+/* Stile Pills Gruppe in Listenzeile */
+.ml-list-stile {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  width: 160px;
+  overflow: hidden;
+}
+
+/* Gurt Wrapper in Listenzeile */
+.ml-list-gurt {
+  flex-shrink: 0;
+  width: 115px;
+  overflow: hidden;
+}
+
+/* Pfeil-Chevron in Listenzeile */
+.ml-list-arrow {
+  flex-shrink: 0;
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.25);
+  transition: color 0.1s ease, transform 0.1s ease;
+  line-height: 1;
+  width: 14px;
+  text-align: center;
+}
+
+.ml-list-row:hover .ml-list-arrow {
+  color: rgba(255, 215, 0, 0.55);
+  transform: translateX(2px);
+}
+
+/* Responsive: Stile und Gurt bei schmalen Screens ausblenden */
+@media (max-width: 760px) {
+  .ml-list-stile { display: none; }
+}
+@media (max-width: 560px) {
+  .ml-list-gurt { display: none; }
+  .ml-list-email { display: none; }
+}
+
+/* ── Washi Theme Overrides ──────────────────────────────────────────────── */
+
+[data-theme="tda-vib"] .ml-list-container {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="tda-vib"] .ml-list-row {
+  background: rgba(0, 0, 0, 0.02);
+  border-bottom-color: rgba(0, 0, 0, 0.07);
+  border-left-color: transparent;
+}
+
+[data-theme="tda-vib"] .ml-list-row:hover {
+  background: rgba(154, 112, 0, 0.05);
+  border-left-color: rgba(154, 112, 0, 0.3);
+}
+
+[data-theme="tda-vib"] .ml-list-name {
+  color: var(--color-sumi, #1a1a2e);
+}
+
+[data-theme="tda-vib"] .ml-list-meta {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="tda-vib"] .ml-list-arrow {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="tda-vib"] .ml-list-row:hover .ml-list-arrow {
+  color: var(--color-gold-dark, #9a7000);
+}
+
+[data-theme="tda-vib"] .ml-list-avatar-circle {
+  background: rgba(154, 112, 0, 0.1);
+  border-color: rgba(154, 112, 0, 0.2);
+  color: var(--color-gold-dark, #9a7000);
+}
+
+[data-theme="tda-vib"] .ml-stile-pill {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.55);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="tda-vib"] .ml-gurt-text {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="tda-vib"] .ml-view-toggle-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="tda-vib"] .ml-view-toggle-btn:hover {
+  background: rgba(154, 112, 0, 0.07);
+  border-color: rgba(154, 112, 0, 0.2);
+  color: var(--color-gold-dark, #9a7000);
+}
+
+[data-theme="tda-vib"] .ml-member-name {
+  color: var(--color-sumi, #1a1a2e) !important;
+  -webkit-text-fill-color: var(--color-sumi, #1a1a2e) !important;
+}
+
+[data-theme="tda-vib"] .ml-avatar--initials {
+  background: rgba(154, 112, 0, 0.1);
+  border-color: rgba(154, 112, 0, 0.2);
+  color: var(--color-gold-dark, #9a7000);
+}
+
+/* ====================================================
+   NEUE FILTER: Status-Chips, Mehr-Filter, Gespeicherte Listen
+   ==================================================== */
+
+/* Mehr-Filter Toggle-Button */
+.ml-mehr-filter-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary, rgba(255,255,255,0.85));
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.ml-mehr-filter-btn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.4);
+}
+.ml-mehr-filter-btn.active {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.4);
+}
+.ml-mehr-filter-btn--has-active {
+  border-color: rgba(245,158,11,0.6);
+  color: #F59E0B;
+}
+
+/* Status-Chips Zeile */
+.ml-status-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.35rem 0;
+}
+
+.ml-status-chip {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-status-chip:hover {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+.ml-status-chip--aktiv {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+  color: #4ade80;
+  font-weight: 600;
+}
+.ml-status-chip--inaktiv {
+  background: rgba(239,68,68,0.12);
+  border-color: rgba(239,68,68,0.35);
+  color: #f87171;
+  font-weight: 600;
+}
+.ml-status-chip--alle {
+  background: rgba(148,163,184,0.12);
+  border-color: rgba(148,163,184,0.35);
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+
+/* Gespeicherte Listen */
+.ml-saved-lists-label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  margin-left: 0.4rem;
+  white-space: nowrap;
+}
+
+.ml-saved-list-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  border: 1px solid rgba(212,175,55,0.3);
+  background: rgba(212,175,55,0.08);
+  color: rgba(212,175,55,0.85);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-saved-list-chip:hover {
+  background: rgba(212,175,55,0.15);
+  border-color: rgba(212,175,55,0.5);
+}
+.ml-saved-list-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  line-height: 1;
+  color: rgba(212,175,55,0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-saved-list-delete:hover {
+  background: rgba(239,68,68,0.2);
+  color: #f87171;
+}
+
+.ml-save-list-btn {
+  padding: 0.3rem 0.65rem;
+  border-radius: 20px;
+  border: 1px dashed rgba(255,255,255,0.2);
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-save-list-btn:hover {
+  border-color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.7);
+}
+
+/* Erweiterte Filter Panel */
+.ml-mehr-filter-panel {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-top: 0.25rem;
+}
+.ml-mehr-filter-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.ml-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.ml-filter-label {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Modal: Filterliste speichern */
+.ml-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+}
+.ml-modal-box {
+  background: #1a1d2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05);
+  padding: 1.5rem;
+  width: min(420px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.ml-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, rgba(255,255,255,0.9));
+  margin: 0;
+}
+.ml-modal-desc {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
+}
+.ml-modal-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  color: var(--text-primary, rgba(255,255,255,0.9));
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.ml-modal-input:focus {
+  border-color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.09);
+}
+.ml-modal-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+.ml-modal-save-btn {
+  padding: 0.5rem 1.1rem;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.9);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-modal-save-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.2);
+}
+.ml-modal-save-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ml-modal-cancel-btn {
+  padding: 0.5rem 1.1rem;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-modal-cancel-btn:hover {
+  border-color: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.7);
+}
+
+.ml-saved-list-chip--active {
+  background: rgba(212,175,55,0.22);
+  border-color: rgba(212,175,55,0.6);
+  color: rgba(212,175,55,1);
+  font-weight: 600;
+}
+
+/* Listen-Button in Toolbar */
+.ml-listen-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary, rgba(255,255,255,0.85));
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.ml-listen-btn:hover {
+  background: rgba(255,255,255,0.12);
+  border-color: rgba(255,255,255,0.4);
+}
+.ml-listen-btn--active {
+  border-color: rgba(212,175,55,0.5);
+  background: rgba(212,175,55,0.1);
+  color: rgba(212,175,55,0.9);
+}
+
+/* Aktive Liste Indikator in Status-Row */
+.ml-active-list-indicator {
+  font-size: 0.75rem;
+  color: rgba(212,175,55,0.8);
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(212,175,55,0.3);
+  border-radius: 20px;
+  background: rgba(212,175,55,0.08);
+}
+
+/* Gespeicherte Listen Modal */
+.ml-listen-modal-box {
+  width: min(480px, 92vw) !important;
+  max-height: 80vh;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #1a1d2e !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.05) !important;
+}
+.ml-listen-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.ml-modal-close-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+  font-size: 1.1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-modal-close-btn:hover {
+  background: rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.9);
+}
+
+/* Leerer Zustand */
+.ml-listen-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  gap: 0.4rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+}
+.ml-listen-empty-icon { font-size: 2rem; }
+.ml-listen-empty p { margin: 0; font-size: 0.88rem; }
+.ml-listen-empty-hint { font-size: 0.78rem !important; color: rgba(255,255,255,0.3) !important; }
+
+/* Listen-Einträge */
+.ml-listen-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.ml-listen-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-listen-item:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.14);
+}
+.ml-listen-item--active {
+  background: rgba(212,175,55,0.1);
+  border-color: rgba(212,175,55,0.35);
+}
+.ml-listen-item--active:hover {
+  background: rgba(212,175,55,0.15);
+}
+.ml-listen-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+}
+.ml-listen-item-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ml-listen-item-check {
+  color: rgba(212,175,55,0.9);
+}
+.ml-listen-item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.ml-listen-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.5);
+}
+.ml-listen-delete-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.3);
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ml-listen-delete-btn:hover {
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+}
+
+/* Footer */
+.ml-listen-modal-footer {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 0.25rem;
+}
+.ml-listen-new-btn {
+  width: 100%;
+  padding: 0.55rem 1rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.ml-listen-new-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.85);
 }

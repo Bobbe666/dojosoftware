@@ -13,7 +13,11 @@ const MemberEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [memberData, setMemberData] = useState(null);
-  const [actionLoading, setActionLoading] = useState(null); // event_id während Anmeldung/Abmeldung
+  const [actionLoading, setActionLoading] = useState(null);
+  const [activeTab, setActiveTab] = useState('events');
+  const [tdaTurniere, setTdaTurniere] = useState([]);
+  const [meineAnmeldungen, setMeineAnmeldungen] = useState({}); // tda_turnier_id → status
+  const [turnierAnmeldeLoading, setTurnierAnmeldeLoading] = useState(null);
 
   // Bestelloptionen Modal State
   const [showBestellModal, setShowBestellModal] = useState(false);
@@ -36,10 +40,25 @@ const MemberEvents = () => {
       const memberData = await memberRes.json();
       setMemberData(memberData);
 
-      // 2. Lade Events mit Anmeldestatus + Bestelloptionen
-      const eventsRes = await fetchWithAuth(`${config.apiBaseUrl}/events/member/${memberData.mitglied_id}`);
+      // 2. Lade Events + TDA Turniere parallel
+      const [eventsRes, turniereRes, anmeldungenRes] = await Promise.all([
+        fetchWithAuth(`${config.apiBaseUrl}/events/member/${memberData.mitglied_id}`),
+        fetchWithAuth(`${config.apiBaseUrl}/tda-turniere?upcoming=true`),
+        fetchWithAuth(`${config.apiBaseUrl}/tda-turniere/meine-anmeldungen`)
+      ]);
       const eventsData = await eventsRes.json();
       setEvents(eventsData.events || []);
+
+      if (turniereRes.ok) {
+        const turniereData = await turniereRes.json();
+        setTdaTurniere(turniereData.turniere || []);
+      }
+      if (anmeldungenRes.ok) {
+        const anmeldungenData = await anmeldungenRes.json();
+        const map = {};
+        (anmeldungenData.anmeldungen || []).forEach(a => { map[a.tda_turnier_id] = a.status; });
+        setMeineAnmeldungen(map);
+      }
     } catch (error) {
       console.error('Fehler beim Laden der Events:', error);
     } finally {
@@ -122,6 +141,24 @@ const MemberEvents = () => {
     }
   };
 
+  const handleTurnierAnmelden = async (turnier) => {
+    setTurnierAnmeldeLoading(turnier.tda_turnier_id);
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/tda-turniere/${turnier.tda_turnier_id}/anmelden`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      setMeineAnmeldungen(prev => ({ ...prev, [turnier.tda_turnier_id]: 'angemeldet' }));
+    } catch (e) {
+      console.error('Fehler bei TDA-Turnier-Anmeldung:', e);
+    } finally {
+      setTurnierAnmeldeLoading(null);
+    }
+    if (turnier.tda_registration_url) {
+      window.open(turnier.tda_registration_url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const setMenge = (optionId, delta) => {
     setBestellMengen(prev => ({
       ...prev,
@@ -181,14 +218,86 @@ const MemberEvents = () => {
           </p>
         </div>
 
-        {events.length === 0 ? (
+        {/* Tab-Umschalter */}
+        <div className="me-tabs">
+          <button
+            className={`me-tab-btn${activeTab === 'events' ? ' active' : ''}`}
+            onClick={() => setActiveTab('events')}
+          >
+            📅 Dojo Events
+          </button>
+          <button
+            className={`me-tab-btn${activeTab === 'turniere' ? ' active' : ''}`}
+            onClick={() => setActiveTab('turniere')}
+          >
+            🏆 TDA Turniere
+            {Object.keys(meineAnmeldungen).length > 0 && (
+              <span className="me-tab-badge">{Object.keys(meineAnmeldungen).length}</span>
+            )}
+          </button>
+        </div>
+
+        {/* TDA Turniere Tab */}
+        {activeTab === 'turniere' && (
+          <div>
+            {tdaTurniere.length === 0 ? (
+              <div className="me-empty-state">
+                <span style={{ fontSize: '2.5rem' }}>🏆</span>
+                <p className="me-empty-text">Aktuell sind keine TDA Turniere geplant.</p>
+              </div>
+            ) : (
+              <div className="me-events-grid">
+                {tdaTurniere.map(turnier => {
+                  const anmeldStatus = meineAnmeldungen[turnier.tda_turnier_id];
+                  const isLoading = turnierAnmeldeLoading === turnier.tda_turnier_id;
+                  return (
+                    <div key={turnier.id} className={`me-event-card ${anmeldStatus ? 'me-event-card--enrolled' : 'me-event-card--default'}`}>
+                      <div className="me-event-header">
+                        <div className="me-event-type-badge" style={{ background: '#F59E0B' }}>🏆 TDA Turnier</div>
+                        {anmeldStatus && (
+                          <span className={`me-turnier-status me-turnier-status--${anmeldStatus}`}>
+                            {anmeldStatus === 'angemeldet' ? '✓ Angemeldet' : anmeldStatus === 'bestaetigt' ? '✅ Bestätigt' : '✗ Abgelehnt'}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="me-event-title">{turnier.name}</h3>
+                      <div className="me-event-details">
+                        <div className="me-event-detail"><Calendar size={14} /><span>{new Date(turnier.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span></div>
+                        {turnier.ort && <div className="me-event-detail"><MapPin size={14} /><span>{turnier.ort}</span></div>}
+                        {turnier.anmeldeschluss && <div className="me-event-detail"><Clock size={14} /><span>Anmeldeschluss: {new Date(turnier.anmeldeschluss).toLocaleDateString('de-DE')}</span></div>}
+                        {turnier.teilnahmegebuehr > 0 && <div className="me-event-detail"><span>💶</span><span>Startgebühr: {parseFloat(turnier.teilnahmegebuehr).toFixed(2)} €</span></div>}
+                      </div>
+                      {turnier.beschreibung && <p className="me-event-description">{turnier.beschreibung}</p>}
+                      <div className="me-event-actions">
+                        {anmeldStatus === 'abgelehnt' ? (
+                          <span className="me-status-text me-status-text--rejected">Anmeldung abgelehnt</span>
+                        ) : anmeldStatus ? (
+                          <button className="me-btn-enrolled" onClick={() => turnier.tda_registration_url && window.open(turnier.tda_registration_url, '_blank')}>
+                            <CheckCircle size={16} /> Zur Anmeldung
+                          </button>
+                        ) : (
+                          <button className="me-btn-register" onClick={() => handleTurnierAnmelden(turnier)} disabled={isLoading}>
+                            {isLoading ? <span className="me-btn-spinner" /> : null}
+                            {isLoading ? 'Wird angemeldet...' : 'Jetzt anmelden'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'events' && events.length === 0 ? (
           <div className="me-empty-state">
             <Calendar size={48} className="me-empty-icon" />
             <p className="me-empty-text">
               Derzeit sind keine Events geplant.
             </p>
           </div>
-        ) : (
+        ) : activeTab === 'events' ? (
           <div className="me-events-grid">
             {events.map(event => (
               <div
@@ -312,7 +421,7 @@ const MemberEvents = () => {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Bestell-Modal */}

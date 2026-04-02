@@ -15,13 +15,13 @@ const BerichteDokumente = ({ embedded = false }) => {
   // Dokumenttypen
   const documentTypes = [
     { id: 'all', label: 'Alle Dokumente', icon: <FileText size={18} /> },
-    { id: 'vertrag', label: 'Mitgliedschaftsvertrag', icon: <FileText size={18} />, color: 'var(--error)', featured: true },
-    { id: 'mitgliederliste', label: 'Mitgliederliste', icon: <Users size={18} />, color: 'var(--info)' },
-    { id: 'anwesenheit', label: 'Anwesenheitsberichte', icon: <FileCheck size={18} />, color: 'var(--success)' },
-    { id: 'beitraege', label: 'Beitragsübersicht', icon: <DollarSign size={18} />, color: 'var(--warning)' },
-    { id: 'statistiken', label: 'Statistiken', icon: <TrendingUp size={18} />, color: '#8B5CF6' },
-    { id: 'pruefungen', label: 'Prüfungsurkunden', icon: <Award size={18} />, color: 'var(--error)' },
-    { id: 'custom', label: 'Benutzerdefiniert', icon: <FileText size={18} />, color: '#6B7280' }
+    { id: 'vertrag', label: 'Mitgliedschaftsvertrag', icon: <FileText size={18} />, featured: true },
+    { id: 'mitgliederliste', label: 'Mitgliederliste', icon: <Users size={18} /> },
+    { id: 'anwesenheit', label: 'Anwesenheitsberichte', icon: <FileCheck size={18} /> },
+    { id: 'beitraege', label: 'Beitragsübersicht', icon: <DollarSign size={18} /> },
+    { id: 'statistiken', label: 'Statistiken', icon: <TrendingUp size={18} /> },
+    { id: 'pruefungen', label: 'Prüfungsurkunden', icon: <Award size={18} /> },
+    { id: 'custom', label: 'Benutzerdefiniert', icon: <FileText size={18} /> }
   ];
 
   // Dokumente von API laden
@@ -204,25 +204,19 @@ const BerichteDokumente = ({ embedded = false }) => {
 
       {/* Schnellaktionen */}
       <div className="quick-create-section">
-        <h2>⚡ Neues Dokument erstellen</h2>
+        <h2>Neues Dokument erstellen</h2>
         <div className="quick-create-grid">
           {documentTypes.filter(dt => dt.id !== 'all').map(docType => (
             <div
               key={docType.id}
               className={`quick-create-card ${docType.featured ? 'featured' : ''}`}
               onClick={() => handleCreateDocument(docType.label)}
-              style={{ '--typ-color': docType.color }}
             >
               <div className="quick-create-icon">
                 {docType.icon}
               </div>
-              <div className="quick-create-content">
-                <h3>{docType.label}</h3>
-                <button className="btn-create">
-                  <Plus size={16} />
-                  Erstellen
-                </button>
-              </div>
+              <span className="qc-label">{docType.label}</span>
+              <Plus size={14} className="qc-plus" />
             </div>
           ))}
         </div>
@@ -230,7 +224,7 @@ const BerichteDokumente = ({ embedded = false }) => {
 
       {/* Dokumenten-Filter */}
       <div className="document-filter">
-        <h2>📚 Gespeicherte Dokumente</h2>
+        <h2>Gespeicherte Dokumente</h2>
         <div className="filter-buttons">
           {documentTypes.map(type => (
             <button

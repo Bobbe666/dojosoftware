@@ -11,7 +11,7 @@
 }
 
 .pw-modal {
-  background: var(--bg-card, #1a1a2e);
+  background: var(--modal-bg-secondary, #1a1a2e);
   border: 1px solid var(--border-color, #333);
   border-radius: 16px;
   width: 100%;
@@ -137,7 +137,7 @@
 }
 
 .pw-form select option {
-  background: var(--bg-card, #1a1a2e);
+  background: var(--modal-bg-secondary, #1a1a2e);
 }
 
 .pw-form textarea {

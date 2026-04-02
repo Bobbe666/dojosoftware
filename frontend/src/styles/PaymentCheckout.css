@@ -165,7 +165,7 @@
   justify-content: space-between;
   padding-top: 0.75rem;
   margin-top: 0.5rem;
-  border-top: 2px solid rgba(255, 215, 0, 0.3);
+  border-top: 2px solid var(--primary-alpha-30);
   font-size: var(--ui-section-title);
   color: var(--text-1);
 }
@@ -219,7 +219,7 @@
 }
 
 .method-tab.active {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border-color: var(--primary);
   color: var(--primary);
 }
@@ -265,7 +265,7 @@
   justify-content: center;
   gap: var(--ui-btn-gap);
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: var(--gradient-gold);
   border: none;
   border-radius: var(--comp-radius-md);
   color: #0f172a;
@@ -277,7 +277,7 @@
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .btn-secondary {
@@ -383,7 +383,7 @@
   justify-content: center;
   gap: var(--ui-btn-gap);
   padding: 1rem 1.5rem;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  background: var(--gradient-gold);
   border: none;
   border-radius: var(--comp-radius-lg);
   color: #0f172a;
@@ -395,7 +395,7 @@
 
 .stripe-submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 16px var(--primary-alpha-40);
 }
 
 .stripe-submit-btn:disabled {
@@ -436,8 +436,8 @@
 .paypal-amount-info {
   text-align: center;
   padding: 1rem;
-  background: rgba(255, 215, 0, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-05);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
 }
 

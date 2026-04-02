@@ -98,9 +98,8 @@ const SSOLogin = () => {
             <h2>Login fehlgeschlagen</h2>
             <p>{error}</p>
             <button
-              className="btn-primary"
+              className="btn-primary u-mt-1"
               onClick={() => navigate('/login')}
-              className="u-mt-1"
             >
               Zum normalen Login
             </button>

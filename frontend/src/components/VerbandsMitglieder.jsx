@@ -6,6 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import openApiBlob from '../utils/openApiBlob';
 import {
   Building2, User, Plus, Search, Filter, RefreshCw, Check, X, Clock,
   AlertTriangle, Euro, Calendar, Mail, Phone, MapPin, CreditCard,
@@ -609,7 +610,7 @@ const VerbandsMitglieder = () => {
   // PDF Download
   const handleDownloadPdf = async (id) => {
     try {
-      window.open(`/api/verbandsmitgliedschaften/${id}/pdf`, '_blank');
+      await openApiBlob(`/api/verbandsmitgliedschaften/${id}/pdf`);
     } catch (err) {
       alert('Fehler beim Download');
     }

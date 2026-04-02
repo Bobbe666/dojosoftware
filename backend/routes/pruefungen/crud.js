@@ -9,6 +9,7 @@ const db = require('../../db');
 const logger = require('../../utils/logger');
 const UrkundePdfGenerator = require('../../utils/urkundePdfGenerator');
 const { ERROR_MESSAGES, SUCCESS_MESSAGES, HTTP_STATUS } = require('../../utils/constants');
+const { getSecureDojoId, buildDojoWhereClause } = require('../../utils/dojo-filter-helper');
 
 const pdfGenerator = new UrkundePdfGenerator();
 
@@ -60,27 +61,30 @@ router.get('/heute', (req, res) => {
   let whereClause = "WHERE p.pruefungsdatum = ? AND p.status IN ('geplant', 'durchgefuehrt', 'bestanden', 'nicht_bestanden')";
   let queryParams = [datum];
 
-  if (dojo_id && dojo_id !== 'all') {
-    whereClause += ' AND p.dojo_id = ?';
-    queryParams.push(parseInt(dojo_id));
-  }
+  // 🔒 Dojo-Filter
+  const secureDojoId = getSecureDojoId(req);
+  const dojoClause = buildDojoWhereClause(secureDojoId, 'p', queryParams);
+  if (dojoClause) whereClause += ' AND ' + dojoClause;
 
   const query = `
     SELECT
       p.pruefung_id, p.mitglied_id, p.stil_id, p.pruefungsdatum, p.pruefungszeit,
       p.pruefungsort, p.graduierung_vorher_id, p.graduierung_nachher_id,
       p.status, p.bestanden, p.punktzahl, p.max_punktzahl, p.prueferkommentar, p.dojo_id,
-      m.vorname, m.nachname, m.email, m.geburtsdatum,
+      p.is_extern, p.extern_vorname, p.extern_nachname, p.extern_verein,
+      COALESCE(m.vorname, p.extern_vorname) AS vorname,
+      COALESCE(m.nachname, p.extern_nachname) AS nachname,
+      m.email, m.geburtsdatum,
       s.name as stil_name, s.beschreibung as stil_beschreibung,
       g_vorher.name as graduierung_vorher_name, g_vorher.farbe_hex as graduierung_vorher_farbe,
       g_nachher.name as graduierung_nachher_name, g_nachher.farbe_hex as graduierung_nachher_farbe
     FROM pruefungen p
-    INNER JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+    LEFT JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
     INNER JOIN stile s ON p.stil_id = s.stil_id
     LEFT JOIN graduierungen g_vorher ON p.graduierung_vorher_id = g_vorher.graduierung_id
     LEFT JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
     ${whereClause}
-    ORDER BY p.pruefungszeit ASC, m.nachname ASC, m.vorname ASC
+    ORDER BY p.pruefungszeit ASC, COALESCE(m.nachname, p.extern_nachname) ASC, COALESCE(m.vorname, p.extern_vorname) ASC
   `;
 
   db.query(query, queryParams, (err, results) => {
@@ -103,10 +107,10 @@ router.get('/status/anstehend', (req, res) => {
   let whereClause = "WHERE p.status = 'geplant' AND p.pruefungsdatum >= CURDATE()";
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
-    whereClause += ' AND p.dojo_id = ?';
-    queryParams.push(parseInt(dojo_id));
-  }
+  // 🔒 Dojo-Filter
+  const secureDojoId = getSecureDojoId(req);
+  const dojoClause = buildDojoWhereClause(secureDojoId, 'p', queryParams);
+  if (dojoClause) whereClause += ' AND ' + dojoClause;
 
   whereClause += ' AND p.pruefungsdatum <= DATE_ADD(CURDATE(), INTERVAL ? DAY)';
   queryParams.push(parseInt(tage));
@@ -114,12 +118,14 @@ router.get('/status/anstehend', (req, res) => {
   const query = `
     SELECT
       p.*,
-      m.vorname, m.nachname, m.email,
+      COALESCE(m.vorname, p.extern_vorname) AS vorname,
+      COALESCE(m.nachname, p.extern_nachname) AS nachname,
+      m.email,
       s.name as stil_name,
       g.name as angestrebte_graduierung, g.farbe_hex, g.dan_grad,
       DATEDIFF(p.pruefungsdatum, CURDATE()) as tage_bis_pruefung
     FROM pruefungen p
-    INNER JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+    LEFT JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
     INNER JOIN stile s ON p.stil_id = s.stil_id
     INNER JOIN graduierungen g ON p.graduierung_nachher_id = g.graduierung_id
     ${whereClause}
@@ -162,12 +168,36 @@ router.get('/', (req, res) => {
   let whereConditions = [];
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  // 🔒 Dojo-Filter mit dojo_ids Unterstützung
+  const secureDojoId = getSecureDojoId(req);
+  logger.debug('🔍 GET /pruefungen', { secureDojoId });
+  if (secureDojoId) {
+    // Normaler Admin: immer eigenes Dojo
     whereConditions.push('p.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
+  } else {
+    // Super-Admin: optionale Filterung über Query-Parameter
+    const { dojo_ids } = req.query;
+    if (dojo_ids) {
+      const ids = dojo_ids.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+      if (ids.length > 0) {
+        whereConditions.push(`p.dojo_id IN (${ids.map(() => '?').join(',')})`);
+        queryParams.push(...ids);
+      }
+    } else if (dojo_id && dojo_id !== 'all') {
+      whereConditions.push('p.dojo_id = ?');
+      queryParams.push(parseInt(dojo_id));
+    } else {
+      // Kein Filter: nur verwaltete Dojos (ohne eigene Admins)
+      whereConditions.push(`p.dojo_id NOT IN (SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin'))`);
+    }
   }
 
-  if (mitglied_id) {
+  // 🔒 Member-Sicherheit: Member dürfen nur EIGENE Prüfungen sehen
+  if (req.user?.mitglied_id) {
+    whereConditions.push('p.mitglied_id = ?');
+    queryParams.push(req.user.mitglied_id);
+  } else if (mitglied_id) {
     whereConditions.push('p.mitglied_id = ?');
     queryParams.push(parseInt(mitglied_id));
   }
@@ -210,17 +240,22 @@ router.get('/', (req, res) => {
 
   const query = `
     SELECT
-      p.*, m.vorname, m.nachname, m.email,
+      p.*,
+      COALESCE(m.vorname, p.extern_vorname) AS vorname,
+      COALESCE(m.nachname, p.extern_nachname) AS nachname,
+      m.geburtsdatum, m.email,
       s.name as stil_name, d.dojoname,
       g_vorher.name as graduierung_vorher, g_vorher.farbe_hex as farbe_vorher,
       g_nachher.name as graduierung_nachher, g_nachher.farbe_hex as farbe_nachher,
-      g_nachher.dan_grad
+      g_nachher.dan_grad,
+      g_zwischen.name as graduierung_zwischen, g_zwischen.farbe_hex as farbe_zwischen
     FROM pruefungen p
-    INNER JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+    LEFT JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
     INNER JOIN stile s ON p.stil_id = s.stil_id
     INNER JOIN dojo d ON p.dojo_id = d.id
     LEFT JOIN graduierungen g_vorher ON p.graduierung_vorher_id = g_vorher.graduierung_id
-    INNER JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
+    LEFT JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
+    LEFT JOIN graduierungen g_zwischen ON p.graduierung_zwischen_id = g_zwischen.graduierung_id
     ${whereClause}
     ORDER BY p.pruefungsdatum DESC
     LIMIT ? OFFSET ?
@@ -584,6 +619,13 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
   if (!mitglied_id) {
     return res.status(HTTP_STATUS.BAD_REQUEST).json({
       error: 'Mitglied-ID erforderlich'
+    });
+  }
+
+  // 🔒 Member-Sicherheit: Token-mitglied_id muss mit Body-mitglied_id übereinstimmen
+  if (req.user?.mitglied_id && req.user.mitglied_id !== parseInt(mitglied_id)) {
+    return res.status(HTTP_STATUS.FORBIDDEN).json({
+      error: 'Keine Berechtigung für diese Prüfung'
     });
   }
 
@@ -962,4 +1004,169 @@ router.get('/:id/urkunde/download', async (req, res) => {
   }
 });
 
+// ============================================================================
+// BEWERTUNGEN (Prüfungsinhalte-Ergebnisse) - gespeichert als JSON in pruefungen.einzelbewertungen
+// ============================================================================
+
+/**
+ * GET /:id/bewertungen
+ * Lädt gespeicherte Inhalts-Bewertungen für eine Prüfung (gruppiert nach Kategorie)
+ */
+router.get('/:id/bewertungen', (req, res) => {
+  const pruefung_id = parseInt(req.params.id);
+  if (!pruefung_id || isNaN(pruefung_id)) {
+    return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+  }
+
+  db.query('SELECT einzelbewertungen FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (err, results) => {
+    if (err) {
+      logger.error('Fehler beim Laden der Bewertungen:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
+    if (results.length === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+
+    let bewertungen = {};
+    const raw = results[0].einzelbewertungen;
+    if (raw) {
+      try {
+        bewertungen = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      } catch (e) {
+        bewertungen = {};
+      }
+    }
+
+    res.json({ success: true, bewertungen });
+  });
+});
+
+/**
+ * POST /:id/bewertungen
+ * Speichert Inhalts-Bewertungen für eine Prüfung.
+ * Erwartet { bewertungen: [{ inhalt_id, bestanden, punktzahl, max_punktzahl, kommentar }] }
+ * Gruppiert nach Kategorie (Lookup via pruefungsinhalte) und speichert in einzelbewertungen.
+ */
+router.post('/:id/bewertungen', (req, res) => {
+  const pruefung_id = parseInt(req.params.id);
+  const { bewertungen, mit_gesprungenen } = req.body;
+
+  if (!pruefung_id || isNaN(pruefung_id)) {
+    return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+  }
+  if (!Array.isArray(bewertungen)) {
+    return res.status(400).json({ error: 'bewertungen muss ein Array sein' });
+  }
+
+  // Lade graduierung_nachher_id um Kategorie-Mapping zu ermöglichen
+  db.query('SELECT graduierung_nachher_id FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (err, results) => {
+    if (err) {
+      logger.error('Fehler beim Laden der Prüfung:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
+    if (results.length === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+
+    const graduierung_nachher_id = results[0].graduierung_nachher_id;
+
+    const doSave = (bewertungenGrouped) => {
+      const mitGesprungenenVal = mit_gesprungenen != null ? (mit_gesprungenen ? 1 : 0) : null;
+      const query = mitGesprungenenVal != null
+        ? 'UPDATE pruefungen SET einzelbewertungen = ?, mit_gesprungenen = ?, aktualisiert_am = NOW() WHERE pruefung_id = ?'
+        : 'UPDATE pruefungen SET einzelbewertungen = ?, aktualisiert_am = NOW() WHERE pruefung_id = ?';
+      const params = mitGesprungenenVal != null
+        ? [JSON.stringify(bewertungenGrouped), mitGesprungenenVal, pruefung_id]
+        : [JSON.stringify(bewertungenGrouped), pruefung_id];
+      db.query(query, params,
+        (updateErr) => {
+          if (updateErr) {
+            logger.error('Fehler beim Speichern der Bewertungen:', { error: updateErr });
+            return res.status(500).json({ error: 'Fehler beim Speichern', details: updateErr.message });
+          }
+          res.json({ success: true, message: 'Bewertungen gespeichert', count: bewertungen.length });
+        }
+      );
+    };
+
+    if (!graduierung_nachher_id) {
+      // Ohne Graduierung: alle unter 'allgemein' speichern
+      doSave({ allgemein: bewertungen });
+      return;
+    }
+
+    // Kategorie-Mapping aus pruefungsinhalte laden
+    db.query(
+      'SELECT inhalt_id, kategorie FROM pruefungsinhalte WHERE graduierung_id = ?',
+      [graduierung_nachher_id],
+      (inhalteErr, inhalteResults) => {
+        if (inhalteErr) {
+          // Fallback ohne Kategorie-Gruppierung
+          doSave({ allgemein: bewertungen });
+          return;
+        }
+
+        const kategorieMap = {};
+        inhalteResults.forEach(r => { kategorieMap[r.inhalt_id] = r.kategorie; });
+
+        // Gruppiere nach Kategorie
+        const bewertungenGrouped = {};
+        bewertungen.forEach(bew => {
+          const kat = bew.kat || kategorieMap[bew.inhalt_id] || 'allgemein';
+          if (!bewertungenGrouped[kat]) bewertungenGrouped[kat] = [];
+          bewertungenGrouped[kat].push(bew);
+        });
+
+        doSave(bewertungenGrouped);
+      }
+    );
+  });
+});
+
 module.exports = router;
+
+// PUT /:id/graduierung - Aktualisiert die Ziel-Graduierung einer geplanten Prüfung
+router.put('/:id/graduierung', (req, res) => {
+  const pruefung_id = parseInt(req.params.id);
+  const { graduierung_nachher_id, graduierung_zwischen_id } = req.body;
+
+  if (!pruefung_id || isNaN(pruefung_id)) {
+    return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+  }
+
+  if (!graduierung_nachher_id) {
+    return res.status(400).json({ error: 'graduierung_nachher_id ist erforderlich' });
+  }
+
+  // Prüfe ob die Prüfung existiert und im Status 'geplant' ist
+  db.query('SELECT * FROM pruefungen WHERE pruefung_id = ?', [pruefung_id], (err, results) => {
+    if (err) {
+      logger.error('Fehler beim Prüfen der Prüfung:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+    }
+
+    const pruefung = results[0];
+    const zwischenId = graduierung_zwischen_id !== undefined ? (graduierung_zwischen_id ? parseInt(graduierung_zwischen_id) : null) : pruefung.graduierung_zwischen_id;
+
+    // Ziel-Graduierung nur bei geplanten Prüfungen änderbar;
+    // Zwischengurt (Doppelprüfung) ist auch nach der Prüfung setzbar (für Urkundendruck)
+    const nurZwischenUpdate = zwischenId !== pruefung.graduierung_zwischen_id &&
+      graduierung_nachher_id === pruefung.graduierung_nachher_id;
+
+    if (pruefung.status !== 'geplant' && !nurZwischenUpdate) {
+      return res.status(400).json({ error: 'Nur geplante Prüfungen können geändert werden' });
+    }
+
+    // Update: Ziel-Graduierung + optionaler Zwischengurt (Doppelprüfung)
+    const updateQuery = 'UPDATE pruefungen SET graduierung_nachher_id = ?, graduierung_zwischen_id = ?, aktualisiert_am = NOW() WHERE pruefung_id = ?';
+    db.query(updateQuery, [graduierung_nachher_id, zwischenId, pruefung_id], (updateErr) => {
+      if (updateErr) {
+        logger.error('Fehler beim Aktualisieren der Graduierung:', { error: updateErr });
+        return res.status(500).json({ error: 'Fehler beim Aktualisieren', details: updateErr.message });
+      }
+
+      logger.info('Graduierung aktualisiert', { pruefung_id, graduierung_nachher_id, graduierung_zwischen_id: zwischenId });
+      res.json({ success: true, message: 'Graduierung erfolgreich aktualisiert' });
+    });
+  });
+});

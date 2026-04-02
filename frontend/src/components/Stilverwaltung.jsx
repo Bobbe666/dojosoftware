@@ -8,9 +8,11 @@ DEPENDENCIES: npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 ================================================================================
 */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useDojoContext } from '../context/DojoContext.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart, Bar, PieChart, Pie, Cell,
@@ -43,14 +45,101 @@ import '../styles/Statistiken.css';          // Statistiken Charts und Visualisi
 import '../styles/StilVerwaltungOverrides.css';
 import GurtStatistikItem from './GurtStatistikDropdown.jsx';  // Gurt-Statistik mit Dropdown // MUST be last - overrides !important rules
 
+/**
+ * SortableKatItem – außerhalb StilVerwaltung definiert damit React kein Re-Mount erzwingt
+ */
+const SortableKatItem = ({ kat, editId, editLabel, editIcon, saving,
+  setEditId, setEditLabel, setEditIcon, onSaveEdit, onDelete,
+  graduierungen, gradSelectId, setGradSelectId, onToggleGraduierung }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: kat.kategorie_id
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 100 : 'auto',
+    position: 'relative'
+  };
+  const isGradExpanded = gradSelectId === kat.kategorie_id;
+  const aktiveIds = kat.aktive_graduierung_ids; // null = alle; Array = nur diese
+  const inaktivCount = aktiveIds ? graduierungen.filter(g => !aktiveIds.includes(g.graduierung_id)).length : 0;
+
+  return (
+    <div ref={setNodeRef} style={style} className={`pi-kat-item-wrap${isDragging ? ' pi-kat-item--dragging' : ''}`}>
+      <div className="pi-kat-item">
+        {editId === kat.kategorie_id ? (
+          <div className="pi-kat-edit-row">
+            <input type="text" value={editIcon} onChange={e => setEditIcon(e.target.value)}
+              maxLength={4} className="pi-kat-icon-input" placeholder="Icon" />
+            <input type="text" value={editLabel} onChange={e => setEditLabel(e.target.value)}
+              className="pi-kat-label-input" placeholder="Bezeichnung" autoFocus
+              onKeyDown={e => { if (e.key === 'Enter') onSaveEdit(kat.kategorie_id); if (e.key === 'Escape') setEditId(null); }} />
+            <button className="btn btn-primary btn-sm" onClick={() => onSaveEdit(kat.kategorie_id)} disabled={saving || !editLabel.trim()}>✓</button>
+            <button className="btn btn-neutral btn-sm" onClick={() => setEditId(null)}>✕</button>
+          </div>
+        ) : (
+          <>
+            <span className="pi-kat-drag-handle" {...attributes} {...listeners} title="Verschieben">⠿</span>
+            <span className="pi-kat-icon">{kat.icon}</span>
+            <span className="pi-kat-label">{kat.label}</span>
+            <div className="pi-kat-actions">
+              <button
+                className={`pi-kat-grad-btn${isGradExpanded ? ' active' : ''}${inaktivCount > 0 ? ' has-inactive' : ''}`}
+                onClick={() => setGradSelectId(isGradExpanded ? null : kat.kategorie_id)}
+                title="Gilt für Graduierungen"
+              >
+                🎖️ {aktiveIds ? `${aktiveIds.length}/${graduierungen.length}` : 'Alle'}
+              </button>
+              <button className="pi-kat-edit-btn"
+                onClick={() => { setEditId(kat.kategorie_id); setEditLabel(kat.label); setEditIcon(kat.icon); }}
+                title="Bearbeiten">✏️</button>
+              <button className="pi-kat-del-btn" onClick={() => onDelete(kat)} disabled={saving} title="Löschen">🗑️</button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {isGradExpanded && (
+        <div className="pi-kat-grad-select">
+          <div className="pi-kat-grad-hint">Kategorie gilt für diese Graduierungen:</div>
+          <div className="pi-kat-grad-list">
+            {graduierungen.map(g => {
+              const isActive = aktiveIds === null || aktiveIds.includes(g.graduierung_id);
+              return (
+                <label key={g.graduierung_id} className="pi-kat-grad-item">
+                  <input
+                    type="checkbox"
+                    checked={isActive}
+                    onChange={() => onToggleGraduierung(kat, g.graduierung_id)}
+                  />
+                  <span>{g.name}</span>
+                </label>
+              );
+            })}
+          </div>
+          <button className="pi-kat-grad-all-btn"
+            onClick={() => onToggleGraduierung(kat, null)}
+            title="Alle aktivieren"
+          >Alle aktivieren</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const StilVerwaltung = () => {
   const navigate = useNavigate();
   const { stilId } = useParams();
-  
+  const { token, user } = useAuth();
+  const { activeDojo } = useDojoContext();
+  // Effektive Dojo-ID: für Super-Admin aus activeDojo, sonst aus JWT
+  const effectiveDojoId = activeDojo?.id || user?.dojo_id || null;
+
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
-  
+
   // Hauptdaten States
   const [stile, setStile] = useState([]);                    // Array aller Stile
   const [currentStil, setCurrentStil] = useState(null);      // Aktuell gewählter Stil
@@ -59,6 +148,20 @@ const StilVerwaltung = () => {
   const [success, setSuccess] = useState('');                // Erfolgsmeldungen
   const [activeTab, setActiveTab] = useState('allgemein');   // Aktiver Tab in Detail-Ansicht
   const [mitglieder, setMitglieder] = useState([]);          // Alle Mitglieder für Schüler-Zählung
+
+  // Stilmitglieder States
+  const [stilMitglieder, setStilMitglieder] = useState([]);
+  const [alleDojMitglieder, setAlleDojMitglieder] = useState([]);
+  const [stilMitgliederLoading, setStilMitgliederLoading] = useState(false);
+  const [stilMitgliederSearch, setStilMitgliederSearch] = useState('');
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+  const [memberPickerSearch, setMemberPickerSearch] = useState('');
+  const memberPickerSearchRef = useRef(null);
+  // Bulk-Gürtelzuweisung
+  const [bulkGradMode, setBulkGradMode] = useState(false);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState([]);
+  const [bulkTargetGradId, setBulkTargetGradId] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   // Statistiken States
   const [statistiken, setStatistiken] = useState(null);      // Stil-Statistiken (Schüler-Verteilung, etc.)
@@ -86,6 +189,15 @@ const StilVerwaltung = () => {
   const [selectedKategorie, setSelectedKategorie] = useState('');                // Kategorie (Grundtechniken, Kata, etc.)
   const [showPruefungsinhalteModal, setShowPruefungsinhalteModal] = useState(false); // Modal zum Anzeigen der Prüfungsinhalte
   const [viewingGraduierung, setViewingGraduierung] = useState(null);            // Graduierung deren Inhalte angezeigt werden
+
+  // Prüfungsinhalte Kategorien States
+  const [pruefungsinhalteSubTab, setPruefungsinhalteSubTab] = useState('inhalte');
+  const [stilKategorien, setStilKategorien] = useState([]);
+  const [kategorienLoading, setKategorienLoading] = useState(false);
+  const [katGradSelectId, setKatGradSelectId] = useState(null); // geöffnete Graduierungsauswahl
+  // "Inhalte übernehmen aus..."-UI
+  const [copyFromGradId, setCopyFromGradId] = useState(null);   // welche Grad zeigt das Copy-Panel
+  const [copySourceId, setCopySourceId] = useState('');          // ausgewählte Quell-Grad
 
 
   // Stil-Erstellung Form Data - Erweitert
@@ -450,6 +562,25 @@ const StilVerwaltung = () => {
   };
 
   /**
+   * Lädt die Prüfungsinhalte-Kategorien für einen Stil
+   */
+  const fetchStilKategorien = useCallback(async (stilId) => {
+    if (!stilId) return;
+    setKategorienLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien`);
+      if (res.ok) {
+        const data = await res.json();
+        setStilKategorien(data.kategorien || []);
+      }
+    } catch (e) {
+      console.error('Fehler beim Laden der Kategorien:', e);
+    } finally {
+      setKategorienLoading(false);
+    }
+  }, []);
+
+  /**
    * Lädt einen spezifischen Stil mit allen Details
    * @param {number} id - Stil-ID
    */
@@ -462,12 +593,16 @@ const StilVerwaltung = () => {
       if (response.ok) {
         const data = await response.json();
         setCurrentStil(data);
+        setPruefungsinhalteSubTab('inhalte');
+        fetchStilKategorien(id);
         console.log('✅ Stil geladen:', data.name);
       } else {
         // Fallback: Suche im lokalen Array
         const stil = stile.find(s => s.stil_id === parseInt(id));
         if (stil) {
           setCurrentStil(stil);
+          setPruefungsinhalteSubTab('inhalte');
+          fetchStilKategorien(id);
         } else {
           setError('Stil nicht gefunden');
         }
@@ -563,17 +698,45 @@ const StilVerwaltung = () => {
    */
   const deleteStil = async (stilId) => {
     if (!stilId) return;
-    
+
     // Finde den Stil
     const stil = stile.find(s => s.stil_id === stilId);
     if (!stil) return;
-    
-    // Prüfe ob Stil Daten hat
-    const hasData = (stil.anzahl_mitglieder && stil.anzahl_mitglieder > 0) || 
+
+    // Bereits inaktiver Stil → direkt löschen anbieten
+    if (!stil.aktiv) {
+      const confirmDelete = confirm(
+        `Stil "${stil.name}" ist bereits inaktiv.\nMöchten Sie ihn endgültig löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden!`
+      );
+      if (!confirmDelete) return;
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/stile/${stilId}`, { method: 'DELETE' });
+        if (response.ok) {
+          setStile(prev => prev.filter(s => s.stil_id !== stilId));
+          setSuccess(`Stil "${stil.name}" wurde gelöscht.`);
+          setTimeout(() => setSuccess(''), 3000);
+        } else if (response.status === 409) {
+          const errorData = await response.json().catch(() => ({}));
+          setError(`Stil kann nicht gelöscht werden: ${errorData.error || 'Mitglieder noch zugeordnet'}`);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          setError(errorData.error || 'Fehler beim Löschen');
+        }
+      } catch (err) {
+        setError('Stil konnte nicht gelöscht werden');
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Prüfe ob aktiver Stil Daten hat
+    const hasData = (stil.anzahl_mitglieder && stil.anzahl_mitglieder > 0) ||
                    (stil.graduierungen && stil.graduierungen.length > 0);
-    
+
     if (hasData) {
-      // Stil hat Daten - nur Deaktivierung möglich
+      // Aktiver Stil hat Daten - nur Deaktivierung möglich
       const confirmDeactivate = confirm(
         `Der Stil "${stil.name}" hat bereits Daten (${stil.anzahl_mitglieder || 0} Schüler, ${stil.graduierungen?.length || 0} Graduierungen).\n\n` +
         `Löschen ist nicht möglich. Möchten Sie den Stil stattdessen deaktivieren?\n\n` +
@@ -884,7 +1047,7 @@ const StilVerwaltung = () => {
   /**
    * Speichert einen Prüfungsinhalt (neu oder bearbeitet)
    */
-  const handleSavePruefungsinhalt = async (inhaltText) => {
+  const handleSavePruefungsinhalt = async (inhaltText, beschreibungText = '') => {
     if (!selectedGraduierung || !selectedKategorie || !inhaltText.trim()) {
       setError('Bitte alle Felder ausfüllen');
       return;
@@ -904,12 +1067,13 @@ const StilVerwaltung = () => {
           item.id === editingPruefungsinhalt.id
         );
         updatedInhalte = [...kategorieInhalte];
-        updatedInhalte[index] = { ...editingPruefungsinhalt, inhalt: inhaltText };
+        updatedInhalte[index] = { ...editingPruefungsinhalt, inhalt: inhaltText, beschreibung: beschreibungText };
       } else {
         // Neu hinzufügen
         const newInhalt = {
           id: Date.now(), // Temporäre ID
           inhalt: inhaltText,
+          beschreibung: beschreibungText,
           reihenfolge: kategorieInhalte.length
         };
         updatedInhalte = [...kategorieInhalte, newInhalt];
@@ -951,6 +1115,77 @@ const StilVerwaltung = () => {
     } catch (error) {
       console.error('Fehler beim Speichern des Prüfungsinhalts:', error);
       setError('Prüfungsinhalt konnte nicht gespeichert werden');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Kopiert alle Inhalte einer Quell-Graduierung in eine Ziel-Graduierung (Merge, keine Duplikate)
+   */
+  const handleCopyFromGrad = async (targetGrad, sourceGradIdStr) => {
+    const sourceGradId = parseInt(sourceGradIdStr);
+    if (!sourceGradId || !currentStil) return;
+
+    const sourceGrad = currentStil.graduierungen.find(g => g.graduierung_id === sourceGradId);
+    if (!sourceGrad) return;
+
+    const sourceInhalte = sourceGrad.pruefungsinhalte || {};
+    const targetInhalte = { ...(targetGrad.pruefungsinhalte || {}) };
+
+    let addedCount = 0;
+    Object.entries(sourceInhalte).forEach(([kategorie, items]) => {
+      if (!Array.isArray(items)) return;
+      if (!targetInhalte[kategorie]) targetInhalte[kategorie] = [];
+      const existingTexts = targetInhalte[kategorie].map(
+        i => (i.inhalt || i.titel || '').toLowerCase().trim()
+      );
+      items.forEach(item => {
+        const text = (item.inhalt || item.titel || '').toLowerCase().trim();
+        if (text && !existingTexts.includes(text)) {
+          targetInhalte[kategorie].push({
+            ...item,
+            id: Date.now() + Math.floor(Math.random() * 10000)
+          });
+          addedCount++;
+        }
+      });
+    });
+
+    if (addedCount === 0) {
+      setSuccess(`Alle Inhalte aus "${sourceGrad.name}" sind bereits vorhanden`);
+      setCopyFromGradId(null);
+      setCopySourceId('');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${API_BASE}/stile/${currentStil.stil_id}/graduierungen/${targetGrad.graduierung_id}/pruefungsinhalte`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pruefungsinhalte: targetInhalte })
+        }
+      );
+
+      if (!response.ok) throw new Error('Fehler beim Speichern');
+
+      setCurrentStil(prev => ({
+        ...prev,
+        graduierungen: prev.graduierungen.map(g =>
+          g.graduierung_id === targetGrad.graduierung_id
+            ? { ...g, pruefungsinhalte: targetInhalte }
+            : g
+        )
+      }));
+      setSuccess(`${addedCount} Inhalt${addedCount !== 1 ? 'e' : ''} aus "${sourceGrad.name}" übernommen`);
+      setCopyFromGradId(null);
+      setCopySourceId('');
+    } catch (err) {
+      console.error('Fehler beim Übernehmen der Inhalte:', err);
+      setError('Inhalte konnten nicht übernommen werden');
     } finally {
       setLoading(false);
     }
@@ -1096,6 +1331,14 @@ const StilVerwaltung = () => {
     }
   }, [stilId, stile]);
 
+  // Lade Stilmitglieder wenn Tab aktiv + Stil geladen
+  useEffect(() => {
+    if (activeTab === 'stilmitglieder' && currentStil) {
+      loadStilMitglieder();
+      loadAlleDojMitglieder();
+    }
+  }, [activeTab, currentStil]);
+
   // Bereinige Nachrichten nach 5 Sekunden
   useEffect(() => {
     if (error || success) {
@@ -1211,6 +1454,118 @@ const StilVerwaltung = () => {
       setError(err.message || 'Fehler beim Verschieben des Stils');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // STILMITGLIEDER FUNKTIONEN
+  // ============================================================================
+
+  const loadStilMitglieder = useCallback(async () => {
+    if (!currentStil) return;
+    setStilMitgliederLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
+      const res = await fetch(
+        `${API_BASE}/mitglieder/zuweisung/stil/${currentStil.stil_id}?${params}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (data.success) setStilMitglieder(data.mitglieder || []);
+    } catch (e) {
+      console.error('Stilmitglieder laden Fehler:', e);
+    } finally {
+      setStilMitgliederLoading(false);
+    }
+  }, [currentStil, API_BASE, token, effectiveDojoId]);
+
+  const loadAlleDojMitglieder = useCallback(async () => {
+    if (!effectiveDojoId) return; // Ohne Dojo-ID keine Mitglieder laden
+    try {
+      const res = await fetch(`${API_BASE}/mitglieder?dojo_id=${effectiveDojoId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data.mitglieder || []);
+      setAlleDojMitglieder(list);
+    } catch (e) {
+      console.error('Dojo-Mitglieder laden Fehler:', e);
+    }
+  }, [API_BASE, token, effectiveDojoId]);
+
+  const addMemberToStil = async (mitgliedId) => {
+    try {
+      const params = new URLSearchParams();
+      if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
+      const res = await fetch(`${API_BASE}/mitglieder/stil/${currentStil.stil_id}/assign?${params}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ mitglied_id: mitgliedId })
+      });
+      const data = await res.json();
+      if (data.success || data.message === 'Bereits zugewiesen') {
+        // Mitglied sofort aus Picker-Liste entfernen
+        setAlleDojMitglieder(prev => prev.filter(m => m.mitglied_id !== mitgliedId));
+        // Stil-Mitgliederliste aktualisieren
+        await loadStilMitglieder();
+        // Modal bleibt offen
+      }
+    } catch (e) {
+      setError('Fehler beim Zuweisen');
+    }
+  };
+
+  const removeMemberFromStil = async (mitgliedId, name) => {
+    if (!window.confirm(`${name} aus diesem Stil entfernen?`)) return;
+    try {
+      const params = new URLSearchParams();
+      if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
+      const res = await fetch(
+        `${API_BASE}/mitglieder/stil/${currentStil.stil_id}/remove/${mitgliedId}?${params}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setStilMitglieder(prev => prev.filter(m => m.mitglied_id !== mitgliedId));
+        setSuccess('Mitglied entfernt!');
+        setTimeout(() => setSuccess(''), 2000);
+      }
+    } catch (e) {
+      setError('Fehler beim Entfernen');
+    }
+  };
+
+  const handleBulkGraduierung = async () => {
+    if (!bulkTargetGradId || bulkSelectedIds.length === 0 || !currentStil) return;
+    setBulkSaving(true);
+    try {
+      const assignments = bulkSelectedIds.map(id => ({
+        mitglied_id: id,
+        graduierung_id: parseInt(bulkTargetGradId)
+      }));
+      const params = new URLSearchParams();
+      if (effectiveDojoId) params.set('dojo_id', effectiveDojoId);
+      const res = await fetch(`${API_BASE}/mitglieder/bulk-graduierung?${params}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ stil_id: currentStil.stil_id, assignments })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess(`${bulkSelectedIds.length} Mitglied${bulkSelectedIds.length !== 1 ? 'er' : ''} zugewiesen`);
+        setBulkGradMode(false);
+        setBulkSelectedIds([]);
+        setBulkTargetGradId('');
+        await loadStilMitglieder();
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(data.error || 'Fehler bei der Zuweisung');
+      }
+    } catch (e) {
+      setError('Netzwerkfehler');
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -1333,9 +1688,7 @@ const StilVerwaltung = () => {
     return (
       <motion.div
         className={`stil-card ${!stil.aktiv ? 'inactive' : ''}`}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        title={`${stil.name} - ${stil.beschreibung}${!stil.aktiv ? ' (Inaktiv)' : ''}`}
+        title={`${stil.name}${!stil.aktiv ? ' (Inaktiv)' : ''}`}
       >
         <div className="stil-card-content" onClick={() => navigate(`/dashboard/stile/${stil.stil_id}`)}>
           <div className="stil-card-header">
@@ -1422,7 +1775,7 @@ const StilVerwaltung = () => {
           {stil.aktiv && (
             <>
               <button
-                className="btn btn-info btn-small move-btn"
+                className="btn btn-neutral btn-sm move-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   onMoveUp && onMoveUp(stil);
@@ -1433,7 +1786,7 @@ const StilVerwaltung = () => {
                 ↑
               </button>
               <button
-                className="btn btn-info btn-small move-btn"
+                className="btn btn-neutral btn-sm move-btn"
                 onClick={(e) => {
                   e.stopPropagation();
                   onMoveDown && onMoveDown(stil);
@@ -1651,7 +2004,7 @@ const StilVerwaltung = () => {
                       .map(guertel => (
                         <div
                           key={guertel.name}
-                          className={`belt-option ${newGraduierung.name === guertel.name ? 'selected' : ''}`}
+                          className={`belt-option sv-belt-option-card ${newGraduierung.name === guertel.name ? 'selected sv-belt-option-card--selected' : ''}`}
                           onClick={() => {
                             // Automatisch passende Wartezeit aus Prüfungseinstellungen vorschlagen
                             let suggestedWaitTime = 3; // Default
@@ -1674,7 +2027,6 @@ const StilVerwaltung = () => {
                             });
                           }}
                           title={guertel.name}
-                          className={`sv-belt-option-card ${newGraduierung.name === guertel.name ? 'sv-belt-option-card--selected' : ''}`}
                         >
                           <BeltPreview
                             primaer={guertel.primaer}
@@ -2181,20 +2533,25 @@ const StilVerwaltung = () => {
     const [inhaltText, setInhaltText] = React.useState(
       editingPruefungsinhalt?.inhalt || ''
     );
+    const [beschreibungText, setBeschreibungText] = React.useState(
+      editingPruefungsinhalt?.beschreibung || ''
+    );
 
     React.useEffect(() => {
       setInhaltText(editingPruefungsinhalt?.inhalt || '');
+      setBeschreibungText(editingPruefungsinhalt?.beschreibung || '');
     }, [editingPruefungsinhalt]);
 
     const handleSubmit = () => {
-      handleSavePruefungsinhalt(inhaltText);
+      handleSavePruefungsinhalt(inhaltText, beschreibungText);
     };
 
     const kategorieLabels = {
-      'grundtechniken': 'Grundtechniken',
-      'kata': 'Kata / Formen',
-      'kumite': 'Kumite / Sparring',
-      'theorie': 'Theorie'
+      'kondition': '💪 Kondition / Warm Up',
+      'grundtechniken': '🥋 Grundtechniken',
+      'kata': '🎭 Kata / Kombinationen',
+      'kumite': '⚔️ Kumite / Sparring',
+      'theorie': '📚 Theorie'
     };
 
     if (!showPruefungsinhaltForm) return null;
@@ -2259,6 +2616,17 @@ const StilVerwaltung = () => {
                 rows="4"
                 className="sv-textarea"
               />
+
+              <label className="sv-label-primary" style={{ marginTop: '12px', display: 'block' }}>
+                Zusatzinfo / Beschreibung: <small style={{ fontWeight: 'normal', opacity: 0.7 }}>(optional)</small>
+              </label>
+              <textarea
+                value={beschreibungText}
+                onChange={(e) => setBeschreibungText(e.target.value)}
+                placeholder="z.B. Ausführungshinweise, Details, Bewertungskriterien..."
+                rows="2"
+                className="sv-textarea"
+              />
             </div>
 
             <div className="sv-modal-footer">
@@ -2293,12 +2661,15 @@ const StilVerwaltung = () => {
    * Modal zum Anzeigen der Prüfungsinhalte einer Graduierung
    */
   const PruefungsinhalteViewModal = () => {
-    const kategorien = [
-      { key: 'grundtechniken', label: 'Grundtechniken', icon: '🥋' },
-      { key: 'kata', label: 'Kata / Formen', icon: '🎭' },
-      { key: 'kumite', label: 'Kumite / Sparring', icon: '⚔️' },
-      { key: 'theorie', label: 'Theorie', icon: '📚' }
-    ];
+    const kategorien = stilKategorien.length > 0
+      ? stilKategorien.map(k => ({ key: k.kategorie_key, label: k.label, icon: k.icon }))
+      : [
+          { key: 'kondition', label: 'Kondition / Warm Up', icon: '💪' },
+          { key: 'grundtechniken', label: 'Grundtechniken', icon: '🥋' },
+          { key: 'kata', label: 'Kata / Kombinationen', icon: '🎭' },
+          { key: 'kumite', label: 'Kumite / Sparring', icon: '⚔️' },
+          { key: 'theorie', label: 'Theorie', icon: '📚' }
+        ];
 
     if (!showPruefungsinhalteModal || !viewingGraduierung) return null;
 
@@ -2404,32 +2775,15 @@ const StilVerwaltung = () => {
    * PruefungsinhaltManager - Verwaltet Prüfungsinhalte für Graduierungen
    */
   const PruefungsinhaltManager = () => {
-    const kategorien = [
-      {
-        key: 'grundtechniken',
-        label: 'Grundtechniken',
-        icon: '🥋',
-        beispiele: ['Grundstellungen', 'Fußarbeit', 'Hand- und Fußtechniken']
-      },
-      {
-        key: 'kata',
-        label: 'Kata / Formen',
-        icon: '🎭',
-        beispiele: ['Heian Shodan', 'Heian Nidan']
-      },
-      {
-        key: 'kumite',
-        label: 'Kumite / Sparring',
-        icon: '⚔️',
-        beispiele: ['Grundkumite', 'Situative Techniken']
-      },
-      {
-        key: 'theorie',
-        label: 'Theorie',
-        icon: '📚',
-        beispiele: ['Dojo-Kun (Verhaltensregeln)', 'Grundbegriffe', 'Geschichte']
-      }
-    ];
+    const kategorien = stilKategorien.length > 0
+      ? stilKategorien.map(k => ({ key: k.kategorie_key, label: k.label, icon: k.icon, beispiele: [], aktive_graduierung_ids: k.aktive_graduierung_ids ?? null }))
+      : [
+          { key: 'kondition',      label: 'Kondition / Warm Up',  icon: '💪', beispiele: ['Warm Up', 'Kraft: Liegestütze', 'Kicks in Zeitlupe'] },
+          { key: 'grundtechniken', label: 'Grundtechniken',        icon: '🥋', beispiele: ['Kampfstellung', 'Handtechniken', 'Fußtechniken', 'Abwehr'] },
+          { key: 'kata',           label: 'Kata / Kombinationen',  icon: '🎭', beispiele: ['Kombinationen Handtechniken', 'Kombination Hand/Fuß'] },
+          { key: 'kumite',         label: 'Kumite / Sparring',     icon: '⚔️', beispiele: ['Sandsack/Pratzen', 'Sparring Boxen', 'Pointfighting'] },
+          { key: 'theorie',        label: 'Theorie',               icon: '📚', beispiele: ['Regelkunde', 'Notwehrparagraph', 'Erste Hilfe'] }
+        ];
 
     // Toggle-Funktion für Graduierungen
     const toggleGraduierung = (graduierungId) => {
@@ -2476,8 +2830,54 @@ const StilVerwaltung = () => {
                   </div>
 
                   {isExpanded && (
+                    <>
+                    {/* Copy-from-Graduierung Panel */}
+                    {copyFromGradId !== grad.graduierung_id ? (
+                      <div className="sv-pruef-copy-bar">
+                        <button
+                          className="sv-pruef-copy-trigger"
+                          onClick={e => { e.stopPropagation(); setCopyFromGradId(grad.graduierung_id); setCopySourceId(''); }}
+                        >
+                          📋 Inhalte übernehmen aus…
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="sv-pruef-copy-panel">
+                        <span className="sv-pruef-copy-label">📋 Inhalte aus:</span>
+                        <select
+                          className="sv-pruef-copy-select"
+                          value={copySourceId}
+                          onChange={e => setCopySourceId(e.target.value)}
+                        >
+                          <option value="">Graduierung wählen…</option>
+                          {(currentStil?.graduierungen || [])
+                            .filter(g => g.graduierung_id !== grad.graduierung_id)
+                            .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+                            .map(g => (
+                              <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>
+                            ))}
+                        </select>
+                        <button
+                          className="sv-pruef-copy-confirm"
+                          onClick={() => handleCopyFromGrad(grad, copySourceId)}
+                          disabled={!copySourceId || loading}
+                        >
+                          ✓ Übernehmen
+                        </button>
+                        <button
+                          className="sv-pruef-copy-cancel"
+                          onClick={() => { setCopyFromGradId(null); setCopySourceId(''); }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+
                     <div className="pruefungsinhalt-categories">
-                    {kategorien.map(kategorie => {
+                    {kategorien.filter(kat => {
+                      if (!kat.aktive_graduierung_ids) return true; // null = alle aktiv
+                      return kat.aktive_graduierung_ids.includes(grad.graduierung_id);
+                    }).map(kategorie => {
                       const inhalte = pruefungsinhalte[kategorie.key] || [];
 
                       return (
@@ -2489,7 +2889,12 @@ const StilVerwaltung = () => {
                                 .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
                                 .map(inhalt => (
                                   <li key={inhalt.id}>
-                                    <span>{inhalt.inhalt}</span>
+                                    <div className="sv-pruef-inhalt-text">
+                                      <span>{inhalt.inhalt || inhalt.titel}</span>
+                                      {(inhalt.beschreibung) && (
+                                        <span className="sv-pruef-beschreibung">{inhalt.beschreibung}</span>
+                                      )}
+                                    </div>
                                     <div className="inhalt-actions">
                                       <button
                                         className="sub-tab-btn sv-pruef-action-btn"
@@ -2508,10 +2913,12 @@ const StilVerwaltung = () => {
                                     </div>
                                   </li>
                                 ))
-                            ) : (
-                              kategorie.beispiele.map((beispiel, index) => (
+                            ) : (kategorie.beispiele || []).length > 0 ? (
+                              (kategorie.beispiele || []).map((beispiel, index) => (
                                 <li key={`beispiel-${index}`}>{beispiel}</li>
                               ))
+                            ) : (
+                              <li className="sv-pruef-empty-hint">Noch keine Inhalte — klicke „+ Hinzufügen"</li>
                             )}
                           </ul>
                           <div className="sub-tabs sv-sub-tabs-mt">
@@ -2540,6 +2947,7 @@ const StilVerwaltung = () => {
                       );
                     })}
                     </div>
+                    </>
                   )}
                 </div>
               );
@@ -2555,10 +2963,200 @@ const StilVerwaltung = () => {
     );
   };
 
+  /**
+   * KategorienEinstellungen - Kategorien für Prüfungsinhalte eines Stils verwalten
+   */
+  const KategorienEinstellungen = () => {
+    const [newLabel, setNewLabel] = useState('');
+    const [newIcon, setNewIcon] = useState('📋');
+    const [editId, setEditId] = useState(null);
+    const [editLabel, setEditLabel] = useState('');
+    const [editIcon, setEditIcon] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [localError, setLocalError] = useState('');
+    // gradSelectId lebt im äußeren State (katGradSelectId) um Remount-Verlust zu vermeiden
+
+    const stilId = currentStil?.stil_id;
+    const graduierungen = (currentStil?.graduierungen || [])
+      .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+
+    const katSensors = useSensors(
+      useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+      useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } })
+    );
+
+    const handleAdd = async () => {
+      if (!newLabel.trim() || !stilId) return;
+      setSaving(true);
+      setLocalError('');
+      try {
+        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label: newLabel.trim(), icon: newIcon || '📋' })
+        });
+        const data = await res.json();
+        if (!res.ok) { setLocalError(data.error || 'Fehler'); }
+        else { setNewLabel(''); setNewIcon('📋'); fetchStilKategorien(stilId); }
+      } catch (e) { setLocalError('Netzwerkfehler'); }
+      setSaving(false);
+    };
+
+    const handleSaveEdit = async (katId) => {
+      if (!editLabel.trim() || !stilId) return;
+      setSaving(true);
+      setLocalError('');
+      try {
+        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/${katId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label: editLabel.trim(), icon: editIcon || '📋' })
+        });
+        const data = await res.json();
+        if (!res.ok) { setLocalError(data.error || 'Fehler'); }
+        else { setEditId(null); fetchStilKategorien(stilId); }
+      } catch (e) { setLocalError('Netzwerkfehler'); }
+      setSaving(false);
+    };
+
+    const handleDelete = async (kat) => {
+      if (!window.confirm(`Kategorie „${kat.label}" wirklich löschen?`)) return;
+      setSaving(true);
+      setLocalError('');
+      try {
+        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/${kat.kategorie_id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) { setLocalError(data.error || 'Fehler'); }
+        else { fetchStilKategorien(stilId); }
+      } catch (e) { setLocalError('Netzwerkfehler'); }
+      setSaving(false);
+    };
+
+    const handleToggleGraduierung = async (kat, graduierungId) => {
+      // null = alle aktivieren
+      let neueIds;
+      if (graduierungId === null) {
+        neueIds = null; // alle aktiv
+      } else {
+        const aktuelleIds = kat.aktive_graduierung_ids
+          ? [...kat.aktive_graduierung_ids]
+          : graduierungen.map(g => g.graduierung_id);
+        if (aktuelleIds.includes(graduierungId)) {
+          neueIds = aktuelleIds.filter(id => id !== graduierungId);
+          if (neueIds.length === 0) neueIds = []; // mindestens leer, nicht null
+        } else {
+          neueIds = [...aktuelleIds, graduierungId];
+          if (neueIds.length === graduierungen.length) neueIds = null; // alle aktiv → null
+        }
+      }
+      // Optimistic update
+      setStilKategorien(prev => prev.map(k =>
+        k.kategorie_id === kat.kategorie_id ? { ...k, aktive_graduierung_ids: neueIds } : k
+      ));
+      try {
+        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/${kat.kategorie_id}/graduierungen`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ aktive_graduierung_ids: neueIds })
+        });
+        if (!res.ok) fetchStilKategorien(stilId);
+      } catch (e) { fetchStilKategorien(stilId); }
+    };
+
+    const handleDragEnd = async (event) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIdx = stilKategorien.findIndex(k => k.kategorie_id === active.id);
+      const newIdx = stilKategorien.findIndex(k => k.kategorie_id === over.id);
+      const newOrder = arrayMove(stilKategorien, oldIdx, newIdx);
+      // Optimistic update
+      setStilKategorien(newOrder);
+      const reorderData = newOrder.map((k, i) => ({ kategorie_id: k.kategorie_id, reihenfolge: i + 1 }));
+      try {
+        const res = await fetch(`${API_BASE}/stile/${stilId}/kategorien/reorder`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kategorien: reorderData })
+        });
+        if (!res.ok) fetchStilKategorien(stilId); // revert on error
+      } catch (e) { fetchStilKategorien(stilId); setLocalError('Fehler beim Neuordnen'); }
+    };
+
+    return (
+      <div className="pi-kat-einstellungen">
+        <div className="section-header">
+          <h3>Kategorien verwalten</h3>
+          <p>Definiere die Prüfungskategorien für diesen Stil. Reihenfolge per Drag & Drop ändern.</p>
+        </div>
+
+        {localError && <div className="error-message sv-kat-error">⚠️ {localError}</div>}
+
+        {kategorienLoading ? (
+          <div className="sv-kat-loading">⏳ Kategorien werden geladen…</div>
+        ) : (
+          <DndContext sensors={katSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={stilKategorien.map(k => k.kategorie_id)} strategy={verticalListSortingStrategy}>
+              <div className="pi-kat-list">
+                {stilKategorien.map(kat => (
+                  <SortableKatItem
+                    key={kat.kategorie_id}
+                    kat={kat}
+                    editId={editId}
+                    editLabel={editLabel}
+                    editIcon={editIcon}
+                    saving={saving}
+                    setEditId={setEditId}
+                    setEditLabel={setEditLabel}
+                    setEditIcon={setEditIcon}
+                    onSaveEdit={handleSaveEdit}
+                    onDelete={handleDelete}
+                    graduierungen={graduierungen}
+                    gradSelectId={katGradSelectId}
+                    setGradSelectId={setKatGradSelectId}
+                    onToggleGraduierung={handleToggleGraduierung}
+                  />
+                ))}
+                {stilKategorien.length === 0 && (
+                  <div className="empty-state"><p>Noch keine Kategorien angelegt</p></div>
+                )}
+              </div>
+            </SortableContext>
+          </DndContext>
+        )}
+
+        <div className="pi-kat-add-form">
+          <h4>Neue Kategorie hinzufügen</h4>
+          <div className="pi-kat-add-row">
+            <input
+              type="text"
+              value={newIcon}
+              onChange={e => setNewIcon(e.target.value)}
+              maxLength={4}
+              className="pi-kat-icon-input"
+              placeholder="🎯"
+              title="Emoji-Icon (1-2 Zeichen)"
+            />
+            <input
+              type="text"
+              value={newLabel}
+              onChange={e => setNewLabel(e.target.value)}
+              className="pi-kat-label-input"
+              placeholder="Kategorie-Name, z. B. Nage-waza…"
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            />
+            <button className="btn btn-primary btn-sm" onClick={handleAdd} disabled={saving || !newLabel.trim()}>
+              + Hinzufügen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ============================================================================
   // LOADING STATE
   // ============================================================================
-  
+
   // Zeige Loading-Screen beim ersten Laden
   if (loading && stile.length === 0) {
     return (
@@ -2737,16 +3335,13 @@ const StilVerwaltung = () => {
             <div className="stil-detail">
               {/* Detail-Header */}
               <div className="stil-detail-header">
-                <div>
-                  <h2 className="stil-detail-title">{currentStil.name}</h2>
-                  <p>{currentStil.beschreibung}</p>
-                  <div className="stil-detail-stats">
-                    <span>👥 {currentStil.anzahl_mitglieder || 0} Schüler</span>
-                    <span>🎖️ {currentStil.graduierungen?.length || 0} Gürtel</span>
-                    <span className={`status ${currentStil.aktiv ? 'active' : 'inactive'}`}>
-                      {currentStil.aktiv ? '✅ Aktiv' : '❌ Inaktiv'}
-                    </span>
-                  </div>
+                <h2 className="stil-detail-title">{currentStil.name}</h2>
+                <div className="stil-detail-stats">
+                  <span>👥 {currentStil.anzahl_mitglieder || 0} Schüler</span>
+                  <span>🎖️ {currentStil.graduierungen?.length || 0} Gürtel</span>
+                  <span className={`status ${currentStil.aktiv ? 'active' : 'inactive'}`}>
+                    {currentStil.aktiv ? '✅ Aktiv' : '❌ Inaktiv'}
+                  </span>
                 </div>
               </div>
 
@@ -2757,11 +3352,12 @@ const StilVerwaltung = () => {
                   { id: 'pruefungseinstellungen', label: '⏱️ Prüfungseinstellungen', title: 'Wartezeiten und Prüfungsregeln' },
                   { id: 'graduierungen', label: '🎖️ Graduierungen', title: 'Gürtel und Graduierungen verwalten' },
                   { id: 'pruefungsinhalte', label: '📝 Prüfungsinhalte', title: 'Prüfungsinhalte definieren' },
+                  { id: 'stilmitglieder', label: '👥 Stilmitglieder', title: 'Mitglieder diesem Stil zuweisen' },
                   { id: 'statistiken', label: '📊 Statistiken', title: 'Auswertungen und Statistiken' }
                 ].map(tab => (
                   <button
                     key={tab.id}
-                    className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                    className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
                     onClick={() => setActiveTab(tab.id)}
                     title={tab.title}
                   >
@@ -3026,6 +3622,14 @@ const StilVerwaltung = () => {
                                 newWaitTime = currentStil.wartezeit_mittelstufe || 4;
                               } else if (kategorie === 'oberstufe') {
                                 newWaitTime = currentStil.wartezeit_oberstufe || 6;
+                              } else if (kategorie === 'dan') {
+                                if (currentStil.wartezeit_schwarzgurt_traditionell && grad.dan_grad >= 2) {
+                                  // Traditionelle Wartezeiten: (n-1).DAN → n.DAN = n Jahre
+                                  // 1→2.DAN: 2 Jahre, 2→3.DAN: 3 Jahre, 3→4.DAN: 4 Jahre ...
+                                  newWaitTime = grad.dan_grad * 12;
+                                } else {
+                                  newWaitTime = currentStil.wartezeit_oberstufe || 6;
+                                }
                               }
 
                               // Nur aktualisieren wenn sich was geändert hat oder Kategorie gesetzt werden soll
@@ -3082,15 +3686,176 @@ const StilVerwaltung = () => {
                 )}
 
                 {activeTab === 'pruefungsinhalte' && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <PruefungsinhaltManager />
+                    {/* Sub-Tab-Leiste */}
+                    <div className="pi-subtabs">
+                      <button
+                        className={`pi-subtab-btn${pruefungsinhalteSubTab === 'inhalte' ? ' pi-subtab-btn--active' : ''}`}
+                        onClick={() => setPruefungsinhalteSubTab('inhalte')}
+                      >
+                        📝 Inhalte
+                      </button>
+                      <button
+                        className={`pi-subtab-btn${pruefungsinhalteSubTab === 'einstellungen' ? ' pi-subtab-btn--active' : ''}`}
+                        onClick={() => setPruefungsinhalteSubTab('einstellungen')}
+                      >
+                        ⚙️ Einstellungen
+                      </button>
+                    </div>
+
+                    {pruefungsinhalteSubTab === 'inhalte' && <PruefungsinhaltManager />}
+                    {pruefungsinhalteSubTab === 'einstellungen' && <KategorienEinstellungen />}
                   </motion.div>
                 )}
                 
+                {activeTab === 'stilmitglieder' && (
+                  <motion.div
+                    className="stilmitglieder-tab"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {/* Header-Zeile */}
+                    <div className="sv-sm-header">
+                      <h3 className="sv-sm-title">
+                        👥 Mitglieder in diesem Stil
+                        <span className="sv-sm-count">{stilMitglieder.length}</span>
+                      </h3>
+                      <div className="sv-sm-header-actions">
+                        {stilMitglieder.length > 0 && (
+                          <button
+                            className={`btn btn-sm${bulkGradMode ? ' btn-neutral' : ''}`}
+                            style={!bulkGradMode ? { background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' } : {}}
+                            onClick={() => {
+                              setBulkGradMode(v => !v);
+                              setBulkSelectedIds([]);
+                              setBulkTargetGradId('');
+                            }}
+                          >
+                            {bulkGradMode ? '✕ Abbrechen' : '🎖️ Gürtel zuweisen'}
+                          </button>
+                        )}
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => {
+                            setShowMemberPicker(true);
+                            setMemberPickerSearch('');
+                            setTimeout(() => memberPickerSearchRef.current?.focus(), 80);
+                          }}
+                        >
+                          + Mitglied hinzufügen
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bulk-Gürtelzuweisung Panel */}
+                    {bulkGradMode && (
+                      <div className="sv-sm-bulk-panel">
+                        <label className="sv-sm-bulk-label">
+                          <input
+                            type="checkbox"
+                            checked={bulkSelectedIds.length === stilMitglieder.length && stilMitglieder.length > 0}
+                            onChange={e => setBulkSelectedIds(e.target.checked ? stilMitglieder.map(m => m.mitglied_id) : [])}
+                          />
+                          Alle auswählen ({bulkSelectedIds.length} gewählt)
+                        </label>
+                        <select
+                          className="sv-sm-bulk-select"
+                          value={bulkTargetGradId}
+                          onChange={e => setBulkTargetGradId(e.target.value)}
+                        >
+                          <option value="">Gürtel wählen…</option>
+                          {(currentStil?.graduierungen || [])
+                            .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+                            .map(g => (
+                              <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>
+                            ))}
+                        </select>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={handleBulkGraduierung}
+                          disabled={bulkSaving || !bulkTargetGradId || bulkSelectedIds.length === 0}
+                        >
+                          {bulkSaving ? 'Wird gespeichert…' : `✓ Zuweisen (${bulkSelectedIds.length})`}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Suchfeld für aktuelle Mitglieder */}
+                    <input
+                      className="sv-sm-search"
+                      type="text"
+                      placeholder="Mitglieder filtern…"
+                      value={stilMitgliederSearch}
+                      onChange={e => setStilMitgliederSearch(e.target.value)}
+                    />
+
+                    {/* Mitgliederliste */}
+                    {stilMitgliederLoading ? (
+                      <div className="no-data-message"><p>Mitglieder werden geladen…</p></div>
+                    ) : stilMitglieder.length === 0 ? (
+                      <div className="no-data-message">
+                        <p>Noch keine Mitglieder in diesem Stil. Klicke auf „Mitglied hinzufügen".</p>
+                      </div>
+                    ) : (
+                      <div className="sv-sm-list">
+                        {stilMitglieder
+                          .filter(m => {
+                            const q = stilMitgliederSearch.toLowerCase();
+                            return !q || `${m.vorname} ${m.nachname}`.toLowerCase().includes(q);
+                          })
+                          .map(m => (
+                            <div
+                              key={m.mitglied_id}
+                              className={`sv-sm-item${bulkGradMode && bulkSelectedIds.includes(m.mitglied_id) ? ' sv-sm-item--selected' : ''}`}
+                              onClick={bulkGradMode ? () => setBulkSelectedIds(prev =>
+                                prev.includes(m.mitglied_id)
+                                  ? prev.filter(id => id !== m.mitglied_id)
+                                  : [...prev, m.mitglied_id]
+                              ) : undefined}
+                              style={bulkGradMode ? { cursor: 'pointer' } : {}}
+                            >
+                              {bulkGradMode && (
+                                <input
+                                  type="checkbox"
+                                  className="sv-sm-checkbox"
+                                  checked={bulkSelectedIds.includes(m.mitglied_id)}
+                                  onChange={() => {}}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                              )}
+                              <div
+                                className="sv-sm-belt-dot"
+                                style={{ background: m.farbe_hex || '#888' }}
+                                title={m.graduierung_name || 'Kein Gürtel'}
+                              />
+                              <div className="sv-sm-info">
+                                <span className="sv-sm-name">{m.vorname} {m.nachname}</span>
+                                {m.graduierung_name && (
+                                  <span className="sv-sm-grad">{m.graduierung_name}</span>
+                                )}
+                              </div>
+                              {!bulkGradMode && (
+                                <button
+                                  className="sv-sm-remove-btn"
+                                  title="Aus Stil entfernen"
+                                  onClick={() => removeMemberFromStil(m.mitglied_id, `${m.vorname} ${m.nachname}`)}
+                                >
+                                  ✕
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        }
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
                 {activeTab === 'statistiken' && (
                   <motion.div
                     className="statistiken-tab"
@@ -3288,7 +4053,7 @@ const StilVerwaltung = () => {
                                       {parseFloat(grad.durchschnitt_punkte)?.toFixed(1) || '0'}
                                     </div>
                                     <div className="sv-text-muted-11">
-                                      ({grad.min_punkte?.toFixed(0)} - {grad.max_punkte?.toFixed(0)})
+                                      ({parseFloat(grad.min_punkte)?.toFixed(0) ?? '0'} - {parseFloat(grad.max_punkte)?.toFixed(0) ?? '0'})
                                     </div>
                                   </div>
                                 </div>
@@ -3395,12 +4160,11 @@ const StilVerwaltung = () => {
         <AnimatePresence>
           {showCreateForm && (
             <motion.div
-              className="modal-overlay"
+              className="modal-overlay sv-create-modal-overlay-flex"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => resetCreateModal()}
-              className="sv-create-modal-overlay-flex"
             >
               <motion.div
                 className="modal-content create-stil-modal stil-modal sv-modal-content sv-modal-content--700"
@@ -3856,6 +4620,91 @@ const StilVerwaltung = () => {
 
         {/* Modal: Prüfungsinhalte anzeigen */}
         <PruefungsinhalteViewModal />
+
+        {/* Modal: Mitglied zum Stil hinzufügen */}
+        <AnimatePresence>
+          {showMemberPicker && (
+            <motion.div
+              className="sv-sm-modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowMemberPicker(false)}
+            >
+              <motion.div
+                className="sv-sm-modal"
+                initial={{ scale: 0.92, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.92, opacity: 0, y: 30 }}
+                transition={{ duration: 0.2 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="sv-sm-modal-header">
+                  <h3 className="sv-sm-modal-title">
+                    👥 Mitglied hinzufügen
+                    <span className="sv-sm-modal-subtitle">
+                      {currentStil?.name}
+                    </span>
+                  </h3>
+                  <button className="modal-close" onClick={() => setShowMemberPicker(false)}>×</button>
+                </div>
+
+                <input
+                  ref={memberPickerSearchRef}
+                  className="sv-sm-modal-search"
+                  type="text"
+                  placeholder="Name oder E-Mail suchen…"
+                  value={memberPickerSearch}
+                  onChange={e => setMemberPickerSearch(e.target.value)}
+                />
+
+                {(() => {
+                  const available = alleDojMitglieder.filter(
+                    m => !stilMitglieder.find(sm => sm.mitglied_id === m.mitglied_id)
+                  ).filter(m => {
+                    const q = memberPickerSearch.toLowerCase();
+                    return !q
+                      || `${m.vorname} ${m.nachname}`.toLowerCase().includes(q)
+                      || (m.email || '').toLowerCase().includes(q);
+                  });
+
+                  if (alleDojMitglieder.length === 0) {
+                    return <div className="sv-sm-modal-empty">Mitglieder werden geladen…</div>;
+                  }
+                  if (available.length === 0) {
+                    return (
+                      <div className="sv-sm-modal-empty">
+                        {memberPickerSearch
+                          ? `Kein Treffer für „${memberPickerSearch}"`
+                          : 'Alle Mitglieder sind bereits zugewiesen'}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="sv-sm-modal-list">
+                      {available.map(m => (
+                        <button
+                          key={m.mitglied_id}
+                          className="sv-sm-modal-item"
+                          onClick={() => addMemberToStil(m.mitglied_id)}
+                        >
+                          <span className="sv-sm-modal-avatar">
+                            {(m.vorname || '?')[0]}{(m.nachname || '?')[0]}
+                          </span>
+                          <div className="sv-sm-modal-info">
+                            <span className="sv-sm-modal-name">{m.vorname} {m.nachname}</span>
+                            {m.email && <span className="sv-sm-modal-email">{m.email}</span>}
+                          </div>
+                          <span className="sv-sm-modal-add">+</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </div>

@@ -8,7 +8,7 @@
 
 .trainer-dashboard-header {
   background: rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   padding: 1.5rem 2rem;
   display: flex;
   justify-content: space-between;
@@ -44,7 +44,7 @@
 
 .trainer-dashboard-nav {
   background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   padding: 0 2rem;
   display: flex;
   gap: 1rem;
@@ -66,9 +66,9 @@
 }
 
 .trainer-dashboard-tab--active {
-  background: rgba(255, 215, 0, 0.2);
-  border-bottom-color: #FFD700;
-  color: #FFD700;
+  background: var(--primary-alpha-20);
+  border-bottom-color: var(--primary);
+  color: var(--primary);
 }
 
 .trainer-dashboard-content {

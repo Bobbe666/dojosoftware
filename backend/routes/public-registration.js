@@ -6,6 +6,26 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 const { sendVerificationEmail } = require('../services/emailTemplates');
+const rateLimit = require('express-rate-limit');
+const enc = require('../services/encryptionService');
+
+// Rate-Limiter für Registrierungs-Endpoints (10 Requests / 15 Min pro IP)
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, error: 'Zu viele Anfragen, bitte in 15 Minuten erneut versuchen.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Strikter Limiter für Step1 (Email-Prüfung) — Account Enumeration verhindern
+const step1Limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { success: false, error: 'Zu viele Registrierungsversuche, bitte in 15 Minuten erneut versuchen.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -30,7 +50,7 @@ const generateToken = () => {
 // =============================================
 
 // POST /api/public/register/step1 - Schritt 1: Grundregistrierung mit Email
-router.post('/register/step1', async (req, res) => {
+router.post('/register/step1', step1Limiter, async (req, res) => {
   try {
     const { email, password, promo_code } = req.body;
 
@@ -40,6 +60,18 @@ router.post('/register/step1', async (req, res) => {
         error: 'Email und Passwort sind erforderlich'
       });
     }
+
+    // Passwort-Komplexität prüfen
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, error: 'Passwort muss mindestens 8 Zeichen lang sein.' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ success: false, error: 'Passwort muss mindestens einen Großbuchstaben enthalten.' });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ success: false, error: 'Passwort muss mindestens eine Zahl enthalten.' });
+    }
+
     // Prüfen ob Email bereits existiert
     const existingUser = await queryAsync(
       'SELECT email FROM registrierungen WHERE email = ? OR EXISTS (SELECT 1 FROM mitglieder WHERE email = ?)',
@@ -61,9 +93,9 @@ router.post('/register/step1', async (req, res) => {
         SELECT rc.id, rc.mitglied_id, rc.dojo_id
         FROM referral_codes rc
         WHERE rc.code = ?
-          AND rc.status = 'aktiv'
+          AND rc.aktiv = 1
           AND (rc.gueltig_bis IS NULL OR rc.gueltig_bis >= CURDATE())
-          AND (rc.max_verwendungen IS NULL OR rc.verwendet_count < rc.max_verwendungen)
+          AND (rc.max_verwendungen IS NULL OR rc.aktuelle_verwendungen < rc.max_verwendungen)
       `, [promo_code.trim().toUpperCase()]);
 
       if (codeResult.length > 0) {
@@ -156,7 +188,7 @@ router.get('/register/verify/:token', async (req, res) => {
 });
 
 // POST /api/public/register/step2 - Schritt 2: Persönliche Daten
-router.post('/register/step2', async (req, res) => {
+router.post('/register/step2', registerLimiter, async (req, res) => {
   try {
     const {
       email,
@@ -191,6 +223,27 @@ router.post('/register/step2', async (req, res) => {
         status = 'personal_data_complete'
       WHERE id = ?
     `, [vorname, nachname, geburtsdatum, geschlecht, strasse, hausnummer, plz, ort, telefon, registration[0].id]);
+
+    // Erziehungsberechtigten-Daten speichern falls vorhanden
+    if (req.body.is_guardian_registration) {
+      const ebVorname = req.body.erziehungsberechtigt_vorname || '';
+      const ebNachname = req.body.erziehungsberechtigt_nachname || '';
+      const ebEmail = req.body.erziehungsberechtigt_email || email;
+      const ebTelefon = req.body.erziehungsberechtigt_telefon || telefon;
+      const ebVerhaeltnis = req.body.verhaeltnis || 'erziehungsberechtigter';
+
+      if (ebVorname && ebNachname) {
+        await queryAsync(`
+          UPDATE registrierungen SET
+            vertreter1_typ = ?,
+            vertreter1_name = ?,
+            vertreter1_telefon = ?,
+            vertreter1_email = ?
+          WHERE id = ?
+        `, [ebVerhaeltnis, `${ebVorname} ${ebNachname}`, ebTelefon, ebEmail, registration[0].id]);
+      }
+    }
+
     res.json({
       success: true,
       message: 'Persönliche Daten erfolgreich gespeichert',
@@ -207,7 +260,7 @@ router.post('/register/step2', async (req, res) => {
 });
 
 // POST /api/public/register/step3 - Schritt 3: Bankdaten
-router.post('/register/step3', async (req, res) => {
+router.post('/register/step3', registerLimiter, async (req, res) => {
   try {
     const {
       email,
@@ -252,7 +305,7 @@ router.post('/register/step3', async (req, res) => {
 });
 
 // POST /api/public/register/step4 - Schritt 4: Tarifauswahl
-router.post('/register/step4', async (req, res) => {
+router.post('/register/step4', registerLimiter, async (req, res) => {
   try {
     const {
       email,
@@ -297,7 +350,7 @@ router.post('/register/step4', async (req, res) => {
 });
 
 // POST /api/public/register/step5 - Schritt 5: Gesundheitsfragen
-router.post('/register/step5', async (req, res) => {
+router.post('/register/step5', registerLimiter, async (req, res) => {
   try {
     const {
       email,
@@ -322,7 +375,7 @@ router.post('/register/step5', async (req, res) => {
         gesundheitsfragen = ?,
         status = 'health_questions_complete'
       WHERE id = ?
-    `, [JSON.stringify(gesundheitsfragen), registration[0].id]);
+    `, [enc.encrypt(gesundheitsfragen), registration[0].id]);
     res.json({
       success: true,
       message: 'Gesundheitsfragen erfolgreich gespeichert',
@@ -339,7 +392,7 @@ router.post('/register/step5', async (req, res) => {
 });
 
 // POST /api/public/register/step6 - Schritt 6: Rechtliche Zustimmungen
-router.post('/register/step6', async (req, res) => {
+router.post('/register/step6', registerLimiter, async (req, res) => {
   try {
     const {
       email,
@@ -400,7 +453,7 @@ router.post('/register/step6', async (req, res) => {
         // Code-Verwendungszähler erhöhen
         await queryAsync(`
           UPDATE referral_codes
-          SET verwendet_count = verwendet_count + 1
+          SET aktuelle_verwendungen = aktuelle_verwendungen + 1
           WHERE id = ?
         `, [registration[0].promo_code_id]);
 
@@ -449,10 +502,16 @@ router.post('/register/step6', async (req, res) => {
       <strong>Registrierungsdatum:</strong> ${new Date().toLocaleString('de-DE')}
     `;
 
+    const notificationMetadata = JSON.stringify({
+      email: registration[0].email,
+      vorname: registration[0].vorname,
+      nachname: registration[0].nachname
+    });
+
     await queryAsync(`
-      INSERT INTO notifications (type, recipient, subject, message, status, created_at)
-      VALUES ('admin_alert', 'admin', 'Neue Mitglieder-Registrierung', ?, 'unread', NOW())
-    `, [notificationMessage]);
+      INSERT INTO notifications (type, recipient, subject, message, metadata, status, created_at)
+      VALUES ('admin_alert', 'admin', 'Neue Mitglieder-Registrierung', ?, ?, 'unread', NOW())
+    `, [notificationMessage, notificationMetadata]);
 
     res.json({
       success: true,
@@ -765,11 +824,21 @@ router.post('/banken/validate-iban', async (req, res) => {
     // IBAN bereinigen (Leerzeichen entfernen)
     const cleanIban = iban.replace(/\s/g, '').toUpperCase();
 
-    // Deutsche IBAN validieren (DE + 20 Zeichen)
-    if (!/^DE\d{20}$/.test(cleanIban)) {
+    // IBAN Format-Validierung (international)
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/.test(cleanIban)) {
       return res.status(400).json({
-        error: "Ungültige deutsche IBAN. Format: DE + 20 Ziffern"
+        error: "Ungültiges IBAN-Format"
       });
+    }
+    // Modulo-97 Prüfsumme (ISO 7064)
+    const ibanDigits = (cleanIban.slice(4) + cleanIban.slice(0, 4)).split('').map(c => {
+      const code = c.charCodeAt(0);
+      return code >= 65 ? (code - 55).toString() : c;
+    }).join('');
+    let remainder = 0;
+    for (const ch of ibanDigits) { remainder = (remainder * 10 + parseInt(ch, 10)) % 97; }
+    if (remainder !== 1) {
+      return res.status(400).json({ error: 'IBAN-Prüfsumme ungültig. Bitte IBAN prüfen.' });
     }
 
     // Bankleitzahl aus IBAN extrahieren (Zeichen 4-11)
@@ -888,7 +957,7 @@ router.post('/banken/kto-blz-to-iban', async (req, res) => {
 });
 
 // POST /api/public/check-duplicate - Duplikatsprüfung (öffentlich)
-router.post('/check-duplicate', async (req, res) => {
+router.post('/check-duplicate', step1Limiter, async (req, res) => {
   try {
     const { vorname, nachname, geburtsdatum, email } = req.body;
 
@@ -950,20 +1019,52 @@ function calculateIbanCheckDigits(bban) {
 // TARIFE ENDPOINT
 // =============================================
 
-// GET /api/public/tarife - Öffentlich verfügbare Tarife
+// GET /api/public/tarife - Öffentlich verfügbare Tarife (tenant-aware via X-Tenant-Subdomain)
 router.get('/tarife', async (req, res) => {
   try {
-    const tarife = await queryAsync(`
-      SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
-             altersgruppe, mindestlaufzeit_monate
-      FROM tarife
-      WHERE active = 1 AND (ist_archiviert IS NULL OR ist_archiviert = 0)
-      ORDER BY altersgruppe ASC, price_cents ASC
-    `);
+    const familyContext = req.query.family === '1'; // ?family=1 zeigt Familienmitglied-Tarife
+
+    // Tenant-Erkennung für public (unauthentifizierte) Requests via Subdomain-Header
+    let dojoId = null;
+    const subdomain = req.headers['x-tenant-subdomain'];
+    if (subdomain) {
+      const dojos = await queryAsync(
+        'SELECT id FROM dojo WHERE subdomain = ? AND ist_aktiv = 1 LIMIT 1',
+        [subdomain]
+      );
+      if (dojos.length > 0) dojoId = dojos[0].id;
+    }
+
+    let query;
+    let params;
+    if (dojoId) {
+      query = `
+        SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
+               altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents, nur_familienmitglied
+        FROM tarife
+        WHERE dojo_id = ? AND active = 1 AND (ist_archiviert IS NULL OR ist_archiviert = 0)
+          AND nur_familienmitglied = ?
+        ORDER BY altersgruppe ASC, price_cents ASC
+      `;
+      params = [dojoId, familyContext ? 1 : 0];
+    } else {
+      query = `
+        SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
+               altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents, nur_familienmitglied
+        FROM tarife
+        WHERE active = 1 AND (ist_archiviert IS NULL OR ist_archiviert = 0)
+          AND nur_familienmitglied = ?
+        ORDER BY altersgruppe ASC, price_cents ASC
+      `;
+      params = [familyContext ? 1 : 0];
+    }
+
+    const tarife = await queryAsync(query, params);
 
     const tarifeFormatted = tarife.map(tarif => ({
       ...tarif,
       price_euros: (tarif.price_cents / 100).toFixed(2),
+      aufnahmegebuehr_euros: ((tarif.aufnahmegebuehr_cents || 0) / 100).toFixed(2),
       beschreibung: tarif.altersgruppe
         ? `${tarif.altersgruppe} - ${tarif.duration_months || tarif.mindestlaufzeit_monate || 12} Monate Laufzeit`
         : `${tarif.duration_months || tarif.mindestlaufzeit_monate || 12} Monate Laufzeit`
@@ -1093,14 +1194,16 @@ router.post('/family-login', async (req, res) => {
 router.get('/tarife/:dojo_id', async (req, res) => {
   try {
     const { dojo_id } = req.params;
+    const familyContext = req.query.family === '1'; // ?family=1 zeigt Familienmitglied-Tarife
 
     const tarife = await queryAsync(`
       SELECT id, name, price_cents, currency, duration_months, billing_cycle, payment_method,
-             altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents
+             altersgruppe, mindestlaufzeit_monate, aufnahmegebuehr_cents, nur_familienmitglied
       FROM tarife
       WHERE dojo_id = ? AND active = 1 AND (ist_archiviert IS NULL OR ist_archiviert = 0)
+        AND nur_familienmitglied = ?
       ORDER BY altersgruppe ASC, price_cents ASC
-    `, [dojo_id]);
+    `, [dojo_id, familyContext ? 1 : 0]);
 
     const tarifeFormatted = tarife.map(tarif => ({
       ...tarif,
@@ -1180,7 +1283,9 @@ router.post('/mitglied-anlegen', async (req, res) => {
       // Optional: Familien-Verknüpfung
       familien_id, hauptmitglied_id,
       // Einverständnisse
-      agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged, dojoregeln_accepted
+      agb_accepted, dsgvo_accepted, widerrufsrecht_acknowledged, dojoregeln_accepted,
+      // Empfehlungscode
+      referral_code
     } = req.body;
 
     // Pflichtfeld-Validierung
@@ -1203,6 +1308,18 @@ router.post('/mitglied-anlegen', async (req, res) => {
       if (emailCheck.length > 0) {
         return res.status(400).json({ success: false, error: 'Diese E-Mail-Adresse ist bereits registriert' });
       }
+    }
+
+    // Name + Geburtsdatum Duplikat prüfen (verhindert Doppelregistrierung)
+    const nameCheck = await queryAsync(
+      'SELECT mitglied_id FROM mitglieder WHERE LOWER(vorname) = LOWER(?) AND LOWER(nachname) = LOWER(?) AND geburtsdatum = ? AND dojo_id = ?',
+      [vorname, nachname, geburtsdatum, dojo_id]
+    );
+    if (nameCheck.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Ein Mitglied mit diesem Namen und Geburtsdatum ist bereits registriert. Bitte kontaktiere uns direkt falls du Fragen hast.'
+      });
     }
 
     // Alle vorhandenen Spalten der mitglieder-Tabelle abrufen
@@ -1454,23 +1571,196 @@ router.post('/mitglied-anlegen', async (req, res) => {
 
     // Gesundheitsfragen speichern falls vorhanden
     if (gesundheitsfragen && Object.keys(gesundheitsfragen).length > 0) {
-      await queryAsync(`
-        INSERT INTO mitglieder_gesundheit (
-          mitglied_id, vorerkrankungen, medikamente, herzprobleme,
-          rueckenprobleme, gelenkprobleme, sonstige_einschraenkungen,
-          notfallkontakt_name, notfallkontakt_telefon, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `, [
-        newMitgliedId,
-        gesundheitsfragen.vorerkrankungen || 'nein',
-        gesundheitsfragen.medikamente || 'nein',
-        gesundheitsfragen.herzprobleme || 'nein',
-        gesundheitsfragen.rueckenprobleme || 'nein',
-        gesundheitsfragen.gelenkprobleme || 'nein',
-        gesundheitsfragen.sonstige_einschraenkungen || '',
-        gesundheitsfragen.notfallkontakt_name || '',
-        gesundheitsfragen.notfallkontakt_telefon || ''
-      ]);
+      try {
+        await queryAsync(`
+          INSERT INTO mitglieder_gesundheit (
+            mitglied_id, vorerkrankungen, medikamente, herzprobleme,
+            rueckenprobleme, gelenkprobleme, sonstige_einschraenkungen,
+            notfallkontakt_name, notfallkontakt_telefon, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        `, [
+          newMitgliedId,
+          gesundheitsfragen.vorerkrankungen || 'nein',
+          gesundheitsfragen.medikamente || 'nein',
+          gesundheitsfragen.herzprobleme || 'nein',
+          gesundheitsfragen.rueckenprobleme || 'nein',
+          gesundheitsfragen.gelenkprobleme || 'nein',
+          gesundheitsfragen.sonstige_einschraenkungen || '',
+          gesundheitsfragen.notfallkontakt_name || '',
+          gesundheitsfragen.notfallkontakt_telefon || ''
+        ]);
+      } catch (gesundheitErr) {
+        logger.warn('Gesundheitsfragen konnten nicht gespeichert werden (Tabelle fehlt?)', { error: gesundheitErr.message, mitglied_id: newMitgliedId });
+      }
+    }
+
+    // Login-Account erstellen (automatisch mit vorname.nachname / Geburtsdatum dd/mm/yyyy)
+    try {
+      const cleanName = s => (s || '').trim().toLowerCase()
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+        .replace(/\s+/g, '');
+      const autoUsername = req.body.benutzername
+        ? req.body.benutzername.trim()
+        : cleanName(vorname) + '.' + cleanName(nachname);
+      const [gy, gm, gd] = (geburtsdatum || '').split('-');
+      const autoPassword = req.body.passwort
+        ? req.body.passwort
+        : (gd && gm && gy ? gd + '/' + gm + '/' + gy : null);
+
+      if (autoUsername && autoPassword && autoUsername.toLowerCase() !== 'admin') {
+        const existing = await queryAsync('SELECT id FROM users WHERE username = ?', [autoUsername]);
+        const usernameToUse = existing.length > 0 ? autoUsername + '.' + newMitgliedId : autoUsername;
+        const hash = await bcrypt.hash(autoPassword, 10);
+        await queryAsync(
+          'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+          [usernameToUse, email || null, hash, 'member', newMitgliedId]
+        );
+        logger.info('Account automatisch erstellt', { username: usernameToUse, mitglied_id: newMitgliedId });
+      }
+    } catch (accountErr) {
+      logger.warn('Account-Erstellung fehlgeschlagen (Mitglied angelegt)', { error: accountErr.message });
+    }
+
+    // Familienmitglieder anlegen (wenn angegeben)
+    const familyMembers = Array.isArray(req.body.family_members) ? req.body.family_members : [];
+    for (const fm of familyMembers) {
+      if (!fm.vorname || !fm.nachname || !fm.geburtsdatum || !fm.geschlecht) continue;
+      try {
+        const fmGeschlechtMap = { 'männlich': 'm', 'maennlich': 'm', 'male': 'm', 'm': 'm', 'weiblich': 'w', 'female': 'w', 'w': 'w', 'divers': 'd', 'd': 'd' };
+        const fmGeschlecht = fmGeschlechtMap[(fm.geschlecht || '').toLowerCase()] || fm.geschlecht;
+
+        const fmFields = {
+          dojo_id, vorname: fm.vorname, nachname: fm.nachname,
+          geburtsdatum: fm.geburtsdatum, geschlecht: fmGeschlecht,
+          strasse: strasse || '', hausnummer: hausnummer || '',
+          plz: plz || '', ort: ort || '',
+          telefon: fm.telefon || telefon || '',
+          email: fm.email || '',
+          iban: iban || '', bic: bic || '',
+          bankname: bank_name || '',
+          kontoinhaber: kontoinhaber || `${vorname} ${nachname}`,
+          aktiv: 1,
+          eintrittsdatum: vertragsbeginn || new Date().toISOString().split('T')[0],
+          created_at: new Date(),
+          familien_id: finalFamilienId,
+          hauptmitglied_id: newMitgliedId,
+          registration_source: 'public_website_family',
+          schueler_student: fm.schueler_student ? 1 : 0,
+          agb_akzeptiert: agb_accepted ? 1 : 0,
+          datenschutz_akzeptiert: dsgvo_accepted ? 1 : 0,
+          zahlungsmethode: 'Lastschrift'
+        };
+
+        const fmInsertFields = [];
+        const fmInsertValues = [];
+        for (const [field, value] of Object.entries(fmFields)) {
+          if (existingColumns.has(field) && value !== null) {
+            fmInsertFields.push(field);
+            fmInsertValues.push(value);
+          }
+        }
+        const fmResult = await queryAsync(
+          `INSERT INTO mitglieder (${fmInsertFields.join(', ')}) VALUES (${fmInsertValues.map(() => '?').join(', ')})`,
+          fmInsertValues
+        );
+        const fmMitgliedId = fmResult.insertId;
+
+        // Vertrag für Familienmitglied
+        if (fm.tarif_id) {
+          const fmTarif = await queryAsync('SELECT * FROM tarife WHERE id = ?', [fm.tarif_id]);
+          if (fmTarif.length > 0) {
+            const t = fmTarif[0];
+            const startDate = vertragsbeginn || new Date().toISOString().split('T')[0];
+            const monatsBeitrag = (t.price_cents || 0) / 100;
+            const mindestlaufzeit = t.mindestlaufzeit_monate || 12;
+            const fmLastVertrag = await queryAsync('SELECT id FROM vertraege WHERE dojo_id = ? ORDER BY id DESC LIMIT 1', [dojo_id]);
+            const fmNextNum = fmLastVertrag.length > 0 ? fmLastVertrag[0].id + 1 : 1;
+            const fmVertragsnummer = `V-${String(fmNextNum).padStart(6, '0')}`;
+            await queryAsync(
+              `INSERT INTO vertraege (mitglied_id, dojo_id, tarif_id, vertragsbeginn, vertragsende, status, monatlicher_beitrag, monatsbeitrag, billing_cycle, vertragsnummer, mindestlaufzeit_monate)
+               VALUES (?, ?, ?, ?, DATE_ADD(?, INTERVAL ? MONTH), 'aktiv', ?, ?, ?, ?, ?)`,
+              [fmMitgliedId, dojo_id, fm.tarif_id, startDate, startDate, mindestlaufzeit, monatsBeitrag, monatsBeitrag, t.billing_cycle || 'MONTHLY', fmVertragsnummer, mindestlaufzeit]
+            );
+            if (iban && kontoinhaber) {
+              const fmMandatsref = `DOJO${dojo_id}-${fmMitgliedId}-${Date.now()}`;
+              await queryAsync(
+                `INSERT INTO sepa_mandate (mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz, glaeubiger_id, status, erstellungsdatum, provider, mandat_typ)
+                 VALUES (?, ?, ?, ?, ?, ?, 'DE98ZZZ09999999999', 'aktiv', NOW(), 'manual_sepa', 'CORE')`,
+                [fmMitgliedId, iban, bic || '', bank_name || '', kontoinhaber, fmMandatsref]
+              );
+            }
+          }
+        }
+
+        // Account für Familienmitglied
+        if (fm.benutzername && fm.passwort && fm.benutzername.trim().toLowerCase() !== 'admin') {
+          try {
+            const bcrypt = require('bcryptjs');
+            const fmBenutzername = fm.benutzername.trim();
+            const fmExisting = await queryAsync('SELECT id FROM users WHERE username = ?', [fmBenutzername]);
+            if (fmExisting.length === 0) {
+              const hash = await bcrypt.hash(fm.passwort, 10);
+              await queryAsync(
+                'INSERT INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, "member", ?, NOW())',
+                [fmBenutzername, fm.email || null, hash, fmMitgliedId]
+              );
+            }
+          } catch (fmAccountErr) {
+            logger.warn('FM-Account fehlgeschlagen', { error: fmAccountErr.message });
+          }
+        }
+      } catch (fmErr) {
+        logger.warn('Familienmitglied konnte nicht angelegt werden', { error: fmErr.message, fm: fm.vorname });
+      }
+    }
+
+    // ── Referral-Code verarbeiten ────────────────────────────────────────────
+    if (referral_code && referral_code.trim()) {
+      try {
+        const code = referral_code.trim().toUpperCase();
+        const [rcRows] = await db.promise().query(`
+          SELECT rc.id, rc.mitglied_id,
+                 COALESCE(rs.standard_praemie, 50.00) AS praemie_betrag
+          FROM referral_codes rc
+          LEFT JOIN referral_settings rs ON rs.dojo_id = rc.dojo_id
+          WHERE rc.code = ? AND rc.aktiv = 1
+            AND (rc.gueltig_bis IS NULL OR rc.gueltig_bis >= CURDATE())
+            AND (rc.max_verwendungen IS NULL OR rc.aktuelle_verwendungen < rc.max_verwendungen)
+        `, [code]);
+
+        if (rcRows.length > 0) {
+          const rc = rcRows[0];
+          const refLaufzeit = vertragId ? (await db.promise().query(
+            'SELECT mindestlaufzeit_monate FROM vertraege WHERE id = ?', [vertragId]
+          ))[0][0]?.mindestlaufzeit_monate || 12 : 12;
+
+          const [refResult] = await db.promise().query(`
+            INSERT INTO referrals
+              (dojo_id, werber_mitglied_id, geworbenes_mitglied_id, referral_code_id,
+               status, vertrag_id, vertrag_laufzeit_monate)
+            VALUES (?, ?, ?, ?, 'vertrag_abgeschlossen', ?, ?)
+          `, [dojo_id, rc.mitglied_id, newMitgliedId, rc.id, vertragId, refLaufzeit]);
+
+          const referralId = refResult.insertId;
+
+          await db.promise().query(`
+            INSERT INTO referral_praemien
+              (dojo_id, referral_id, mitglied_id, betrag, typ, status)
+            VALUES (?, ?, ?, ?, 'gutschrift', 'ausstehend')
+          `, [dojo_id, referralId, rc.mitglied_id, rc.praemie_betrag]);
+
+          await db.promise().query(
+            'UPDATE referral_codes SET aktuelle_verwendungen = aktuelle_verwendungen + 1 WHERE id = ?',
+            [rc.id]
+          );
+
+          logger.info('Referral-Code verarbeitet', { code, werber_id: rc.mitglied_id, geworbener_id: newMitgliedId });
+        } else {
+          logger.warn('Ungültiger oder abgelaufener Referral-Code', { code, mitglied_id: newMitgliedId });
+        }
+      } catch (refErr) {
+        logger.warn('Fehler bei Referral-Code-Verarbeitung', { error: refErr.message });
+      }
     }
 
     logger.info('Neues Mitglied über öffentliche Website angelegt', {

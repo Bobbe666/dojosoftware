@@ -1,0 +1,329 @@
+/* TextbausteinSidebar.css — Prefix: tb- */
+
+.tb-sidebar {
+  width: 240px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1, #1e1e2e);
+  border-left: 1px solid var(--border, #444);
+  overflow-y: auto;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.tb-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border, #444);
+  background: var(--surface-2, #2a2a3a);
+  flex-shrink: 0;
+}
+
+.tb-sidebar-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary, #eee);
+}
+
+.tb-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+}
+
+.tb-close-btn:hover {
+  color: var(--text-primary, #eee);
+  background: var(--surface-hover, #33334a);
+}
+
+/* ── Steuerleiste ──────────────────────────────────────────────────────── */
+.tb-controls {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #444);
+  flex-shrink: 0;
+}
+
+.tb-filter-select {
+  flex: 1;
+  background: var(--surface-2, #2a2a3a);
+  color: var(--text-primary, #eee);
+  border: 1px solid var(--border, #555);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 0.82rem;
+}
+
+.tb-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--primary, #c9a227);
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tb-add-btn:hover { opacity: 0.88; }
+
+/* ── Inline-Formular ───────────────────────────────────────────────────── */
+.tb-edit-form {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border, #444);
+  background: var(--surface-2, #2a2a3a);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tb-form-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary, #c9a227);
+}
+
+.tb-form-input {
+  background: var(--surface-1, #1e1e2e);
+  color: var(--text-primary, #eee);
+  border: 1px solid var(--border, #555);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 0.83rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tb-tiptap-wrap {
+  border: 1px solid var(--border, #555);
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--surface-1, #1e1e2e);
+}
+
+.tb-toolbar {
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border, #444);
+  background: var(--surface-2, #2a2a3a);
+  align-items: center;
+}
+
+.tb-tool-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-secondary, #aaa);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  min-width: 24px;
+  text-align: center;
+}
+
+.tb-tool-btn:hover {
+  background: var(--surface-hover, #33334a);
+  color: var(--text-primary, #eee);
+}
+
+.tb-tool-btn--active {
+  background: var(--primary, #c9a227);
+  color: #000;
+  border-color: var(--primary, #c9a227);
+}
+
+.tb-tool-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--border, #555);
+  margin: 0 2px;
+}
+
+.tb-form-error {
+  font-size: 0.8rem;
+  color: #f87171;
+}
+
+.tb-form-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.tb-btn {
+  border-radius: 5px;
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border: 1px solid var(--border, #555);
+}
+
+.tb-btn--ghost {
+  background: transparent;
+  color: var(--text-secondary, #aaa);
+}
+
+.tb-btn--ghost:hover { color: var(--text-primary, #eee); }
+
+.tb-btn--primary {
+  background: var(--primary, #c9a227);
+  color: #000;
+  border-color: var(--primary, #c9a227);
+  font-weight: 600;
+}
+
+.tb-btn--primary:hover { opacity: 0.88; }
+
+.tb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Liste ─────────────────────────────────────────────────────────────── */
+.tb-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.tb-empty {
+  padding: 20px 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, #aaa);
+  text-align: center;
+}
+
+.tb-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #3a3a4a);
+  transition: background 0.1s;
+}
+
+.tb-item:hover { background: var(--surface-hover, #25253a); }
+
+.tb-item--editing { background: var(--surface-2, #2a2a3a); }
+
+.tb-item-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.tb-item-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #eee);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tb-item-icon-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tb-icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+}
+
+.tb-icon-btn:hover {
+  color: var(--text-primary, #eee);
+  background: var(--surface-hover, #33334a);
+}
+
+.tb-icon-btn--danger:hover { color: #f87171; }
+
+.tb-kat-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  background: var(--surface-2, #2a2a3a);
+  color: var(--text-secondary, #aaa);
+  border: 1px solid var(--border, #444);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-bottom: 4px;
+}
+
+.tb-item-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.tb-insert-btn {
+  flex: 1;
+  padding: 4px 6px;
+  background: var(--surface-2, #2a2a3a);
+  border: 1px solid var(--border, #555);
+  color: var(--text-secondary, #aaa);
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.tb-insert-btn:hover {
+  background: var(--primary, #c9a227);
+  color: #000;
+  border-color: var(--primary, #c9a227);
+  font-weight: 600;
+}
+
+/* ── Layout-Integration im VorlagenEditor ──────────────────────────────── */
+.ve-editor-with-sidebar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.ve-editor-with-sidebar .ve-editor-border {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── System-Bausteine ─────────────────────────────────────────────────── */
+.tb-system-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  background: var(--surface-2, #2a2a3a);
+  color: var(--text-secondary, #888);
+  border: 1px solid var(--border, #444);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: 4px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.tb-item--system {
+  opacity: 0.85;
+}
+
+.tb-item--system:hover {
+  background: var(--surface-hover, #22223a);
+}

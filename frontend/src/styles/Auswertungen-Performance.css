@@ -21,7 +21,7 @@
   transition: border-color 0.2s;
 }
 
-.perf-kpi:hover { border-color: rgba(255, 215, 0, 0.2); }
+.perf-kpi:hover { border-color: var(--primary-alpha-20); }
 
 .perf-kpi-label {
   font-size: var(--ui-stat-label);
@@ -42,7 +42,7 @@
 
 .perf-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 16px rgba(16,185,129,0.3); }
 .perf-kpi-value--red    { color: var(--status-error); }
-.perf-kpi-value--gold   { color: var(--primary); text-shadow: 0 0 16px rgba(255,215,0,0.25); }
+.perf-kpi-value--gold   { color: var(--primary); text-shadow: 0 0 16px var(--primary-alpha-25); }
 
 .perf-kpi-sub {
   font-size: var(--ui-card-label);
@@ -138,7 +138,7 @@
 
 .perf-week-bar-fill--top {
   background: linear-gradient(90deg, #ffd700, #ffaa00);
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 0 8px var(--primary-alpha-40);
 }
 
 .perf-week-count {
@@ -235,6 +235,7 @@
 .perf-duration-bar-fill {
   height: 100%;
   border-radius: 4px;
+  background: var(--dot-color, linear-gradient(90deg, #ffd700, #f59e0b));
   transition: width 0.7s ease;
 }
 
@@ -255,10 +256,961 @@
   font-style: italic;
 }
 
+/* ── KPI Tooltip ── */
+.perf-tooltip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.perf-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 9px;
+  font-style: normal;
+  cursor: default;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.perf-tooltip-wrap:hover .perf-info-icon {
+  background: var(--primary-alpha-25);
+  color: var(--primary);
+}
+
+.perf-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background: #1a1a2e;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+  pointer-events: none;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  white-space: normal;
+}
+
+/* kleines Dreieck nach unten */
+.perf-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(255, 215, 0, 0.2);
+}
+
+.perf-tooltip-wrap:hover .perf-tooltip {
+  display: block;
+}
+
+/* Tooltip nach rechts ausrichten wenn am linken Rand */
+.perf-kpi:first-child .perf-tooltip {
+  left: 0;
+  transform: none;
+}
+.perf-kpi:first-child .perf-tooltip::after {
+  left: 18px;
+  transform: none;
+}
+
+/* Tooltip nach links ausrichten wenn am rechten Rand */
+.perf-kpi:last-child .perf-tooltip {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+.perf-kpi:last-child .perf-tooltip::after {
+  left: auto;
+  right: 14px;
+  transform: none;
+}
+
+/* ── Kurs-Ranking ── */
+.perf-kurs-list {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.perf-kurs-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 160px 64px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s;
+}
+
+.perf-kurs-row:last-child { border-bottom: none; }
+.perf-kurs-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+.perf-kurs-rank {
+  font-size: 1.25rem;
+  text-align: center;
+  line-height: 1;
+}
+
+.perf-kurs-rank-num {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.perf-kurs-info {
+  min-width: 0;
+}
+
+.perf-kurs-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perf-kurs-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.42);
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.perf-kurs-stil-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.perf-kurs-stil { color: rgba(255, 255, 255, 0.55); }
+
+.perf-kurs-sep { opacity: 0.35; }
+
+.perf-kurs-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.perf-kurs-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.perf-kurs-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.7s ease;
+  opacity: 0.85;
+}
+
+.perf-kurs-auslastung {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-kurs-auslastung--voll {
+  color: var(--status-warning, #f59e0b);
+  font-weight: 600;
+}
+
+.perf-kurs-schnitt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.perf-kurs-schnitt-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.perf-kurs-schnitt-label {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Wochenplan ── */
+.perf-wochenplan {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.perf-wplan-tag {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: start;
+}
+
+.perf-wplan-tag:last-child { border-bottom: none; }
+
+.perf-wplan-tag-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding-top: 0.25rem;
+  flex-shrink: 0;
+}
+
+.perf-wplan-kurse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.perf-wplan-kurs {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 0.4rem 0.65rem;
+  min-width: 130px;
+  transition: background 0.15s;
+}
+
+.perf-wplan-kurs:hover { background: rgba(255, 255, 255, 0.07); }
+
+.perf-wplan-time {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 0.15rem;
+}
+
+.perf-wplan-kname {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perf-wplan-kmeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+  flex-wrap: wrap;
+}
+
+.perf-wplan-stil {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.perf-wplan-checkins {
+  font-size: 0.68rem;
+  color: var(--status-success, #10b981);
+  font-weight: 600;
+}
+
+.perf-wplan-leer {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.25);
+  font-style: italic;
+}
+
+/* ── Freie Zeitfenster ── */
+.perf-freie-slots {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.perf-freier-tag {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: start;
+}
+
+.perf-freier-tag:last-child { border-bottom: none; }
+
+.perf-freier-tag--komplett {
+  background: rgba(255, 215, 0, 0.04);
+  border-radius: 6px;
+  padding: 0.6rem 0.5rem;
+  margin: 0 -0.5rem;
+}
+
+.perf-freier-tag-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  padding-top: 0.15rem;
+  flex-shrink: 0;
+}
+
+.perf-freier-badge {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--primary, #ffd700);
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.perf-freier-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.perf-freier-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.perf-freier-time {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.perf-freier-dauer {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+/* ── Section Header (Kollaps) ── */
+.perf-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.1rem;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.1rem;
+  transition: opacity 0.15s;
+}
+
+.perf-section-header:hover { opacity: 0.8; }
+
+.perf-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.perf-section-chevron {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+  display: inline-block;
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.perf-section-chevron--up {
+  transform: rotate(-90deg);
+}
+
+/* ── Absprung-Risiko ── */
+.perf-risiko-wrap {
+  padding: 0.5rem 0;
+}
+
+.perf-risiko-tier {
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.perf-risiko-tier:last-child { border-bottom: none; }
+
+.perf-risiko-tier-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.perf-risiko-count {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-risiko-tier-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.perf-risiko-member {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.2rem 0;
+  font-size: 0.78rem;
+}
+
+.perf-risiko-name {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.perf-risiko-days {
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-risiko-more {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.28);
+  margin-top: 0.2rem;
+  font-style: italic;
+}
+
+.perf-risiko-expand {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--primary, #ffd700);
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s;
+}
+
+.perf-risiko-expand:hover { opacity: 1; }
+
+/* ── Vertragsablauf ── */
+.perf-ablauf-wrap {
+  padding: 0.5rem 0;
+}
+
+.perf-ablauf-bucket {
+  padding: 0.6rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.perf-ablauf-bucket:last-child { border-bottom: none; }
+
+.perf-ablauf-bucket-label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 0.4rem;
+}
+
+.perf-ablauf-count {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.perf-ablauf-member {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 0.15rem 0;
+}
+
+.perf-ablauf-mname {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.perf-ablauf-date {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── Trainingsfrequenz ── */
+.perf-freq-list {
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.perf-freq-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 36px 44px;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.perf-freq-label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.perf-freq-bar-bg {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.perf-freq-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.7s ease;
+}
+
+.perf-freq-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-freq-pct {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Check-in Streaks ── */
+.perf-streak-list {
+  padding: 0.6rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.perf-streak-row {
+  display: grid;
+  grid-template-columns: 24px 1fr 80px 36px;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.perf-streak-rank {
+  font-size: 1rem;
+  text-align: center;
+  line-height: 1;
+}
+
+.perf-streak-name {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.perf-streak-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.perf-streak-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #f97316, #ffd700);
+  transition: width 0.7s ease;
+}
+
+.perf-streak-weeks {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Zahlungsrückstand ── */
+.perf-zahlung-summary {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.perf-zahlung-kpi {
+  flex: 1;
+  padding: 0.85rem 1.25rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.perf-zahlung-kpi:last-child { border-right: none; }
+
+.perf-zahlung-pct {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-zahlung-pct--green { color: var(--status-success, #10b981); }
+.perf-zahlung-pct--amber { color: #f59e0b; }
+.perf-zahlung-pct--red   { color: var(--status-error, #ef4444); }
+
+.perf-zahlung-label {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.perf-zahlung-trend {
+  padding: 0.75rem 1.25rem;
+}
+
+.perf-zahlung-trend-label {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.5rem;
+}
+
+.perf-zahlung-trend-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+  height: 60px;
+}
+
+.perf-zahlung-trend-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.perf-zahlung-trend-bar-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+  justify-content: center;
+}
+
+.perf-zahlung-trend-bar-total {
+  width: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+
+.perf-zahlung-trend-bar-offen {
+  width: 8px;
+  background: rgba(239, 68, 68, 0.65);
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+}
+
+.perf-zahlung-trend-monat {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Onboarding-Kohorte ── */
+.perf-kohorte-table {
+  padding: 0.5rem 1.25rem 0.75rem;
+}
+
+.perf-kohorte-header-row,
+.perf-kohorte-row {
+  display: grid;
+  grid-template-columns: 72px 36px 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+}
+
+.perf-kohorte-header-row { border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.perf-kohorte-row:last-child { border-bottom: none; }
+
+.perf-kohorte-cell {
+  font-size: 0.78rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.perf-kohorte-cell--head {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.perf-kohorte-cell--month {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.perf-kohorte-pct {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.perf-kohorte-pct.pct--green { color: var(--status-success, #10b981); }
+.perf-kohorte-pct.pct--amber { color: #f59e0b; }
+.perf-kohorte-pct.pct--red   { color: var(--status-error, #ef4444); }
+
+.perf-kohorte-pending {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.78rem;
+}
+
+/* ── Graduierungs-Pyramide ── */
+.perf-pyramide-stile {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 1.25rem 1rem;
+  flex-wrap: wrap;
+}
+
+.perf-pyramide-stil {
+  flex: 1;
+  min-width: 200px;
+}
+
+.perf-pyramide-stil-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 0.15rem;
+}
+
+.perf-pyramide-total {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.25);
+  margin-bottom: 0.6rem;
+}
+
+.perf-pyramide-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.perf-pyramide-level {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.perf-pyramide-bar-wrap {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.perf-pyramide-bar {
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  min-width: 4px;
+  transition: width 0.7s ease;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.05);
+}
+
+.perf-pyramide-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+  text-align: right;
+}
+
+.perf-pyramide-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  font-variant-numeric: tabular-nums;
+  min-width: 20px;
+  text-align: right;
+}
+
+/* ── Trainer-Auslastung ── */
+.perf-trainer-list {
+  padding: 0.5rem 0;
+}
+
+.perf-trainer-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 1fr 70px 64px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s;
+}
+
+.perf-trainer-row:last-child { border-bottom: none; }
+.perf-trainer-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+.perf-trainer-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.perf-trainer-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.perf-trainer-stil {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.38);
+  margin-top: 0.1rem;
+}
+
+.perf-trainer-bar-wrap {}
+
+.perf-trainer-bar-bg {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.perf-trainer-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary, #ffd700), #f59e0b);
+  transition: width 0.7s ease;
+}
+
+.perf-trainer-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.perf-trainer-avg {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-trainer-avg-label {
+  font-size: 0.62rem;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.perf-trainer-einheiten {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .perf-kpi-row { grid-template-columns: repeat(2, 1fr); }
   .perf-columns  { grid-template-columns: 1fr; }
+  .perf-kurs-row { grid-template-columns: 36px 1fr 48px; }
+  .perf-kurs-bar-wrap { display: none; }
+  .perf-wplan-tag { grid-template-columns: 72px 1fr; }
+  .perf-freier-tag { grid-template-columns: 72px 1fr; }
+  .perf-freq-row { grid-template-columns: 110px 1fr 32px 38px; }
+  .perf-streak-row { grid-template-columns: 22px 1fr 60px 32px; }
+  .perf-trainer-row { grid-template-columns: 32px 1fr 50px 56px; }
+  .perf-trainer-bar-wrap { display: none; }
+  .perf-pyramide-stile { gap: 1rem; }
 }
 
 @media (max-width: 500px) {
@@ -266,4 +1218,10 @@
   .perf-week-row { grid-template-columns: 60px 1fr 36px; }
   .perf-peak-row { grid-template-columns: 20px 90px 1fr 32px; }
   .perf-duration-row { grid-template-columns: 120px 1fr 40px; }
+  .perf-kurs-row { grid-template-columns: 32px 1fr 48px; }
+  .perf-wplan-tag { grid-template-columns: 60px 1fr; }
+  .perf-freier-tag { grid-template-columns: 60px 1fr; }
+  .perf-freq-row { grid-template-columns: 100px 1fr 28px; }
+  .perf-freq-pct { display: none; }
+  .perf-pyramide-stil { min-width: 100%; }
 }

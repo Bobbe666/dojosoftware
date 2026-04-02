@@ -18,6 +18,7 @@ import {
   QrCode,
   Download,
   CalendarSync,
+  CalendarX,
   Copy,
   Check,
   Gift
@@ -26,6 +27,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 import '../styles/MitgliedDetail.css';
 import MemberHeader from './MemberHeader.jsx';
+import UmfragePopup from './UmfragePopup.jsx';
+import BadgeDisplay from './BadgeDisplay';
 import MemberCheckin from './MemberCheckin.jsx';
 import MemberQRCode from './MemberQRCode.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
@@ -42,8 +45,82 @@ import '../styles/MemberDashboard.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import EventNotificationPopup from './EventNotificationPopup.jsx';
+import PushNotificationPopup from './PushNotificationPopup.jsx';
 import ProfilWizard from './ProfilWizard.jsx';
+import AbwesenheitWidget from './AbwesenheitWidget.jsx';
 
+
+function MemberNewsSlideshow({ bilder, titel }) {
+  const [aktiv, setAktiv] = useState(0);
+  const timerRef = useRef(null);
+  useEffect(() => {
+    setAktiv(0);
+    if (bilder.length < 2) return;
+    timerRef.current = setInterval(() => {
+      setAktiv(prev => (prev + 1) % bilder.length);
+    }, 4000);
+    return () => clearInterval(timerRef.current);
+  }, [bilder.length]);
+  return (
+    <div className="member-news-slideshow">
+      {bilder.map((url, i) => (
+        <img key={i} src={url} alt={`${titel} ${i + 1}`}
+          className={`member-news-slide${i === aktiv ? ' aktiv' : ''}`} loading="lazy" />
+      ))}
+      {bilder.length > 1 && (
+        <div className="member-news-slide-dots">
+          {bilder.map((_, i) => (
+            <span key={i} className={`member-slide-dot${i === aktiv ? ' aktiv' : ''}`}
+              onClick={() => setAktiv(i)} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MemberNewsModal({ artikel, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+  const absätze = (artikel.inhalt || '').split(/\n\s*\n/).filter(Boolean);
+  const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+  return (
+    <div className="member-news-modal-overlay" onClick={onClose}>
+      <div className="member-news-modal-box" onClick={e => e.stopPropagation()}>
+        <button className="member-news-modal-close" onClick={onClose} aria-label="Schließen">✕</button>
+        {artikel.bilder.length > 0 && (
+          <div className="member-news-modal-bild">
+            <MemberNewsSlideshow bilder={artikel.bilder} titel={artikel.titel} />
+          </div>
+        )}
+        <div className="member-news-modal-inhalt">
+          <div className="member-news-modal-date">{formatDate(artikel.datum)}</div>
+          <h2 className="member-news-modal-titel">{artikel.titel}</h2>
+          <div className="member-news-modal-text">
+            {absätze.length > 0
+              ? absätze.map((p, i) => <p key={i}>{p}</p>)
+              : <p>{artikel.inhalt}</p>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
 
 const MemberDashboard = () => {
   const { t } = useTranslation('member');
@@ -95,6 +172,10 @@ const MemberDashboard = () => {
     list: [],
     unreadCount: 0
   });
+  const [showPushPopup, setShowPushPopup] = useState(false);
+  const [pushStatus, setPushStatus] = useState('unknown');
+  const [pushLoading, setPushLoading] = useState(false);
+  const [expandedNotif, setExpandedNotif] = useState(null);
 
   // Zahlungshinweise / Mahnungen aus mitglied_nachrichten
   const [zahlungsNachrichten, setZahlungsNachrichten] = useState([]);
@@ -107,12 +188,121 @@ const MemberDashboard = () => {
   // ProfilWizard: beim ersten Login anzeigen
   const [showProfilWizard, setShowProfilWizard] = useState(false);
 
+  // Familienmitglieder laden
+  const [familyMembers, setFamilyMembers] = useState([]);
+  const [familySwitching, setFamilySwitching] = useState(false);
+
+  useEffect(() => {
+    const loadFamily = async () => {
+      try {
+        const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/family-members`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.members.length > 1) {
+            setFamilyMembers(data.members);
+          }
+        }
+      } catch (e) { /* ignore */ }
+    };
+    loadFamily();
+  }, []);
+
+  const handleFamilySwitch = async (targetMitgliedId) => {
+    if (targetMitgliedId === user?.mitglied_id || familySwitching) return;
+    setFamilySwitching(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/auth/family-switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mitglied_id: targetMitgliedId })
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        // Token-Payload dekodieren für Expiry
+        const payload = JSON.parse(atob(data.token.split('.')[1]));
+        const expiryTime = payload.exp ? payload.exp * 1000 : Date.now() + (30 * 24 * 60 * 60 * 1000);
+        localStorage.setItem('dojo_auth_token', data.token);
+        localStorage.setItem('dojo_user', JSON.stringify(data.user));
+        localStorage.setItem('dojo_session_expiry', expiryTime.toString());
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error('Familie-Wechsel fehlgeschlagen:', e);
+    } finally {
+      setFamilySwitching(false);
+    }
+  };
+
+  // Push-Benachrichtigungen: Status beim Mount prüfen
+  useEffect(() => {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushStatus('unsupported');
+    } else {
+      setPushStatus(Notification.permission);
+    }
+  }, []);
+
+  const handlePushSubscribe = async () => {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    setPushLoading(true);
+    try {
+      const permission = await Notification.requestPermission();
+      setPushStatus(permission);
+      if (permission !== 'granted') return;
+      const registration = await navigator.serviceWorker.ready;
+      const vapidPublicKey = 'BKzKRA_Tojs8YsxKH5yR2oToWDm5uI8QvMjZNLCP6hSMBxyA3pwOIk2rc80a8kyd04T4stIUIrLXMj2O_CMCnfc';
+      const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: convertedKey });
+      }
+      const subJson = subscription.toJSON();
+      await fetchWithAuth(`${config.apiBaseUrl}/notifications/push/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: subJson.endpoint, p256dh: subJson.keys?.p256dh, auth: subJson.keys?.auth, userAgent: navigator.userAgent })
+      });
+      setPushStatus('granted');
+    } catch (err) {
+      console.error('Push-Aktivierung fehlgeschlagen:', err);
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
   // Event-Benachrichtigungs-Popup
   const [neueEvents, setNeueEvents] = useState([]);
   const [showEventPopup, setShowEventPopup] = useState(false);
 
   // Alle kommenden Events für Dashboard-Widget
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+
+  // News für Member-Dashboard
+  const [memberNews, setMemberNews] = useState([]);
+  const [offeneNews, setOffeneNews] = useState(null);
+
+  // Meine Umfragen (beantwortete + offene)
+  const [meineUmfragen, setMeineUmfragen] = useState([]);
+  const [pendingUmfragen, setPendingUmfragen] = useState([]);
+  const [umfrageAntworten, setUmfrageAntworten] = useState({}); // { [id]: { antwort, kommentar } }
+  const [umfrageSending, setUmfrageSending] = useState(null);
+
+  // Vertrag-Anpassungen (Mitglied-Sicht)
+  const [meineAnpassungen, setMeineAnpassungen] = useState([]);
+  const [showAnpassungForm, setShowAnpassungForm] = useState(false);
+  const [anpassungForm, setAnpassungForm] = useState({ typ: 'student', gueltig_von: '', gueltig_bis: '', grund: '' });
+  const [anpassungLoading, setAnpassungLoading] = useState(false);
+  const [anpassungError, setAnpassungError] = useState('');
+  const [anpassungSuccess, setAnpassungSuccess] = useState('');
+  const [showAbwesenheitWidget, setShowAbwesenheitWidget] = useState(false);
+  // Ruhepause
+  const [showRuhepauseForm, setShowRuhepauseForm] = useState(false);
+  const [ruhepauseForm, setRuhepauseForm] = useState({ gueltig_von: '', gueltig_bis: '', grund: '' });
+  const [ruhepauseLoading, setRuhepauseLoading] = useState(false);
+  const [ruhepauseError, setRuhepauseError] = useState('');
+  const [ruhepauseSuccess, setRuhepauseSuccess] = useState('');
+  const [ruhepauseInfo, setRuhepauseInfo] = useState(null);
+  const [ruhepauseMaxMonate, setRuhepauseMaxMonate] = useState(3);
 
   // Abwärtskompatibilität: Destrukturierte Werte für bestehenden Code
   const showMemberCheckin = modals.checkin;
@@ -148,6 +338,10 @@ const MemberDashboard = () => {
   const setAcceptedConditions = useCallback((val) => setExamData(prev => ({ ...prev, acceptedConditions: val })), []);
   const setNotifications = useCallback((val) => setNotificationData(prev => ({ ...prev, list: val })), []);
   const setUnreadCount = useCallback((val) => setNotificationData(prev => ({ ...prev, unreadCount: val })), []);
+
+  // Prüfungsprotokoll
+  const [pruefProtokolle, setPruefProtokolle] = useState([]);
+  const [protokollViewId, setProtokolViewId] = useState(null);
 
   // Quick Action Handler
   const handleQuickAction = (action) => {
@@ -196,6 +390,73 @@ const MemberDashboard = () => {
       }
     } catch (e) {
       // optional — kein Fehler anzeigen
+    }
+  };
+
+  // Lade aktive + noch nicht beantwortete Umfragen
+  const loadMeineUmfragen = async () => {
+    try {
+      const [rAktiv, rPending] = await Promise.allSettled([
+        fetchWithAuth(`${config.apiBaseUrl}/umfragen/dojo/aktiv`),
+        fetchWithAuth(`${config.apiBaseUrl}/umfragen/pending`),
+      ]);
+      if (rAktiv.status === 'fulfilled' && rAktiv.value.ok) {
+        const data = await rAktiv.value.json();
+        setMeineUmfragen(data.umfragen || []);
+      }
+      if (rPending.status === 'fulfilled' && rPending.value.ok) {
+        const data = await rPending.value.json();
+        setPendingUmfragen(data.umfragen || []);
+        // Antwort-State vorinitialisieren
+        const init = {};
+        (data.umfragen || []).forEach(u => { init[u.id] = { antwort: null, kommentar: '' }; });
+        setUmfrageAntworten(init);
+      }
+    } catch {}
+  };
+
+  const submitUmfrageAntwort = async (umfrageId) => {
+    const a = umfrageAntworten[umfrageId] || {};
+    setUmfrageSending(umfrageId);
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/umfragen/${umfrageId}/antwort`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ antwort: a.antwort || null, kommentar: a.kommentar || null }),
+      });
+      // Nach Abstimmung: aus pending entfernen
+      setPendingUmfragen(prev => prev.filter(u => u.id !== umfrageId));
+    } catch {} finally { setUmfrageSending(null); }
+  };
+
+  // Lade News für Member-Dashboard
+  const loadMemberNews = async () => {
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/news/public`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.news && data.news.length > 0) {
+          const toAbs = (url) => url ? (url.startsWith('http') ? url : `https://app.tda-vib.de${url}`) : null;
+          const mapped = data.news.map(a => {
+            let bilder = [];
+            if (a.bilder_json) {
+              try { bilder = JSON.parse(a.bilder_json).map(toAbs).filter(Boolean); } catch {}
+            }
+            if (bilder.length === 0 && a.bild_url) bilder = [toAbs(a.bild_url)];
+            return {
+              id: a.id,
+              titel: a.titel,
+              kurzbeschreibung: a.kurzbeschreibung,
+              inhalt: a.inhalt || '',
+              bilder,
+              datum: a.veroeffentlicht_am || a.created_at,
+            };
+          });
+          setMemberNews(mapped);
+        }
+      }
+    } catch (e) {
+      // News optional — kein Fehler anzeigen
     }
   };
 
@@ -277,8 +538,45 @@ const MemberDashboard = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.notifications?.filter(n => !n.read).length || 0);
+          const allNotifs = data.notifications || [];
+          setNotifications(allNotifs);
+          const unread = allNotifs.filter(n => n.status === 'unread');
+          setUnreadCount(unread.length);
+
+          // App-Icon-Badge setzen (Chrome Android / Desktop)
+          if ('setAppBadge' in navigator) {
+            unread.length > 0
+              ? navigator.setAppBadge(unread.length).catch(() => {})
+              : navigator.clearAppBadge().catch(() => {});
+          }
+          // Service Worker Badge-Update (Fallback via postMessage)
+          if (navigator.serviceWorker?.controller) {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'SET_BADGE',
+              count: unread.length
+            });
+          }
+
+          // Popup nur für Nachrichten zeigen, die noch NICHT gesehen wurden
+          // localStorage statt sessionStorage → bleibt auch nach App-Neustart erhalten
+          if (unread.length > 0) {
+            const storageKey = `pnp_shown_${email}`;
+            const alreadyShown = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+            // Nur Notifications ohne Bestätigungspflicht — Bestätigungen brauchen expliziten Klick
+            const newOnes = unread.filter(n => !alreadyShown.has(String(n.id)) && !n.requires_confirmation);
+            if (newOnes.length > 0) {
+              newOnes.forEach(n => alreadyShown.add(String(n.id)));
+              localStorage.setItem(storageKey, JSON.stringify([...alreadyShown]));
+              setShowPushPopup(true);
+              // Sofort als gelesen markieren (nicht-Bestätigungs-Nachrichten)
+              const nonConfirmIds = newOnes.map(n => n.id);
+              fetchWithAuth(`${config.apiBaseUrl}/notifications/member/mark-read`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, ids: nonConfirmIds })
+              }).catch(() => {});
+            }
+          }
         }
       }
     } catch (error) {
@@ -325,7 +623,7 @@ const MemberDashboard = () => {
         if (data.success && data.pruefungen) {
           setApprovedExams(data.pruefungen);
 
-          // Setze nächste Prüfung wenn vorhanden
+          // Nächste Prüfung: nur aus tatsächlicher Teilnahme-Liste setzen
           if (data.pruefungen.length > 0) {
             const nextExamData = data.pruefungen[0]; // Erste Prüfung (nach Datum sortiert)
             setNextExam({
@@ -334,6 +632,9 @@ const MemberDashboard = () => {
               stilId: nextExamData.stil_id,
               graduierung: nextExamData.graduierung_nachher
             });
+          } else {
+            // Kein aktiver Prüfungstermin mehr → Countdown ausblenden
+            setNextExam(null);
           }
         }
       }
@@ -355,6 +656,14 @@ const MemberDashboard = () => {
     } catch (error) {
       console.error('❌ Fehler beim Laden der Prüfungsergebnisse:', error);
     }
+    // Protokolle laden
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/pruefungen/mitglied/${memberId}/protokolle`);
+      if (r.ok) {
+        const d = await r.json();
+        if (d.success) setPruefProtokolle(d.protokolle || []);
+      }
+    } catch (_) {}
   };
 
   // Echte Daten für das eingeloggte Mitglied laden
@@ -372,7 +681,13 @@ const MemberDashboard = () => {
 
         console.log('🔍 Lade Mitgliedsdaten für ID:', mitgliedId);
 
-        const memberResponse = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${mitgliedId}`);
+        // Alle 4 initialen Fetches parallel — mitgliedId ist aus JWT bekannt
+        const [memberResponse, attendanceResponse, vertraegeResponse, kurseResponse] = await Promise.all([
+          fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${mitgliedId}`),
+          fetchWithAuth(`${config.apiBaseUrl}/anwesenheit/${mitgliedId}`),
+          fetchWithAuth(`${config.apiBaseUrl}/vertraege?mitglied_id=${mitgliedId}`),
+          fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${mitgliedId}/kurse`),
+        ]);
 
         if (!memberResponse.ok) {
           throw new Error(`HTTP ${memberResponse.status}: ${memberResponse.statusText}`);
@@ -387,9 +702,6 @@ const MemberDashboard = () => {
           setShowProfilWizard(true);
         }
 
-        // Anwesenheitsdaten laden (mit mitglied_id direkt)
-        const attendanceResponse = await fetchWithAuth(`${config.apiBaseUrl}/anwesenheit/${memberData.mitglied_id}`);
-
         let attendanceData = [];
         if (attendanceResponse.ok) {
           try {
@@ -397,16 +709,9 @@ const MemberDashboard = () => {
           } catch (e) {
             console.error('❌ Fehler beim Parsen der Anwesenheitsdaten:', e);
           }
-        } else if (attendanceResponse.status === 404) {
-          // 404 bedeutet keine Anwesenheitsdaten vorhanden - das ist ok
-        } else {
+        } else if (attendanceResponse.status !== 404) {
           console.error('❌ Fehler beim Laden der Anwesenheitsdaten:', attendanceResponse.statusText);
         }
-
-        // Beitragsdaten laden - verwende den Mitgliederdetail-Endpoint
-        // Da es keinen spezifischen Beitrags-Endpoint gibt, müssen wir diese Daten anders laden
-        // Lass uns erstmal nur die Verträge des Mitglieds prüfen
-        const vertraegeResponse = await fetchWithAuth(`${config.apiBaseUrl}/vertraege?mitglied_id=${memberData.mitglied_id}`);
 
         let vertraegeData = [];
         if (vertraegeResponse.ok) {
@@ -415,25 +720,21 @@ const MemberDashboard = () => {
           } catch (e) {
             console.error('❌ Fehler beim Parsen der Vertragsdaten:', e);
           }
-        } else if (vertraegeResponse.status === 404) {
-        } else {
+        } else if (vertraegeResponse.status !== 404) {
           console.error('❌ Fehler beim Laden der Vertragsdaten:', vertraegeResponse.statusText);
         }
 
         // Berechne offene Beiträge aus Verträgen
-        // WICHTIG: API gibt alle Verträge zurück, nicht gefiltert - wir müssen selbst filtern!
         const memberVertraege = Array.isArray(vertraegeData?.data)
-          ? vertraegeData.data.filter(v => v.mitglied_id === memberData.mitglied_id)
+          ? vertraegeData.data.filter(v => v.mitglied_id === mitgliedId)
           : Array.isArray(vertraegeData)
-            ? vertraegeData.filter(v => v.mitglied_id === memberData.mitglied_id)
+            ? vertraegeData.filter(v => v.mitglied_id === mitgliedId)
             : [];
 
         const paymentsData = memberVertraege;
 
-        // Kurse des Mitglieds laden (für Stundenplan-basierte Anwesenheitsberechnung)
         let memberKurse = [];
         try {
-          const kurseResponse = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberData.mitglied_id}/kurse`);
           if (kurseResponse.ok) {
             const kurseData = await kurseResponse.json();
             memberKurse = Array.isArray(kurseData) ? kurseData : (kurseData.kurse || []);
@@ -513,26 +814,20 @@ const MemberDashboard = () => {
         setAttendanceHistory(attendanceData);
         setPaymentHistory(paymentsData);
 
-        // Lade Stil & Gurt Daten
-        await loadMemberStyles(memberData.mitglied_id);
-
-        // Lade Push-Benachrichtigungen
-        await loadNotifications(memberData.email || user?.email);
-
-        // Lade Prüfungstermine
-        await loadApprovedExams(memberData.mitglied_id);
-
-        // Lade Prüfungsergebnisse
-        await loadExamResults(memberData.mitglied_id);
-
-        // Lade Referral-Daten
-        await loadReferralData(memberData.mitglied_id);
-
-        // Neue Events für Popup laden + alle kommenden Events für Widget
+        // Alle nachgelagerten Loads parallel ausführen
         await Promise.all([
+          loadMemberStyles(memberData.mitglied_id),
+          loadNotifications(memberData.email || user?.email),
+          loadApprovedExams(memberData.mitglied_id),
+          loadExamResults(memberData.mitglied_id),
+          loadReferralData(memberData.mitglied_id),
           loadNeueEvents(memberData.mitglied_id),
-          loadUpcomingEvents(memberData.mitglied_id)
+          loadUpcomingEvents(memberData.mitglied_id),
+          loadMemberNews(),
         ]);
+
+        // Separat laden — darf Hauptload nicht blockieren
+        loadMeineUmfragen();
 
       } catch (error) {
         console.error('❌ Fehler beim Laden der Mitgliederdaten:', error);
@@ -576,11 +871,39 @@ const MemberDashboard = () => {
       }
     };
 
-    if (user?.email) {
+    if (user?.email || user?.mitglied_id) {
       loadMemberData();
       checkBirthday();
     }
   }, [user?.email, user?.mitglied_id]);
+
+  // Meine Vertrag-Anpassungen + Ruhepause laden
+  useEffect(() => {
+    if (!user?.mitglied_id) return;
+    const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+    const headers = { 'Authorization': `Bearer ${token}` };
+    const loadAnpassungen = async () => {
+      try {
+        const resp = await fetch('/api/vertrag-anpassungen/meine', { headers });
+        if (resp.ok) { const data = await resp.json(); setMeineAnpassungen(data.anpassungen || []); }
+      } catch (_) {}
+    };
+    const loadRuhepause = async () => {
+      try {
+        const resp = await fetch('/api/vertrag-anpassungen/aktive-ruhepause', { headers });
+        if (resp.ok) { const data = await resp.json(); if (data.success) setRuhepauseInfo(data); }
+      } catch (_) {}
+    };
+    const loadRuhepauseMax = async () => {
+      try {
+        const resp = await fetch('/api/vertrag-anpassungen/ruhepause-einstellungen', { headers });
+        if (resp.ok) { const data = await resp.json(); if (data.success) setRuhepauseMaxMonate(data.max_monate || 3); }
+      } catch (_) {}
+    };
+    loadAnpassungen();
+    loadRuhepause();
+    loadRuhepauseMax();
+  }, [user?.mitglied_id]);
 
   // Zahlungshinweise / Mahnungen laden
   useEffect(() => {
@@ -660,19 +983,9 @@ const MemberDashboard = () => {
           [stilId]: result.data
         }));
 
-        // Prüfe auf nächste Prüfung
-        if (result.data?.naechste_pruefung) {
-          const examDate = new Date(result.data.naechste_pruefung);
-          const today = new Date();
-          if (examDate > today) {
-            const stilData = stile.find(s => s.stil_id === stilId);
-            setNextExam({
-              date: examDate,
-              stil: stilData?.name || 'Unbekannt',
-              stilId: stilId
-            });
-          }
-        }
+        // naechste_pruefung aus Stil-Daten wird NICHT für den Countdown verwendet,
+        // da sie aus pruefungstermin_vorlagen kommt (unabhängig von tatsächlicher Anmeldung).
+        // Stattdessen setzt loadApprovedExams den echten Teilnehmer-Status.
       }
     } catch (error) {
       console.error(`Fehler beim Laden stilspezifischer Daten für Stil ${stilId}:`, error);
@@ -746,44 +1059,39 @@ const MemberDashboard = () => {
 
   // Berechne aktuelle Gürtelfarben aus memberStile
   const currentBelts = useMemo(() => {
-    console.log('🎨 Berechne Gürtelfarben...', { memberStile, styleSpecificData });
-
     if (!memberStile || memberStile.length === 0) {
-      console.log('⚠️ Keine Stile geladen - Fallback zu Weiß');
-      return 'Weiß';
+      return [{ name: 'Weiß', farbe: '#ffffff' }];
     }
 
     const belts = memberStile.map(stil => {
       const stilData = styleSpecificData[stil.stil_id];
+      const stilName = stil.name || '';
 
       if (!stilData || !stilData.current_graduierung_id) {
-        // Fallback: Nutze stil.current_gurtfarbe wenn vorhanden
         if (stil.current_gurtfarbe) {
-          return stil.current_gurtfarbe;
+          return { stilName, name: stil.current_gurtfarbe, farbe: null };
         }
-
-        // Fallback: Erste Graduierung (meistens Weißgurt)
-        const firstGrad = stil.graduierungen?.[0]?.name;
-        return firstGrad || 'Weiß';
+        const firstGrad = stil.graduierungen?.[0];
+        return { stilName, name: firstGrad?.name || 'Weiß', farbe: firstGrad?.farbe_hex || '#ffffff' };
       }
 
       const currentGrad = stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id);
-      return currentGrad?.name || 'Weiß';
-    }).filter(Boolean); // Entferne undefinierte Werte
+      return { stilName, name: currentGrad?.name || 'Weiß', farbe: currentGrad?.farbe_hex || '#ffffff' };
+    }).filter(Boolean);
 
-    console.log('🎓 Finale Gürtel:', belts);
-
-    // Falls mehrere Stile: alle Gürtel anzeigen
-    return belts.length > 0 ? belts.join(', ') : 'Weiß';
+    return belts.length > 0 ? belts : [{ name: 'Weiß', farbe: '#ffffff' }];
   }, [memberStile, styleSpecificData]);
 
   // Debug: Log memberData status on render
   console.log('🎨 MemberDashboard Render - memberData:', memberData ? 'vorhanden' : 'nicht vorhanden', memberData);
-  console.log('🎨 Aktuelle Gürtel:', currentBelts);
+  console.log('🎨 Aktuelle Gürtel:', currentBelts.map(b => b.name).join(', '));
 
   return (
     <div className="dashboard-container">
       <MemberHeader />
+
+      {/* Umfragen-Popup: erscheint beim Login wenn offene Umfragen vorhanden */}
+      <UmfragePopup />
 
       {/* ProfilWizard: Notfallkontakt beim ersten Login */}
       {showProfilWizard && memberData && (
@@ -804,6 +1112,72 @@ const MemberDashboard = () => {
           onSpaeter={handleEventPopupSpaeter}
           onClose={() => setShowEventPopup(false)}
         />
+      )}
+
+      {/* Push-Benachrichtigungs-Popup */}
+      {showPushPopup && notifications.filter(n => n.status === 'unread').length > 0 && (
+        <PushNotificationPopup
+          notifications={notifications.filter(n => n.status === 'unread')}
+          onClose={() => setShowPushPopup(false)}
+          onConfirm={async (id) => {
+            await confirmNotification(id);
+            // Nachrichten neu laden nach Bestätigung
+            if (memberData?.email || user?.email) {
+              await loadNotifications(memberData?.email || user?.email);
+            }
+          }}
+        />
+      )}
+
+      {/* Benachrichtigung "Weiterlesen" Modal */}
+      {expandedNotif && (
+        <div className="pnp-overlay" onClick={() => setExpandedNotif(null)}>
+          <div className="pnp-card" onClick={e => e.stopPropagation()}>
+            <div className="pnp-header">
+              <div className="pnp-header-left">
+                <Bell size={16} className="pnp-bell-icon" />
+                <span className="pnp-header-title">{expandedNotif.subject || expandedNotif.title || 'Benachrichtigung'}</span>
+              </div>
+              <button className="pnp-close-btn" onClick={() => setExpandedNotif(null)} title="Schließen">
+                ✕
+              </button>
+            </div>
+            <div className="pnp-body">
+              <div className="pnp-message">{expandedNotif.message}</div>
+              {expandedNotif.created_at && (
+                <div className="pnp-time">
+                  {new Date(expandedNotif.created_at).toLocaleString('de-DE', {
+                    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                  })}
+                </div>
+              )}
+              {!!expandedNotif.requires_confirmation && !expandedNotif.confirmed_at && (
+                <button
+                  className="pnp-confirm-btn"
+                  style={{ marginTop: '0.75rem' }}
+                  onClick={async () => {
+                    await confirmNotification(expandedNotif.id);
+                    if (memberData?.email || user?.email) {
+                      await loadNotifications(memberData?.email || user?.email);
+                    }
+                    setExpandedNotif(null);
+                  }}
+                >
+                  <Check size={14} /> Bestätigen
+                </button>
+              )}
+              {!!expandedNotif.requires_confirmation && expandedNotif.confirmed_at && (
+                <div className="pnp-confirmed-badge" style={{ marginTop: '0.75rem' }}>
+                  ✓ Bestätigt am {new Date(expandedNotif.confirmed_at).toLocaleString('de-DE')}
+                </div>
+              )}
+            </div>
+            <div className="pnp-footer">
+              <span />
+              <button className="pnp-next-btn" onClick={() => setExpandedNotif(null)}>Schließen</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Zahlungshinweis-Banner */}
@@ -849,18 +1223,19 @@ const MemberDashboard = () => {
           <div className="member-stat-column">
             <div className="member-stat-card">
               <div className="member-stat-icon">🏃‍♂️</div>
-              <h3 className="member-stat-label">{t('stats.trainingHours')}</h3>
+              <h3 className="member-stat-label">TRAININGS</h3>
               <div className="member-stat-value">{stats.trainingsstunden}</div>
+              <div className="member-stat-sublabel">Einheiten absolviert</div>
             </div>
             <div className="member-stat-card">
               <div className="member-stat-icon">📊</div>
-              <h3 className="member-stat-label">{t('stats.attendance')}</h3>
+              <h3 className="member-stat-label">ANWESENHEIT</h3>
               <div className="member-stat-value">
                 {stats.anwesenheit !== null ? `${stats.anwesenheit}%` : '—'}
               </div>
-              {stats.anwesenheitMoeglich > 0 && (
+              {stats.anwesenheitAnwesend > 0 && (
                 <div className="member-stat-sublabel">
-                  {stats.anwesenheitAnwesend} / {stats.anwesenheitMoeglich}
+                  {stats.anwesenheitAnwesend} Termine
                 </div>
               )}
             </div>
@@ -936,15 +1311,38 @@ const MemberDashboard = () => {
           <div className="member-stat-column">
             <div className="member-stat-card">
               <div className="member-stat-icon">🎓</div>
-              <h3 className="member-stat-label">{t('stats.belt')}</h3>
-              <div className="member-stat-value sm">{currentBelts}</div>
+              <h3 className="member-stat-label">GÜRTEL</h3>
+              <div className="member-belt-list">
+                {currentBelts.map((b, i) => (
+                  <div key={i} className="member-belt-entry">
+                    {b.stilName && (
+                      <span className="member-belt-stilname">{b.stilName}</span>
+                    )}
+                    <div className="member-belt-item">
+                      <span
+                        className="member-belt-stripe"
+                        style={{ background: b.farbe || '#ffffff' }}
+                      />
+                      <span className="member-belt-name">{b.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="member-stat-card">
-              <div className="member-stat-icon">💳</div>
-              <h3 className="member-stat-label">{t('stats.openFees')}</h3>
-              <div className={`member-stat-value${stats.offeneBeitraege > 0 ? ' md-stat-value--error' : ' md-stat-value--success'}`}>
-                {stats.offeneBeitraege}
-              </div>
+              <div className="member-stat-icon">{stats.offeneBeitraege > 0 ? '⚠️' : '✅'}</div>
+              <h3 className="member-stat-label">BEITRÄGE</h3>
+              {stats.offeneBeitraege === 0 ? (
+                <>
+                  <div className="member-stat-value md-stat-value--success">✓</div>
+                  <div className="member-stat-sublabel">Alles bezahlt</div>
+                </>
+              ) : (
+                <>
+                  <div className="member-stat-value md-stat-value--error">{stats.offeneBeitraege}</div>
+                  <div className="member-stat-sublabel md-stat-sublabel--error">offen</div>
+                </>
+              )}
             </div>
           </div>
 
@@ -993,9 +1391,9 @@ const MemberDashboard = () => {
           <QrCode size={20} />
           <span className="cta-tile-quick-label">{t('quickActions.myQrCode')}</span>
         </div>
-        <div className="cta-tile cta-tile-quick cta-tile-install" onClick={() => navigate('/app-install')}>
-          <Download size={20} />
-          <span className="cta-tile-quick-label">{t('quickActions.installApp')}</span>
+        <div className={`cta-tile cta-tile-quick${showAbwesenheitWidget ? ' cta-tile--active' : ''}`} onClick={() => setShowAbwesenheitWidget(v => !v)}>
+          <CalendarX size={20} />
+          <span className="cta-tile-quick-label">Abwesenheit</span>
         </div>
         <div className="cta-tile cta-tile-quick" onClick={() => navigate('/member/events')}>
           <Calendar size={20} />
@@ -1009,6 +1407,9 @@ const MemberDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Abwesenheit Widget — per Tile-Klick aufklappbar */}
+      {showAbwesenheitWidget && <AbwesenheitWidget />}
 
       {/* Kommende Events Widget */}
       {upcomingEvents.length > 0 && (
@@ -1049,6 +1450,45 @@ const MemberDashboard = () => {
             })}
           </div>
         </div>
+      )}
+
+      {/* News Widget */}
+      {memberNews.length > 0 && (
+        <div className="member-news-wrap">
+          <div className="member-news-header">
+            <h3 className="member-news-title">📰 Aktuelles</h3>
+          </div>
+          <div className="member-news-list">
+            {memberNews.slice(0, 3).map(artikel => (
+              <div key={artikel.id} className="member-news-card">
+                {artikel.bilder.length > 0 && (
+                  <MemberNewsSlideshow bilder={artikel.bilder} titel={artikel.titel} />
+                )}
+                <div className="member-news-card-content">
+                  <div className="member-news-date">
+                    {artikel.datum
+                      ? new Date(artikel.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'short', year: 'numeric' })
+                      : ''}
+                  </div>
+                  <div className="member-news-card-titel">{artikel.titel}</div>
+                  {artikel.kurzbeschreibung && (
+                    <p className="member-news-card-excerpt">{artikel.kurzbeschreibung}</p>
+                  )}
+                  {artikel.inhalt && (
+                    <button className="member-news-weiterlesen" onClick={() => setOffeneNews(artikel)}>
+                      Weiterlesen →
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* News Modal */}
+      {offeneNews && (
+        <MemberNewsModal artikel={offeneNews} onClose={() => setOffeneNews(null)} />
       )}
 
       {/* Freunde werben Freunde – prominent nach den Quick Actions */}
@@ -1124,6 +1564,220 @@ const MemberDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Badges / Auszeichnungen */}
+      {memberData && (
+        <div className="md-badges-section">
+          <BadgeDisplay mitgliedId={memberData.mitglied_id} compact={false} />
+        </div>
+      )}
+
+      {/* Vertragsstatus / Tarifanpassung */}
+      <div className="md-anpassung-section">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <h3 style={{ margin: 0, fontSize: '1rem', color: 'var(--text-primary)' }}>📋 Mein Vertragsstatus</h3>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => { setShowRuhepauseForm(f => !f); setShowAnpassungForm(false); setRuhepauseError(''); setRuhepauseSuccess(''); }}
+              style={{ background: showRuhepauseForm ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${showRuhepauseForm ? 'rgba(59,130,246,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, padding: '0.35rem 0.75rem', color: showRuhepauseForm ? '#60a5fa' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.82rem' }}
+            >
+              {showRuhepauseForm ? '↑ Schließen' : '⏸ Ruhepause beantragen'}
+            </button>
+            <button
+              onClick={() => { setShowAnpassungForm(f => !f); setShowRuhepauseForm(false); setAnpassungError(''); setAnpassungSuccess(''); }}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, padding: '0.35rem 0.75rem', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.82rem' }}
+            >
+              {showAnpassungForm ? '↑ Schließen' : '+ Anpassung beantragen'}
+            </button>
+          </div>
+        </div>
+
+        {/* Aktive Anpassung anzeigen */}
+        {meineAnpassungen.filter(a => a.status === 'genehmigt').length > 0 && (
+          <div style={{ background: 'rgba(76,175,80,0.08)', border: '1px solid rgba(76,175,80,0.3)', borderRadius: 10, padding: '0.75rem 1rem', marginBottom: '0.75rem' }}>
+            {meineAnpassungen.filter(a => a.status === 'genehmigt').map(a => {
+              const typLabels = { schueler: 'Schüler', student: 'Student', azubi: 'Azubi', rentner: 'Rentner', sonstiges: 'Sonstiges' };
+              return (
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <span style={{ color: '#4caf50', fontWeight: 600 }}>✓ {typLabels[a.typ] || a.typ}-Tarif aktiv</span>
+                  <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{parseFloat(a.neuer_betrag).toFixed(2).replace('.', ',')} €/Monat</span>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>bis {new Date(a.gueltig_bis).toLocaleDateString('de-DE')}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Offene Anträge */}
+        {meineAnpassungen.filter(a => a.status === 'beantragt').length > 0 && (
+          <div style={{ background: 'rgba(255,152,0,0.08)', border: '1px solid rgba(255,152,0,0.3)', borderRadius: 10, padding: '0.65rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#ff9800' }}>
+            ⏳ Dein Antrag wartet auf Genehmigung durch den Administrator.
+          </div>
+        )}
+
+        {/* Aktive / geplante Ruhepause */}
+        {ruhepauseInfo?.aktiv && ruhepauseInfo.ruhepause && (
+          <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 10, padding: '0.75rem 1rem', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+              <span style={{ color: '#60a5fa', fontWeight: 600 }}>⏸ Ruhepause aktiv</span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                {new Date(ruhepauseInfo.ruhepause.von + 'T00:00').toLocaleDateString('de-DE')} – {new Date(ruhepauseInfo.ruhepause.bis + 'T00:00').toLocaleDateString('de-DE')}
+                {ruhepauseInfo.ruhepause.dauer_monate && ` · ${ruhepauseInfo.ruhepause.dauer_monate} Monat${ruhepauseInfo.ruhepause.dauer_monate !== 1 ? 'e' : ''}`}
+              </span>
+            </div>
+            <p style={{ margin: '0.3rem 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              Während der Ruhepause werden keine Beiträge eingezogen. Dein Vertrag läuft danach automatisch weiter.
+            </p>
+          </div>
+        )}
+        {ruhepauseInfo?.geplant && !ruhepauseInfo?.aktiv && ruhepauseInfo.ruhepause && (
+          <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 10, padding: '0.65rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+            <span style={{ color: '#93c5fd' }}>
+              📅 Ruhepause geplant: {new Date(ruhepauseInfo.ruhepause.von + 'T00:00').toLocaleDateString('de-DE')} – {new Date(ruhepauseInfo.ruhepause.bis + 'T00:00').toLocaleDateString('de-DE')}
+            </span>
+          </div>
+        )}
+        {ruhepauseInfo?.pending && !ruhepauseInfo?.aktiv && !ruhepauseInfo?.geplant && (
+          <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 10, padding: '0.65rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#a5b4fc' }}>
+            ⏳ Dein Ruhepause-Antrag ({new Date(ruhepauseInfo.pending.gueltig_von + 'T00:00').toLocaleDateString('de-DE')} – {new Date(ruhepauseInfo.pending.gueltig_bis + 'T00:00').toLocaleDateString('de-DE')}) wartet auf Genehmigung.
+          </div>
+        )}
+
+        {/* Ruhepause-Formular */}
+        {showRuhepauseForm && (
+          <div style={{ background: 'rgba(59,130,246,0.05)', borderRadius: 10, padding: '1rem', border: '1px solid rgba(59,130,246,0.2)', marginBottom: '0.75rem' }}>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Eine Ruhepause unterbricht deinen Vertrag für einen bestimmten Zeitraum – keine Beiträge, volle Reaktivierung danach. Max. {ruhepauseMaxMonate} Monat{ruhepauseMaxMonate !== 1 ? 'e' : ''} möglich.
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginBottom: '0.65rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Ruhepause ab</label>
+                <input type="date" value={ruhepauseForm.gueltig_von}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={e => setRuhepauseForm(f => ({ ...f, gueltig_von: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Ruhepause bis</label>
+                <input type="date" value={ruhepauseForm.gueltig_bis}
+                  min={ruhepauseForm.gueltig_von || new Date().toISOString().slice(0, 10)}
+                  onChange={e => setRuhepauseForm(f => ({ ...f, gueltig_bis: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ gridColumn: '1/-1' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Grund (optional)</label>
+                <input type="text" placeholder="z.B. Verletzung, Urlaub, berufliche Auszeit…"
+                  value={ruhepauseForm.grund}
+                  onChange={e => setRuhepauseForm(f => ({ ...f, grund: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+            {ruhepauseError && <div style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '0.5rem' }}>⚠️ {ruhepauseError}</div>}
+            {ruhepauseSuccess && <div style={{ color: '#60a5fa', fontSize: '0.82rem', marginBottom: '0.5rem' }}>✓ {ruhepauseSuccess}</div>}
+            <button
+              disabled={ruhepauseLoading}
+              onClick={async () => {
+                const { gueltig_von, gueltig_bis, grund } = ruhepauseForm;
+                if (!gueltig_von || !gueltig_bis) { setRuhepauseError('Bitte Beginn und Ende ausfüllen.'); return; }
+                if (gueltig_bis < gueltig_von) { setRuhepauseError('Enddatum muss nach Startdatum liegen.'); return; }
+                const von = new Date(gueltig_von), bis = new Date(gueltig_bis);
+                const diffMonate = (bis.getFullYear() - von.getFullYear()) * 12 + (bis.getMonth() - von.getMonth()) + (bis.getDate() >= von.getDate() ? 0 : -1) + 1;
+                if (diffMonate > ruhepauseMaxMonate) { setRuhepauseError(`Ruhepause darf maximal ${ruhepauseMaxMonate} Monat${ruhepauseMaxMonate !== 1 ? 'e' : ''} dauern.`); return; }
+                setRuhepauseLoading(true); setRuhepauseError('');
+                try {
+                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                  const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ typ: 'ruhepause', gueltig_von, gueltig_bis, grund: grund || null })
+                  });
+                  const data = await resp.json();
+                  if (!resp.ok) throw new Error(data.error || 'Fehler');
+                  setRuhepauseSuccess('Antrag gestellt! Der Administrator wird ihn prüfen und bestätigen.');
+                  setRuhepauseForm({ gueltig_von: '', gueltig_bis: '', grund: '' });
+                  setShowRuhepauseForm(false);
+                  // Ruhepause-Info neu laden
+                  const r2 = await fetch('/api/vertrag-anpassungen/aktive-ruhepause', { headers: { 'Authorization': `Bearer ${token}` } });
+                  const d2 = await r2.json();
+                  if (d2.success) setRuhepauseInfo(d2);
+                } catch (err) { setRuhepauseError(err.message); }
+                finally { setRuhepauseLoading(false); }
+              }}
+              style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', border: 'none', color: '#fff', fontWeight: 600, cursor: ruhepauseLoading ? 'not-allowed' : 'pointer', opacity: ruhepauseLoading ? 0.7 : 1 }}
+            >
+              {ruhepauseLoading ? '⏳ Senden…' : '⏸ Ruhepause beantragen'}
+            </button>
+          </div>
+        )}
+
+        {/* Antrags-Formular */}
+        {showAnpassungForm && (
+          <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '1rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginBottom: '0.65rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Grund der Anpassung</label>
+                <select
+                  value={anpassungForm.typ}
+                  onChange={e => setAnpassungForm(f => ({ ...f, typ: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)' }}
+                >
+                  <option value="schueler">Schüler</option>
+                  <option value="student">Student</option>
+                  <option value="azubi">Azubi</option>
+                  <option value="rentner">Rentner</option>
+                  <option value="sonstiges">Sonstiges</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Gültig von</label>
+                <input type="date" value={anpassungForm.gueltig_von} onChange={e => setAnpassungForm(f => ({ ...f, gueltig_von: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Gültig bis</label>
+                <input type="date" value={anpassungForm.gueltig_bis} onChange={e => setAnpassungForm(f => ({ ...f, gueltig_bis: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Begründung (optional)</label>
+                <input type="text" placeholder="z.B. Immatrikulation liegt vor" value={anpassungForm.grund} onChange={e => setAnpassungForm(f => ({ ...f, grund: e.target.value }))}
+                  style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+            {anpassungError && <div style={{ color: '#ff6b6b', fontSize: '0.82rem', marginBottom: '0.5rem' }}>⚠️ {anpassungError}</div>}
+            {anpassungSuccess && <div style={{ color: '#4caf50', fontSize: '0.82rem', marginBottom: '0.5rem' }}>✓ {anpassungSuccess}</div>}
+            <button
+              disabled={anpassungLoading}
+              onClick={async () => {
+                const { typ, gueltig_von, gueltig_bis, grund } = anpassungForm;
+                if (!gueltig_von || !gueltig_bis) { setAnpassungError('Bitte Beginn und Ende ausfüllen.'); return; }
+                setAnpassungLoading(true); setAnpassungError('');
+                try {
+                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                  const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ typ, gueltig_von, gueltig_bis, grund: grund || null })
+                  });
+                  const data = await resp.json();
+                  if (!resp.ok) throw new Error(data.error || 'Fehler');
+                  setAnpassungSuccess('Antrag erfolgreich gestellt! Der Administrator wird ihn prüfen.');
+                  setAnpassungForm({ typ: 'student', gueltig_von: '', gueltig_bis: '', grund: '' });
+                  setShowAnpassungForm(false);
+                  // Anpassungen neu laden
+                  const r2 = await fetch('/api/vertrag-anpassungen/meine', { headers: { 'Authorization': `Bearer ${token}` } });
+                  const d2 = await r2.json();
+                  setMeineAnpassungen(d2.anpassungen || []);
+                } catch (err) { setAnpassungError(err.message); }
+                finally { setAnpassungLoading(false); }
+              }}
+              style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, var(--primary), var(--primary-dark, #b8860b))', border: 'none', color: '#fff', fontWeight: 600, cursor: anpassungLoading ? 'not-allowed' : 'pointer' }}
+            >
+              {anpassungLoading ? '⏳ Senden...' : '📩 Antrag stellen'}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Persönliche Informationen - kompakter */}
       {memberData && (
@@ -1218,39 +1872,30 @@ const MemberDashboard = () => {
 
             {/* Aktuelle Stile & Gürtel */}
             {memberStile.length > 0 && (
-              <div className="md-info-card">
-                <div className="mb-icon-lg">🥋</div>
-                <div className="u-flex-1">
-                  <h4 className="mb-value-primary">Meine Kampfkunst-Stile</h4>
-                  {memberStile.map((stil, index) => {
+              <div className="md-info-card md-stile-card">
+                <div className="md-stile-card__header">
+                  <span className="md-stile-card__icon">🥋</span>
+                  <span className="md-stile-card__title">Meine Kampfkunst-Stile</span>
+                  <span className="md-hint-text md-hint-inline">💡 Klicke auf "Stil &amp; Gurt" für Details</span>
+                </div>
+                <div className="md-stile-card__chips">
+                  {memberStile.map((stil) => {
                     const stilData = styleSpecificData[stil.stil_id];
-                    const currentGraduation = stilData?.current_graduierung_id ? 
-                      stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id) : 
+                    const currentGraduation = stilData?.current_graduierung_id ?
+                      stil.graduierungen?.find(g => g.graduierung_id === stilData.current_graduierung_id) :
                       stil.graduierungen?.[0];
-                    
                     return (
-                      <div key={stil.stil_id} className="md-stil-item">
-                        <div className="md-stil-row-header">
-                          <span className="md-stil-name">
-                            {stil.name}
-                          </span>
-                          {currentGraduation && (
-                            <span className="md-graduation-badge">
-                              {currentGraduation.name}
-                            </span>
-                          )}
-                        </div>
+                      <div key={stil.stil_id} className="md-stil-chip">
+                        <span className="md-stil-chip__name">{stil.name}</span>
+                        {currentGraduation && (
+                          <span className="md-graduation-badge">{currentGraduation.name}</span>
+                        )}
                         {stilData?.letzte_pruefung && (
-                          <div className="md-last-exam-text">
-                            Letzte Prüfung: {new Date(stilData.letzte_pruefung).toLocaleDateString('de-DE')}
-                          </div>
+                          <span className="md-stil-chip__exam">Prüfung: {new Date(stilData.letzte_pruefung).toLocaleDateString('de-DE')}</span>
                         )}
                       </div>
                     );
                   })}
-                  <div className="md-hint-text">
-                    💡 Klicke auf "Stil & Gurt" für Details
-                  </div>
                 </div>
               </div>
             )}
@@ -1390,6 +2035,18 @@ const MemberDashboard = () => {
                           Punktzahl: {result.punktzahl} / {result.max_punktzahl}
                         </div>
                       )}
+                      {(() => {
+                        const proto = pruefProtokolle.find(p => p.pruefung_id === result.pruefung_id);
+                        if (!proto || !proto.gesendet_am) return null;
+                        return (
+                          <button
+                            onClick={() => setProtokolViewId(result.pruefung_id)}
+                            style={{ marginTop: '8px', width: '100%', padding: '6px 10px', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: '6px', color: '#818cf8', cursor: 'pointer', fontSize: '12px', fontWeight: 600, textAlign: 'center' }}
+                          >
+                            📋 Prüfungsprotokoll ansehen
+                          </button>
+                        );
+                      })()}
                     </div>
                   ))}
                   {examResults.length > 3 && (
@@ -1397,6 +2054,66 @@ const MemberDashboard = () => {
                       +{examResults.length - 3} weitere Prüfungen
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Meine Umfragen */}
+            {(pendingUmfragen.length > 0 || meineUmfragen.length > 0) && (
+              <div className="md-info-card-col">
+                <div className="mb-flex-center-gap">
+                  <div className="mb-icon-lg">📋</div>
+                  <div className="u-flex-1">
+                    <h4 className="md-section-heading-primary">
+                      Umfragen
+                      {pendingUmfragen.length > 0 && (
+                        <span className="md-count-badge-red" style={{ marginLeft: 6 }}>{pendingUmfragen.length}</span>
+                      )}
+                    </h4>
+                  </div>
+                </div>
+                <div className="u-flex-col-sm">
+                  {/* Offene (noch nicht beantwortete) Umfragen */}
+                  {pendingUmfragen.map(u => {
+                    const a = umfrageAntworten[u.id] || {};
+                    const hatJaNein = u.typ === 'ja_nein' || u.typ === 'beides';
+                    const hatKommentar = u.typ === 'kommentar' || u.typ === 'beides';
+                    const kannAbsenden = hatJaNein ? a.antwort !== null : (a.kommentar || '').trim().length > 0;
+                    return (
+                      <div key={u.id} style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 8, padding: '0.85rem 1rem' }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: 4 }}>{u.titel}</div>
+                        {u.beschreibung && <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', marginBottom: 10 }}>{u.beschreibung}</div>}
+                        {hatJaNein && (
+                          <div style={{ display: 'flex', gap: 8, marginBottom: hatKommentar ? 8 : 10 }}>
+                            {['ja','nein'].map(val => (
+                              <button key={val} onClick={() => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], antwort: prev[u.id]?.antwort === val ? null : val } }))}
+                                style={{ flex: 1, padding: '0.5rem', borderRadius: 7, border: `2px solid ${a.antwort === val ? (val === 'ja' ? '#22c55e' : '#ef4444') : 'rgba(255,255,255,0.15)'}`, background: a.antwort === val ? (val === 'ja' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.05)', color: a.antwort === val ? (val === 'ja' ? '#86efac' : '#fca5a5') : 'rgba(255,255,255,0.6)', fontWeight: 600, cursor: 'pointer' }}>
+                                {val === 'ja' ? '✓ Ja' : '✗ Nein'}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {hatKommentar && (
+                          <textarea rows={2} placeholder="Kommentar (optional)…" value={a.kommentar || ''} onChange={e => setUmfrageAntworten(prev => ({ ...prev, [u.id]: { ...prev[u.id], kommentar: e.target.value } }))}
+                            style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '0.5rem 0.7rem', color: '#e2e8f0', fontSize: '0.85rem', resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
+                        )}
+                        <button onClick={() => submitUmfrageAntwort(u.id)} disabled={!kannAbsenden || umfrageSending === u.id}
+                          style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 7, color: '#fff', fontWeight: 600, padding: '0.5rem 1.25rem', cursor: kannAbsenden ? 'pointer' : 'not-allowed', opacity: kannAbsenden ? 1 : 0.4, fontSize: '0.85rem' }}>
+                          {umfrageSending === u.id ? 'Wird gesendet…' : 'Absenden'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {/* Bereits beantwortete / laufende Umfragen (Ergebnisübersicht) */}
+                  {meineUmfragen.filter(u => !pendingUmfragen.find(p => p.id === u.id)).map(u => (
+                    <div key={u.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '0.75rem 1rem' }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: 4, color: '#cbd5e1' }}>{u.titel}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+                        ✓ Beantwortet · {u.antworten_gesamt || 0} Stimmen gesamt
+                        {u.typ !== 'kommentar' && u.antworten_gesamt > 0 && ` · ✓ ${u.antworten_ja || 0} Ja · ✗ ${u.antworten_nein || 0} Nein`}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -1425,18 +2142,41 @@ const MemberDashboard = () => {
                   {notifications.slice(0, 3).map((notification, index) => (
                     <div
                       key={notification.id || index}
-                      className={`md-notif-item${!notification.read ? ' md-notif-item--unread' : ''}`}
+                      className={`md-notif-item${notification.status === 'unread' ? ' md-notif-item--unread' : ''}`}
                     >
-                      <div className={`md-notif-title${!notification.read ? ' md-notif-title--unread' : ''}`}>
+                      <div className={`md-notif-title${notification.status === 'unread' ? ' md-notif-title--unread' : ''}`}>
                         {notification.subject || notification.title}
                       </div>
                       <div className="md-notif-message">
-                        {notification.message}
+                        {(() => {
+                          const msg = notification.message || '';
+                          const MAX = 200;
+                          if (msg.length <= MAX) return msg;
+                          // Bis zu 3 Sätze oder MAX Zeichen
+                          const sätze = msg.match(/[^.!?\n]+[.!?\n]+/g) || [];
+                          let preview = '';
+                          for (let i = 0; i < Math.min(3, sätze.length); i++) {
+                            if (i > 0 && (preview + sätze[i]).length > MAX) break;
+                            preview += sätze[i];
+                          }
+                          if (!preview) preview = msg.slice(0, MAX);
+                          return (
+                            <>
+                              {preview.trim()}
+                              <button
+                                className="md-notif-readmore"
+                                onClick={() => setExpandedNotif(notification)}
+                              >
+                                … Weiterlesen
+                              </button>
+                            </>
+                          );
+                        })()}
                       </div>
                       <div className="md-notif-timestamp">
                         {notification.created_at ? new Date(notification.created_at).toLocaleString('de-DE') : 'Gerade eben'}
                       </div>
-                      {notification.requires_confirmation && !notification.confirmed_at && (
+                      {!!notification.requires_confirmation && !notification.confirmed_at && (
                         <button
                           onClick={() => confirmNotification(notification.id)}
                           className="md-notif-confirm-btn"
@@ -1452,7 +2192,7 @@ const MemberDashboard = () => {
                           ✓ Bestätigen
                         </button>
                       )}
-                      {notification.requires_confirmation && notification.confirmed_at && (
+                      {!!notification.requires_confirmation && notification.confirmed_at && (
                         <div className="md-notif-confirmed-badge">
                           ✓ Bestätigt am {new Date(notification.confirmed_at).toLocaleString('de-DE')}
                         </div>
@@ -1469,6 +2209,23 @@ const MemberDashboard = () => {
                 <p className="md-notif-empty">
                   📭 {t('notifications.noNotifications')}
                 </p>
+              )}
+
+              {/* Push-Benachrichtigungen aktivieren */}
+              {pushStatus !== 'unsupported' && pushStatus !== 'granted' && (
+                <div style={{ marginTop: '12px' }}>
+                  {pushStatus === 'denied' ? (
+                    <p className="md-notif-empty">Push-Benachrichtigungen blockiert — bitte in den Browser-Einstellungen erlauben.</p>
+                  ) : (
+                    <button
+                      className="md-notif-confirm-btn"
+                      onClick={handlePushSubscribe}
+                      disabled={pushLoading}
+                    >
+                      {pushLoading ? 'Wird aktiviert…' : '🔔 Benachrichtigungen aktivieren'}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -1674,6 +2431,15 @@ const MemberDashboard = () => {
         </div>
       )}
 
+      {/* Ehrungen Platzhalter */}
+      <div className="md-ehrungen-card">
+        <span className="md-hof-icon">🏅</span>
+        <div>
+          <h4 className="md-hof-title">Meine Ehrungen</h4>
+          <p className="md-hof-sub">Hier erscheinen deine Auszeichnungen, sobald du in die Hall of Fame aufgenommen wirst.</p>
+        </div>
+      </div>
+
       {/* Member Check-in Modal */}
       {showMemberCheckin && (
         <MemberCheckin onClose={() => setShowMemberCheckin(false)} />
@@ -1686,6 +2452,24 @@ const MemberDashboard = () => {
           onClose={() => setShowQRCode(false)}
         />
       )}
+
+      {/* Prüfungsprotokoll Modal */}
+      {protokollViewId && (() => {
+        const proto = pruefProtokolle.find(p => p.pruefung_id === protokollViewId);
+        if (!proto?.html_inhalt) return null;
+        return (
+          <div onClick={() => setProtokolViewId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflowY: 'auto', padding: '16px' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '8px', width: '100%', maxWidth: '210mm', boxShadow: '0 20px 60px rgba(0,0,0,0.6)', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid #e0e0e0', background: '#f5f5f5', borderRadius: '8px 8px 0 0' }}>
+                <span style={{ fontWeight: 600, color: '#333', fontSize: '14px' }}>📋 Prüfungsprotokoll</span>
+                <button onClick={() => setProtokolViewId(null)} style={{ background: '#e0e0e0', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontWeight: 500, color: '#333', fontSize: '13px' }}>✕ Schließen</button>
+              </div>
+              <div style={{ padding: '16mm 12mm', color: '#1a1a1a' }} dangerouslySetInnerHTML={{ __html: proto.html_inhalt }} />
+            </div>
+          </div>
+        );
+      })()}
+
         </div>
       </div>
     </div>

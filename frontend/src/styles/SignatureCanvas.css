@@ -22,7 +22,7 @@
   border-radius: 8px;
   background-color: var(--sc-bg, transparent);
 }
-.sc-pad-wrapper--signed { border: 2px solid #10b981; }
+.sc-pad-wrapper--signed { border: 2px solid var(--status-success); }
 .sc-pad-wrapper--disabled { background-color: rgba(255,255,255,0.05); }
 
 .sc-placeholder {
@@ -50,7 +50,7 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  background-color: #10b981;
+  background-color: var(--status-success);
   border-radius: 50%;
   padding: 4px;
   display: flex;

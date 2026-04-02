@@ -10,7 +10,7 @@
 .legal-header {
   padding: 1rem 0;
   background: rgba(0, 0, 0, 0.3);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .legal-header .container {
@@ -22,7 +22,7 @@
 .legal-logo {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   text-decoration: none;
   display: inline-block;
 }
@@ -35,7 +35,7 @@
 .legal-hero {
   padding: 4rem 0 3rem;
   text-align: center;
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.05) 0%, transparent 100%);
+  background: linear-gradient(180deg, var(--primary-alpha-05) 0%, transparent 100%);
 }
 
 .legal-hero .container {
@@ -46,8 +46,8 @@
 
 .legal-label {
   display: inline-block;
-  background: rgba(255, 215, 0, 0.15);
-  color: #ffd700;
+  background: var(--primary-alpha-15);
+  color: var(--primary);
   padding: 0.4rem 1rem;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -59,7 +59,7 @@
   font-size: 2.5rem;
   font-weight: 800;
   margin: 0 0 1rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -86,7 +86,7 @@
   background: rgba(255, 255, 255, 0.03);
   border-radius: 16px;
   padding: 2.5rem;
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--primary-alpha-10);
 }
 
 .legal-block {
@@ -100,10 +100,10 @@
 .legal-article h2 {
   font-size: 1.4rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   margin: 0 0 1.25rem;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid var(--primary-alpha-20);
 }
 
 .legal-article h3 {
@@ -143,21 +143,21 @@
 
 .legal-article address {
   font-style: normal;
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
   padding: 1.25rem;
   border-radius: 8px;
-  border-left: 3px solid #ffd700;
+  border-left: 3px solid var(--primary);
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.8;
   margin: 1rem 0;
 }
 
 .legal-article address strong {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .legal-article a {
-  color: #ffd700;
+  color: var(--primary);
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -175,7 +175,7 @@
 .legal-footer {
   padding: 2rem 0;
   background: rgba(0, 0, 0, 0.3);
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
+  border-top: 1px solid var(--primary-alpha-20);
   text-align: center;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .legal-footer-links a:hover {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 /* Responsive */

@@ -1,0 +1,347 @@
+/* ============================================================
+   TAB STYLE SYSTEM — Globale Tab-Ansichten
+   Umschaltbar via html[data-tab-style="X"]
+   Persistiert in localStorage('dojo-tab-style')
+   ============================================================ */
+
+/* Akzentfarbe (kann vom Benutzer via DesignTab geändert werden) */
+:root {
+  --tab-accent: var(--primary, #ffd700);
+}
+
+/* ─── Preset: Underline ─────────────────────────────────────── */
+/* Transparent, klare Unterstrich-Linie bei aktivem Tab */
+
+html[data-tab-style="underline"] .tab-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  border-radius: 0 !important;
+  color: rgba(255,255,255,0.55) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="underline"] .tab-button:hover:not(.active) {
+  background: rgba(255,255,255,0.04) !important;
+  border-bottom-color: rgba(255,255,255,0.2) !important;
+  color: rgba(255,255,255,0.85) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="underline"] .tab-button.active {
+  background: transparent !important;
+  border-bottom-color: var(--tab-accent) !important;
+  color: var(--tab-accent) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Auswertungen-spezifisch: horizontale Tabs brauchen border-radius 0 für Underline */
+html[data-tab-style="underline"] .tab-navigation .tab-button {
+  border-radius: 0 !important;
+}
+
+/* ─── Preset: Pill Solid ────────────────────────────────────── */
+/* Track-Hintergrund, solide Füllung bei Aktiv */
+
+html[data-tab-style="pill-solid"] .tab-navigation {
+  background: rgba(255,255,255,0.04) !important;
+  padding: 4px !important;
+  border-radius: 100px !important;
+  border: 1px solid rgba(255,255,255,0.07) !important;
+  gap: 2px !important;
+}
+html[data-tab-style="pill-solid"] .tab-button {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 100px !important;
+  color: rgba(255,255,255,0.55) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="pill-solid"] .tab-button:hover:not(.active) {
+  background: rgba(255,255,255,0.07) !important;
+  color: rgba(255,255,255,0.88) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  border-color: transparent !important;
+}
+html[data-tab-style="pill-solid"] .tab-button.active {
+  background: var(--tab-accent) !important;
+  color: #1a1a0a !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+  transform: none !important;
+  border-color: transparent !important;
+}
+
+/* ─── Preset: Frosted ───────────────────────────────────────── */
+/* Leicht getönter Track, sanfte Outline-Box bei Aktiv */
+
+html[data-tab-style="frosted"] .tab-navigation {
+  background: rgba(255,255,255,0.03) !important;
+  padding: 3px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255,255,255,0.06) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  gap: 2px !important;
+}
+html[data-tab-style="frosted"] .tab-button {
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+  color: rgba(255,255,255,0.55) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="frosted"] .tab-button:hover:not(.active) {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.85) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="frosted"] .tab-button.active {
+  background: rgba(255,215,0,0.10) !important;
+  border-color: rgba(255,215,0,0.25) !important;
+  color: var(--tab-accent) !important;
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.12) inset, 0 2px 8px rgba(255,215,0,0.08) !important;
+  transform: none !important;
+}
+
+/* ─── Preset: Bordered ──────────────────────────────────────── */
+/* Klarer Rahmen, leicht gefüllt bei Aktiv */
+
+html[data-tab-style="bordered"] .tab-button {
+  background: transparent !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 7px !important;
+  color: rgba(255,255,255,0.55) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="bordered"] .tab-button:hover:not(.active) {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.2) !important;
+  color: rgba(255,255,255,0.85) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+html[data-tab-style="bordered"] .tab-button.active {
+  background: rgba(255,215,0,0.08) !important;
+  border-color: var(--tab-accent) !important;
+  color: var(--tab-accent) !important;
+  box-shadow: none !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ─── Akzentfarbe auf alle active-States (auch bei Glass-Stil) ── */
+/* Diese Regel sorgt dafür dass der Farbpicker wirkt */
+html[data-tab-style] .tab-button.active {
+  color: var(--tab-accent) !important;
+}
+
+/* Auswertungen: .tab-button:hover color override */
+html[data-tab-style] .tab-button:hover {
+  color: var(--tab-accent) !important;
+}
+
+/* ─── DesignTab Preview-Klassen ─────────────────────────────── */
+
+.dtab-style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.dtab-style-card {
+  background: rgba(255,255,255,0.025);
+  border: 2px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 1.1rem 1rem 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+  user-select: none;
+}
+.dtab-style-card:hover {
+  border-color: rgba(255,255,255,0.2);
+  transform: translateY(-1px);
+}
+.dtab-style-card.active {
+  border-color: var(--primary, #ffd700);
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.15), 0 4px 16px rgba(255,215,0,0.08);
+}
+
+.dtab-preview-strip {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+  padding: 4px 5px;
+  border-radius: 8px;
+  min-height: 34px;
+  align-items: center;
+}
+
+.dtab-preview-tab {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 9px;
+  cursor: default;
+  white-space: nowrap;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.dtab-style-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin-bottom: 0.2rem;
+}
+
+.dtab-style-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, rgba(255,255,255,0.5));
+  line-height: 1.4;
+}
+
+.dtab-active-check {
+  float: right;
+  font-size: 0.8rem;
+  color: var(--primary, #ffd700);
+  font-weight: 700;
+}
+
+/* Color picker section */
+.dtab-color-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dtab-color-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary, rgba(255,255,255,0.7));
+  flex: 1;
+  min-width: 120px;
+}
+.dtab-color-label small {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-top: 1px;
+}
+
+.dtab-color-input {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  overflow: hidden;
+}
+
+.dtab-color-hex {
+  font-size: 0.8rem;
+  color: var(--text-secondary, rgba(255,255,255,0.6));
+  font-family: monospace;
+  min-width: 70px;
+}
+
+.dtab-color-reset {
+  padding: 0.35rem 0.8rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  color: var(--text-secondary, rgba(255,255,255,0.6));
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.dtab-color-reset:hover {
+  background: rgba(255,255,255,0.09);
+  color: var(--text-primary, #fff);
+}
+
+/* Save button + success state */
+.dtab-save-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dtab-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.4rem;
+  background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,107,53,0.12));
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 8px;
+  color: var(--primary, #ffd700);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.dtab-save-btn:hover {
+  background: linear-gradient(135deg, rgba(255,215,0,0.28), rgba(255,107,53,0.18));
+  box-shadow: 0 2px 16px rgba(255,215,0,0.15);
+}
+
+.dtab-saved-msg {
+  font-size: 0.84rem;
+  color: #10b981;
+  font-weight: 600;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Live-Vorschau Hinweis */
+.dtab-live-hint {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ─── Washi Theme Overrides ──────────────────────────────────── */
+
+[data-theme="tda-vib"] html[data-tab-style="underline"] .tab-button.active,
+[data-theme="tda-vib"][data-tab-style="underline"] .tab-button.active {
+  border-bottom-color: var(--color-vermillion, #c73e3a) !important;
+  color: var(--color-vermillion, #c73e3a) !important;
+}
+
+[data-theme="tda-vib"] .dtab-style-card.active {
+  border-color: var(--color-gold-dark, #9a7000);
+}
+
+[data-theme="tda-vib"] .dtab-style-card {
+  background: rgba(255,255,255,0.5);
+  border-color: rgba(175,135,55,0.18);
+}
+
+[data-theme="tda-vib"] .dtab-color-section {
+  background: rgba(255,255,255,0.45);
+  border-color: rgba(175,135,55,0.18);
+}
+
+[data-theme="tda-vib"] .dtab-style-label {
+  color: var(--color-sumi, #2c2416);
+}
+[data-theme="tda-vib"] .dtab-style-desc {
+  color: rgba(44,36,22,0.6);
+}

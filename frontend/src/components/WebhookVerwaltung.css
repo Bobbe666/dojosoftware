@@ -23,5 +23,5 @@
 .wv-status-dot--active { background: #22c55e; }
 .wv-status-dot--inactive { background: #ef4444; }
 
-.wv-test-result--ok { background: rgba(34, 197, 94, 0.1); border-color: #22c55e; }
-.wv-test-result--error { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
+.wv-test-result--ok { background: rgba(34, 197, 94, 0.1); border-color: var(--status-success); }
+.wv-test-result--error { background: rgba(239, 68, 68, 0.1); border-color: var(--status-error); }

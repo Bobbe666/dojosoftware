@@ -103,7 +103,7 @@
 
 .member-stats .pruefung-item {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-lg);
   padding: 0.5rem;
   display: grid;
@@ -163,14 +163,14 @@
 .member-stats .chart-bar:hover .bar-value {
   color: var(--primary);
   font-weight: 600;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 8px var(--primary-alpha-50);
 }
 
 .member-stats .chart-bar .bar-container {
   width: 100%;
   height: 150px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-md);
   overflow: hidden;
   position: relative;
@@ -178,8 +178,8 @@
 }
 
 .member-stats .bar-container:hover {
-  border-color: rgba(255, 215, 0, 0.4);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  border-color: var(--primary-alpha-40);
+  box-shadow: 0 0 15px var(--primary-alpha-20);
   transform: translateY(-2px);
 }
 
@@ -289,7 +289,7 @@
 
 .month-details-popup {
   background: linear-gradient(135deg, rgba(30, 30, 35, 0.95), rgba(45, 45, 50, 0.95));
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-xl);
   max-width: 600px;
   width: 90%;
@@ -299,7 +299,7 @@
 }
 
 .month-details-header {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
   padding: 1rem 1.5rem;
   display: flex;
@@ -346,7 +346,7 @@
 
 .summary-item {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: 1rem;
   display: flex;
@@ -364,7 +364,7 @@
 
 .training-day-item {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-lg);
   padding: 1rem;
   margin-bottom: 0.8rem;
@@ -373,7 +373,7 @@
 
 .training-day-item:hover {
   background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .training-date {
@@ -437,7 +437,7 @@
 
 .member-stats .comparison-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: 1rem;
   transition: all 0.2s ease;
@@ -445,7 +445,7 @@
 
 .member-stats .comparison-card:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-2px);
 }
 
@@ -469,7 +469,7 @@
   gap: 0.3rem;
   font-size: var(--ui-badge-size);
   font-weight: 600;
-  color: var(--perf-color, #ffd700);
+  color: var(--perf-color, var(--primary));
 }
 
 .member-stats .comparison-values {
@@ -544,9 +544,9 @@
   top: 0;
   left: 0;
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   border-radius: var(--comp-radius-lg);
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 10px var(--primary-alpha-30);
 }
 
 .member-stats .bar-labels {
@@ -580,7 +580,7 @@
 
 .member-stats .goal-item {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-lg);
   padding: 0.5rem;
 }
@@ -596,7 +596,7 @@
 
 .member-stats .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
 }
 
 .member-stats .goal-status {

@@ -1,0 +1,231 @@
+{
+  "invoices": {
+    "title": "Fatture",
+    "subtitle": "Gestisci tutte le fatture",
+    "create": "Nuova Fattura",
+    "edit": "Modifica Fattura",
+    "view": "Visualizza Fattura",
+    "columns": {
+      "invoiceNumber": "N. Fattura",
+      "date": "Data",
+      "dueDate": "Scadenza",
+      "member": "Membro",
+      "amount": "Importo",
+      "status": "Stato",
+      "actions": "Azioni"
+    },
+    "status": {
+      "open": "Aperta",
+      "paid": "Pagata",
+      "overdue": "Scaduta",
+      "partiallyPaid": "Parzialmente Pagata",
+      "cancelled": "Annullata"
+    },
+    "filters": {
+      "all": "Tutte le Fatture",
+      "open": "Aperte",
+      "paid": "Pagate",
+      "overdue": "Scadute",
+      "archive": "Archivio"
+    },
+    "searchPlaceholder": "Cerca per numero fattura, membro o descrizione...",
+    "noInvoices": "Nessuna fattura trovata",
+    "emptyStates": {
+      "all": "Non sono ancora state create fatture.",
+      "open": "Nessuna fattura aperta disponibile.",
+      "paid": "Nessuna fattura pagata disponibile.",
+      "overdue": "Nessuna fattura scaduta disponibile.",
+      "archive": "Nessuna fattura archiviata disponibile."
+    },
+    "types": {
+      "membershipFee": "Quota Associativa",
+      "examFee": "Tassa Esame",
+      "courseFee": "Quota Corso",
+      "equipment": "Attrezzatura",
+      "other": "Altro"
+    },
+    "details": "Dettagli Fattura",
+    "tabs": {
+      "details": "Dettagli",
+      "positions": "Voci",
+      "payments": "Pagamenti"
+    },
+    "positionsTable": {
+      "position": "Pos.",
+      "description": "Descrizione",
+      "quantity": "Qtà",
+      "unitPrice": "Prezzo Unit.",
+      "total": "Totale",
+      "noPositions": "Nessuna voce disponibile"
+    },
+    "paymentsTable": {
+      "title": "Storico Pagamenti",
+      "date": "Data",
+      "amount": "Importo",
+      "method": "Metodo",
+      "note": "Nota",
+      "noPayments": "Nessun pagamento disponibile"
+    },
+    "confirmArchive": "Archiviare la fattura?",
+    "confirmUnarchive": "Ripristinare dall'archivio?",
+    "confirmDelete": "Eliminare davvero la fattura? Non può essere annullato!",
+    "archived": "Fattura archiviata",
+    "unarchived": "Archivio ripristinato",
+    "deleted": "Fattura eliminata",
+    "tooltips": {
+      "viewDetails": "Visualizza dettagli",
+      "archive": "Archivia",
+      "restore": "Ripristina",
+      "delete": "Elimina"
+    },
+    "form": {
+      "selectMember": "Seleziona Membro",
+      "invoiceDate": "Data Fattura",
+      "dueDate": "Data Scadenza",
+      "items": "Voci",
+      "addItem": "Aggiungi Voce",
+      "description": "Descrizione",
+      "quantity": "Quantità",
+      "unitPrice": "Prezzo Unitario",
+      "total": "Totale",
+      "subtotal": "Subtotale",
+      "tax": "IVA",
+      "totalAmount": "Importo Totale"
+    },
+    "actions": {
+      "markPaid": "Segna come Pagata",
+      "sendEmail": "Invia per Email",
+      "download": "Scarica PDF",
+      "cancel": "Annulla",
+      "duplicate": "Duplica"
+    }
+  },
+  "fees": {
+    "title": "Quote",
+    "subtitle": "Gestisci le quote associative",
+    "columns": {
+      "member": "Membro",
+      "tariff": "Tariffa",
+      "amount": "Importo",
+      "period": "Periodo",
+      "dueDate": "Scadenza",
+      "status": "Stato"
+    },
+    "status": {
+      "pending": "In Attesa",
+      "paid": "Pagata",
+      "overdue": "Scaduta"
+    },
+    "createBatch": "Genera Quote"
+  },
+  "directDebit": {
+    "title": "Addebito Diretto",
+    "subtitle": "Gestisci addebiti SEPA",
+    "createRun": "Crea Nuovo Ciclo di Addebito",
+    "runDate": "Data Incasso",
+    "totalAmount": "Importo Totale",
+    "transactions": "Transazioni",
+    "status": {
+      "pending": "Preparato",
+      "submitted": "Inviato",
+      "completed": "Completato",
+      "failed": "Fallito"
+    },
+    "export": "Esporta SEPA XML"
+  },
+  "sepa": {
+    "title": "Mandati SEPA",
+    "subtitle": "Gestisci autorizzazioni addebito diretto",
+    "columns": {
+      "mandateId": "Riferimento Mandato",
+      "member": "Membro",
+      "iban": "IBAN",
+      "bic": "BIC",
+      "signatureDate": "Data Firma",
+      "status": "Stato"
+    },
+    "status": {
+      "active": "Attivo",
+      "revoked": "Revocato",
+      "expired": "Scaduto"
+    },
+    "create": "Crea Nuovo Mandato",
+    "revoke": "Revoca Mandato"
+  },
+  "dunning": {
+    "title": "Solleciti",
+    "subtitle": "Gestisci crediti in sospeso",
+    "levels": {
+      "reminder": "Promemoria Pagamento",
+      "dunning1": "1° Sollecito",
+      "dunning2": "2° Sollecito",
+      "dunning3": "3° Sollecito"
+    },
+    "sendReminder": "Invia Sollecito",
+    "daysOverdue": "Giorni di Ritardo"
+  },
+  "tariffs": {
+    "title": "Tariffe e Prezzi",
+    "subtitle": "Gestisci tariffe associative",
+    "create": "Crea Nuova Tariffa",
+    "columns": {
+      "name": "Nome",
+      "price": "Prezzo",
+      "interval": "Intervallo",
+      "members": "Membri"
+    },
+    "intervals": {
+      "monthly": "Mensile",
+      "quarterly": "Trimestrale",
+      "halfYearly": "Semestrale",
+      "yearly": "Annuale",
+      "oneTime": "Una Tantum"
+    }
+  },
+  "expenses": {
+    "title": "Spese",
+    "subtitle": "Registra spese aziendali",
+    "create": "Aggiungi Spesa",
+    "columns": {
+      "date": "Data",
+      "category": "Categoria",
+      "description": "Descrizione",
+      "amount": "Importo",
+      "receipt": "Ricevuta"
+    },
+    "categories": {
+      "rent": "Affitto",
+      "utilities": "Utenze",
+      "equipment": "Attrezzatura",
+      "marketing": "Marketing",
+      "insurance": "Assicurazione",
+      "other": "Altro"
+    }
+  },
+  "cockpit": {
+    "title": "Cockpit Finanziario",
+    "subtitle": "Panoramica di tutti gli indicatori finanziari",
+    "revenue": "Ricavi",
+    "expenses": "Spese",
+    "profit": "Profitto",
+    "totalInvoices": "Fatture Totali",
+    "openInvoices": "Fatture Aperte",
+    "paidInvoices": "Fatture Pagate",
+    "overdueInvoices": "Fatture Scadute",
+    "overdueAmount": "Importi Scaduti",
+    "thisMonth": "Questo Mese",
+    "thisYear": "Quest'Anno",
+    "compared": "Rispetto all'Anno Scorso"
+  },
+  "errors": {
+    "loadingError": "Errore nel caricamento dei dati finanziari",
+    "savingError": "Errore nel salvataggio",
+    "invoiceNotFound": "Fattura non trovata",
+    "paymentFailed": "Pagamento fallito"
+  },
+  "messages": {
+    "invoiceSaved": "Fattura salvata",
+    "invoiceSent": "Fattura inviata",
+    "paymentRecorded": "Pagamento registrato"
+  }
+}

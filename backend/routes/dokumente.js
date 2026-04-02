@@ -8,6 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const { generateMitgliedschaftsvertragPDF } = require('../services/vertragPdfGenerator');
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const logger = require('../utils/logger');
 
 // =====================================================
@@ -43,6 +44,39 @@ router.get('/', authenticateToken, (req, res) => {
 
     res.json(results);
   });
+});
+
+// =====================================================
+// GET /api/dokumente/zentrale/stats - Statistiken für DokumentenZentrale
+// =====================================================
+router.get('/zentrale/stats', authenticateToken, async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    const pool = req.db.promise();
+
+    const dojoFilter = dojoId ? ' WHERE dojo_id = ?' : '';
+    const dojoParams = dojoId ? [dojoId] : [];
+
+    // Alle Zähler parallel abfragen
+    const [
+      [vorlagenResult],
+      [vertragsvorlagenResult],
+      [absenderResult]
+    ] = await Promise.all([
+      pool.query(`SELECT COUNT(*) as count FROM dokument_vorlagen${dojoFilter}`, dojoParams),
+      pool.query(`SELECT COUNT(*) as count FROM vertragsvorlagen${dojoFilter}`, dojoParams),
+      pool.query(`SELECT COUNT(*) as count FROM absender_profile${dojoFilter}`, dojoParams)
+    ]);
+
+    res.json({
+      vorlagen: vorlagenResult[0]?.count || 0,
+      vertragsvorlagen: vertragsvorlagenResult[0]?.count || 0,
+      absenderProfile: absenderResult[0]?.count || 0
+    });
+  } catch (error) {
+    logger.error('Fehler beim Laden der DokumentenZentrale-Stats', { error: error.message });
+    res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
+  }
 });
 
 // =====================================================
@@ -548,25 +582,215 @@ async function generateMitgliederlistePDF(db, parameter = {}) {
   });
 }
 
-// Placeholder-Funktionen für andere PDF-Typen
 async function generateAnwesenheitPDF(db, parameter) {
-  // TODO: Implementierung
-  return generatePlaceholderPDF('Anwesenheitsbericht');
+  return new Promise((resolve, reject) => {
+    const dojoId = parameter && parameter.dojo_id;
+    const vonDatum = parameter && parameter.von ? parameter.von : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const bisDatum = parameter && parameter.bis ? parameter.bis : new Date().toISOString().slice(0, 10);
+    const where = dojoId ? 'WHERE DATE(c.checkin_time) BETWEEN ? AND ? AND m.dojo_id = ?' : 'WHERE DATE(c.checkin_time) BETWEEN ? AND ?';
+    const params = dojoId ? [vonDatum, bisDatum, dojoId] : [vonDatum, bisDatum];
+    db.query(
+      'SELECT m.nachname, m.vorname, DATE(c.checkin_time) as datum, TIME(c.checkin_time) as uhrzeit ' +
+      'FROM checkins c JOIN mitglieder m ON c.mitglied_id = m.mitglied_id ' + where +
+      ' ORDER BY c.checkin_time DESC LIMIT 500',
+      params,
+      (err, rows) => {
+        if (err) return reject(err);
+        try {
+          const doc = new PDFDocument({ margin: 50, size: 'A4' });
+          const chunks = [];
+          doc.on('data', c => chunks.push(c));
+          doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+          doc.fontSize(18).font('Helvetica-Bold').text('Anwesenheitsbericht', { align: 'center' });
+          doc.moveDown(0.5);
+          doc.fontSize(10).font('Helvetica').text(`Zeitraum: ${vonDatum} bis ${bisDatum}`, { align: 'center' });
+          doc.moveDown(1.5);
+
+          const headers = ['Nachname', 'Vorname', 'Datum', 'Uhrzeit'];
+          const widths = [150, 130, 110, 100];
+          let x = 50; const y = doc.y;
+          doc.font('Helvetica-Bold').fontSize(10);
+          headers.forEach((h, i) => { doc.text(h, x, y, { width: widths[i] }); x += widths[i]; });
+          doc.moveDown(0.3);
+          doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
+          doc.moveDown(0.3);
+
+          doc.font('Helvetica').fontSize(9);
+          rows.forEach(row => {
+            if (doc.y > 750) { doc.addPage(); }
+            const ry = doc.y; x = 50;
+            doc.text(row.nachname || '', x, ry, { width: widths[0] }); x += widths[0];
+            doc.text(row.vorname || '', x, ry, { width: widths[1] }); x += widths[1];
+            doc.text(row.datum ? new Date(row.datum).toLocaleDateString('de-DE') : '', x, ry, { width: widths[2] }); x += widths[2];
+            doc.text(row.uhrzeit ? String(row.uhrzeit).slice(0, 5) : '', x, ry, { width: widths[3] });
+            doc.moveDown(0.5);
+          });
+
+          doc.fontSize(8).text('Gesamt: ' + rows.length + ' Eintraege', 50, doc.page.height - 40);
+          doc.end();
+        } catch (e) { reject(e); }
+      }
+    );
+  });
 }
 
 async function generateBeitraegePDF(db, parameter) {
-  // TODO: Implementierung
-  return generatePlaceholderPDF('Beitragsübersicht');
+  return new Promise((resolve, reject) => {
+    const dojoId = parameter && parameter.dojo_id;
+    const nurOffene = parameter && parameter.nur_offene;
+    let where = nurOffene ? 'WHERE b.bezahlt = 0' : 'WHERE 1=1';
+    const params = [];
+    if (dojoId) { where += ' AND b.dojo_id = ?'; params.push(dojoId); }
+    db.query(
+      'SELECT m.nachname, m.vorname, b.betrag, b.zahlungsdatum, b.zahlungsart, b.bezahlt ' +
+      'FROM beitraege b JOIN mitglieder m ON b.mitglied_id = m.mitglied_id ' + where +
+      ' ORDER BY b.bezahlt ASC, b.zahlungsdatum ASC LIMIT 1000',
+      params,
+      (err, rows) => {
+        if (err) return reject(err);
+        try {
+          const doc = new PDFDocument({ margin: 50, size: 'A4', layout: 'landscape' });
+          const chunks = [];
+          doc.on('data', c => chunks.push(c));
+          doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+          const titel = nurOffene ? 'Offene Beitraege' : 'Beitragsübersicht';
+          doc.fontSize(18).font('Helvetica-Bold').text(titel, { align: 'center' });
+          doc.moveDown(0.5);
+          doc.fontSize(10).font('Helvetica').text('Stand: ' + new Date().toLocaleDateString('de-DE'), { align: 'center' });
+          doc.moveDown(1.5);
+
+          const headers = ['Nachname', 'Vorname', 'Betrag', 'Faellig am', 'Zahlungsart', 'Status'];
+          const widths = [140, 120, 80, 110, 120, 80];
+          let x = 50; const y = doc.y;
+          doc.font('Helvetica-Bold').fontSize(10);
+          headers.forEach((h, i) => { doc.text(h, x, y, { width: widths[i] }); x += widths[i]; });
+          doc.moveDown(0.3);
+          doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
+          doc.moveDown(0.3);
+
+          let summe = 0;
+          doc.font('Helvetica').fontSize(9);
+          rows.forEach(row => {
+            if (doc.y > 540) { doc.addPage({ layout: 'landscape' }); }
+            const ry = doc.y; x = 50;
+            doc.text(row.nachname || '', x, ry, { width: widths[0] }); x += widths[0];
+            doc.text(row.vorname || '', x, ry, { width: widths[1] }); x += widths[1];
+            const betrag = parseFloat(row.betrag) || 0;
+            summe += betrag;
+            doc.text(betrag.toFixed(2) + ' EUR', x, ry, { width: widths[2] }); x += widths[2];
+            doc.text(row.zahlungsdatum ? new Date(row.zahlungsdatum).toLocaleDateString('de-DE') : '–', x, ry, { width: widths[3] }); x += widths[3];
+            doc.text(row.zahlungsart || '–', x, ry, { width: widths[4] }); x += widths[4];
+            doc.text(row.bezahlt ? 'bezahlt' : 'offen', x, ry, { width: widths[5] });
+            doc.moveDown(0.5);
+          });
+
+          doc.moveDown(0.5);
+          doc.moveTo(50, doc.y).lineTo(750, doc.y).stroke();
+          doc.moveDown(0.3);
+          doc.font('Helvetica-Bold').fontSize(10).text('Gesamt: ' + rows.length + ' Posten | Summe: ' + summe.toFixed(2) + ' EUR', 50);
+          doc.end();
+        } catch (e) { reject(e); }
+      }
+    );
+  });
 }
 
 async function generateStatistikenPDF(db, parameter) {
-  // TODO: Implementierung
-  return generatePlaceholderPDF('Statistiken');
+  return new Promise((resolve, reject) => {
+    const dojoId = parameter && parameter.dojo_id;
+    const cond = dojoId ? ' WHERE dojo_id = ?' : '';
+    const p = dojoId ? [dojoId] : [];
+    Promise.all([
+      new Promise((res, rej) => db.query('SELECT COUNT(*) as n FROM mitglieder' + cond, p, (e, r) => e ? rej(e) : res(r[0].n))),
+      new Promise((res, rej) => db.query('SELECT COUNT(*) as n FROM mitglieder' + (dojoId ? ' WHERE dojo_id = ? AND aktiv = 1' : ' WHERE aktiv = 1'), p, (e, r) => e ? rej(e) : res(r[0].n))),
+      new Promise((res, rej) => db.query('SELECT COUNT(*) as n FROM checkins' + (dojoId ? ' WHERE mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)' : ''), p, (e, r) => e ? rej(e) : res(r[0].n))),
+      new Promise((res, rej) => db.query('SELECT COUNT(*) as n FROM beitraege' + (dojoId ? ' WHERE dojo_id = ? AND bezahlt = 0' : ' WHERE bezahlt = 0'), p, (e, r) => e ? rej(e) : res(r[0].n))),
+    ]).then(([gesamt, aktiv, checkins, offeneBeitraege]) => {
+      try {
+        const doc = new PDFDocument({ margin: 60, size: 'A4' });
+        const chunks = [];
+        doc.on('data', c => chunks.push(c));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+        doc.fontSize(22).font('Helvetica-Bold').text('Dojo-Statistiken', { align: 'center' });
+        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica').text('Stand: ' + new Date().toLocaleDateString('de-DE'), { align: 'center' });
+        doc.moveDown(2);
+
+        const stats = [
+          ['Mitglieder gesamt', String(gesamt)],
+          ['Aktive Mitglieder', String(aktiv)],
+          ['Inaktive Mitglieder', String(gesamt - aktiv)],
+          ['Check-ins gesamt', String(checkins)],
+          ['Offene Beitraege', String(offeneBeitraege)],
+        ];
+
+        doc.font('Helvetica-Bold').fontSize(12);
+        stats.forEach(([label, wert]) => {
+          const y = doc.y;
+          doc.text(label, 60, y, { width: 280 });
+          doc.text(wert, 340, y, { width: 100 });
+          doc.moveDown(0.8);
+        });
+
+        doc.end();
+      } catch (e) { reject(e); }
+    }).catch(reject);
+  });
 }
 
 async function generatePruefungsurkundePDF(db, parameter) {
-  // TODO: Implementierung
-  return generatePlaceholderPDF('Prüfungsurkunde');
+  return new Promise((resolve, reject) => {
+    const mitgliedId = parameter && parameter.mitglied_id;
+    if (!mitgliedId) return resolve(generatePlaceholderPDF('Pruefungsurkunde (keine mitglied_id angegeben)'));
+    db.query(
+      'SELECT m.vorname, m.nachname, m.geburtsdatum, g.name as guertel, g.farbe_hex, ' +
+      'p.datum as pruefungsdatum, p.bestanden ' +
+      'FROM mitglieder m ' +
+      'LEFT JOIN guertelgrade g ON m.guertel_id = g.id ' +
+      'LEFT JOIN pruefungen p ON p.mitglied_id = m.mitglied_id ' +
+      'WHERE m.mitglied_id = ? ORDER BY p.datum DESC LIMIT 1',
+      [mitgliedId],
+      (err, rows) => {
+        if (err) return reject(err);
+        if (!rows || rows.length === 0) return resolve(generatePlaceholderPDF('Mitglied nicht gefunden'));
+        const m = rows[0];
+        try {
+          const doc = new PDFDocument({ margin: 70, size: 'A4' });
+          const chunks = [];
+          doc.on('data', c => chunks.push(c));
+          doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+          // Rahmen
+          doc.rect(30, 30, doc.page.width - 60, doc.page.height - 60).stroke();
+          doc.rect(35, 35, doc.page.width - 70, doc.page.height - 70).stroke();
+
+          doc.moveDown(2);
+          doc.fontSize(28).font('Helvetica-Bold').text('Pruefungsurkunde', { align: 'center' });
+          doc.moveDown(1.5);
+          doc.fontSize(14).font('Helvetica').text('Diese Urkunde wird verliehen an', { align: 'center' });
+          doc.moveDown(0.8);
+          doc.fontSize(22).font('Helvetica-Bold').text((m.vorname || '') + ' ' + (m.nachname || ''), { align: 'center' });
+          doc.moveDown(1);
+          doc.fontSize(13).font('Helvetica').text('fuer das erfolgreiche Bestehen der Pruefung zum', { align: 'center' });
+          doc.moveDown(0.8);
+          doc.fontSize(18).font('Helvetica-Bold').text(m.guertel || 'Guertelgrad', { align: 'center' });
+          doc.moveDown(1.5);
+          if (m.pruefungsdatum) {
+            doc.fontSize(11).font('Helvetica').text('Datum: ' + new Date(m.pruefungsdatum).toLocaleDateString('de-DE'), { align: 'center' });
+          }
+          doc.moveDown(3);
+          doc.fontSize(10).text('_______________________________', { align: 'center' });
+          doc.moveDown(0.3);
+          doc.fontSize(10).text('Unterschrift Pruefer', { align: 'center' });
+
+          doc.end();
+        } catch (e) { reject(e); }
+      }
+    );
+  });
 }
 
 async function generateCustomPDF(db, parameter) {

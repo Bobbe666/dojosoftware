@@ -1,0 +1,65 @@
+
+// GET /checkin/member-last-visits - letzter Besuch je Mitglied
+router.get('/member-last-visits', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo' });
+    const rows = await queryAsync(`
+      SELECT c.mitglied_id,
+             DATEDIFF(NOW(), MAX(c.checkin_time)) as days_since,
+             MAX(DATE(c.checkin_time)) as last_date
+      FROM checkins c
+      JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+      WHERE m.dojo_id = ? AND m.aktiv = 1 AND c.mitglied_id IS NOT NULL
+        AND c.status = 'active'
+      GROUP BY c.mitglied_id
+    `, [dojoId]);
+    const map = {};
+    rows.forEach(r => { map[r.mitglied_id] = { days_since: r.days_since, last_date: r.last_date }; });
+    res.json({ success: true, data: map });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /checkin/zehnerkarten-low - Mitglieder mit <= 2 verbleibenden Einheiten
+router.get('/zehnerkarten-low', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo' });
+    const rows = await queryAsync(`
+      SELECT z.mitglied_id, z.einheiten_verbleibend, z.einheiten_gesamt
+      FROM zehnerkarten z
+      JOIN mitglieder m ON z.mitglied_id = m.mitglied_id
+      WHERE m.dojo_id = ? AND z.status = 'aktiv' AND z.einheiten_verbleibend <= 2
+    `, [dojoId]);
+    const map = {};
+    rows.forEach(r => { map[r.mitglied_id] = r.einheiten_verbleibend; });
+    res.json({ success: true, data: map });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /checkin/course-avg?stundenplan_id=X - Ø-Anwesenheit letzte 8 Wochen
+router.get('/course-avg', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    const { stundenplan_id } = req.query;
+    if (!stundenplan_id) return res.status(400).json({ error: 'Kein stundenplan_id' });
+    const rows = await queryAsync(`
+      SELECT AVG(daily_count) as avg_count, COUNT(*) as sessions
+      FROM (
+        SELECT DATE(checkin_time) as day, COUNT(*) as daily_count
+        FROM checkins
+        WHERE stundenplan_id = ? AND checkin_time >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
+          AND status = 'active' AND mitglied_id IS NOT NULL
+        GROUP BY DATE(checkin_time)
+      ) sub
+    `, [stundenplan_id]);
+    res.json({ success: true, avg: Math.round(rows[0]?.avg_count || 0), sessions: rows[0]?.sessions || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+

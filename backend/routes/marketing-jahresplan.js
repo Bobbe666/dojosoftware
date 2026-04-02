@@ -35,28 +35,17 @@ router.get('/', async (req, res) => {
             return res.status(400).json({ error: 'Dojo-ID erforderlich' });
         }
 
+        const alleJahre = req.query.all === 'true';
         const year = parseInt(jahr) || new Date().getFullYear();
 
-        const aktionen = await queryAsync(`
-            SELECT
-                id,
-                dojo_id,
-                titel,
-                beschreibung,
-                typ,
-                start_datum,
-                end_datum,
-                status,
-                zielgruppe,
-                budget,
-                notizen,
-                erstellt_am,
-                aktualisiert_am
-            FROM marketing_jahresplan
-            WHERE dojo_id = ?
-              AND YEAR(start_datum) = ?
-            ORDER BY start_datum ASC
-        `, [dojoId, year]);
+        const aktionen = await queryAsync(
+            alleJahre
+                ? `SELECT id, dojo_id, titel, beschreibung, typ, start_datum, end_datum, status, zielgruppe, budget, notizen, erstellt_am, aktualisiert_am
+                   FROM marketing_jahresplan WHERE dojo_id = ? ORDER BY start_datum DESC`
+                : `SELECT id, dojo_id, titel, beschreibung, typ, start_datum, end_datum, status, zielgruppe, budget, notizen, erstellt_am, aktualisiert_am
+                   FROM marketing_jahresplan WHERE dojo_id = ? AND YEAR(start_datum) = ? ORDER BY start_datum ASC`,
+            alleJahre ? [dojoId] : [dojoId, year]
+        );
 
         res.json(aktionen);
 

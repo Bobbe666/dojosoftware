@@ -61,7 +61,7 @@
   letter-spacing: normal;
   background: none;
   -webkit-background-clip: unset;
-  -webkit-text-fill-color: #FFD700;
+  -webkit-text-fill-color: var(--primary);
 }
 
 .fwf-section-h3-blue {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -7,32 +8,47 @@ import {
   XCircle,
   Clock,
   Eye,
+  EyeOff,
   Edit,
   Trash2,
   Plus,
   Download,
   AlertCircle,
-  PenTool
+  PenTool,
+  Users
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/SepaMandateVerwaltung.css";
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import { useDojoContext } from '../context/DojoContext.jsx';
 import SignatureCanvas from './SignatureCanvas';
 
 
 const SepaMandateVerwaltung = () => {
   const navigate = useNavigate();
+  const { activeDojo } = useDojoContext();
+  const withDojo = (url) => activeDojo?.id
+    ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}`
+    : url;
   const [loading, setLoading] = useState(true);
   const [mandate, setMandate] = useState([]);
   const [filteredMandate, setFilteredMandate] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // all, aktiv, widerrufen, abgelaufen
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showIban, setShowIban] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showNewMandatModal, setShowNewMandatModal] = useState(false);
   const [selectedMandat, setSelectedMandat] = useState(null);
+
+  // Massenerstellung
+  const [showMassenModal, setShowMassenModal] = useState(false);
+  const [ohneMandat, setOhneMandat] = useState([]);
+  const [massenSelected, setMassenSelected] = useState(new Set());
+  const [massenLoading, setMassenLoading] = useState(false);
+  const [massenResult, setMassenResult] = useState(null);
 
   // Für neues Mandat
   const [mitgliederListe, setMitgliederListe] = useState([]);
@@ -48,8 +64,10 @@ const SepaMandateVerwaltung = () => {
   });
 
   useEffect(() => {
+    if (activeDojo === null) return; // DojoContext noch nicht geladen
     loadMandate();
-  }, []);
+    loadOhneMandat(true);
+  }, [activeDojo?.id, activeDojo === null ? 0 : 1]); // eslint-disable-line
 
   useEffect(() => {
     filterMandate();
@@ -58,7 +76,7 @@ const SepaMandateVerwaltung = () => {
   const loadMandate = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/sepa-mandate`);
+      const response = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/sepa-mandate`));
 
       if (!response.ok) {
         throw new Error('Fehler beim Laden der SEPA-Mandate');
@@ -123,7 +141,7 @@ const SepaMandateVerwaltung = () => {
     }
 
     try {
-      const response = await fetchWithAuth(`${config.apiBaseUrl}/sepa-mandate/${mandat_id}`, {
+      const response = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/sepa-mandate/${mandat_id}`), {
         method: 'DELETE'
       });
 
@@ -170,6 +188,52 @@ const SepaMandateVerwaltung = () => {
       mandatsreferenz: '',
       unterschrift_digital: null
     });
+  };
+
+  const loadOhneMandat = async (silent = false) => {
+    if (!silent) {
+      setMassenLoading(true);
+      setMassenResult(null);
+    }
+    try {
+      const res = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/sepa-mandate/ohne-mandat`));
+      const data = await res.json();
+      const liste = data.data || [];
+      setOhneMandat(liste);
+      setMassenSelected(new Set(liste.filter(m => m.iban).map(m => m.mitglied_id)));
+    } catch (e) {
+      console.error('Fehler beim Laden:', e);
+    }
+    if (!silent) setMassenLoading(false);
+  };
+
+  const sendMassenErstellung = async () => {
+    const zuErstellen = ohneMandat
+      .filter(m => massenSelected.has(m.mitglied_id))
+      .map(m => ({
+        mitglied_id: m.mitglied_id,
+        iban: m.iban,
+        bic: m.bic || '',
+        kontoinhaber: m.kontoinhaber || `${m.vorname} ${m.nachname}`
+      }));
+    if (!zuErstellen.length) return;
+    setMassenLoading(true);
+    try {
+      const res = await fetchWithAuth(withDojo(`${config.apiBaseUrl}/sepa-mandate/massen-erstellung`), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mandate: zuErstellen })
+      });
+      const result = await res.json();
+      setMassenResult(result);
+      if (result.erstellt > 0) {
+        loadMandate();
+        loadOhneMandat(true);
+      }
+    } catch (e) {
+      setMassenResult({ success: false, fehler: zuErstellen.length, erstellt: 0, details: [] });
+    }
+    setMassenLoading(false);
   };
 
   const handleSaveNewMandat = async () => {
@@ -250,13 +314,22 @@ const SepaMandateVerwaltung = () => {
           <h1>📋 SEPA-Mandate Verwaltung</h1>
           <p>Alle SEPA-Lastschriftmandate verwalten und prüfen</p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={handleOpenNewMandatModal}
-        >
-          <Plus size={20} />
-          Neues Mandat
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => { setShowMassenModal(true); loadOhneMandat(); }}
+          >
+            <Users size={20} />
+            Massenanlage
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleOpenNewMandatModal}
+          >
+            <Plus size={20} />
+            Neues Mandat
+          </button>
+        </div>
       </div>
 
       {/* Info Box */}
@@ -317,7 +390,65 @@ const SepaMandateVerwaltung = () => {
             <span className="stat-trend">Alle Mandate</span>
           </div>
         </div>
+
+        <div className={`stat-card ${ohneMandat.length > 0 ? 'danger' : 'success'}`}>
+          <div className="stat-icon">
+            <AlertCircle size={32} />
+          </div>
+          <div className="stat-info">
+            <h3>Ohne Mandat</h3>
+            <p className="stat-value">{ohneMandat.length}</p>
+            <span className="stat-trend">
+              {ohneMandat.length > 0 ? 'Lastschrift fehlt' : 'Alle abgedeckt'}
+            </span>
+          </div>
+        </div>
       </div>
+
+      {/* Vorschau: Mitglieder ohne Mandat */}
+      {ohneMandat.length > 0 && (
+        <div className="sepa-ohne-mandat-preview">
+          <div className="sepa-ohne-mandat-header">
+            <div className="sepa-ohne-mandat-header-info">
+              <AlertCircle size={18} />
+              <strong>{ohneMandat.length} Mitglieder ohne aktives SEPA-Mandat</strong>
+              {ohneMandat.filter(m => m.iban).length > 0 && (
+                <span className="sepa-preview-hint">
+                  {ohneMandat.filter(m => m.iban).length} mit IBAN — sofort anlegbar
+                </span>
+              )}
+            </div>
+            <button
+              className="btn btn-primary"
+              style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+              onClick={() => { setShowMassenModal(true); setMassenResult(null); }}
+            >
+              <Users size={16} />
+              Massenanlage starten
+            </button>
+          </div>
+          <div className="sepa-ohne-mandat-list">
+            {ohneMandat.map(m => (
+              <div key={m.mitglied_id} className={`sepa-ohne-mandat-item${!m.iban ? ' no-iban' : ''}`}>
+                <span className="sepa-item-name">{m.vorname} {m.nachname}</span>
+                {m.iban
+                  ? <code className="sepa-item-iban">{maskIBAN(m.iban)}</code>
+                  : <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>Keine IBAN</span>
+                }
+                {m.bic && <span className="sepa-item-bic">{m.bic}</span>}
+                <button
+                  className="btn-icon btn-secondary"
+                  onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}
+                  title="Mitglied öffnen"
+                  style={{ marginLeft: 'auto', flexShrink: 0 }}
+                >
+                  <Edit size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Filter */}
       <div className="filter-bar">
@@ -401,6 +532,7 @@ const SepaMandateVerwaltung = () => {
                         className="btn-icon btn-info"
                         onClick={() => {
                           setSelectedMandat(mandat);
+                          setShowIban(false);
                           setShowDetailsModal(true);
                         }}
                         title="Details anzeigen"
@@ -472,8 +604,16 @@ const SepaMandateVerwaltung = () => {
 
                 <div className="detail-item">
                   <label>IBAN</label>
-                  <div className="detail-value">
-                    <code>{selectedMandat.iban || '-'}</code>
+                  <div className="detail-value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <code>{showIban ? (selectedMandat.iban || '-') : maskIBAN(selectedMandat.iban)}</code>
+                    <button
+                      className="btn-icon"
+                      onClick={() => setShowIban(v => !v)}
+                      title={showIban ? 'IBAN verbergen' : 'IBAN anzeigen'}
+                      style={{ flexShrink: 0 }}
+                    >
+                      {showIban ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
                   </div>
                 </div>
 
@@ -530,6 +670,132 @@ const SepaMandateVerwaltung = () => {
           </div>
         </div>
       )}
+
+      {showMassenModal && createPortal(
+        <div onClick={() => setShowMassenModal(false)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 99999, padding: '1rem', overflowY: 'auto'
+        }}>
+          <div className="modal-content modal-content--wide" onClick={e => e.stopPropagation()} style={{
+            position: 'relative', maxHeight: '90vh', overflowY: 'auto',
+            width: '90vw', maxWidth: '800px'
+          }}>
+            <div className="modal-header">
+              <h2><Users size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />Massenerstellung SEPA-Mandate</h2>
+              <button className="btn-close" onClick={() => setShowMassenModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              {massenLoading && !massenResult ? (
+                <div style={{ textAlign: 'center', padding: '2rem' }}>
+                  <div className="loading-spinner" />
+                  <p>Lade Mitglieder ohne Mandat...</p>
+                </div>
+              ) : massenResult ? (
+                <div className="sepa-massen-result">
+                  <div className={`sepa-massen-result-row ${massenResult.erstellt > 0 ? 'success' : ''}`}>
+                    <CheckCircle size={20} />
+                    <strong>{massenResult.erstellt} Mandate erfolgreich erstellt</strong>
+                  </div>
+                  {massenResult.fehler > 0 && (
+                    <div className="sepa-massen-result-row error">
+                      <XCircle size={20} />
+                      <strong>{massenResult.fehler} Fehler</strong>
+                    </div>
+                  )}
+                  {massenResult.details?.length > 0 && (
+                    <ul className="sepa-massen-fehler-list">
+                      {massenResult.details.map((d, i) => (
+                        <li key={i}>Mitglied #{d.mitglied_id}: {d.fehler}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="sepa-massen-info">
+                    <span><strong>{ohneMandat.length}</strong> Mitglieder ohne aktives Mandat</span>
+                    <span><strong>{ohneMandat.filter(m => m.iban).length}</strong> haben IBAN hinterlegt</span>
+                    {ohneMandat.filter(m => !m.iban).length > 0 && (
+                      <span style={{ color: 'var(--color-warning)' }}>
+                        <AlertCircle size={14} /> {ohneMandat.filter(m => !m.iban).length} ohne IBAN (nicht wählbar)
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <button
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+                      onClick={() => setMassenSelected(new Set(ohneMandat.filter(m => m.iban).map(m => m.mitglied_id)))}
+                    >
+                      Alle mit IBAN auswählen
+                    </button>
+                  </div>
+                  <div className="sepa-massen-table-wrap">
+                    <table className="mandate-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: 40 }}></th>
+                          <th>Mitglied</th>
+                          <th>IBAN</th>
+                          <th>BIC</th>
+                          <th>Kontoinhaber</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ohneMandat.map(m => {
+                          const hatIban = !!m.iban;
+                          const checked = massenSelected.has(m.mitglied_id);
+                          return (
+                            <tr key={m.mitglied_id} className={!hatIban ? 'sepa-massen-row--disabled' : ''}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  disabled={!hatIban}
+                                  onChange={() => {
+                                    const s = new Set(massenSelected);
+                                    if (checked) s.delete(m.mitglied_id); else s.add(m.mitglied_id);
+                                    setMassenSelected(s);
+                                  }}
+                                />
+                              </td>
+                              <td><strong>{m.vorname} {m.nachname}</strong></td>
+                              <td>
+                                {hatIban
+                                  ? <code>{maskIBAN(m.iban)}</code>
+                                  : <span className="badge badge-neutral" style={{ fontSize: '0.75rem' }}>Keine IBAN</span>
+                                }
+                              </td>
+                              <td>{m.bic || '–'}</td>
+                              <td>{m.kontoinhaber || `${m.vorname} ${m.nachname}`}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowMassenModal(false)}>
+                {massenResult ? 'Schließen' : 'Abbrechen'}
+              </button>
+              {!massenResult && (
+                <button
+                  className="btn btn-primary"
+                  onClick={sendMassenErstellung}
+                  disabled={massenLoading || massenSelected.size === 0}
+                >
+                  <Plus size={18} />
+                  {massenLoading ? 'Erstelle...' : `${massenSelected.size} Mandate anlegen`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      , document.body)}
 
       {/* Neues Mandat Modal */}
       {showNewMandatModal && (

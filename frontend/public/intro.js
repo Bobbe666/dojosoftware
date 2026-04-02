@@ -2,11 +2,8 @@
 (function () {
   var currentPath = window.location.pathname;
   var intro = document.getElementById('introOverlay');
-  var cornerBadge = document.getElementById('cornerBadge');
 
   if (currentPath === '/' || currentPath === '/index.html') {
-    cornerBadge.style.display = 'block';
-
     var introShown = sessionStorage.getItem('tdaIntroShown');
 
     if (!introShown) {
@@ -24,6 +21,5 @@
     }
   } else {
     intro.style.display = 'none';
-    cornerBadge.style.display = 'none';
   }
 })();

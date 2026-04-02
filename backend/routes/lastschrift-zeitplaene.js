@@ -481,12 +481,30 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
             for (const trans of result.transactions) {
                 if (trans.status === 'succeeded' || trans.status === 'processing') {
                     const mitgliedData = mitglieder.find(m => m.mitglied_id === trans.mitglied_id);
-                    if (mitgliedData && mitgliedData.beitraege) {
-                        for (const beitrag of mitgliedData.beitraege) {
-                            await queryAsync(
-                                'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
-                                ['Stripe SEPA (Auto)', beitrag.beitrag_id]
-                            );
+                    if (mitgliedData) {
+                        if (mitgliedData.beitraege) {
+                            for (const beitrag of mitgliedData.beitraege) {
+                                await queryAsync(
+                                    'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
+                                    ['Stripe SEPA (Auto)', beitrag.beitrag_id]
+                                );
+                            }
+                        }
+                        if (mitgliedData.rechnungen) {
+                            for (const rechnung of mitgliedData.rechnungen) {
+                                await queryAsync(
+                                    "UPDATE rechnungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = 'lastschrift' WHERE rechnung_id = ?",
+                                    [rechnung.rechnung_id]
+                                );
+                            }
+                        }
+                        if (mitgliedData.verkaeufe) {
+                            for (const verkauf of mitgliedData.verkaeufe) {
+                                await queryAsync(
+                                    "UPDATE verkaeufe SET status = 'bezahlt', bezahlt_am = CURDATE() WHERE verkauf_id = ?",
+                                    [verkauf.verkauf_id]
+                                );
+                            }
                         }
                     }
                 }
@@ -593,7 +611,7 @@ async function ladeRechnungenMitglieder(dojoId) {
             m.mitglied_id,
             m.vorname,
             m.nachname,
-            SUM(r.betrag - COALESCE(r.bezahlt_betrag, 0)) as betrag,
+            SUM(r.betrag) as betrag,
             GROUP_CONCAT(r.rechnung_id) as rechnung_ids
         FROM mitglieder m
         INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'

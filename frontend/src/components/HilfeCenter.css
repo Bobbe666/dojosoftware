@@ -14,7 +14,7 @@
 }
 
 .hilfe-header h2 {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
 }
@@ -36,7 +36,7 @@
   padding: 0.75rem 1rem;
   padding-right: 2.5rem;
   background: var(--glass-bg, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--border-accent, rgba(255, 215, 0, 0.2));
+  border: 1px solid var(--border-accent, var(--primary-alpha-20));
   border-radius: 8px;
   color: var(--text-primary, #fff);
   font-size: 0.95rem;
@@ -45,7 +45,7 @@
 }
 
 .hilfe-search input:focus {
-  border-color: var(--primary, #ffd700);
+  border-color: var(--primary, var(--primary));
 }
 
 .hilfe-search input::placeholder {
@@ -92,7 +92,7 @@
 
 .hilfe-kategorie {
   background: var(--glass-bg, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--border-accent, rgba(255, 215, 0, 0.15));
+  border: 1px solid var(--border-accent, var(--primary-alpha-15));
   border-radius: 12px;
   overflow: hidden;
 }
@@ -112,12 +112,12 @@
 }
 
 .kategorie-header:hover {
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
 }
 
 .kategorie-header.expanded {
-  background: rgba(255, 215, 0, 0.1);
-  border-bottom: 1px solid var(--border-accent, rgba(255, 215, 0, 0.15));
+  background: var(--primary-alpha-10);
+  border-bottom: 1px solid var(--border-accent, var(--primary-alpha-15));
 }
 
 .kategorie-icon {
@@ -135,7 +135,7 @@
 .kategorie-titel {
   font-weight: 600;
   font-size: 1rem;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
 }
 
 .kategorie-beschreibung {
@@ -173,16 +173,16 @@
 }
 
 .artikel-item:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .artikel-item.selected {
-  background: rgba(255, 215, 0, 0.15);
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-15);
+  color: var(--primary, var(--primary));
 }
 
 .artikel-bullet {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: 1.25rem;
   line-height: 1;
 }
@@ -194,7 +194,7 @@
 /* Artikel Content */
 .hilfe-artikel-content {
   background: var(--glass-bg, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--border-accent, rgba(255, 215, 0, 0.2));
+  border: 1px solid var(--border-accent, var(--primary-alpha-20));
   border-radius: 12px;
   overflow: hidden;
   max-height: 70vh;
@@ -207,13 +207,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  background: rgba(255, 215, 0, 0.1);
-  border-bottom: 1px solid var(--border-accent, rgba(255, 215, 0, 0.2));
+  background: var(--primary-alpha-10);
+  border-bottom: 1px solid var(--border-accent, var(--primary-alpha-20));
 }
 
 .artikel-header h3 {
   margin: 0;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: var(--ui-card-title);
 }
 
@@ -238,11 +238,11 @@
 }
 
 .artikel-body h2 {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: 1.25rem;
   margin: 0 0 1rem 0;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border-accent, rgba(255, 215, 0, 0.2));
+  border-bottom: 1px solid var(--border-accent, var(--primary-alpha-20));
 }
 
 .artikel-body h3 {
@@ -270,7 +270,7 @@
 }
 
 .artikel-body strong {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-weight: 600;
 }
 
@@ -281,7 +281,7 @@
   color: var(--text-secondary, rgba(255, 255, 255, 0.5));
   background: var(--glass-bg, rgba(255, 255, 255, 0.03));
   border-radius: 12px;
-  border: 1px dashed var(--border-accent, rgba(255, 215, 0, 0.2));
+  border: 1px dashed var(--border-accent, var(--primary-alpha-20));
 }
 
 /* Mobile Anpassungen */

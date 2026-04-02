@@ -33,7 +33,7 @@
 
 .rechnung-erstellen-container .rechnung-form h2 {
   margin: 0 0 0.75rem 0 !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   font-size: var(--ui-section-title) !important;
   text-shadow: none !important;
 }
@@ -41,7 +41,7 @@
 .rechnung-erstellen-container .form-section {
   margin-bottom: 0.75rem !important;
   padding-bottom: 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-bottom: 1px solid var(--primary-alpha-15) !important;
 }
 
 .rechnung-erstellen-container .form-section:last-of-type,
@@ -53,7 +53,7 @@
 
 .rechnung-erstellen-container .form-section h3 {
   margin: 0 0 0.5rem 0 !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   font-size: var(--ui-card-label) !important;
   font-weight: 600 !important;
 }
@@ -63,7 +63,7 @@
 .rechnung-erstellen-container .form-section textarea {
   width: 100% !important;
   padding: 0.4rem 0.5rem !important;
-  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  border: 1px solid var(--primary-alpha-25) !important;
   border-radius: var(--comp-radius-sm) !important;
   font-size: var(--ui-card-label) !important;
   color: rgba(255, 255, 255, 0.95) !important;
@@ -74,8 +74,8 @@
 .rechnung-erstellen-container .form-section input:focus,
 .rechnung-erstellen-container .form-section textarea:focus {
   outline: none !important;
-  border-color: #ffd700 !important;
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--primary-alpha-10) !important;
 }
 
 .rechnung-erstellen-container .form-section select option {
@@ -164,14 +164,14 @@
 /* Positions list */
 .rechnung-erstellen-container .positionen-liste-header {
   font-size: 0.75rem !important;
-  color: #ffd700 !important;
+  color: var(--primary) !important;
   margin-bottom: 0.5rem !important;
   font-weight: 600 !important;
 }
 
 .rechnung-erstellen-container .position-item {
   background: rgba(255, 255, 255, 0.05) !important;
-  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border: 1px solid var(--primary-alpha-15) !important;
   border-radius: var(--comp-radius-sm) !important;
   padding: 0.5rem 0.75rem !important;
   margin-bottom: 0.35rem !important;
@@ -260,7 +260,7 @@
 }
 
 .verband-rechnung-erstellen .header-left svg {
-  color: #c9a227;
+  color: var(--primary);
 }
 
 /* Alerts */
@@ -276,13 +276,13 @@
 .verband-rechnung-erstellen .alert-error {
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .verband-rechnung-erstellen .alert-success {
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.3);
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 .verband-rechnung-erstellen .alert button {
@@ -310,7 +310,7 @@
 .verband-rechnung-erstellen .form-section h3 {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #c9a227;
+  color: var(--primary);
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -347,8 +347,8 @@
 
 .verband-rechnung-erstellen .empfaenger-tabs button.active {
   background: rgba(201, 162, 39, 0.2);
-  border-color: #c9a227;
-  color: #c9a227;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* Search Box */
@@ -399,7 +399,7 @@
 }
 
 .verband-rechnung-erstellen .empfaenger-info .mitgliedsnummer {
-  color: #c9a227;
+  color: var(--primary);
   font-size: 0.8rem;
 }
 
@@ -417,7 +417,7 @@
 }
 
 .verband-rechnung-erstellen .selected-empfaenger button:hover {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* Empfänger Liste */
@@ -454,7 +454,7 @@
   justify-content: center;
   background: rgba(201, 162, 39, 0.2);
   border-radius: var(--comp-radius-md);
-  color: #c9a227;
+  color: var(--primary);
 }
 
 .verband-rechnung-erstellen .emp-details {
@@ -518,7 +518,7 @@
 .verband-rechnung-erstellen input:focus,
 .verband-rechnung-erstellen select:focus,
 .verband-rechnung-erstellen textarea:focus {
-  border-color: #c9a227;
+  border-color: var(--primary);
 }
 
 .verband-rechnung-erstellen input.readonly {
@@ -582,8 +582,8 @@
 
 .verband-rechnung-erstellen .btn-icon.danger:hover {
   background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--status-error);
+  color: var(--status-error);
 }
 
 .verband-rechnung-erstellen .btn-icon:disabled {
@@ -616,7 +616,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: 0.5rem;
   padding-top: 0.75rem;
-  color: #c9a227;
+  color: var(--primary);
   font-weight: 600;
   font-size: 1.1rem;
 }
@@ -652,7 +652,7 @@
 .verband-rechnung-erstellen .btn-outline {
   background: transparent;
   border: 1px solid rgba(201, 162, 39, 0.5);
-  color: #c9a227;
+  color: var(--primary);
 }
 
 .verband-rechnung-erstellen .btn-outline:hover {
@@ -677,7 +677,7 @@
 }
 
 .verband-rechnung-erstellen .rechnungen-liste h3 {
-  color: #c9a227;
+  color: var(--primary);
   margin-bottom: 1rem;
   font-size: 1rem;
 }
@@ -828,12 +828,12 @@
 .form-card-header span {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #c9a227;
+  color: var(--primary);
   margin: 0;
 }
 
 .form-card-header svg {
-  color: #c9a227;
+  color: var(--primary);
   width: 16px;
   height: 16px;
 }
@@ -872,8 +872,8 @@
 
 .compact-empfaenger-tabs button.active {
   background: rgba(201, 162, 39, 0.2);
-  border-color: #c9a227;
-  color: #c9a227;
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .compact-empfaenger-tabs button svg {
@@ -944,7 +944,7 @@
 }
 
 .compact-selected-empfaenger button:hover {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* Compact Empfänger List */
@@ -981,7 +981,7 @@
   justify-content: center;
   background: rgba(201, 162, 39, 0.2);
   border-radius: var(--comp-radius-sm);
-  color: #c9a227;
+  color: var(--primary);
 }
 
 .compact-empfaenger-item .emp-icon svg {
@@ -1049,7 +1049,7 @@
 .compact-form-row input:focus,
 .compact-form-row select:focus,
 .compact-form-row textarea:focus {
-  border-color: #c9a227;
+  border-color: var(--primary);
 }
 
 /* Compact Positionen Table */
@@ -1103,7 +1103,7 @@
   background: transparent;
   border: 1px dashed rgba(201, 162, 39, 0.4);
   border-radius: 5px;
-  color: #c9a227;
+  color: var(--primary);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -1140,7 +1140,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   margin-top: 0.35rem;
   padding-top: 0.5rem;
-  color: #c9a227;
+  color: var(--primary);
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -1182,14 +1182,14 @@
   border-bottom: 1px solid rgba(201, 162, 39, 0.15);
   font-size: 0.85rem;
   font-weight: 600;
-  color: #c9a227;
+  color: var(--primary);
 }
 
 .preview-card-header h3,
 .preview-header h3 {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #c9a227;
+  color: var(--primary);
   margin: 0;
   display: flex;
   align-items: center;
@@ -1206,7 +1206,7 @@
   font-size: 0.65rem;
   padding: 0.2rem 0.5rem;
   background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  color: var(--status-success);
   border-radius: var(--comp-radius-xs);
   font-weight: 500;
 }
@@ -1242,7 +1242,7 @@
   justify-content: space-between;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #c9a227;
+  border-bottom: 2px solid var(--primary);
 }
 
 .preview-sender {
@@ -1391,7 +1391,7 @@
   margin-top: 1.5rem;
   padding: 0.75rem;
   background: #f9f9f9;
-  border-left: 3px solid #c9a227;
+  border-left: 3px solid var(--primary);
   font-size: 0.7rem;
   color: #666;
 }
@@ -1458,7 +1458,7 @@
 .preview-logo strong {
   display: block;
   font-size: 1rem;
-  color: #c9a227;
+  color: var(--primary);
 }
 
 .preview-logo small {
@@ -1547,13 +1547,13 @@
 
 .pos-input input:focus,
 .pos-input select:focus {
-  border-color: #c9a227;
+  border-color: var(--primary);
   outline: none;
 }
 
 .pos-total {
   font-weight: 600;
-  color: #c9a227;
+  color: var(--primary);
   font-size: 0.85rem;
   white-space: nowrap;
 }
@@ -1570,8 +1570,8 @@
 
 .btn-remove:hover {
   background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--status-error);
+  color: var(--status-error);
 }
 
 .btn-remove:disabled {
@@ -1619,7 +1619,7 @@
 
 .summen-display .sum-row.total {
   font-size: 1rem;
-  color: #c9a227;
+  color: var(--primary);
   font-weight: 600;
 }
 
@@ -1686,7 +1686,7 @@
   display: inline-block;
   padding: 0.2rem 0.5rem;
   background: rgba(201, 162, 39, 0.2);
-  color: #c9a227;
+  color: var(--primary);
   border-radius: var(--comp-radius-xs);
   font-size: 0.7rem;
   font-weight: 500;
@@ -1760,7 +1760,7 @@ input.readonly {
   background: rgba(201, 162, 39, 0.2);
   border: 1px solid rgba(201, 162, 39, 0.4);
   border-radius: var(--comp-radius-xs);
-  color: #c9a227;
+  color: var(--primary);
   cursor: pointer;
   padding: 0.3rem;
   transition: all 0.2s;
@@ -1768,7 +1768,7 @@ input.readonly {
 
 .btn-add-small:hover {
   background: rgba(201, 162, 39, 0.3);
-  border-color: #c9a227;
+  border-color: var(--primary);
 }
 
 /* Form card body no padding */
@@ -1850,7 +1850,7 @@ input.readonly {
 .position-details .pos-total {
   margin-left: auto;
   font-weight: 600;
-  color: #c9a227;
+  color: var(--primary);
   font-size: 0.9rem;
   min-width: 80px;
   text-align: right;
@@ -2029,7 +2029,7 @@ input.readonly {
   gap: 0.5rem;
   padding: 1rem;
   background: rgba(26, 26, 46, 0.95);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   margin-bottom: 1rem;
 }
 
@@ -2037,9 +2037,9 @@ input.readonly {
 .vre-toggle-btn {
   padding: 0.6rem 1.5rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
-  color: #ffd700;
+  color: var(--primary);
   cursor: pointer;
   font-weight: 400;
   transition: all 0.3s ease;
@@ -2058,10 +2058,10 @@ input.readonly {
 .vre-status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: var(--status-bg, rgba(255, 215, 0, 0.1));
-  border: 1px solid var(--status-border, rgba(255, 215, 0, 0.3));
+  background: var(--status-bg, var(--primary-alpha-10));
+  border: 1px solid var(--status-border, var(--primary-alpha-30));
   border-radius: 12px;
-  color: var(--status-text, #ffd700);
+  color: var(--status-text, var(--primary));
   font-size: 0.8rem;
   font-weight: 500;
   text-transform: capitalize;
@@ -2078,9 +2078,9 @@ input.readonly {
   cursor: pointer;
 }
 .vre-tab-btn--active {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
-  color: #ffd700;
+  background: var(--primary-alpha-20);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* Rechnungen list view */
@@ -2093,13 +2093,13 @@ input.readonly {
 .vre-list-card {
   background: rgba(26, 26, 46, 0.95);
   border-radius: 12px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   overflow: hidden;
 }
 
 .vre-list-header {
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -2134,7 +2134,7 @@ input.readonly {
 }
 
 .vre-thead-row {
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .vre-th-right-primary {
@@ -2187,8 +2187,8 @@ input.readonly {
 /* Action buttons */
 .vre-btn-view {
   padding: 0.4rem;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 6px;
   color: var(--primary);
   cursor: pointer;
@@ -2353,8 +2353,8 @@ input.readonly {
   width: 32px;
   padding: 1px 2px;
   font-size: 0.65rem;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 2px;
   color: var(--primary);
   text-align: center;
@@ -2379,8 +2379,8 @@ input.readonly {
 }
 
 .vre-btn-info {
-  background: rgba(255, 215, 0, 0.2);
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: var(--primary-alpha-20);
+  border: 1px solid var(--primary-alpha-40);
   border-radius: 50%;
   color: var(--primary);
   width: 14px;
@@ -2409,7 +2409,7 @@ input.readonly {
   z-index: 9999;
   padding: 1rem;
   background: rgba(255, 215, 0, 0.98);
-  border: 2px solid #ffd700;
+  border: 2px solid var(--primary);
   border-radius: 8px;
   color: #000;
   font-size: 0.85rem;
@@ -2535,7 +2535,7 @@ input.readonly {
   padding: 0.6rem 1rem;
   background: transparent;
   border: 1px solid rgba(201, 162, 39, 0.5);
-  color: #c9a227;
+  color: var(--primary);
   border-radius: 6px;
   cursor: pointer;
 }

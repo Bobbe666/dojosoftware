@@ -480,13 +480,13 @@
 }
 
 /* Days-until-event text colors */
-.edb-days-text--urgent  { color: #ef4444; }
-.edb-days-text--warning { color: #f59e0b; }
+.edb-days-text--urgent  { color: var(--status-error); }
+.edb-days-text--warning { color: var(--status-warning); }
 .edb-days-text--normal  { color: rgba(255,255,255,0.45); }
 
 /* Participant count */
 .edb-participant-count       { color: #fff; }
-.edb-participant-count--full { color: #ef4444; }
+.edb-participant-count--full { color: var(--status-error); }
 
 /* Event fill rate progress bar */
 .edb-fill {

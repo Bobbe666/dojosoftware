@@ -16,24 +16,24 @@ const path = require('path');
 const fs = require('fs');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailTemplates');
 
-// Logo Upload Konfiguration
-const logoStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '../uploads/verband-logos');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `verband-${req.user?.id || 'unknown'}-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
+// Magic-Bytes Prüfung für sicheren File-Upload
+const checkImageMagicBytes = (buffer) => {
+  if (!buffer || buffer.length < 12) return false;
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) return true;
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) return true;
+  // GIF: 47 49 46 38
+  if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38) return true;
+  // WebP: RIFF....WEBP (bytes 0-3 = 52 49 46 46, bytes 8-11 = 57 45 42 50)
+  if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+      buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) return true;
+  return false;
+};
 
 const logoUpload = multer({
-  storage: logoStorage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  storage: multer.memoryStorage(), // In-Memory für Magic-Bytes Check
+  limits: { fileSize: 500 * 1024 }, // 500KB - Logos brauchen nicht mehr
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (allowedTypes.includes(file.mimetype)) {
@@ -43,6 +43,16 @@ const logoUpload = multer({
     }
   }
 });
+
+// Helper: Logo-Buffer auf Disk speichern (nach Magic-Bytes-Check)
+const saveLogoBuffer = async (buffer, filename) => {
+  const fs = require('fs');
+  const uploadDir = require('path').join(__dirname, '../uploads/verband-logos');
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+  const filepath = require('path').join(uploadDir, filename);
+  await fs.promises.writeFile(filepath, buffer);
+  return filepath;
+};
 const {
   ERROR_MESSAGES,
   SUCCESS_MESSAGES,
@@ -72,6 +82,29 @@ const queryAsync = (sql, params) => {
   });
 };
 
+// Rate Limiter für Auth-Endpoints
+const verbandLoginLimiter = require("express-rate-limit")({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: "Zu viele Login-Versuche. Bitte warte 15 Minuten." },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
+});
+const verbandRegisterLimiter = require("express-rate-limit")({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  message: { error: "Zu viele Registrierungsversuche. Bitte warte eine Stunde." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const verbandResetLimiter = require("express-rate-limit")({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: { error: "Zu viele Anfragen. Bitte warte eine Stunde." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const generateMitgliedsnummer = async (typ) => {
   const prefix = typ === 'dojo' ? 'TDA-D' : 'TDA-E';
   const year = new Date().getFullYear().toString().slice(-2);
@@ -93,7 +126,7 @@ const generateMitgliedsnummer = async (typ) => {
  * POST /api/verband-auth/register
  * Registrierung als Verbandsmitglied (Dojo oder Einzelperson)
  */
-router.post('/register', async (req, res) => {
+router.post('/register', verbandRegisterLimiter, async (req, res) => {
   try {
     const {
       typ, // 'dojo' oder 'einzelperson'
@@ -135,6 +168,13 @@ router.post('/register', async (req, res) => {
 
     if (passwort.length < LIMITS.PASSWORD_MIN_LENGTH) {
       return res.status(400).json({ error: ERROR_MESSAGES.AUTH.PASSWORD_MIN_LENGTH });
+    }
+
+    // Passwort-Komplexität prüfen (min. Großbuchstabe + Kleinbuchstabe + Zahl)
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(passwort)) {
+      return res.status(400).json({
+        error: 'Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten.'
+      });
     }
 
     if (!agb_akzeptiert || !dsgvo_akzeptiert) {
@@ -277,7 +317,7 @@ router.post('/register', async (req, res) => {
  * POST /api/verband-auth/login
  * Login für Verbandsmitglieder (E-Mail oder Benutzername/Mitgliedsnummer)
  */
-router.post('/login', async (req, res) => {
+router.post('/login', verbandLoginLimiter, async (req, res) => {
   try {
     const { email, benutzername, passwort } = req.body;
     const loginIdentifier = email || benutzername;
@@ -339,23 +379,40 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: ERROR_MESSAGES.AUTH.INVALID_CREDENTIALS });
     }
 
+    // E-Mail-Verifikation prüfen
+    if (member.email_verified === 0 || member.email_verified === false) {
+      return res.status(403).json({
+        error: 'E-Mail-Adresse nicht verifiziert. Bitte prüfe dein Postfach und bestätige deine E-Mail.',
+        requiresVerification: true
+      });
+    }
+
     // Last login aktualisieren
     await queryAsync(
       `UPDATE verbandsmitgliedschaften SET last_login = NOW() WHERE id = ?`,
       [member.id]
     );
 
-    // JWT Token erstellen
+    // JWT Access Token erstellen (kurzlebig)
     const token = jwt.sign(
       {
         id: member.id,
         typ: member.typ,
         mitgliedsnummer: member.mitgliedsnummer,
         email: member.person_email || member.dojo_email,
-        role: 'verbandsmitglied'
+        role: 'verbandsmitglied',
+        iat: Math.floor(Date.now() / 1000)
       },
       JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '4h' }
+    );
+
+    // Refresh-Token generieren (langlebig, in DB speichern)
+    const refreshToken = require('crypto').randomBytes(40).toString('hex');
+    const refreshExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 Tage
+    await queryAsync(
+      'UPDATE verbandsmitgliedschaften SET refresh_token = ?, refresh_token_expires = ? WHERE id = ?',
+      [refreshToken, refreshExpires, member.id]
     );
 
     // Sensible Daten entfernen
@@ -377,6 +434,7 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       token,
+      refreshToken,
       member
     });
 
@@ -479,7 +537,7 @@ router.post('/verify-email', async (req, res) => {
  * POST /api/verband-auth/forgot-password
  * Passwort-Reset anfordern
  */
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', verbandResetLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -500,7 +558,7 @@ router.post('/forgot-password', async (req, res) => {
 
     const reset_token = crypto.randomBytes(32).toString('hex');
     const reset_expires = new Date();
-    reset_expires.setHours(reset_expires.getHours() + 24);
+    reset_expires.setMinutes(reset_expires.getMinutes() + 30);
 
     await queryAsync(
       `UPDATE verbandsmitgliedschaften
@@ -578,7 +636,7 @@ router.post('/reset-password', async (req, res) => {
 /**
  * Middleware: JWT Token prüfen
  */
-const verifyVerbandToken = (req, res, next) => {
+const verifyVerbandToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -586,13 +644,34 @@ const verifyVerbandToken = (req, res, next) => {
     return res.status(401).json({ error: ERROR_MESSAGES.AUTH.NOT_AUTHENTICATED });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(403).json({ error: ERROR_MESSAGES.AUTH.TOKEN_INVALID });
+  let decoded;
+  try {
+    decoded = jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return res.status(403).json({ error: ERROR_MESSAGES.AUTH.TOKEN_INVALID });
+  }
+
+  // Prüfen ob User sich nach Token-Ausstellung ausgeloggt hat (Token-Invalidierung)
+  if (decoded.id) {
+    try {
+      const rows = await queryAsync(
+        'SELECT last_logout_at FROM verbandsmitgliedschaften WHERE id = ? LIMIT 1',
+        [decoded.id]
+      );
+      if (rows.length > 0 && rows[0].last_logout_at) {
+        const logoutTime = new Date(rows[0].last_logout_at).getTime() / 1000;
+        if (decoded.iat && decoded.iat < logoutTime) {
+          return res.status(401).json({ error: 'Session abgelaufen. Bitte erneut anmelden.' });
+        }
+      }
+    } catch (dbErr) {
+      // DB-Fehler nicht blockierend - weiter mit normaler Auth
+      logger.warn('verifyVerbandToken DB-Check fehlgeschlagen:', dbErr.message);
     }
-    req.verbandUser = decoded;
-    next();
-  });
+  }
+
+  req.verbandUser = decoded;
+  next();
 };
 
 /**
@@ -684,6 +763,40 @@ router.put('/me', verifyVerbandToken, async (req, res) => {
       values
     );
 
+    // Falls Mitglied mit einer Dojo verknüpft ist, auch dort die Felder aktualisieren
+    // damit COALESCE in GET /me die neuen Werte zurückgibt
+    const member = await queryAsync(
+      `SELECT dojo_id FROM verbandsmitgliedschaften WHERE id = ?`,
+      [req.verbandUser.id]
+    );
+    if (member[0]?.dojo_id) {
+      const dojoFieldMap = {
+        dojo_name:     'dojoname',
+        dojo_strasse:  'strasse',
+        dojo_plz:      'plz',
+        dojo_ort:      'ort',
+        dojo_land:     'land',
+        dojo_telefon:  'telefon',
+        dojo_website:  'internet',
+        dojo_email:    'email',
+      };
+      const dojoUpdates = [];
+      const dojoValues = [];
+      for (const [vmField, dojoField] of Object.entries(dojoFieldMap)) {
+        if (req.body[vmField] !== undefined) {
+          dojoUpdates.push(`${dojoField} = ?`);
+          dojoValues.push(req.body[vmField]);
+        }
+      }
+      if (dojoUpdates.length > 0) {
+        dojoValues.push(member[0].dojo_id);
+        await queryAsync(
+          `UPDATE dojo SET ${dojoUpdates.join(', ')} WHERE id = ?`,
+          dojoValues
+        );
+      }
+    }
+
     res.json({ success: true, message: SUCCESS_MESSAGES.CRUD.UPDATED });
 
   } catch (error) {
@@ -706,6 +819,12 @@ router.put('/change-password', verifyVerbandToken, async (req, res) => {
 
     if (neues_passwort.length < LIMITS.PASSWORD_MIN_LENGTH) {
       return res.status(400).json({ error: ERROR_MESSAGES.AUTH.PASSWORD_MIN_LENGTH });
+    }
+
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(neues_passwort)) {
+      return res.status(400).json({
+        error: 'Passwort muss mindestens einen Großbuchstaben, einen Kleinbuchstaben und eine Zahl enthalten.'
+      });
     }
 
     const members = await queryAsync(
@@ -753,12 +872,17 @@ router.get('/invoices', verifyVerbandToken, async (req, res) => {
     );
 
     // Rechnungen aus verband_rechnungen (Shop, Sonstiges)
+    // Ausschluss: Rechnungsnummern die bereits in verbandsmitgliedschaft_zahlungen stehen
     const sonstigeRechnungen = await queryAsync(
       `SELECT id, rechnungsnummer, rechnungsdatum, faellig_am, summe_brutto as betrag,
               status, bezahlt_am, 'sonstig' as typ
        FROM verband_rechnungen
-       WHERE empfaenger_typ = 'verbandsmitglied' AND empfaenger_id = ?`,
-      [req.verbandUser.id]
+       WHERE empfaenger_typ = 'verbandsmitglied' AND empfaenger_id = ?
+         AND rechnungsnummer NOT IN (
+           SELECT rechnungsnummer FROM verbandsmitgliedschaft_zahlungen
+           WHERE verbandsmitgliedschaft_id = ?
+         )`,
+      [req.verbandUser.id, req.verbandUser.id]
     );
 
     // Kombinieren und nach Datum sortieren
@@ -774,10 +898,33 @@ router.get('/invoices', verifyVerbandToken, async (req, res) => {
 });
 
 /**
+ * Middleware für PDF-Download: akzeptiert Token auch als Query-Parameter
+ * (ermöglicht direkten Browser-Download ohne fetch+blob)
+ */
+const verifyVerbandTokenForPdf = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const headerToken = authHeader && authHeader.split(' ')[1];
+  const queryToken = req.query.token;
+  const token = headerToken || queryToken;
+
+  if (!token) {
+    return res.status(401).json({ error: ERROR_MESSAGES.AUTH.NOT_AUTHENTICATED });
+  }
+
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).json({ error: ERROR_MESSAGES.AUTH.TOKEN_INVALID });
+    }
+    req.verbandUser = decoded;
+    next();
+  });
+};
+
+/**
  * GET /api/verband-auth/invoices/:id/pdf
  * Rechnungs-PDF herunterladen (mit Besitzprüfung)
  */
-router.get('/invoices/:id/pdf', verifyVerbandToken, async (req, res) => {
+router.get('/invoices/:id/pdf', verifyVerbandTokenForPdf, async (req, res) => {
   try {
     const typ = req.query.typ || 'beitrag';
     let invoice;
@@ -1532,11 +1679,8 @@ router.get('/shop/bestellungen', verifyVerbandToken, async (req, res) => {
  * Middleware: Prüft ob User SuperAdmin ist
  */
 const verifySuperAdmin = async (req, res, next) => {
-  // SuperAdmin prüfen (vereinfacht - ID 1 oder spezielle Flag)
-  // In diesem Fall: Verbandsmitglieder mit bestimmter Rolle
-  // Für jetzt: Alle authentifizierten Verbandsmitglieder mit Mitglied ID 1-5
-  // TODO: Echte Admin-Rolle implementieren
-  if (req.verbandUser.id <= 5) {
+  // Prüfe ob Token die tda_admin Rolle hat (gesetzt beim Admin-Login via /admin-login)
+  if (req.verbandUser.role === 'tda_admin') {
     next();
   } else {
     res.status(403).json({ error: 'Keine Berechtigung' });
@@ -1734,8 +1878,16 @@ router.post('/logo', verifyVerbandToken, logoUpload.single('logo'), async (req, 
       return res.status(400).json({ error: 'Keine Datei hochgeladen' });
     }
 
+    // SECURITY: Magic-Bytes prüfen (verhindert gefälschte MIME-Types)
+    if (!checkImageMagicBytes(req.file.buffer)) {
+      return res.status(400).json({ error: 'Ungültiges Bildformat. Datei ist kein echtes Bild.' });
+    }
+
     const memberId = req.verbandUser.id;
-    const logoUrl = `/api/verband-auth/logo/${path.basename(req.file.path)}`;
+    const ext = path.extname(req.file.originalname).toLowerCase() || '.jpg';
+    const safeExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext) ? ext : '.jpg';
+    const filename = `logo_${memberId}_${Date.now()}${safeExt}`;
+    const logoUrl = `/api/verband-auth/logo/${filename}`;
 
     // Altes Logo löschen falls vorhanden
     const existing = await queryAsync(
@@ -1750,7 +1902,10 @@ router.post('/logo', verifyVerbandToken, logoUpload.single('logo'), async (req, 
       }
     }
 
-    // Neues Logo speichern
+    // Datei auf Disk schreiben (nach Magic-Bytes-Check)
+    await saveLogoBuffer(req.file.buffer, filename);
+
+    // URL in DB speichern
     await queryAsync(
       `UPDATE verbandsmitgliedschaften SET logo_url = ? WHERE id = ?`,
       [logoUrl, memberId]
@@ -1884,5 +2039,535 @@ router.get('/member-logo/:id', async (req, res) => {
     res.status(500).json({ error: 'Fehler beim Laden des Logos' });
   }
 });
+
+// ============================================================================
+// SUPPORT TICKETS FÜR VERBANDSMITGLIEDER
+// ============================================================================
+
+/**
+ * GET /api/verband-auth/support-tickets
+ * Eigene Support-Tickets abrufen
+ */
+router.get('/support-tickets', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const tickets = await queryAsync(
+      `SELECT id, ticket_nummer, betreff, kategorie, prioritaet, status, created_at, updated_at
+       FROM support_tickets
+       WHERE ersteller_typ = 'verbandsmitglied' AND ersteller_id = ?
+       ORDER BY updated_at DESC`,
+      [userId]
+    );
+    res.json({ success: true, data: tickets });
+  } catch (error) {
+    logger.error('Verband-Support-Tickets Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Tickets' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/support-tickets
+ * Neues Support-Ticket erstellen
+ */
+router.post('/support-tickets', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const { kategorie, betreff, nachricht, prioritaet = 'mittel' } = req.body;
+
+    if (!betreff || !nachricht || !kategorie) {
+      return res.status(400).json({ error: 'Betreff, Kategorie und Nachricht sind erforderlich' });
+    }
+
+    // Ticket-Nummer generieren (TKT-YYYY-NNNNN)
+    const year = new Date().getFullYear();
+    const numResult = await queryAsync(
+      `SELECT COALESCE(MAX(aktuelle_nummer), 0) + 1 AS naechste FROM support_ticket_nummern WHERE jahr = ?`,
+      [year]
+    );
+    const naechste = numResult[0].naechste;
+    await queryAsync(
+      `INSERT INTO support_ticket_nummern (jahr, aktuelle_nummer) VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE aktuelle_nummer = ?`,
+      [year, naechste, naechste]
+    );
+    const ticketNummer = `TKT-${year}-${String(naechste).padStart(5, '0')}`;
+
+    // Absendername ermitteln
+    const memberData = await queryAsync(
+      `SELECT typ, person_vorname, person_nachname, person_email, dojo_name FROM verbandsmitgliedschaften WHERE id = ?`,
+      [userId]
+    );
+    const m = memberData[0];
+    const absenderName = m
+      ? (m.typ === 'dojo' ? m.dojo_name : `${m.person_vorname} ${m.person_nachname}`)
+      : 'Verbandsmitglied';
+    const absenderEmail = m ? m.person_email : '';
+
+    // Ticket einfügen
+    const result = await queryAsync(
+      `INSERT INTO support_tickets
+       (ticket_nummer, ersteller_typ, ersteller_id, ersteller_name, ersteller_email, bereich, kategorie, betreff, prioritaet, status)
+       VALUES (?, 'verbandsmitglied', ?, ?, ?, 'verband', ?, ?, ?, 'offen')`,
+      [ticketNummer, userId, absenderName, absenderEmail, kategorie, betreff, prioritaet]
+    );
+    const ticketId = result.insertId;
+
+    // Erste Nachricht einfügen
+    await queryAsync(
+      `INSERT INTO support_ticket_nachrichten (ticket_id, absender_typ, absender_id, absender_name, nachricht, ist_intern)
+       VALUES (?, 'verbandsmitglied', ?, ?, ?, 0)`,
+      [ticketId, userId, absenderName, nachricht]
+    );
+
+    res.status(201).json({ success: true, data: { id: ticketId, ticket_nummer: ticketNummer } });
+  } catch (error) {
+    logger.error('Verband-Support-Ticket erstellen Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen des Tickets' });
+  }
+});
+
+/**
+ * GET /api/verband-auth/support-tickets/:id
+ * Ticket-Detail mit Nachrichten abrufen
+ */
+router.get('/support-tickets/:id', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const { id } = req.params;
+
+    const tickets = await queryAsync(
+      `SELECT * FROM support_tickets WHERE id = ? AND ersteller_typ = 'verbandsmitglied' AND ersteller_id = ?`,
+      [id, userId]
+    );
+    if (!tickets.length) {
+      return res.status(404).json({ error: 'Ticket nicht gefunden' });
+    }
+
+    const nachrichten = await queryAsync(
+      `SELECT id, absender_typ, absender_name, nachricht, ist_intern, created_at
+       FROM support_ticket_nachrichten
+       WHERE ticket_id = ? AND ist_intern = 0
+       ORDER BY created_at ASC`,
+      [id]
+    );
+
+    res.json({ success: true, data: { ...tickets[0], nachrichten } });
+  } catch (error) {
+    logger.error('Verband-Support-Ticket-Detail Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden des Tickets' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/support-tickets/:id/nachrichten
+ * Nachricht zu Ticket hinzufügen
+ */
+router.post('/support-tickets/:id/nachrichten', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const { id } = req.params;
+    const { nachricht } = req.body;
+
+    if (!nachricht) {
+      return res.status(400).json({ error: 'Nachricht ist erforderlich' });
+    }
+
+    const tickets = await queryAsync(
+      `SELECT * FROM support_tickets WHERE id = ? AND ersteller_typ = 'verbandsmitglied' AND ersteller_id = ?`,
+      [id, userId]
+    );
+    if (!tickets.length) {
+      return res.status(404).json({ error: 'Ticket nicht gefunden' });
+    }
+
+    const memberData = await queryAsync(
+      `SELECT typ, person_vorname, person_nachname, dojo_name FROM verbandsmitgliedschaften WHERE id = ?`,
+      [userId]
+    );
+    const m = memberData[0];
+    const absenderName = m
+      ? (m.typ === 'dojo' ? m.dojo_name : `${m.person_vorname} ${m.person_nachname}`)
+      : 'Verbandsmitglied';
+
+    await queryAsync(
+      `INSERT INTO support_ticket_nachrichten (ticket_id, absender_typ, absender_id, absender_name, nachricht, ist_intern)
+       VALUES (?, 'verbandsmitglied', ?, ?, ?, 0)`,
+      [id, userId, absenderName, nachricht]
+    );
+
+    // Status auf "warten_auf_antwort" setzen wenn Mitglied antwortet
+    if (tickets[0].status === 'in_bearbeitung') {
+      await queryAsync(
+        `UPDATE support_tickets SET status = 'warten_auf_antwort', updated_at = NOW() WHERE id = ?`,
+        [id]
+      );
+    } else {
+      await queryAsync(`UPDATE support_tickets SET updated_at = NOW() WHERE id = ?`, [id]);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Verband-Support-Nachricht Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Senden der Nachricht' });
+  }
+});
+
+// ============================================================================
+// FEATURE REQUESTS / WUNSCHLISTE FÜR VERBANDSMITGLIEDER
+// ============================================================================
+
+/**
+ * GET /api/verband-auth/feature-requests
+ * Alle Feature-Wünsche abrufen (sortiert nach Votes)
+ */
+router.get('/feature-requests', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const features = await queryAsync(
+      `SELECT fr.*,
+              (SELECT COUNT(*) FROM feature_votes WHERE feature_id = fr.id) AS votes_count,
+              (SELECT COUNT(*) FROM feature_votes WHERE feature_id = fr.id AND user_id = ? AND user_typ = 'verbandsmitglied') AS user_voted,
+              (fr.ersteller_typ = 'verbandsmitglied' AND fr.ersteller_id = ?) AS is_own
+       FROM feature_requests fr
+       ORDER BY votes_count DESC, fr.created_at DESC`,
+      [userId, userId]
+    );
+    res.json({ success: true, data: features });
+  } catch (error) {
+    logger.error('Verband-Feature-Requests Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Feature-Wünsche' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/feature-requests
+ * Neuen Feature-Wunsch erstellen
+ */
+router.post('/feature-requests', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const { titel, beschreibung, kategorie = 'funktion' } = req.body;
+
+    if (!titel || titel.trim().length < 5) {
+      return res.status(400).json({ error: 'Titel muss mindestens 5 Zeichen lang sein' });
+    }
+
+    const memberData = await queryAsync(
+      `SELECT typ, person_vorname, person_nachname, dojo_name FROM verbandsmitgliedschaften WHERE id = ?`,
+      [userId]
+    );
+    const m = memberData[0];
+    const absenderName = m
+      ? (m.typ === 'dojo' ? m.dojo_name : `${m.person_vorname} ${m.person_nachname}`)
+      : 'Verbandsmitglied';
+
+    const result = await queryAsync(
+      `INSERT INTO feature_requests (titel, beschreibung, kategorie, ersteller_typ, ersteller_id, ersteller_name, status)
+       VALUES (?, ?, ?, 'verbandsmitglied', ?, ?, 'neu')`,
+      [titel.trim(), beschreibung || '', kategorie, userId, absenderName]
+    );
+    const featureId = result.insertId;
+
+    // Ersteller stimmt automatisch für eigenen Wunsch ab
+    await queryAsync(
+      `INSERT INTO feature_votes (feature_id, user_typ, user_id) VALUES (?, 'verbandsmitglied', ?)`,
+      [featureId, userId]
+    );
+
+    res.status(201).json({ success: true, data: { id: featureId } });
+  } catch (error) {
+    logger.error('Verband-Feature-Request erstellen Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen des Feature-Wunsches' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/feature-requests/:id/vote
+ * Für Feature-Wunsch abstimmen (Toggle)
+ */
+router.post('/feature-requests/:id/vote', verifyVerbandToken, async (req, res) => {
+  try {
+    const userId = req.verbandUser.id;
+    const { id } = req.params;
+
+    const existing = await queryAsync(
+      `SELECT id FROM feature_votes WHERE feature_id = ? AND user_id = ? AND user_typ = 'verbandsmitglied'`,
+      [id, userId]
+    );
+
+    if (existing.length) {
+      await queryAsync(
+        `DELETE FROM feature_votes WHERE feature_id = ? AND user_id = ? AND user_typ = 'verbandsmitglied'`,
+        [id, userId]
+      );
+      res.json({ success: true, voted: false });
+    } else {
+      await queryAsync(
+        `INSERT INTO feature_votes (feature_id, user_typ, user_id) VALUES (?, 'verbandsmitglied', ?)`,
+        [id, userId]
+      );
+      res.json({ success: true, voted: true });
+    }
+  } catch (error) {
+    logger.error('Verband-Feature-Vote Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Abstimmen' });
+  }
+});
+
+// ============================================================================
+// PUBLIC ENDPOINTS (kein Auth erforderlich, Rate-Limit gesetzt)
+// ============================================================================
+
+const rateLimit = require('express-rate-limit');
+
+const publicContactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minuten
+  max: 5,
+  message: { error: 'Zu viele Anfragen. Bitte warte 15 Minuten.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const publicNewsletterLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 Stunde
+  max: 3,
+  message: { error: 'Zu viele Anfragen. Bitte warte eine Stunde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+/**
+ * POST /api/verband-auth/public/contact
+ * Kontaktformular (öffentlich, kein Token nötig)
+ */
+router.post('/public/contact', publicContactLimiter, async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ error: 'Alle Felder sind erforderlich.' });
+    }
+
+    // Einfache E-Mail-Validierung
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Ungültige E-Mail-Adresse.' });
+    }
+
+    if (message.length > 5000) {
+      return res.status(400).json({ error: 'Nachricht zu lang (max. 5000 Zeichen).' });
+    }
+
+    const ip = req.ip || req.connection.remoteAddress || null;
+
+    await queryAsync(
+      'INSERT INTO kontakt_anfragen (name, email, subject, message, ip_address) VALUES (?, ?, ?, ?, ?)',
+      [name.trim().substring(0, 200), email.trim().substring(0, 200), subject.trim().substring(0, 100), message.trim(), ip]
+    );
+
+    logger.info('Neue Kontaktanfrage', { email, subject });
+    res.json({ success: true, message: 'Kontaktanfrage erfolgreich gesendet.' });
+  } catch (error) {
+    logger.error('Kontaktformular-Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Senden der Anfrage.' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/public/newsletter-subscribe
+ * Newsletter-Anmeldung (öffentlich, kein Token nötig)
+ */
+router.post('/public/newsletter-subscribe', publicNewsletterLimiter, async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'E-Mail-Adresse erforderlich.' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Ungültige E-Mail-Adresse.' });
+    }
+
+    const trimmedEmail = email.trim().toLowerCase().substring(0, 255);
+
+    // Prüfen ob bereits angemeldet
+    const existing = await queryAsync(
+      'SELECT id, status FROM newsletter_subscriptions WHERE email = ?',
+      [trimmedEmail]
+    );
+
+    if (existing.length > 0) {
+      if (existing[0].status === 'active') {
+        return res.json({ success: true, message: 'Du bist bereits für den Newsletter angemeldet.' });
+      }
+      // Re-Aktivierung bei unsubscribed
+      await queryAsync(
+        'UPDATE newsletter_subscriptions SET status = ?, unsubscribe_date = NULL, subscription_date = CURRENT_TIMESTAMP WHERE email = ?',
+        ['active', trimmedEmail]
+      );
+    } else {
+      const unsubscribeToken = require('crypto').randomBytes(32).toString('hex');
+      await queryAsync(
+        'INSERT INTO newsletter_subscriptions (email, status, unsubscribe_token) VALUES (?, ?, ?)',
+        [trimmedEmail, 'active', unsubscribeToken]
+      );
+    }
+
+    logger.info('Newsletter-Anmeldung', { email: trimmedEmail });
+    res.json({ success: true, message: 'Newsletter-Anmeldung erfolgreich.' });
+  } catch (error) {
+    logger.error('Newsletter-Subscribe-Fehler:', error);
+    res.status(500).json({ error: 'Fehler bei der Anmeldung.' });
+  }
+});
+
+
+// ============================================================================
+// ADMIN NEWSLETTER ENDPOINTS (Admin-Token erforderlich)
+// ============================================================================
+
+const verifyAdminToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Kein Admin-Token vorhanden.' });
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err || decoded?.role !== 'tda_admin') {
+      return res.status(403).json({ error: 'Nur für Administratoren.' });
+    }
+    req.adminUser = decoded;
+    next();
+  });
+};
+
+/**
+ * GET /api/verband-auth/admin/newsletter-subscribers
+ */
+router.get('/admin/newsletter-subscribers', verifyAdminToken, async (req, res) => {
+  try {
+    const rows = await queryAsync(
+      'SELECT id, email, status, DATE_FORMAT(subscription_date, "%Y-%m-%d") AS subscribedAt FROM newsletter_subscriptions ORDER BY subscription_date DESC',
+      []
+    );
+    res.json({ success: true, subscribers: rows });
+  } catch (error) {
+    logger.error('Admin Newsletter Subscribers Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Abonnenten.' });
+  }
+});
+
+/**
+ * PUT /api/verband-auth/admin/newsletter-subscribers/:id
+ * Status toggeln (active <-> unsubscribed)
+ */
+router.put('/admin/newsletter-subscribers/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['active', 'unsubscribed'].includes(status)) {
+      return res.status(400).json({ error: 'Ungültiger Status.' });
+    }
+    await queryAsync('UPDATE newsletter_subscriptions SET status = ? WHERE id = ?', [status, id]);
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Admin Newsletter Status Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren.' });
+  }
+});
+
+/**
+ * GET /api/verband-auth/admin/kontakt-anfragen
+ */
+router.get('/admin/kontakt-anfragen', verifyAdminToken, async (req, res) => {
+  try {
+    const rows = await queryAsync(
+      'SELECT id, name, email, subject, LEFT(message, 200) AS message_preview, bearbeitet, DATE_FORMAT(erstellt_am, "%Y-%m-%d %H:%i") AS erstellt_am FROM kontakt_anfragen ORDER BY erstellt_am DESC LIMIT 100',
+      []
+    );
+    res.json({ success: true, anfragen: rows });
+  } catch (error) {
+    logger.error('Admin Kontaktanfragen Fehler:', error);
+    res.status(500).json({ error: 'Fehler beim Laden.' });
+  }
+});
+
+
+// ============================================================================
+// LOGOUT & REFRESH-TOKEN
+// ============================================================================
+
+/**
+ * POST /api/verband-auth/logout
+ * Setzt last_logout_at → invalidiert alle bestehenden Access-Tokens
+ */
+router.post('/logout', verifyVerbandToken, async (req, res) => {
+  try {
+    await queryAsync(
+      'UPDATE verbandsmitgliedschaften SET last_logout_at = NOW(), refresh_token = NULL, refresh_token_expires = NULL WHERE id = ?',
+      [req.verbandUser.id]
+    );
+    logger.info('Logout erfolgreich', { userId: req.verbandUser.id });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Logout-Fehler:', error);
+    res.status(500).json({ error: 'Logout fehlgeschlagen' });
+  }
+});
+
+/**
+ * POST /api/verband-auth/refresh
+ * Neues Access-Token mit Refresh-Token holen
+ */
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh-Token fehlt.' });
+    }
+
+    const rows = await queryAsync(
+      `SELECT id, typ, mitgliedsnummer, person_email, dojo_email,
+              refresh_token_expires, last_logout_at
+       FROM verbandsmitgliedschaften
+       WHERE refresh_token = ? AND refresh_token_expires > NOW()`,
+      [refreshToken]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Ungültiger oder abgelaufener Refresh-Token.' });
+    }
+
+    const member = rows[0];
+
+    // Neues Access-Token ausstellen (jwt + JWT_SECRET sind im Scope)
+    const newToken = jwt.sign(
+      {
+        id: member.id,
+        typ: member.typ,
+        mitgliedsnummer: member.mitgliedsnummer,
+        email: member.person_email || member.dojo_email,
+        role: 'verbandsmitglied',
+        iat: Math.floor(Date.now() / 1000)
+      },
+      JWT_SECRET,
+      { expiresIn: '4h' }
+    );
+
+    // Refresh-Token rotieren (neuen generieren)
+    const newRefreshToken = crypto.randomBytes(40).toString('hex');
+    const newExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await queryAsync(
+      'UPDATE verbandsmitgliedschaften SET refresh_token = ?, refresh_token_expires = ? WHERE id = ?',
+      [newRefreshToken, newExpires, member.id]
+    );
+
+    res.json({ success: true, token: newToken, refreshToken: newRefreshToken });
+  } catch (error) {
+    logger.error('Refresh-Fehler:', error);
+    res.status(500).json({ error: 'Token-Refresh fehlgeschlagen' });
+  }
+});
+
 
 module.exports = router;

@@ -629,17 +629,26 @@ router.get('/password-management/verband', async (req, res) => {
 // GET alle Dojo-Benutzer (users)
 router.get('/password-management/dojo', async (req, res) => {
   try {
+    const userRole = req.user?.rolle || req.user?.role;
+    const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !req.user?.dojo_id);
+    let dojoId = isSuperAdmin ? (req.query.dojo_id ? parseInt(req.query.dojo_id, 10) : null) : (req.user.dojo_id || null);
+    const params = [];
+    let dojoFilter = '';
+    if (dojoId) {
+      dojoFilter = 'WHERE m.dojo_id = ?';
+      params.push(dojoId);
+    }
     const [rows] = await db.promise().query(`
-      SELECT u.id, u.username, u.email, u.role, u.created_at,
+      SELECT u.id, u.username, u.email, u.role, u.created_at, u.last_login_at,
              CASE WHEN u.password IS NOT NULL AND u.password != '' THEN 1 ELSE 0 END as has_password,
-             m.vorname, m.nachname,
+             m.vorname, m.nachname, m.geburtsdatum,
              d.dojoname as dojo_name
       FROM users u
       LEFT JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
       LEFT JOIN dojo d ON m.dojo_id = d.id
+      ${dojoFilter}
       ORDER BY u.username
-    `);
-    // Convert has_password to boolean
+    `, params);
     const users = rows.map(u => ({ ...u, has_password: Boolean(Number(u.has_password)) }));
     res.json({ success: true, users });
   } catch (error) {
@@ -651,20 +660,129 @@ router.get('/password-management/dojo', async (req, res) => {
 // GET Mitglieder ohne Login-Account
 router.get('/password-management/dojo-ohne-login', async (req, res) => {
   try {
+    const userRole = req.user?.rolle || req.user?.role;
+    const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !req.user?.dojo_id);
+    let dojoId = isSuperAdmin ? (req.query.dojo_id ? parseInt(req.query.dojo_id, 10) : null) : (req.user.dojo_id || null);
+    const params = [];
+    let dojoFilter = '';
+    if (dojoId) {
+      dojoFilter = 'AND m.dojo_id = ?';
+      params.push(dojoId);
+    }
     const [rows] = await db.promise().query(`
-      SELECT m.mitglied_id, m.vorname, m.nachname, m.email,
+      SELECT m.mitglied_id, m.vorname, m.nachname, m.email, m.geburtsdatum,
              d.dojoname as dojo_name, d.id as dojo_id
       FROM mitglieder m
       LEFT JOIN dojo d ON m.dojo_id = d.id
       LEFT JOIN users u ON m.mitglied_id = u.mitglied_id
       WHERE u.id IS NULL
         AND m.aktiv = 1
+        ${dojoFilter}
       ORDER BY d.dojoname, m.nachname, m.vorname
-    `);
+    `, params);
     res.json({ success: true, members: rows });
   } catch (error) {
     console.error('Fehler beim Laden der Mitglieder ohne Login:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Mitglieder' });
+  }
+});
+
+// POST Alle fehlenden Accounts automatisch anlegen (Bulk)
+router.post('/password-management/dojo/bulk-create', async (req, res) => {
+  try {
+    const userRole = req.user?.rolle || req.user?.role;
+    const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !req.user?.dojo_id);
+    let dojoId = isSuperAdmin ? (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null) : (req.user.dojo_id || null);
+    const params = [];
+    let dojoFilter = '';
+    if (dojoId) {
+      dojoFilter = 'AND m.dojo_id = ?';
+      params.push(dojoId);
+    }
+    const [members] = await db.promise().query(`
+      SELECT m.mitglied_id, m.vorname, m.nachname, m.email, m.geburtsdatum
+      FROM mitglieder m
+      LEFT JOIN users u ON m.mitglied_id = u.mitglied_id
+      WHERE u.id IS NULL AND m.aktiv = 1 ${dojoFilter}
+    `, params);
+
+    if (members.length === 0) {
+      return res.json({ success: true, created: 0, message: 'Alle Mitglieder haben bereits einen Account' });
+    }
+
+    const clean = s => (s || '').trim().toLowerCase()
+      .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+      .replace(/\s+/g, '');
+
+    const formatPw = geb => {
+      if (!geb) return null;
+      const d = new Date(geb);
+      const dd = String(d.getDate()).padStart(2, '0');
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    };
+
+    let created = 0;
+    const results = [];
+
+    for (const m of members) {
+      const baseUsername = clean(m.vorname) + '.' + clean(m.nachname);
+      const password = formatPw(m.geburtsdatum);
+      if (!password) continue;
+
+      // Eindeutigen Benutzernamen finden
+      let username = baseUsername;
+      let counter = 1;
+      while (true) {
+        const [ex] = await db.promise().query('SELECT id FROM users WHERE username = ?', [username]);
+        if (ex.length === 0) break;
+        username = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      const hash = await bcrypt.hash(password, 10);
+      await db.promise().query(
+        `INSERT IGNORE INTO users (username, email, password, mitglied_id, role, created_at) VALUES (?, ?, ?, ?, 'member', NOW())`,
+        [username, m.email || null, hash, m.mitglied_id]
+      );
+      created++;
+      results.push({ username, mitglied_id: m.mitglied_id });
+    }
+
+    res.json({ success: true, created, total: members.length, results });
+  } catch (error) {
+    console.error('Fehler beim Bulk-Erstellen:', error);
+    res.status(500).json({ error: 'Fehler beim Erstellen der Accounts' });
+  }
+});
+
+// POST Passwort auf Standard (Geburtsdatum) zurücksetzen
+router.post('/password-management/dojo/:id/reset-to-default', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [rows] = await db.promise().query(
+      'SELECT m.geburtsdatum, u.username FROM users u LEFT JOIN mitglieder m ON u.mitglied_id = m.mitglied_id WHERE u.id = ?',
+      [id]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+
+    const geb = rows[0].geburtsdatum;
+    if (!geb) return res.status(400).json({ error: 'Kein Geburtsdatum hinterlegt' });
+
+    const d = new Date(geb);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const defaultPassword = `${dd}/${mm}/${yyyy}`;
+
+    const hash = await bcrypt.hash(defaultPassword, 10);
+    await db.promise().query('UPDATE users SET password = ? WHERE id = ?', [hash, id]);
+
+    res.json({ success: true, message: `Passwort auf ${defaultPassword} zurückgesetzt`, defaultPassword });
+  } catch (error) {
+    console.error('Fehler beim Standard-Reset:', error);
+    res.status(500).json({ error: 'Fehler beim Zurücksetzen' });
   }
 });
 

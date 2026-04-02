@@ -28,7 +28,7 @@
 
 .weather-widget:hover {
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
@@ -50,7 +50,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--weather-color, #ffd700);
+  color: var(--weather-color, var(--primary));
   animation: weatherFloat 3s ease-in-out infinite;
 }
 
@@ -83,8 +83,8 @@
 }
 
 .weather-motivation {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-md);
   padding: 0.6rem;
   margin-bottom: 0.8rem;
@@ -135,7 +135,7 @@
 .weather-loading .loading-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;

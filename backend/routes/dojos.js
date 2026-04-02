@@ -19,7 +19,8 @@ router.get('/', async (req, res) => {
   const userId = req.user?.id;
   const userDojoId = req.user?.dojo_id;
   const userRole = req.user?.role || req.user?.rolle;
-  const isSuperAdmin = userRole === 'super_admin';
+  // Super-Admin: entweder explizit 'super_admin' ODER role='admin' ohne eigenes dojo_id
+  const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !userDojoId);
   const { filter } = req.query;
 
   try {
@@ -43,8 +44,10 @@ router.get('/', async (req, res) => {
     // Filter für zentral verwaltete Dojos (ohne separate Tenants)
     // WICHTIG: TDA International (id=2) immer einschließen, auch wenn es Admin-User hat
     if (filter === 'managed') {
+      // TDA-eigene Dojos: Ausschließen wenn ein vollwertiger Admin (nicht nur Trainer/eingeschraenkt/checkin)
+      // direkt zugeordnet ist → echte Lizenz-Kundendojos werden ausgeblendet.
       whereClause += ` AND (d.id = 2 OR d.id NOT IN (
-        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2
+        SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2 AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
       ))`;
     }
 

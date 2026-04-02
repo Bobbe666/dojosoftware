@@ -42,8 +42,8 @@
 }
 
 .training-reminders .settings-button {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-sm);
   padding: 0.4rem;
   color: var(--primary);
@@ -52,20 +52,20 @@
 }
 
 .training-reminders .settings-button:hover {
-  background: rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.5);
+  background: var(--primary-alpha-20);
+  border-color: var(--primary-alpha-50);
   transform: scale(1.05);
 }
 
 .training-reminders .settings-button--active {
-  background: rgba(255, 215, 0, 0.2);
-  border: 1px solid rgba(255, 215, 0, 0.5);
-  color: #ffd700;
+  background: var(--primary-alpha-20);
+  border: 1px solid var(--primary-alpha-50);
+  color: var(--primary);
 }
 
 .training-reminders .reminder-settings {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-md);
   padding: var(--ui-page-padding-sm);
   margin-bottom: var(--ui-page-padding-sm);
@@ -111,7 +111,7 @@
 
 .training-reminders .reminder-card {
   background: var(--surface-3);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-lg);
   padding: var(--ui-page-padding-sm);
   display: flex;
@@ -220,7 +220,7 @@
 
 .training-reminders .course-preview {
   background: var(--surface-1);
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: var(--comp-radius-md);
   padding: 0.6rem;
   margin-bottom: 0.5rem;
@@ -232,7 +232,7 @@
 
 .training-reminders .course-preview:hover {
   background: var(--surface-2);
-  border-color: rgba(255, 215, 0, 0.2);
+  border-color: var(--primary-alpha-20);
 }
 
 .training-reminders .course-info {
@@ -255,7 +255,7 @@
 .training-reminders .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;

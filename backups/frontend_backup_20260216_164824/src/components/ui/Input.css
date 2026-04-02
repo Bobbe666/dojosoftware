@@ -1,0 +1,266 @@
+/* ===========================================
+   UI COMPONENT - INPUT / FORM ELEMENTS
+   Zentrale Form-Styles
+   =========================================== */
+
+/* ========== FORM GROUP ========== */
+
+.ds-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.ds-form-group--full {
+  width: 100%;
+}
+
+/* ========== LABEL ========== */
+
+.ds-form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+}
+
+.ds-form-required {
+  color: var(--color-error-500);
+  margin-left: var(--spacing-1);
+}
+
+/* ========== INPUT WRAPPER ========== */
+
+.ds-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ========== BASE INPUT ========== */
+
+.ds-input {
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  color: var(--input-text, var(--text-primary));
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+}
+
+.ds-input::placeholder {
+  color: var(--input-placeholder);
+}
+
+.ds-input:hover:not(:disabled) {
+  border: var(--input-border-hover);
+}
+
+.ds-input:focus {
+  outline: none;
+  border: var(--input-border-focus);
+  background: var(--input-bg-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.ds-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Input with icons */
+.ds-input--with-icon-left {
+  padding-left: var(--spacing-10);
+}
+
+.ds-input--with-icon-right {
+  padding-right: var(--spacing-10);
+}
+
+/* ========== INPUT ICON ========== */
+
+.ds-input-icon {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--spacing-10);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.ds-input-icon--left {
+  left: 0;
+}
+
+.ds-input-icon--right {
+  right: 0;
+}
+
+/* ========== TEXTAREA ========== */
+
+.ds-textarea {
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  color: var(--input-text, var(--text-primary));
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--radius-lg);
+  resize: vertical;
+  min-height: 100px;
+  transition: all var(--transition-fast);
+}
+
+.ds-textarea:focus {
+  outline: none;
+  border: var(--input-border-focus);
+  background: var(--input-bg-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+/* ========== SELECT ========== */
+
+.ds-select {
+  width: 100%;
+  padding: var(--spacing-3) var(--spacing-4);
+  padding-right: var(--spacing-10);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  color: var(--input-text, var(--text-primary));
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23999'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--spacing-3) center;
+  background-size: 1.25em;
+  transition: all var(--transition-fast);
+}
+
+.ds-select:focus {
+  outline: none;
+  border: var(--input-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+.ds-select option {
+  background: var(--dropdown-bg);
+  color: var(--text-primary);
+}
+
+/* ========== CHECKBOX ========== */
+
+.ds-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.ds-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  cursor: pointer;
+}
+
+.ds-checkbox {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.ds-checkbox-indicator {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.ds-checkbox:checked + .ds-checkbox-indicator {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.ds-checkbox:checked + .ds-checkbox-indicator::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--text-inverse);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.ds-checkbox:focus + .ds-checkbox-indicator {
+  box-shadow: var(--shadow-focus);
+}
+
+.ds-checkbox-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* ========== ERROR STATE ========== */
+
+.ds-input-wrapper--error .ds-input,
+.ds-textarea--error,
+.ds-select--error {
+  border-color: var(--color-error-500);
+}
+
+.ds-input-wrapper--error .ds-input:focus,
+.ds-textarea--error:focus,
+.ds-select--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+}
+
+/* ========== HELPER / ERROR TEXT ========== */
+
+.ds-form-helper {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
+.ds-form-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error-500);
+}
+
+/* ========== TDA-VIB THEME ========== */
+
+[data-theme="tda-vib"] .ds-input,
+[data-theme="tda-vib"] .ds-textarea,
+[data-theme="tda-vib"] .ds-select {
+  background: var(--color-white);
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  border-radius: 0;
+}
+
+[data-theme="tda-vib"] .ds-input:focus,
+[data-theme="tda-vib"] .ds-textarea:focus,
+[data-theme="tda-vib"] .ds-select:focus {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px rgba(201, 162, 39, 0.2);
+}
+
+[data-theme="tda-vib"] .ds-checkbox-indicator {
+  border-radius: 0;
+}
+
+[data-theme="tda-vib"] .ds-checkbox:checked + .ds-checkbox-indicator {
+  background: var(--color-sumi);
+  border-color: var(--color-sumi);
+}

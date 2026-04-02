@@ -118,8 +118,8 @@ Glassmorphism-Design mit Theme-Variablen.
 .glass-card:hover,
 .nav-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255,215,0,0.2);
-  border-color: rgba(255,215,0,0.5);
+  box-shadow: 0 20px 40px var(--primary-alpha-20);
+  border-color: var(--primary-alpha-50);
 }
 
 /* Rotating Border Effekt - wie Dashboard */
@@ -135,7 +135,7 @@ Glassmorphism-Design mit Theme-Variablen.
   background: conic-gradient(
     from 0deg,
     transparent,
-    rgba(255,215,0,0.1),
+    var(--primary-alpha-10),
     transparent,
     var(--secondary-alpha-10),
     transparent
@@ -246,15 +246,15 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .nav-badge {
-  background: rgba(255,215,0,0.25);
+  background: var(--primary-alpha-25);
   color: var(--color-gold);
   padding: 0.5rem 1rem;
   border-radius: 25px;
   font-size: 0.8rem;
   font-weight: 600;
-  border: 1px solid rgba(255,215,0,0.5);
+  border: 1px solid var(--primary-alpha-50);
   white-space: nowrap;
-  box-shadow: 0 0 15px rgba(255,215,0,0.4);
+  box-shadow: 0 0 15px var(--primary-alpha-40);
   text-shadow: var(--glow-gold);
   position: relative;
   z-index: 2;
@@ -268,11 +268,11 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .nav-badge.live {
-  background: rgba(255,215,0,0.35);
+  background: var(--primary-alpha-35);
   color: var(--color-gold);
-  border-color: rgba(255,215,0,0.6);
-  text-shadow: 0 0 15px rgba(255,215,0,0.5);
-  box-shadow: 0 0 20px rgba(255,215,0,0.4);
+  border-color: var(--primary-alpha-60);
+  text-shadow: 0 0 15px var(--primary-alpha-50);
+  box-shadow: 0 0 20px var(--primary-alpha-40);
 }
 
 /* ===== STANDARDIZED STAT CARDS - Based on Dashboard stats ===== */
@@ -449,7 +449,7 @@ Glassmorphism-Design mit Theme-Variablen.
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
   transition: left 0.5s;
 }
 
@@ -469,7 +469,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .logout-button:active,
 .dashboard-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(255,215,0,0.2);
+  box-shadow: 0 2px 6px var(--primary-alpha-20);
 }
 
 .logout-icon,
@@ -768,7 +768,7 @@ Glassmorphism-Design mit Theme-Variablen.
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
   transition: left 0.5s;
 }
 
@@ -788,7 +788,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .tab-vertical-btn:active,
 .tab:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(255,215,0,0.2);
+  box-shadow: 0 2px 6px var(--primary-alpha-20);
 }
 
 .tab-icon {
@@ -809,10 +809,10 @@ Glassmorphism-Design mit Theme-Variablen.
 }
 
 .tab.active {
-  background: linear-gradient(135deg, rgba(255,215,0,0.3) 0%, rgba(255,215,0,0.1) 50%, transparent 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
   color: var(--text-1);
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(255,215,0,0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
   border: 1px solid var(--border-accent-hover);
 }
 
@@ -850,7 +850,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .sub-tab-btn:hover {
   background: var(--surface-4);
   color: var(--text-1);
-  border-color: rgba(255,215,0,0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .sub-tab-btn.active {
@@ -901,10 +901,10 @@ Glassmorphism-Design mit Theme-Variablen.
 
 .style-sub-tab-btn.active,
 .exam-sub-tab-btn.active {
-  background: linear-gradient(135deg, rgba(255,215,0,0.25), rgba(255,215,0,0.15));
+  background: linear-gradient(135deg, var(--primary-alpha-25), var(--primary-alpha-15));
   color: var(--color-gold);
   border-color: var(--border-accent-hover);
-  box-shadow: 0 2px 8px rgba(255,215,0,0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
 }
 
 /* ===== LOADING STATES ===== */
@@ -1286,7 +1286,7 @@ Glassmorphism-Design mit Theme-Variablen.
 .u-label-xs-meta { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
 .u-label-xs-bottom { font-size: 0.65rem; color: var(--text-secondary); margin-top: 0.25rem; }
 .u-heading-primary { font-size: 1rem; font-weight: bold; color: var(--primary); }
-.u-gold-glow-lg { color: var(--text-primary); font-size: 1.5rem; font-weight: 700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+.u-gold-glow-lg { color: var(--text-primary); font-size: 1.5rem; font-weight: 700; text-shadow: 0 0 10px var(--primary-alpha-30); }
 .u-emoji-xl { font-size: 3rem; margin-bottom: 1rem; }
 .u-flex-wrap-gap { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .u-hidden { display: none; }

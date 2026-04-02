@@ -23,18 +23,23 @@ export const SubscriptionProvider = ({ children }) => {
   }, []);
 
   const loadSubscription = async () => {
-    const token = localStorage.getItem('token');
+    // Token-Key ist 'dojo_auth_token' (nicht 'token') — Interceptor in main.jsx setzt Auth-Header
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken') || localStorage.getItem('token');
     if (!token) {
       setLoading(false);
       return;
     }
 
     try {
-      const response = await axios.get(`/subscription/current`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.get(`/subscription/current`);
 
-      setSubscription(response.data);
+      // Backend gibt { subscription: {...}, trial_days_left, current_members, ... } zurück
+      // → flach speichern damit hasFeature direkt auf Felder zugreifen kann
+      const raw = response.data;
+      const sub = raw.subscription
+        ? { ...raw.subscription, _current_members: raw.current_members, _trial_days_left: raw.trial_days_left }
+        : raw;
+      setSubscription(sub);
       setError(null);
     } catch (err) {
       // 403 = nicht authentifiziert, kein echter Fehler für öffentliche Seiten
@@ -56,9 +61,9 @@ export const SubscriptionProvider = ({ children }) => {
       return false;
     }
 
-    // Check feature flag
+    // Check feature flag — MySQL TINYINT gibt 0/1 zurück, kein Boolean
     const featureKey = `feature_${featureName}`;
-    return subscription[featureKey] === true;
+    return !!subscription[featureKey];
   };
 
   // Check if trial is active
@@ -105,7 +110,9 @@ export const SubscriptionProvider = ({ children }) => {
       buchfuehrung: 'Buchführung & Rechnungen',
       events: 'Events-Verwaltung',
       multidojo: 'Multi-Dojo-Verwaltung',
-      api: 'API-Zugang'
+      api: 'API-Zugang',
+      messenger: 'Facebook Messenger',
+      homepage_builder: 'Homepage Builder'
     };
     return featureNames[featureName] || featureName;
   };
@@ -117,7 +124,9 @@ export const SubscriptionProvider = ({ children }) => {
       events: 'professional',
       buchfuehrung: 'premium',
       api: 'premium',
-      multidojo: 'enterprise'
+      multidojo: 'enterprise',
+      messenger: 'enterprise',
+      homepage_builder: 'enterprise'
     };
     return featurePlans[featureName] || 'starter';
   };

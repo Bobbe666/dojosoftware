@@ -103,9 +103,9 @@
     height: 54px !important;
   }
 
-  /* --- Navigations-Kacheln: 7er → 3er Grid --- */
-  .member-navigation-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
+  /* --- Navigations-Kacheln: 7er → 4er Grid mobil --- */
+  .member-navigation-grid, .md-navigation-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
     gap: 0.5rem !important;
     margin-bottom: 0.75rem !important;
   }
@@ -115,6 +115,11 @@
     min-height: 72px !important;
     font-size: 0.8rem !important;
     gap: 0.4rem !important;
+  }
+
+  /* --- Info-Cards: 2-spaltig → 1-spaltig auf Mobil --- */
+  .md-info-list {
+    grid-template-columns: 1fr !important;
   }
 
   /* --- Schnellzugriff: 5er → 3er Grid --- */
@@ -193,3 +198,9 @@
   }
 
 }
+
+/* ===============================================================
+   DESKTOP (≥768px) — Info-Karten 2-spaltig
+   =============================================================== */
+
+/* Desktop: info-list is already 2-column via MemberDashboard.css */

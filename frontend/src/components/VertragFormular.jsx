@@ -358,7 +358,9 @@ const VertragFormular = ({
                 tarif_id: e.target.value,
                 mindestlaufzeit_monate: mindestlaufzeit,
                 kuendigungsfrist_monate: selectedTarif?.kuendigungsfrist_monate || 3,
-                aufnahmegebuehr_cents: selectedTarif?.aufnahmegebuehr_cents || 4999,
+                aufnahmegebuehr_cents: selectedTarif?.aufnahmegebuehr_cents ?? 4999,
+                billing_cycle: selectedTarif?.billing_cycle?.toLowerCase() || vertrag.billing_cycle,
+                monatsbeitrag: selectedTarif ? selectedTarif.price_cents / 100 : vertrag.monatsbeitrag,
                 vertragsende: calculatedEnde
               });
             }}

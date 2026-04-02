@@ -1,5 +1,5 @@
 // Frontend/src/App.jsx - OPTIMIERTE VERSION mit aggressivem Lazy Loading
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import "./styles/App.css";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 
@@ -12,6 +12,7 @@ import { MitgliederUpdateProvider } from "./context/MitgliederUpdateContext.jsx"
 import { SubscriptionProvider } from "./context/SubscriptionContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { ChatProvider } from "./context/ChatContext.jsx";
+import { DatenProvider } from "@shared/DatenContext.jsx";
 
 // AGB-Bestaetigung Wrapper
 import AgbConfirmationWrapper from "./components/AgbConfirmationWrapper";
@@ -44,6 +45,7 @@ const lazyWithReload = (importFn) => {
 import Login from "./components/Login";
 import MitgliederLogin from "./components/MitgliederLogin";
 import ClubMemberLogin from "./components/ClubMemberLogin";
+import CheckinLogin from "./components/CheckinLogin";
 import SSOLogin from "./components/SSOLogin";
 import LandingPage from "./pages/LandingPage";
 
@@ -79,6 +81,7 @@ const PublicCheckinDisplay = lazyWithReload(() => import(/* webpackChunkName: "p
 const Stundenplan = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/Stundenplan"));
 const Kurse = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/Kurse"));
 const Trainer = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/Trainer"));
+const TrainerStunden = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/TrainerStunden"));
 const GruppenStilverwaltung = lazyWithReload(() => import(/* webpackChunkName: "courses" */ "./components/GruppenStilverwaltung"));
 const Stilverwaltung = lazyWithReload(() => import(/* webpackChunkName: "styles" */ "./components/Stilverwaltung"));
 const StandortVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "settings" */ "./components/StandortVerwaltung"));
@@ -88,6 +91,7 @@ const PublicTimetableDisplay = lazyWithReload(() => import(/* webpackChunkName: 
 // LAZY LOADED - Finanzen & Beiträge
 // ============================================================================
 const Finanzcockpit = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Finanzcockpit"));
+const BuchhaltungPage = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./pages/BuchhaltungPage"));
 const EuerUebersicht = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/EuerUebersicht"));
 const AusgabenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/AusgabenVerwaltung"));
 const KontoauszugImport = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/KontoauszugImport"));
@@ -116,13 +120,17 @@ const ArtikelVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sale
 const ArtikelFormular = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelFormular"));
 const VerkaufKasse = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/VerkaufKasse"));
 const ArtikelgruppenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelgruppenVerwaltung"));
+const ShopBestellungenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/shop/ShopBestellungenVerwaltung"));
+const OffeneArtikelEinzuege = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/OffeneArtikelEinzuege"));
 
 // ============================================================================
 // LAZY LOADED - Member-Bereich
 // ============================================================================
 const MemberDashboard = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberDashboard"));
+const MemberDashboardMobile = lazyWithReload(() => import(/* webpackChunkName: "member-app" */ "./components/MemberDashboardMobile"));
 const ChatPage = lazyWithReload(() => import(/* webpackChunkName: "member-chat" */ "./components/chat/ChatPage"));
 const AdminChatPage = lazyWithReload(() => import(/* webpackChunkName: "admin-chat" */ "./components/chat/AdminChatPage"));
+const BesucherChat = lazyWithReload(() => import(/* webpackChunkName: "besucher-chat" */ "./components/chat/BesucherChat"));
 const MemberHeader = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberHeader"));
 const MemberProfilePage = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberProfilePage"));
 const MemberSchedule = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberSchedule"));
@@ -149,7 +157,11 @@ const EinstellungenDojo = lazyWithReload(() => import(/* webpackChunkName: "admi
 const AuditLog = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
 const SecurityDashboard = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
 const BuddyVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/BuddyVerwaltung"));
+const FreundeWerbenFreunde = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/FreundeWerbenFreunde"));
+const MarketingZentrale = lazyWithReload(() => import(/* webpackChunkName: "marketing" */ "./components/MarketingZentrale"));
+const UmfragenDashboard = lazyWithReload(() => import(/* webpackChunkName: "umfragen" */ "./components/UmfragenDashboard"));
 const Auswertungen = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/Auswertungen"));
+const GuertelMassenzuweisung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/GuertelMassenzuweisung"));
 const BerichteDokumente = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/BerichteDokumente"));
 const DojosVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/DojosVerwaltung"));
 const DojoEdit = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/DojoEdit"));
@@ -186,7 +198,18 @@ const KalenderAbo = lazyWithReload(() => import(/* webpackChunkName: "member-are
 // ============================================================================
 const PaymentCheckout = lazyWithReload(() => import(/* webpackChunkName: "payment" */ "./components/PaymentCheckout"));
 const EventPaymentCheckout = lazyWithReload(() => import(/* webpackChunkName: "payment" */ "./components/EventPaymentCheckout"));
+const MemberRechnungCheckout = lazyWithReload(() => import(/* webpackChunkName: "payment" */ "./components/MemberRechnungCheckout"));
 const EventsDashboard = lazyWithReload(() => import(/* webpackChunkName: "events" */ "./components/EventsDashboard"));
+
+// ============================================================================
+// LAZY LOADED - Turnierverwaltung & Lernplattform
+// ============================================================================
+const Turnierverwaltung = lazyWithReload(() => import(/* webpackChunkName: "turniere" */ "./components/Turnierverwaltung"));
+const Lernplattform = lazyWithReload(() => import(/* webpackChunkName: "lernplattform" */ "./components/Lernplattform"));
+const ElternZugaenge = lazyWithReload(() => import(/* webpackChunkName: "eltern" */ "./components/ElternZugaenge"));
+const ElternPortal = lazyWithReload(() => import(/* webpackChunkName: "eltern" */ "./components/ElternPortal"));
+const HomepageDashboard = lazyWithReload(() => import(/* webpackChunkName: "homepage-builder" */ "./components/HomepageDashboard"));
+const DojoSite = lazyWithReload(() => import(/* webpackChunkName: "dojo-site" */ "./components/DojoSite"));
 
 // ============================================================================
 // LAZY LOADED - Events & News
@@ -205,6 +228,10 @@ const BuddyInviteRegistration = lazyWithReload(() => import(/* webpackChunkName:
 const VerbandMitgliedWerden = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
 const ProbetrainingBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
 const EventGastAnmeldung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/EventGastAnmeldung"));
+const PublicShop = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShop"));
+const PublicShopWarenkorb = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShopWarenkorb"));
+const PublicShopCheckout = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShopCheckout"));
+const PublicShopBestaetigung = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShopBestaetigung"));
 const MagicLineImport = lazyWithReload(() => import(/* webpackChunkName: "import" */ "./pages/MagicLineImport"));
 const CSVImport = lazyWithReload(() => import(/* webpackChunkName: "import" */ "./pages/CSVImport"));
 
@@ -361,6 +388,11 @@ const LoginRouteHandler = () => {
     return <ClubMemberLogin />;
   }
 
+  // Check-In App (checkin.tda-intl.org) → CheckinLogin (Trainer-Login direkt zum CheckinSystem)
+  if (hostname === 'checkin.tda-intl.org' || hostname === 'checkin.dojo.tda-intl.org') {
+    return <CheckinLogin />;
+  }
+
   // Wenn Dojo-Subdomain (z.B. demo1.dojo.tda-intl.org, dojo-3.dojo.tda-intl.org) → ClubMemberLogin
   // Sonst (dojo.tda-intl.org) → normales Login
   return isDojoSubdomain() ? <ClubMemberLogin /> : <Login />;
@@ -379,6 +411,12 @@ const RootRedirect = () => {
   if (hostname === 'app.tda-vib.de') {
     if (!token) return <Navigate to="/login" replace />;
     return <Navigate to="/member/dashboard" replace />;
+  }
+
+  // Check-In App (checkin.tda-intl.org oder checkin.dojo.tda-intl.org) → direkt zur CheckinApp
+  if (hostname === 'checkin.tda-intl.org' || hostname === 'checkin.dojo.tda-intl.org') {
+    if (!token) return <Navigate to="/login" replace />;
+    return <Navigate to="/dashboard/checkin" replace />;
   }
 
   // Prüfe ob es eine Subdomain ist (nicht die Haupt-Domain)
@@ -406,8 +444,27 @@ const RootRedirect = () => {
   return <Navigate to="/dashboard" replace />;
 };
 
+// Safari-Fix: input[type="date"] feuert onChange nicht zuverlässig bei nativer Datumsauswahl.
+// Globaler input-Listener feuert ein synthetisches change-Event nach, das React aufgreift.
+function useSafariDateFix() {
+  useEffect(() => {
+    const lastVal = new WeakMap();
+    const handle = (e) => {
+      const el = e.target;
+      if (!el || el.tagName !== 'INPUT' || el.type !== 'date') return;
+      const val = el.value;
+      if (lastVal.get(el) === val) return;
+      lastVal.set(el, val);
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    document.addEventListener('input', handle, true);
+    return () => document.removeEventListener('input', handle, true);
+  }, []);
+}
+
 // Haupt-App Komponente
 const App = () => {
+  useSafariDateFix();
   return (
     <ThemeProvider>
       <ApiHealthCheck>
@@ -415,6 +472,7 @@ const App = () => {
           <ChatProvider>
           <SubscriptionProvider>
             <DojoProvider>
+              <DatenProvider>
               <StandortProvider>
                 <KursProvider>
                   <MitgliederUpdateProvider>
@@ -440,6 +498,9 @@ const App = () => {
             {/* Public Homepage - No authentication required */}
             <Route path="/home" element={<Suspense fallback={<LazyLoadFallback />}><Homepage /></Suspense>} />
 
+            {/* Dojo-Homepages (Enterprise Feature) - No authentication required */}
+            <Route path="/site/:slug" element={<Suspense fallback={<div style={{display:'flex',justifyContent:'center',padding:'4rem',fontSize:'1.2rem'}}>Wird geladen…</div>}><DojoSite /></Suspense>} />
+
             {/* Public Check-in Display - No authentication required */}
             <Route path="/public-checkin" element={<Suspense fallback={<LazyLoadFallback />}><PublicCheckinDisplay /></Suspense>} />
 
@@ -458,6 +519,12 @@ const App = () => {
             {/* Event Gast-Anmeldung - Öffentlich zugänglich (kein Login erforderlich) */}
             <Route path="/event/:eventId/gast" element={<Suspense fallback={<LazyLoadFallback />}><EventGastAnmeldung /></Suspense>} />
 
+            {/* Shop - Öffentlich zugänglich (kein Login erforderlich) */}
+            <Route path="/shop/:dojoId" element={<Suspense fallback={<LazyLoadFallback />}><PublicShop /></Suspense>} />
+            <Route path="/shop/:dojoId/warenkorb" element={<Suspense fallback={<LazyLoadFallback />}><PublicShopWarenkorb /></Suspense>} />
+            <Route path="/shop/:dojoId/checkout" element={<Suspense fallback={<LazyLoadFallback />}><PublicShopCheckout /></Suspense>} />
+            <Route path="/shop/:dojoId/bestellung/:bestellnummer" element={<Suspense fallback={<LazyLoadFallback />}><PublicShopBestaetigung /></Suspense>} />
+
             {/* Neumitglied-Registrierung - Öffentlich zugänglich */}
             <Route path="/mitglied-werden" element={<Suspense fallback={<LazyLoadFallback />}><PublicRegistration /></Suspense>} />
 
@@ -475,6 +542,14 @@ const App = () => {
               element={
                 <MemberOnlyRoute>
                   <Suspense fallback={<LazyLoadFallback />}><MemberDashboard /></Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member-app"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}><MemberDashboardMobile /></Suspense>
                 </MemberOnlyRoute>
               }
             />
@@ -527,6 +602,14 @@ const App = () => {
               element={
                 <MemberOnlyRoute>
                   <Suspense fallback={<LazyLoadFallback />}><MemberPayments /></Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+            <Route
+              path="/member/zahlung/:rechnungId"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}><MemberRechnungCheckout /></Suspense>
                 </MemberOnlyRoute>
               }
             />
@@ -612,8 +695,12 @@ const App = () => {
               }
             />
 
+
             {/* Standard-Weiterleitung basierend auf Authentifizierung */}
             <Route path="/" element={<RootRedirect />} />
+
+            {/* Eltern-Portal (öffentlich, token-basiert) */}
+            <Route path="/eltern-portal" element={<Suspense fallback={<LazyLoadFallback />}><ElternPortal /></Suspense>} />
 
             {/* ======== TDA-VIB STYLE DASHBOARD (TEST) ======== */}
             <Route
@@ -687,6 +774,12 @@ const App = () => {
               {/* Kassensystem */}
               <Route path="kasse" element={<Suspense fallback={<LazyLoadFallback />}><VerkaufKasse /></Suspense>} />
 
+              {/* Shop-Bestellungen */}
+              <Route path="shop-bestellungen" element={<Suspense fallback={<LazyLoadFallback />}><ShopBestellungenVerwaltung /></Suspense>} />
+
+              {/* Offene Artikel-Einzüge */}
+              <Route path="offene-einzuege" element={<Suspense fallback={<LazyLoadFallback />}><OffeneArtikelEinzuege /></Suspense>} />
+
               {/* ======== STIL-VERWALTUNG (ERWEITERT) ======== */}
               <Route path="stile" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />
               <Route path="stile/:stilId" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />
@@ -707,6 +800,7 @@ const App = () => {
 
               {/* Trainer-Management */}
               <Route path="trainer" element={<Suspense fallback={<LazyLoadFallback />}><Trainer /></Suspense>} />
+              <Route path="trainer-stunden" element={<Suspense fallback={<LazyLoadFallback />}><TrainerStunden /></Suspense>} />
 
               {/* Prüfungsverwaltung (Gurtprüfungen) */}
               <Route path="termine" element={<Suspense fallback={<LazyLoadFallback />}><PruefungsVerwaltung /></Suspense>} />
@@ -720,6 +814,12 @@ const App = () => {
               <Route path="events-dashboard" element={<Suspense fallback={<LazyLoadFallback />}><EventsDashboard /></Suspense>} />
               <Route path="meine-events" element={<Suspense fallback={<LazyLoadFallback />}><MeineEvents /></Suspense>} />
 
+              {/* Turnierverwaltung & Lernplattform */}
+              <Route path="turniere" element={<Suspense fallback={<LazyLoadFallback />}><Turnierverwaltung /></Suspense>} />
+              <Route path="lernplattform" element={<Suspense fallback={<LazyLoadFallback />}><Lernplattform /></Suspense>} />
+              <Route path="eltern-zugaenge" element={<Suspense fallback={<LazyLoadFallback />}><ElternZugaenge /></Suspense>} />
+              <Route path="homepage" element={<Suspense fallback={<LazyLoadFallback />}><HomepageDashboard /></Suspense>} />
+
               {/* News-Verwaltung (nur Haupt-Admin) */}
               <Route path="news" element={<Suspense fallback={<LazyLoadFallback />}><NewsVerwaltung /></Suspense>} />
               <Route path="news/neu" element={<Suspense fallback={<LazyLoadFallback />}><NewsFormular mode="create" /></Suspense>} />
@@ -729,6 +829,7 @@ const App = () => {
               <Route path="support" element={<Suspense fallback={<LazyLoadFallback />}><SupportTickets /></Suspense>} />
 
               {/* Finanzen & Beitrags-Management */}
+              <Route path="buchhaltung" element={<Suspense fallback={<LazyLoadFallback />}><BuchhaltungPage /></Suspense>} />
               <Route path="finanzcockpit" element={<Suspense fallback={<LazyLoadFallback />}><Finanzcockpit /></Suspense>} />
               <Route path="euer" element={<Suspense fallback={<LazyLoadFallback />}><EuerUebersicht /></Suspense>} />
               <Route path="euer-tda" element={<Suspense fallback={<LazyLoadFallback />}><EuerUebersicht isTDA={true} /></Suspense>} />
@@ -763,8 +864,18 @@ const App = () => {
               {/* Buddy-Gruppen Verwaltung */}
               <Route path="buddy-gruppen" element={<Suspense fallback={<LazyLoadFallback />}><BuddyVerwaltung /></Suspense>} />
 
+              {/* Freunde werben Freunde → jetzt in Marketingzentrale */}
+              <Route path="freunde-werben" element={<Navigate to="/dashboard/marketingzentrale?tab=freunde-werben" replace />} />
+
+              {/* Marketing-Zentrale */}
+              <Route path="marketingzentrale" element={<Suspense fallback={<LazyLoadFallback />}><MarketingZentrale /></Suspense>} />
+
+              {/* Umfragen */}
+              <Route path="umfragen" element={<Suspense fallback={<LazyLoadFallback />}><UmfragenDashboard /></Suspense>} />
+
               {/* Auswertungen (Analytics & Reports) */}
               <Route path="auswertungen" element={<Suspense fallback={<LazyLoadFallback />}><Auswertungen /></Suspense>} />
+              <Route path="guertel-massenzuweisung" element={<Suspense fallback={<LazyLoadFallback />}><GuertelMassenzuweisung /></Suspense>} />
               <Route path="course-ratings" element={<Suspense fallback={<LazyLoadFallback />}><CourseRatingAdmin /></Suspense>} />
 
               {/* MagicLine Import */}
@@ -790,6 +901,7 @@ const App = () => {
               {/* Newsletter & Benachrichtigungssystem */}
               <Route path="notifications" element={<Suspense fallback={<LazyLoadFallback />}><NotificationSystem /></Suspense>} />
 
+
               {/* ======== EINSTELLUNGEN ======== */}
               {/* Redirect alte "Mein Dojo" Route zur neuen Dojo-Verwaltung */}
               <Route path="einstellungen" element={<Navigate to="/dashboard/dojos" replace />} />
@@ -814,6 +926,9 @@ const App = () => {
 
               {/* Chat für Admins / Trainer */}
               <Route path="chat" element={<Suspense fallback={<LazyLoadFallback />}><AdminChatPage /></Suspense>} />
+
+              {/* Besucher-Chat für Admins / Super-Admin */}
+              <Route path="besucher-chat" element={<Suspense fallback={<LazyLoadFallback />}><BesucherChat /></Suspense>} />
 
               {/* Fehlerseite für ungültige Dashboard-Unterrouten */}
               <Route
@@ -847,6 +962,7 @@ const App = () => {
                 </MitgliederUpdateProvider>
               </KursProvider>
             </StandortProvider>
+              </DatenProvider>
           </DojoProvider>
         </SubscriptionProvider>
           </ChatProvider>

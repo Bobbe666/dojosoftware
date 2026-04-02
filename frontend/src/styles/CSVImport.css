@@ -240,7 +240,7 @@
 
 .upload-label:hover {
   border-color: var(--primary);
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
 }
 
 .upload-label.has-file {
@@ -381,8 +381,8 @@
 }
 
 .results-stats .stat.success .stat-value { color: var(--status-success); }
-.results-stats .stat.warning .stat-value { color: #f59e0b; }
-.results-stats .stat.error .stat-value { color: #ef4444; }
+.results-stats .stat.warning .stat-value { color: var(--status-warning); }
+.results-stats .stat.error .stat-value { color: var(--status-error); }
 .results-stats .stat.total .stat-value { color: var(--primary); }
 
 .results-stats .stat-label {
@@ -417,7 +417,7 @@
 }
 
 .results-list.success-list h4 { color: var(--status-success); }
-.results-list.error-list h4 { color: #f59e0b; }
+.results-list.error-list h4 { color: var(--status-warning); }
 
 .results-list ul {
   list-style: none;

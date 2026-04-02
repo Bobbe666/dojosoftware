@@ -21,7 +21,7 @@
   margin-bottom: var(--ui-header-margin-b);
   padding: var(--ui-page-padding-sm);
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xl);
   backdrop-filter: blur(10px);
 }
@@ -58,7 +58,7 @@
 /* Formular für neuen Raum */
 .raum-verwaltung .room-form-card {
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xl);
   margin-bottom: var(--ui-stats-margin-b);
   overflow: hidden;
@@ -103,7 +103,7 @@
 .raum-verwaltung .form-input {
   padding: var(--ui-btn-pad-y);
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-md);
   font-size: var(--ui-form-input);
   color: var(--text-1) !important;
@@ -114,7 +114,7 @@
   outline: none;
   border-color: var(--primary) !important;
   background: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .raum-verwaltung .form-input::placeholder {
@@ -130,7 +130,7 @@
 .raum-verwaltung .color-input {
   width: 40px;
   height: 40px;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   background: transparent !important;
@@ -182,7 +182,7 @@
 
 .raum-verwaltung .room-card {
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xl);
   transition: all 0.2s;
   overflow: hidden;
@@ -191,7 +191,7 @@
 
 .raum-verwaltung .room-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 215, 0, 0.4) !important;
+  border-color: var(--primary-alpha-40) !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
@@ -233,7 +233,7 @@
   flex-grow: 1;
   padding: 0.5rem;
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
   border-radius: var(--comp-radius-sm);
   font-size: var(--ui-card-title);
   font-weight: 600;
@@ -307,13 +307,13 @@
   padding: 3rem;
   text-align: center;
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   backdrop-filter: blur(10px);
 }
 
 .raum-verwaltung .empty-state svg {
-  color: rgba(255, 215, 0, 0.4);
+  color: var(--primary-alpha-40);
   margin-bottom: 1rem;
 }
 
@@ -348,7 +348,7 @@
 
 .raum-verwaltung .btn-primary:hover:not(:disabled) {
   transform: scale(1.02);
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 16px var(--primary-alpha-40);
 }
 
 .raum-verwaltung .btn-primary:disabled {
@@ -373,7 +373,7 @@
 
 .raum-verwaltung .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .raum-verwaltung .btn-icon {
@@ -392,7 +392,7 @@
 
 .raum-verwaltung .btn-icon:hover {
   background: var(--surface-3) !important;
-  border-color: rgba(255, 215, 0, 0.3) !important;
+  border-color: var(--primary-alpha-30) !important;
   color: var(--text-1) !important;
 }
 
@@ -440,7 +440,7 @@
 [data-theme] .raum-verwaltung .section-header,
 .form-section .raum-verwaltung .section-header {
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
 }
 
 .dojo-edit-page .raum-verwaltung .section-header h2,
@@ -466,7 +466,7 @@
 [data-theme] .raum-verwaltung .room-card,
 .form-section .raum-verwaltung .room-card {
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
 }
 
 .dojo-edit-page .raum-verwaltung .room-name,
@@ -506,7 +506,7 @@
 [data-theme="tda-vib"] .raum-verwaltung .room-card,
 [data-theme="tda-vib"] .raum-verwaltung .room-form-card {
   background: var(--surface-2) !important;
-  border-color: rgba(255, 215, 0, 0.2) !important;
+  border-color: var(--primary-alpha-20) !important;
 }
 
 [data-theme="tda-vib"] .raum-verwaltung .header-content h2,
@@ -583,7 +583,7 @@ div.raum-verwaltung h3 {
 .raum-verwaltung .rv2-edit-input {
   padding: var(--ui-btn-pad-y);
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-md);
   font-size: var(--ui-form-input);
   color: var(--text-1) !important;
@@ -609,7 +609,7 @@ div.raum-verwaltung h3 {
 .raum-verwaltung .rv2-color-picker {
   width: 50px;
   height: 40px;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   background: transparent !important;

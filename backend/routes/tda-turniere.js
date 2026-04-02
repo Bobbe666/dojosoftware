@@ -173,10 +173,10 @@ async function handleTurnierCreated(turnier) {
     turnier.bild_url || null
   ]);
 
-  logger.info('Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) gespeichert');
+  logger.info(`Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) gespeichert`);
 
-  // 2. Push-Benachrichtigung an alle Mitglieder senden (deaktiviert für Bulk-Sync)
-  // await sendTurnierNotificationToAll(turnier);
+  // 2. In-App-Benachrichtigung an alle Mitglieder senden
+  await sendTurnierNotificationToAll(turnier);
 }
 
 /**
@@ -234,7 +234,7 @@ async function handleTurnierUpdated(turnier) {
     turnier.tda_turnier_id
   ]);
 
-  logger.info('Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) aktualisiert');
+  logger.info(`Turnier ${turnier.name} (ID: ${turnier.tda_turnier_id}) aktualisiert`);
 }
 
 /**
@@ -268,123 +268,254 @@ async function handleTurnierDeleted(tdaTurnierId) {
 }
 
 /**
- * Sendet Benachrichtigung über gelöschtes Turnier an alle Mitglieder
+ * Sendet In-App-Benachrichtigung über gelöschtes Turnier an alle Mitglieder
  */
 async function sendTurnierDeletedNotification(turnierName, turnierDatum, turnierOrt) {
   try {
-    // Hole alle aktiven Mitglieder
-    const [mitglieder] = await db.promise().query(`
-      SELECT mitglied_id, email
-      FROM mitglieder
-      WHERE aktiv = 1
-    `);
+    const [mitglieder] = await db.promise().query(
+      'SELECT mitglied_id, dojo_id FROM mitglieder WHERE aktiv = 1'
+    );
 
-    if (mitglieder.length === 0) {
-      logger.debug('ℹ️ Keine aktiven Mitglieder für Benachrichtigung gefunden');
-      return;
-    }
+    if (mitglieder.length === 0) return;
 
-    logger.debug('📧 Sende Turnier-Absage-Benachrichtigung an ${mitglieder.length} Mitglieder...');
-
-    // Formatiere Datum falls vorhanden
     let datumText = '';
     if (turnierDatum) {
       datumText = new Date(turnierDatum).toLocaleDateString('de-DE', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
       });
     }
 
-    const notificationSubject = `Turnier abgesagt: ${turnierName}`;
-    const notificationMessage = `Das Turnier "${turnierName}"${datumText ? ` am ${datumText}` : ''}${turnierOrt ? ` in ${turnierOrt}` : ''} wurde abgesagt bzw. aus dem Programm genommen.`;
+    const titel = `Turnier abgesagt: ${turnierName}`;
+    const nachricht = `Das Turnier "${turnierName}"${datumText ? ` am ${datumText}` : ''}${turnierOrt ? ` in ${turnierOrt}` : ''} wurde abgesagt.`;
 
-    // Erstelle Notifications in Batches
     const batchSize = 100;
     for (let i = 0; i < mitglieder.length; i += batchSize) {
       const batch = mitglieder.slice(i, i + batchSize);
-
-      const values = batch.map(m => [
-        m.mitglied_id,
-        m.email,
-        'info',
-        notificationSubject,
-        notificationMessage,
-        '/member/events?tab=turniere',
-        'sent',
-        new Date()
-      ]);
-
-      if (values.length > 0) {
-        await db.promise().query(`
-          INSERT INTO notifications (mitglied_id, recipient, type, subject, message, link, status, created_at)
-          VALUES ?
-        `, [values]);
-      }
+      const values = batch.map(m => [m.mitglied_id, m.dojo_id, 'info', titel, nachricht, null]);
+      await db.promise().query(
+        'INSERT INTO mitglied_nachrichten (mitglied_id, dojo_id, typ, titel, nachricht, referenz_id) VALUES ?',
+        [values]
+      );
     }
 
-    logger.info('${mitglieder.length} Absage-Benachrichtigungen erstellt');
+    logger.info(`${mitglieder.length} Absage-Benachrichtigungen erstellt`);
   } catch (error) {
     logger.error('Fehler beim Senden der Absage-Benachrichtigungen:', error);
-    // Fehler bei Benachrichtigungen sollte nicht den Löschvorgang verhindern
   }
 }
 
 /**
- * Sendet Push-Benachrichtigung an alle Mitglieder (alle Dojos)
+ * Sendet In-App-Benachrichtigung über neues Turnier an alle Mitglieder
  */
 async function sendTurnierNotificationToAll(turnier) {
   try {
-    // Hole alle aktiven Mitglieder aus allen Dojos
-    const [mitglieder] = await db.promise().query(`
-      SELECT mitglied_id, email, vorname, nachname
-      FROM mitglieder
-      WHERE aktiv = 1
-    `);
+    const [mitglieder] = await db.promise().query(
+      'SELECT mitglied_id, dojo_id FROM mitglieder WHERE aktiv = 1'
+    );
 
-    logger.debug('📧 Sende Turnier-Benachrichtigung an ${mitglieder.length} Mitglieder...');
+    if (mitglieder.length === 0) return;
 
-    // Formatiere Datum für deutsche Anzeige
+    logger.debug(`📬 Sende Turnier-Benachrichtigung an ${mitglieder.length} Mitglieder...`);
+
     const datumFormatiert = new Date(turnier.datum).toLocaleDateString('de-DE', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
     });
 
-    const notificationMessage = `Neues TDA Turnier: ${turnier.name} am ${datumFormatiert}`;
-    const notificationDetails = `${turnier.beschreibung || 'Jetzt anmelden!'} ${turnier.ort ? `Ort: ${turnier.ort}` : ''}`;
+    const titel = `Neues Turnier: ${turnier.name}`;
+    const nachricht = `${turnier.name} findet am ${datumFormatiert}${turnier.ort ? ` in ${turnier.ort}` : ''} statt. Jetzt unter Events anmelden!`;
 
-    // Erstelle Notifications in Batches (für Performance)
     const batchSize = 100;
     for (let i = 0; i < mitglieder.length; i += batchSize) {
       const batch = mitglieder.slice(i, i + batchSize);
+      const values = batch.map(m => [m.mitglied_id, m.dojo_id, 'info', titel, nachricht, turnier.tda_turnier_id]);
+      await db.promise().query(
+        'INSERT INTO mitglied_nachrichten (mitglied_id, dojo_id, typ, titel, nachricht, referenz_id) VALUES ?',
+        [values]
+      );
+    }
 
-      const values = batch.map(m => [
-        m.mitglied_id,
-        m.email,
-        'push',
-        notificationMessage,
-        notificationDetails,
-        '/member/events?tab=turniere',
-        'sent'
-      ]);
+    logger.info(`${mitglieder.length} Turnier-Benachrichtigungen erstellt`);
+  } catch (error) {
+    logger.error('Fehler beim Senden der Turnier-Benachrichtigungen:', error);
+  }
+}
 
-      if (values.length > 0) {
-        await db.promise().query(`
-          INSERT INTO notifications (mitglied_id, recipient, type, subject, message, link, status, created_at)
-          VALUES ?
-        `, [values.map(v => [...v, new Date()])]);
+// ============================================================================
+// FRONTEND API ENDPOINTS
+// ============================================================================
+
+// ============================================================================
+// ANMELDUNGEN ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/tda-turniere/:tdaTurnierId/anmelden
+ * Mitglied meldet sich für ein TDA-Turnier an (intern tracken)
+ */
+router.post('/:tdaTurnierId/anmelden', authenticateToken, async (req, res) => {
+  try {
+    const tdaTurnierId = parseInt(req.params.tdaTurnierId);
+    const mitgliedId = req.user?.mitglied_id;
+
+    if (!mitgliedId) {
+      return res.status(400).json({ error: 'Nur Mitglieder können sich anmelden' });
+    }
+
+    // Turnier prüfen
+    const [turniere] = await db.promise().query(
+      'SELECT tda_turnier_id, name, dojo_id FROM tda_turniere WHERE tda_turnier_id = ?',
+      [tdaTurnierId]
+    );
+    if (turniere.length === 0) {
+      return res.status(404).json({ error: 'Turnier nicht gefunden' });
+    }
+
+    // dojo_id des Mitglieds ermitteln
+    const [mitglied] = await db.promise().query(
+      'SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?',
+      [mitgliedId]
+    );
+    if (mitglied.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    // Anmeldung erstellen (DUPLICATE KEY = bereits angemeldet → ignorieren)
+    await db.promise().query(
+      `INSERT INTO tda_turnier_anmeldungen (mitglied_id, dojo_id, tda_turnier_id, status)
+       VALUES (?, ?, ?, 'angemeldet')
+       ON DUPLICATE KEY UPDATE aktualisiert_am = NOW()`,
+      [mitgliedId, mitglied[0].dojo_id, tdaTurnierId]
+    );
+
+    res.json({ success: true, message: 'Anmeldung erfolgreich registriert', status: 'angemeldet' });
+  } catch (error) {
+    logger.error('Fehler bei TDA-Turnier-Anmeldung:', error);
+    res.status(500).json({ error: 'Fehler bei der Anmeldung' });
+  }
+});
+
+/**
+ * GET /api/tda-turniere/meine-anmeldungen
+ * Gibt die TDA-Turnier-Anmeldungen des aktuellen Mitglieds zurück
+ */
+router.get('/meine-anmeldungen', authenticateToken, async (req, res) => {
+  try {
+    const mitgliedId = req.user?.mitglied_id;
+    if (!mitgliedId) {
+      return res.json({ success: true, anmeldungen: [] });
+    }
+
+    const [anmeldungen] = await db.promise().query(
+      `SELECT tta.id, tta.tda_turnier_id, tta.status, tta.erstellt_am,
+              t.name, t.datum, t.ort
+       FROM tda_turnier_anmeldungen tta
+       JOIN tda_turniere t ON tta.tda_turnier_id = t.tda_turnier_id
+       WHERE tta.mitglied_id = ?
+       ORDER BY t.datum ASC`,
+      [mitgliedId]
+    );
+
+    res.json({ success: true, anmeldungen });
+  } catch (error) {
+    logger.error('Fehler beim Laden der eigenen TDA-Anmeldungen:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Anmeldungen' });
+  }
+});
+
+/**
+ * GET /api/tda-turniere/alle-anmeldungen
+ * Admin: Alle TDA-Turnier-Anmeldungen mit Mitglied- und Turnierinfo
+ */
+router.get('/alle-anmeldungen', authenticateToken, async (req, res) => {
+  try {
+    const { getSecureDojoId } = require('../utils/dojo-filter-helper');
+    const secureDojoId = getSecureDojoId(req);
+
+    let whereClause = '';
+    const params = [];
+    if (secureDojoId) {
+      whereClause = 'WHERE tta.dojo_id = ?';
+      params.push(secureDojoId);
+    }
+
+    const [anmeldungen] = await db.promise().query(
+      `SELECT tta.id, tta.mitglied_id, tta.tda_turnier_id, tta.status, tta.bemerkung, tta.erstellt_am,
+              m.vorname, m.nachname, m.email,
+              t.name as turnier_name, t.datum, t.ort
+       FROM tda_turnier_anmeldungen tta
+       JOIN mitglieder m ON tta.mitglied_id = m.mitglied_id
+       JOIN tda_turniere t ON tta.tda_turnier_id = t.tda_turnier_id
+       ${whereClause}
+       ORDER BY t.datum ASC, m.nachname ASC, m.vorname ASC`,
+      params
+    );
+
+    res.json({ success: true, anmeldungen });
+  } catch (error) {
+    logger.error('Fehler beim Laden aller TDA-Anmeldungen:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der Anmeldungen' });
+  }
+});
+
+/**
+ * PATCH /api/tda-turniere/anmeldungen/:id/status
+ * Admin: Anmeldestatus ändern (angemeldet / bestaetigt / abgelehnt)
+ */
+router.patch('/anmeldungen/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const anmeldungId = parseInt(req.params.id);
+    const { status, bemerkung } = req.body;
+    const erlaubteStatus = ['angemeldet', 'bestaetigt', 'abgelehnt'];
+
+    if (!erlaubteStatus.includes(status)) {
+      return res.status(400).json({ error: 'Ungültiger Status' });
+    }
+
+    const { getSecureDojoId } = require('../utils/dojo-filter-helper');
+    const secureDojoId = getSecureDojoId(req);
+
+    const dojoFilter = secureDojoId ? 'AND dojo_id = ?' : '';
+    const params = [status, bemerkung || null, anmeldungId];
+    if (secureDojoId) params.push(secureDojoId);
+
+    const [result] = await db.promise().query(
+      `UPDATE tda_turnier_anmeldungen SET status = ?, bemerkung = ? WHERE id = ? ${dojoFilter}`,
+      params
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Anmeldung nicht gefunden' });
+    }
+
+    // Mitglied bei Ablehnung benachrichtigen
+    if (status === 'abgelehnt') {
+      const [anm] = await db.promise().query(
+        `SELECT tta.mitglied_id, tta.dojo_id, t.name as turnier_name
+         FROM tda_turnier_anmeldungen tta
+         JOIN tda_turniere t ON tta.tda_turnier_id = t.tda_turnier_id
+         WHERE tta.id = ?`,
+        [anmeldungId]
+      );
+      if (anm.length > 0) {
+        await db.promise().query(
+          `INSERT INTO mitglied_nachrichten (mitglied_id, dojo_id, typ, titel, nachricht)
+           VALUES (?, ?, 'info', ?, ?)`,
+          [
+            anm[0].mitglied_id,
+            anm[0].dojo_id,
+            `Turnier-Anmeldung abgelehnt`,
+            `Deine Anmeldung für "${anm[0].turnier_name}" wurde leider abgelehnt.${bemerkung ? ` Hinweis: ${bemerkung}` : ''}`
+          ]
+        );
       }
     }
 
-    logger.info('${mitglieder.length} Turnier-Benachrichtigungen erstellt');
+    res.json({ success: true, message: 'Status aktualisiert' });
   } catch (error) {
-    logger.error('Fehler beim Senden der Turnier-Benachrichtigungen:', error);
-    // Fehler bei Benachrichtigungen sollte nicht den Webhook-Erfolg verhindern
+    logger.error('Fehler beim Aktualisieren des Anmeldestatus:', error);
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
   }
-}
+});
 
 // ============================================================================
 // FRONTEND API ENDPOINTS
@@ -425,7 +556,7 @@ router.get('/', authenticateToken, async (req, res) => {
         synced_at,
         created_at
       FROM tda_turniere
-      WHERE (veroeffentlicht = 1 OR veroeffentlicht IS NULL)
+      WHERE 1=1
     `;
 
     const params = [];

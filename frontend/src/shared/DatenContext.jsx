@@ -1,32 +1,40 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient } from '../services/api';
+import { useDojoContext } from '../context/DojoContext';
 
 export const DatenContext = createContext();
 
 export const DatenProvider = ({ children }) => {
+  const { activeDojo, getDojoFilterParam } = useDojoContext();
   const [kurse, setKurse] = useState([]);
   const [trainer, setTrainer] = useState([]);
   const [stile, setStile] = useState([]);
   const [gruppen, setGruppen] = useState([]);
-  const [loading, setLoading] = useState(false); // WICHTIG: false statt true - kein Auto-Load beim App-Start
+  const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const isLoggedIn = useRef(false);
 
   const ladeAlleDaten = useCallback(async () => {
-    // Nicht nochmal laden wenn schon geladen
-    if (dataLoaded) {
-      console.log('📊 DatenContext: Daten bereits geladen - Skip');
+    console.log('📊 DatenContext: Lade Daten...');
+    const dojoParam = getDojoFilterParam();
+    // Kein Dojo-Filter → kein Laden (Super-Admin ohne Dojo-Auswahl, oder noch nicht bereit)
+    if (!dojoParam) {
+      console.log('📊 DatenContext: Kein Dojo-Filter – leere Daten');
+      setKurse([]);
+      setTrainer([]);
+      setGruppen([]);
       return;
     }
-
-    console.log('📊 DatenContext: Lade Daten...');
     setLoading(true);
     try {
+      const suffix = `?${dojoParam}`;
+
       const [kurseRes, trainerRes, stileRes, gruppenRes] = await Promise.all([
-        apiClient.get('/kurse').catch((err) => {
+        apiClient.get(`/kurse${suffix}`).catch((err) => {
           console.warn('⚠️ Fehler beim Laden der Kurse:', err.response?.status);
           return { data: [] };
         }),
-        apiClient.get('/trainer').catch((err) => {
+        apiClient.get(`/trainer${suffix}`).catch((err) => {
           console.warn('⚠️ Fehler beim Laden der Trainer:', err.response?.status);
           return { data: [] };
         }),
@@ -34,7 +42,7 @@ export const DatenProvider = ({ children }) => {
           console.warn('⚠️ Fehler beim Laden der Stile:', err.response?.status);
           return { data: [] };
         }),
-        apiClient.get('/gruppen').catch((err) => {
+        apiClient.get(`/gruppen${suffix}`).catch((err) => {
           console.warn('⚠️ Fehler beim Laden der Gruppen:', err.response?.status);
           return { data: [] };
         })
@@ -51,15 +59,21 @@ export const DatenProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [dataLoaded]);
+  }, [getDojoFilterParam]);
 
-  // WICHTIG: Daten werden NICHT automatisch beim App-Start geladen
-  // Sie werden nur auf Abruf geladen (z.B. wenn Dashboard mounted)
-  // Das verhindert API-Calls bevor User eingeloggt ist
+  // Bei Dojo-Wechsel: neu laden (nur wenn schon eingeloggt)
   useEffect(() => {
-    // Event Listener für Login - Daten laden wenn User eingeloggt
-    const handleUserLoggedIn = (event) => {
+    if (isLoggedIn.current && activeDojo !== undefined) {
+      console.log('📊 DatenContext: Dojo gewechselt - Lade Daten neu');
+      ladeAlleDaten();
+    }
+  }, [activeDojo]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Login-Event: Daten beim ersten Login laden
+  useEffect(() => {
+    const handleUserLoggedIn = () => {
       console.log('📊 DatenContext: User eingeloggt - Lade Daten');
+      isLoggedIn.current = true;
       ladeAlleDaten();
     };
 

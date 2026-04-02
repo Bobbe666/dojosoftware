@@ -619,7 +619,9 @@ const ArtikelFormular = ({ mode }) => {
 
       const saveData = {
         ...formData,
-        verkaufspreis_euro: vk
+        verkaufspreis_euro: vk,
+        // Wenn keine Unterkategorie gewählt, artikelgruppe_id = kategorie_id (für Tab-Filterung in ArtikelVerwaltung)
+        artikelgruppe_id: formData.artikelgruppe_id || formData.kategorie_id || null
       };
 
       console.log('💾 ArtikelFormular - Speichere:', {
@@ -2034,6 +2036,8 @@ const ArtikelFormular = ({ mode }) => {
                             onChange={(e) => updateVariantenBestand(kombi.key, 'bestand', e.target.value)}
                             min="0"
                             className="af3-lager-bestand-input"
+                            title="Bestand"
+                            aria-label="Bestand"
                           />
 
                           {/* Mindestbestand Input */}
@@ -2042,7 +2046,9 @@ const ArtikelFormular = ({ mode }) => {
                             value={bestandData.mindestbestand}
                             onChange={(e) => updateVariantenBestand(kombi.key, 'mindestbestand', e.target.value)}
                             min="0"
-                            className="af3-lager-bestand-input"
+                            className="af3-lager-bestand-input af3-lager-mindest-input"
+                            title="Mindestbestand"
+                            aria-label="Mindestbestand"
                           />
 
                           {/* Status */}

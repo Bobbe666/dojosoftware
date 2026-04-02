@@ -21,7 +21,7 @@ function connectDatabase() {
         database: process.env.DB_NAME,
         waitForConnections: true,
         queueLimit: 0,
-        charset: 'utf8mb4',
+        charset: 'UTF8MB4_UNICODE_CI',
         // PERFORMANCE: Keep-Alive für stabile Verbindungen
         enableKeepAlive: true,
         keepAliveInitialDelay: 10000
@@ -49,11 +49,20 @@ function connectDatabase() {
 
     // Fehlerhandling bei Verbindungsabbrüchen
     db.on("error", (err) => {
-        console.error("❌ MySQL Fehler:", err);
-        if (err.code === "PROTOCOL_CONNECTION_LOST") {
-            console.log("🔄 Verbindung verloren... Reconnect wird durchgeführt.");
-            connectDatabase(); // Erneute Verbindung
+        // Verbindungs-Fehler (ETIMEDOUT, ECONNRESET, PROTOCOL_CONNECTION_LOST etc.)
+        // sollen den Prozess NICHT crashen — mysql2 Pool erholt sich automatisch
+        const connectionErrors = [
+            "PROTOCOL_CONNECTION_LOST",
+            "ETIMEDOUT",
+            "ECONNRESET",
+            "ECONNREFUSED",
+            "ENOTFOUND",
+        ];
+        if (connectionErrors.includes(err.code) || err.fatal) {
+            console.error("⚠️ MySQL Verbindungsfehler (wird ignoriert):", err.code || err.message);
         } else {
+            // Nur bei echten, unerwarteten Pool-Fehlern weiterschmeißen
+            console.error("❌ MySQL Fehler (unerwartet):", err);
             throw err;
         }
     });

@@ -28,7 +28,7 @@
   padding: 0.6rem 0.75rem;
   padding-top: calc(0.6rem + env(safe-area-inset-top));
   background: #111518;
-  border-bottom: 1px solid rgba(255,215,0,0.12);
+  border-bottom: 1px solid var(--primary-alpha-12);
   gap: 0.5rem;
   flex-shrink: 0;
 }
@@ -44,7 +44,7 @@
   flex-shrink: 0;
   transition: background 0.15s;
 }
-.mp-back:active { background: rgba(255,215,0,0.1); }
+.mp-back:active { background: var(--primary-alpha-10); }
 
 .mp-topbar-title {
   flex: 1;
@@ -73,8 +73,8 @@
   align-items: center;
   gap: 1rem;
   padding: 1.25rem 1rem 1rem;
-  background: linear-gradient(180deg, rgba(255,215,0,0.05) 0%, transparent 100%);
-  border-bottom: 1px solid rgba(255,215,0,0.1);
+  background: linear-gradient(180deg, var(--primary-alpha-05) 0%, transparent 100%);
+  border-bottom: 1px solid var(--primary-alpha-10);
 }
 
 .mp-avatar-wrap {
@@ -86,14 +86,14 @@
 .mp-avatar-img {
   border-radius: 50%;
   object-fit: cover;
-  border: 2.5px solid rgba(255,215,0,0.4);
+  border: 2.5px solid var(--primary-alpha-40);
   display: block;
 }
 
 .mp-avatar-fallback {
   border-radius: 50%;
-  background: rgba(255,215,0,0.12);
-  border: 2.5px solid rgba(255,215,0,0.35);
+  background: var(--primary-alpha-12);
+  border: 2.5px solid var(--primary-alpha-35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,7 +106,7 @@
   bottom: 0;
   right: 0;
   background: #111518;
-  border: 1.5px solid rgba(255,215,0,0.3);
+  border: 1.5px solid var(--primary-alpha-30);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -168,7 +168,7 @@
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   background: #111518;
-  border-bottom: 1px solid rgba(255,215,0,0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
 }
 
 .mp-stat-card {
@@ -179,7 +179,7 @@
   padding: 0.6rem 0.25rem;
   background: rgba(255,215,0,0.04);
   border-radius: var(--comp-radius-lg);
-  border: 1px solid rgba(255,215,0,0.08);
+  border: 1px solid var(--primary-alpha-08);
 }
 
 .mp-stat-num {
@@ -207,7 +207,7 @@
 .mp-section {
   margin: 0.75rem 1rem 0;
   background: #111518;
-  border: 1px solid rgba(255,215,0,0.12);
+  border: 1px solid var(--primary-alpha-12);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
@@ -217,7 +217,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.8rem 1rem;
-  border-bottom: 1px solid rgba(255,215,0,0.08);
+  border-bottom: 1px solid var(--primary-alpha-08);
   background: rgba(255,215,0,0.03);
 }
 
@@ -272,9 +272,9 @@
   font-weight: 700;
   color: var(--primary);
   padding: 0.25rem 0.65rem;
-  border: 1px solid rgba(255,215,0,0.35);
+  border: 1px solid var(--primary-alpha-35);
   border-radius: var(--comp-radius-pill);
-  background: rgba(255,215,0,0.08);
+  background: var(--primary-alpha-08);
   transition: background 0.15s;
 }
 .mp-edit-btn:active { background: rgba(255,215,0,0.18); }
@@ -309,7 +309,7 @@
 
 .mp-edit-input {
   background: var(--surface-2);
-  border: 1.5px solid rgba(255,215,0,0.2);
+  border: 1.5px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-lg);
   padding: 0.65rem 0.85rem;
   font-size: 0.9rem;
@@ -321,7 +321,7 @@
 }
 
 .mp-edit-input:focus {
-  border-color: rgba(255,215,0,0.6);
+  border-color: var(--primary-alpha-60);
 }
 
 .mp-edit-actions {
@@ -350,7 +350,7 @@
 
 .mp-btn--outline {
   background: transparent;
-  border: 1.5px solid rgba(255,215,0,0.3);
+  border: 1.5px solid var(--primary-alpha-30);
   color: var(--text-2);
 }
 
@@ -361,7 +361,7 @@
 
 .mp-ausweis-card {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  border: 1px solid rgba(255,215,0,0.25);
+  border: 1px solid var(--primary-alpha-25);
   border-radius: var(--comp-radius-xl);
   padding: 1.1rem;
   position: relative;
@@ -524,7 +524,7 @@
 .mp-spinner {
   width: 30px;
   height: 30px;
-  border: 3px solid rgba(255,215,0,0.15);
+  border: 3px solid var(--primary-alpha-15);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: mp-spin 0.7s linear infinite;
@@ -547,7 +547,7 @@
   animation: mp-toast-in 0.2s ease;
   z-index: 100;
   background: #1a2128;
-  border: 1px solid rgba(255,215,0,0.2);
+  border: 1px solid var(--primary-alpha-20);
   color: var(--text-1);
 }
 

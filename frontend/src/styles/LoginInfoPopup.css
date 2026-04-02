@@ -108,7 +108,7 @@
 .login-popup-button:hover {
   opacity: 0.9;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 @keyframes fadeIn {

@@ -38,7 +38,7 @@
 }
 
 .first-login-header .warning-icon {
-  color: #f59e0b;
+  color: var(--status-warning);
   flex-shrink: 0;
 }
 
@@ -68,7 +68,7 @@
 
 .first-login-loading .spinner {
   animation: spin 1s linear infinite;
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 @keyframes spin {
@@ -105,17 +105,17 @@
 }
 
 .first-login-tabs .tab.active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: var(--status-indigo);
+  border-bottom-color: var(--status-indigo);
   background: rgba(59, 130, 246, 0.1);
 }
 
 .first-login-tabs .tab.accepted {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .first-login-tabs .tab .check-icon {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 /* Content */
@@ -165,7 +165,7 @@
 .checkbox-label input[type="checkbox"] {
   width: 20px;
   height: 20px;
-  accent-color: #10b981;
+  accent-color: var(--status-success);
   cursor: pointer;
 }
 
@@ -182,7 +182,7 @@
   padding: 0.75rem 1.5rem;
   background: rgba(239, 68, 68, 0.1);
   border-top: 1px solid rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  color: var(--status-error);
   font-size: 0.85rem;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .acceptance-summary span.done {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .btn-confirm {

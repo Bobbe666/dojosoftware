@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText, QrCode, UserPlus
+  Search, CheckCircle, User, X, Calendar, ArrowRight, Plus, Check, Star, Clock, ShoppingCart, FileText, QrCode, UserPlus, AlertTriangle
 } from 'lucide-react';
+import axios from 'axios';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
@@ -114,6 +115,7 @@ const CheckinSystem = () => {
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [step, setStep] = useState(1); // 1: Member Selection, 2: Course Selection, 3: Confirmation
   const [memberCheckedInCourses, setMemberCheckedInCourses] = useState([]); // Stundenplan IDs für die das Mitglied heute schon eingecheckt ist
+  const [memberIsAlreadyCheckedIn, setMemberIsAlreadyCheckedIn] = useState(false); // Ob Mitglied heute schon mind. 1 Check-in hat
 
   // Modal State
   const [showCheckinModal, setShowCheckinModal] = useState(false);
@@ -122,6 +124,26 @@ const CheckinSystem = () => {
   const [showVerkauf, setShowVerkauf] = useState(false);
   const [verkaufKunde, setVerkaufKunde] = useState(null);
   const [verkaufCheckinId, setVerkaufCheckinId] = useState(null);
+
+  // Action Choice State (Verletzung oder Verkauf)
+  const [showActionChoice, setShowActionChoice] = useState(false);
+  const [actionChoiceReady, setActionChoiceReady] = useState(false);
+  const [actionChoiceMember, setActionChoiceMember] = useState(null);
+  const [actionChoiceCheckinId, setActionChoiceCheckinId] = useState(null);
+
+  // Verletzung Modal State
+  const [showVerletzungModal, setShowVerletzungModal] = useState(false);
+  const [verletzungMember, setVerletzungMember] = useState(null);
+  const [verletzungForm, setVerletzungForm] = useState({
+    datum: new Date().toISOString().split('T')[0],
+    art: '',
+    koerperregion: '',
+    schwere: 'leicht',
+    notizen: '',
+    wieder_trainierbar_ab: '',
+  });
+  const [verletzungSaving, setVerletzungSaving] = useState(false);
+  const [verletzungError, setVerletzungError] = useState(null);
 
   // QR Scanner State
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -530,35 +552,34 @@ const CheckinSystem = () => {
     );
   };
 
-  // Member selection - Check-in oder Verkauf je nach Status
+  // Member selection - immer Check-in Modal öffnen (je Kurs einchecken möglich)
   const selectMemberFromSearch = async (member) => {
-    const checkedIn = isCheckedIn(member.mitglied_id);
+    setSelectedMember(member);
+    setSelectedCourses([]);
+    setStep(2);
+    setError('');
+    setSuccess('');
+    setSearchTerm(''); // Suche zurücksetzen nach Auswahl
 
-    if (checkedIn) {
-      // Bereits eingechecktes Mitglied → Verkauf öffnen
-      // Finde die checkin_id für die Verkauf-Verknüpfung
-      const memberCheckin = todayCheckins.find(c => c.mitglied_id === member.mitglied_id);
-      const checkinId = memberCheckin?.primaryCheckin?.checkin_id || memberCheckin?.checkin_id;
-      startVerkauf(member, checkinId);
-    } else {
-      // Nicht eingechecktes Mitglied → normaler Check-in Prozess
-      setSelectedMember(member);
-      setSelectedCourses([]);
-      setStep(2);
-      setError('');
-      setSuccess('');
-      setSearchTerm(''); // Suche zurücksetzen nach Auswahl
+    // Lade bereits eingecheckte Kurse für dieses Mitglied
+    const checkedInCourses = await loadMemberCheckins(member.mitglied_id);
 
-      // Lade bereits eingecheckte Kurse für dieses Mitglied
-      await loadMemberCheckins(member.mitglied_id);
+    // Merke ob Mitglied heute schon mind. 1 Kurs eingecheckt hat (für Verkauf-Button im Modal)
+    setMemberIsAlreadyCheckedIn(checkedInCourses.length > 0);
 
-      setShowCheckinModal(true); // Modal öffnen
+    setShowCheckinModal(true); // Modal öffnen
 
-      // Nach oben scrollen wenn Modal öffnet
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 50);
-    }
+    // Fokus zurück aufs Suchfeld - sofort nächste Person scannen/suchen möglich
+    setTimeout(() => {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
+    }, 50);
+
+    // Nach oben scrollen wenn Modal öffnet
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   };
 
   // Verkauf starten (mit optionaler checkin_id für Verknüpfung)
@@ -582,6 +603,64 @@ const CheckinSystem = () => {
     }, 100);
   };
 
+  // Action Choice öffnen (Verletzung oder Verkauf)
+  // Verzögerung + ready-Flag verhindert "tap-through" auf Touch-Geräten
+  const openActionChoice = (member, checkinId = null) => {
+    setActionChoiceMember(member);
+    setActionChoiceCheckinId(checkinId);
+    setActionChoiceReady(false);
+    setTimeout(() => {
+      setShowActionChoice(true);
+      setTimeout(() => setActionChoiceReady(true), 200);
+    }, 150);
+  };
+
+  const closeActionChoice = () => {
+    setShowActionChoice(false);
+    setActionChoiceReady(false);
+    setActionChoiceMember(null);
+    setActionChoiceCheckinId(null);
+  };
+
+  const openVerletzungModal = (member) => {
+    setVerletzungMember(member);
+    setVerletzungForm({
+      datum: new Date().toISOString().split('T')[0],
+      art: '',
+      koerperregion: '',
+      schwere: 'leicht',
+      notizen: '',
+      wieder_trainierbar_ab: '',
+    });
+    setVerletzungError(null);
+    setShowVerletzungModal(true);
+  };
+
+  const closeVerletzungModal = () => {
+    setShowVerletzungModal(false);
+    setVerletzungMember(null);
+    setVerletzungError(null);
+  };
+
+  const saveVerletzung = async () => {
+    if (!verletzungForm.art.trim()) {
+      setVerletzungError('Bitte Art der Verletzung angeben.');
+      return;
+    }
+    setVerletzungSaving(true);
+    setVerletzungError(null);
+    try {
+      await axios.post('/verletzungen', { mitglied_id: verletzungMember.mitglied_id, ...verletzungForm });
+      setSuccess(`Verletzung für ${verletzungMember.vorname} ${verletzungMember.nachname} gespeichert.`);
+      setTimeout(() => setSuccess(''), 3000);
+      closeVerletzungModal();
+    } catch (err) {
+      setVerletzungError('Fehler beim Speichern.');
+    } finally {
+      setVerletzungSaving(false);
+    }
+  };
+
   // QR-Code gescannt
   const handleQRScan = async (qrData, parsedData) => {
     console.log('QR-Code gescannt:', parsedData);
@@ -603,19 +682,22 @@ const CheckinSystem = () => {
     // Schliesse Scanner
     setShowQRScanner(false);
 
-    // Pruefe ob bereits eingecheckt
-    const checkedIn = isCheckedIn(member.mitglied_id);
+    // Lade bereits eingecheckte Kurse für diesen Member
+    const alreadyCheckedInIds = await loadMemberCheckins(member.mitglied_id);
 
-    if (checkedIn) {
-      // Bereits eingecheckt -> Verkauf oeffnen
-      setSuccess(`${member.vorname} ${member.nachname} ist bereits eingecheckt`);
+    // Prüfe ob noch nicht eingecheckte Kurse heute verfügbar sind
+    const availableCourseIds = coursesToday.map(c => c.stundenplan_id);
+    const hasUncheckedCourses = availableCourseIds.some(id => !alreadyCheckedInIds.includes(id));
+
+    if (!hasUncheckedCourses && alreadyCheckedInIds.length > 0) {
+      // Alle Kurse eingecheckt -> Verkauf öffnen
+      setSuccess(`${member.vorname} ${member.nachname} ist bereits für alle Kurse eingecheckt`);
       setTimeout(() => setSuccess(''), 2000);
-      // Finde die checkin_id für die Verkauf-Verknüpfung
       const memberCheckin = todayCheckins.find(c => c.mitglied_id === member.mitglied_id);
       const checkinId = memberCheckin?.primaryCheckin?.checkin_id || memberCheckin?.checkin_id;
       startVerkauf(member, checkinId);
     } else {
-      // Nicht eingecheckt -> Check-in Prozess starten
+      // Noch Kurse offen -> Check-in Modal öffnen
       selectMemberFromSearch(member);
     }
   };
@@ -909,6 +991,7 @@ const CheckinSystem = () => {
     setSelectedMember(null);
     setSelectedCourses([]);
     setMemberCheckedInCourses([]); // Eingecheckte Kurse zurücksetzen
+    setMemberIsAlreadyCheckedIn(false);
     setError('');
     setSuccess('');
     setSearchTerm('');
@@ -1221,9 +1304,7 @@ const CheckinSystem = () => {
                         key={checkin.mitglied_id || checkoutTargetId} 
                         className="member-card checked-in-card compact"
                         onClick={() => {
-                          // Linksklick öffnet Verkauf (nur für Mitglieder, nicht für Gäste)
                           if (checkin.ist_gast) {
-                            // Für Gäste: Zeige Info-Meldung
                             setSuccess(`Gast: ${checkin.vorname} ${checkin.nachname}`);
                             setTimeout(() => setSuccess(''), 2000);
                             return;
@@ -1236,9 +1317,8 @@ const CheckinSystem = () => {
                             gurtfarbe: checkin.gurtfarbe,
                             mitgliedsnummer: checkin.mitgliedsnummer
                           };
-                          // Übergebe checkin_id für Verkauf-Anwesenheit-Verknüpfung
                           const checkinId = checkin.primaryCheckin?.checkin_id || checkin.checkin_id;
-                          startVerkauf(memberData, checkinId);
+                          openActionChoice(memberData, checkinId);
                         }}
                         onContextMenu={(e) => handleContextMenu(e, checkin)}
                       >
@@ -1331,6 +1411,26 @@ const CheckinSystem = () => {
                     Verfügbare Kurse heute
                   </h3>
 
+                  {/* Bereits eingecheckt-Hinweis mit Verkauf-Button */}
+                  {memberIsAlreadyCheckedIn && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.75rem', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      <CheckCircle size={16} />
+                      <span>Bereits für {memberCheckedInCourses.length} Kurs{memberCheckedInCourses.length !== 1 ? 'e' : ''} eingecheckt — weiterer Kurs wählbar</span>
+                      <button
+                        onClick={() => {
+                          closeCheckinModal();
+                          const memberCheckin = todayCheckins.find(c => c.mitglied_id === selectedMember?.mitglied_id);
+                          const checkinId = memberCheckin?.checkin_id || memberCheckin?.primaryCheckin?.checkin_id;
+                          if (selectedMember) startVerkauf(selectedMember, checkinId);
+                        }}
+                        style={{ marginLeft: 'auto', background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', color: '#10b981', borderRadius: '6px', padding: '0.25rem 0.6rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem' }}
+                      >
+                        <ShoppingCart size={14} />
+                        Verkauf
+                      </button>
+                    </div>
+                  )}
+
                   {coursesToday.filter(course => !memberCheckedInCourses.includes(course.stundenplan_id)).length === 0 ? (
                     <div className="empty-state">
                       <CheckCircle className="empty-state-icon" size={80} />
@@ -1383,7 +1483,7 @@ const CheckinSystem = () => {
                     </div>
                   )}
 
-                  <div className="action-buttons" className="u-mt-1">
+                  <div className="action-buttons u-mt-1">
                     <button onClick={closeCheckinModal} className="btn btn-secondary">
                       Abbrechen
                     </button>
@@ -1444,6 +1544,177 @@ const CheckinSystem = () => {
           onClose={closeVerkauf}
           checkin_id={verkaufCheckinId}
         />
+      )}
+
+      {/* Action Choice Modal (Verletzung oder Verkauf) */}
+      {showActionChoice && actionChoiceMember && (
+        <div className="checkin-modal-overlay" onClick={closeActionChoice}>
+          <div className="checkin-modal" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="checkin-modal-header">
+              <div className="checkin-modal-title">
+                <User size={24} />
+                {actionChoiceMember.vorname} {actionChoiceMember.nachname}
+              </div>
+              <button className="checkin-modal-close" onClick={closeActionChoice}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="checkin-modal-body">
+              <p style={{ textAlign: 'center', marginBottom: '1.25rem', color: 'var(--text-secondary, #9ca3af)', fontSize: '0.95rem' }}>
+                Was möchtest du aufnehmen?
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', pointerEvents: actionChoiceReady ? 'auto' : 'none', opacity: actionChoiceReady ? 1 : 0.5, transition: 'opacity 0.15s' }}>
+                <button
+                  onClick={() => {
+                    closeActionChoice();
+                    startVerkauf(actionChoiceMember, actionChoiceCheckinId);
+                  }}
+                  style={{
+                    width: '100%', padding: '1.25rem', borderRadius: '12px',
+                    background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(16,185,129,0.4)',
+                    color: '#10b981', cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                    fontSize: '1.05rem', fontWeight: 600
+                  }}
+                >
+                  <ShoppingCart size={26} />
+                  Verkauf starten
+                </button>
+                <button
+                  onClick={() => {
+                    closeActionChoice();
+                    openVerletzungModal(actionChoiceMember);
+                  }}
+                  style={{
+                    width: '100%', padding: '1.25rem', borderRadius: '12px',
+                    background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.4)',
+                    color: '#ef4444', cursor: 'pointer', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
+                    fontSize: '1.05rem', fontWeight: 600
+                  }}
+                >
+                  <AlertTriangle size={26} />
+                  Verletzung erfassen
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verletzung Modal */}
+      {showVerletzungModal && verletzungMember && (
+        <div className="checkin-modal-overlay" onClick={closeVerletzungModal}>
+          <div className="checkin-modal" style={{ maxWidth: '480px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="checkin-modal-header">
+              <div className="checkin-modal-title">
+                <AlertTriangle size={22} />
+                Verletzung — {verletzungMember.vorname} {verletzungMember.nachname}
+              </div>
+              <button className="checkin-modal-close" onClick={closeVerletzungModal}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="checkin-modal-body">
+              {verletzungError && (
+                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '8px', padding: '0.6rem 0.75rem', color: '#ef4444', marginBottom: '1rem', fontSize: '0.875rem' }}>
+                  {verletzungError}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '0.3rem' }}>Datum</label>
+                  <input
+                    type="date"
+                    value={verletzungForm.datum}
+                    onChange={(e) => setVerletzungForm(f => ({ ...f, datum: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '0.3rem' }}>Art der Verletzung *</label>
+                  <input
+                    type="text"
+                    value={verletzungForm.art}
+                    onChange={(e) => setVerletzungForm(f => ({ ...f, art: e.target.value }))}
+                    placeholder="z.B. Verstauchung, Prelllung, Zerrung..."
+                    className="form-input"
+                    style={{ width: '100%' }}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '0.3rem' }}>Körperregion</label>
+                  <select
+                    value={verletzungForm.koerperregion}
+                    onChange={(e) => setVerletzungForm(f => ({ ...f, koerperregion: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  >
+                    <option value="">— wählen —</option>
+                    {['Kopf / Gesicht','Schulter / Schlüsselbein','Arm / Ellbogen','Handgelenk / Hand','Finger','Rippen / Brustkorb','Rücken / Wirbelsäule','Hüfte / Becken','Oberschenkel','Knie','Schienbein / Wade','Sprunggelenk / Fuß','Zehen','Sonstiges'].map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '0.3rem' }}>Schwere</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {[{ value: 'leicht', label: '🟡 Leicht' }, { value: 'mittel', label: '🟠 Mittel' }, { value: 'schwer', label: '🔴 Schwer' }].map(s => (
+                      <button
+                        key={s.value}
+                        onClick={() => setVerletzungForm(f => ({ ...f, schwere: s.value }))}
+                        style={{
+                          flex: 1, padding: '0.5rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem',
+                          background: verletzungForm.schwere === s.value ? 'rgba(99,102,241,0.2)' : 'transparent',
+                          border: verletzungForm.schwere === s.value ? '2px solid #6366f1' : '2px solid rgba(255,255,255,0.1)',
+                          color: 'inherit'
+                        }}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '0.3rem' }}>Wieder trainierbar ab</label>
+                  <input
+                    type="date"
+                    value={verletzungForm.wieder_trainierbar_ab}
+                    onChange={(e) => setVerletzungForm(f => ({ ...f, wieder_trainierbar_ab: e.target.value }))}
+                    className="form-input"
+                    style={{ width: '100%' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary, #9ca3af)', marginBottom: '0.3rem' }}>Notizen</label>
+                  <textarea
+                    value={verletzungForm.notizen}
+                    onChange={(e) => setVerletzungForm(f => ({ ...f, notizen: e.target.value }))}
+                    placeholder="Weitere Details..."
+                    className="form-input"
+                    rows={3}
+                    style={{ width: '100%', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+
+              <div className="action-buttons u-mt-1">
+                <button onClick={closeVerletzungModal} className="btn btn-secondary">Abbrechen</button>
+                <button onClick={saveVerletzung} className="btn btn-primary" disabled={verletzungSaving}>
+                  {verletzungSaving ? 'Speichern...' : '✓ Verletzung speichern'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* QR Scanner Modal */}

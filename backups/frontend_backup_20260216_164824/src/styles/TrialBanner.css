@@ -1,0 +1,143 @@
+/* =============================================
+   TRIAL BANNER STYLES
+   ============================================= */
+
+.trial-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Info Banner (>7 Tage) */
+.trial-banner-info {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+  border-left-color: #3b82f6;
+  color: #1e40af;
+}
+
+.trial-banner-info .trial-banner-icon {
+  color: #3b82f6;
+}
+
+/* Warning Banner (3-7 Tage) */
+.trial-banner-warning {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%);
+  border-left-color: #f59e0b;
+  color: #92400e;
+}
+
+.trial-banner-warning .trial-banner-icon {
+  color: #f59e0b;
+}
+
+/* Danger Banner (0-3 Tage) */
+.trial-banner-danger {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.05) 100%);
+  border-left-color: #ef4444;
+  color: #991b1b;
+}
+
+.trial-banner-danger .trial-banner-icon {
+  color: #ef4444;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Expired Banner */
+.trial-banner-expired {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(220, 38, 38, 0.08) 100%);
+  border-left-color: #dc2626;
+  color: #7f1d1d;
+}
+
+.trial-banner-expired .trial-banner-icon {
+  color: #dc2626;
+}
+
+/* Icon */
+.trial-banner-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Content */
+.trial-banner-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.trial-banner-message {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Button */
+.trial-banner-button {
+  flex-shrink: 0;
+  padding: 0.5rem 1.25rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.9) 0%, rgba(255, 193, 7, 0.9) 100%);
+  color: #000000;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+.trial-banner-button:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 1) 0%, rgba(255, 193, 7, 1) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.trial-banner-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .trial-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 1rem;
+  }
+
+  .trial-banner-button {
+    width: 100%;
+  }
+}

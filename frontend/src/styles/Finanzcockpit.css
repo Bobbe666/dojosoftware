@@ -50,7 +50,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 
 .finanzcockpit-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 16px 40px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 16px 40px var(--primary-alpha-15);
   border-color: var(--border-accent-hover);
 }
 
@@ -108,9 +108,9 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   align-items: center;
   padding: 0.3rem 0.75rem;
   border-radius: var(--comp-radius-pill);
-  background: rgba(255, 215, 0, 0.12);
+  background: var(--primary-alpha-12);
   border: 1px solid var(--border-accent);
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
   font-size: var(--font-size-xs);
   font-weight: 700;
   text-transform: uppercase;
@@ -161,8 +161,8 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .finanzcockpit__period-selector button.is-active {
-  background: rgba(255, 215, 0, 0.15);
-  color: var(--text-accent, #ffd700);
+  background: var(--primary-alpha-15);
+  color: var(--text-accent, var(--primary));
   box-shadow: 0 0 0 1px var(--border-accent) inset;
 }
 
@@ -179,7 +179,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .finanzcockpit__period-info svg {
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
 }
 
 /* Dojo-Selektor */
@@ -191,7 +191,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   background: var(--surface-2);
   border-radius: var(--comp-radius-pill);
   border: 1px solid var(--border-accent);
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
 }
 
 .finanzcockpit__dojo-selector svg { flex-shrink: 0; }
@@ -256,7 +256,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 
 .finanzcockpit__kpi-card--clickable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 8px 20px var(--primary-alpha-15);
   border-color: var(--border-accent-hover);
 }
 
@@ -275,11 +275,11 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   width: 2.2rem;
   height: 2.2rem;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
   flex-shrink: 0;
 }
 
@@ -300,7 +300,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 
 .finanzcockpit__kpi-card--clickable:hover .finanzcockpit__kpi-arrow {
   transform: translateX(3px);
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
 }
 
 .finanzcockpit__kpi-value {
@@ -316,8 +316,8 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .finanzcockpit__kpi-card--positive .finanzcockpit__kpi-icon { color: #34d399; background: rgba(52, 211, 153, 0.12); }
-.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon { color: #ef4444; background: rgba(239, 68, 68, 0.12); }
-.finanzcockpit__kpi-card--warning  .finanzcockpit__kpi-icon { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+.finanzcockpit__kpi-card--negative .finanzcockpit__kpi-icon { color: var(--status-error); background: rgba(239, 68, 68, 0.12); }
+.finanzcockpit__kpi-card--warning  .finanzcockpit__kpi-icon { color: var(--status-warning); background: rgba(245, 158, 11, 0.12); }
 
 /* ============================================================
    ALERT-SEKTION
@@ -346,12 +346,12 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .fc__alert-card:hover { transform: translateX(2px); background: var(--surface-3); }
-.fc__alert-card--error  { border-left-color: #ef4444; }
-.fc__alert-card--error svg:first-child  { color: #ef4444; }
+.fc__alert-card--error  { border-left-color: var(--status-error); }
+.fc__alert-card--error svg:first-child  { color: var(--status-error); }
 .fc__alert-card--warning { border-left-color: #f97316; }
 .fc__alert-card--warning svg:first-child { color: #f97316; }
-.fc__alert-card--invoice { border-left-color: #f59e0b; }
-.fc__alert-card--invoice svg:first-child { color: #f59e0b; }
+.fc__alert-card--invoice { border-left-color: var(--status-warning); }
+.fc__alert-card--invoice svg:first-child { color: var(--status-warning); }
 
 .fc__alert-count { font-size: 1rem; font-weight: 700; }
 .fc__alert-label { color: var(--text-2); }
@@ -426,7 +426,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .fc__chart-tabs button:hover { color: var(--text-1); background: var(--surface-4); }
-.fc__chart-tabs button.is-active { background: rgba(255, 215, 0, 0.15); color: var(--text-accent, #ffd700); }
+.fc__chart-tabs button.is-active { background: var(--primary-alpha-15); color: var(--text-accent, #ffd700); }
 
 /* ============================================================
    INSIGHTS
@@ -454,11 +454,11 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
   flex-shrink: 0;
 }
 
@@ -552,7 +552,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   background: var(--surface-4);
   border-color: var(--border-accent-hover);
   transform: translateX(2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 4px 12px var(--primary-alpha-10);
 }
 
 .fc__action-card-icon {
@@ -569,7 +569,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .fc__action-card:hover .fc__action-card-icon {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .fc__action-card-text {
@@ -605,7 +605,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 
 .fc__action-card:hover .fc__action-card-arrow {
   transform: translateX(3px);
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
 }
 
 .fc__action-badge {
@@ -643,7 +643,7 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   align-items: center;
   gap: 0.75rem;
   margin-bottom: var(--spacing-sm);
-  color: var(--text-accent, #ffd700);
+  color: var(--text-accent, var(--primary));
 }
 
 .finanzcockpit__detail-header h3 {
@@ -703,8 +703,8 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 }
 
 .finanzcockpit__metric-value.is-positive { color: #34d399; }
-.finanzcockpit__metric-value.is-negative  { color: #ef4444; }
-.finanzcockpit__metric-value.is-warning   { color: #f59e0b; }
+.finanzcockpit__metric-value.is-negative  { color: var(--status-error); }
+.finanzcockpit__metric-value.is-warning   { color: var(--status-warning); }
 
 /* ============================================================
    LOADING / ERROR STATES
@@ -723,13 +723,13 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 3px solid rgba(255, 215, 0, 0.15);
+  border: 3px solid var(--primary-alpha-15);
   border-top-color: rgba(255, 215, 0, 0.8);
   animation: spin 0.9s linear infinite;
 }
 
 .finanzcockpit__state p { margin: 0; color: var(--text-2); font-size: var(--font-size-sm); }
-.finanzcockpit__state.is-error { color: #ef4444; }
+.finanzcockpit__state.is-error { color: var(--status-error); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -849,3 +849,221 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
   padding: 2rem 0;
   margin: 0;
 }
+
+/* ── Klickbare Metrik-Zeilen ────────────────────── */
+.finanzcockpit__metric-row--clickable {
+  cursor: pointer;
+  border-radius: 6px;
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+  margin-left: -0.4rem;
+  margin-right: -0.4rem;
+  transition: background 0.15s;
+}
+.finanzcockpit__metric-row--clickable:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.fc__metric-row-arrow {
+  opacity: 0;
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.finanzcockpit__metric-row--clickable:hover .fc__metric-row-arrow {
+  opacity: 1;
+}
+
+/* ── Klickbarer Detail-Card Header ──────────────── */
+.finanzcockpit__detail-card--clickable {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.finanzcockpit__detail-card--clickable:hover {
+  border-color: var(--primary);
+  background: rgba(255, 215, 0, 0.03);
+}
+.finanzcockpit__detail-arrow {
+  margin-left: auto;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.finanzcockpit__detail-card--clickable:hover .finanzcockpit__detail-arrow {
+  opacity: 1;
+}
+
+/* ── Mitglieder-KPI-Reihe ────────────────────────── */
+.finanzcockpit__member-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--spacing-sm);
+}
+@media (max-width: 900px) { .finanzcockpit__member-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .finanzcockpit__member-kpi-grid { grid-template-columns: 1fr; } }
+
+.finanzcockpit__kpi-card--mini {
+  padding: 0.9rem 1rem;
+}
+.finanzcockpit__kpi-card--mini .finanzcockpit__kpi-value {
+  font-size: 1.5rem;
+}
+.finanzcockpit__kpi-card--mini .finanzcockpit__kpi-detail {
+  font-size: 0.7rem;
+}
+.finanzcockpit__member-section-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+/* ── Progress Bar ────────────────────────────────── */
+.fc__progress-wrap {
+  margin-top: 0.35rem;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.fc__progress-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.7s ease;
+}
+.fc__progress-bar--positive { background: #10b981; }
+.fc__progress-bar--warning  { background: #f59e0b; }
+.fc__progress-bar--negative { background: #ef4444; }
+.fc__progress-bar--neutral  { background: var(--gradient-gold, linear-gradient(90deg, #FFD700, #f59e0b)); }
+
+/* ── Zahlungsarten mit Progress Bars ─────────────── */
+.fc__payment-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.fc__payment-row:last-child { border-bottom: none; }
+.fc__payment-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fc__payment-row-left {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.fc__payment-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.fc__payment-row-label {
+  font-size: 0.82rem;
+  color: var(--text-2, #94a3b8);
+}
+.fc__payment-row-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: right;
+}
+.fc__payment-row-pct {
+  font-size: 0.72rem;
+  color: var(--text-3, #64748b);
+  min-width: 3rem;
+  text-align: right;
+}
+.fc__payment-row-value {
+  font-size: 0.82rem;
+  color: var(--text-1, #f1f5f9);
+  font-weight: 500;
+  min-width: 5rem;
+  text-align: right;
+}
+
+/* ── Top-Tarife ──────────────────────────────────── */
+.fc__tarif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.fc__tarif-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.fc__tarif-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.fc__tarif-name {
+  color: var(--text-1, #f1f5f9);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.fc__tarif-name-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fc__tarif-rank {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.12);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #FFD700;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fc__tarif-stats {
+  color: var(--text-3, #64748b);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  text-align: right;
+}
+.fc__tarif-bar-wrap {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.fc__tarif-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #FFD700, #f59e0b);
+  border-radius: 2px;
+  transition: width 0.7s ease;
+}
+
+/* ── Section-Label über Detailkarten ─────────────── */
+.finanzcockpit__details-section-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+  padding: 0.2rem 0;
+}
+
+/* ── Insight-Ton-Farben ──────────────────────────── */
+.finanzcockpit__insight-icon--positive { color: #10b981; }
+.finanzcockpit__insight-icon--warning  { color: #f59e0b; }
+.finanzcockpit__insight-icon--negative { color: #ef4444; }
+.finanzcockpit__insight-icon--neutral  { color: var(--primary, #FFD700); }

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="theme-color" content="#0f0f23">
+
+    <!-- iOS Meta Tags für App-Installation -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dojosoftware">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <title>Dojosoftware - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .login-container {
+            background: #1a1a2e;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            max-width: 420px;
+            width: 100%;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            color: #ffd700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: #a0a0a0;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            color: #e0e0e0;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #0f0f23;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            color: #ff6b6b;
+            padding: 0.875rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: #ffd700;
+            margin-top: 1rem;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-top: 3px solid #ffd700;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🥋 Dojosoftware</h1>
+            <p>Mitgliederbereich</p>
+        </div>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Benutzername</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Passwort</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn" id="submit-btn">Anmelden</button>
+        </form>
+
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div>Anmeldung läuft...</div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        const loading = document.getElementById('loading');
+        const submitBtn = document.getElementById('submit-btn');
+
+        // Login Form Handler
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // UI aktualisieren
+            errorMessage.style.display = 'none';
+            loading.style.display = 'block';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Login fehlgeschlagen');
+                }
+
+                // Token speichern
+                localStorage.setItem('dojo_auth_token', data.token);
+                localStorage.setItem('dojo_user', JSON.stringify(data.user));
+                localStorage.setItem('dojo_session_expiry', Date.now() + (24 * 60 * 60 * 1000));
+
+                console.log('Login erfolgreich:', data.user.username);
+
+                // Weiterleitung basierend auf Rolle
+                if (data.user.role === 'member') {
+                    window.location.href = '/member/dashboard';
+                } else {
+                    window.location.href = '/dashboard';
+                }
+
+            } catch (error) {
+                console.error('Login-Fehler:', error);
+                errorMessage.textContent = error.message || 'Anmeldung fehlgeschlagen. Bitte überprüfe deine Zugangsdaten.';
+                errorMessage.style.display = 'block';
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+
+        console.log('Static Login Page loaded');
+    </script>
+</body>
+</html>

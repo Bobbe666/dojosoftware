@@ -44,7 +44,7 @@
 .filter-toggle.active {
   background: var(--primary-color, #3b82f6);
   color: white;
-  border-color: var(--primary-color, #3b82f6);
+  border-color: var(--primary-color, var(--status-indigo));
 }
 
 .refresh-btn {
@@ -273,7 +273,7 @@
 
 .view-btn:hover {
   background: var(--bg-secondary, #f3f4f6);
-  color: var(--primary-color, #3b82f6);
+  color: var(--primary-color, var(--status-indigo));
 }
 
 /* Empty & Loading States */
@@ -302,7 +302,7 @@
   border-top: 1px solid var(--border-color, #e5e7eb);
   cursor: pointer;
   font-weight: 500;
-  color: var(--primary-color, #3b82f6);
+  color: var(--primary-color, var(--status-indigo));
   transition: background 0.2s;
 }
 
@@ -861,8 +861,8 @@
 }
 
 .shortcut-btn:hover {
-  background: rgba(255,215,0,0.12);
-  border-color: rgba(255,215,0,0.3);
+  background: var(--primary-alpha-12);
+  border-color: var(--primary-alpha-30);
   color: var(--primary);
 }
 
@@ -931,7 +931,7 @@
 
 /* Error state within empty-state */
 .empty-state--error {
-  color: var(--color-status-error, #ef4444);
+  color: var(--color-status-error, var(--status-error));
 }
 
 .empty-state--error .error-heading {

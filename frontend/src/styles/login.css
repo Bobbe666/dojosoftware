@@ -56,7 +56,7 @@
 .login-card {
   background: var(--surface-3);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-pill);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   padding: 2rem;
@@ -71,7 +71,7 @@
 .login-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 @keyframes cardFloat {
@@ -127,7 +127,7 @@
 /* Header */
 .login-header {
   text-align: center;
-  margin-bottom: var(--ui-header-margin-b);
+  margin-bottom: 1.25rem;
   position: relative;
   z-index: 2;
   animation: fadeInUp 0.6s ease-out 0.1s both;
@@ -138,56 +138,44 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
 }
 
 .japanese-title {
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   font-weight: 400;
-  color: rgba(255, 215, 0, 0.8);
-  margin-bottom: 1.5rem;
+  color: rgba(255, 215, 0, 0.75);
+  margin-bottom: 1rem;
   letter-spacing: 2px;
   text-transform: uppercase;
   font-family: 'Times New Roman', serif;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 10px var(--primary-alpha-30);
   animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
-.logo-image {
-  width: 120px;
-  height: 120px;
+/* Wrapper für perfekt rundes Logo */
+.logo-circle {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 215, 0, 0.4);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px;
-  transition: all 0.3s ease;
+  overflow: hidden;
+  border: 3px solid var(--primary-alpha-50);
   animation: logoGlow 4s ease-in-out infinite;
-  position: relative;
+  flex-shrink: 0;
 }
 
-.logo-image::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  bottom: -6px;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  background: linear-gradient(45deg, #ffd700, #ff6b35, #f7931e, #ffd700) border-box;
-  -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: subtract;
-  mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
-  mask-composite: subtract;
-  animation: rotate 8s linear infinite;
-  opacity: 0.7;
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 @keyframes pulse {
   0%, 100% { 
     transform: scale(1);
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 40px var(--primary-alpha-50);
   }
   50% { 
     transform: scale(1.05);
@@ -202,8 +190,8 @@
 
 @keyframes logoGlow {
   0%, 100% { 
-    box-shadow: 0 0 40px rgba(255, 215, 0, 0.5);
-    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 0 40px var(--primary-alpha-50);
+    border-color: var(--primary-alpha-40);
   }
   25% { 
     box-shadow: 0 0 60px rgba(255, 107, 53, 0.6);
@@ -223,10 +211,10 @@
   width: 48px;
   height: 48px;
   color: var(--primary);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 10px;
   border-radius: var(--comp-radius-xl);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 20px var(--primary-alpha-30);
 }
 
 .login-card .title {
@@ -234,11 +222,11 @@
   font-weight: 700 !important;
   margin: 0 !important;
   letter-spacing: 1px !important;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e) !important;
+  background: var(--gradient-gold);
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5) !important;
+  text-shadow: 0 0 20px var(--primary-alpha-50) !important;
   filter: none !important;
 }
 
@@ -253,12 +241,12 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: rgba(255, 215, 0, 0.9);
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-pill);
   font-size: 0.85rem;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   font-weight: 500;
 }
 
@@ -268,7 +256,7 @@
   color: var(--primary);
   margin: 0 0 0.5rem 0;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9),
-               0 0 4px rgba(255, 215, 0, 0.6);
+               0 0 4px var(--primary-alpha-60);
 }
 
 .login-subtitle {
@@ -281,7 +269,7 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   position: relative;
   z-index: 2;
   animation: fadeInUp 0.6s ease-out 0.3s both;
@@ -303,7 +291,7 @@
 }
 
 .form-group:hover .form-input {
-  border-color: rgba(255, 215, 0, 0.5);
+  border-color: var(--primary-alpha-50);
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -350,7 +338,7 @@
 .form-input:focus {
   outline: none;
   border-color: rgba(255, 215, 0, 0.7);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-alpha-15);
   background: rgba(255, 255, 255, 0.22);
 }
 
@@ -416,7 +404,7 @@
 
 .password-toggle:hover {
   color: var(--primary);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 /* Login Type Toggle */
@@ -445,14 +433,14 @@
 }
 
 .toggle-option.active {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #1a1a2e;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 2px 8px var(--primary-alpha-30);
 }
 
 /* Buttons */
 .login-button {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #1a1a2e;
   border: none;
   border-radius: var(--comp-radius-xl);
@@ -461,7 +449,7 @@
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--primary-alpha-30);
   position: relative;
   overflow: hidden;
   animation: fadeInUp 0.6s ease-out 0.6s both;
@@ -488,7 +476,7 @@
 
 .login-button:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 25px var(--primary-alpha-50);
 }
 
 .login-button:disabled {
@@ -554,7 +542,7 @@
   border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 10px var(--primary-alpha-30);
 }
 
 /* Registration Section */
@@ -585,7 +573,7 @@
 
 .registration-divider {
   position: relative;
-  margin: 1.5rem 0;
+  margin: 1rem 0;
   color: var(--text-3);
   font-size: 0.9rem;
 }
@@ -609,10 +597,10 @@
 
 .registration-button {
   width: 100%;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #000;
   border: none;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   border-radius: var(--comp-radius-xl);
   font-size: 1rem;
   font-weight: 600;
@@ -622,13 +610,13 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--primary-alpha-30);
   margin-bottom: 1rem;
 }
 
 .registration-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 6px 20px var(--primary-alpha-40);
   background: linear-gradient(135deg, #ffed4e, #ff7b55);
 }
 
@@ -657,7 +645,7 @@
 
 .test-accounts-toggle {
   background: none;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   color: rgba(255, 215, 0, 0.8);
   cursor: pointer;
   font-size: 0.9rem;
@@ -670,13 +658,13 @@
   gap: 0.5rem;
   margin: 0 auto;
   backdrop-filter: blur(10px);
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
 }
 
 .test-accounts-toggle:hover {
   color: var(--primary);
-  border-color: rgba(255, 215, 0, 0.6);
-  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--primary-alpha-60);
+  background: var(--primary-alpha-10);
   transform: translateY(-2px);
 }
 
@@ -699,7 +687,7 @@
   padding: 1.5rem;
   background: var(--surface-2);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.4s ease-out;
 }
@@ -727,7 +715,7 @@
 .account-card:hover {
   transform: translateY(-2px);
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .account-header {
@@ -770,9 +758,9 @@
 }
 
 .account-fill-button {
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   color: rgba(255, 215, 0, 0.9);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-sm);
   padding: 6px 12px;
   font-size: 0.8rem;
@@ -782,7 +770,7 @@
 }
 
 .account-fill-button:hover {
-  background: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-30);
   transform: translateY(-1px);
 }
 
@@ -836,9 +824,9 @@
 }
 
 .test-account-use {
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   color: var(--primary);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-md);
   padding: 4px 12px;
   font-size: 0.75rem;
@@ -847,9 +835,9 @@
 }
 
 .test-account-use:hover {
-  background: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-30);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
 }
 
 /* Responsive */
@@ -874,6 +862,29 @@
   .toggle-option {
     padding: 12px;
   }
+}
+
+/* Footer */
+.login-footer {
+  margin-top: 1.25rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.75rem;
+}
+
+.version-info {
+  color: var(--text-3, rgba(255,255,255,0.3));
+  font-size: 0.75rem;
+  margin: 0 0 0.3rem 0;
+}
+
+.security-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  color: var(--text-3, rgba(255,255,255,0.3));
+  font-size: 0.72rem;
 }
 
 /* Focus Management */
@@ -964,7 +975,7 @@
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 1rem;
-  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 2px 10px var(--primary-alpha-30);
 }
 
 .branding-subtitle {
@@ -1013,7 +1024,7 @@
   color: var(--primary);
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .login-card-title svg {

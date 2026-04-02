@@ -8,14 +8,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Settings, CreditCard, FileText, Calculator, Save, Eye, EyeOff,
-  CheckCircle, AlertCircle, RefreshCw, ExternalLink, Link2, Smartphone
+  CheckCircle, AlertCircle, RefreshCw, ExternalLink, Smartphone
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import StripeConnectSetup from './StripeConnectSetup';
+import MessengerKonfiguration from './MessengerKonfiguration';
 import '../styles/IntegrationsEinstellungen.css';
 
 const IntegrationsEinstellungen = () => {
   const { activeDojo } = useDojoContext();
+  const { hasFeature } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
@@ -44,6 +47,9 @@ const IntegrationsEinstellungen = () => {
   });
 
   const dojoId = activeDojo?.id || activeDojo;
+
+  // Subdomain-Check für Messenger (verfügbar wenn Dojo eine Subdomain hat)
+  const hasMessenger = !!(activeDojo && activeDojo !== 'super-admin' && activeDojo.subdomain);
 
   useEffect(() => {
     if (dojoId && dojoId !== 'super-admin') {
@@ -505,6 +511,26 @@ const IntegrationsEinstellungen = () => {
             <li>Debitoren-Stammdaten - ASCII Format</li>
           </ul>
         </div>
+      </div>
+
+      {/* Facebook Messenger Section */}
+      <div className="ie-section">
+        <div className="ie-section-header">
+          <span style={{ fontSize: 24 }}>📘</span>
+          <h3 className="ie-section-title">Facebook Messenger</h3>
+        </div>
+
+        {!hasMessenger ? (
+          <div className="ie-upgrade-hint">
+            <AlertCircle size={18} />
+            <span>
+              Facebook Messenger Integration ist für Dojos mit eigener Subdomain verfügbar.
+              Bitte wende dich an den Administrator.
+            </span>
+          </div>
+        ) : (
+          <MessengerKonfiguration dojoId={dojoId} />
+        )}
       </div>
 
       {/* Save Button */}

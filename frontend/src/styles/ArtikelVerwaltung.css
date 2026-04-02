@@ -69,28 +69,17 @@
 }
 
 .page-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(255,215,0,0.1), 
-    transparent);
-  animation: shimmer 3s forwards;
+  display: none;
 }
 
 .page-header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #FFD700 !important;
-  -webkit-text-fill-color: #FFD700 !important;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary) !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
   background: none !important;
   margin: 0 0 var(--abstand-sm) 0;
-  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.4);
-  letter-spacing: 2px;
+  letter-spacing: 0;
 }
 
 /* ============================================
@@ -104,7 +93,7 @@
   background: rgba(0, 0, 0, 0.3);
   padding: 0.5rem;
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .main-tab-btn {
@@ -125,15 +114,15 @@
 }
 
 .main-tab-btn:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: white;
 }
 
 .main-tab-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 184, 0, 0.15) 100%);
-  color: #ffd700;
-  border: 1px solid rgba(255, 215, 0, 0.4);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+  background: linear-gradient(135deg, var(--primary-alpha-20) 0%, rgba(255, 184, 0, 0.15) 100%);
+  color: var(--primary);
+  border: 1px solid var(--primary-alpha-40);
+  box-shadow: 0 4px 12px var(--primary-alpha-20);
 }
 
 .low-stock-badge {
@@ -235,7 +224,7 @@
 .search-box input:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--hintergrund-hover);
 }
 
@@ -268,7 +257,7 @@
 .search-filters select:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .checkbox-label {
@@ -315,12 +304,12 @@
 .btn-primary {
   background: linear-gradient(135deg, var(--farbe-hauptfarbe), var(--farbe-dunkel));
   color: var(--bg-secondary);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--primary-alpha-30);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 8px 25px var(--primary-alpha-50);
 }
 
 .btn-secondary {
@@ -332,7 +321,7 @@
 
 .btn-secondary:hover {
   background: var(--hintergrund-hover);
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-40);
   transform: translateY(-1px);
 }
 
@@ -400,7 +389,7 @@
   font-weight: 700;
   color: var(--text-hauptfarbe);
   border-bottom: 2px solid var(--rand-farbe);
-  background: rgba(255,215,0,0.1);
+  background: var(--primary-alpha-10);
   white-space: nowrap;
 }
 
@@ -410,7 +399,7 @@
 }
 
 .sortable-th:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: var(--primary);
 }
 
@@ -472,11 +461,11 @@
   display: inline-block !important;
   padding: 0.35rem 0.85rem !important;
   border-radius: var(--comp-radius-pill) !important;
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   font-size: 0.8rem !important;
   font-weight: 600 !important;
   background: rgba(139, 90, 43, 0.6) !important;
-  border: 1px solid rgba(255, 215, 0, 0.4) !important;
+  border: 1px solid var(--primary-alpha-40) !important;
   white-space: nowrap !important;
   vertical-align: middle !important;
   line-height: 1.4 !important;
@@ -590,25 +579,25 @@ body.dark-mode .lager-status {
 
 .lager-status.in-stock {
   background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  color: var(--status-success);
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
 .lager-status.low-stock {
   background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
+  color: var(--status-warning);
   border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 .lager-status.out-of-stock {
   background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
+  color: var(--status-error);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .lager-status.unlimited {
   background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  color: var(--status-indigo);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
@@ -669,7 +658,7 @@ body.dark-mode .lager-status {
 .modal-content.modern-modal,
 .modal-content.step-modal {
   background: linear-gradient(135deg, var(--bg-secondary) 0%, #16213e 100%);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--radius-lg);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
   max-width: 900px;
@@ -705,7 +694,7 @@ body.dark-mode .lager-status {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
   position: relative;
 }
 
@@ -989,7 +978,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .step-progress-container {
   padding: var(--abstand-lg) var(--ui-card-padding);
   background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .step-progress-bar {
@@ -1041,14 +1030,14 @@ html body .modal-overlay .modal-content.lager-modal,
   background: var(--gradient-gold);
   border-color: var(--primary);
   color: var(--bg-secondary);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  box-shadow: 0 0 20px var(--primary-alpha-50);
   transform: scale(1.1);
 }
 
 .step-indicator.completed .step-number {
   background: rgba(34, 197, 94, 0.2);
-  border-color: #22c55e;
-  color: #22c55e;
+  border-color: var(--status-success);
+  color: var(--status-success);
 }
 
 .step-label {
@@ -1082,7 +1071,7 @@ html body .modal-overlay .modal-content.lager-modal,
 
 .form-section {
   background: rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(255, 215, 0, 0.25);
+  border: 2px solid var(--primary-alpha-25);
   border-radius: var(--radius-md);
   padding: var(--ui-section-gap-sm);
   position: relative;
@@ -1110,7 +1099,7 @@ html body .modal-overlay .modal-content.lager-modal,
   align-items: center;
   gap: var(--abstand-sm);
   padding-bottom: var(--ui-page-padding-sm);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .form-row {
@@ -1143,7 +1132,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .form-textarea {
   padding: 1rem 1.25rem;
   background: rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   border-radius: var(--radius-sm);
   font-size: 1.05rem;
   color: #ffffff;
@@ -1158,7 +1147,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .form-textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.25);
+  box-shadow: 0 0 0 4px var(--primary-alpha-25);
   background: rgba(0, 0, 0, 0.6);
   transform: translateY(-2px);
 }
@@ -1166,7 +1155,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .form-input:hover,
 .form-select:hover,
 .form-textarea:hover {
-  border-color: rgba(255, 215, 0, 0.5);
+  border-color: var(--primary-alpha-50);
 }
 
 .form-input::placeholder,
@@ -1284,8 +1273,8 @@ html body .modal-overlay .modal-content.lager-modal,
 
 /* Lager Form Specific */
 .artikel-info-card {
-  background: rgba(255,215,0,0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--radius-md);
   padding: var(--abstand-lg);
   margin-top: var(--abstand-lg);
@@ -1562,11 +1551,11 @@ html body .modal-overlay .modal-content.lager-modal,
 }
 
 .page-header h1 {
-  color: #FFD700 !important;
+  color: var(--primary) !important;
   font-size: 2.5rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
-  -webkit-text-fill-color: #FFD700 !important;
+  -webkit-text-fill-color: var(--primary) !important;
 }
 
 .page-header p {
@@ -1856,7 +1845,7 @@ html body .modal-overlay .modal-content.lager-modal,
 
 .progress-step.active {
   opacity: 1;
-  background: rgba(255,215,0,0.1);
+  background: var(--primary-alpha-10);
 }
 
 .progress-step.completed {
@@ -1904,7 +1893,7 @@ html body .modal-overlay .modal-content.lager-modal,
   margin-bottom: var(--ui-section-gap);
   text-align: center;
   padding-bottom: var(--ui-section-gap-sm);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-30);
 }
 
 .step-title {
@@ -1973,7 +1962,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .form-textarea-enhanced:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 0 4px var(--primary-alpha-15);
   background: var(--hintergrund-hover);
   transform: translateY(-2px);
 }
@@ -2036,7 +2025,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .color-text-enhanced:focus {
   outline: none;
   border-color: var(--farbe-hauptfarbe);
-  box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 0 4px var(--primary-alpha-15);
 }
 
 /* ============================================
@@ -2062,7 +2051,7 @@ html body .modal-overlay .modal-content.lager-modal,
 
 .setting-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .setting-header {
@@ -2161,7 +2150,7 @@ html body .modal-overlay .modal-content.lager-modal,
   background: var(--farbe-hauptfarbe);
   color: var(--bg-secondary);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 8px 20px var(--primary-alpha-30);
 }
 
 /* ============================================
@@ -2188,7 +2177,7 @@ html body .modal-overlay .modal-content.lager-modal,
   max-height: 100vh;
   height: 100vh;
   background: var(--bg-secondary);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 0;
   overflow: hidden;
   display: flex;
@@ -2217,7 +2206,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .artikel-modal .sub-tabs {
   padding: 1rem 1.5rem !important;
   margin-bottom: 0 !important;
-  border-bottom: 1px solid rgba(255,215,0,0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
   background: rgba(0, 0, 0, 0.3) !important;
   border-radius: 0 !important;
 }
@@ -2320,8 +2309,8 @@ html body .modal-overlay .modal-content.lager-modal,
 }
 
 .tab-content-section .checkbox-label:hover {
-  background: rgba(255,215,0,0.1);
-  border-color: rgba(255, 215, 0, 0.4);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-40);
 }
 
 .tab-content-section .checkbox-label input[type="checkbox"] {
@@ -2358,7 +2347,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .preis-eingabe-section,
 .preis-kalkulation-section {
   background: rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--primary-alpha-20);
   border-radius: var(--radius-md);
   padding: 0.85rem;
   overflow-y: auto;
@@ -2366,8 +2355,8 @@ html body .modal-overlay .modal-content.lager-modal,
 }
 
 .preis-kalkulation-section {
-  background: rgba(255, 215, 0, 0.05);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-05);
+  border-color: var(--primary-alpha-30);
 }
 
 .kalkulation-table {
@@ -2393,8 +2382,8 @@ html body .modal-overlay .modal-content.lager-modal,
 }
 
 .kalkulation-row.total {
-  background: rgba(255,215,0,0.1);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
   margin-top: 0.5rem;
   padding: 1rem;
 }
@@ -2412,11 +2401,11 @@ html body .modal-overlay .modal-content.lager-modal,
 }
 
 .kalkulation-row.final {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 107, 53, 0.2));
-  border: 2px solid rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, var(--primary-alpha-20), rgba(255, 107, 53, 0.2));
+  border: 2px solid var(--primary-alpha-50);
   margin-top: 1rem;
   padding: 1.25rem;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 4px 15px var(--primary-alpha-20);
 }
 
 .kalkulation-row.profit {
@@ -2427,7 +2416,7 @@ html body .modal-overlay .modal-content.lager-modal,
 
 .kalkulation-divider {
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-50), transparent);
   margin: 1rem 0;
 }
 
@@ -2444,13 +2433,13 @@ html body .modal-overlay .modal-content.lager-modal,
   font-family: 'Courier New', monospace;
 }
 
-.kalkulation-value--positive { color: #10b981; }
-.kalkulation-value--negative { color: #ef4444; }
+.kalkulation-value--positive { color: var(--status-success); }
+.kalkulation-value--negative { color: var(--status-error); }
 
 .kalkulation-value.final-price {
   font-size: 1.25rem;
   color: var(--primary);
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  text-shadow: 0 0 10px var(--primary-alpha-50);
 }
 
 /* Responsive für Preiskalkulation */
@@ -2465,8 +2454,8 @@ html body .modal-overlay .modal-content.lager-modal,
    ============================================ */
 
 .artikel-modal-header {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 107, 53, 0.1));
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, var(--primary-alpha-15), rgba(255, 107, 53, 0.1));
+  border-bottom: 2px solid var(--primary-alpha-30);
 }
 
 .modal-header-content {
@@ -2483,7 +2472,7 @@ html body .modal-overlay .modal-content.lager-modal,
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 0 !important;
-  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 2px 10px var(--primary-alpha-30);
   background: none !important;
   -webkit-text-fill-color: var(--primary) !important;
   background-clip: initial !important;
@@ -2506,7 +2495,7 @@ html body .modal-overlay .modal-content.lager-modal,
 .preis-eingabe-section .form-group label,
 .preis-kalkulation-section h3 {
   color: var(--primary);
-  text-shadow: 0 1px 3px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 1px 3px var(--primary-alpha-30);
 }
 
 .preis-eingabe-section h3,
@@ -2565,7 +2554,7 @@ body.dark-mode .lager-status.archived {
 }
 
 .preis-kategorien .preis-kids {
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .preis-kategorien .preis-erw {
@@ -2721,7 +2710,7 @@ body.dark-mode .lager-status.archived {
   max-height: 100%;
   padding: 0.85rem;
   background: rgba(0, 0, 0, 0.3);
-  border: 2px solid rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--primary-alpha-20);
   border-radius: 8px;
 }
 
@@ -2740,8 +2729,8 @@ body.dark-mode .lager-status.archived {
   overflow-y: auto;
   max-height: 100%;
   padding: 0.85rem;
-  background: rgba(255, 215, 0, 0.05);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-05);
+  border: 2px solid var(--primary-alpha-30);
   border-radius: 8px;
 }
 
@@ -2866,7 +2855,7 @@ body.dark-mode .lager-status.archived {
 .af2-checkbox-green {
   width: 18px;
   height: 18px;
-  accent-color: #22c55e;
+  accent-color: var(--status-success);
 }
 
 .af2-fw700 {
@@ -2988,5 +2977,5 @@ body.dark-mode .lager-status.archived {
 }
 
 .af2-accent-green {
-  accent-color: #22c55e;
+  accent-color: var(--status-success);
 }

@@ -31,6 +31,120 @@ const calculateAge = (birthdate) => {
   return age;
 };
 
+// Gurt-Farben als kleine Dot-Indikatoren (dezent, kein buntes Badge)
+const GURT_DOT_COLORS = {
+  'Weißgurt':    '#d1d5db',
+  'Gelbgurt':    '#ffd700',
+  'Orangegurt':  '#f97316',
+  'Grüngurt':    '#22c55e',
+  'Blaugurt':    '#60a5fa',
+  'Braungurt':   '#b45309',
+  'Schwarzgurt': '#6b7280',
+};
+const getGurtDotColor = (gurt) => GURT_DOT_COLORS[gurt] || 'rgba(255,255,255,0.3)';
+
+// Memoized List Row für Listen-Ansicht
+const MemberListRow = React.memo(({
+  mitglied,
+  selectionMode,
+  isSelected,
+  onToggleSelection,
+  onNavigate
+}) => {
+  const initials = `${mitglied.vorname?.charAt(0) || ''}${mitglied.nachname?.charAt(0) || ''}`.toUpperCase();
+  const age = calculateAge(mitglied.geburtsdatum);
+  const dobFormatted = mitglied.geburtsdatum
+    ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : null;
+
+  const stileArr = mitglied.stile
+    ? mitglied.stile.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  const gurte = mitglied.aktuelle_graduierung
+    ? mitglied.aktuelle_graduierung.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const primaryGurt = gurte[0] || null;
+  const gurtDot = getGurtDotColor(primaryGurt);
+
+  const [imgError, setImgError] = React.useState(false);
+
+  return (
+    <div
+      className={`ml-list-row${selectionMode && isSelected ? ' ml-list-row--selected' : ''}`}
+      onClick={(e) => {
+        if (selectionMode) {
+          e.stopPropagation();
+          onToggleSelection(mitglied.mitglied_id);
+        } else {
+          onNavigate(mitglied.mitglied_id);
+        }
+      }}
+    >
+      {selectionMode && (
+        <div
+          className={`ml-checkbox${isSelected ? ' ml-checkbox--selected' : ''}`}
+          onClick={(e) => { e.stopPropagation(); onToggleSelection(mitglied.mitglied_id); }}
+        >
+          {isSelected && <span className="ml-check-mark">✓</span>}
+        </div>
+      )}
+
+      {/* Avatar */}
+      <div className="ml-list-avatar-wrap">
+        {mitglied.foto_pfad && !imgError ? (
+          <img
+            src={`${config.imageBaseUrl}/${mitglied.foto_pfad}`}
+            alt={initials}
+            className="ml-list-avatar-img"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="ml-list-avatar-circle">{initials}</div>
+        )}
+      </div>
+
+      {/* Name + Metainfo (2-zeilig) */}
+      <div className="ml-list-name-block">
+        <div className="ml-list-name">
+          {mitglied.nachname || 'Unbekannt'}, {mitglied.vorname || 'Unbekannt'}
+        </div>
+        <div className="ml-list-meta">
+          {dobFormatted && <span>{dobFormatted}{age > 0 ? ` · ${age} J.` : ''}</span>}
+          {mitglied.email && <span className="ml-list-email">{mitglied.email}</span>}
+        </div>
+      </div>
+
+      {/* Stile Pills */}
+      <div className="ml-list-stile">
+        {stileArr.slice(0, 3).map(s => (
+          <span key={s} className="ml-stile-pill">{s}</span>
+        ))}
+        {stileArr.length > 3 && (
+          <span className="ml-stile-pill ml-stile-pill--more">+{stileArr.length - 3}</span>
+        )}
+      </div>
+
+      {/* Gurt — kleiner Dot + Text, kein buntes Badge */}
+      <div className="ml-list-gurt">
+        {primaryGurt ? (
+          <span className="ml-gurt-text">
+            <span className="ml-gurt-dot" style={{ background: gurtDot }} />
+            {primaryGurt}
+          </span>
+        ) : (
+          <span className="ml-gurt-text ml-gurt-text--none">—</span>
+        )}
+      </div>
+
+      {/* Pfeil */}
+      <div className="ml-list-arrow">›</div>
+    </div>
+  );
+});
+
+MemberListRow.displayName = 'MemberListRow';
+
 // Memoized Member Card - verhindert Re-Render wenn andere Karten sich ändern
 const MemberCard = React.memo(({
   mitglied,
@@ -39,6 +153,20 @@ const MemberCard = React.memo(({
   onToggleSelection,
   onNavigate
 }) => {
+  const initials = `${mitglied.vorname?.charAt(0) || ''}${mitglied.nachname?.charAt(0) || ''}`.toUpperCase();
+  const [imgError, setImgError] = React.useState(false);
+  const age = calculateAge(mitglied.geburtsdatum);
+
+  const stileArr = mitglied.stile
+    ? mitglied.stile.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  const gurte = mitglied.aktuelle_graduierung
+    ? mitglied.aktuelle_graduierung.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+  const primaryGurt = gurte[0] || null;
+  const gurtDot = getGurtDotColor(primaryGurt);
+
   return (
     <div
       className={`stat-card ml-member-card${selectionMode && isSelected ? ' ml-member-card--selected' : ''}`}
@@ -51,47 +179,59 @@ const MemberCard = React.memo(({
         }
       }}
     >
-      {/* Checkbox im Auswahlmodus */}
       {selectionMode && (
         <div
           className={`ml-checkbox${isSelected ? ' ml-checkbox--selected' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelection(mitglied.mitglied_id);
-          }}
+          onClick={(e) => { e.stopPropagation(); onToggleSelection(mitglied.mitglied_id); }}
         >
-          {isSelected && (
-            <span className="ml-check-mark">✓</span>
-          )}
+          {isSelected && <span className="ml-check-mark">✓</span>}
         </div>
       )}
 
       <div className="ml-card-top">
         <div className="ml-card-header-row">
-          <img
-            src={mitglied.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
-            alt={`${mitglied.vorname} ${mitglied.nachname}`}
-            className="ml-avatar"
-            onError={(e) => {
-              e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40"%3E%3Crect fill="%232a2a4e" width="40" height="40"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="20" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
-            }}
-          />
+          {mitglied.foto_pfad && !imgError ? (
+            <img
+              src={`${config.imageBaseUrl}/${mitglied.foto_pfad}`}
+              alt={initials}
+              className="ml-avatar"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div className="ml-avatar ml-avatar--initials">
+              {initials}
+            </div>
+          )}
           <h3 className="member-name ml-member-name">
             {mitglied.nachname || "Unbekannt"}, {mitglied.vorname || "Unbekannt"}
           </h3>
         </div>
       </div>
+
       <div className="member-info ml-member-info">
-        <p className="ml-info-dob">
-          <strong>Geburtsdatum:</strong>{" "}
-          {mitglied.geburtsdatum
-            ? new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE')
-            : "N/A"}
-        </p>
-        <p className="ml-info-stile">
-          <strong>Stile:</strong>{" "}
-          {mitglied.stile ? mitglied.stile.replace(/,/g, ", ") : "Keine Stile"}
-        </p>
+        {/* Gurt: Dot + Text, kein buntes Badge */}
+        {primaryGurt && (
+          <div className="ml-card-gurt">
+            <span className="ml-gurt-text">
+              <span className="ml-gurt-dot" style={{ background: gurtDot }} />
+              {primaryGurt}
+            </span>
+          </div>
+        )}
+        {/* Stile Pills */}
+        <div className="ml-card-stile">
+          {stileArr.slice(0, 2).map(s => (
+            <span key={s} className="ml-stile-pill">{s}</span>
+          ))}
+          {stileArr.length > 2 && (
+            <span className="ml-stile-pill ml-stile-pill--more">+{stileArr.length - 2}</span>
+          )}
+          {stileArr.length === 0 && (
+            <span className="ml-info-stile-none">Keine Stile</span>
+          )}
+        </div>
+        {/* Alter */}
+        {age > 0 && <div className="ml-card-alter">{age} J.</div>}
       </div>
     </div>
   );
@@ -102,6 +242,7 @@ MemberCard.displayName = 'MemberCard';
 // Virtualisiertes Grid für große Mitgliederlisten (100+ Mitglieder)
 const VirtualizedMemberGrid = React.memo(({
   members,
+  viewMode,
   selectionMode,
   selectedMembers,
   onToggleSelection,
@@ -135,38 +276,6 @@ const VirtualizedMemberGrid = React.memo(({
     return COLUMN_COUNT;
   }, [containerWidth]);
 
-  const rowCount = useMemo(() => Math.ceil(safeMembers.length / columnCount), [safeMembers.length, columnCount]);
-
-  // Berechne Karten-Breite basierend auf verfügbarem Platz
-  const cardWidth = useMemo(() => {
-    return Math.floor((containerWidth - (columnCount - 1) * GAP) / columnCount);
-  }, [containerWidth, columnCount]);
-
-  // Cell Renderer für das Grid
-  const Cell = useCallback(({ columnIndex, rowIndex, style }) => {
-    const index = rowIndex * columnCount + columnIndex;
-    if (index >= safeMembers.length) return null;
-
-    const mitglied = safeMembers[index];
-    return (
-      <div style={{
-        ...style,
-        left: style.left + GAP / 2,
-        top: style.top + GAP / 2,
-        width: style.width - GAP,
-        height: style.height - GAP
-      }}>
-        <MemberCard
-          mitglied={mitglied}
-          selectionMode={selectionMode}
-          isSelected={selectedMembers.includes(mitglied.mitglied_id)}
-          onToggleSelection={onToggleSelection}
-          onNavigate={onNavigate}
-        />
-      </div>
-    );
-  }, [safeMembers, columnCount, selectionMode, selectedMembers, onToggleSelection, onNavigate]);
-
   // Empty State
   if (safeMembers.length === 0) {
     return (
@@ -181,7 +290,25 @@ const VirtualizedMemberGrid = React.memo(({
     );
   }
 
-  // Einfaches Grid für alle Listen (Virtualisierung temporär deaktiviert)
+  // Listen-Ansicht
+  if (viewMode === 'list') {
+    return (
+      <div ref={containerRef} className="ml-list-container">
+        {safeMembers.map((mitglied) => (
+          <MemberListRow
+            key={mitglied.mitglied_id}
+            mitglied={mitglied}
+            selectionMode={selectionMode}
+            isSelected={selectedMembers.includes(mitglied.mitglied_id)}
+            onToggleSelection={onToggleSelection}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Karten-Ansicht (Grid)
   return (
     <div
       ref={containerRef}
@@ -258,6 +385,36 @@ const MitgliederListe = () => {
   const [availableStile, setAvailableStile] = useState([]);
   const [availableGurte, setAvailableGurte] = useState([]);
 
+  // Erweiterte Filter-States
+  const [filterStatus, setFilterStatus] = useState("aktiv"); // default: nur aktive zeigen
+  const [filterGeschlecht, setFilterGeschlecht] = useState("");
+  const [filterGeburtstag, setFilterGeburtstag] = useState("");
+  const [filterMitgliedSeit, setFilterMitgliedSeit] = useState("");
+  const [filterVertrag, setFilterVertrag] = useState("");
+  const [sortierung, setSortierung] = useState("nachname_az");
+  const [showMehrFilter, setShowMehrFilter] = useState(false);
+  const [savedLists, setSavedLists] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ml-saved-lists') || '[]'); } catch { return []; }
+  });
+  const [activeListId, setActiveListId] = useState(() => {
+    const v = localStorage.getItem('ml-active-list-id');
+    return v ? parseInt(v) : null;
+  });
+  const [showSaveListModal, setShowSaveListModal] = useState(false);
+  const [showListenModal, setShowListenModal] = useState(false);
+  const [saveListName, setSaveListName] = useState("");
+
+  // Ansichts-Modus: 'list' (Standard) oder 'grid'
+  const [viewMode, setViewMode] = useState(() => localStorage.getItem('ml-view-mode') || 'list');
+
+  const handleToggleViewMode = useCallback(() => {
+    setViewMode(prev => {
+      const next = prev === 'list' ? 'grid' : 'list';
+      localStorage.setItem('ml-view-mode', next);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     // Warte bis Übersetzungen und Context bereit sind
     if (!ready || !dojos) {
@@ -306,6 +463,25 @@ const MitgliederListe = () => {
         }
 
         console.log(`✅ ${data.length} Mitglieder geladen (Filter: ${dojoFilterParam || 'alle'})`);
+
+        // Gespeicherte aktive Liste auto-anwenden
+        const activeId = parseInt(localStorage.getItem('ml-active-list-id') || '0');
+        if (activeId) {
+          const lists = JSON.parse(localStorage.getItem('ml-saved-lists') || '[]');
+          const activeList = lists.find(l => l.id === activeId);
+          if (activeList) {
+            const f = activeList.filters;
+            setFilterStil(f.filterStil || "");
+            setFilterAlter(f.filterAlter || "");
+            setFilterGurt(f.filterGurt || "");
+            setFilterStatus(f.filterStatus || "aktiv");
+            setFilterGeschlecht(f.filterGeschlecht || "");
+            setFilterGeburtstag(f.filterGeburtstag || "");
+            setFilterMitgliedSeit(f.filterMitgliedSeit || "");
+            setFilterVertrag(f.filterVertrag || "");
+            setSortierung(f.sortierung || "nachname_az");
+          }
+        }
       })
       .catch((error) => {
         console.error("Fehler beim Laden der Mitglieder:", error);
@@ -375,8 +551,101 @@ const MitgliederListe = () => {
       );
     }
 
+    // Status-Filter (aktiv/inaktiv/alle)
+    if (filterStatus === 'aktiv') {
+      filtered = filtered.filter(m => m.aktiv === 1 || m.aktiv === true);
+    } else if (filterStatus === 'inaktiv') {
+      filtered = filtered.filter(m => m.aktiv === 0 || m.aktiv === false);
+    }
+    // 'alle' = kein Filter
+
+    // Geschlecht-Filter
+    if (filterGeschlecht) {
+      filtered = filtered.filter(m => m.geschlecht === filterGeschlecht);
+    }
+
+    // Geburtstag-Filter
+    if (filterGeburtstag) {
+      const today = new Date();
+      filtered = filtered.filter(m => {
+        if (!m.geburtsdatum) return false;
+        const geb = new Date(m.geburtsdatum);
+        if (filterGeburtstag === 'diesen_monat') {
+          return geb.getMonth() === today.getMonth();
+        }
+        if (filterGeburtstag === 'naechste_7') {
+          const in7 = new Date(today); in7.setDate(today.getDate() + 7);
+          let bd = new Date(today.getFullYear(), geb.getMonth(), geb.getDate());
+          if (bd < today) bd = new Date(today.getFullYear() + 1, geb.getMonth(), geb.getDate());
+          return bd >= today && bd <= in7;
+        }
+        if (filterGeburtstag === 'naechste_30') {
+          const in30 = new Date(today); in30.setDate(today.getDate() + 30);
+          let bd = new Date(today.getFullYear(), geb.getMonth(), geb.getDate());
+          if (bd < today) bd = new Date(today.getFullYear() + 1, geb.getMonth(), geb.getDate());
+          return bd >= today && bd <= in30;
+        }
+        return true;
+      });
+    }
+
+    // Mitglied-seit-Filter
+    if (filterMitgliedSeit) {
+      const today = new Date();
+      filtered = filtered.filter(m => {
+        if (!m.eintrittsdatum) return false;
+        const eintritt = new Date(m.eintrittsdatum);
+        if (filterMitgliedSeit === 'dieses_jahr') {
+          return eintritt.getFullYear() === today.getFullYear();
+        }
+        if (filterMitgliedSeit === 'letztes_jahr') {
+          return eintritt.getFullYear() === today.getFullYear() - 1;
+        }
+        const monate = parseInt(filterMitgliedSeit);
+        if (!isNaN(monate)) {
+          const cutoff = new Date(today); cutoff.setMonth(today.getMonth() - monate);
+          return eintritt >= cutoff;
+        }
+        return true;
+      });
+    }
+
+    // Vertrag-Filter
+    if (filterVertrag) {
+      filtered = filtered.filter(m => {
+        if (filterVertrag === 'kein') return !m.vertrag_status;
+        if (filterVertrag === 'aktiv') return m.vertrag_status === 'aktiv';
+        if (filterVertrag === 'ruhepause') return m.vertrag_status === 'ruhepause';
+        if (filterVertrag === 'gekuendigt') return m.vertrag_status === 'gekuendigt' || m.vertrag_status === 'beendet';
+        // Läuft ab in X Monaten
+        const monate = parseInt(filterVertrag);
+        if (!isNaN(monate) && m.vertrag_status === 'aktiv' && m.vertrag_ende) {
+          const today = new Date();
+          const cutoff = new Date(today); cutoff.setMonth(today.getMonth() + monate);
+          const ende = new Date(m.vertrag_ende);
+          return ende >= today && ende <= cutoff;
+        }
+        return false;
+      });
+    }
+
+    // Sortierung
+    const sortFns = {
+      'nachname_az': (a, b) => (a.nachname || '').localeCompare(b.nachname || '', 'de'),
+      'nachname_za': (a, b) => (b.nachname || '').localeCompare(a.nachname || '', 'de'),
+      'vorname_az': (a, b) => (a.vorname || '').localeCompare(b.vorname || '', 'de'),
+      'vorname_za': (a, b) => (b.vorname || '').localeCompare(a.vorname || '', 'de'),
+      'eintrittsdatum_neu': (a, b) => new Date(b.eintrittsdatum || 0) - new Date(a.eintrittsdatum || 0),
+      'eintrittsdatum_alt': (a, b) => new Date(a.eintrittsdatum || 0) - new Date(b.eintrittsdatum || 0),
+      'alter_jung': (a, b) => new Date(b.geburtsdatum || 0) - new Date(a.geburtsdatum || 0),
+      'alter_alt': (a, b) => new Date(a.geburtsdatum || 0) - new Date(b.geburtsdatum || 0),
+    };
+    if (sortierung && sortFns[sortierung]) {
+      filtered = [...filtered].sort(sortFns[sortierung]);
+    }
+
     return filtered;
-  }, [mitglieder, searchTerm, selectedLetter, filterStil, filterAlter, filterGurt]);
+  }, [mitglieder, searchTerm, selectedLetter, filterStil, filterAlter, filterGurt, filterStatus, filterGeschlecht, filterGeburtstag, filterMitgliedSeit, filterVertrag, sortierung]);
 
   // Schließe Menü beim Klicken außerhalb
   useEffect(() => {
@@ -412,12 +681,67 @@ const MitgliederListe = () => {
     setFilterStil("");
     setFilterAlter("");
     setFilterGurt("");
+    setFilterStatus("aktiv");
+    setFilterGeschlecht("");
+    setFilterGeburtstag("");
+    setFilterMitgliedSeit("");
+    setFilterVertrag("");
+    setSortierung("nachname_az");
+    setActiveListId(null);
+    localStorage.removeItem('ml-active-list-id');
   }, []);
 
   // Memoized check für aktive Filter
   const hasActiveFilters = useMemo(() => {
-    return searchTerm || selectedLetter || filterStil || filterAlter || filterGurt;
-  }, [searchTerm, selectedLetter, filterStil, filterAlter, filterGurt]);
+    return searchTerm || selectedLetter || filterStil || filterAlter || filterGurt ||
+      filterStatus !== 'aktiv' || filterGeschlecht || filterGeburtstag || filterMitgliedSeit ||
+      filterVertrag || sortierung !== 'nachname_az';
+  }, [searchTerm, selectedLetter, filterStil, filterAlter, filterGurt, filterStatus, filterGeschlecht, filterGeburtstag, filterMitgliedSeit, filterVertrag, sortierung]);
+
+  const handleSaveList = useCallback(() => {
+    if (!saveListName.trim()) return;
+    const newList = {
+      id: Date.now(),
+      name: saveListName.trim(),
+      count: filteredMitglieder.length,
+      filters: { filterStil, filterAlter, filterGurt, filterStatus, filterGeschlecht, filterGeburtstag, filterMitgliedSeit, filterVertrag, sortierung }
+    };
+    const updated = [...savedLists, newList];
+    setSavedLists(updated);
+    localStorage.setItem('ml-saved-lists', JSON.stringify(updated));
+    setSaveListName("");
+    setShowSaveListModal(false);
+  }, [saveListName, savedLists, filteredMitglieder.length, filterStil, filterAlter, filterGurt, filterStatus, filterGeschlecht, filterGeburtstag, filterMitgliedSeit, filterVertrag, sortierung]);
+
+  const handleLoadList = useCallback((list) => {
+    const f = list.filters;
+    setFilterStil(f.filterStil || "");
+    setFilterAlter(f.filterAlter || "");
+    setFilterGurt(f.filterGurt || "");
+    setFilterStatus(f.filterStatus || "aktiv");
+    setFilterGeschlecht(f.filterGeschlecht || "");
+    setFilterGeburtstag(f.filterGeburtstag || "");
+    setFilterMitgliedSeit(f.filterMitgliedSeit || "");
+    setFilterVertrag(f.filterVertrag || "");
+    setSortierung(f.sortierung || "nachname_az");
+    setSelectedLetter("");
+    setSearchTerm("");
+    // Aktive Liste merken → beim nächsten Öffnen automatisch anwenden
+    setActiveListId(list.id);
+    localStorage.setItem('ml-active-list-id', String(list.id));
+  }, []);
+
+  const handleDeleteList = useCallback((id, e) => {
+    e.stopPropagation();
+    const updated = savedLists.filter(l => l.id !== id);
+    setSavedLists(updated);
+    localStorage.setItem('ml-saved-lists', JSON.stringify(updated));
+    // Falls die gelöschte Liste aktiv war, zurücksetzen
+    if (activeListId === id) {
+      setActiveListId(null);
+      localStorage.removeItem('ml-active-list-id');
+    }
+  }, [savedLists, activeListId]);
 
   const handleLetterFilter = useCallback((letter) => {
     setSelectedLetter(prev => {
@@ -577,8 +901,25 @@ const MitgliederListe = () => {
         {/* Zeile 1: Nur Titel */}
         <h2 className="page-title ml-page-title">{t('list.title')}</h2>
 
-        {/* Zeile 2: Suchfeld + Neu + Filter + Aktionen */}
+        {/* Zeile 2: Status-Chips + Suchfeld + Filter + Aktionen */}
         <div className="ml-toolbar-row">
+          {/* Status-Chips */}
+          <div className="ml-status-chips-inline">
+            {[
+              { value: 'aktiv', label: 'Aktiv' },
+              { value: 'inaktiv', label: 'Inaktiv' },
+              { value: 'alle', label: 'Alle' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                onClick={() => setFilterStatus(opt.value)}
+                className={`ml-status-chip ${filterStatus === opt.value ? `ml-status-chip--${opt.value}` : ''}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
           {/* Suchfeld */}
           <input
             type="text"
@@ -596,45 +937,13 @@ const MitgliederListe = () => {
             }}
           />
 
-          {/* Stil-Filter */}
-          <select
-            value={filterStil}
-            onChange={(e) => setFilterStil(e.target.value)}
-            className={`filter-select ml-filter-select ${filterStil ? 'active' : ''}`}
+          {/* Mehr Filter Toggle */}
+          <button
+            onClick={() => setShowMehrFilter(prev => !prev)}
+            className={`ml-mehr-filter-btn ${showMehrFilter ? 'active' : ''} ${(filterStil || filterAlter || filterGurt || filterGeschlecht || filterGeburtstag || filterMitgliedSeit || filterVertrag) && !showMehrFilter ? 'ml-mehr-filter-btn--has-active' : ''}`}
           >
-            <option value="">🎯 {t('list.filters.allStyles', 'Alle Stile')}</option>
-            <option value="__OHNE_STIL__" className="option-warning">❌ {t('list.filters.noStyle', 'Ohne Stil')}</option>
-            {availableStile.map(stil => (
-              <option key={stil} value={stil}>{stil}</option>
-            ))}
-          </select>
-
-          {/* Alter-Filter */}
-          <select
-            value={filterAlter}
-            onChange={(e) => setFilterAlter(e.target.value)}
-            className={`filter-select ml-filter-select ${filterAlter ? 'active' : ''}`}
-          >
-            <option value="">📅 {t('list.filters.age', 'Alter')}</option>
-            <option value="0-6">0-6 J.</option>
-            <option value="7-12">7-12 J.</option>
-            <option value="13-17">13-17 J.</option>
-            <option value="18-25">18-25 J.</option>
-            <option value="26-40">26-40 J.</option>
-            <option value="41+">41+ J.</option>
-          </select>
-
-          {/* Gurt-Filter */}
-          <select
-            value={filterGurt}
-            onChange={(e) => setFilterGurt(e.target.value)}
-            className={`filter-select ml-filter-select ${filterGurt ? 'active' : ''}`}
-          >
-            <option value="">🥋 {t('list.filters.allBelts', 'Alle Gurte')}</option>
-            {availableGurte.map(gurt => (
-              <option key={gurt} value={gurt}>{gurt}</option>
-            ))}
-          </select>
+            ⚙ Filter{showMehrFilter ? ' ▲' : ' ▼'}
+          </button>
 
           {/* Filter zurücksetzen Button */}
           {hasActiveFilters && (
@@ -653,8 +962,8 @@ const MitgliederListe = () => {
               onClick={handleMenuToggle}
               className="actions-btn ml-actions-btn"
             >
-              <span className="ml-kebab-icon">⋮</span>
               <span>{t('common:labels.actions')}</span>
+              <span className="ml-chevron-icon">▾</span>
             </button>
           </div>
 
@@ -704,9 +1013,46 @@ const MitgliederListe = () => {
                 <span className="ml-icon-lg">📦</span>
                 <span>{selectionMode ? t('list.endSelection', 'Auswahl beenden') : t('list.bulkArchive', 'Mehrfach archivieren')}</span>
               </button>
+
+              <div className="ml-dropdown-divider" />
+
+              <button
+                className="actions-dropdown-item ml-dropdown-item"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  setShowListenModal(true);
+                }}
+              >
+                <span className="ml-icon-lg">📋</span>
+                <span>Gespeicherte Listen{savedLists.length > 0 ? ` (${savedLists.length})` : ''}</span>
+              </button>
+
+              <button
+                className="actions-dropdown-item ml-dropdown-item"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  setShowSaveListModal(true);
+                }}
+              >
+                <span className="ml-icon-lg">💾</span>
+                <span>Liste speichern</span>
+              </button>
             </div>,
             document.body
           )}
+
+          {/* Ansicht umschalten: Liste / Karten */}
+          <button
+            onClick={handleToggleViewMode}
+            className="ml-view-toggle-btn"
+            title={viewMode === 'list' ? 'Karten-Ansicht' : 'Listen-Ansicht'}
+          >
+            {viewMode === 'list' ? '⊞' : '☰'}
+          </button>
 
           {/* Anzahl Mitglieder */}
           <span className="ml-member-count">
@@ -714,7 +1060,157 @@ const MitgliederListe = () => {
           </span>
         </div>
 
-        {/* Zeile 3: Nachname-Label + ABC-Buchstaben */}
+        {/* Aktive Liste Indikator */}
+        {activeListId && savedLists.find(l => l.id === activeListId) && (
+          <div className="ml-status-row">
+            <span className="ml-active-list-indicator">
+              ✓ {savedLists.find(l => l.id === activeListId)?.name}
+            </span>
+          </div>
+        )}
+
+        {/* Zeile 4: Erweiterte Filter (aufklappbar) */}
+        {showMehrFilter && (
+          <div className="ml-mehr-filter-panel">
+            <div className="ml-mehr-filter-grid">
+              {/* Stil */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Stil</label>
+                <select
+                  value={filterStil}
+                  onChange={(e) => setFilterStil(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterStil ? 'active' : ''}`}
+                >
+                  <option value="">{t('list.filters.allStyles', 'Alle Stile')}</option>
+                  <option value="__OHNE_STIL__">❌ {t('list.filters.noStyle', 'Ohne Stil')}</option>
+                  {availableStile.map(stil => (
+                    <option key={stil} value={stil}>{stil}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Alter */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Alter</label>
+                <select
+                  value={filterAlter}
+                  onChange={(e) => setFilterAlter(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterAlter ? 'active' : ''}`}
+                >
+                  <option value="">{t('list.filters.age', 'Alle')}</option>
+                  <option value="0-6">0–6 J.</option>
+                  <option value="7-12">7–12 J.</option>
+                  <option value="13-17">13–17 J.</option>
+                  <option value="18-25">18–25 J.</option>
+                  <option value="26-40">26–40 J.</option>
+                  <option value="41+">41+ J.</option>
+                </select>
+              </div>
+
+              {/* Gurt */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Gurt</label>
+                <select
+                  value={filterGurt}
+                  onChange={(e) => setFilterGurt(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterGurt ? 'active' : ''}`}
+                >
+                  <option value="">{t('list.filters.allBelts', 'Alle Gurte')}</option>
+                  {availableGurte.map(gurt => (
+                    <option key={gurt} value={gurt}>{gurt}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Geschlecht */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Geschlecht</label>
+                <select
+                  value={filterGeschlecht}
+                  onChange={e => setFilterGeschlecht(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterGeschlecht ? 'active' : ''}`}
+                >
+                  <option value="">Alle</option>
+                  <option value="m">Männlich</option>
+                  <option value="w">Weiblich</option>
+                  <option value="d">Divers</option>
+                </select>
+              </div>
+
+              {/* Geburtstag */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Geburtstag</label>
+                <select
+                  value={filterGeburtstag}
+                  onChange={e => setFilterGeburtstag(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterGeburtstag ? 'active' : ''}`}
+                >
+                  <option value="">Alle</option>
+                  <option value="diesen_monat">Diesen Monat</option>
+                  <option value="naechste_7">Nächste 7 Tage</option>
+                  <option value="naechste_30">Nächste 30 Tage</option>
+                </select>
+              </div>
+
+              {/* Mitglied seit */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Mitglied seit</label>
+                <select
+                  value={filterMitgliedSeit}
+                  onChange={e => setFilterMitgliedSeit(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterMitgliedSeit ? 'active' : ''}`}
+                >
+                  <option value="">Alle</option>
+                  <option value="3">Letzten 3 Monate</option>
+                  <option value="6">Letzten 6 Monate</option>
+                  <option value="12">Letzten 12 Monate</option>
+                  <option value="dieses_jahr">Dieses Jahr</option>
+                  <option value="letztes_jahr">Letztes Jahr</option>
+                </select>
+              </div>
+
+              {/* Vertrag */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Vertrag</label>
+                <select
+                  value={filterVertrag}
+                  onChange={e => setFilterVertrag(e.target.value)}
+                  className={`filter-select ml-filter-select ${filterVertrag ? 'active' : ''}`}
+                >
+                  <option value="">Alle</option>
+                  <option value="aktiv">Aktiver Vertrag</option>
+                  <option value="ruhepause">In Ruhepause</option>
+                  <option value="gekuendigt">Gekündigt/Beendet</option>
+                  <option value="kein">Kein Vertrag</option>
+                  <option value="3">Läuft ab: 3 Monate</option>
+                  <option value="6">Läuft ab: 6 Monate</option>
+                  <option value="12">Läuft ab: 12 Monate</option>
+                </select>
+              </div>
+
+              {/* Sortierung */}
+              <div className="ml-filter-group">
+                <label className="ml-filter-label">Sortierung</label>
+                <select
+                  value={sortierung}
+                  onChange={e => setSortierung(e.target.value)}
+                  className="filter-select ml-filter-select"
+                >
+                  <option value="nachname_az">Nachname A–Z</option>
+                  <option value="nachname_za">Nachname Z–A</option>
+                  <option value="vorname_az">Vorname A–Z</option>
+                  <option value="vorname_za">Vorname Z–A</option>
+                  <option value="eintrittsdatum_neu">Neueste Mitglieder zuerst</option>
+                  <option value="eintrittsdatum_alt">Älteste Mitglieder zuerst</option>
+                  <option value="alter_jung">Jüngste zuerst</option>
+                  <option value="alter_alt">Älteste zuerst</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Zeile 5: Nachname-Label + ABC-Buchstaben */}
         {availableLetters.length > 0 && (
           <div className="ml-letter-row">
             <span className="ml-letter-label">
@@ -812,12 +1308,111 @@ const MitgliederListe = () => {
       {!loading && Array.isArray(filteredMitglieder) && (
         <VirtualizedMemberGrid
           members={filteredMitglieder}
+          viewMode={viewMode}
           selectionMode={selectionMode}
           selectedMembers={selectedMembers}
           onToggleSelection={handleToggleMemberSelection}
           onNavigate={(id) => navigate(`/dashboard/mitglieder/${id}`)}
           t={t}
         />
+      )}
+
+      {/* Modal: Gespeicherte Listen */}
+      {showListenModal && (
+        <div className="ml-modal-overlay" onClick={() => setShowListenModal(false)}>
+          <div className="ml-modal-box ml-listen-modal-box" onClick={e => e.stopPropagation()}>
+            <div className="ml-listen-modal-header">
+              <h3 className="ml-modal-title">Gespeicherte Listen</h3>
+              <button className="ml-modal-close-btn" onClick={() => setShowListenModal(false)}>×</button>
+            </div>
+
+            {savedLists.length === 0 ? (
+              <div className="ml-listen-empty">
+                <span className="ml-listen-empty-icon">📋</span>
+                <p>Noch keine Listen gespeichert.</p>
+                <p className="ml-listen-empty-hint">Filter setzen und auf „Liste speichern" klicken.</p>
+              </div>
+            ) : (
+              <ul className="ml-listen-list">
+                {savedLists.map(list => {
+                  const isActive = activeListId === list.id;
+                  const labels = [];
+                  const f = list.filters || {};
+                  if (f.filterStatus && f.filterStatus !== 'aktiv') labels.push(f.filterStatus === 'inaktiv' ? 'Inaktiv' : 'Alle');
+                  if (f.filterGeschlecht) labels.push({ m: 'Männlich', w: 'Weiblich', d: 'Divers' }[f.filterGeschlecht] || f.filterGeschlecht);
+                  if (f.filterGeburtstag) labels.push('Geburtstag');
+                  if (f.filterMitgliedSeit) labels.push(`Seit ${f.filterMitgliedSeit} Mon.`);
+                  if (f.filterVertrag) labels.push('Vertrag');
+                  if (f.filterStil) labels.push(f.filterStil);
+                  if (f.filterGurt) labels.push(f.filterGurt);
+                  if (f.filterAlter) labels.push(`${f.filterAlter} J.`);
+                  return (
+                    <li
+                      key={list.id}
+                      className={`ml-listen-item ${isActive ? 'ml-listen-item--active' : ''}`}
+                      onClick={() => { handleLoadList(list); setShowListenModal(false); }}
+                    >
+                      <div className="ml-listen-item-main">
+                        <span className="ml-listen-item-name">
+                          {isActive && <span className="ml-listen-item-check">✓ </span>}
+                          {list.name}
+                        </span>
+                        {labels.length > 0 && (
+                          <span className="ml-listen-item-tags">
+                            {labels.map((l, i) => <span key={i} className="ml-listen-tag">{l}</span>)}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        className="ml-listen-delete-btn"
+                        onClick={(e) => { handleDeleteList(list.id, e); }}
+                        title="Liste löschen"
+                      >🗑</button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <div className="ml-listen-modal-footer">
+              <button
+                className="ml-listen-new-btn"
+                onClick={() => { setShowListenModal(false); setShowSaveListModal(true); }}
+              >
+                + Aktuelle Filter als Liste speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Filterliste speichern */}
+      {showSaveListModal && (
+        <div className="ml-modal-overlay" onClick={() => setShowSaveListModal(false)}>
+          <div className="ml-modal-box" onClick={e => e.stopPropagation()}>
+            <h3 className="ml-modal-title">Liste speichern</h3>
+            <p className="ml-modal-desc">
+              Aktuelle Filter werden gespeichert ({filteredMitglieder.length} Mitglieder).
+            </p>
+            <input
+              type="text"
+              value={saveListName}
+              onChange={e => setSaveListName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSaveList()}
+              placeholder="Name der Liste, z.B. &quot;Geburtstage März&quot;"
+              className="ml-modal-input"
+              autoFocus
+            />
+            <div className="ml-modal-actions">
+              <button onClick={handleSaveList} className="ml-modal-save-btn" disabled={!saveListName.trim()}>
+                Speichern
+              </button>
+              <button onClick={() => { setShowSaveListModal(false); setSaveListName(""); }} className="ml-modal-cancel-btn">
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {isModalOpen && <NeuesMitgliedAnlegen onClose={() => setIsModalOpen(false)} />}

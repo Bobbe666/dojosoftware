@@ -1,0 +1,256 @@
+/* ===== MITGLIEDER TAB – PROFESSIONAL REDESIGN ===== */
+
+.mem-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-section-gap);
+}
+
+/* ── Period Toggle ── */
+.mem-period-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.mem-period-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.mem-period-tabs {
+  display: flex;
+  gap: 0.2rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--comp-radius-md);
+  padding: 0.2rem;
+}
+
+.mem-period-btn {
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.mem-period-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mem-period-btn.active {
+  background: var(--primary-alpha-20);
+  color: var(--primary);
+}
+
+/* ── KPI Row ── */
+.mem-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--ui-stats-gap);
+}
+
+.mem-kpi {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  padding: var(--ui-stat-card-padding);
+  transition: border-color 0.2s;
+}
+
+.mem-kpi:hover {
+  border-color: var(--primary-alpha-20);
+}
+
+.mem-kpi-label {
+  font-size: var(--ui-stat-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.45rem;
+}
+
+.mem-kpi-value {
+  font-size: var(--ui-kpi-value);
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.mem-kpi-value--gold   { color: var(--primary); text-shadow: 0 0 16px var(--primary-alpha-30); }
+.mem-kpi-value--green  { color: var(--status-success); text-shadow: 0 0 12px rgba(16,185,129,0.25); }
+.mem-kpi-value--red    { color: var(--status-error); }
+.mem-kpi-sub {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.35rem;
+}
+
+/* ── Charts Grid (3 cols + forecast) ── */
+.mem-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ui-grid-gap);
+}
+
+.mem-chart {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.mem-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.1rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mem-chart-title {
+  font-size: var(--ui-card-label);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.mem-chart-body {
+  padding: 0.75rem 0.5rem 0.5rem;
+}
+
+/* ── Forecast Card ── */
+.mem-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mem-forecast-hero {
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.mem-forecast-current-val {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 20px var(--primary-alpha-30);
+}
+
+.mem-forecast-current-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-top: 0.25rem;
+}
+
+.mem-forecast-rows {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mem-forecast-item {
+  padding: 0.85rem 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
+}
+
+.mem-forecast-item:last-child {
+  border-right: none;
+}
+
+.mem-forecast-horizon {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 0.3rem;
+}
+
+.mem-forecast-val {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--status-success);
+  font-variant-numeric: tabular-nums;
+}
+
+.mem-forecast-rate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.mem-forecast-rate-label {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mem-forecast-rate-value {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Demographics Row ── */
+.mem-demo-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ui-grid-gap);
+}
+
+.mem-demo-chart {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+/* no-data inside chart */
+.mem-no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .mem-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .mem-charts-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .mem-kpi-row { grid-template-columns: 1fr 1fr; }
+  .mem-charts-grid { grid-template-columns: 1fr; }
+  .mem-demo-row { grid-template-columns: 1fr; }
+  .mem-forecast-rows { grid-template-columns: 1fr; }
+}

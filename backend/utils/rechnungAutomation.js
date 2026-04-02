@@ -7,6 +7,7 @@
 // =====================================================================================
 
 const db = require('../db');
+const logger = require('./logger');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -202,7 +203,7 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
 
     // Prüfe, ob payment_method = 'invoice'
     if (vertrag.payment_method !== 'invoice') {
-      console.log(`⚠️  Vertrag #${vertrag_id} hat payment_method='${vertrag.payment_method}' - keine Rechnung erstellt`);
+      logger.debug(`Vertrag #${vertrag_id} hat payment_method='${vertrag.payment_method}' - keine Rechnung erstellt`);
       return null;
     }
 

@@ -148,7 +148,7 @@
 
 /* New-Dojo card inside new-membership modal */
 .vm-neues-dojo-card {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   margin-bottom: 1rem;
 }
 
@@ -232,12 +232,12 @@
 
 /* Small Button color overrides */
 .vm-small-btn-danger {
-  background-color: #ef4444 !important;
+  background-color: var(--status-error) !important;
   color: var(--text-primary) !important;
 }
 
 .vm-small-btn-blue {
-  background-color: #3b82f6 !important;
+  background-color: var(--status-indigo) !important;
   color: var(--text-primary) !important;
 }
 
@@ -253,8 +253,8 @@
 
 /* Bruttopreis info box */
 .vm-bruttopreis-box {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 16px;
@@ -288,7 +288,7 @@
 /* Previously existing classes */
 .vm-icon-btn-danger {
   background: rgba(239, 68, 68, 0.2) !important;
-  color: #ef4444 !important;
+  color: var(--status-error) !important;
   border-color: rgba(239, 68, 68, 0.3) !important;
 }
 
@@ -381,7 +381,7 @@
 
 /* Action button primary override */
 .vm-action-btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ffaa00) !important;
+  background: var(--gradient-gold);
   border: none !important;
   color: #000 !important;
   font-weight: 600 !important;
@@ -390,7 +390,7 @@
 /* "Neues Dojo wird angelegt" indicator span */
 .vm-neues-dojo-indicator {
   padding: 10px 15px;
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   border-radius: 8px;
   color: var(--primary);
   font-weight: 600;
@@ -418,7 +418,7 @@
   background: transparent; border: none; border-radius: 8px;
   color: var(--text-muted); cursor: pointer; transition: all 0.2s;
 }
-.vm-tab-btn--active { background: rgba(255, 215, 0, 0.15); color: var(--primary); }
+.vm-tab-btn--active { background: var(--primary-alpha-15); color: var(--primary); }
 
 /* Einstellungen sub-tab buttons */
 .vm-einst-tab-btn {
@@ -426,7 +426,7 @@
   background: transparent; border: none; border-radius: 6px;
   color: var(--text-muted); cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
 }
-.vm-einst-tab-btn--active { background: rgba(255, 215, 0, 0.15); color: var(--primary); }
+.vm-einst-tab-btn--active { background: var(--primary-alpha-15); color: var(--primary); }
 
 /* Detail modal tab buttons */
 .vm-detail-tab-btn {
@@ -434,7 +434,7 @@
   background: transparent; border: none; border-radius: 6px;
   color: var(--text-muted); cursor: pointer; transition: all 0.2s;
 }
-.vm-detail-tab-btn--active { background: rgba(255, 215, 0, 0.15); color: var(--primary); }
+.vm-detail-tab-btn--active { background: var(--primary-alpha-15); color: var(--primary); }
 
 /* Vorteil card */
 .vm-vorteil-card { opacity: 1; }
@@ -444,11 +444,11 @@
 .vm-vorteil-gilt { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; }
 .vm-vorteil-gilt--dojo { background: rgba(59, 130, 246, 0.2); }
 .vm-vorteil-gilt--einzelperson { background: rgba(16, 185, 129, 0.2); }
-.vm-vorteil-gilt--beide { background: rgba(255, 215, 0, 0.2); }
+.vm-vorteil-gilt--beide { background: var(--primary-alpha-20); }
 
 /* Activate/deactivate buttons */
-.vm-btn-activate { background: rgba(16,185,129,0.2); color: #10b981; }
-.vm-btn-deactivate { background: rgba(239,68,68,0.2); color: #ef4444; }
+.vm-btn-activate { background: rgba(16,185,129,0.2); color: var(--status-success); }
+.vm-btn-deactivate { background: rgba(239,68,68,0.2); color: var(--status-error); }
 
 /* Typ item inactive */
 .vm-typ-item--inactive { opacity: 0.6; }
@@ -465,8 +465,8 @@
 .vm-toggle-knob { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
 .vm-toggle-knob--on { transform: translateX(24px); }
 .vm-toggle-text { font-weight: 600; }
-.vm-toggle-text--on { color: #10b981; }
-.vm-toggle-text--off { color: #ef4444; }
+.vm-toggle-text--on { color: var(--status-success); }
+.vm-toggle-text--off { color: var(--status-error); }
 
 /* Typ selector buttons (modal) */
 .vm-typ-btn {
@@ -475,8 +475,8 @@
   border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text-primary);
   cursor: pointer; transition: all 0.2s; flex: 1;
 }
-.vm-typ-btn--dojo { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); color: #ffd700; }
-.vm-typ-btn--einzelperson { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.vm-typ-btn--dojo { border-color: #ffd700; background: var(--primary-alpha-10); color: #ffd700; }
+.vm-typ-btn--einzelperson { border-color: var(--status-success); background: rgba(34, 197, 94, 0.1); color: var(--status-success); }
 
 /* Beitragsfrei label */
 .vm-beitragsfrei-label {
@@ -486,7 +486,7 @@
 }
 .vm-beitragsfrei-label--active { background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3); }
 .vm-beitragsfrei-text { color: rgba(255, 255, 255, 0.8); }
-.vm-beitragsfrei-text--active { color: #22c55e; }
+.vm-beitragsfrei-text--active { color: var(--status-success); }
 
 /* Beitragsfrei detail box */
 .vm-beitragsfrei-box {
@@ -500,19 +500,19 @@
 
 /* Status select */
 .vm-status-select { padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); font-weight: 600; cursor: pointer; }
-.vm-status-select--aktiv { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-.vm-status-select--ausstehend { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.vm-status-select--aktiv { background: rgba(16, 185, 129, 0.2); color: var(--status-success); }
+.vm-status-select--ausstehend { background: rgba(245, 158, 11, 0.2); color: var(--status-warning); }
 .vm-status-select--vertragsfrei { background: rgba(107, 114, 128, 0.2); color: #6b7280; }
-.vm-status-select--gekuendigt, .vm-status-select--abgelaufen { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.vm-status-select--gekuendigt, .vm-status-select--abgelaufen { background: rgba(239, 68, 68, 0.2); color: var(--status-error); }
 
 /* Zahlung status */
-.vm-zahlung-status--bezahlt { color: #10b981; }
-.vm-zahlung-status--offen { color: #f59e0b; }
+.vm-zahlung-status--bezahlt { color: var(--status-success); }
+.vm-zahlung-status--offen { color: var(--status-warning); }
 
 /* SEPA status */
 .vm-sepa-status { padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; }
-.vm-sepa-status--aktiv { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-.vm-sepa-status--inaktiv { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.vm-sepa-status--aktiv { background: rgba(16, 185, 129, 0.2); color: var(--status-success); }
+.vm-sepa-status--inaktiv { background: rgba(239, 68, 68, 0.2); color: var(--status-error); }
 
 /* Icon button base (was styles.iconButton) */
 .vm-icon-btn {

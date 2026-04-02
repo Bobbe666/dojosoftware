@@ -153,7 +153,7 @@
 .fa-stat-clickable {
   cursor: pointer;
 }
-.fa-stat-clickable--active .stat-number { color: var(--stat-color, #ffd700); }
+.fa-stat-clickable--active .stat-number { color: var(--stat-color, var(--primary)); }
 
 /* Filter icon */
 .fa-filter-icon {
@@ -164,11 +164,11 @@
 /* Type icon */
 .fa-type-icon {
   flex-shrink: 0;
-  color: var(--typ-color, #ffd700);
+  color: var(--typ-color, var(--primary));
 }
 
 /* Type label text */
-.fa-type-label { color: var(--typ-color, #ffd700); font-size: 0.8125rem; }
+.fa-type-label { color: var(--typ-color, var(--primary)); font-size: 0.8125rem; }
 
 /* Card border-left color */
 .freie-aktion-card { border-left-color: var(--typ-color, transparent); }

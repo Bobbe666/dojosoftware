@@ -17,6 +17,7 @@ const ChatPage = () => {
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [activeRoom, setActiveRoom] = useState(null);
   const [isMobileListVisible, setIsMobileListVisible] = useState(true);
+  const [roomListVersion, setRoomListVersion] = useState(0);
 
   // URL-Parameter: ?room=123 direkt öffnen (z.B. von Push-Klick)
   useEffect(() => {
@@ -69,6 +70,7 @@ const ChatPage = () => {
           <ChatRoomList
             activeRoomId={activeRoomId}
             onSelectRoom={handleSelectRoom}
+            refreshVersion={roomListVersion}
           />
         </div>
 
@@ -79,6 +81,17 @@ const ChatPage = () => {
               key={activeRoom.id}
               room={activeRoom}
               onBack={handleBack}
+              onRoomUpdated={(updatedRoom, action) => {
+                if (!updatedRoom) {
+                  // Gruppe verlassen oder Raum gelöscht
+                  handleBack();
+                  if (action === 'deleted') {
+                    setRoomListVersion(v => v + 1); // Raumliste neu laden
+                  }
+                } else {
+                  setActiveRoom(updatedRoom);
+                }
+              }}
             />
           ) : (
             <div className="chat-placeholder">

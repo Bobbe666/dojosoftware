@@ -68,7 +68,7 @@
   width: 100%;
   margin: 0.75rem 0 1.25rem;
   padding: 0.6rem 0.75rem;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   border: 1px solid rgba(255, 215, 0, 0.18);
   border-radius: var(--comp-radius-md);
   color: var(--primary);
@@ -84,8 +84,8 @@
 
 .btn-create-event:hover {
   background: rgba(255, 215, 0, 0.16);
-  border-color: rgba(255, 215, 0, 0.3);
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+  border-color: var(--primary-alpha-30);
+  box-shadow: 0 0 12px var(--primary-alpha-10);
 }
 
 /* Vertical Nav Tabs */
@@ -121,7 +121,7 @@
 }
 
 .events-container .tab-vertical-btn.active {
-  background: rgba(255, 215, 0, 0.08);
+  background: var(--primary-alpha-08);
   color: var(--primary);
   font-weight: 600;
   border: none;
@@ -200,7 +200,7 @@
   gap: 0 !important;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-top: 2px solid rgba(255, 215, 0, 0.3);
+  border-top: 2px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
   transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
@@ -250,7 +250,7 @@
   padding: 0.65rem 0.75rem;
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--comp-radius-sm);
-  border-left: 2px solid rgba(255, 215, 0, 0.2);
+  border-left: 2px solid var(--primary-alpha-20);
 }
 
 .event-description p {
@@ -394,15 +394,15 @@
 }
 
 .btn-primary {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: var(--primary);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .btn-primary:hover {
   background: rgba(255, 215, 0, 0.16);
-  border-color: rgba(255, 215, 0, 0.35);
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.1);
+  border-color: var(--primary-alpha-35);
+  box-shadow: 0 0 12px var(--primary-alpha-10);
 }
 
 .btn-secondary {
@@ -458,7 +458,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+  border-bottom: 1px solid var(--primary-alpha-15);
 }
 
 .modal-header h2 {
@@ -605,8 +605,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: rgba(255, 215, 0, 0.35);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.05);
+  border-color: var(--primary-alpha-35);
+  box-shadow: 0 0 0 3px var(--primary-alpha-05);
 }
 
 .form-group textarea {
@@ -701,7 +701,7 @@
   background: rgba(255, 255, 255, 0.03);
   border-radius: var(--comp-radius-xs);
   font-style: italic;
-  border-left: 2px solid rgba(255, 215, 0, 0.2);
+  border-left: 2px solid var(--primary-alpha-20);
   font-size: 0.78rem;
 }
 
@@ -1519,8 +1519,8 @@
 .ev-btn-paid {
   padding: 0.2rem 0.6rem;
   font-size: 0.75rem;
-  background: rgba(255, 215, 0, 0.2);
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: var(--primary-alpha-20);
+  border: 1px solid var(--primary-alpha-40);
   border-radius: 6px;
   cursor: pointer;
   color: var(--primary);

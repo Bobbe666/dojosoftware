@@ -49,7 +49,7 @@
 
 .datev-export-section {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 20px;
@@ -81,8 +81,8 @@
 }
 
 .datev-export-type-card--active {
-  border-color: #ffd700;
-  background: rgba(255, 215, 0, 0.1);
+  border-color: var(--primary);
+  background: var(--primary-alpha-10);
 }
 
 .datev-export-type-icon {
@@ -97,7 +97,7 @@
 }
 
 .datev-export-type-icon--active {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .datev-export-type-info {
@@ -112,7 +112,7 @@
 }
 
 .datev-export-type-card--active .datev-export-type-info strong {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .datev-export-type-info span {
@@ -141,7 +141,7 @@
 .datev-export-date-input {
   padding: 12px 16px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 14px;

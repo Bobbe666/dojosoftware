@@ -1,26 +1,17 @@
 import React from 'react';
 import '../../../styles/MemberMedicalTab.css';
 
-// Standard-Allergien zur Auswahl
 const COMMON_ALLERGIES = [
-  'Nüsse/Erdnüsse',
-  'Milch/Laktose',
-  'Gluten/Weizen',
-  'Eier',
-  'Fisch/Meeresfrüchte',
-  'Soja',
-  'Insektenstiche (Bienen/Wespen)',
-  'Medikamente (Penicillin etc.)',
-  'Latex',
-  'Pollen/Heuschnupfen',
-  'Hausstaub/Milben',
-  'Tierhaare',
-  'Sonstiges'
+  'Nüsse/Erdnüsse', 'Milch/Laktose', 'Gluten/Weizen', 'Eier',
+  'Fisch/Meeresfrüchte', 'Soja', 'Insektenstiche (Bienen/Wespen)',
+  'Medikamente (Penicillin etc.)', 'Latex', 'Pollen/Heuschnupfen',
+  'Hausstaub/Milben', 'Tierhaare', 'Sonstiges'
 ];
 
-// Beziehungs-Optionen für Notfallkontakte
 const RELATIONSHIP_OPTIONS = [
   { value: '', label: 'Bitte wählen' },
+  { value: 'Mutter', label: 'Mutter' },
+  { value: 'Vater', label: 'Vater' },
   { value: 'Elternteil', label: 'Elternteil' },
   { value: 'Partner/in', label: 'Partner/in' },
   { value: 'Geschwister', label: 'Geschwister' },
@@ -29,22 +20,6 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'Sonstiges', label: 'Sonstiges' }
 ];
 
-/**
- * MemberMedicalTab - Medizinische Informationen und Notfallkontakte
- *
- * Props:
- * - mitglied: Das Mitglied-Objekt (für Read-Only Ansicht)
- * - updatedData: Aktuelle Bearbeitungsdaten
- * - editMode: Ob Bearbeitung erlaubt ist
- * - handleChange: Callback für Feldänderungen (e, fieldName)
- * - CustomSelect: Die CustomSelect-Komponente
- * - allergien: Array der aktiven Allergien [{id, value}]
- * - allergienArchiv: Array der archivierten Allergien
- * - newAllergie: State für neue Allergie {type, custom}
- * - setNewAllergie: Setter für newAllergie
- * - addAllergie: Funktion zum Hinzufügen einer Allergie
- * - removeAllergie: Funktion zum Entfernen einer Allergie (id)
- */
 const MemberMedicalTab = ({
   mitglied,
   updatedData,
@@ -58,287 +33,155 @@ const MemberMedicalTab = ({
   addAllergie,
   removeAllergie
 }) => {
-  // Fallback Select-Komponente
   const SelectComponent = CustomSelect || (({ value, onChange, options, className }) => (
     <select className={className} value={value} onChange={onChange}>
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
+      {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
     </select>
   ));
 
   return (
-    <div className="medizinisch-container">
-      {/* Medizinische Informationen */}
-      <div className="field-group card">
-        <h3>Medizinische Informationen</h3>
+    <div className="mmt-container">
 
-        {/* Allergien-Management */}
-        <div className="allergie-management">
-          <label>Allergien:</label>
+      {/* ── Zeile 1: Allergien + Medizinische Hinweise ── */}
+      <div className="mmt-top-row">
+
+        {/* Allergien */}
+        <div className="field-group card">
+          <h3 className="mmt-section-title">🌿 Allergien</h3>
+
           {editMode ? (
-            <div className="allergien-editor">
-              {/* Bestehende Allergien anzeigen */}
-              <div className="allergien-liste">
-                {allergien.length === 0 ? (
-                  <p className="no-allergien">Keine Allergien erfasst</p>
-                ) : (
-                  allergien.map((allergie) => (
-                    <div key={allergie.id} className="allergie-tag">
-                      <span className="allergie-name">{allergie.value}</span>
-                      <button
-                        type="button"
-                        className="allergie-remove"
-                        onClick={() => removeAllergie(allergie.id)}
-                        title="Allergie archivieren"
-                      >
-                        x
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Neue Allergie hinzufügen */}
-              <div className="allergie-add-form">
-                <div className="add-form-controls">
-                  <SelectComponent
-                    value={newAllergie.type}
-                    onChange={(e) => setNewAllergie({ ...newAllergie, type: e.target.value })}
-                    className="allergie-select"
-                    options={[
-                      { value: '', label: 'Allergie auswählen...' },
-                      ...COMMON_ALLERGIES.map(allergy => ({ value: allergy, label: allergy }))
-                    ]}
-                  />
-
-                  {newAllergie.type === 'Sonstiges' && (
-                    <input
-                      type="text"
-                      value={newAllergie.custom}
-                      onChange={(e) => setNewAllergie({ ...newAllergie, custom: e.target.value })}
-                      placeholder="Eigene Allergie eingeben..."
-                      className="allergie-custom-input"
-                    />
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={addAllergie}
-                    className="allergie-add-btn"
-                    disabled={!newAllergie.type || (newAllergie.type === 'Sonstiges' && !newAllergie.custom.trim())}
-                    title="Allergie hinzufügen"
-                  >
-                    + Hinzufuegen
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="allergien-anzeige">
-              {allergien.length === 0 ? (
-                <span className="no-allergien-display">Keine Allergien bekannt</span>
-              ) : (
-                <div className="allergien-tags-readonly">
-                  {allergien.map((allergie) => (
-                    <span key={allergie.id} className="allergie-tag-readonly">
-                      {allergie.value}
+            <>
+              <div className="mmt-tags-wrap">
+                {allergien.length === 0
+                  ? <span className="mmt-placeholder">Noch keine Allergien erfasst</span>
+                  : allergien.map(a => (
+                    <span key={a.id} className="mmt-tag mmt-tag--red">
+                      {a.value}
+                      <button type="button" className="mmt-tag-x" onClick={() => removeAllergie(a.id)}>×</button>
                     </span>
-                  ))}
-                </div>
-              )}
+                  ))
+                }
+              </div>
+              <div className="mmt-add-row">
+                <SelectComponent
+                  value={newAllergie.type}
+                  onChange={(e) => setNewAllergie({ ...newAllergie, type: e.target.value })}
+                  className="mmt-select"
+                  options={[{ value: '', label: 'Allergie wählen…' }, ...COMMON_ALLERGIES.map(a => ({ value: a, label: a }))]}
+                />
+                {newAllergie.type === 'Sonstiges' && (
+                  <input
+                    type="text"
+                    className="mmt-input"
+                    value={newAllergie.custom}
+                    onChange={(e) => setNewAllergie({ ...newAllergie, custom: e.target.value })}
+                    placeholder="Eigene Allergie…"
+                  />
+                )}
+                <button
+                  type="button"
+                  className="mmt-btn"
+                  onClick={addAllergie}
+                  disabled={!newAllergie.type || (newAllergie.type === 'Sonstiges' && !newAllergie.custom.trim())}
+                >+ Hinzufügen</button>
+              </div>
+            </>
+          ) : (
+            <div className="mmt-tags-wrap">
+              {allergien.length === 0
+                ? <span className="mmt-placeholder">Keine Allergien bekannt</span>
+                : allergien.map(a => <span key={a.id} className="mmt-tag mmt-tag--red">{a.value}</span>)
+              }
+            </div>
+          )}
+
+          {allergienArchiv?.length > 0 && (
+            <div className="mmt-archiv-box">
+              <span className="mmt-archiv-label">Archiviert</span>
+              <div className="mmt-tags-wrap">
+                {allergienArchiv.map((a, i) => (
+                  <span key={i} className="mmt-tag mmt-tag--dim">
+                    {a.value}{a.geloescht_am_readable && <em> ({a.geloescht_am_readable})</em>}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
         </div>
-
-        {/* Archivierte Allergien */}
-        {allergienArchiv && allergienArchiv.length > 0 && (
-          <div className="allergie-archiv mmt-archiv-box">
-            <label className="mmt-archiv-label">
-              Archivierte Allergien (geloescht):
-            </label>
-            <div className="allergien-archiv-liste mmt-archiv-list">
-              {allergienArchiv.map((allergie, index) => (
-                <div key={index} className="mmt-archiv-item">
-                  <span className="u-text-secondary">
-                    {allergie.value}
-                  </span>
-                  {allergie.geloescht_am_readable && (
-                    <span className="mmt-archiv-date">
-                      (geloescht: {allergie.geloescht_am_readable})
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Medizinische Hinweise */}
-        <div>
-          <label>Medizinische Hinweise:</label>
+        <div className="field-group card">
+          <h3 className="mmt-section-title">⚕️ Medizinische Hinweise</h3>
           {editMode ? (
             <textarea
-              rows="3"
-              value={updatedData.medizinische_hinweise || ""}
-              onChange={(e) => handleChange(e, "medizinische_hinweise")}
-              placeholder="z.B. Asthma, Herzprobleme, Medikamente..."
+              className="mmt-textarea"
+              rows={6}
+              value={updatedData.medizinische_hinweise || ''}
+              onChange={(e) => handleChange(e, 'medizinische_hinweise')}
+              placeholder="z.B. Asthma, Herzprobleme, Medikamente…"
             />
           ) : (
-            <span>{mitglied.medizinische_hinweise || "Keine"}</span>
+            <p className={mitglied.medizinische_hinweise ? 'mmt-text' : 'mmt-placeholder'}>
+              {mitglied.medizinische_hinweise || 'Keine medizinischen Hinweise hinterlegt.'}
+            </p>
           )}
         </div>
       </div>
 
-      {/* Notfallkontakte */}
-      <div className="field-group card">
-        <h3>Notfallkontakte</h3>
+      {/* ── Zeile 2: 3 Notfallkontakte ── */}
+      <div className="mmt-contacts-row">
+        {[
+          { label: 'Notfallkontakt 1', primary: true,  nf: 'notfallkontakt',  nf2: 'notfallkontakt',  nf3: 'notfallkontakt'  },
+          { label: 'Notfallkontakt 2', primary: false, nf: 'notfallkontakt2', nf2: 'notfallkontakt2', nf3: 'notfallkontakt2' },
+          { label: 'Notfallkontakt 3', primary: false, nf: 'notfallkontakt3', nf2: 'notfallkontakt3', nf3: 'notfallkontakt3' },
+        ].map(({ label, primary, nf }) => {
+          const nameKey  = nf === 'notfallkontakt' ? 'notfallkontakt_name'      : `${nf}_name`;
+          const telKey   = nf === 'notfallkontakt' ? 'notfallkontakt_telefon'   : `${nf}_telefon`;
+          const verhKey  = nf === 'notfallkontakt' ? 'notfallkontakt_verhaeltnis' : `${nf}_verhaeltnis`;
+          const name     = mitglied[nameKey];
+          const telefon  = mitglied[telKey];
+          const verhae   = mitglied[verhKey];
 
-        {/* Notfallkontakt 1 - Primär */}
-        <div className="emergency-contact-section">
-          <div className="contact-grid">
-            <div className="contact-header">
-              <h4>Notfallkontakt 1 <span className="primary-badge">Primaer</span></h4>
-            </div>
-            <div>
-              <label>Name:</label>
-              {editMode ? (
-                <input
-                  type="text"
-                  value={updatedData.notfallkontakt_name || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt_name")}
-                  placeholder="Max Mustermann"
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt_name || "Nicht angegeben"}</span>
-              )}
-            </div>
-            <div>
-              <label>Telefon:</label>
-              {editMode ? (
-                <input
-                  type="tel"
-                  value={updatedData.notfallkontakt_telefon || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt_telefon")}
-                  placeholder="+49 123 456789"
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt_telefon || "Nicht angegeben"}</span>
-              )}
-            </div>
-            <div>
-              <label>Verhaeltnis:</label>
-              {editMode ? (
-                <SelectComponent
-                  value={updatedData.notfallkontakt_verhaeltnis || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt_verhaeltnis")}
-                  options={RELATIONSHIP_OPTIONS}
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt_verhaeltnis || "Nicht angegeben"}</span>
-              )}
-            </div>
-          </div>
-        </div>
+          return (
+            <div key={label} className={`field-group card mmt-contact-card${primary ? ' mmt-contact-card--primary' : ''}`}>
+              <h3 className="mmt-section-title">
+                {primary ? '🚨 ' : '👤 '}{label}
+                {primary && <span className="mmt-badge-primary">Primär</span>}
+              </h3>
 
-        {/* Notfallkontakt 2 */}
-        <div className="emergency-contact-section">
-          <div className="contact-grid">
-            <div className="contact-header">
-              <h4>Notfallkontakt 2</h4>
-            </div>
-            <div>
-              <label>Name:</label>
-              {editMode ? (
-                <input
-                  type="text"
-                  value={updatedData.notfallkontakt2_name || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt2_name")}
-                  placeholder="Maria Musterfrau"
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt2_name || "Nicht angegeben"}</span>
-              )}
-            </div>
-            <div>
-              <label>Telefon:</label>
-              {editMode ? (
-                <input
-                  type="tel"
-                  value={updatedData.notfallkontakt2_telefon || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt2_telefon")}
-                  placeholder="+49 123 456789"
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt2_telefon || "Nicht angegeben"}</span>
-              )}
-            </div>
-            <div>
-              <label>Verhaeltnis:</label>
-              {editMode ? (
-                <SelectComponent
-                  value={updatedData.notfallkontakt2_verhaeltnis || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt2_verhaeltnis")}
-                  options={RELATIONSHIP_OPTIONS}
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt2_verhaeltnis || "Nicht angegeben"}</span>
-              )}
-            </div>
-          </div>
-        </div>
+              {/* Name */}
+              <div className="mmt-kv">
+                <span className="mmt-kv-label">Name</span>
+                {editMode
+                  ? <input className="mmt-input" type="text" value={updatedData[nameKey] || ''} onChange={(e) => handleChange(e, nameKey)} placeholder="Vollständiger Name" />
+                  : <span className={name ? 'mmt-kv-value' : 'mmt-kv-empty'}>{name || '—'}</span>
+                }
+              </div>
 
-        {/* Notfallkontakt 3 */}
-        <div className="emergency-contact-section">
-          <div className="contact-grid">
-            <div className="contact-header">
-              <h4>Notfallkontakt 3</h4>
-            </div>
-            <div>
-              <label>Name:</label>
-              {editMode ? (
-                <input
-                  type="text"
-                  value={updatedData.notfallkontakt3_name || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt3_name")}
-                  placeholder="Dr. med. Beispiel"
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt3_name || "Nicht angegeben"}</span>
-              )}
-            </div>
-            <div>
-              <label>Telefon:</label>
-              {editMode ? (
-                <input
-                  type="tel"
-                  value={updatedData.notfallkontakt3_telefon || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt3_telefon")}
-                  placeholder="+49 123 456789"
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt3_telefon || "Nicht angegeben"}</span>
-              )}
-            </div>
-            <div>
-              <label>Verhaeltnis:</label>
-              {editMode ? (
-                <SelectComponent
-                  value={updatedData.notfallkontakt3_verhaeltnis || ""}
-                  onChange={(e) => handleChange(e, "notfallkontakt3_verhaeltnis")}
-                  options={RELATIONSHIP_OPTIONS}
-                />
-              ) : (
-                <span>{mitglied.notfallkontakt3_verhaeltnis || "Nicht angegeben"}</span>
-              )}
-            </div>
-          </div>
-        </div>
+              {/* Telefon */}
+              <div className="mmt-kv">
+                <span className="mmt-kv-label">Telefon</span>
+                {editMode
+                  ? <input className="mmt-input" type="tel" value={updatedData[telKey] || ''} onChange={(e) => handleChange(e, telKey)} placeholder="+49 …" />
+                  : <span className={telefon ? 'mmt-kv-value' : 'mmt-kv-empty'}>
+                      {telefon ? <a href={`tel:${telefon}`} className="mmt-tel-link">{telefon}</a> : '—'}
+                    </span>
+                }
+              </div>
 
-        <div className="info-box">
-          <p><strong>Hinweis:</strong> Es wird empfohlen, mindestens einen Primaerkontakt anzugeben. Zusaetzliche Kontakte bieten mehr Sicherheit im Notfall.</p>
-        </div>
+              {/* Verhältnis */}
+              <div className="mmt-kv">
+                <span className="mmt-kv-label">Verhältnis</span>
+                {editMode
+                  ? <SelectComponent value={updatedData[verhKey] || ''} onChange={(e) => handleChange(e, verhKey)} options={RELATIONSHIP_OPTIONS} className="mmt-select mmt-select--sm" />
+                  : <span className={verhae ? 'mmt-kv-value' : 'mmt-kv-empty'}>{verhae || '—'}</span>
+                }
+              </div>
+            </div>
+          );
+        })}
       </div>
+
     </div>
   );
 };

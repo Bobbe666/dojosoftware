@@ -1,0 +1,942 @@
+/* DojoEdit.css - Dedizierte Bearbeitungsseite für Dojos */
+
+/* Override parent content-card - Komplett transparent */
+.content-card:has(.dojo-edit-page) {
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dojo-edit-page {
+  width: 100% !important;
+  min-height: 100vh !important;
+  background: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Layout Container */
+.dojo-edit-layout {
+  display: flex;
+  width: 100%;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* Header - Glassmorphism Design */
+.dojo-edit-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px var(--primary-alpha-10) inset;
+}
+
+.dojo-edit-header h1 {
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 2px 8px var(--primary-alpha-30);
+}
+
+.dojo-name-header {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--primary-alpha-30);
+  border-radius: 12px;
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.back-button:hover {
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
+}
+
+/* Message */
+.dojo-edit-page .message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  margin: 0;
+  border-radius: 0;
+  font-size: 0.95rem;
+  border-bottom: 1px solid var(--primary-alpha-10);
+}
+
+.message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.message.error {
+  background: var(--color-error-500-alpha-10);
+  border: 1px solid var(--color-error-500-alpha-20);
+  color: var(--error);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Sidebar - Premium Glassmorphism */
+.dojo-sidebar {
+  width: fit-content;
+  min-width: 240px;
+  max-width: 280px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border-right: 1px solid var(--primary-alpha-20);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+  margin: 1rem 0 1rem 1rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px var(--primary-alpha-10) inset;
+  padding: 1rem 0.75rem;
+}
+
+.dojo-sidebar.collapsed {
+  min-width: 70px;
+  max-width: 70px;
+}
+
+/* Sidebar Header - Dojo Hamburg */
+.dojo-edit-page .mitglied-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--primary-alpha-20);
+}
+
+.dojo-edit-page .mitglied-avatar {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: var(--primary-alpha-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--primary-alpha-30);
+  box-shadow: 0 4px 12px var(--primary-alpha-20);
+  transition: all 0.3s ease;
+}
+
+.dojo-sidebar.collapsed .mitglied-avatar {
+  width: 50px;
+  height: 50px;
+  margin-bottom: 0;
+}
+
+.dojo-edit-page .mitglied-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+  line-height: 1.4;
+  text-shadow: 0 2px 4px var(--primary-alpha-20);
+}
+
+/* Tabs - Premium Gold Design */
+.dojo-edit-page .tabs-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.dojo-edit-page .tab-vertical-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.6rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  width: 100%;
+  border: 1px solid transparent;
+}
+
+.dojo-edit-page .tab-vertical-btn:hover {
+  background: var(--primary-alpha-10);
+  color: var(--primary);
+  border-color: var(--primary-alpha-20);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px var(--primary-alpha-15);
+}
+
+.dojo-edit-page .tab-vertical-btn.active {
+  background: linear-gradient(135deg, var(--primary-alpha-15), var(--glass-bg));
+  color: var(--primary);
+  font-weight: 600;
+  border-color: var(--primary-alpha-40);
+  box-shadow: 0 4px 12px var(--primary-alpha-20),
+              0 0 0 1px var(--primary-alpha-10) inset;
+}
+
+.dojo-edit-page .tab-vertical-btn .tab-icon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.dojo-edit-page .tab-vertical-btn.active .tab-icon {
+  filter: drop-shadow(0 2px 4px var(--primary-alpha-40));
+}
+
+/* Sidebar Toggle Button */
+.dojo-edit-page .sidebar-toggle-btn {
+  margin-top: auto;
+  margin-bottom: 0.5rem;
+  justify-content: center;
+  background: var(--glass-bg);
+  border: 1px solid var(--primary-alpha-20);
+}
+
+.dojo-edit-page .sidebar-toggle-btn:hover {
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
+}
+
+/* Content */
+.dojo-content {
+  flex: 1;
+  padding: 2rem;
+  background: transparent;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* Form Actions - Sticky Footer mit Premium Glassmorphism */
+.form-actions-sticky {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  padding: 1.5rem 2rem;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: 16px;
+  z-index: 100;
+  margin: 2rem 1rem 1rem 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px var(--primary-alpha-10) inset;
+}
+
+.btn-primary, .btn-secondary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.btn-primary:focus,
+.btn-secondary:focus {
+  outline: none;
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible {
+  outline: 2px solid var(--primary-alpha-50);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, #f0c419 100%);
+  color: var(--bg-secondary);
+  border: 1px solid var(--primary-alpha-30);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px var(--primary-alpha-50);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: var(--glass-bg-hover);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+/* Tab Navigation - 2-zeilig Grid */
+.dojo-tabs {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr) !important;
+  gap: 0.5rem !important;
+  margin-bottom: 2rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.5rem;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.tab-button:hover {
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
+  color: var(--primary);
+}
+
+.tab-button.active {
+  background: var(--primary-alpha-15);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Form */
+.dojo-form {
+  width: 100%;
+}
+
+.form-section {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--primary-alpha-20);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3),
+              0 0 0 1px var(--primary-alpha-10) inset;
+}
+
+.form-section h3 {
+  color: var(--primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--primary-alpha-20);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-alpha-20);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--gradient-gold);
+  color: var(--bg-secondary);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--error), #dc2626);
+  color: white;
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px var(--color-error-500-alpha-20);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dojo-edit-page .mitglied-content {
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+}
+
+/* ============================================
+   LIGHT MODE (TDA-VIB) STYLES
+   ============================================ */
+
+[data-theme="tda-vib"] .dojo-edit-page .tab-vertical-btn {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .tab-vertical-btn:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .tab-vertical-btn.active {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.3) !important;
+  box-shadow: inset 3px 0 0 #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .back-button {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .back-button:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-primary,
+[data-theme="tda-vib"] .dojo-edit-page .btn {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-primary:hover,
+[data-theme="tda-vib"] .dojo-edit-page .btn:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-secondary {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-secondary:hover {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.25) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-danger {
+  background: rgba(244, 67, 54, 0.1) !important;
+  border: 1px solid rgba(244, 67, 54, 0.3) !important;
+  color: #dc2626 !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .btn-danger:hover {
+  background: rgba(244, 67, 54, 0.2) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-section {
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 26, 26, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-group label {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-group input,
+[data-theme="tda-vib"] .dojo-edit-page .form-group select,
+[data-theme="tda-vib"] .dojo-edit-page .form-group textarea {
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .form-group input:focus,
+[data-theme="tda-vib"] .dojo-edit-page .form-group select:focus,
+[data-theme="tda-vib"] .dojo-edit-page .form-group textarea:focus {
+  border-color: rgba(26, 26, 26, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.05) !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .sidebar-toggle-btn {
+  background: #e8e0d0 !important;
+  border: 1px solid rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .dojo-edit-page .sidebar-toggle-btn:hover {
+  background: #f5f0e6 !important;
+}
+
+/* ============================================
+   API TOKEN SECTION STYLES
+   ============================================ */
+
+.api-info-box {
+  background: rgba(255, 215, 0, 0.1);
+  border: 2px solid #ffd700;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.api-info-box p {
+  margin: 0;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.api-info-box strong {
+  color: #ffd700;
+}
+
+.api-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.api-input-readonly {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: text;
+}
+
+.api-input-token {
+  flex: 1;
+  background: rgba(46, 213, 115, 0.1);
+  border: 2px solid #2ed573;
+  cursor: text;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.api-copy-btn {
+  padding: 0.5rem 1rem;
+  background: #ffd700;
+  color: #000;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.api-copy-btn:hover {
+  background: #e6c200;
+}
+
+.api-copy-btn-green {
+  background: #2ed573;
+  color: #fff;
+}
+
+.api-copy-btn-green:hover {
+  background: #26b863;
+}
+
+.api-hint {
+  color: rgba(255, 255, 255, 0.6);
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.api-status-badge {
+  background: #2ed573;
+  color: #fff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.api-metadata-box {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.api-metadata-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.api-metadata-label {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+.api-metadata-value {
+  color: rgba(255, 255, 255, 0.9);
+  margin-top: 0.25rem;
+}
+
+.api-regenerate-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(239, 68, 68, 0.8);
+  color: #fff;
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.api-regenerate-btn:hover {
+  background: #ef4444;
+}
+
+.api-regenerate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.api-warning-text {
+  color: #ff6b6b;
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.api-empty-state {
+  background: rgba(255, 107, 53, 0.1);
+  border: 2px dashed #ff6b35;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.api-empty-state p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1rem;
+}
+
+.api-generate-btn {
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.api-generate-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.api-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.api-save-hint {
+  color: #ff6b35;
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* ============================================
+   API TOKEN - LIGHT MODE (TDA-VIB)
+   ============================================ */
+
+[data-theme="tda-vib"] .api-info-box {
+  background: rgba(107, 68, 35, 0.08) !important;
+  border-color: #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .api-info-box p {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-info-box strong {
+  color: #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .api-input-readonly {
+  background: #f5f0e6 !important;
+  border-color: rgba(26, 26, 26, 0.15) !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-input-token {
+  background: rgba(46, 213, 115, 0.08) !important;
+  border-color: #2ed573 !important;
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-copy-btn {
+  background: #6B4423 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="tda-vib"] .api-copy-btn:hover {
+  background: #8B5A2B !important;
+}
+
+[data-theme="tda-vib"] .api-hint {
+  color: #666666 !important;
+}
+
+[data-theme="tda-vib"] .api-metadata-box {
+  background: #f5f0e6 !important;
+  border: 1px solid rgba(26, 26, 26, 0.1) !important;
+}
+
+[data-theme="tda-vib"] .api-metadata-label {
+  color: #6B4423 !important;
+}
+
+[data-theme="tda-vib"] .api-metadata-value {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-empty-state {
+  background: rgba(255, 107, 53, 0.08) !important;
+  border-color: #ff6b35 !important;
+}
+
+[data-theme="tda-vib"] .api-empty-state p {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-warning-text {
+  color: #dc2626 !important;
+}
+
+[data-theme="tda-vib"] .api-save-hint {
+  color: #dc2626 !important;
+}
+
+/* API Instructions Box */
+.api-instructions {
+  background: rgba(59, 130, 246, 0.1);
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.api-instructions h4 {
+  color: #3b82f6;
+  margin-bottom: 1rem;
+}
+
+.api-instructions ol {
+  margin-left: 1.5rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.api-instructions ul {
+  margin-top: 0.5rem;
+  margin-left: 1rem;
+}
+
+.api-instructions strong {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* API Security Note */
+.api-security-note {
+  background: rgba(239, 68, 68, 0.1);
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1.5rem;
+}
+
+.api-security-note p {
+  margin: 0;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.api-security-note strong {
+  color: #ef4444;
+}
+
+/* Light Mode - API Instructions */
+[data-theme="tda-vib"] .api-instructions {
+  background: rgba(59, 130, 246, 0.08) !important;
+  border-color: #3b82f6 !important;
+}
+
+[data-theme="tda-vib"] .api-instructions h4 {
+  color: #2563eb !important;
+}
+
+[data-theme="tda-vib"] .api-instructions ol,
+[data-theme="tda-vib"] .api-instructions ul,
+[data-theme="tda-vib"] .api-instructions li {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-instructions strong {
+  color: #1a1a1a !important;
+}
+
+/* Light Mode - API Security Note */
+[data-theme="tda-vib"] .api-security-note {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: #ef4444 !important;
+}
+
+[data-theme="tda-vib"] .api-security-note p {
+  color: #1a1a1a !important;
+}
+
+[data-theme="tda-vib"] .api-security-note strong {
+  color: #dc2626 !important;
+}

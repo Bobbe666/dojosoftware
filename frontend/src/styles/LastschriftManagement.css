@@ -19,7 +19,7 @@
 
 .management-header .btn {
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
   color: var(--text-1) !important;
   border: none !important;
   padding: 12px 20px !important;
@@ -27,7 +27,7 @@
   font-weight: 700 !important;
   font-size: var(--ui-form-input) !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
+  box-shadow: 0 2px 8px var(--primary-alpha-20) !important;
   display: flex !important;
   align-items: center !important;
   gap: 0.5rem !important;
@@ -46,7 +46,7 @@
   left: -100% !important;
   width: 100% !important;
   height: 100% !important;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent) !important;
   transition: left 0.5s !important;
 }
 
@@ -55,15 +55,15 @@
 }
 
 .management-header .btn:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
+  background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-20) 50%, rgba(255, 107, 53, 0.1) 100%) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4) !important;
+  box-shadow: 0 4px 15px var(--primary-alpha-40) !important;
   color: var(--primary) !important;
 }
 
 .management-header .btn:active {
   transform: translateY(0) !important;
-  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2) !important;
+  box-shadow: 0 2px 6px var(--primary-alpha-20) !important;
 }
 
 /* ===== TABS ===== */
@@ -79,7 +79,7 @@
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn {
   background: transparent !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   color: var(--text-2) !important;
   padding: 12px 16px !important;
   text-align: left !important;
@@ -105,7 +105,7 @@
   left: -100% !important;
   width: 100% !important;
   height: 100% !important;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent) !important;
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent) !important;
   transition: left 0.5s !important;
 }
 
@@ -115,14 +115,14 @@
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn:hover {
   background: rgba(255, 255, 255, 0.1) !important;
-  border-color: rgba(255, 215, 0, 0.4) !important;
+  border-color: var(--primary-alpha-40) !important;
   color: var(--text-1) !important;
   transform: translateY(-1px) !important;
 }
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn:active {
   transform: translateY(0) !important;
-  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2) !important;
+  box-shadow: 0 2px 6px var(--primary-alpha-20) !important;
 }
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn .tab-icon {
@@ -145,11 +145,11 @@
 }
 
 .management-header .sub-tabs-sidebar-style .tab-vertical-btn.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%) !important;
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%) !important;
   color: var(--text-1) !important;
   font-weight: 700 !important;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2) !important;
-  border: 1px solid rgba(255, 215, 0, 0.4) !important;
+  box-shadow: 0 2px 8px var(--primary-alpha-20) !important;
+  border: 1px solid var(--primary-alpha-40) !important;
 }
 
 /* ===== TAB CONTENT ===== */

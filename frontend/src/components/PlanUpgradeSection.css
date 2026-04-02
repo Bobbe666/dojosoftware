@@ -29,7 +29,7 @@
 .current-plan-card {
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid;
-  border-color: var(--plan-color, #3b82f6);
+  border-color: var(--plan-color, var(--status-indigo));
   border-radius: 12px;
   padding: 1.25rem;
   margin-bottom: var(--ui-stats-margin-b);
@@ -48,7 +48,7 @@
   color: #fff;
   font-weight: 600;
   font-size: 0.9rem;
-  background-color: var(--plan-color, #3b82f6);
+  background-color: var(--plan-color, var(--status-indigo));
 }
 
 .status-badge {
@@ -60,7 +60,7 @@
 
 .status-badge.active {
   background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 .current-plan-details {
@@ -82,11 +82,11 @@
 }
 
 .detail-item.trial-warning {
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .detail-item.trial-warning svg {
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 /* Success Banner */
@@ -98,7 +98,7 @@
   background: rgba(34, 197, 94, 0.15);
   border: 1px solid rgba(34, 197, 94, 0.3);
   border-radius: 8px;
-  color: #22c55e;
+  color: var(--status-success);
   margin-bottom: 1.5rem;
 }
 
@@ -149,7 +149,7 @@
   background: rgba(245, 158, 11, 0.15);
   border: 1px solid rgba(245, 158, 11, 0.3);
   border-radius: 8px;
-  color: #f59e0b;
+  color: var(--status-warning);
   margin-bottom: 1.5rem;
 }
 
@@ -167,7 +167,7 @@
   background: rgba(239, 68, 68, 0.15);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: 8px;
-  color: #ef4444;
+  color: var(--status-error);
   margin-bottom: 1.5rem;
 }
 
@@ -311,7 +311,7 @@
 .price-savings {
   display: inline-block;
   background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+  color: var(--status-success);
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
@@ -348,7 +348,7 @@
 .plan-feature-check {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--plan-color, #3b82f6);
+  color: var(--plan-color, var(--status-indigo));
 }
 
 /* Upgrade Button */
@@ -366,8 +366,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  background-color: var(--plan-color, #3b82f6);
-  border-color: var(--plan-color, #3b82f6);
+  background-color: var(--plan-color, var(--status-indigo));
+  border-color: var(--plan-color, var(--status-indigo));
 }
 
 .btn-upgrade:hover:not(:disabled) {
@@ -412,11 +412,11 @@
 
 .upgrade-info svg {
   flex-shrink: 0;
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .upgrade-info a {
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 /* Loading State */

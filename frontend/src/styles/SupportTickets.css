@@ -181,7 +181,7 @@
 
 .support-tickets .support-stats .stat-card.bereich-dojo {
   border-color: rgba(16, 185, 129, 0.3) !important;
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .support-tickets .support-stats .stat-card.bereich-verband {
@@ -191,7 +191,7 @@
 
 .support-tickets .support-stats .stat-card.bereich-org {
   border-color: rgba(59, 130, 246, 0.3) !important;
-  color: #3b82f6;
+  color: var(--status-indigo);
 }
 
 .support-tickets .support-stats .stat-card.kritisch {
@@ -381,7 +381,7 @@
 }
 
 .ticket-card.bereich-dojo {
-  border-left-color: #10b981;
+  border-left-color: var(--status-success);
 }
 
 .ticket-card.bereich-verband {
@@ -389,7 +389,7 @@
 }
 
 .ticket-card.bereich-org {
-  border-left-color: #3b82f6;
+  border-left-color: var(--status-indigo);
 }
 
 .ticket-card-header {
@@ -654,7 +654,7 @@
 }
 
 .message-item.ersteller {
-  border-left-color: #10b981;
+  border-left-color: var(--status-success);
 }
 
 .message-item.bearbeiter {
@@ -662,7 +662,7 @@
 }
 
 .message-item.system {
-  border-left-color: #f59e0b;
+  border-left-color: var(--status-warning);
   background: rgba(245, 158, 11, 0.05);
   font-style: italic;
 }
@@ -1034,9 +1034,9 @@
   border-radius: var(--comp-radius-md);
 }
 
-.compact-stats .stat-item.offen { color: #f59e0b; }
-.compact-stats .stat-item.bearbeitung { color: #3b82f6; }
-.compact-stats .stat-item.kritisch { color: #ef4444; }
+.compact-stats .stat-item.offen { color: var(--status-warning); }
+.compact-stats .stat-item.bearbeitung { color: var(--status-indigo); }
+.compact-stats .stat-item.kritisch { color: var(--status-error); }
 
 .compact-stats .stat-value {
   font-size: 1.25rem;

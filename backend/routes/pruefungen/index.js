@@ -19,6 +19,7 @@ const kandidatenRoutes = require('./kandidaten');
 const historieRoutes = require('./historie');
 const statsRoutes = require('./stats');
 const crudRoutes = require('./crud');
+const timerRoutes = require('./timer');
 
 // Zusätzliche Dependencies für PDF-Generierung
 const db = require('../../db');
@@ -41,6 +42,13 @@ router.use('/', historieRoutes);
 
 // Stats-Routes: /api/pruefungen/stats/*
 router.use('/stats', statsRoutes);
+
+// Timer-Config-Routes: /api/pruefungen/timer-config
+router.use('/', timerRoutes);
+
+// Protokoll-Routes: /api/pruefungen/:id/protokoll, /api/pruefungen/mitglied/:mid/protokolle
+const protokollRoutes = require('./protokoll');
+router.use('/', protokollRoutes);
 
 // CRUD und Aktions-Routes: /api/pruefungen/, /api/pruefungen/:id, etc.
 // Diese kommen zuletzt, da sie generische /:id Parameter haben

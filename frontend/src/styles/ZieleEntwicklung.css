@@ -257,7 +257,7 @@
 }
 
 .ist-wert {
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 500;
 }
 
@@ -309,17 +309,17 @@
 
 .mini-badge.up {
   background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .mini-badge.down {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .mini-badge.neutral {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 /* Progress Bar */
@@ -449,7 +449,7 @@
 }
 
 .gruppe-beitrag {
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 500;
   font-size: 0.9rem;
 }
@@ -682,7 +682,7 @@
 }
 
 .wert-block.ist .wert-zahl {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .wert-block.soll .wert-zahl {
@@ -740,15 +740,15 @@
 }
 
 .progress-prozent.up {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .progress-prozent.down {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .progress-prozent.neutral {
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .progress-differenz {
@@ -756,11 +756,11 @@
 }
 
 .progress-differenz.positive {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .progress-differenz.negative {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .vergleich-trend {
@@ -780,11 +780,11 @@
 }
 
 .trend-up {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .trend-down {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .trend-neutral {
@@ -800,17 +800,17 @@
 
 .prozent-badge.good {
   background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .prozent-badge.warning {
   background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .prozent-badge.bad {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* ============================================================================
@@ -931,12 +931,12 @@
 }
 
 .prognose-tabelle td.jaehrlich {
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 500;
 }
 
 .prognose-tabelle td.jaehrlich.highlight {
-  color: #10b981;
+  color: var(--status-success);
   font-weight: 600;
 }
 
@@ -949,11 +949,11 @@
 }
 
 .prognose-tabelle td.wachstum.positive {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .prognose-tabelle td.wachstum.negative {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 .prognose-tabelle tfoot {
@@ -971,7 +971,7 @@
 }
 
 .prognose-tabelle tfoot td.summe-wert {
-  color: #10b981;
+  color: var(--status-success);
   font-size: 1.1rem;
 }
 
@@ -1117,7 +1117,7 @@
 }
 
 .umsatz-info-wert.highlight {
-  color: #f59e0b;
+  color: var(--status-warning);
   font-size: 1rem;
 }
 
@@ -1150,7 +1150,7 @@
 }
 
 .umsatz-tabelle th.current-year {
-  color: #f59e0b;
+  color: var(--status-warning);
 }
 
 .umsatz-tabelle td {
@@ -1196,7 +1196,7 @@
 }
 
 .ist-wert.highlight-green {
-  color: #22c55e;
+  color: var(--status-success);
 }
 
 /* Zielumsatz-Zeile */
@@ -1221,7 +1221,7 @@
   background: rgba(255,255,255,0.07);
   border: 1px solid rgba(245,158,11,0.35);
   border-radius: var(--comp-radius-sm);
-  color: #f59e0b;
+  color: var(--status-warning);
   font-size: 0.82rem;
   font-weight: 600;
   text-align: right;
@@ -1230,7 +1230,7 @@
 
 .umsatz-input:focus {
   outline: none;
-  border-color: #f59e0b;
+  border-color: var(--status-warning);
   background: rgba(245,158,11,0.1);
 }
 
@@ -1288,8 +1288,8 @@
   font-size: 0.95rem;
 }
 
-.diff-cell.diff-ok .diff-zahl { color: #22c55e; }
-.diff-cell.diff-fehlt .diff-zahl { color: #ef4444; }
+.diff-cell.diff-ok .diff-zahl { color: var(--status-success); }
+.diff-cell.diff-fehlt .diff-zahl { color: var(--status-error); }
 
 .diff-label {
   font-size: 0.67rem;
@@ -1413,9 +1413,9 @@
 .ze-erreichbar-fill--low  { background: #ef4444; }
 
 /* Erreichbar percent modifiers */
-.ze-erreichbar-pct--full { color: #22c55e; }
-.ze-erreichbar-pct--mid  { color: #f59e0b; }
-.ze-erreichbar-pct--low  { color: #ef4444; }
+.ze-erreichbar-pct--full { color: var(--status-success); }
+.ze-erreichbar-pct--mid  { color: var(--status-warning); }
+.ze-erreichbar-pct--low  { color: var(--status-error); }
 
 /* .ist-wert modifier: planning-row sizing */
 .ze-ist-wert--planning {

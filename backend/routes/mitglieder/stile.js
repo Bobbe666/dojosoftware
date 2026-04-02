@@ -5,7 +5,206 @@
 const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 const router = express.Router();
+
+// ─── MASSENWEISE GÜRTELZUWEISUNG (muss VOR /:id Routen stehen!) ──────────────
+
+// GET /zuweisung/stil/:stil_id – Alle aktiven Mitglieder eines Stils mit aktuellem Gürtel
+// Prüft BEIDE Tabellen: mitglied_stil_data (direkte ID-Zuordnung) + mitglied_stile (Text-Zuordnung)
+router.get('/zuweisung/stil/:stil_id', (req, res) => {
+  const stil_id = parseInt(req.params.stil_id, 10);
+  if (isNaN(stil_id)) return res.status(400).json({ error: 'Ungültige Stil-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const dojoParams = secureDojoId ? [stil_id, stil_id, stil_id, secureDojoId] : [stil_id, stil_id, stil_id];
+  const dojoCondition = secureDojoId ? ' AND m.dojo_id = ?' : '';
+
+  // UNION: Mitglieder aus mitglied_stil_data (neu, mit Gürtel)
+  //      + Mitglieder nur aus mitglied_stile (alt, ohne Gürtel) – zum Sync
+  const query = `
+    SELECT
+      m.mitglied_id,
+      m.vorname,
+      m.nachname,
+      msd.current_graduierung_id,
+      msd.letzte_pruefung,
+      g.name as graduierung_name,
+      g.farbe_hex,
+      g.reihenfolge as graduierung_reihenfolge,
+      g.kategorie,
+      g.dan_grad
+    FROM mitglieder m
+    INNER JOIN (
+      SELECT mitglied_id, current_graduierung_id, letzte_pruefung
+      FROM mitglied_stil_data WHERE stil_id = ?
+      UNION
+      SELECT ms.mitglied_id, NULL, NULL
+      FROM mitglied_stile ms
+        JOIN stile s ON s.stil_id = ? AND ms.stil = s.name
+      WHERE ms.mitglied_id NOT IN (
+        SELECT mitglied_id FROM mitglied_stil_data WHERE stil_id = ?
+      )
+    ) AS combined ON m.mitglied_id = combined.mitglied_id
+    LEFT JOIN graduierungen g ON combined.current_graduierung_id = g.graduierung_id
+    WHERE m.aktiv = 1${dojoCondition}
+    ORDER BY COALESCE(g.reihenfolge, 9999) ASC, m.nachname ASC, m.vorname ASC
+  `;
+
+  db.query(query, dojoParams, (err, results) => {
+    if (err) {
+      logger.error('Fehler bei Gürtel-Zuweisung:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    res.json({ success: true, mitglieder: results });
+  });
+});
+
+// POST /stil/:stil_id/assign – Mitglied einem Stil zuweisen (von Stilmitglieder-Tab)
+router.post('/stil/:stil_id/assign', async (req, res) => {
+  const stil_id = parseInt(req.params.stil_id, 10);
+  const { mitglied_id } = req.body;
+  if (isNaN(stil_id) || !mitglied_id) return res.status(400).json({ error: 'Ungültige Parameter' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+
+  try {
+    // Sicherheitscheck: Mitglied gehört zum Dojo
+    if (secureDojoId) {
+      const [member] = await pool.query(
+        'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ? AND aktiv = 1',
+        [mitglied_id, secureDojoId]
+      );
+      if (member.length === 0) return res.status(403).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    // Bereits zugewiesen?
+    const [existing] = await pool.query(
+      'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+      [mitglied_id, stil_id]
+    );
+    if (existing.length > 0) return res.json({ success: true, message: 'Bereits zugewiesen' });
+
+    // Erste Graduierung des Stils holen
+    const [grads] = await pool.query(
+      'SELECT graduierung_id FROM graduierungen WHERE stil_id = ? AND aktiv = 1 ORDER BY reihenfolge ASC LIMIT 1',
+      [stil_id]
+    );
+    const firstGradId = grads.length > 0 ? grads[0].graduierung_id : null;
+
+    // In mitglied_stil_data eintragen
+    await pool.query(
+      'INSERT INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, erstellt_am) VALUES (?, ?, ?, NOW())',
+      [mitglied_id, stil_id, firstGradId]
+    );
+
+    // Auch in mitglied_stile (Text-Tabelle) eintragen – für Rückwärtskompatibilität
+    const [stilRow] = await pool.query('SELECT name FROM stile WHERE stil_id = ?', [stil_id]);
+    if (stilRow.length > 0) {
+      await pool.query(
+        'INSERT IGNORE INTO mitglied_stile (mitglied_id, stil) VALUES (?, ?)',
+        [mitglied_id, stilRow[0].name]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler beim Zuweisen des Stils:', err);
+    res.status(500).json({ error: 'Fehler beim Zuweisen' });
+  }
+});
+
+// DELETE /stil/:stil_id/remove/:mitglied_id – Mitglied aus Stil entfernen
+router.delete('/stil/:stil_id/remove/:mitglied_id', async (req, res) => {
+  const stil_id = parseInt(req.params.stil_id, 10);
+  const mitglied_id = parseInt(req.params.mitglied_id, 10);
+  if (isNaN(stil_id) || isNaN(mitglied_id)) return res.status(400).json({ error: 'Ungültige Parameter' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+
+  try {
+    if (secureDojoId) {
+      const [member] = await pool.query(
+        'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?',
+        [mitglied_id, secureDojoId]
+      );
+      if (member.length === 0) return res.status(403).json({ error: 'Nicht berechtigt' });
+    }
+
+    await pool.query(
+      'DELETE FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+      [mitglied_id, stil_id]
+    );
+
+    // Auch aus Text-Tabelle entfernen
+    const [stilRow] = await pool.query('SELECT name FROM stile WHERE stil_id = ?', [stil_id]);
+    if (stilRow.length > 0) {
+      await pool.query(
+        'DELETE FROM mitglied_stile WHERE mitglied_id = ? AND stil = ?',
+        [mitglied_id, stilRow[0].name]
+      );
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler beim Entfernen aus Stil:', err);
+    res.status(500).json({ error: 'Fehler beim Entfernen' });
+  }
+});
+
+// POST /bulk-graduierung – Massenweise Gürtel zuweisen
+router.post('/bulk-graduierung', (req, res) => {
+  const { stil_id, assignments } = req.body;
+  if (!stil_id || !Array.isArray(assignments) || assignments.length === 0) {
+    return res.status(400).json({ error: 'stil_id und assignments Array erforderlich' });
+  }
+
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+
+  const processAll = async () => {
+    let updated = 0, inserted = 0;
+    for (const { mitglied_id, graduierung_id } of assignments) {
+      if (!mitglied_id || !graduierung_id) continue;
+      if (secureDojoId) {
+        const [check] = await pool.query(
+          'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ? AND aktiv = 1',
+          [mitglied_id, secureDojoId]
+        );
+        if (check.length === 0) continue;
+      }
+      const [existing] = await pool.query(
+        'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+        [mitglied_id, stil_id]
+      );
+      if (existing.length > 0) {
+        await pool.query(
+          'UPDATE mitglied_stil_data SET current_graduierung_id = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE mitglied_id = ? AND stil_id = ?',
+          [graduierung_id, mitglied_id, stil_id]
+        );
+        updated++;
+      } else {
+        await pool.query(
+          'INSERT INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, erstellt_am) VALUES (?, ?, ?, CURRENT_TIMESTAMP)',
+          [mitglied_id, stil_id, graduierung_id]
+        );
+        inserted++;
+      }
+    }
+    return { updated, inserted };
+  };
+
+  processAll()
+    .then(({ updated, inserted }) => {
+      res.json({ success: true, updated, inserted, total: updated + inserted });
+    })
+    .catch(err => {
+      logger.error('Fehler bei Bulk-Graduierung:', err);
+      res.status(500).json({ error: 'Fehler beim Speichern der Gürtelzuweisungen' });
+    });
+});
 
 // Stil-Mapping für ENUM-Konvertierung
 const stilMappingById = {
@@ -27,92 +226,63 @@ const stilMappingByName = {
   'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do', beschreibung: 'Koreanische Kampfkunst mit Betonung auf Fußtechniken und hohe Tritte' }
 };
 
-// Mitglied-Stile verwalten (POST)
+// Mitglied-Stile verwalten (POST) – schreibt in BEIDE Tabellen
 router.post('/:id/stile', (req, res) => {
   const mitglied_id = parseInt(req.params.id, 10);
   const { stile } = req.body;
 
-  if (isNaN(mitglied_id)) {
-    return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
-  }
+  if (isNaN(mitglied_id)) return res.status(400).json({ error: 'Ungültige Mitglieds-ID' });
+  if (!Array.isArray(stile)) return res.status(400).json({ error: 'Stile müssen als Array übergeben werden' });
 
-  if (!Array.isArray(stile)) {
-    return res.status(400).json({ error: 'Stile müssen als Array übergeben werden' });
-  }
+  const pool = db.promise();
 
-  const deleteMitgliedStileQuery = 'DELETE FROM mitglied_stile WHERE mitglied_id = ?';
-  const deleteMitgliedStilDataQuery = 'DELETE FROM mitglied_stil_data WHERE mitglied_id = ?';
+  const run = async () => {
+    // Alte Einträge löschen
+    await pool.query('DELETE FROM mitglied_stile WHERE mitglied_id = ?', [mitglied_id]);
+    await pool.query('DELETE FROM mitglied_stil_data WHERE mitglied_id = ?', [mitglied_id]);
 
-  db.query(deleteMitgliedStileQuery, [mitglied_id], (deleteErr) => {
-    if (deleteErr) {
-      logger.error('Fehler beim Löschen bestehender Stile:', deleteErr);
-      return res.status(500).json({ error: 'Fehler beim Löschen bestehender Stile' });
+    if (stile.length === 0) return;
+
+    // mitglied_stile (Text-Tabelle) für gemappte Stile
+    const textInserts = stile
+      .filter(sid => stilMappingById[sid])
+      .map(sid => [mitglied_id, stilMappingById[sid]]);
+    if (textInserts.length > 0) {
+      await pool.query('INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?', [textInserts]);
     }
 
-    db.query(deleteMitgliedStilDataQuery, [mitglied_id], (deleteDataErr) => {
-      if (deleteDataErr) {
-        logger.error('Fehler beim Löschen von mitglied_stil_data:', deleteDataErr);
+    // Für nicht-gemappte Stile: Namen direkt aus stile-Tabelle holen
+    const unmappedIds = stile.filter(sid => !stilMappingById[sid]);
+    for (const sid of unmappedIds) {
+      const [rows] = await pool.query('SELECT name FROM stile WHERE stil_id = ?', [sid]);
+      if (rows.length > 0) {
+        await pool.query(
+          'INSERT IGNORE INTO mitglied_stile (mitglied_id, stil) VALUES (?, ?)',
+          [mitglied_id, rows[0].name]
+        );
       }
+    }
 
-      if (stile.length === 0) {
-        return res.json({ success: true, message: 'Stile erfolgreich aktualisiert', stile: [] });
-      }
+    // mitglied_stil_data für ALLE Stile (alt + neu)
+    for (const sid of stile) {
+      const [grads] = await pool.query(
+        'SELECT graduierung_id FROM graduierungen WHERE stil_id = ? AND aktiv = 1 ORDER BY reihenfolge ASC LIMIT 1',
+        [sid]
+      );
+      const firstGradId = grads.length > 0 ? grads[0].graduierung_id : null;
+      await pool.query(
+        'INSERT IGNORE INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, erstellt_am) VALUES (?, ?, ?, NOW())',
+        [mitglied_id, sid, firstGradId]
+      );
+    }
+  };
 
-      const validValues = stile
-        .filter(stil_id => stilMappingById[stil_id])
-        .map(stil_id => [mitglied_id, stilMappingById[stil_id]]);
-
-      if (validValues.length === 0) {
-        return res.json({ success: true, message: 'Keine gültigen Stile zum Hinzufügen', stile: [] });
-      }
-
-      const insertQuery = 'INSERT INTO mitglied_stile (mitglied_id, stil) VALUES ?';
-
-      db.query(insertQuery, [validValues], (insertErr) => {
-        if (insertErr) {
-          logger.error('Fehler beim Hinzufügen neuer Stile:', insertErr);
-          return res.status(500).json({ error: 'Fehler beim Hinzufügen neuer Stile' });
-        }
-
-        const stilDataPromises = stile.map(stil_id => {
-          return new Promise((resolve, reject) => {
-            const checkQuery = 'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?';
-            db.query(checkQuery, [mitglied_id, stil_id], (checkErr, checkResults) => {
-              if (checkErr) return reject(checkErr);
-              if (checkResults.length > 0) return resolve();
-
-              const getFirstGraduierungQuery = `
-                SELECT graduierung_id FROM graduierungen
-                WHERE stil_id = ? AND aktiv = 1
-                ORDER BY reihenfolge ASC LIMIT 1
-              `;
-              db.query(getFirstGraduierungQuery, [stil_id], (gradErr, gradResults) => {
-                if (gradErr) return reject(gradErr);
-                const firstGraduierungId = gradResults.length > 0 ? gradResults[0].graduierung_id : null;
-                const insertDataQuery = `
-                  INSERT INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, erstellt_am)
-                  VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-                `;
-                db.query(insertDataQuery, [mitglied_id, stil_id, firstGraduierungId], (insertDataErr) => {
-                  if (insertDataErr) return reject(insertDataErr);
-                  resolve();
-                });
-              });
-            });
-          });
-        });
-
-        Promise.all(stilDataPromises)
-          .then(() => {
-            res.json({ success: true, message: 'Stile erfolgreich aktualisiert', mitglied_id, stile });
-          })
-          .catch(err => {
-            logger.error('Fehler beim Aktualisieren mitglied_stil_data:', { error: err });
-            res.json({ success: true, message: 'Stile aktualisiert, aber Warnung bei Stil-Daten', mitglied_id, stile });
-          });
-      });
+  run()
+    .then(() => res.json({ success: true, message: 'Stile erfolgreich aktualisiert', mitglied_id, stile }))
+    .catch(err => {
+      logger.error('Fehler beim Aktualisieren der Mitglieds-Stile:', err);
+      res.status(500).json({ error: 'Fehler beim Speichern der Stile' });
     });
-  });
 });
 
 // Mitglied-Stile abrufen (GET)

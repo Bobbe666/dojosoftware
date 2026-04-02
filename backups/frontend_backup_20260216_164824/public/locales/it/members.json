@@ -1,0 +1,118 @@
+{
+  "list": {
+    "title": "Panoramica Membri",
+    "subtitle": "Gestisci tutti i membri attivi",
+    "searchPlaceholder": "Cerca...",
+    "noMembers": "Nessun membro trovato",
+    "addMember": "Aggiungi Nuovo Membro",
+    "printList": "Stampa Lista Membri",
+    "bulkArchive": "Archivia Multipli",
+    "endSelection": "Termina Selezione",
+    "selectAll": "Seleziona Tutti",
+    "deselectAll": "Deseleziona Tutti",
+    "selectedCount": "{{count}} selezionati",
+    "columns": {
+      "name": "Nome",
+      "email": "Email",
+      "phone": "Telefono",
+      "memberNumber": "N. Membro",
+      "status": "Stato",
+      "entryDate": "Data Iscrizione",
+      "course": "Corso",
+      "belt": "Cintura",
+      "actions": "Azioni"
+    },
+    "status": {
+      "active": "Attivo",
+      "inactive": "Inattivo",
+      "cancelled": "Cancellato",
+      "paused": "In pausa"
+    },
+    "filters": {
+      "all": "Tutti",
+      "active": "Attivi",
+      "inactive": "Inattivi",
+      "trial": "Prova",
+      "allStyles": "Tutti gli Stili",
+      "noStyle": "Senza Stile",
+      "age": "Età",
+      "allBelts": "Tutte le Cinture"
+    }
+  },
+  "detail": {
+    "title": "Modifica Membro",
+    "tabs": {
+      "personal": "Dati Personali",
+      "contact": "Contatto",
+      "contract": "Contratto",
+      "training": "Allenamento",
+      "payments": "Pagamenti",
+      "documents": "Documenti",
+      "notes": "Note"
+    },
+    "fields": {
+      "firstName": "Nome",
+      "lastName": "Cognome",
+      "email": "Email",
+      "phone": "Telefono",
+      "mobile": "Cellulare",
+      "birthDate": "Data di Nascita",
+      "gender": "Genere",
+      "street": "Via",
+      "houseNumber": "Numero Civico",
+      "zip": "CAP",
+      "city": "Città",
+      "country": "Paese",
+      "memberNumber": "Numero Membro",
+      "entryDate": "Data Iscrizione",
+      "exitDate": "Data Uscita"
+    },
+    "gender": {
+      "male": "Maschio",
+      "female": "Femmina",
+      "diverse": "Diverso"
+    }
+  },
+  "create": {
+    "title": "Crea Nuovo Membro",
+    "subtitle": "Inserisci i dati del nuovo membro",
+    "steps": {
+      "personal": "Dati Personali",
+      "contact": "Dettagli Contatto",
+      "contract": "Contratto",
+      "summary": "Riepilogo"
+    },
+    "success": "Membro creato con successo",
+    "error": "Errore nella creazione del membro"
+  },
+  "former": {
+    "title": "Ex Membri",
+    "subtitle": "Membri cancellati e usciti",
+    "reactivate": "Riattiva",
+    "delete": "Elimina definitivamente",
+    "confirmDelete": "Sei sicuro di voler eliminare definitivamente questo membro?",
+    "exitReason": "Motivo Uscita"
+  },
+  "prospects": {
+    "title": "Potenziali",
+    "subtitle": "Potenziali nuovi membri",
+    "convert": "Converti in Membro",
+    "source": "Fonte",
+    "notes": "Note",
+    "contacted": "Contattato",
+    "trialBooked": "Prova Prenotata"
+  },
+  "errors": {
+    "loadingError": "Errore nel caricamento dei membri",
+    "savingError": "Errore nel salvataggio",
+    "deletingError": "Errore nell'eliminazione",
+    "notFound": "Membro non trovato",
+    "emailExists": "Indirizzo email già esistente"
+  },
+  "messages": {
+    "saved": "Membro salvato",
+    "deleted": "Membro eliminato",
+    "reactivated": "Membro riattivato",
+    "confirmCancel": "Annullare le modifiche?"
+  }
+}

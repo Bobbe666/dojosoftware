@@ -1,0 +1,902 @@
+const express = require("express");
+const logger = require('../utils/logger');
+const db = require("../db");
+const { getSecureDojoId, isSuperAdmin } = require('../middleware/tenantSecurity');
+
+const router = express.Router();
+
+// Alle Anwesenheiten abrufen (unverändert)
+router.get("/", (req, res) => {
+    // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
+    const showAll = !dojoId || dojoId === 'all' || dojoId === 'null';
+
+    let query;
+    let params;
+
+    if (showAll) {
+        // Super-Admin: Alle Anwesenheiten
+        query = `
+            SELECT a.*, m.vorname, m.nachname, d.dojoname
+            FROM anwesenheit a
+            JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
+            LEFT JOIN dojo d ON m.dojo_id = d.id
+            ORDER BY a.datum DESC
+            LIMIT 1000
+        `;
+        params = [];
+    } else {
+        query = `
+            SELECT a.*
+            FROM anwesenheit a
+            JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
+            WHERE m.dojo_id = ?
+            ORDER BY a.datum DESC
+        `;
+        params = [dojoId];
+    }
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            logger.error('Fehler beim Abrufen der Anwesenheitsdaten:', { error: err });
+            return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheitsdaten", details: err.message });
+        }
+
+        if (!results || results.length === 0) {
+
+            return res.status(404).json({ message: "Keine Anwesenheitsdaten vorhanden" });
+        }
+
+        res.json(results);
+    });
+});
+
+// FIXED: UNION-basierte Query für Kurs-Mitglieder
+router.get("/kurs/:stundenplan_id/:datum", async (req, res) => {
+    // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
+
+    // Für Super-Admin ohne spezifisches Dojo: Hole dojo_id aus dem Kurs
+    const allowWithoutDojo = !dojoId || dojoId === 'all' || dojoId === 'null';
+
+    logger.debug('Anwesenheit Route aufgerufen:', {
+        stundenplan_id: req.params.stundenplan_id,
+        datum: req.params.datum,
+        show_all: req.query.show_all,
+        show_style_only: req.query.show_style_only,
+        dojo_id: dojoId,
+        allowWithoutDojo
+    });
+
+    try {
+        const stundenplan_id = parseInt(req.params.stundenplan_id, 10);
+        const datum = req.params.datum;
+        const show_all = req.query.show_all === 'true'; // Optional: alle Mitglieder anzeigen
+        const show_style_only = req.query.show_style_only === 'true'; // NEU: Nur Stil-Filter (ohne Gruppe)
+
+        if (isNaN(stundenplan_id)) {
+            return res.status(400).json({
+                success: false,
+                error: "Ungültige Stundenplan-ID"
+            });
+        }
+
+        if (!datum || !datum.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return res.status(400).json({
+                success: false,
+                error: "Ungültiges Datumsformat. Erwartet: YYYY-MM-DD"
+            });
+        }
+
+        // ── SONDERTRAINING: eigener Zweig ────────────────────────────────────────
+        const pool = db.promise();
+        const [[spInfo]] = await pool.query(
+            'SELECT typ, event_name, stil_id, sonder_dojo_id FROM stundenplan WHERE stundenplan_id = ?',
+            [stundenplan_id]
+        );
+
+        if (spInfo && spInfo.typ === 'sonder') {
+            const sonderDojoId = spInfo.sonder_dojo_id;
+            if (!sonderDojoId && !allowWithoutDojo) {
+                return res.status(400).json({ success: false, error: 'Sondertraining ohne Dojo-Zuordnung' });
+            }
+            let memberQuery = `
+                SELECT
+                    m.mitglied_id,
+                    m.vorname,
+                    m.nachname,
+                    CONCAT(m.vorname, ' ', m.nachname) as full_name,
+                    m.gurtfarbe,
+                    m.aktiv,
+                    'nicht_eingecheckt' as checkin_status,
+                    NULL as checkin_time,
+                    NULL as checkout_time,
+                    NULL as checkin_db_status,
+                    NULL as checkin_id,
+                    COALESCE(a.anwesend, 0) as anwesend,
+                    a.erstellt_am as anwesenheit_eingetragen,
+                    ? as kurs_name,
+                    '' as kurs_zeit
+                FROM mitglieder m
+                LEFT JOIN anwesenheit a ON (
+                    m.mitglied_id = a.mitglied_id
+                    AND a.stundenplan_id = ?
+                    AND DATE(a.datum) = DATE(?)
+                )
+                WHERE m.aktiv = 1
+            `;
+            const memberParams = [spInfo.event_name || 'Sondertraining', stundenplan_id, datum];
+            if (sonderDojoId) {
+                memberQuery += ' AND m.dojo_id = ?';
+                memberParams.push(sonderDojoId);
+            }
+            memberQuery += ' ORDER BY CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END, m.nachname, m.vorname';
+
+            const [members] = await pool.query(memberQuery, memberParams);
+            return res.json({
+                success: true,
+                stundenplan_id,
+                datum,
+                show_all: true,
+                show_style_only: false,
+                typ: 'sonder',
+                event_name: spInfo.event_name,
+                stil_id: spInfo.stil_id,
+                stats: {
+                    total_members: members.length,
+                    eingecheckt: 0,
+                    anwesend_markiert: members.filter(r => r.anwesend === 1).length,
+                    noch_aktiv: 0,
+                    trainer_hinzugefuegt: 0
+                },
+                members
+            });
+        }
+        // ── Ende Sondertraining-Zweig ─────────────────────────────────────────────
+
+        let query;
+        let params;
+
+    if (show_all) {
+        // ALLE aktiven Mitglieder anzeigen (für Suche)
+        query = `
+            SELECT DISTINCT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                CONCAT(m.vorname, ' ', m.nachname) as full_name,
+                m.gurtfarbe,
+                m.aktiv,
+                
+                -- Check-in Status für heute (nur neuester Check-in)
+                CASE 
+                    WHEN latest_c.checkin_id IS NOT NULL THEN 'eingecheckt'
+                    ELSE 'nicht_eingecheckt'
+                END as checkin_status,
+                
+                latest_c.checkin_time,
+                latest_c.checkout_time,
+                latest_c.status as checkin_db_status,
+                latest_c.checkin_id,
+                
+                -- Anwesenheitsstatus aus anwesenheit Tabelle
+                COALESCE(a.anwesend, 0) as anwesend,
+                a.erstellt_am as anwesenheit_eingetragen,
+                
+                -- Kurs-Info
+                k.gruppenname as kurs_name,
+                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit
+                
+            FROM mitglieder m
+            LEFT JOIN (
+                -- Subquery: Nur den neuesten Check-in pro Person/Kurs/Tag
+                SELECT 
+                    c1.mitglied_id,
+                    c1.stundenplan_id,
+                    c1.checkin_time,
+                    c1.checkout_time,
+                    c1.status,
+                    c1.checkin_id
+                FROM checkins c1
+                INNER JOIN (
+                    SELECT 
+                        mitglied_id,
+                        stundenplan_id,
+                        MAX(checkin_time) as max_checkin_time
+                    FROM checkins 
+                    WHERE stundenplan_id = ? 
+                        AND DATE(checkin_time) = DATE(?)
+                        AND status = 'active'
+                    GROUP BY mitglied_id, stundenplan_id
+                ) c2 ON c1.mitglied_id = c2.mitglied_id 
+                    AND c1.stundenplan_id = c2.stundenplan_id 
+                    AND c1.checkin_time = c2.max_checkin_time
+                    AND c1.status = 'active'
+            ) latest_c ON (
+                m.mitglied_id = latest_c.mitglied_id 
+                AND latest_c.stundenplan_id = ?
+            )
+            LEFT JOIN anwesenheit a ON (
+                m.mitglied_id = a.mitglied_id 
+                AND a.stundenplan_id = ? 
+                AND DATE(a.datum) = DATE(?)
+            )
+            LEFT JOIN stundenplan s ON s.stundenplan_id = ?
+            LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+
+            WHERE m.aktiv = 1 AND m.dojo_id = k.dojo_id
+            ORDER BY
+                CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
+                m.nachname, m.vorname
+        `;
+        params = [stundenplan_id, datum, stundenplan_id, stundenplan_id, datum, stundenplan_id];
+
+    } else if (show_style_only) {
+        // NEU: Alle Mitglieder des Stils anzeigen (vereinfacht ohne mitglied_stile)
+        // Zeigt ALLE aktiven Mitglieder, unabhängig von Stil und Altersgruppe
+        query = `
+            SELECT DISTINCT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                CONCAT(m.vorname, ' ', m.nachname) as full_name,
+                m.gurtfarbe,
+                m.aktiv,
+
+                -- Check-in Status für heute (nur neuester Check-in)
+                CASE
+                    WHEN latest_c.checkin_id IS NOT NULL THEN 'eingecheckt'
+                    ELSE 'nicht_eingecheckt'
+                END as checkin_status,
+
+                latest_c.checkin_time,
+                latest_c.checkout_time,
+                latest_c.status as checkin_db_status,
+                latest_c.checkin_id,
+
+                -- Anwesenheitsstatus aus anwesenheit Tabelle
+                COALESCE(a.anwesend, 0) as anwesend,
+                a.erstellt_am as anwesenheit_eingetragen,
+
+                -- Kurs-Info
+                k.gruppenname as kurs_name,
+                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
+                k.stil as kurs_stil
+
+            FROM mitglieder m
+
+            -- Join mit Kurs-Info um den Stil zu ermitteln
+            INNER JOIN stundenplan s ON s.stundenplan_id = ?
+            INNER JOIN kurse k ON s.kurs_id = k.kurs_id
+
+            -- Check-in Status für heute
+            LEFT JOIN (
+                SELECT
+                    c1.mitglied_id,
+                    c1.stundenplan_id,
+                    c1.checkin_time,
+                    c1.checkout_time,
+                    c1.status,
+                    c1.checkin_id
+                FROM checkins c1
+                INNER JOIN (
+                    SELECT
+                        mitglied_id,
+                        stundenplan_id,
+                        MAX(checkin_time) as max_checkin_time
+                    FROM checkins
+                    WHERE stundenplan_id = ?
+                        AND DATE(checkin_time) = DATE(?)
+                        AND status = 'active'
+                    GROUP BY mitglied_id, stundenplan_id
+                ) c2 ON c1.mitglied_id = c2.mitglied_id
+                    AND c1.stundenplan_id = c2.stundenplan_id
+                    AND c1.checkin_time = c2.max_checkin_time
+                    AND c1.status = 'active'
+            ) latest_c ON (
+                m.mitglied_id = latest_c.mitglied_id
+                AND latest_c.stundenplan_id = ?
+            )
+
+            -- Anwesenheit für diesen Kurs und Datum
+            LEFT JOIN anwesenheit a ON (
+                m.mitglied_id = a.mitglied_id
+                AND a.stundenplan_id = ?
+                AND a.datum = ?
+            )
+
+            -- Alle aktiven Mitglieder des Kurs-Dojos
+            WHERE m.aktiv = 1 AND m.dojo_id = k.dojo_id
+
+            ORDER BY
+                CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,  -- Eingecheckte zuerst
+                CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END,  -- Dann anwesend markierte
+                m.nachname, m.vorname
+        `;
+        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
+
+    } else {
+        // Standard: Kurs-Mitglieder (Stil + Altersgruppe)
+        // Zeigt alle Mitglieder die zum Stil UND zur Altersgruppe des Kurses passen
+        query = `
+            SELECT DISTINCT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                CONCAT(m.vorname, ' ', m.nachname) as full_name,
+                m.gurtfarbe,
+                m.geburtsdatum,
+                m.aktiv,
+
+                -- Check-in Status für heute
+                CASE
+                    WHEN latest_c.checkin_id IS NOT NULL THEN 'eingecheckt'
+                    ELSE 'nicht_eingecheckt'
+                END as checkin_status,
+
+                latest_c.checkin_time,
+                latest_c.checkout_time,
+                latest_c.status as checkin_db_status,
+                latest_c.checkin_id,
+
+                -- Anwesenheitsstatus
+                COALESCE(a.anwesend, 0) as anwesend,
+                a.erstellt_am as anwesenheit_eingetragen,
+
+                -- Kurs-Info
+                k.gruppenname as kurs_name,
+                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as kurs_zeit,
+                k.stil as kurs_stil,
+                TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) as mitglied_alter
+
+            FROM mitglieder m
+
+            -- Join mit Kurs-Info
+            INNER JOIN stundenplan s ON s.stundenplan_id = ?
+            INNER JOIN kurse k ON s.kurs_id = k.kurs_id
+
+            -- Check-in Status
+            LEFT JOIN (
+                SELECT
+                    c1.mitglied_id,
+                    c1.stundenplan_id,
+                    c1.checkin_time,
+                    c1.checkout_time,
+                    c1.status,
+                    c1.checkin_id
+                FROM checkins c1
+                INNER JOIN (
+                    SELECT
+                        mitglied_id,
+                        stundenplan_id,
+                        MAX(checkin_time) as max_checkin_time
+                    FROM checkins
+                    WHERE stundenplan_id = ?
+                        AND DATE(checkin_time) = DATE(?)
+                        AND status = 'active'
+                    GROUP BY mitglied_id, stundenplan_id
+                ) c2 ON c1.mitglied_id = c2.mitglied_id
+                    AND c1.stundenplan_id = c2.stundenplan_id
+                    AND c1.checkin_time = c2.max_checkin_time
+                    AND c1.status = 'active'
+            ) latest_c ON (
+                m.mitglied_id = latest_c.mitglied_id
+                AND latest_c.stundenplan_id = ?
+            )
+
+            -- Anwesenheit
+            LEFT JOIN anwesenheit a ON (
+                m.mitglied_id = a.mitglied_id
+                AND a.stundenplan_id = ?
+                AND a.datum = ?
+            )
+
+            WHERE m.aktiv = 1
+                AND m.dojo_id = k.dojo_id
+                -- Altersgruppen-Match (vereinfacht)
+                AND (
+                    -- Erwachsene: 16+
+                    (k.gruppenname LIKE '%Erwachsene%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) >= 16)
+                    -- Jugendliche: 13-17
+                    OR (k.gruppenname LIKE '%Jugendlich%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) BETWEEN 13 AND 25)
+                    -- Kinder 7-12
+                    OR (k.gruppenname LIKE '%7-12%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) BETWEEN 7 AND 12)
+                    -- Kinder 4-6
+                    OR (k.gruppenname LIKE '%4-6%' AND TIMESTAMPDIFF(YEAR, m.geburtsdatum, CURDATE()) BETWEEN 4 AND 6)
+                    -- Family Training: alle Altersgruppen
+                    OR (k.gruppenname LIKE '%Family%')
+                )
+
+            ORDER BY
+                CASE WHEN latest_c.checkin_id IS NOT NULL THEN 0 ELSE 1 END,
+                CASE WHEN a.anwesend = 1 THEN 0 ELSE 1 END,
+                m.nachname, m.vorname
+        `;
+        params = [stundenplan_id, stundenplan_id, datum, stundenplan_id, stundenplan_id, datum];
+        }
+
+        // Sicherstellen, dass query und params definiert sind
+        if (!query || !params) {
+            logger.error('Query oder Params nicht definiert für stundenplan_id:', { error: stundenplan_id });
+            return res.status(500).json({ 
+                success: false,
+                error: "Interner Fehler: Query konnte nicht erstellt werden" 
+            });
+        }
+
+        db.query(query, params, (err, results) => {
+            if (err) {
+                logger.error('Fehler beim Abrufen der Kursmitglieder', {
+                    error: err.message,
+                    sqlState: err.sqlState,
+                    sqlMessage: err.sqlMessage,
+                    code: err.code,
+                    query: query.substring(0, 200) + '...',
+                    params: params
+                });
+                return res.status(500).json({ 
+                    success: false,
+                    error: "Fehler beim Abrufen der Kursmitglieder", 
+                    details: err.message 
+                });
+            }
+
+            // FIXED: Statistiken aus den UNION-Ergebnissen berechnen
+            const stats = {
+                total_members: results ? results.length : 0,
+                eingecheckt: results ? results.filter(r => r.checkin_status === 'eingecheckt').length : 0,
+                anwesend_markiert: results ? results.filter(r => r.anwesend === 1).length : 0,
+                noch_aktiv: results ? results.filter(r => r.checkin_db_status === 'active').length : 0,
+                trainer_hinzugefuegt: results ? results.filter(r => r.checkin_status === 'nicht_eingecheckt' && r.anwesend === 1).length : 0
+            };
+
+            res.json({
+                success: true,
+                stundenplan_id: stundenplan_id,
+                datum: datum,
+                show_all: show_all,
+                show_style_only: show_style_only,
+                stats: stats,
+                members: results || []
+            });
+        });
+    } catch (error) {
+        logger.error('Unerwarteter Fehler in /kurs/:stundenplan_id/:datum:', { error: error });
+        return res.status(500).json({ 
+            success: false,
+            error: "Unerwarteter Fehler beim Abrufen der Kursmitglieder", 
+            details: error.message 
+        });
+    }
+});
+
+// 🆕 NEU: Kursliste für Datum abrufen (für Frontend Dropdown)
+router.get("/kurse/:datum", async (req, res) => {
+    const dojoId = getSecureDojoId(req);
+    const showAllDojos = !dojoId || dojoId === 'all' || dojoId === 'null';
+
+    // dojo_ids (plural, komma-separiert) kommt von getDojoFilterParam() wenn filter='all'
+    // z.B. ?dojo_ids=1,2,3 — diese Dojos anzeigen, Demo-Dojos ausschließen
+    const dojoIdsParam = req.query.dojo_ids;
+    const dojoIdsList = dojoIdsParam
+        ? dojoIdsParam.split(',').map(id => parseInt(id, 10)).filter(Boolean)
+        : null;
+
+    if (!showAllDojos && !dojoId) {
+        return res.status(403).json({ error: 'No tenant - dojo_id fehlt' });
+    }
+
+    const datum = req.params.datum;
+    const today = new Date(datum);
+    const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const todayName = dayNames[today.getDay()];
+
+    try {
+        const pool = db.promise();
+
+        // Query 1: Reguläre Wochenstunden
+        let regularQuery = `
+            SELECT
+                s.stundenplan_id,
+                'regulaer' as typ,
+                s.tag as wochentag,
+                s.uhrzeit_start,
+                s.uhrzeit_ende,
+                CONCAT(TIME_FORMAT(s.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(s.uhrzeit_ende, '%H:%i')) as zeit,
+                k.gruppenname as kurs_name,
+                k.stil,
+                k.dojo_id,
+                d.dojoname,
+                CONCAT(t.vorname, ' ', t.nachname) as trainer_name,
+                (SELECT COUNT(*) FROM checkins c WHERE c.stundenplan_id = s.stundenplan_id AND DATE(c.checkin_time) = ?) as checkins_heute,
+                (SELECT COUNT(*) FROM checkins c WHERE c.stundenplan_id = s.stundenplan_id AND DATE(c.checkin_time) = ? AND c.status = 'active') as aktive_checkins
+            FROM stundenplan s
+            LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+            LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
+            LEFT JOIN dojo d ON k.dojo_id = d.id
+            WHERE LOWER(s.tag) = LOWER(?) AND (s.typ IS NULL OR s.typ = 'regulaer')
+        `;
+        const regularParams = [datum, datum, todayName];
+        if (!showAllDojos) {
+            regularQuery += ' AND k.dojo_id = ?';
+            regularParams.push(dojoId);
+        } else if (dojoIdsList && dojoIdsList.length > 0) {
+            regularQuery += ` AND k.dojo_id IN (${dojoIdsList.map(() => '?').join(',')})`;
+            regularParams.push(...dojoIdsList);
+        }
+        regularQuery += ' ORDER BY d.dojoname, s.uhrzeit_start';
+
+        // Query 2: Sondertraining für dieses Datum
+        let sonderQuery = `
+            SELECT
+                s.stundenplan_id,
+                'sonder' as typ,
+                DATE_FORMAT(s.einmalig_datum, '%d.%m.%Y') as wochentag,
+                '00:00:00' as uhrzeit_start,
+                '00:00:00' as uhrzeit_ende,
+                '—' as zeit,
+                COALESCE(s.event_name, 'Sondertraining') as kurs_name,
+                st.name as stil,
+                s.sonder_dojo_id as dojo_id,
+                d.dojoname,
+                NULL as trainer_name,
+                0 as checkins_heute,
+                0 as aktive_checkins
+            FROM stundenplan s
+            LEFT JOIN stile st ON s.stil_id = st.stil_id
+            LEFT JOIN dojo d ON s.sonder_dojo_id = d.id
+            WHERE s.typ = 'sonder' AND s.einmalig_datum = ?
+        `;
+        const sonderParams = [datum];
+        if (!showAllDojos) {
+            sonderQuery += ' AND s.sonder_dojo_id = ?';
+            sonderParams.push(dojoId);
+        } else if (dojoIdsList && dojoIdsList.length > 0) {
+            sonderQuery += ` AND s.sonder_dojo_id IN (${dojoIdsList.map(() => '?').join(',')})`;
+            sonderParams.push(...dojoIdsList);
+        }
+
+        const [[regularResults], [sonderResults]] = await Promise.all([
+            pool.query(regularQuery, regularParams),
+            pool.query(sonderQuery, sonderParams)
+        ]);
+
+        res.json({
+            success: true,
+            datum,
+            wochentag: todayName,
+            kurse: [...regularResults, ...sonderResults]
+        });
+    } catch (err) {
+        logger.error('Fehler beim Abrufen der Kurse:', { error: err });
+        res.status(500).json({ error: 'Fehler beim Abrufen der Kurse', details: err.message });
+    }
+});
+
+// ── SONDERTRAINING ANLEGEN ────────────────────────────────────────────────────
+router.post('/sondertraining', async (req, res) => {
+    const { event_name, datum, stil_id } = req.body;
+    const secureDojoId = getSecureDojoId(req);
+
+    logger.info('POST /sondertraining:', { event_name, datum, stil_id, secureDojoId, query: req.query });
+
+    if (!event_name || !datum || !stil_id) {
+        return res.status(400).json({ error: 'event_name, datum und stil_id sind erforderlich' });
+    }
+    if (!secureDojoId) {
+        return res.status(400).json({ error: 'Bitte zuerst ein Dojo auswählen (Super-Admin: Dojo-ID fehlt)' });
+    }
+    if (!datum.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return res.status(400).json({ error: 'Ungültiges Datumsformat. Erwartet: YYYY-MM-DD' });
+    }
+
+    try {
+        const pool = db.promise();
+        const [result] = await pool.query(
+            `INSERT INTO stundenplan (typ, einmalig_datum, event_name, stil_id, sonder_dojo_id, tag, uhrzeit_start, uhrzeit_ende)
+             VALUES ('sonder', ?, ?, ?, ?, '-', '00:00:00', '00:00:00')`,
+            [datum, event_name.trim(), parseInt(stil_id, 10), secureDojoId]
+        );
+        res.json({
+            success: true,
+            stundenplan_id: result.insertId,
+            event_name: event_name.trim(),
+            datum,
+            stil_id: parseInt(stil_id, 10)
+        });
+    } catch (err) {
+        logger.error('Fehler beim Anlegen des Sondertrainings:', { error: err });
+        res.status(500).json({ error: 'Fehler beim Anlegen des Sondertrainings', details: err.message });
+    }
+});
+
+// Anwesenheit für ein bestimmtes Mitglied abrufen (STIL-SPEZIFISCH)
+router.get("/:mitglied_id", (req, res) => {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id;
+
+    // Super-Admin (dojo_id = null): Kann Anwesenheit aller zentral verwalteten Dojos sehen
+    // Normaler Admin: Muss dojo_id haben
+    if (dojoId === undefined && !req.user) {
+        return res.status(403).json({ error: 'No tenant' });
+    }
+
+    const mitglied_id = parseInt(req.params.mitglied_id, 10);
+    const { stil_id } = req.query; // Optional: Filter nach Stil
+
+    if (isNaN(mitglied_id)) {
+        return res.status(400).json({ error: "Ungültige Mitglieds-ID" });
+    }
+
+    // Erweiterte Query mit Stil-Informationen
+    let query = `
+        SELECT
+            a.*,
+            s.stundenplan_id,
+            s.tag,
+            s.uhrzeit_start,
+            s.uhrzeit_ende,
+            k.kurs_id,
+            k.gruppenname as kurs_name,
+            k.stil,
+            t.vorname as trainer_vorname,
+            t.nachname as trainer_nachname
+        FROM anwesenheit a
+        JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
+        LEFT JOIN stundenplan s ON a.stundenplan_id = s.stundenplan_id
+        LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+        LEFT JOIN trainer t ON s.trainer_id = t.trainer_id
+        WHERE a.mitglied_id = ?
+    `;
+
+    let params = [mitglied_id];
+
+    // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
+    if (dojoId === null || dojoId === undefined) {
+        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
+        query += ` AND m.dojo_id NOT IN (
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
+        )`;
+    } else {
+        // Normaler Admin: Nur eigenes Dojo
+        query += ' AND m.dojo_id = ?';
+        params.push(dojoId);
+    }
+
+    // Optional: Filter nach Stil
+    if (stil_id) {
+      query += " AND k.stil = ?";
+      params.push(stil_id);
+    }
+
+    query += " ORDER BY a.datum DESC";
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            logger.error('Fehler beim Abrufen der Anwesenheit für Mitglied:', { error: err });
+            return res.status(500).json({ error: "Fehler beim Abrufen der Anwesenheit", details: err.message });
+        }
+
+        if (!results || results.length === 0) {
+
+            return res.status(404).json({ message: `Keine Anwesenheitsdaten für Mitglied ${mitglied_id} vorhanden.` });
+        }
+
+        res.json(results);
+    });
+});
+
+// Anwesenheit eintragen (erweitert für stundenplan_id)
+router.post("/", (req, res) => {
+    // Tenant check - unterstütze sowohl Subdomain als auch Hauptdomain
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
+    // Für POST: dojo_id ist optional, da die Mitglied-ID die Zuordnung bestimmt
+
+    const { mitglied_id, stundenplan_id, datum, anwesend, bemerkung } = req.body;
+
+    if (!mitglied_id || !datum) {
+        return res.status(400).json({ error: "Mitglied-ID und Datum sind erforderlich." });
+    }
+
+    const mitglied_id_num = parseInt(mitglied_id, 10);
+    const stundenplan_id_num = stundenplan_id ? parseInt(stundenplan_id, 10) : null;
+    
+    if (isNaN(mitglied_id_num)) {
+        return res.status(400).json({ error: "Ungültige Mitglieds-ID." });
+    }
+
+    // Mit stundenplan_id für bessere Kurs-Zuordnung
+    const query = `
+        INSERT INTO anwesenheit (mitglied_id, stundenplan_id, datum, anwesend, erstellt_am)
+        VALUES (?, ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE
+            anwesend = VALUES(anwesend),
+            erstellt_am = NOW()
+    `;
+
+    const anwesend_value = anwesend === true || anwesend === 1 || anwesend === '1' ? 1 : 0;
+
+    db.query(query, [mitglied_id_num, stundenplan_id_num, datum, anwesend_value], (err, result) => {
+        if (err) {
+            logger.error('Fehler beim Eintragen der Anwesenheit:', { error: err });
+            return res.status(500).json({ error: "Fehler beim Eintragen der Anwesenheit", details: err.message });
+        }
+
+        // Auch in anwesenheit_protokoll eintragen falls vorhanden
+        if (stundenplan_id_num) {
+            const protokoll_query = `
+                INSERT INTO anwesenheit_protokoll (mitglied_id, stundenplan_id, datum, status, bemerkung, erstellt_am)
+                VALUES (?, ?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE
+                    status = VALUES(status),
+                    bemerkung = VALUES(bemerkung),
+                    erstellt_am = NOW()
+            `;
+            
+            const status = anwesend_value === 1 ? 'anwesend' : 'abwesend';
+            
+            db.query(protokoll_query, [mitglied_id_num, stundenplan_id_num, datum, status, bemerkung || null], (protokoll_err) => {
+                if (protokoll_err) {
+
+                } else {
+
+                }
+            });
+        }
+
+        res.status(201).json({ 
+            success: true, 
+            message: "Anwesenheit erfolgreich eingetragen", 
+            id: result.insertId,
+            anwesend: anwesend_value
+        });
+    });
+});
+
+// 🆕 NEU: Batch-Update für mehrere Anwesenheiten
+router.post("/batch", (req, res) => {
+    const { eintraege, stundenplan_id, datum } = req.body;
+
+    if (!Array.isArray(eintraege) || eintraege.length === 0) {
+        return res.status(400).json({ error: "Keine Einträge übermittelt." });
+    }
+
+    if (!stundenplan_id || !datum) {
+        return res.status(400).json({ error: "stundenplan_id und datum sind erforderlich." });
+    }
+
+    // Transaction starten
+    db.beginTransaction((err) => {
+        if (err) {
+            logger.error('Fehler beim Starten der Transaction:', { error: err });
+            return res.status(500).json({ error: "Transaction-Fehler" });
+        }
+
+        let completed = 0;
+        let errors = [];
+
+        eintraege.forEach((eintrag, index) => {
+            const { mitglied_id, anwesend, bemerkung } = eintrag;
+            const anwesend_value = anwesend === true || anwesend === 1 || anwesend === '1' ? 1 : 0;
+
+            const query = `
+                INSERT INTO anwesenheit (mitglied_id, stundenplan_id, datum, anwesend, erstellt_am)
+                VALUES (?, ?, ?, ?, NOW())
+                ON DUPLICATE KEY UPDATE
+                    anwesend = VALUES(anwesend),
+                    erstellt_am = NOW()
+            `;
+
+            db.query(query, [mitglied_id, stundenplan_id, datum, anwesend_value], (update_err) => {
+                completed++;
+
+                if (update_err) {
+                    errors.push({ mitglied_id, error: update_err.message });
+                }
+
+                // Wenn alle Einträge verarbeitet wurden
+                if (completed === eintraege.length) {
+                    if (errors.length > 0) {
+                        db.rollback(() => {
+                            logger.error('Batch-Update fehlgeschlagen, Rollback durchgeführt');
+                            res.status(500).json({ 
+                                error: "Batch-Update fehlgeschlagen", 
+                                errors: errors 
+                            });
+                        });
+                    } else {
+                        db.commit((commit_err) => {
+                            if (commit_err) {
+                                db.rollback(() => {
+                                    logger.error('Commit fehlgeschlagen, Rollback durchgeführt');
+                                    res.status(500).json({ error: "Commit fehlgeschlagen" });
+                                });
+                            } else {
+
+                                res.json({ 
+                                    success: true, 
+                                    message: `${eintraege.length} Anwesenheiten erfolgreich aktualisiert`,
+                                    processed: eintraege.length
+                                });
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
+});
+
+// Anwesenheit löschen (unverändert)
+router.delete("/:id", (req, res) => {
+    const id = parseInt(req.params.id, 10);
+
+    if (isNaN(id)) {
+
+        return res.status(400).json({ error: "Ungültige Anwesenheits-ID" });
+    }
+
+    const query = "DELETE FROM anwesenheit WHERE id = ?";
+
+    db.query(query, [id], (err, result) => {
+        if (err) {
+            logger.error('Fehler beim Löschen der Anwesenheit:', { error: err });
+            return res.status(500).json({ error: "Fehler beim Löschen der Anwesenheit", details: err.message });
+        }
+
+        if (result.affectedRows === 0) {
+
+            return res.status(404).json({ error: `Kein Anwesenheitsdatensatz mit ID ${id} gefunden.` });
+        }
+
+        res.json({ success: true, message: "Anwesenheitsdatensatz erfolgreich gelöscht" });
+    });
+});
+
+// GET /anwesenheit/:mitglied_id - Anwesenheitsdaten für ein bestimmtes Mitglied
+router.get("/:mitglied_id", (req, res) => {
+    const mitgliedId = parseInt(req.params.mitglied_id);
+
+    logger.debug('📊 Lade Anwesenheitsdaten für Mitglied ${mitgliedId}');
+
+    // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+    const dojoId = getSecureDojoId(req);
+
+    const query = `
+        SELECT
+            a.*,
+            s.tag as wochentag,
+            s.uhrzeit_start,
+            s.uhrzeit_ende,
+            k.gruppenname as kurs_name,
+            k.stil
+        FROM anwesenheit a
+        LEFT JOIN stundenplan s ON a.stundenplan_id = s.stundenplan_id
+        LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+        LEFT JOIN mitglieder m ON a.mitglied_id = m.mitglied_id
+        WHERE a.mitglied_id = ?
+        ${dojoId ? 'AND m.dojo_id = ?' : ''}
+        ORDER BY a.datum DESC, a.created_at DESC
+        LIMIT 100
+    `;
+
+    const queryParams = dojoId ? [mitgliedId, dojoId] : [mitgliedId];
+
+    db.query(query, queryParams, (err, results) => {
+        if (err) {
+            logger.error('Fehler beim Abrufen der Anwesenheitsdaten:', err);
+            return res.status(500).json({
+                error: "Fehler beim Abrufen der Anwesenheitsdaten",
+                details: err.message
+            });
+        }
+
+        logger.info('Anwesenheitseinträge gefunden', { count: results.length, mitglied_id: mitgliedId, dojo_id: dojoId });
+        res.json(results);
+    });
+});
+
+// Router exportieren
+module.exports = router;

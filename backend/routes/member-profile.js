@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../middleware/auth');
+const logger = require("../utils/logger");
 
 // Promise-wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -46,8 +47,8 @@ router.get('/profile', authenticateMember, async (req, res) => {
         u.email,
         u.role
       FROM mitglieder m
-      LEFT JOIN users u ON m.user_id = u.id
-      WHERE m.user_id = ?
+      LEFT JOIN users u ON u.mitglied_id = m.mitglied_id
+      WHERE u.id = ?
     `, [userId]);
 
     if (memberData.length === 0) {
@@ -118,7 +119,7 @@ router.put('/profile', authenticateMember, async (req, res) => {
     await queryAsync(`
       UPDATE mitglieder 
       SET ${setClause}, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
+      WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)
     `, values);
 
     // Aktualisiere auch User-Daten falls vorhanden
@@ -126,7 +127,7 @@ router.put('/profile', authenticateMember, async (req, res) => {
       await queryAsync(`
         UPDATE users 
         SET email = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
+        WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)
       `, [updateData.email, userId]);
     }
 
@@ -152,7 +153,7 @@ router.put('/password', authenticateMember, async (req, res) => {
     }
 
     // Hole aktuelles Passwort-Hash
-    const userData = await queryAsync('SELECT password FROM users WHERE id = ?', [userId]);
+    const userData = await queryAsync('SELECT password FROM users WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)', [userId]);
     
     if (userData.length === 0) {
       return res.status(404).json({ error: 'Benutzer nicht gefunden' });
@@ -174,7 +175,7 @@ router.put('/password', authenticateMember, async (req, res) => {
     await queryAsync(`
       UPDATE users 
       SET password = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
+      WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)
     `, [hashedPassword, userId]);
 
     res.json({ message: 'Passwort erfolgreich geändert' });
@@ -190,7 +191,7 @@ router.get('/schedule', authenticateMember, async (req, res) => {
     const userId = req.user.id;
     
     // Hole Mitglieder-ID
-    const memberData = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE user_id = ?', [userId]);
+    const memberData = await queryAsync('SELECT mitglied_id FROM users WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)', [userId]);
     
     if (memberData.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
@@ -251,7 +252,7 @@ router.get('/payments', authenticateMember, async (req, res) => {
     const userId = req.user.id;
     
     // Hole Mitglieder-ID
-    const memberData = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE user_id = ?', [userId]);
+    const memberData = await queryAsync('SELECT mitglied_id FROM users WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)', [userId]);
     
     if (memberData.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
@@ -292,7 +293,7 @@ router.get('/stats', authenticateMember, async (req, res) => {
     const userId = req.user.id;
     
     // Hole Mitglieder-ID
-    const memberData = await queryAsync('SELECT mitglied_id FROM mitglieder WHERE user_id = ?', [userId]);
+    const memberData = await queryAsync('SELECT mitglied_id FROM users WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)', [userId]);
     
     if (memberData.length === 0) {
       return res.status(404).json({ error: 'Mitglied nicht gefunden' });
@@ -306,7 +307,7 @@ router.get('/stats', authenticateMember, async (req, res) => {
         (SELECT COUNT(*) * 1.5 FROM anwesenheit WHERE mitglied_id = ?) as trainingsstunden,
         (SELECT ROUND((COUNT(*) * 100.0 / 30), 1) FROM anwesenheit WHERE mitglied_id = ? AND datum >= DATE_SUB(NOW(), INTERVAL 30 DAY)) as anwesenheit,
         (SELECT COUNT(*) FROM anwesenheit WHERE mitglied_id = ? AND datum >= DATE_SUB(NOW(), INTERVAL 7 DAY)) as aktuelle_woche,
-        (SELECT MAX(graduierung) FROM mitglieder WHERE id = ?) as aktueller_gürtel,
+        (SELECT MAX(graduierung) FROM mitglieder WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?)) as aktueller_gürtel,
         (SELECT COUNT(*) FROM pruefungen_mitglieder WHERE mitglied_id = ? AND status = 'bestanden') as bestandene_prüfungen
     `, [memberId, memberId, memberId, memberId, memberId]);
 
@@ -346,6 +347,69 @@ router.get('/stats', authenticateMember, async (req, res) => {
   } catch (error) {
     logger.error('Fehler beim Laden der Statistiken:', { error: error });
     res.status(500).json({ error: 'Fehler beim Laden der Statistiken' });
+  }
+});
+
+// GET /api/member/nachrichten - Ungelesene Zahlungshinweise & Mahnungen
+router.get('/nachrichten', authenticateMember, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // mitglied_id des eingeloggten Members holen
+    const memberData = await queryAsync(
+      'SELECT mitglied_id FROM users WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?) LIMIT 1',
+      [userId]
+    );
+
+    if (memberData.length === 0) {
+      return res.json({ nachrichten: [], anzahl: 0 });
+    }
+
+    const mitgliedId = memberData[0].mitglied_id;
+
+    const nachrichten = await queryAsync(
+      `SELECT id, typ, titel, nachricht, gelesen, referenz_id, erstellt_am
+       FROM mitglied_nachrichten
+       WHERE mitglied_id = ? AND gelesen = 0
+       ORDER BY erstellt_am DESC
+       LIMIT 20`,
+      [mitgliedId]
+    );
+
+    res.json({
+      nachrichten,
+      anzahl: nachrichten.length,
+      hatMahnung: nachrichten.some(n => n.typ === 'mahnung')
+    });
+  } catch (error) {
+    logger.error('Fehler beim Laden der Mitglied-Nachrichten:', { error: error });
+    res.status(500).json({ error: 'Fehler beim Laden der Nachrichten' });
+  }
+});
+
+// PUT /api/member/nachrichten/:id/gelesen - Nachricht als gelesen markieren
+router.put('/nachrichten/:id/gelesen', authenticateMember, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const nachrrichtId = parseInt(req.params.id);
+
+    const memberData = await queryAsync(
+      'SELECT mitglied_id FROM users WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?) LIMIT 1',
+      [userId]
+    );
+
+    if (memberData.length === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    }
+
+    await queryAsync(
+      'UPDATE mitglied_nachrichten SET gelesen = 1 WHERE mitglied_id = (SELECT mitglied_id FROM users WHERE id = ?) AND mitglied_id = ?',
+      [nachrrichtId, memberData[0].mitglied_id]
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
   }
 });
 

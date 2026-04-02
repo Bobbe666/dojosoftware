@@ -16,7 +16,7 @@
   padding: 1.2rem 3rem;
   background: var(--surface-3);
   backdrop-filter: blur(20px);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-30);
   gap: 2.5rem;
   position: relative;
   z-index: 10;
@@ -131,14 +131,14 @@
   background: rgba(255, 255, 255, 0.06);
   padding: 0.7rem 1rem;
   border-radius: var(--comp-radius-lg);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--primary-alpha-25);
   min-width: 130px;
   transition: all 0.2s ease;
 }
 
 .stat-item-compact:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-40);
   transform: translateY(-1px);
 }
 
@@ -246,7 +246,7 @@
 .stat-item:hover {
   transform: translateY(-5px);
   background: var(--surface-3);
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 }
 
@@ -283,17 +283,17 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  color: #FFD700;
+  color: var(--primary);
   font-weight: 600;
   z-index: 1000;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 215, 0, 0.3);
-  border-top: 2px solid #FFD700;
+  border: 2px solid var(--primary-alpha-30);
+  border-top: 2px solid var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -396,7 +396,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: white;
   font-size: 2rem;
   font-weight: bold;
@@ -428,13 +428,13 @@
 
 .checkin-time,
 .belt-info {
-  background: rgba(255, 215, 0, 0.2);
-  color: #FFD700;
+  background: var(--primary-alpha-20);
+  color: var(--primary);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   font-size: 0.85rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 .belt-info {
@@ -488,7 +488,7 @@
 .status-text {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #ffd700;
+  color: var(--primary);
   text-transform: uppercase;
   letter-spacing: 1px;
 }

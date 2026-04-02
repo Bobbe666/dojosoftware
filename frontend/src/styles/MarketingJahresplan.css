@@ -1,12 +1,647 @@
-/* MarketingJahresplan.css */
+/* =============================================================================
+   MARKETING-JAHRESPLAN — Scoped CSS (mj- prefix)
+   Alle Klassen sind mit mj- präfixiert → kein Konflikt mit globalen Styles
+   ============================================================================= */
+
+/* --------------------------------------------------------------------------
+   Root / Loading / Empty
+   -------------------------------------------------------------------------- */
+.mj-root {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.mj-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.mj-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: mj-spin 0.8s linear infinite;
+}
+
+@keyframes mj-spin {
+  to { transform: rotate(360deg); }
+}
 
 .mj-empty-state {
-  text-align: center;
-  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
   color: var(--text-muted);
+  text-align: center;
 }
 
 .mj-empty-icon {
-  font-size: 2rem;
-  margin-bottom: 0.75rem;
+  font-size: 2.5rem;
+}
+
+/* --------------------------------------------------------------------------
+   Message Banner
+   -------------------------------------------------------------------------- */
+.mj-message {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.mj-message--success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.mj-message--error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+/* --------------------------------------------------------------------------
+   Header (Jahresnavigation)
+   -------------------------------------------------------------------------- */
+.mj-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.mj-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.mj-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mj-nav-btn:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   Stats Bar
+   -------------------------------------------------------------------------- */
+.mj-stats {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+
+.mj-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.75rem 0.5rem;
+  border-right: 1px solid var(--border);
+}
+
+.mj-stat-item:last-child {
+  border-right: none;
+}
+
+.mj-stat-number {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.mj-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Month Grid
+   -------------------------------------------------------------------------- */
+.mj-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.875rem;
+}
+
+@media (max-width: 1100px) {
+  .mj-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  .mj-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .mj-grid { grid-template-columns: 1fr; }
+}
+
+/* --------------------------------------------------------------------------
+   Month Card
+   -------------------------------------------------------------------------- */
+.mj-month-card {
+  background: #141420;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+}
+
+.mj-month-card--current {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary), 0 4px 16px rgba(212,175,55, 0.12);
+}
+
+.mj-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+}
+
+.mj-month-header h3 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.mj-month-card--current .mj-month-header h3 {
+  color: var(--primary);
+}
+
+/* "+" Button im Monatskopf */
+.mj-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mj-add-btn:hover {
+  background: var(--primary);
+  color: #000;
+  border-color: var(--primary);
+}
+
+.mj-month-content {
+  padding: 0.5rem 0.6rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+/* --------------------------------------------------------------------------
+   Empty Month
+   -------------------------------------------------------------------------- */
+.mj-month-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.mj-month-empty p {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0;
+  opacity: 0.6;
+}
+
+.mj-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.mj-suggestions-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  width: 100%;
+  margin-bottom: 0.1rem;
+}
+
+.mj-suggestion-chip {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  border: 1px dashed rgba(255,255,255,0.2);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  text-align: left;
+}
+
+.mj-suggestion-chip:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   Action Item (inside a month card)
+   -------------------------------------------------------------------------- */
+.mj-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.mj-action-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.04);
+  border-left: 3px solid var(--typ-color, var(--primary));
+  position: relative;
+}
+
+.mj-action-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: rgba(255,255,255,0.06);
+  color: var(--typ-color, var(--primary));
+  flex-shrink: 0;
+}
+
+.mj-action-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  /* Platz für die zwei Icon-Buttons rechts */
+  padding-right: 4.5rem;
+}
+
+.mj-action-info strong {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mj-action-date {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   Action Buttons (edit + delete) — absolut rechts in der Zeile
+   -------------------------------------------------------------------------- */
+.mj-action-btns {
+  position: absolute;
+  right: 0.4rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: row;
+  gap: 0.2rem;
+  align-items: center;
+}
+
+.mj-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.mj-icon-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.3);
+}
+
+.mj-icon-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* --------------------------------------------------------------------------
+   Status Badge
+   -------------------------------------------------------------------------- */
+.mj-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+.mj-status-badge--planned    { background: rgba(100,116,139,0.2); color: #94a3b8; }
+.mj-status-badge--preparing  { background: rgba(139,92,246,0.2);  color: #a78bfa; }
+.mj-status-badge--active     { background: rgba(16,185,129,0.2);  color: #34d399; }
+.mj-status-badge--completed  { background: rgba(34,197,94,0.2);   color: #4ade80; }
+.mj-status-badge--cancelled  { background: rgba(239,68,68,0.2);   color: #f87171; }
+
+/* --------------------------------------------------------------------------
+   Legend
+   -------------------------------------------------------------------------- */
+.mj-legend {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+  background: var(--card-bg);
+}
+
+.mj-legend h4 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.6rem;
+}
+
+.mj-legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.mj-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.73rem;
+  color: var(--legende-color, var(--text-muted));
+  padding: 0.2rem 0.5rem;
+  border-radius: 5px;
+}
+
+/* --------------------------------------------------------------------------
+   Modal Overlay + Dialog
+   -------------------------------------------------------------------------- */
+.mj-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  padding: 1rem;
+}
+
+.mj-modal {
+  background: #1a1a2e !important;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.mj-modal-body {
+  background: #1a1a2e;
+}
+
+.mj-modal-header {
+  background: #1a1a2e;
+}
+
+.mj-modal-footer {
+  background: #1a1a2e;
+}
+
+.mj-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.mj-modal-header h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.mj-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mj-close-btn:hover {
+  background: rgba(239,68,68,0.15);
+  color: #ef4444;
+  border-color: rgba(239,68,68,0.4);
+}
+
+.mj-modal-body {
+  background: #1a1a2e;
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  flex: 1;
+}
+
+.mj-modal-footer {
+  background: #1a1a2e;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  border-top: 1px solid #2a2a3a;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Form Elements
+   -------------------------------------------------------------------------- */
+.mj-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.875rem;
+}
+
+@media (max-width: 480px) {
+  .mj-form-row { grid-template-columns: 1fr; }
+}
+
+.mj-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mj-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mj-input,
+.mj-select,
+.mj-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.mj-input:focus,
+.mj-select:focus,
+.mj-textarea:focus {
+  border-color: var(--primary);
+  background: rgba(255,255,255,0.06);
+}
+
+.mj-select {
+  cursor: pointer;
+}
+
+.mj-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.mj-input[type="date"] {
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   Footer Buttons
+   -------------------------------------------------------------------------- */
+.mj-btn-cancel {
+  padding: 0.5rem 1rem;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mj-btn-cancel:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary);
+}
+
+.mj-btn-save {
+  padding: 0.5rem 1.25rem;
+  border-radius: 7px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #000;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.mj-btn-save:hover {
+  opacity: 0.85;
 }

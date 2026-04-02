@@ -1,3 +1,4 @@
+const { authenticateToken } = require("../middleware/auth");
 const express = require("express");
 const logger = require('../utils/logger');
 const db = require("../db"); // Verbindung zur DB importieren
@@ -6,7 +7,26 @@ const MitgliedsausweisGenerator = require("../utils/mitgliedsausweisGenerator");
 const bcrypt = require("bcryptjs"); // Für Passwort-Hashing
 const auditLog = require("../services/auditLogService");
 const { requireFields, validateEmail, validateDate, validateId, sanitizeStrings } = require('../middleware/validation');
+const { sendEmail, sendEmailForDojo } = require('../services/emailService');
+const webpush = require('web-push');
 const router = express.Router();
+
+// IBAN maskieren: erste 4 + letzte 4 Zeichen sichtbar, Rest mit *
+const maskIBAN = (iban) => {
+  if (!iban) return iban;
+  const clean = iban.replace(/\s/g, "");
+  if (clean.length <= 8) return iban;
+  return clean.slice(0, 4) + "*".repeat(clean.length - 8) + clean.slice(-4);
+};
+
+// VAPID für Push-Benachrichtigungen konfigurieren
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL || 'mailto:admin@dojo.tda-intl.org',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 /**
  * 🔒 SICHERHEIT: Extrahiert die gültige dojo_id aus dem Request
@@ -49,7 +69,7 @@ function canAccessDojo(req, targetDojoId) {
 
 // ✅ NEU: API für Anwesenheit – aktive Mitglieder nach Stil filtern + DOJO-FILTER
 router.get("/", (req, res) => {
-    const { stil } = req.query;
+    const { stil, search, limit } = req.query;
 
     // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token (nicht aus Query!)
     const secureDojoId = getSecureDojoId(req);
@@ -68,8 +88,21 @@ router.get("/", (req, res) => {
     if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
         queryParams.push(secureDojoId);
+    } else if (req.query.dojo_ids) {
+        const dojoIds = req.query.dojo_ids.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (dojoIds.length > 0) {
+            whereConditions.push(`m.dojo_id IN (${dojoIds.map(() => '?').join(',')})`);
+            queryParams.push(...dojoIds);
+        }
     }
 
+    // Suchfilter (Name, Mitgliedsnummer)
+    if (search) {
+        const s = '%' + search + '%';
+        whereConditions.push('(m.vorname LIKE ? OR m.nachname LIKE ? OR m.magicline_customer_number LIKE ? OR CONCAT(m.vorname, \' \', m.nachname) LIKE ?)');
+        queryParams.push(s, s, s, s);
+    }
+    const limitClause = limit ? `LIMIT ${parseInt(limit, 10) || 20}` : '';
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     if (stil) {
@@ -92,10 +125,11 @@ router.get("/", (req, res) => {
     } else {
         // Standard: Alle aktiven Mitglieder
         const query = `
-            SELECT mitglied_id, vorname, nachname, strasse as adresse, hausnummer, plz, ort, email, telefon_mobil, foto_pfad
+            SELECT mitglied_id, vorname, nachname, magicline_customer_number AS mitgliedsnummer, strasse as adresse, hausnummer, plz, ort, email, telefon_mobil, foto_pfad
             FROM mitglieder m
             ${whereClause}
             ORDER BY nachname, vorname
+            ${limitClause}
         `;
 
         db.query(query, queryParams, (err, results) => {
@@ -121,6 +155,13 @@ router.get("/all", (req, res) => {
     if (secureDojoId) {
         whereClause = 'WHERE m.dojo_id = ?';
         queryParams.push(secureDojoId);
+    } else if (req.query.dojo_ids) {
+        // Super-Admin mit mehreren Dojos (z.B. "2,3")
+        const dojoIds = req.query.dojo_ids.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+        if (dojoIds.length > 0) {
+            whereClause = `WHERE m.dojo_id IN (${dojoIds.map(() => '?').join(',')})`;
+            queryParams.push(...dojoIds);
+        }
     }
 
     const query = `
@@ -403,30 +444,25 @@ router.get("/filter/ohne-vertrag", (req, res) => {
 
 // ✅ API: Mitglieder mit Tarif-Abweichungen (MUSS VOR /:id Route stehen!)
 router.get("/filter/tarif-abweichung", (req, res) => {
-  // 🔒 SICHERHEIT: Hole sichere dojo_id aus Token
   const secureDojoId = getSecureDojoId(req);
 
-  // 🔒 DOJO-FILTER: Baue WHERE-Clause
   let whereConditions = [
     "v.status = 'aktiv'",
-    // Zeige Verträge die:
-    // 1. Keinen Tarif haben (tarif_id IS NULL) ODER
-    // 2. Einen Tarif ohne Altersgruppe haben (alte Tarife, nicht kategorisiert) ODER
-    // 3. Vom erwarteten Monatspreis abweichen
+    "m.aktiv = 1",
+    "d.ist_aktiv = 1",
+    "d.dojoname NOT LIKE '%demo%'",
     `(
       v.tarif_id IS NULL
-      OR t.altersgruppe IS NULL
+      OR t.ist_archiviert = 1
       OR (
-        t.id IS NOT NULL
+        t.id IS NOT NULL AND t.ist_archiviert = 0
         AND v.monatsbeitrag != ROUND(
           CASE
-            WHEN t.billing_cycle = 'MONTHLY' THEN t.price_cents / 100
+            WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
             WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
-            WHEN t.billing_cycle = 'YEARLY' THEN (t.price_cents / 100) / 12
+            WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
             ELSE t.price_cents / 100
-          END,
-          2
-        )
+          END, 2)
       )
     )`
   ];
@@ -439,65 +475,99 @@ router.get("/filter/tarif-abweichung", (req, res) => {
 
   const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
 
+  // nt = Nachfolger-Tarif (falls archivierter Tarif einen Nachfolger hat)
   const query = `
-    SELECT DISTINCT
+    SELECT
       m.mitglied_id,
       m.vorname,
       m.nachname,
       m.email,
       m.zahlungsmethode,
-      m.aktiv,
       m.geburtsdatum,
+      m.aktiv,
+      v.id            AS vertrag_id,
       v.monatsbeitrag,
       v.tarif_id,
-      v.billing_cycle as vertrag_billing_cycle,
-      t.name as tarif_name,
+      v.billing_cycle AS vertrag_billing_cycle,
+      t.name          AS tarif_name,
       t.price_cents,
-      t.billing_cycle as tarif_billing_cycle,
+      t.billing_cycle AS tarif_billing_cycle,
       t.altersgruppe,
-      ROUND(
-        CASE
-          WHEN t.billing_cycle = 'MONTHLY' THEN t.price_cents / 100
-          WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
-          WHEN t.billing_cycle = 'YEARLY' THEN (t.price_cents / 100) / 12
-          ELSE t.price_cents / 100
-        END,
-        2
-      ) as erwarteter_monatsbeitrag,
+      t.ist_archiviert,
+      t.nachfolger_tarif_id,
+      nt.name         AS nachfolger_tarif_name,
+      nt.price_cents  AS nachfolger_price_cents,
+
+      -- Erwarteter Monatsbeitrag:
+      --   kein Tarif         → NULL
+      --   archiviert + Nachfolger → Nachfolger-Preis
+      --   archiviert ohne Nachfolger → Archiv-Preis (Hinweis ohne echte Vergleichsbasis)
+      --   aktiv              → Tarif-Preis
+      CASE
+        WHEN v.tarif_id IS NULL THEN NULL
+        WHEN t.ist_archiviert = 1 AND nt.id IS NOT NULL
+          THEN ROUND(nt.price_cents / 100, 2)
+        ELSE ROUND(
+          CASE
+            WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+            WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+            WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+            ELSE t.price_cents / 100
+          END, 2)
+      END AS erwarteter_monatsbeitrag,
+
+      -- Differenz: Ist − Soll. NULL wenn kein Soll-Vergleich möglich.
+      CASE
+        WHEN v.tarif_id IS NULL THEN NULL
+        WHEN t.ist_archiviert = 1 AND nt.id IS NULL THEN NULL
+        WHEN t.ist_archiviert = 1 AND nt.id IS NOT NULL
+          THEN ROUND(v.monatsbeitrag - (nt.price_cents / 100), 2)
+        ELSE ROUND(
+          v.monatsbeitrag -
+          CASE
+            WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+            WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+            WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+            ELSE t.price_cents / 100
+          END, 2)
+      END AS differenz,
+
+      -- Lesbarer Abweichungsgrund
       CASE
         WHEN v.tarif_id IS NULL THEN
-          CONCAT('Alter Vertrag ohne Tarif-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat)')
-        WHEN t.altersgruppe IS NULL THEN
-          CONCAT('Tarif ohne Altersgruppen-Zuordnung (€', COALESCE(v.monatsbeitrag, 0), '/Monat - ', t.name, ')')
+          CONCAT('Alter Vertrag ohne Tarif-Zuordnung (zahlt ', FORMAT(v.monatsbeitrag, 2), ' €/Monat)')
+        WHEN t.ist_archiviert = 1 AND nt.id IS NOT NULL THEN
+          CONCAT('Archivierter Tarif "', t.name, '" → Nachfolger: "', nt.name,
+                 '" (Soll: ', FORMAT(nt.price_cents / 100, 2),
+                 ' €/Monat | Zahlt: ', FORMAT(v.monatsbeitrag, 2), ' €)')
+        WHEN t.ist_archiviert = 1 AND nt.id IS NULL THEN
+          CONCAT('Archivierter Tarif "', t.name, '" (zahlt ', FORMAT(v.monatsbeitrag, 2),
+                 ' €/Monat, kein Nachfolger definiert)')
         ELSE
           CONCAT(
-            'Zahlt €', COALESCE(v.monatsbeitrag, 0),
-            ' statt €',
-            ROUND(
-              CASE
-                WHEN t.billing_cycle = 'MONTHLY' THEN t.price_cents / 100
-                WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
-                WHEN t.billing_cycle = 'YEARLY' THEN (t.price_cents / 100) / 12
-                ELSE t.price_cents / 100
-              END,
-              2
-            ),
-            '/Monat (',
-            t.name,
-            CASE WHEN t.billing_cycle = 'MONTHLY' THEN ' - Monatlich'
-                 WHEN t.billing_cycle = 'QUARTERLY' THEN ' - Vierteljährlich'
-                 WHEN t.billing_cycle = 'YEARLY' THEN ' - Jährlich'
-                 ELSE ''
-            END,
-            ', ', t.altersgruppe,
-            ')'
+            'Zahlt ', FORMAT(v.monatsbeitrag, 2),
+            ' € statt ',
+            FORMAT(ROUND(CASE
+              WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+              WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+              WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+              ELSE t.price_cents / 100
+            END, 2), 2),
+            ' €/Monat (', t.name, ')'
           )
-      END as abweichung_grund
+      END AS abweichung_grund
+
     FROM mitglieder m
-    JOIN vertraege v ON m.mitglied_id = v.mitglied_id
-    LEFT JOIN tarife t ON v.tarif_id = t.id
+    JOIN vertraege v  ON m.mitglied_id = v.mitglied_id
+    JOIN dojo d       ON m.dojo_id = d.id
+    LEFT JOIN tarife t  ON v.tarif_id = t.id
+    LEFT JOIN tarife nt ON t.nachfolger_tarif_id = nt.id
     ${whereClause}
-    ORDER BY m.nachname, m.vorname
+    ORDER BY
+      CASE WHEN t.ist_archiviert = 1 THEN 0
+           WHEN v.tarif_id IS NULL THEN 1
+           ELSE 2 END,
+      m.nachname, m.vorname
   `;
 
   db.query(query, queryParams, (err, results) => {
@@ -506,7 +576,814 @@ router.get("/filter/tarif-abweichung", (req, res) => {
       return res.status(500).json({ error: "Fehler beim Laden der Mitglieder" });
     }
 
-    res.json({ success: true, data: results });
+    const statistik = {
+      gesamt: results.length,
+      archivierterTarif: 0,
+      archivierterTarifMitNachfolger: 0,
+      zuViel: 0,
+      zuWenig: 0,
+      keinTarif: 0,
+      summeArchiviert: 0,
+      summeZuViel: 0,
+      summeZuWenig: 0,
+      potenzialBeiMigration: 0  // möglicher Mehrumsatz wenn alle auf Nachfolger-Tarif
+    };
+
+    results.forEach(m => {
+      const diff = m.differenz !== null ? parseFloat(m.differenz) : null;
+      if (!m.tarif_id) {
+        statistik.keinTarif++;
+      } else if (m.ist_archiviert === 1) {
+        statistik.archivierterTarif++;
+        statistik.summeArchiviert += parseFloat(m.monatsbeitrag || 0);
+        if (m.nachfolger_tarif_id) {
+          statistik.archivierterTarifMitNachfolger++;
+          // Potenzial = was Nachfolger kosten würde minus was der Mitglieder zahlt
+          if (diff !== null && diff < 0) {
+            statistik.potenzialBeiMigration += Math.abs(diff);
+          }
+        }
+      } else if (diff !== null && diff > 0) {
+        statistik.zuViel++;
+        statistik.summeZuViel += diff;
+      } else if (diff !== null && diff < 0) {
+        statistik.zuWenig++;
+        statistik.summeZuWenig += Math.abs(diff);
+      }
+    });
+
+    res.json({ success: true, data: results, statistik });
+  });
+});
+
+// ✅ API: Vorschau der Beitragserhöhung (welche Mitglieder, alte/neue Beträge)
+router.get("/filter/tarif-abweichung/vorschau", (req, res) => {
+  const role = req.user?.rolle;
+  if (role !== 'admin' && role !== 'super_admin') return res.status(403).json({ error: 'Nur für Admins' });
+
+  const { typ, erhoehung, erhoehungProzent } = req.query;
+  const betrag  = parseFloat(erhoehung) || 0;
+  const prozent = parseFloat(erhoehungProzent) || 0;
+
+  const secureDojoId = getSecureDojoId(req);
+
+  const tarifPreisExpr = `ROUND(CASE
+    WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+    WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+    WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+    ELSE t.price_cents / 100
+  END, 2)`;
+  // Aktiver Tarif → Cap am Tarif-Preis. Archivierter Tarif → kein Cap (999999), kann immer erhöht werden.
+  const tarifCapExpr = `CASE WHEN t.id IS NOT NULL AND t.ist_archiviert = 0 THEN ${tarifPreisExpr} ELSE 999999 END`;
+
+  let neuerBetragExpr, params;
+  if (typ === 'prozent') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag * (1 + ? / 100), 2), ${tarifCapExpr})`;
+    params = [prozent];
+  } else if (typ === 'kombination') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + LEAST(?, ROUND(v.monatsbeitrag * ? / 100, 2)), 2), ${tarifCapExpr})`;
+    params = [betrag, prozent];
+  } else {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + ?, 2), ${tarifCapExpr})`;
+    params = [betrag];
+  }
+
+  if (secureDojoId) params.push(secureDojoId);
+
+  const query = `
+    SELECT
+      m.mitglied_id, m.vorname, m.nachname, m.email, m.dojo_id,
+      ROUND(v.monatsbeitrag, 2) AS alter_betrag,
+      ${neuerBetragExpr} AS neuer_betrag,
+      d.dojoname,
+      t.name AS tarif_name,
+      t.ist_archiviert AS tarif_archiviert,
+      v.mindestlaufzeit_monate,
+      v.vertragsbeginn,
+      v.vertragsende,
+      v.billing_cycle AS vertrag_billing_cycle
+    FROM mitglieder m
+    JOIN vertraege v ON v.mitglied_id = m.mitglied_id AND v.status = 'aktiv'
+    JOIN dojo d ON m.dojo_id = d.id AND d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%'
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    WHERE m.aktiv = 1
+    AND v.tarif_id IS NOT NULL
+    AND (
+      t.ist_archiviert = 1
+      OR ROUND(v.monatsbeitrag, 2) < ${tarifPreisExpr}
+    )
+    AND NOT (
+      t.ist_archiviert = 1
+      AND EXISTS (
+        SELECT 1 FROM tarife t2
+        WHERE t2.ist_archiviert = 0 AND t2.active = 1
+        AND t2.dojo_id = m.dojo_id
+        AND ROUND(CASE
+          WHEN t2.billing_cycle = 'MONTHLY'   THEN t2.price_cents / 100
+          WHEN t2.billing_cycle = 'QUARTERLY' THEN (t2.price_cents / 100) / 3
+          WHEN t2.billing_cycle = 'YEARLY'    THEN (t2.price_cents / 100) / 12
+          ELSE t2.price_cents / 100
+        END, 2) = ROUND(v.monatsbeitrag, 2)
+      )
+    )
+    ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
+    HAVING neuer_betrag > alter_betrag
+    ORDER BY m.nachname, m.vorname
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      logger.error('Fehler bei Vorschau-Abfrage:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    res.json(results.map(m => ({
+      ...m,
+      differenz: Math.round((m.neuer_betrag - m.alter_betrag) * 100) / 100
+    })));
+  });
+});
+
+// ✅ API: Beiträge massenweise erhöhen (absolut, prozentual oder kombiniert, gedeckelt am Tarif-Preis)
+router.put("/filter/tarif-abweichung/massenerhohung", (req, res) => {
+  const role = req.user?.rolle;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Nur für Admins' });
+  }
+
+  const { erhoehung, erhoehungProzent, typ, ausschluss } = req.body;
+  const betrag  = parseFloat(erhoehung) || 0;
+  const prozent = parseFloat(erhoehungProzent) || 0;
+  const ausschlussIds = Array.isArray(ausschluss) ? ausschluss.map(Number).filter(n => n > 0) : [];
+
+  if (typ === 'prozent') {
+    if (!prozent || prozent <= 0 || prozent > 100) return res.status(400).json({ error: 'Ungültiger Prozentwert' });
+  } else if (typ === 'kombination') {
+    if (!betrag || betrag <= 0 || !prozent || prozent <= 0) return res.status(400).json({ error: 'Ungültige Kombinations-Parameter' });
+  } else {
+    if (!betrag || betrag <= 0 || betrag > 500) return res.status(400).json({ error: 'Ungültiger Erhöhungsbetrag (max. 500 €)' });
+  }
+
+  const secureDojoId = getSecureDojoId(req);
+
+  const tarifPreisExpr = `ROUND(CASE
+    WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+    WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+    WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+    ELSE t.price_cents / 100
+  END, 2)`;
+  const tarifCapExpr = `CASE WHEN t.id IS NOT NULL AND t.ist_archiviert = 0 THEN ${tarifPreisExpr} ELSE 999999 END`;
+
+  let neuerBetragExpr, params;
+  if (typ === 'prozent') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag * (1 + ? / 100), 2), ${tarifCapExpr})`;
+    params = [prozent];
+  } else if (typ === 'kombination') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + LEAST(?, ROUND(v.monatsbeitrag * ? / 100, 2)), 2), ${tarifCapExpr})`;
+    params = [betrag, prozent];
+  } else {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + ?, 2), ${tarifCapExpr})`;
+    params = [betrag];
+  }
+
+  let dojoFilter = '';
+  if (secureDojoId) { dojoFilter = 'AND m.dojo_id = ?'; params.push(secureDojoId); }
+
+  let ausschlussFilter = '';
+  if (ausschlussIds.length > 0) {
+    ausschlussFilter = `AND m.mitglied_id NOT IN (${ausschlussIds.map(() => '?').join(',')})`;
+    params.push(...ausschlussIds);
+  }
+
+  const query = `
+    UPDATE vertraege v
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    JOIN mitglieder m ON v.mitglied_id = m.mitglied_id AND m.aktiv = 1
+    JOIN dojo d ON m.dojo_id = d.id AND d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%'
+    SET v.monatsbeitrag = ${neuerBetragExpr}
+    WHERE v.status = 'aktiv'
+    AND v.tarif_id IS NOT NULL
+    AND (
+      t.ist_archiviert = 1
+      OR ROUND(v.monatsbeitrag, 2) < ${tarifPreisExpr}
+    )
+    AND NOT (
+      t.ist_archiviert = 1
+      AND EXISTS (
+        SELECT 1 FROM tarife t2
+        WHERE t2.ist_archiviert = 0 AND t2.active = 1
+        AND t2.dojo_id = m.dojo_id
+        AND ROUND(CASE
+          WHEN t2.billing_cycle = 'MONTHLY'   THEN t2.price_cents / 100
+          WHEN t2.billing_cycle = 'QUARTERLY' THEN (t2.price_cents / 100) / 3
+          WHEN t2.billing_cycle = 'YEARLY'    THEN (t2.price_cents / 100) / 12
+          ELSE t2.price_cents / 100
+        END, 2) = ROUND(v.monatsbeitrag, 2)
+      )
+    )
+    AND ${neuerBetragExpr} > v.monatsbeitrag
+    ${dojoFilter}
+    ${ausschlussFilter}
+  `;
+
+  db.query(query, params, (err, result) => {
+    if (err) {
+      logger.error('Fehler bei Massenerhöhung:', { error: err });
+      return res.status(500).json({ error: 'Fehler bei der Massenerhöhung' });
+    }
+    logger.info(`Massenerhöhung (${typ||'absolut'}): ${result.affectedRows} Verträge erhöht`, {
+      user: req.user?.id, dojo_id: secureDojoId
+    });
+    res.json({ success: true, aktualisiert: result.affectedRows });
+  });
+});
+
+// ✅ API: Beitragserhöhung terminieren + Mitglieder per E-Mail & Push informieren
+router.post("/filter/tarif-abweichung/terminierung", async (req, res) => {
+  const role = req.user?.rolle;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Nur für Admins' });
+  }
+
+  const { erhoehung, erhoehungProzent, typ, vorlage, gueltigAb, grund, ausschluss, schritte: schritteRaw } = req.body;
+  const betrag  = parseFloat(erhoehung) || 0;
+  const prozent = parseFloat(erhoehungProzent) || 0;
+  const grundText = typeof grund === 'string' ? grund.trim().slice(0, 800) : '';
+  const ausschlussIds = Array.isArray(ausschluss) ? ausschluss.map(Number).filter(n => n > 0) : [];
+  const validSchritte = Array.isArray(schritteRaw)
+    ? schritteRaw.filter(s => s && s.datum && s.betrag && parseFloat(s.betrag) > 0)
+    : [];
+
+  if (!['formell', 'freundlich', 'kurz'].includes(vorlage)) return res.status(400).json({ error: 'Ungültige Vorlage' });
+  if (!gueltigAb) return res.status(400).json({ error: 'Gültigkeitsdatum fehlt' });
+
+  const secureDojoId = getSecureDojoId(req);
+
+  const tarifPreisExpr = `ROUND(CASE
+    WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+    WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+    WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+    ELSE t.price_cents / 100
+  END, 2)`;
+  const tarifCapExpr = `CASE WHEN t.id IS NOT NULL AND t.ist_archiviert = 0 THEN ${tarifPreisExpr} ELSE 999999 END`;
+
+  let neuerBetragExpr, params;
+  if (typ === 'prozent') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag * (1 + ? / 100), 2), ${tarifCapExpr})`;
+    params = [prozent];
+  } else if (typ === 'kombination') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + LEAST(?, ROUND(v.monatsbeitrag * ? / 100, 2)), 2), ${tarifCapExpr})`;
+    params = [betrag, prozent];
+  } else {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + ?, 2), ${tarifCapExpr})`;
+    params = [betrag];
+  }
+
+  let dojoFilter = '';
+  if (secureDojoId) { dojoFilter = 'AND m.dojo_id = ?'; params.push(secureDojoId); }
+
+  let ausschlussFilter = '';
+  if (ausschlussIds.length > 0) {
+    ausschlussFilter = `AND m.mitglied_id NOT IN (${ausschlussIds.map(() => '?').join(',')})`;
+    params.push(...ausschlussIds);
+  }
+
+  const query = `
+    SELECT
+      m.mitglied_id, m.vorname, m.nachname, m.email, m.dojo_id,
+      ROUND(v.monatsbeitrag, 2) AS alter_betrag,
+      ${neuerBetragExpr} AS neuer_betrag,
+      ${tarifCapExpr} AS tarif_cap,
+      d.dojoname
+    FROM mitglieder m
+    JOIN vertraege v ON v.mitglied_id = m.mitglied_id AND v.status = 'aktiv'
+    JOIN dojo d      ON m.dojo_id = d.id AND d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%'
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    WHERE m.aktiv = 1
+    AND v.tarif_id IS NOT NULL
+    AND (
+      t.ist_archiviert = 1
+      OR ROUND(v.monatsbeitrag, 2) < ${tarifPreisExpr}
+    )
+    AND NOT (
+      t.ist_archiviert = 1
+      AND EXISTS (
+        SELECT 1 FROM tarife t2
+        WHERE t2.ist_archiviert = 0 AND t2.active = 1
+        AND t2.dojo_id = m.dojo_id
+        AND ROUND(CASE
+          WHEN t2.billing_cycle = 'MONTHLY'   THEN t2.price_cents / 100
+          WHEN t2.billing_cycle = 'QUARTERLY' THEN (t2.price_cents / 100) / 3
+          WHEN t2.billing_cycle = 'YEARLY'    THEN (t2.price_cents / 100) / 12
+          ELSE t2.price_cents / 100
+        END, 2) = ROUND(v.monatsbeitrag, 2)
+      )
+    )
+    ${dojoFilter}
+    ${ausschlussFilter}
+    HAVING neuer_betrag > alter_betrag
+  `;
+
+  db.query(query, params, async (err, members) => {
+    if (err) {
+      logger.error('Fehler bei Terminierungs-Abfrage:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
+    // 1. Erhöhung für jeden Vertrag terminieren
+    let terminiert = 0;
+    for (const m of members) {
+      try {
+        if (validSchritte.length > 0) {
+          // Schrittweise: Schritt 1 → vertraege, Schritte 2..n → vertrag_beitrag_schritte
+          const tarifCap = parseFloat(m.tarif_cap) || 999999;
+          let kumulativ = 0;
+
+          // Schritt 1 in vertraege
+          kumulativ += parseFloat(validSchritte[0].betrag);
+          const betrag0 = Math.round(Math.min(m.alter_betrag + kumulativ, tarifCap) * 100) / 100;
+
+          const conn = await db.promise().getConnection();
+          try {
+            await conn.beginTransaction();
+            await conn.query(
+              `UPDATE vertraege SET neuer_monatsbeitrag = ?, neuer_beitrag_ab = ?
+               WHERE mitglied_id = ? AND status = 'aktiv'`,
+              [betrag0, validSchritte[0].datum, m.mitglied_id]
+            );
+
+            // Schritte 2..n in vertrag_beitrag_schritte
+            for (let si = 1; si < validSchritte.length; si++) {
+              kumulativ += parseFloat(validSchritte[si].betrag);
+              const betragN = Math.round(Math.min(m.alter_betrag + kumulativ, tarifCap) * 100) / 100;
+              await conn.query(
+                `INSERT INTO vertrag_beitrag_schritte (mitglied_id, schritt_nr, gueltig_ab, neuer_betrag)
+                 VALUES (?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE neuer_betrag = VALUES(neuer_betrag)`,
+                [m.mitglied_id, si + 1, validSchritte[si].datum, betragN]
+              );
+            }
+            await conn.commit();
+          } catch (txErr) {
+            await conn.rollback();
+            throw txErr;
+          } finally {
+            conn.release();
+          }
+        } else {
+          // Einfache Erhöhung (bisheriges Verhalten)
+          await db.promise().query(
+            `UPDATE vertraege SET neuer_monatsbeitrag = ?, neuer_beitrag_ab = ?
+             WHERE mitglied_id = ? AND status = 'aktiv'`,
+            [m.neuer_betrag, gueltigAb, m.mitglied_id]
+          );
+        }
+        terminiert++;
+      } catch (upErr) {
+        logger.error(`Terminierung fehlgeschlagen für Mitglied ${m.mitglied_id}:`, { error: upErr });
+      }
+    }
+
+    // 2. E-Mail + Push an alle Betroffenen
+    const datumFormatiert = new Date(gueltigAb).toLocaleDateString('de-DE', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    const fmt = (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v);
+    let sent = 0, failed = 0, noEmail = 0, pushSent = 0;
+
+    for (const m of members) {
+      if (!m.email) { noEmail++; }
+
+      const alt = fmt(m.alter_betrag);
+      const neu = fmt(m.neuer_betrag);
+      let subject, html, text;
+
+      const grundAbsatz = grundText
+        ? `\n\n${grundText}`
+        : '\n\nDiese Anpassung ist notwendig, um die langfristige Qualität unserer Angebote und Trainings sicherzustellen.';
+      const grundHtml = grundText
+        ? `<p>${grundText.replace(/\n/g, '<br>')}</p>`
+        : '<p>Diese Anpassung ist notwendig, um die langfristige Qualität unserer Angebote und Trainings sicherzustellen.</p>';
+
+      if (vorlage === 'formell') {
+        subject = `Ankündigung Beitragsanpassung ab ${datumFormatiert}`;
+        text = `Sehr geehrte/r ${m.vorname} ${m.nachname},\n\nwir möchten Sie hiermit über eine Anpassung Ihres monatlichen Mitgliedsbeitrags informieren.\n\nAb dem ${datumFormatiert} beträgt Ihr monatlicher Beitrag ${neu} (bisher: ${alt}).${grundAbsatz}\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen\n${m.dojoname}`;
+        html = `<p>Sehr geehrte/r <strong>${m.vorname} ${m.nachname}</strong>,</p><p>wir möchten Sie hiermit über eine Anpassung Ihres monatlichen Mitgliedsbeitrags informieren.</p><p>Ab dem <strong>${datumFormatiert}</strong> beträgt Ihr monatlicher Beitrag <strong>${neu}</strong> (bisher: ${alt}).</p>${grundHtml}<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p><p>Mit freundlichen Grüßen<br><strong>${m.dojoname}</strong></p>`;
+      } else if (vorlage === 'freundlich') {
+        subject = `Dein Beitrag ändert sich ab ${datumFormatiert}`;
+        text = `Hallo ${m.vorname},\n\nwir möchten dich über eine Anpassung deines monatlichen Mitgliedsbeitrags informieren.\n\nAb dem ${datumFormatiert} beträgt dein monatlicher Beitrag ${neu} (bisher: ${alt}).${grundAbsatz}\n\nWir danken dir für deine Mitgliedschaft und freuen uns, dich weiterhin bei uns im Dojo willkommen zu heißen!\n\nHerzliche Grüße\n${m.dojoname}`;
+        html = `<p>Hallo <strong>${m.vorname}</strong>,</p><p>wir möchten dich über eine Anpassung deines monatlichen Mitgliedsbeitrags informieren.</p><p>Ab dem <strong>${datumFormatiert}</strong> beträgt dein monatlicher Beitrag <strong>${neu}</strong> (bisher: ${alt}).</p>${grundHtml}<p>Wir danken dir für deine Mitgliedschaft und freuen uns, dich weiterhin bei uns im Dojo willkommen zu heißen!</p><p>Herzliche Grüße<br><strong>${m.dojoname}</strong></p>`;
+      } else {
+        subject = `Beitragsänderung ab ${datumFormatiert}`;
+        text = `${m.vorname} ${m.nachname},\n\nab dem ${datumFormatiert} wird dein monatlicher Mitgliedsbeitrag von ${alt} auf ${neu} angepasst.${grundText ? '\n\n' + grundText : ''}\n\n${m.dojoname}`;
+        html = `<p>${m.vorname} ${m.nachname},</p><p>ab dem <strong>${datumFormatiert}</strong> wird dein monatlicher Mitgliedsbeitrag von ${alt} auf <strong>${neu}</strong> angepasst.</p>${grundText ? `<p>${grundText.replace(/\n/g, '<br>')}</p>` : ''}<p>${m.dojoname}</p>`;
+      }
+
+      if (m.email) {
+        try {
+          const dojoIdForEmail = secureDojoId || m.dojo_id;
+          if (dojoIdForEmail) {
+            await sendEmailForDojo({ to: m.email, subject, html, text }, dojoIdForEmail);
+          } else {
+            await sendEmail({ to: m.email, subject, html, text });
+          }
+          sent++;
+        } catch (emailErr) {
+          logger.error(`E-Mail an ${m.email} fehlgeschlagen:`, { error: emailErr });
+          failed++;
+        }
+      }
+
+      // Push immer senden (kein Toggle — alle betroffenen Mitglieder werden informiert)
+      if (process.env.VAPID_PUBLIC_KEY) {
+        try {
+          const [subs] = await db.promise().query(
+            'SELECT ps.endpoint, ps.p256dh_key, ps.auth_key FROM push_subscriptions ps JOIN users u ON u.id = ps.user_id WHERE u.mitglied_id = ? AND ps.is_active = TRUE',
+            [m.mitglied_id]
+          );
+          const pushBody = vorlage === 'formell'
+            ? `Ab dem ${datumFormatiert} beträgt Ihr monatlicher Beitrag ${fmt(m.neuer_betrag)} (bisher: ${fmt(m.alter_betrag)}).`
+            : `Ab dem ${datumFormatiert} beträgt dein monatlicher Beitrag ${fmt(m.neuer_betrag)} (bisher: ${fmt(m.alter_betrag)}).`;
+          const pushPayload = JSON.stringify({
+            title: subject,
+            body: pushBody,
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/badge-72x72.png',
+            data: { url: '/member/dashboard' }
+          });
+          for (const sub of subs) {
+            try {
+              await webpush.sendNotification(
+                { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh_key, auth: sub.auth_key } },
+                pushPayload
+              );
+              pushSent++;
+            } catch (pe) {
+              if (pe.statusCode === 410 || pe.statusCode === 404) {
+                db.query('UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?', [sub.endpoint]);
+              }
+            }
+          }
+        } catch (pushErr) {
+          logger.error(`Push-Fehler für Mitglied ${m.mitglied_id}:`, { error: pushErr });
+        }
+      }
+    }
+
+    logger.info(`Beitragserhöhung terminiert: ${terminiert} Verträge ab ${gueltigAb}, ${sent} E-Mails, ${pushSent} Push`, {
+      user: req.user?.id
+    });
+
+    // Audit-Log: Beitragserhöhung terminiert
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.TARIFERHOEHUNG,
+      kategorie: auditLog.KATEGORIE.FINANZEN,
+      entityType: 'vertraege',
+      beschreibung: `Beitragserhöhung terminiert: ${terminiert} Verträge ab ${gueltigAb} · Typ: ${typ||'absolut'} · ${typ==='prozent' ? prozent+'%' : '+'+betrag+'€'} · ${sent} E-Mails gesendet${failed>0?' · '+failed+' fehlgeschlagen':''}${validSchritte.length>0?' · '+validSchritte.length+' Schritte':''}`,
+      dojoId: secureDojoId,
+      neueWerte: {
+        gueltig_ab: gueltigAb,
+        typ: typ || 'absolut',
+        erhoehung_betrag: betrag,
+        erhoehung_prozent: prozent,
+        betroffene_vertraege: terminiert,
+        emails_gesendet: sent,
+        emails_fehlgeschlagen: failed,
+        push_gesendet: pushSent,
+        schritte: validSchritte.length > 0 ? validSchritte : undefined,
+        ausschluss_anzahl: ausschlussIds.length
+      }
+    });
+
+    res.json({ success: true, terminiert, sent, failed, noEmail, pushSent, gesamt: members.length, emailWarning: failed > 0 });
+  });
+});
+
+// ✅ API: Terminierte Beitragserhöhung stornieren (pending Terminierungen zurücksetzen)
+router.delete("/filter/tarif-abweichung/terminierung", async (req, res) => {
+  const role = req.user?.rolle;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Nur für Admins' });
+  }
+
+  const secureDojoId = getSecureDojoId(req);
+
+  const conn = await db.promise().getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1. Vertraege: neuer_monatsbeitrag + neuer_beitrag_ab zurücksetzen
+    let vertraegeQuery = `
+      UPDATE vertraege v
+      JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
+      SET v.neuer_monatsbeitrag = NULL,
+          v.neuer_beitrag_ab = NULL
+      WHERE v.neuer_beitrag_ab IS NOT NULL
+        AND v.neuer_monatsbeitrag IS NOT NULL
+        AND v.status = 'aktiv'
+        AND m.aktiv = 1
+    `;
+    const vertraegeParams = [];
+    if (secureDojoId) {
+      vertraegeQuery += ' AND m.dojo_id = ?';
+      vertraegeParams.push(secureDojoId);
+    }
+
+    const [vertraegeResult] = await conn.query(vertraegeQuery, vertraegeParams);
+
+    // 2. Schrittweise Erhöhungen löschen (nur noch nicht angewendete)
+    let schritteQuery = `
+      DELETE s FROM vertrag_beitrag_schritte s
+      JOIN mitglieder m ON m.mitglied_id = s.mitglied_id
+      WHERE s.angewendet_am IS NULL
+        AND m.aktiv = 1
+    `;
+    const schritteParams = [];
+    if (secureDojoId) {
+      schritteQuery += ' AND m.dojo_id = ?';
+      schritteParams.push(secureDojoId);
+    }
+
+    const [schritteResult] = await conn.query(schritteQuery, schritteParams);
+    await conn.commit();
+
+    // 3. Audit-Log
+    await auditLog.log({
+      req,
+      aktion: auditLog.AKTION.TARIFERHOEHUNG,
+      kategorie: auditLog.KATEGORIE.FINANZEN,
+      entityType: 'vertraege',
+      beschreibung: `Beitragserhöhung storniert: ${vertraegeResult.affectedRows} Terminierungen zurückgesetzt, ${schritteResult.affectedRows} Schritte gelöscht`,
+      dojoId: secureDojoId,
+      neueWerte: { storniert: vertraegeResult.affectedRows, schritte_geloescht: schritteResult.affectedRows }
+    });
+
+    logger.info(`Beitragserhöhung storniert: ${vertraegeResult.affectedRows} Verträge zurückgesetzt`, { user: req.user?.id });
+    res.json({ success: true, storniert: vertraegeResult.affectedRows, schritteGeloescht: schritteResult.affectedRows });
+  } catch (err) {
+    await conn.rollback();
+    logger.error('Fehler bei Stornierung:', { error: err });
+    res.status(500).json({ error: 'Fehler bei der Stornierung' });
+  } finally {
+    conn.release();
+  }
+});
+
+// ✅ API: Test-Mail an Admin senden (Vorschau der Beitragserhöhungs-E-Mail)
+router.post("/filter/tarif-abweichung/test-mail", async (req, res) => {
+  const role = req.user?.rolle;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Nur für Admins' });
+  }
+
+  const { erhoehung, erhoehungProzent, typ, vorlage, gueltigAb, grund } = req.body;
+  const betrag  = parseFloat(erhoehung) || 0;
+  const prozent = parseFloat(erhoehungProzent) || 0;
+  const grundText = typeof grund === 'string' ? grund.trim().slice(0, 800) : '';
+
+  if (!['formell', 'freundlich', 'kurz'].includes(vorlage)) return res.status(400).json({ error: 'Ungültige Vorlage' });
+  if (!gueltigAb) return res.status(400).json({ error: 'Gültigkeitsdatum fehlt' });
+
+  try {
+    // Admin-Email aus DB holen
+    const [userRows] = await db.promise().query('SELECT email, username FROM users WHERE id = ?', [req.user.id]);
+    const adminEmail = userRows[0]?.email;
+    if (!adminEmail) return res.status(400).json({ error: 'Keine E-Mail-Adresse für Admin hinterlegt' });
+
+    // Beispiel-Beträge für die Test-Mail
+    const alterBetrag = 45.00;
+    const neuerBetrag = typ === 'prozent'
+      ? Math.round(alterBetrag * (1 + prozent / 100) * 100) / 100
+      : Math.round((alterBetrag + betrag) * 100) / 100;
+
+    const datumFormatiert = new Date(gueltigAb).toLocaleDateString('de-DE', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+    const fmt = v => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v);
+    const alt = fmt(alterBetrag);
+    const neu = fmt(neuerBetrag);
+
+    const grundAbsatz = grundText
+      ? `\n\n${grundText}`
+      : '\n\nDiese Anpassung ist notwendig, um die langfristige Qualität unserer Angebote und Trainings sicherzustellen.';
+    const grundHtml = grundText
+      ? `<p>${grundText.replace(/\n/g, '<br>')}</p>`
+      : '<p>Diese Anpassung ist notwendig, um die langfristige Qualität unserer Angebote und Trainings sicherzustellen.</p>';
+
+    let subject, html, text;
+    if (vorlage === 'formell') {
+      subject = `[TEST] Ankündigung Beitragsanpassung ab ${datumFormatiert}`;
+      text = `Sehr geehrte/r Mustermann,\n\nwir möchten Sie hiermit über eine Anpassung Ihres monatlichen Mitgliedsbeitrags informieren.\n\nAb dem ${datumFormatiert} beträgt Ihr monatlicher Beitrag ${neu} (bisher: ${alt}).${grundAbsatz}\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen\nIhr Dojo`;
+      html = `<p><strong>[TEST-MAIL]</strong></p><p>Sehr geehrte/r <strong>Mustermann</strong>,</p><p>wir möchten Sie hiermit über eine Anpassung Ihres monatlichen Mitgliedsbeitrags informieren.</p><p>Ab dem <strong>${datumFormatiert}</strong> beträgt Ihr monatlicher Beitrag <strong>${neu}</strong> (bisher: ${alt}).</p>${grundHtml}<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p><p>Mit freundlichen Grüßen<br><strong>Ihr Dojo</strong></p>`;
+    } else if (vorlage === 'freundlich') {
+      subject = `[TEST] Dein Beitrag ändert sich ab ${datumFormatiert}`;
+      text = `Hallo Max,\n\nwir möchten dich über eine Anpassung deines monatlichen Mitgliedsbeitrags informieren.\n\nAb dem ${datumFormatiert} beträgt dein monatlicher Beitrag ${neu} (bisher: ${alt}).${grundAbsatz}\n\nWir danken dir für deine Mitgliedschaft!\n\nHerzliche Grüße\nIhr Dojo`;
+      html = `<p><strong>[TEST-MAIL]</strong></p><p>Hallo <strong>Max</strong>,</p><p>wir möchten dich über eine Anpassung deines monatlichen Mitgliedsbeitrags informieren.</p><p>Ab dem <strong>${datumFormatiert}</strong> beträgt dein monatlicher Beitrag <strong>${neu}</strong> (bisher: ${alt}).</p>${grundHtml}<p>Wir danken dir für deine Mitgliedschaft!</p><p>Herzliche Grüße<br><strong>Ihr Dojo</strong></p>`;
+    } else {
+      subject = `[TEST] Beitragsänderung ab ${datumFormatiert}`;
+      text = `Max Mustermann,\n\nab dem ${datumFormatiert} wird dein monatlicher Mitgliedsbeitrag von ${alt} auf ${neu} angepasst.${grundText ? '\n\n' + grundText : ''}\n\nIhr Dojo`;
+      html = `<p><strong>[TEST-MAIL]</strong></p><p>Max Mustermann,</p><p>ab dem <strong>${datumFormatiert}</strong> wird dein monatlicher Mitgliedsbeitrag von ${alt} auf <strong>${neu}</strong> angepasst.</p>${grundText ? `<p>${grundText.replace(/\n/g, '<br>')}</p>` : ''}<p>Ihr Dojo</p>`;
+    }
+
+    const secureDojoId = getSecureDojoId(req);
+    if (secureDojoId) {
+      await sendEmailForDojo({ to: adminEmail, subject, html, text }, secureDojoId);
+    } else {
+      await sendEmail({ to: adminEmail, subject, html, text });
+    }
+
+    logger.info(`Test-Mail gesendet an ${adminEmail}`, { user: req.user?.id });
+    res.json({ success: true, to: adminEmail });
+  } catch (err) {
+    logger.error('Test-Mail fehlgeschlagen:', { error: err });
+    res.status(500).json({ error: 'Test-Mail konnte nicht gesendet werden: ' + err.message });
+  }
+});
+
+// ✅ API: Mitglieder über Beitragserhöhung per E-Mail informieren
+router.post("/filter/tarif-abweichung/benachrichtigung", async (req, res) => {
+  const role = req.user?.rolle;
+  if (role !== 'admin' && role !== 'super_admin') {
+    return res.status(403).json({ error: 'Nur für Admins' });
+  }
+
+  const { erhoehung, erhoehungProzent, typ, vorlage, gueltigAb, grund, ausschluss, sendPush } = req.body;
+  const betrag  = parseFloat(erhoehung) || 0;
+  const prozent = parseFloat(erhoehungProzent) || 0;
+  // Begründungstext bereinigen (max 800 Zeichen, kein HTML)
+  const grundText = typeof grund === 'string' ? grund.trim().slice(0, 800) : '';
+  const ausschlussIds = Array.isArray(ausschluss) ? ausschluss.map(Number).filter(n => n > 0) : [];
+
+  if (!['formell', 'freundlich', 'kurz'].includes(vorlage)) return res.status(400).json({ error: 'Ungültige Vorlage' });
+  if (!gueltigAb) return res.status(400).json({ error: 'Gültigkeitsdatum fehlt' });
+
+  const secureDojoId = getSecureDojoId(req);
+
+  const tarifPreisExpr = `ROUND(CASE
+    WHEN t.billing_cycle = 'MONTHLY'   THEN t.price_cents / 100
+    WHEN t.billing_cycle = 'QUARTERLY' THEN (t.price_cents / 100) / 3
+    WHEN t.billing_cycle = 'YEARLY'    THEN (t.price_cents / 100) / 12
+    ELSE t.price_cents / 100
+  END, 2)`;
+
+  const tarifCapExpr = `CASE WHEN t.id IS NOT NULL AND t.ist_archiviert = 0 THEN ${tarifPreisExpr} ELSE 999999 END`;
+
+  let neuerBetragExpr, params;
+  if (typ === 'prozent') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag * (1 + ? / 100), 2), ${tarifCapExpr})`;
+    params = [prozent];
+  } else if (typ === 'kombination') {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + LEAST(?, ROUND(v.monatsbeitrag * ? / 100, 2)), 2), ${tarifCapExpr})`;
+    params = [betrag, prozent];
+  } else {
+    neuerBetragExpr = `LEAST(ROUND(v.monatsbeitrag + ?, 2), ${tarifCapExpr})`;
+    params = [betrag];
+  }
+
+  let dojoFilter = '';
+  if (secureDojoId) { dojoFilter = 'AND m.dojo_id = ?'; params.push(secureDojoId); }
+
+  let ausschlussFilter = '';
+  if (ausschlussIds.length > 0) {
+    ausschlussFilter = `AND m.mitglied_id NOT IN (${ausschlussIds.map(() => '?').join(',')})`;
+    params.push(...ausschlussIds);
+  }
+
+  const query = `
+    SELECT
+      m.mitglied_id, m.vorname, m.nachname, m.email, m.dojo_id,
+      ROUND(v.monatsbeitrag, 2) AS alter_betrag,
+      ${neuerBetragExpr} AS neuer_betrag,
+      d.dojoname
+    FROM mitglieder m
+    JOIN vertraege v ON v.mitglied_id = m.mitglied_id AND v.status = 'aktiv'
+    JOIN dojo d      ON m.dojo_id = d.id AND d.ist_aktiv = 1 AND d.dojoname NOT LIKE '%demo%'
+    LEFT JOIN tarife t ON v.tarif_id = t.id
+    WHERE m.aktiv = 1
+    AND v.tarif_id IS NOT NULL
+    AND (
+      t.ist_archiviert = 1
+      OR ROUND(v.monatsbeitrag, 2) < ${tarifPreisExpr}
+    )
+    AND NOT (
+      t.ist_archiviert = 1
+      AND EXISTS (
+        SELECT 1 FROM tarife t2
+        WHERE t2.ist_archiviert = 0 AND t2.active = 1
+        AND t2.dojo_id = m.dojo_id
+        AND ROUND(CASE
+          WHEN t2.billing_cycle = 'MONTHLY'   THEN t2.price_cents / 100
+          WHEN t2.billing_cycle = 'QUARTERLY' THEN (t2.price_cents / 100) / 3
+          WHEN t2.billing_cycle = 'YEARLY'    THEN (t2.price_cents / 100) / 12
+          ELSE t2.price_cents / 100
+        END, 2) = ROUND(v.monatsbeitrag, 2)
+      )
+    )
+    ${dojoFilter}
+    ${ausschlussFilter}
+    HAVING neuer_betrag > alter_betrag
+  `;
+
+  db.query(query, params, async (err, members) => {
+    if (err) {
+      logger.error('Fehler bei Benachrichtigungsabfrage:', { error: err });
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
+    const datumFormatiert = new Date(gueltigAb).toLocaleDateString('de-DE', {
+      day: '2-digit', month: '2-digit', year: 'numeric'
+    });
+
+    const fmt = (v) => new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(v);
+
+    let sent = 0, failed = 0, noEmail = 0, pushSent = 0;
+
+    for (const m of members) {
+      if (!m.email) { noEmail++; }
+
+      const alt = fmt(m.alter_betrag);
+      const neu = fmt(m.neuer_betrag);
+
+      let subject, html, text;
+
+      const grundAbsatz = grundText
+        ? `\n\n${grundText}`
+        : '\n\nDiese Anpassung ist notwendig, um die langfristige Qualität unserer Angebote und Trainings sicherzustellen.';
+      const grundHtml = grundText
+        ? `<p>${grundText.replace(/\n/g, '<br>')}</p>`
+        : '<p>Diese Anpassung ist notwendig, um die langfristige Qualität unserer Angebote und Trainings sicherzustellen.</p>';
+
+      if (vorlage === 'formell') {
+        subject = `Ankündigung Beitragsanpassung ab ${datumFormatiert}`;
+        text = `Sehr geehrte/r ${m.vorname} ${m.nachname},\n\nwir möchten Sie hiermit über eine Anpassung Ihres monatlichen Mitgliedsbeitrags informieren.\n\nAb dem ${datumFormatiert} beträgt Ihr monatlicher Beitrag ${neu} (bisher: ${alt}).${grundAbsatz}\n\nBei Fragen stehen wir Ihnen gerne zur Verfügung.\n\nMit freundlichen Grüßen\n${m.dojoname}`;
+        html = `<p>Sehr geehrte/r <strong>${m.vorname} ${m.nachname}</strong>,</p><p>wir möchten Sie hiermit über eine Anpassung Ihres monatlichen Mitgliedsbeitrags informieren.</p><p>Ab dem <strong>${datumFormatiert}</strong> beträgt Ihr monatlicher Beitrag <strong>${neu}</strong> (bisher: ${alt}).</p>${grundHtml}<p>Bei Fragen stehen wir Ihnen gerne zur Verfügung.</p><p>Mit freundlichen Grüßen<br><strong>${m.dojoname}</strong></p>`;
+      } else if (vorlage === 'freundlich') {
+        subject = `Dein Beitrag ändert sich ab ${datumFormatiert}`;
+        text = `Hallo ${m.vorname},\n\nwir möchten dich über eine Anpassung deines monatlichen Mitgliedsbeitrags informieren.\n\nAb dem ${datumFormatiert} beträgt dein monatlicher Beitrag ${neu} (bisher: ${alt}).${grundAbsatz}\n\nWir danken dir für deine Mitgliedschaft und freuen uns, dich weiterhin bei uns im Dojo willkommen zu heißen!\n\nHerzliche Grüße\n${m.dojoname}`;
+        html = `<p>Hallo <strong>${m.vorname}</strong>,</p><p>wir möchten dich über eine Anpassung deines monatlichen Mitgliedsbeitrags informieren.</p><p>Ab dem <strong>${datumFormatiert}</strong> beträgt dein monatlicher Beitrag <strong>${neu}</strong> (bisher: ${alt}).</p>${grundHtml}<p>Wir danken dir für deine Mitgliedschaft und freuen uns, dich weiterhin bei uns im Dojo willkommen zu heißen!</p><p>Herzliche Grüße<br><strong>${m.dojoname}</strong></p>`;
+      } else {
+        subject = `Beitragsänderung ab ${datumFormatiert}`;
+        text = `${m.vorname} ${m.nachname},\n\nab dem ${datumFormatiert} wird dein monatlicher Mitgliedsbeitrag von ${alt} auf ${neu} angepasst.${grundText ? '\n\n' + grundText : ''}\n\n${m.dojoname}`;
+        html = `<p>${m.vorname} ${m.nachname},</p><p>ab dem <strong>${datumFormatiert}</strong> wird dein monatlicher Mitgliedsbeitrag von ${alt} auf <strong>${neu}</strong> angepasst.</p>${grundText ? `<p>${grundText.replace(/\n/g, '<br>')}</p>` : ''}<p>${m.dojoname}</p>`;
+      }
+
+      // E-Mail
+      if (m.email) {
+        try {
+          const dojoIdForEmail = secureDojoId || m.dojo_id;
+          if (dojoIdForEmail) {
+            await sendEmailForDojo({ to: m.email, subject, html, text }, dojoIdForEmail);
+          } else {
+            await sendEmail({ to: m.email, subject, html, text });
+          }
+          sent++;
+        } catch (emailErr) {
+          logger.error(`E-Mail an ${m.email} fehlgeschlagen:`, { error: emailErr });
+          failed++;
+        }
+      }
+
+      // Push-Benachrichtigung (immer senden wenn VAPID konfiguriert)
+      if (process.env.VAPID_PUBLIC_KEY) {
+        try {
+          const [subs] = await db.promise().query(
+            'SELECT ps.endpoint, ps.p256dh_key, ps.auth_key FROM push_subscriptions ps JOIN users u ON u.id = ps.user_id WHERE u.mitglied_id = ? AND ps.is_active = TRUE',
+            [m.mitglied_id]
+          );
+          const pushBody = vorlage === 'formell'
+            ? `Ab dem ${datumFormatiert} beträgt Ihr monatlicher Beitrag ${fmt(m.neuer_betrag)} (bisher: ${fmt(m.alter_betrag)}).`
+            : `Ab dem ${datumFormatiert} beträgt dein monatlicher Beitrag ${fmt(m.neuer_betrag)} (bisher: ${fmt(m.alter_betrag)}).`;
+          const pushPayload = JSON.stringify({
+            title: subject,
+            body: pushBody,
+            icon: '/icons/icon-192x192.png',
+            badge: '/icons/badge-72x72.png',
+            data: { url: '/member/dashboard' }
+          });
+          for (const sub of subs) {
+            try {
+              await webpush.sendNotification(
+                { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh_key, auth: sub.auth_key } },
+                pushPayload
+              );
+              pushSent++;
+            } catch (pe) {
+              if (pe.statusCode === 410 || pe.statusCode === 404) {
+                db.query('UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?', [sub.endpoint]);
+              }
+            }
+          }
+        } catch (pushErr) {
+          logger.error(`Push-Fehler für Mitglied ${m.mitglied_id}:`, { error: pushErr });
+        }
+      }
+    }
+
+    logger.info(`Beitragserhöhung Benachrichtigung: ${sent} E-Mails, ${pushSent} Push, ${failed} fehlgeschlagen`, {
+      user: req.user?.id, gueltigAb
+    });
+
+    res.json({ success: true, sent, failed, noEmail, pushSent, gesamt: members.length, emailWarning: failed > 0 });
   });
 });
 
@@ -831,7 +1708,9 @@ router.get("/:id", (req, res) => {
             return res.status(404).json({ error: `Mitglied mit ID ${id} nicht gefunden oder keine Berechtigung.` });
         }
 
-        res.json(result[0]);
+        const m = result[0];
+        if (m && m.iban) m.iban = maskIBAN(m.iban);
+        res.json(m);
     });
 });
 
@@ -1331,6 +2210,171 @@ router.put("/:id",
     });
 });
 
+// POST /bulk-graduierung – Massenweise Gürtel zuweisen
+router.post('/bulk-graduierung', async (req, res) => {
+  const { stil_id, assignments } = req.body;
+  if (!stil_id || !Array.isArray(assignments) || assignments.length === 0) {
+    return res.status(400).json({ error: 'stil_id und assignments Array erforderlich' });
+  }
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+  let updated = 0, inserted = 0;
+  try {
+    for (const { mitglied_id, graduierung_id } of assignments) {
+      if (!mitglied_id || !graduierung_id) continue;
+      if (secureDojoId) {
+        const [check] = await pool.query(
+          'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ? AND aktiv = 1',
+          [mitglied_id, secureDojoId]
+        );
+        if (check.length === 0) continue;
+      }
+      const [existing] = await pool.query(
+        'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+        [mitglied_id, stil_id]
+      );
+      if (existing.length > 0) {
+        await pool.query(
+          'UPDATE mitglied_stil_data SET current_graduierung_id = ?, aktualisiert_am = NOW() WHERE mitglied_id = ? AND stil_id = ?',
+          [graduierung_id, mitglied_id, stil_id]
+        );
+        updated++;
+      } else {
+        await pool.query(
+          'INSERT INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, erstellt_am) VALUES (?, ?, ?, NOW())',
+          [mitglied_id, stil_id, graduierung_id]
+        );
+        inserted++;
+      }
+    }
+    res.json({ success: true, updated, inserted, total: updated + inserted });
+  } catch (err) {
+    logger.error('Fehler bei Bulk-Graduierung:', err);
+    res.status(500).json({ error: 'Fehler beim Speichern' });
+  }
+});
+
+// GET /zuweisung/stil/:stil_id – Alle aktiven Mitglieder eines Stils mit Gürtel
+// Prüft BEIDE Tabellen: mitglied_stil_data (direkte Zuordnung) + mitglied_stile (Text-Fallback)
+router.get('/zuweisung/stil/:stil_id', (req, res) => {
+  const stil_id = parseInt(req.params.stil_id, 10);
+  if (isNaN(stil_id)) return res.status(400).json({ error: 'Ungültige Stil-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const dojoCondition = secureDojoId ? ' AND m.dojo_id = ?' : '';
+  const params = secureDojoId ? [stil_id, stil_id, stil_id, secureDojoId] : [stil_id, stil_id, stil_id];
+
+  const query = `
+    SELECT
+      m.mitglied_id, m.vorname, m.nachname,
+      combined.current_graduierung_id,
+      combined.letzte_pruefung,
+      g.name as graduierung_name,
+      g.farbe_hex,
+      g.reihenfolge as graduierung_reihenfolge,
+      g.kategorie, g.dan_grad
+    FROM mitglieder m
+    INNER JOIN (
+      SELECT mitglied_id, current_graduierung_id, letzte_pruefung
+        FROM mitglied_stil_data WHERE stil_id = ?
+      UNION
+      SELECT ms.mitglied_id, NULL, NULL
+        FROM mitglied_stile ms
+        JOIN stile s ON s.stil_id = ? AND ms.stil = s.name
+        WHERE ms.mitglied_id NOT IN (
+          SELECT mitglied_id FROM mitglied_stil_data WHERE stil_id = ?
+        )
+    ) AS combined ON m.mitglied_id = combined.mitglied_id
+    LEFT JOIN graduierungen g ON combined.current_graduierung_id = g.graduierung_id
+    WHERE m.aktiv = 1${dojoCondition}
+    ORDER BY COALESCE(g.reihenfolge, 9999) ASC, m.nachname ASC, m.vorname ASC
+  `;
+
+  db.query(query, params, (err, results) => {
+    if (err) {
+      logger.error('Fehler bei Stil-Zuweisung:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    res.json({ success: true, mitglieder: results });
+  });
+});
+
+// POST /stil/:stil_id/assign – Mitglied einem Stil zuweisen (Stilmitglieder-Tab)
+router.post('/stil/:stil_id/assign', async (req, res) => {
+  const stil_id = parseInt(req.params.stil_id, 10);
+  const { mitglied_id } = req.body;
+  if (isNaN(stil_id) || !mitglied_id) return res.status(400).json({ error: 'Ungültige Parameter' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+  try {
+    if (secureDojoId) {
+      const [m] = await pool.query(
+        'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ? AND aktiv = 1',
+        [mitglied_id, secureDojoId]
+      );
+      if (m.length === 0) return res.status(403).json({ error: 'Mitglied nicht gefunden' });
+    }
+    const [existing] = await pool.query(
+      'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+      [mitglied_id, stil_id]
+    );
+    if (existing.length > 0) return res.json({ success: true, message: 'Bereits zugewiesen' });
+
+    const [grads] = await pool.query(
+      'SELECT graduierung_id FROM graduierungen WHERE stil_id = ? AND aktiv = 1 ORDER BY reihenfolge ASC LIMIT 1',
+      [stil_id]
+    );
+    const firstGradId = grads.length > 0 ? grads[0].graduierung_id : null;
+    await pool.query(
+      'INSERT INTO mitglied_stil_data (mitglied_id, stil_id, current_graduierung_id, erstellt_am) VALUES (?, ?, ?, NOW())',
+      [mitglied_id, stil_id, firstGradId]
+    );
+    const [stilRow] = await pool.query('SELECT name FROM stile WHERE stil_id = ?', [stil_id]);
+    if (stilRow.length > 0) {
+      await pool.query(
+        'INSERT IGNORE INTO mitglied_stile (mitglied_id, stil) VALUES (?, ?)',
+        [mitglied_id, stilRow[0].name]
+      );
+    }
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler beim Zuweisen des Stils:', err);
+    res.status(500).json({ error: 'Fehler beim Zuweisen' });
+  }
+});
+
+// DELETE /stil/:stil_id/remove/:mitglied_id – Mitglied aus Stil entfernen
+router.delete('/stil/:stil_id/remove/:mitglied_id', async (req, res) => {
+  const stil_id = parseInt(req.params.stil_id, 10);
+  const mitglied_id = parseInt(req.params.mitglied_id, 10);
+  if (isNaN(stil_id) || isNaN(mitglied_id)) return res.status(400).json({ error: 'Ungültige Parameter' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+  try {
+    if (secureDojoId) {
+      const [m] = await pool.query(
+        'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?',
+        [mitglied_id, secureDojoId]
+      );
+      if (m.length === 0) return res.status(403).json({ error: 'Nicht berechtigt' });
+    }
+    await pool.query('DELETE FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?', [mitglied_id, stil_id]);
+    const [stilRow] = await pool.query('SELECT name FROM stile WHERE stil_id = ?', [stil_id]);
+    if (stilRow.length > 0) {
+      await pool.query(
+        'DELETE FROM mitglied_stile WHERE mitglied_id = ? AND stil = ?',
+        [mitglied_id, stilRow[0].name]
+      );
+    }
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler beim Entfernen aus Stil:', err);
+    res.status(500).json({ error: 'Fehler beim Entfernen' });
+  }
+});
+
 // 🆕 API: Mitglied-Stile verwalten (Multiple Stile pro Person)
 router.post("/:id/stile", (req, res) => {
     const mitglied_id = parseInt(req.params.id, 10);
@@ -1494,10 +2538,10 @@ router.get("/:id/stile", (req, res) => {
     };
 
     const query = `
-        SELECT ms.stil
+        SELECT ms.stil, ms.ist_hauptstil
         FROM mitglied_stile ms
         WHERE ms.mitglied_id = ?
-        ORDER BY ms.stil
+        ORDER BY ms.ist_hauptstil DESC, ms.stil
     `;
 
     db.query(query, [mitglied_id], (err, results) => {
@@ -1515,9 +2559,11 @@ router.get("/:id/stile", (req, res) => {
             }
             return {
                 stil_id: stilInfo.stil_id,
-                name: stilInfo.stil_name, // Frontend erwartet 'name', nicht 'stil_name'
+                name: stilInfo.stil_name,
                 stil_name: stilInfo.stil_name,
-                beschreibung: stilInfo.beschreibung
+                beschreibung: stilInfo.beschreibung,
+                ist_hauptstil: row.ist_hauptstil === 1,
+                stil_enum: row.stil
             };
         }).filter(Boolean);
 
@@ -1582,22 +2628,55 @@ router.get("/:id/stile", (req, res) => {
     });
 });
 
+// POST /:id/stile/hauptstil — Setzt einen Stil als Hauptstil (alle anderen werden zurückgesetzt)
+router.post("/:id/stile/hauptstil", async (req, res) => {
+    const mitglied_id = parseInt(req.params.id, 10);
+    const { stil } = req.body; // ENUM-Wert, z.B. 'Kickboxen'
+    if (isNaN(mitglied_id) || !stil) {
+        return res.status(400).json({ error: 'mitglied_id und stil erforderlich' });
+    }
+    const pool = db.promise();
+    try {
+        await pool.query(
+            'UPDATE mitglied_stile SET ist_hauptstil = 0 WHERE mitglied_id = ?',
+            [mitglied_id]
+        );
+        await pool.query(
+            'UPDATE mitglied_stile SET ist_hauptstil = 1 WHERE mitglied_id = ? AND stil = ?',
+            [mitglied_id, stil]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        logger.error('Hauptstil setzen Fehler', { error: err.message });
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 🆕 API: Stilspezifische Daten für ein Mitglied verwalten (Graduierung, letzte Prüfung, etc.)
 router.post("/:id/stil/:stil_id/data", (req, res) => {
     const mitglied_id = parseInt(req.params.id, 10);
     const stil_id = parseInt(req.params.stil_id, 10);
     const { current_graduierung_id, letzte_pruefung, naechste_pruefung, anmerkungen } = req.body;
-    
+
     if (isNaN(mitglied_id) || isNaN(stil_id)) {
         return res.status(400).json({ error: "Ungültige Mitglieds- oder Stil-ID" });
     }
 
+    // ISO-Datetime-Strings auf YYYY-MM-DD kürzen (MySQL DATE-Spalten akzeptieren kein 'T...')
+    const formatDate = (val) => {
+        if (!val) return null;
+        const s = String(val);
+        return s.includes('T') ? s.split('T')[0] : s;
+    };
+    const safeLetzePruefung = formatDate(letzte_pruefung);
+    const safeNaechstePruefung = formatDate(naechste_pruefung);
+
     // Erst prüfen, ob bereits ein Eintrag existiert
     const checkQuery = `
-        SELECT id FROM mitglied_stil_data 
+        SELECT id FROM mitglied_stil_data
         WHERE mitglied_id = ? AND stil_id = ?
     `;
-    
+
     db.query(checkQuery, [mitglied_id, stil_id], (checkErr, checkResult) => {
         if (checkErr) {
             logger.error('Fehler beim Prüfen vorhandener Daten:', checkErr);
@@ -1608,12 +2687,12 @@ router.post("/:id/stil/:stil_id/data", (req, res) => {
         if (checkResult.length > 0) {
             // UPDATE existierende Daten
             query = `
-                UPDATE mitglied_stil_data 
-                SET current_graduierung_id = ?, letzte_pruefung = ?, naechste_pruefung = ?, anmerkungen = ?, 
+                UPDATE mitglied_stil_data
+                SET current_graduierung_id = ?, letzte_pruefung = ?, naechste_pruefung = ?, anmerkungen = ?,
                     aktualisiert_am = CURRENT_TIMESTAMP
                 WHERE mitglied_id = ? AND stil_id = ?
             `;
-            params = [current_graduierung_id || null, letzte_pruefung || null, naechste_pruefung || null, anmerkungen || null, mitglied_id, stil_id];
+            params = [current_graduierung_id || null, safeLetzePruefung, safeNaechstePruefung, anmerkungen || null, mitglied_id, stil_id];
         } else {
             // INSERT neue Daten
             query = `
@@ -1621,7 +2700,7 @@ router.post("/:id/stil/:stil_id/data", (req, res) => {
                 (mitglied_id, stil_id, current_graduierung_id, letzte_pruefung, naechste_pruefung, anmerkungen, erstellt_am)
                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             `;
-            params = [mitglied_id, stil_id, current_graduierung_id || null, letzte_pruefung || null, naechste_pruefung || null, anmerkungen || null];
+            params = [mitglied_id, stil_id, current_graduierung_id || null, safeLetzePruefung, safeNaechstePruefung, anmerkungen || null];
         }
 
         db.query(query, params, (err) => {
@@ -1832,7 +2911,7 @@ router.get("/:id/sepa-mandate", (req, res) => {
     if (secureDojoId === null) {
         // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
         whereConditions.push(`m.dojo_id NOT IN (
-            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
         )`);
     } else {
         // Normaler Admin: Nur eigenes Dojo
@@ -1859,7 +2938,18 @@ router.get("/:id/sepa-mandate", (req, res) => {
             return res.status(404).json({ message: "Kein aktives SEPA-Mandat gefunden oder keine Berechtigung" });
         }
 
-        res.json(results[0]);
+        const sm = results[0];
+        // Audit-Log: Bankdaten gelesen
+        auditLog.log({
+          req,
+          aktion: auditLog.AKTION.SEPA_MANDAT_ABGERUFEN,
+          kategorie: auditLog.KATEGORIE.SEPA,
+          entity_type: 'mitglied',
+          entity_id: parseInt(id),
+          beschreibung: 'SEPA-Mandat abgerufen',
+        }).catch(() => {});
+        if (sm && sm.iban) sm.iban = maskIBAN(sm.iban);
+        res.json(sm);
     });
 });
 
@@ -1877,12 +2967,25 @@ router.post("/:id/sepa-mandate",
     iban = iban.replace(/\s/g, '').toUpperCase();
     bic = bic.replace(/\s/g, '').toUpperCase();
 
-    // IBAN Format-Validierung (DE/AT/CH)
+    // IBAN Format-Validierung + Modulo-97-Checksumme
     const ibanRegex = /^[A-Z]{2}\d{2}[A-Z0-9]{4,30}$/;
     if (!ibanRegex.test(iban)) {
         return res.status(400).json({
             success: false,
             error: { message: "Ungültiges IBAN-Format", code: 400 }
+        });
+    }
+    // Modulo-97 Prüfsumme (ISO 7064)
+    const ibanDigits = (iban.slice(4) + iban.slice(0, 4)).split('').map(c => {
+        const code = c.charCodeAt(0);
+        return code >= 65 ? (code - 55).toString() : c;
+    }).join('');
+    let remainder = 0;
+    for (const ch of ibanDigits) { remainder = (remainder * 10 + parseInt(ch, 10)) % 97; }
+    if (remainder !== 1) {
+        return res.status(400).json({
+            success: false,
+            error: { message: "IBAN-Prüfsumme ungültig. Bitte IBAN prüfen.", code: 400 }
         });
     }
 
@@ -1969,7 +3072,17 @@ router.post("/:id/sepa-mandate",
                     }
                 });
 
-                res.status(201).json(newMandate);
+                const maskedMandate = { ...newMandate, iban: maskIBAN(newMandate.iban) };
+                // Audit-Log: Bankdaten-Eintrag
+                auditLog.log({
+                  req,
+                  aktion: auditLog.AKTION.SEPA_MANDAT_ERSTELLT,
+                  kategorie: auditLog.KATEGORIE.SEPA,
+                  entity_type: 'mitglied',
+                  entity_id: parseInt(id),
+                  beschreibung: 'SEPA-Mandat erstellt (IBAN: ' + maskIBAN(iban) + ')',
+                }).catch(() => {});
+                res.status(201).json(maskedMandate);
             });
         });
     });
@@ -2014,6 +3127,15 @@ router.delete("/:id/sepa-mandate", (req, res) => {
             return res.status(404).json({ error: "Kein aktives SEPA-Mandat gefunden oder keine Berechtigung" });
         }
 
+        // Audit-Log: Mandat widerrufen
+        auditLog.log({
+          req,
+          aktion: auditLog.AKTION.SEPA_MANDAT_WIDERRUFEN,
+          kategorie: auditLog.KATEGORIE.SEPA,
+          entity_type: 'mitglied',
+          entity_id: parseInt(id),
+          beschreibung: 'SEPA-Mandat widerrufen. Grund: ' + (grund || 'k.A.'),
+        }).catch(() => {});
         res.json({ success: true, message: "SEPA-Mandat wurde archiviert" });
     });
 });
@@ -2047,7 +3169,7 @@ router.get("/:id/sepa-mandate/archiv", (req, res) => {
             return res.status(500).json({ error: "Fehler beim Abrufen archivierter Mandate" });
         }
 
-        res.json(results);
+        res.json(results.map(r => { if (r.iban) r.iban = maskIBAN(r.iban); return r; }));
     });
 });
 
@@ -2377,12 +3499,28 @@ router.post("/",
         // 🆕 VERTRAG AUTOMATISCH ERSTELLEN (wenn Vertragsdaten vorhanden)
         if (memberData.vertrag_tarif_id) {
 
+            // Tarif zuerst laden, um billing_cycle und monatsbeitrag zu bestimmen
+            db.query('SELECT price_cents, billing_cycle, mindestlaufzeit_monate, kuendigungsfrist_monate FROM tarife WHERE id = ?', [memberData.vertrag_tarif_id], (tarifFetchErr, tarifFetchRows) => {
+            const fetchedTarif = tarifFetchRows?.[0] || {};
+            const tarifPreis = fetchedTarif.price_cents ? fetchedTarif.price_cents / 100 : null;
+            const billing_cycle = (memberData.vertrag_billing_cycle || fetchedTarif.billing_cycle || 'monthly').toUpperCase();
+            const vertragsbeginn = memberData.vertrag_vertragsbeginn || new Date().toISOString().split('T')[0];
+            const mindestlaufzeit = memberData.vertrag_mindestlaufzeit_monate || fetchedTarif.mindestlaufzeit_monate || 12;
+            const startDate = new Date(vertragsbeginn);
+            const endeDate = new Date(startDate.getFullYear(), startDate.getMonth() + mindestlaufzeit, 0);
+            const vertragsende = endeDate.toISOString().split('T')[0];
+
             const vertragData = {
                 mitglied_id: newMemberId,
                 dojo_id: memberData.dojo_id,  // 🔒 KRITISCH: Tax Compliance!
                 tarif_id: memberData.vertrag_tarif_id,
-                kuendigungsfrist_monate: memberData.vertrag_kuendigungsfrist_monate || 3,
-                mindestlaufzeit_monate: memberData.vertrag_mindestlaufzeit_monate || 12,
+                vertragsbeginn,
+                vertragsende,
+                billing_cycle,
+                monatsbeitrag: tarifPreis,
+                payment_method: memberData.vertrag_payment_method || 'direct_debit',
+                kuendigungsfrist_monate: memberData.vertrag_kuendigungsfrist_monate || fetchedTarif.kuendigungsfrist_monate || 3,
+                mindestlaufzeit_monate: mindestlaufzeit,
                 automatische_verlaengerung: memberData.vertrag_automatische_verlaengerung !== undefined ? memberData.vertrag_automatische_verlaengerung : true,
                 verlaengerung_monate: memberData.vertrag_verlaengerung_monate || 12,
                 faelligkeit_tag: memberData.vertrag_faelligkeit_tag || 1,
@@ -2429,21 +3567,18 @@ router.post("/",
 
                 const vertragId = vertragResult.insertId;
 
-                // 💰 Ersten Beitrag automatisch erstellen
+                // 💰 Ersten Beitrag automatisch erstellen (Tarif-Preis bereits bekannt)
                 const createFirstBeitrag = (callback) => {
-                    // Tarif-Preis holen
-                    db.query('SELECT price_cents FROM tarife WHERE id = ?', [memberData.vertrag_tarif_id], (tarifErr, tarifResults) => {
-                        if (tarifErr || tarifResults.length === 0) {
+                        if (!tarifPreis) {
                             logger.warn('Tarif nicht gefunden für Beitragserstellung');
                             return callback();
                         }
 
-                        const tarifPreis = tarifResults[0].price_cents / 100;
                         const beitragQuery = `
                             INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
-                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'SEPA', 0, ?)
+                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'Lastschrift', 0, ?)
                         `;
-                        db.query(beitragQuery, [newMemberId, tarifPreis, memberData.dojo_id], (beitragErr, beitragResult) => {
+                        db.query(beitragQuery, [newMemberId, tarifPreis, memberData.dojo_id], (beitragErr) => {
                             if (beitragErr) {
                                 logger.error('Fehler beim Erstellen des ersten Beitrags:', beitragErr);
                             } else {
@@ -2451,7 +3586,6 @@ router.post("/",
                             }
                             callback();
                         });
-                    });
                 };
 
                 // Beitrag erstellen, dann User-Account und Familienmitglieder
@@ -2482,6 +3616,7 @@ router.post("/",
                     });
                 });
             });
+            }); // closes tarif-fetch db.query
         } else {
             // Kein Vertrag, nur Mitglied erstellt
             // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
@@ -2659,7 +3794,7 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
                         // 💰 Ersten Beitrag automatisch erstellen
                         const beitragQuery = `
                             INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
-                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'SEPA', 0, ?)
+                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'Lastschrift', 0, ?)
                         `;
                         db.query(beitragQuery, [newMemberId, monatsbeitrag, dojoId], (beitragErr, beitragResult) => {
                             if (beitragErr) {
@@ -2689,29 +3824,50 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
     createMember(0);
 }
 
-// 🔐 HILFSFUNKTION: User-Account erstellen (nur bei öffentlicher Registrierung)
+// 🔐 HILFSFUNKTION: Benutzernamen aus Vor-/Nachname generieren
+function generateUsername(vorname, nachname) {
+    const clean = s => (s || '').trim().toLowerCase()
+        .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+        .replace(/\s+/g, '');
+    return clean(vorname) + '.' + clean(nachname);
+}
+
+// 🔐 HILFSFUNKTION: Passwort aus Geburtsdatum generieren (dd/mm/yyyy)
+function generatePasswordFromBirthdate(geburtsdatum) {
+    if (!geburtsdatum) return null;
+    const [y, m, d] = String(geburtsdatum).split('-');
+    if (!y || !m || !d) return null;
+    return d + '/' + m + '/' + y;
+}
+
+// 🔐 HILFSFUNKTION: User-Account erstellen (automatisch bei jeder Mitgliederanlage)
 async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
-    // Nur wenn Benutzername und Passwort vorhanden sind (öffentliche Registrierung)
-    if (memberData.benutzername && memberData.passwort) {
-        logger.debug('🔐 Erstelle User-Account für öffentliche Registrierung...');
+    // Benutzername und Passwort: explizit angegeben ODER automatisch generieren
+    const username = memberData.benutzername
+        ? memberData.benutzername.trim()
+        : generateUsername(memberData.vorname, memberData.nachname);
+    const password = memberData.passwort
+        ? memberData.passwort
+        : generatePasswordFromBirthdate(memberData.geburtsdatum);
 
-        try {
-            // ✅ SCHUTZ: "admin" Benutzername ist reserviert
-            if (memberData.benutzername.trim().toLowerCase() === 'admin') {
-                logger.error('Versuch, reservierten Benutzernamen zu verwenden', { username: 'admin' });
-                return callback(null, { warning: 'Benutzername "admin" ist reserviert' });
-            }
+    if (!username || !password) {
+        logger.warn('Kein Benutzername oder Passwort generierbar – kein Account erstellt', { mitgliedId });
+        return callback();
+    }
 
-            const username = memberData.benutzername.trim();
-            const email = memberData.email || null;
+    if (username.toLowerCase() === 'admin') {
+        logger.warn('Reservierter Benutzername "admin" – kein Account erstellt');
+        return callback(null, { warning: 'Benutzername "admin" ist reserviert' });
+    }
 
-            // 🔍 ERST PRÜFEN: Existiert Benutzername oder Email bereits?
-            const checkQuery = `
-                SELECT id, username, email, mitglied_id FROM users
-                WHERE username = ? OR (email = ? AND email IS NOT NULL)
-            `;
+    const email = memberData.email || null;
 
-            db.query(checkQuery, [username, email], async (checkErr, existingUsers) => {
+    try {
+        // Existiert Benutzername bereits?
+        db.query(
+            'SELECT id, mitglied_id FROM users WHERE username = ?',
+            [username],
+            async (checkErr, existingUsers) => {
                 if (checkErr) {
                     logger.error('Fehler bei User-Prüfung:', checkErr);
                     return callback(null, { warning: 'Fehler bei User-Prüfung' });
@@ -2719,75 +3875,44 @@ async function createUserAccountIfNeeded(memberData, mitgliedId, callback) {
 
                 if (existingUsers.length > 0) {
                     const existing = existingUsers[0];
-
-                    // Fall 1: User gehört bereits zu diesem Mitglied → alles OK
                     if (existing.mitglied_id === mitgliedId) {
-                        logger.info(`✅ User-Account existiert bereits für Mitglied ${mitgliedId}`);
                         return callback(null, { userId: existing.id, message: 'User existiert bereits' });
                     }
-
-                    // Fall 2: User gehört zu anderem Mitglied → Warnung aber fortfahren
-                    if (existing.mitglied_id && existing.mitglied_id !== mitgliedId) {
-                        logger.warn(`⚠️ Benutzername/Email bereits für anderes Mitglied vergeben`, {
-                            username, email, existingMitgliedId: existing.mitglied_id, newMitgliedId: mitgliedId
-                        });
-                        return callback(null, {
-                            warning: 'Benutzername oder E-Mail bereits vergeben - kein Login-Account erstellt',
-                            existingUserId: existing.id
-                        });
-                    }
-
-                    // Fall 3: User existiert ohne Mitglied-Verknüpfung → verknüpfen
-                    if (!existing.mitglied_id) {
-                        logger.info(`🔗 Verknüpfe existierenden User mit Mitglied ${mitgliedId}`);
-                        const hashedPassword = await bcrypt.hash(memberData.passwort, 10);
-                        db.query(
-                            'UPDATE users SET mitglied_id = ?, password = ? WHERE id = ?',
-                            [mitgliedId, hashedPassword, existing.id],
-                            (updateErr) => {
-                                if (updateErr) {
-                                    logger.error('Fehler beim Verknüpfen des Users:', updateErr);
-                                    return callback(null, { warning: 'User-Verknüpfung fehlgeschlagen' });
-                                }
-                                logger.info(`✅ User ${existing.id} mit Mitglied ${mitgliedId} verknüpft`);
-                                return callback(null, { userId: existing.id, message: 'User verknüpft' });
-                            }
-                        );
-                        return;
-                    }
+                    // Benutzername vergeben → Suffix anhängen
+                    const usernameFallback = username + '.' + mitgliedId;
+                    logger.warn(`Benutzername ${username} vergeben, nutze ${usernameFallback}`);
+                    const hash2 = await bcrypt.hash(password, 10);
+                    db.query(
+                        'INSERT IGNORE INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+                        [usernameFallback, email, hash2, 'member', mitgliedId],
+                        (err2, res2) => {
+                            if (err2) return callback(null, { warning: 'Fallback-Account fehlgeschlagen' });
+                            logger.info(`✅ Fallback-Account erstellt: ${usernameFallback}`);
+                            callback(null, { userId: res2.insertId, username: usernameFallback });
+                        }
+                    );
+                    return;
                 }
 
-                // Kein existierender User → NEU ERSTELLEN
-                const hashedPassword = await bcrypt.hash(memberData.passwort, 10);
-
-                const userQuery = `
-                    INSERT INTO users (username, email, password, role, mitglied_id, created_at)
-                    VALUES (?, ?, ?, 'member', ?, NOW())
-                `;
-
-                const userValues = [username, email, hashedPassword, mitgliedId];
-
-                db.query(userQuery, userValues, (userErr, userResult) => {
-                    if (userErr) {
-                        logger.error('Fehler beim Erstellen des User-Accounts:', userErr);
-                        // Bei Duplicate-Key trotzdem fortfahren (Race Condition möglich)
-                        if (userErr.code === 'ER_DUP_ENTRY') {
-                            return callback(null, { warning: 'Benutzername oder E-Mail bereits vergeben' });
+                // Neu erstellen
+                const hashedPassword = await bcrypt.hash(password, 10);
+                db.query(
+                    'INSERT INTO users (username, email, password, role, mitglied_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+                    [username, email, hashedPassword, 'member', mitgliedId],
+                    (userErr, userResult) => {
+                        if (userErr) {
+                            logger.error('Fehler beim Erstellen des User-Accounts:', userErr);
+                            return callback(null, { warning: 'User-Account konnte nicht erstellt werden' });
                         }
-                        return callback(null, { warning: 'User-Account konnte nicht erstellt werden' });
+                        logger.info(`✅ User-Account automatisch erstellt: ${username} für Mitglied ${mitgliedId}`);
+                        callback(null, { userId: userResult.insertId, username, message: 'User-Account erstellt' });
                     }
-
-                    logger.info(`✅ User-Account erstellt für Mitglied ${mitgliedId} (User-ID: ${userResult.insertId})`);
-                    callback(null, { userId: userResult.insertId, message: 'User-Account erstellt' });
-                });
-            });
-        } catch (hashError) {
-            logger.error('Fehler beim Hashen des Passworts:', hashError);
-            callback(null, { warning: 'Passwort-Verarbeitung fehlgeschlagen' });
-        }
-    } else {
-        // Keine User-Account-Daten vorhanden (interne Admin-Erstellung)
-        callback();
+                );
+            }
+        );
+    } catch (hashError) {
+        logger.error('Fehler beim Hashen des Passworts:', hashError);
+        callback(null, { warning: 'Passwort-Verarbeitung fehlgeschlagen' });
     }
 }
 
@@ -3165,13 +4290,14 @@ router.post("/:id/archivieren", async (req, res) => {
 
     logger.info('Archiv-Eintrag erstellt mit ID: ${archivId}');
 
-    // 8. Kopiere Stil-Daten ins Archiv
-    for (const stil of stilData) {
+    // 8. Kopiere Stil-Daten ins Archiv (Batch-Insert statt N+1 Loop)
+    if (stilData.length > 0) {
+      const stilValues = stilData.map(stil => [archivId, mitgliedId, stil.stil_id, stil.current_graduierung_id, stil.aktiv_seit]);
       await db.promise().query(
         `INSERT INTO archiv_mitglied_stil_data
          (archiv_id, mitglied_id, stil_id, current_graduierung_id, aktiv_seit)
-         VALUES (?, ?, ?, ?, ?)`,
-        [archivId, mitgliedId, stil.stil_id, stil.current_graduierung_id, stil.aktiv_seit]
+         VALUES ?`,
+        [stilValues]
       );
     }
 
@@ -3381,13 +4507,14 @@ router.post("/bulk-archivieren", async (req, res) => {
       const [archivResult] = await db.promise().query(insertArchivQuery, archivValues);
       const archivId = archivResult.insertId;
 
-      // 8. Kopiere Stil-Daten ins Archiv
-      for (const stil of stilData) {
+      // 8. Kopiere Stil-Daten ins Archiv (Batch-Insert statt N+1 Loop)
+      if (stilData.length > 0) {
+        const stilValues = stilData.map(stil => [archivId, mitgliedId, stil.stil_id, stil.current_graduierung_id, stil.aktiv_seit]);
         await db.promise().query(
           `INSERT INTO archiv_mitglied_stil_data
            (archiv_id, mitglied_id, stil_id, current_graduierung_id, aktiv_seit)
-           VALUES (?, ?, ?, ?, ?)`,
-          [archivId, mitgliedId, stil.stil_id, stil.current_graduierung_id, stil.aktiv_seit]
+           VALUES ?`,
+          [stilValues]
         );
       }
 
@@ -3811,7 +4938,90 @@ router.get("/:id/kurse", (req, res) => {
 });
 
 /**
+ * PUT /mitglieder/:id/beitrag
+ * Aktualisiert den Monatsbeitrag eines Mitglieds
+ */
+router.put("/:id/beitrag", validateId('id'), (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { monatsbeitrag } = req.body;
+  const secureDojoId = getSecureDojoId(req);
+
+  // Validierung
+  if (monatsbeitrag == null || isNaN(parseFloat(monatsbeitrag))) {
+    return res.status(400).json({ error: "Ungültiger Monatsbeitrag" });
+  }
+
+  const beitrag = parseFloat(monatsbeitrag);
+
+  // SQL Query mit Multi-Tenancy
+  let whereConditions = ['mitglied_id = ?'];
+  const values = [beitrag, id];
+
+  if (secureDojoId) {
+    whereConditions.push('dojo_id = ?');
+    values.push(secureDojoId);
+  }
+
+  const query = `
+    UPDATE mitglieder
+    SET monatsbeitrag = ?
+    WHERE ${whereConditions.join(' AND ')}
+  `;
+
+  db.query(query, values, (error, results) => {
+    if (error) {
+      logger.error('Datenbankfehler beim Beitrag-Update:', error);
+      return res.status(500).json({
+        error: 'Datenbankfehler beim Aktualisieren des Beitrags',
+        details: error.message
+      });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Mitglied nicht gefunden oder keine Berechtigung' });
+    }
+
+    logger.info(`Monatsbeitrag aktualisiert für Mitglied ${id} auf ${beitrag}€`);
+    res.json({ message: 'Beitrag erfolgreich aktualisiert', monatsbeitrag: beitrag });
+  });
+});
+
+/**
  * GET /mitglieder/print
  * Generiert eine PDF-Liste aller Mitglieder mit Name, Geburtsdatum, Stil und Vertrag
  */
+
+/**
+ * GET /mitglieder/:id/ruecklastschriften-stats
+ * Returns Rücklastschriften count and amount for a specific member
+ */
+router.get('/:id/ruecklastschriften-stats', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const secureDojoId = getSecureDojoId(req);
+
+  const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+  const query = `
+    SELECT
+      COUNT(*) as anzahl,
+      COALESCE(SUM(r.original_betrag), 0) as gesamt_betrag,
+      SUM(CASE WHEN r.status IN ('neu','bearbeitet','mahnverfahren') THEN 1 ELSE 0 END) as offen_anzahl,
+      COALESCE(SUM(CASE WHEN r.status IN ('neu','bearbeitet','mahnverfahren') THEN r.original_betrag ELSE 0 END), 0) as offen_betrag
+    FROM sepa_ruecklastschriften r
+    JOIN sepa_mandate sm ON r.mandat_id = sm.mandat_id
+    JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id
+    WHERE sm.mitglied_id = ?
+    ${dojoFilter}
+  `;
+
+  const params = secureDojoId ? [id, secureDojoId] : [id];
+
+  db.query(query, params, (error, results) => {
+    if (error) {
+      logger.error('Fehler beim Laden der Ruecklastschriften-Stats:', error);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+    res.json({ success: true, stats: results[0] || { anzahl: 0, gesamt_betrag: 0, offen_anzahl: 0, offen_betrag: 0 } });
+  });
+});
+
 module.exports = router;

@@ -13,11 +13,8 @@ const router = express.Router();
 
 // GET / - Mitglieder mit optionalem Stil-Filter
 router.get('/', (req, res) => {
-  let { stil, dojo_id } = req.query;
-
-  if (req.user && req.user.dojo_id) {
-    dojo_id = req.user.dojo_id.toString();
-  }
+  const { stil } = req.query;
+  const secureDojoId = getSecureDojoId(req);
 
   let whereConditions = ['m.aktiv = 1'];
   let queryParams = [];
@@ -27,9 +24,11 @@ router.get('/', (req, res) => {
     queryParams.push(stil);
   }
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereConditions.push('m.dojo_id = ?');
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
+  } else {
+    whereConditions.push('m.dojo_id IN (SELECT id FROM dojo WHERE ist_aktiv = 1)');
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
@@ -70,23 +69,22 @@ router.get('/', (req, res) => {
 
 // GET /all - Alle Mitglieder mit Details
 router.get('/all', (req, res) => {
-  let { dojo_id } = req.query;
-
-  if (req.user && req.user.dojo_id) {
-    dojo_id = req.user.dojo_id.toString();
-  }
+  const secureDojoId = getSecureDojoId(req);
 
   let whereClause = '';
   let queryParams = [];
 
-  if (dojo_id && dojo_id !== 'all') {
+  if (secureDojoId) {
     whereClause = 'WHERE m.dojo_id = ?';
-    queryParams.push(parseInt(dojo_id));
+    queryParams.push(secureDojoId);
+  } else {
+    whereClause = 'WHERE m.dojo_id IN (SELECT id FROM dojo WHERE ist_aktiv = 1)';
   }
 
   const query = `
     SELECT
       m.mitglied_id, m.vorname, m.nachname, m.geburtsdatum, m.gurtfarbe, m.graduierung_id,
+      m.geschlecht, m.notizen,
       COALESCE(GROUP_CONCAT(DISTINCT g_stil.name ORDER BY g_stil.name SEPARATOR ', '), g.name) AS aktuelle_graduierung,
       m.email, m.telefon_mobil, m.aktiv, m.eintrittsdatum, m.dojo_id,
       m.allergien, m.notfallkontakt_name, m.notfallkontakt_telefon,
@@ -94,12 +92,23 @@ router.get('/all', (req, res) => {
       m.hausordnung_akzeptiert, m.datenschutz_akzeptiert, m.foto_einverstaendnis,
       m.familien_id, m.rabatt_prozent, m.trainingsstunden,
       COALESCE(GROUP_CONCAT(DISTINCT ms.stil ORDER BY ms.stil SEPARATOR ', '), '') AS stile,
-      m.foto_pfad
+      m.foto_pfad,
+      lv.vertrag_status, lv.vertrag_ende, lv.vertrag_betrag
     FROM mitglieder m
     LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
     LEFT JOIN graduierungen g ON m.graduierung_id = g.graduierung_id
     LEFT JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id
     LEFT JOIN graduierungen g_stil ON msd.current_graduierung_id = g_stil.graduierung_id
+    LEFT JOIN (
+      SELECT v1.mitglied_id, v1.status AS vertrag_status, v1.vertragsende AS vertrag_ende, v1.monatsbeitrag AS vertrag_betrag
+      FROM vertraege v1
+      WHERE v1.id = (
+        SELECT v2.id FROM vertraege v2
+        WHERE v2.mitglied_id = v1.mitglied_id
+        ORDER BY FIELD(v2.status,'aktiv','ruhepause','gekuendigt','beendet') ASC, v2.id DESC
+        LIMIT 1
+      )
+    ) lv ON m.mitglied_id = lv.mitglied_id
     ${whereClause}
     GROUP BY m.mitglied_id
     ORDER BY m.nachname, m.vorname
@@ -121,7 +130,17 @@ router.get('/all', (req, res) => {
 
 // GET /by-email/:email - Mitglied über Email abrufen
 router.get('/by-email/:email', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { email } = req.params;
+
+  let whereClause = 'm.email = ?';
+  const queryParams = [email];
+
+  if (secureDojoId) {
+    whereClause += ' AND m.dojo_id = ?';
+    queryParams.push(secureDojoId);
+  }
 
   const query = `
     SELECT
@@ -137,11 +156,11 @@ router.get('/by-email/:email', (req, res) => {
       m.foto_pfad
     FROM mitglieder m
     LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
-    WHERE m.email = ?
+    WHERE ${whereClause}
     GROUP BY m.mitglied_id
   `;
 
-  db.query(query, [email], (err, result) => {
+  db.query(query, queryParams, (err, result) => {
     if (err) {
       logger.error('Fehler beim Abrufen des Mitglieds über Email:', err);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Mitgliedsdaten' });
@@ -185,7 +204,9 @@ router.get('/:id', (req, res) => {
       m.naechste_pruefung_datum, m.pruefungsgebuehr_bezahlt, m.trainer_empfehlung,
       m.hausordnung_akzeptiert, m.datenschutz_akzeptiert, m.foto_einverstaendnis, m.vereinsordnung_datum,
       m.familien_id, m.rabatt_prozent, m.rabatt_grund,
-      COALESCE(GROUP_CONCAT(DISTINCT ms.stil ORDER BY ms.stil SEPARATOR ', '), '') AS stile
+      COALESCE(GROUP_CONCAT(DISTINCT ms.stil ORDER BY ms.stil SEPARATOR ', '), '') AS stile,
+      (SELECT COUNT(*) FROM mitglied_dokumente md WHERE md.mitglied_id = m.mitglied_id) AS dokumente_offen,
+      (SELECT COUNT(*) FROM nachrichten n WHERE n.mitglied_id = m.mitglied_id) AS nachrichten_offen
     FROM mitglieder m
     LEFT JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
     ${whereClause}

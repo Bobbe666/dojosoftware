@@ -19,7 +19,7 @@
   background: var(--surface-2);
   backdrop-filter: blur(20px);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
@@ -83,7 +83,7 @@
   background: var(--surface-2);
   backdrop-filter: blur(10px);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   margin-bottom: 1rem;
   overflow: hidden;
@@ -91,21 +91,21 @@
 }
 
 .mahnstufe-card:hover {
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Farbige Border je nach Mahnstufe - updated for collapsible structure */
 .mahnstufe-card:nth-of-type(1) {
-  border-left: 3px solid #f59e0b;
+  border-left: 3px solid var(--status-warning);
 }
 
 .mahnstufe-card:nth-of-type(2) {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--status-error);
 }
 
 .mahnstufe-card:nth-of-type(3) {
-  border-left: 3px solid #dc2626;
+  border-left: 3px solid var(--status-error);
 }
 
 .mahnstufe-card:nth-of-type(n+4) {
@@ -118,7 +118,7 @@
   align-items: center;
   padding: 1rem 1.25rem;
   background: rgba(255, 255, 255, 0.03);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
   transition: background 0.2s ease;
 }
 
@@ -203,7 +203,7 @@
 .form-group input,
 .form-group textarea {
   padding: 0.6rem 0.75rem;
-  border: 1px solid rgba(255, 215, 0, 0.15);
+  border: 1px solid var(--primary-alpha-15);
   border-radius: var(--comp-radius-sm);
   background: var(--surface-2);
   color: var(--text-1);
@@ -215,7 +215,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 2px var(--primary-alpha-10);
   background: var(--surface-3);
 }
 

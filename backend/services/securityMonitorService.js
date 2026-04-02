@@ -9,7 +9,7 @@ const db = require('../db');
 const SQL_INJECTION_PATTERNS = [
   /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b.*\b(FROM|INTO|SET|TABLE|DATABASE)\b)/i,
   /(\bOR\b\s+['"]?\d+['"]?\s*=\s*['"]?\d+)/i,
-  /(--|\#|\/\*|\*\/)/,
+  /(--|# |\/\*|\*\/)/,
   /(\bEXEC\b|\bEXECUTE\b)/i,
   /(\bxp_|\bsp_)/i,
   /(SLEEP\s*\(|BENCHMARK\s*\(|WAITFOR\s+DELAY)/i,

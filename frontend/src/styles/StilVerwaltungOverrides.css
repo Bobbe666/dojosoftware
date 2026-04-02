@@ -40,7 +40,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 .pruefungsinhalt-manager {
   background: rgba(30, 30, 50, 0.7) !important;
   backdrop-filter: blur(30px) !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
   border-radius: var(--comp-radius-pill) !important;
   padding: var(--ui-page-padding) !important;
@@ -53,7 +53,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   justify-content: space-between !important;
   align-items: center !important;
   background: rgba(20, 20, 35, 0.5) !important;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.4) !important;
+  border-bottom: 2px solid var(--primary-alpha-40) !important;
   border-radius: 15px 15px 0 0 !important;
   backdrop-filter: blur(10px) !important;
   padding: 1.5rem !important;
@@ -69,7 +69,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   font-weight: 700 !important;
   margin: 0 !important;
   letter-spacing: 0.5px !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 215, 0, 0.6) !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9), 0 0 4px var(--primary-alpha-60) !important;
   position: relative !important;
   z-index: 100 !important;
   -webkit-font-smoothing: antialiased !important;
@@ -101,7 +101,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 .graduierung-manager .section-header .btn,
 .graduierung-manager button[class*="btn"] {
   background: rgba(20, 20, 35, 0.7) !important;
-  border: 1px solid rgba(255, 215, 0, 0.5) !important;
+  border: 1px solid var(--primary-alpha-50) !important;
   color: var(--text-1) !important;
   padding: 12px 20px !important;
   border-radius: var(--comp-radius-md) !important;
@@ -123,7 +123,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   border-color: rgba(255, 215, 0, 0.7) !important;
   color: var(--text-1) !important;
   transform: none !important;
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.2) !important;
+  box-shadow: 0 0 12px var(--primary-alpha-20) !important;
   background-image: none !important;
 }
 
@@ -146,7 +146,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 .graduierung-actions .btn-info,
 .graduierung-actions .move-btn {
   border: 1px solid rgba(59, 130, 246, 0.4) !important;
-  color: #3b82f6 !important;
+  color: var(--status-indigo) !important;
   min-width: 36px !important;
   width: 36px !important;
   height: 36px !important;
@@ -158,7 +158,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 .graduierung-actions .move-btn:hover:not(:disabled) {
   background: rgba(59, 130, 246, 0.1) !important;
   border-color: rgba(59, 130, 246, 0.6) !important;
-  color: #3b82f6 !important;
+  color: var(--status-indigo) !important;
   box-shadow: none !important;
 }
 
@@ -190,7 +190,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 .empty-state {
   background: rgba(30, 30, 50, 0.5) !important;
   backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xl) !important;
   padding: 3rem !important;
 }
@@ -287,9 +287,9 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
   background: rgba(30, 30, 50, 0.98) !important;
   border-color: var(--primary) !important;
   color: var(--text-1) !important; /* White on hover for better visibility */
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6) !important; /* Glow effect on hover */
+  text-shadow: 0 0 10px var(--primary-alpha-60) !important; /* Glow effect on hover */
   transform: translateY(-2px) !important;
-  box-shadow: 0 4px 16px rgba(255, 215, 0, 0.5) !important;
+  box-shadow: 0 4px 16px var(--primary-alpha-50) !important;
 }
 
 .graduierung-manager .section-header .sub-tab-btn:disabled {
@@ -305,7 +305,7 @@ WICHTIG: Diese Datei muss NACH StilVerwaltung.css importiert werden!
 
 .drag-drop-info strong {
   color: var(--primary) !important;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6) !important;
+  text-shadow: 0 0 10px var(--primary-alpha-60) !important;
 }
 
 /* Graduierung Namen besser lesbar */
@@ -377,7 +377,7 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal {
 
   /* Visuals */
   background: var(--modal-bg-dark) !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
   border-radius: var(--comp-radius-pill) !important;
   backdrop-filter: blur(20px) !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
@@ -407,7 +407,7 @@ html body .modal-overlay .modal-content.belt-modal.stil-modal .modal-header {
   padding-top: 0 !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-bottom: 1px solid var(--primary-alpha-20) !important;
 }
 
 /* Modal Actions - ALLE negativen Margins überschreiben! */

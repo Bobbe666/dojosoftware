@@ -10,7 +10,7 @@
 
 /* ===== STATISTIK CARDS ===== */
 .mahnwesen-container .stat-icon {
-  background: rgba(255, 215, 0, 0.2);
+  background: var(--primary-alpha-20);
   color: var(--primary);
   padding: 0.65rem;
   border-radius: 50%;
@@ -70,7 +70,7 @@
   background: var(--surface-2);
   backdrop-filter: blur(20px);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 
@@ -109,7 +109,7 @@
 }
 
 .data-table thead {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .data-table th {
@@ -120,7 +120,7 @@
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 2px solid var(--primary-alpha-20);
 }
 
 .data-table td {
@@ -135,7 +135,7 @@
 }
 
 .data-table tbody tr:hover {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .data-table td.amount {
@@ -178,7 +178,7 @@
 }
 
 .empty-state svg {
-  color: rgba(255, 215, 0, 0.2);
+  color: var(--primary-alpha-20);
   margin-bottom: 1rem;
 }
 
@@ -254,11 +254,11 @@
 }
 .mahnlauf-ergebnis--simulation {
   background: rgba(251, 191, 36, 0.1);
-  border: 1px solid #f59e0b;
+  border: 1px solid var(--status-warning);
 }
 .mahnlauf-ergebnis--real {
   background: rgba(34, 197, 94, 0.1);
-  border: 1px solid #22c55e;
+  border: 1px solid var(--status-success);
 }
-.mahnlauf-ergebnis--simulation .mahnlauf-ergebnis-title { margin: 0; color: #f59e0b; }
-.mahnlauf-ergebnis--real .mahnlauf-ergebnis-title { margin: 0; color: #22c55e; }
+.mahnlauf-ergebnis--simulation .mahnlauf-ergebnis-title { margin: 0; color: var(--status-warning); }
+.mahnlauf-ergebnis--real .mahnlauf-ergebnis-title { margin: 0; color: var(--status-success); }

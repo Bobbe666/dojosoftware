@@ -1,0 +1,150 @@
+/* HeroSlider.css */
+
+.hero-slider {
+  width: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  overflow: hidden;
+  padding: 40px 0;
+}
+
+.slider-container {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.slides-wrapper {
+  display: flex;
+  transition: transform 0.5s ease-in-out;
+}
+
+.slide {
+  min-width: 100%;
+  cursor: pointer;
+  position: relative;
+}
+
+.slide img {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  display: block;
+  object-fit: contain;
+  background: #1a1a2e;
+}
+
+.slide::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 60%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  pointer-events: none;
+}
+
+/* Dots Navigation */
+.slider-dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+  z-index: 10;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.dot.active {
+  background: #ff6b35;
+  border-color: #ff6b35;
+  transform: scale(1.2);
+}
+
+/* CTA Overlay */
+.slider-cta {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: none; /* Hidden by default since images have their own CTAs */
+}
+
+.cta-button {
+  padding: 14px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: none;
+}
+
+.cta-button.primary {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+}
+
+.cta-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .slider-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 1.8rem;
+  }
+
+  .slider-arrow.prev {
+    left: 10px;
+  }
+
+  .slider-arrow.next {
+    right: 10px;
+  }
+
+  .slider-dots {
+    bottom: 15px;
+    gap: 8px;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .slider-arrow {
+    display: none;
+  }
+
+  .slider-dots {
+    bottom: 10px;
+  }
+}

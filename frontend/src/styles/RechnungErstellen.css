@@ -23,7 +23,7 @@
 .rechnung-erstellen-container .rechnung-form {
   background: rgba(26, 26, 46, 0.95) !important;
   backdrop-filter: blur(10px) !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-md) !important;
   padding: 0.75rem 1rem !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
@@ -42,7 +42,7 @@
 .rechnung-erstellen-container .form-section {
   margin-bottom: 0.4rem !important;
   padding-bottom: 0.4rem !important;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-bottom: 1px solid var(--primary-alpha-15) !important;
 }
 
 .rechnung-erstellen-container .form-section:last-of-type {
@@ -67,7 +67,7 @@
 .rechnung-erstellen-container .form-section input {
   width: 100% !important;
   padding: 0.3rem 0.45rem !important;
-  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xs) !important;
   font-size: 0.75rem !important;
   color: var(--text-1) !important;
@@ -84,7 +84,7 @@
 .form-section input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
 }
 
 .rechnung-erstellen-container .form-grid {
@@ -126,7 +126,7 @@
   padding: 0.5rem 0.6rem;
   color: var(--text-1);
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--primary-alpha-25);
   border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
 }
@@ -143,7 +143,7 @@
   padding: 0.5rem 0.4rem;
   color: var(--text-1);
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 215, 0, 0.25);
+  border: 1px solid var(--primary-alpha-25);
   border-radius: var(--comp-radius-sm);
   font-size: 0.85rem;
   text-align: center;
@@ -181,7 +181,7 @@
   padding: 0.6rem !important;
   background: linear-gradient(135deg, var(--primary), #f59e0b) !important;
   color: var(--bg-secondary) !important;
-  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border: 1px solid var(--primary-alpha-30) !important;
   border-radius: var(--comp-radius-md) !important;
   font-size: 0.9rem !important;
   font-weight: 600 !important;
@@ -193,7 +193,7 @@
 .btn-save:hover {
   background: linear-gradient(135deg, #f59e0b, #d97706);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255,215,0,0.1);
+  box-shadow: 0 4px 12px var(--primary-alpha-10);
 }
 
 /* Rechnungsvorschau */
@@ -442,7 +442,7 @@
 
 .rechnung-erstellen-container .position-item {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-sm);
   padding: 0.75rem;
   margin-bottom: 0.5rem;
@@ -454,7 +454,7 @@
 }
 
 .rechnung-erstellen-container .position-item-divider {
-  border-top: 1px solid rgba(255, 215, 0, 0.1);
+  border-top: 1px solid var(--primary-alpha-10);
 }
 
 .rechnung-erstellen-container input[type="checkbox"] {
@@ -494,8 +494,8 @@
   padding: 0.4rem 0.5rem;
   font-size: 0.85rem;
   width: 80px;
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-sm);
   color: var(--text-1);
   text-align: center;
@@ -578,15 +578,15 @@
 }
 
 .dojo-selection-card:hover {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
   transform: translateY(-2px);
 }
 
 .dojo-selection-card.active {
-  background: rgba(255, 215, 0, 0.15);
+  background: var(--primary-alpha-15);
   border-color: var(--primary);
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 20px var(--primary-alpha-20);
 }
 
 .dojo-selection-card .dojo-card-header {
@@ -634,7 +634,7 @@
 
 .dojo-selection-card .steuer-badge.regelbesteuert {
   background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
+  color: var(--status-indigo);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
@@ -774,7 +774,7 @@
 }
 
 .modal-close-btn:hover {
-  color: var(--danger-color, #ef4444);
+  color: var(--danger-color, var(--status-error));
 }
 
 .varianten-modal-content {
@@ -1099,10 +1099,10 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 /* Rabatt % label */
@@ -1119,7 +1119,7 @@
   font-size: 0.85rem;
   width: 70px;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  border: 1px solid var(--primary-alpha-40);
   border-radius: 4px;
   color: var(--primary);
   text-align: center;
@@ -1174,7 +1174,7 @@
   align-items: center;
   gap: 0.75rem;
   padding-top: 0.4rem;
-  border-top: 1px solid rgba(255, 215, 0, 0.15);
+  border-top: 1px solid var(--primary-alpha-15);
 }
 
 /* Inline rabatt label in position */
@@ -1191,7 +1191,7 @@
 .re-pos-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
   cursor: pointer;
 }
 
@@ -1207,7 +1207,7 @@
   width: 55px;
   padding: 0.2rem 0.3rem;
   background: rgba(0, 0, 0, 0.4);
-  border: 1px solid #ffd700;
+  border: 1px solid var(--primary);
   border-radius: 4px;
   color: var(--primary);
   font-size: 0.8rem;
@@ -1222,8 +1222,8 @@
 
 /* Rabatt info button (?) */
 .re-btn-info {
-  background: rgba(255, 215, 0, 0.2);
-  border: 1px solid rgba(255, 215, 0, 0.4);
+  background: var(--primary-alpha-20);
+  border: 1px solid var(--primary-alpha-40);
   border-radius: 50%;
   color: var(--primary);
   width: 14px;

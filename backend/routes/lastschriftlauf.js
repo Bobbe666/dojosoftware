@@ -401,11 +401,13 @@ router.get("/missing-mandates", (req, res) => {
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const secureDojoId = getSecureDojoId(req);
 
+    const dojoId = req.query.dojo_id || req.user?.dojo_id;
+
     let whereClause = '';
     const params = [];
-    if (secureDojoId) {
+    if (dojoId) {
         whereClause = 'AND m.dojo_id = ?';
-        params.push(secureDojoId);
+        params.push(parseInt(dojoId));
     }
 
     const query = `
@@ -416,8 +418,7 @@ router.get("/missing-mandates", (req, res) => {
             m.email,
             m.telefon,
             m.zahlungsmethode,
-            COUNT(v.id) as anzahl_vertraege,
-            GROUP_CONCAT(DISTINCT v.name SEPARATOR ', ') as vertrag_namen
+            COUNT(v.id) as anzahl_vertraege
         FROM mitglieder m
         JOIN vertraege v ON m.mitglied_id = v.mitglied_id
         LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
@@ -426,7 +427,7 @@ router.get("/missing-mandates", (req, res) => {
           AND sm.mandat_id IS NULL
           AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
           ${whereClause}
-        GROUP BY m.mitglied_id, m.vorname, m.nachname, m.email, m.telefon, m.zahlungsmethode
+        GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
     `;
 
@@ -447,6 +448,103 @@ router.get("/missing-mandates", (req, res) => {
             members: results
         });
     });
+});
+
+/**
+ * GET /api/lastschriftlauf/not-in-run
+ * Alle SEPA-Mitglieder die NICHT im aktuellen Lastschriftlauf sind, mit Grund
+ */
+router.get("/not-in-run", async (req, res) => {
+    try {
+        const dojoId = req.query.dojo_id || req.user?.dojo_id;
+        const monat = parseInt(req.query.monat) || (new Date().getMonth() + 1);
+        const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-31`;
+
+        // Schritt 1: Wer ist im Lauf (wie preview-Query)
+        const inRunQuery = `
+            SELECT DISTINCT m2.mitglied_id
+            FROM mitglieder m2
+            JOIN vertraege v2 ON m2.mitglied_id = v2.mitglied_id AND v2.status = 'aktiv'
+            JOIN beitraege b2 ON m2.mitglied_id = b2.mitglied_id
+                AND b2.bezahlt = 0 AND b2.zahlungsdatum <= ?
+            INNER JOIN (
+                SELECT mitglied_id FROM sepa_mandate
+                WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
+            ) sm2 ON m2.mitglied_id = sm2.mitglied_id
+            WHERE (m2.zahlungsmethode = 'SEPA-Lastschrift' OR m2.zahlungsmethode = 'Lastschrift')
+              AND (m2.vertragsfrei = 0 OR m2.vertragsfrei IS NULL)
+              ${dojoId ? 'AND m2.dojo_id = ?' : ''}
+        `;
+        const inRunParams = dojoId ? [monatEnde, dojoId] : [monatEnde];
+        const inRunRows = await queryAsync(inRunQuery, inRunParams);
+        const inRunIds = inRunRows.map(r => r.mitglied_id);
+
+        // Schritt 2: Alle SEPA-Mitglieder die NICHT im Lauf sind
+        const notInRunWhere = inRunIds.length > 0
+            ? `AND m.mitglied_id NOT IN (${inRunIds.map(() => '?').join(',')})`
+            : '';
+
+        const query = `
+            SELECT
+                m.mitglied_id, m.vorname, m.nachname, m.zahlungsmethode,
+                v.status as vertrag_status,
+                v.ruhepause_von, v.ruhepause_bis, v.vertragsende,
+                sm.mandat_id, sm.mandatsreferenz,
+                (SELECT COUNT(*) FROM beitraege b
+                 WHERE b.mitglied_id = m.mitglied_id AND b.bezahlt = 0
+                   AND b.zahlungsdatum <= ?) as offene_beitraege
+            FROM mitglieder m
+            LEFT JOIN vertraege v ON m.mitglied_id = v.mitglied_id
+                AND v.status IN ('aktiv','gekuendigt','ruhepause')
+            LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id
+                AND sm.status = 'aktiv' AND sm.mandatsreferenz IS NOT NULL
+            WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+              ${dojoId ? 'AND m.dojo_id = ?' : ''}
+              ${notInRunWhere}
+            GROUP BY m.mitglied_id
+            ORDER BY m.nachname, m.vorname
+        `;
+
+        const queryParams = [
+            monatEnde,
+            ...(dojoId ? [dojoId] : []),
+            ...inRunIds
+        ];
+
+        const results = await queryAsync(query, queryParams);
+
+        const members = results.map(r => {
+            let grund = '';
+            if (!r.mandat_id) {
+                grund = 'Kein aktives SEPA-Mandat';
+            } else if (!r.vertrag_status) {
+                grund = 'Kein Vertrag';
+            } else if (r.vertrag_status === 'ruhepause') {
+                grund = `Ruhepause (bis ${r.ruhepause_bis ? new Date(r.ruhepause_bis).toLocaleDateString('de-DE') : '?'})`;
+            } else if (r.vertrag_status === 'gekuendigt') {
+                grund = `Gekündigt (Ende ${r.vertragsende ? new Date(r.vertragsende).toLocaleDateString('de-DE') : '?'})`;
+            } else if (r.offene_beitraege === 0) {
+                grund = 'Alle Beiträge bezahlt';
+            } else {
+                grund = 'Unbekannt';
+            }
+            return {
+                mitglied_id: r.mitglied_id,
+                name: `${r.vorname} ${r.nachname}`,
+                zahlungsmethode: r.zahlungsmethode,
+                vertrag_status: r.vertrag_status,
+                offene_beitraege: r.offene_beitraege,
+                grund
+            };
+        });
+
+        res.json({ success: true, count: members.length, members });
+    } catch (error) {
+        logger.error('Fehler bei not-in-run:', error);
+        res.status(500).json({ error: 'Fehler', details: error.message });
+    }
 });
 
 /**
@@ -768,14 +866,14 @@ function getMostCommonBank(contracts) {
 router.get("/stripe/status", async (req, res) => {
     try {
         // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
-        const dojoId = getSecureDojoId(req);
+        const dojoId = req.query.dojo_id || req.user?.dojo_id;
 
         // Prüfe Stripe-Konfiguration
         const dojoQuery = 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?';
         const dojoResult = await queryAsync(dojoQuery, [dojoId]);
 
         if (dojoResult.length === 0) {
-            return res.json({ stripe_configured: false, message: 'Dojo nicht gefunden' });
+            return res.json({ stripe_configured: false, message: 'Dojo nicht gefunden oder Stripe nicht konfiguriert' });
         }
 
         const stripeConfigured = !!(dojoResult[0].stripe_secret_key && dojoResult[0].stripe_publishable_key);
@@ -789,9 +887,10 @@ router.get("/stripe/status", async (req, res) => {
             FROM mitglieder m
             INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND m.dojo_id = ?
         `;
 
-        const countResult = await queryAsync(countQuery, []);
+        const countResult = await queryAsync(countQuery, [dojoId]);
 
         res.json({
             stripe_configured: stripeConfigured,
@@ -813,8 +912,7 @@ router.get("/stripe/status", async (req, res) => {
 router.post("/stripe/setup-customer", async (req, res) => {
     try {
         const { mitglied_id } = req.body;
-        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
-        const dojoId = getSecureDojoId(req);
+        const dojoId = req.body.dojo_id || req.user?.dojo_id;
 
         if (!mitglied_id) {
             return res.status(400).json({ error: 'mitglied_id erforderlich' });
@@ -874,8 +972,7 @@ router.post("/stripe/setup-customer", async (req, res) => {
  */
 router.post("/stripe/setup-all", async (req, res) => {
     try {
-        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
-        const dojoId = getSecureDojoId(req);
+        const dojoId = req.body.dojo_id || req.user?.dojo_id;
 
         // Finde alle Mitglieder die Setup benötigen
         const mitgliederQuery = `
@@ -887,8 +984,9 @@ router.post("/stripe/setup-all", async (req, res) => {
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.iban IS NOT NULL
               AND (m.stripe_customer_id IS NULL OR sm.stripe_payment_method_id IS NULL)
+              AND m.dojo_id = ?
         `;
-        const mitglieder = await queryAsync(mitgliederQuery, []);
+        const mitglieder = await queryAsync(mitgliederQuery, [dojoId]);
 
         if (mitglieder.length === 0) {
             return res.json({
@@ -957,8 +1055,7 @@ router.post("/stripe/setup-all", async (req, res) => {
 router.post("/stripe/execute", async (req, res) => {
     try {
         const { monat, jahr, mitglieder } = req.body;
-        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
-        const dojoId = getSecureDojoId(req);
+        const dojoId = req.body.dojo_id || req.user?.dojo_id;
 
         if (!monat || !jahr) {
             return res.status(400).json({ error: 'Monat und Jahr erforderlich' });

@@ -25,7 +25,7 @@ router.get('/:id/sepa-mandate', (req, res) => {
   if (userIsSuperAdmin && secureDojoId === null) {
     // Super-Admin ohne spezifisches Dojo: Nur zentral verwaltete Dojos
     whereConditions.push(`m.dojo_id NOT IN (
-      SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL
+      SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
     )`);
   } else if (secureDojoId) {
     // Normaler Admin oder Super-Admin mit spezifischem Dojo

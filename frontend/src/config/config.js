@@ -2,8 +2,8 @@
 // 🔧 DOJOSOFTWARE - FRONTEND CONFIGURATION
 // ===================================================================
 
-// Version automatisch aus Changelog holen
-import { CURRENT_VERSION, CURRENT_BUILD_DATE } from '../components/SystemChangelog.jsx';
+// Version aus zentraler version.js (kein React-Import nötig!)
+import { CURRENT_VERSION, CURRENT_BUILD_DATE } from '../version.js';
 
 // Umgebung bestimmen
 const isDevelopment = import.meta.env.MODE === 'development';

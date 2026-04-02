@@ -105,7 +105,7 @@
 }
 
 .trial-banner.urgent .trial-upgrade-btn {
-  color: #dc2626;
+  color: var(--status-error);
   animation: shake 0.5s ease-in-out;
 }
 

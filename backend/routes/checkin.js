@@ -33,7 +33,7 @@ const generateQRData = (memberId) => {
 // HELPER FUNCTION: Multi-Course Check-in Logic (extracted)
 // ============================================
 
-const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_method) => {
+const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_method, checkinDateOverride) => {
 
   // 1. Verify member exists
   const members = await queryAsync(
@@ -59,15 +59,18 @@ const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_m
   }
   
   // 3. Create check-ins
-  const checkinTime = new Date();
+  const checkinTime = checkinDateOverride || new Date();
+  const validMethods = ['touch', 'qr_code', 'manual', 'nfc', 'admin'];
+  const safeMethod = validMethods.includes(checkin_method) ? checkin_method : 'manual';
   const checkinResults = [];
   
   for (const stundenplan_id of stundenplan_ids) {
     try {
-      // Prüfe nur auf AKTIVE Check-ins heute
+      // Prüfe nur auf AKTIVE Check-ins am jeweiligen Datum
+      const checkinDateStr = checkinTime.toISOString().split('T')[0];
       const existing = await queryAsync(
-        'SELECT checkin_id, status FROM checkins WHERE mitglied_id = ? AND stundenplan_id = ? AND DATE(checkin_time) = CURDATE() AND status = "active"',
-        [mitglied_id, stundenplan_id]
+        'SELECT checkin_id, status FROM checkins WHERE mitglied_id = ? AND stundenplan_id = ? AND DATE(checkin_time) = ? AND status = "active"',
+        [mitglied_id, stundenplan_id, checkinDateStr]
       );
 
       if (existing.length > 0) {
@@ -86,7 +89,7 @@ const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_m
         `INSERT INTO checkins 
          (mitglied_id, stundenplan_id, checkin_time, checkin_method, status, created_at, updated_at) 
          VALUES (?, ?, ?, ?, 'active', NOW(), NOW())`,
-        [mitglied_id, stundenplan_id, checkinTime, checkin_method || 'touch']
+        [mitglied_id, stundenplan_id, checkinTime, safeMethod]
       );
 
       checkinResults.push({
@@ -190,6 +193,8 @@ router.get('/health', (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { mitglied_id, stundenplan_id, datum, checkin_type } = req.body;
+    // datum: optional — wenn übergeben, aktuelle Uhrzeit beibehalten (kein T12:00:00!)
+    const checkinDate = new Date();
 
     // Basic validation
     if (!mitglied_id || !stundenplan_id) {
@@ -203,7 +208,8 @@ router.post('/', async (req, res) => {
     const result = await performMultiCourseCheckin(
       mitglied_id, 
       [stundenplan_id],  // Array mit einem Element
-      checkin_type || 'manual'
+      checkin_type || 'manual',
+      checkinDate
     );
     
     const { member, checkinTime, checkinResults } = result;
@@ -258,14 +264,14 @@ router.post('/', async (req, res) => {
 // Get today's available courses
 router.get('/courses-today', async (req, res) => {
   try {
-    // Get current day name in German
-    const today = new Date();
+    // Get day name - support optional ?date=YYYY-MM-DD param
     const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+    const today = req.query.date ? new Date(req.query.date + 'T12:00:00') : new Date();
     const todayName = dayNames[today.getDay()];
 
     // 🔒 SICHER: Verwende getSecureDojoId statt req.query.dojo_id
     const secureDojoId = getSecureDojoId(req);
-    const dojoFilter = secureDojoId ? ` AND s.dojo_id = ${secureDojoId}` : '';
+    const dojoFilter = secureDojoId ? ` AND k.dojo_id = ${secureDojoId}` : '';
 
     logger.debug('Lade Kurse', { tag: todayName, dojo_id: secureDojoId || 'all' });
 
@@ -520,6 +526,12 @@ router.get('/today', async (req, res) => {
       });
     }
 
+    // 🔒 Dojo-Filter: Super-Admin kann dojo_id via Query übergeben
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilter = secureDojoId
+      ? `AND (m.dojo_id = ${secureDojoId} OR (c.ist_gast = 1 AND c.mitglied_id IS NULL))`
+      : '';
+
     const query = `
       SELECT
         c.checkin_id,
@@ -548,17 +560,19 @@ router.get('/today', async (req, res) => {
       LEFT JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
       LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
       LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
-      WHERE DATE(c.checkin_time) = CURDATE()
+      WHERE DATE(c.checkin_time) = ?
         AND (m.aktiv = 1 OR c.ist_gast = 1)
-        AND c.status = 'active'
+        AND (c.status = 'active' OR DATE(c.checkin_time) != CURDATE())
+        ${dojoFilter}
       ORDER BY c.checkin_time DESC
     `;
 
-    const checkins = await queryAsync(query);
+    const filterDate = req.query.date || new Date().toISOString().split('T')[0];
+    const checkins = await queryAsync(query, [filterDate]);
 
     res.json({
       success: true,
-      date: new Date().toISOString().split('T')[0],
+      date: filterDate,
       checkins: checkins
     });
 
@@ -595,12 +609,18 @@ router.get('/today-member/:mitglied_id', async (req, res) => {
 
     const checkins = await queryAsync(query, [mitglied_id]);
 
+    // stundenplan_ids: nur aktive Check-ins blockieren neue Anmeldungen
+    // completed/cancelled Einträge werden als "war schon da" zurückgegeben, blockieren aber nicht
+    const activeStundenplanIds = checkins
+      .filter(c => c.status === 'active')
+      .map(c => c.stundenplan_id);
+
     res.json({
       success: true,
       mitglied_id: parseInt(mitglied_id),
       date: new Date().toISOString().split('T')[0],
       checkins: checkins,
-      stundenplan_ids: checkins.map(c => c.stundenplan_id)
+      stundenplan_ids: activeStundenplanIds
     });
 
   } catch (error) {
@@ -615,20 +635,24 @@ router.get('/today-member/:mitglied_id', async (req, res) => {
 // 🆕 NEU: Check-in Übersicht für Tresen (eingecheckt + vom Trainer hinzugefügt)
 router.get('/tresen/:datum', async (req, res) => {
     try {
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const secureDojoId = getSecureDojoId(req);
+
         const datum = req.params.datum;
         const heute = new Date(datum);
         const wochentag = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][heute.getDay()];
         logger.debug('📢 Tresen-Query für Datum: ${datum} (${wochentag})');
-        
-        // Sehr einfache Query: Finde ALLE aktiven Check-ins für heute
+
+        // Sehr einfache Query: Finde aktive Check-ins für heute (nur eigenes Dojo)
         logger.debug('Suche Check-ins für Datum: ${datum}');
-        
+
         // Zuerst: Prüfe ob überhaupt Check-ins existieren
         const testQuery = `SELECT COUNT(*) as count FROM checkins WHERE DATE(checkin_time) = ? AND status = 'active'`;
         const testResult = await queryAsync(testQuery, [datum]);
         logger.debug('📊 Anzahl aktive Check-ins in DB: ${testResult[0]?.count || 0}');
-        
+
         // Dann: Hole alle Check-ins mit Mitglied-Daten (inkl. Gäste)
+        const dojoFilter = secureDojoId ? 'AND (m.dojo_id = ? OR c.ist_gast = 1)' : '';
         const checkinsQuery = `
             SELECT
                 c.checkin_id,
@@ -661,13 +685,16 @@ router.get('/tresen/:datum', async (req, res) => {
             WHERE DATE(c.checkin_time) = ?
                 AND c.status = 'active'
                 AND (m.aktiv = 1 OR c.ist_gast = 1)
+                ${dojoFilter}
             ORDER BY c.checkin_time DESC
         `;
-        
+
+        const queryParams = secureDojoId ? [datum, secureDojoId] : [datum];
+
         logger.debug('Führe Query aus mit Datum: ${datum}');
         let checkins;
         try {
-            checkins = await queryAsync(checkinsQuery, [datum]);
+            checkins = await queryAsync(checkinsQuery, queryParams);
             logger.info('Query erfolgreich ausgeführt. Gefundene Check-ins nach JOIN: ${checkins.length}');
         } catch (queryError) {
             logger.error('Query-Fehler:', queryError);
@@ -875,10 +902,13 @@ router.post('/checkout', async (req, res) => {
       await queryAsync('SET @TRIGGER_DISABLED = 1');
       
       // Update check-in to completed
-      await queryAsync(
+      const updateResult = await queryAsync(
         'UPDATE checkins SET checkout_time = NOW(), status = ?, updated_at = NOW() WHERE checkin_id = ?',
         ['completed', checkin_id]
       );
+      if (!updateResult || updateResult.affectedRows === 0) {
+        throw new Error('UPDATE hat keine Zeile geändert');
+      }
       
       // Triggers wieder aktivieren
       await queryAsync('SET @TRIGGER_DISABLED = NULL');
@@ -1051,5 +1081,71 @@ router.get('/qr/:id', async (req, res) => {
     });
   }
 });
+
+
+// GET /checkin/member-last-visits - letzter Besuch je Mitglied
+router.get('/member-last-visits', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo' });
+    const rows = await queryAsync(`
+      SELECT c.mitglied_id,
+             DATEDIFF(NOW(), MAX(c.checkin_time)) as days_since,
+             MAX(DATE(c.checkin_time)) as last_date
+      FROM checkins c
+      JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+      WHERE m.dojo_id = ? AND m.aktiv = 1 AND c.mitglied_id IS NOT NULL
+        AND c.status = 'active'
+      GROUP BY c.mitglied_id
+    `, [dojoId]);
+    const map = {};
+    rows.forEach(r => { map[r.mitglied_id] = { days_since: r.days_since, last_date: r.last_date }; });
+    res.json({ success: true, data: map });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /checkin/zehnerkarten-low - Mitglieder mit <= 2 verbleibenden Einheiten
+router.get('/zehnerkarten-low', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo' });
+    const rows = await queryAsync(`
+      SELECT z.mitglied_id, z.einheiten_verbleibend, z.einheiten_gesamt
+      FROM zehnerkarten z
+      JOIN mitglieder m ON z.mitglied_id = m.mitglied_id
+      WHERE m.dojo_id = ? AND z.status = 'aktiv' AND z.einheiten_verbleibend <= 2
+    `, [dojoId]);
+    const map = {};
+    rows.forEach(r => { map[r.mitglied_id] = r.einheiten_verbleibend; });
+    res.json({ success: true, data: map });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /checkin/course-avg?stundenplan_id=X - Ø-Anwesenheit letzte 8 Wochen
+router.get('/course-avg', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    const { stundenplan_id } = req.query;
+    if (!stundenplan_id) return res.status(400).json({ error: 'Kein stundenplan_id' });
+    const rows = await queryAsync(`
+      SELECT AVG(daily_count) as avg_count, COUNT(*) as sessions
+      FROM (
+        SELECT DATE(checkin_time) as day, COUNT(*) as daily_count
+        FROM checkins
+        WHERE stundenplan_id = ? AND checkin_time >= DATE_SUB(NOW(), INTERVAL 8 WEEK)
+          AND status = 'active' AND mitglied_id IS NOT NULL
+        GROUP BY DATE(checkin_time)
+      ) sub
+    `, [stundenplan_id]);
+    res.json({ success: true, avg: Math.round(rows[0]?.avg_count || 0), sessions: rows[0]?.sessions || 0 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 module.exports = router;

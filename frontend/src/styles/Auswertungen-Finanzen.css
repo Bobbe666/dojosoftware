@@ -22,12 +22,12 @@
 }
 
 .fin-kpi:hover {
-  border-color: rgba(255, 215, 0, 0.2);
+  border-color: var(--primary-alpha-20);
 }
 
 .fin-kpi--hero {
-  background: rgba(255, 215, 0, 0.05);
-  border-color: rgba(255, 215, 0, 0.25);
+  background: var(--primary-alpha-05);
+  border-color: var(--primary-alpha-25);
 }
 
 .fin-kpi-label {
@@ -40,17 +40,17 @@
 }
 
 .fin-kpi-value {
-  font-size: var(--ui-stat-value);
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-1);
-  line-height: 1;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 
 .fin-kpi--hero .fin-kpi-value {
-  font-size: 2.75rem;
+  font-size: 1.85rem;
   color: var(--primary);
-  text-shadow: 0 0 24px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 0 24px var(--primary-alpha-30);
 }
 
 .fin-kpi-sub {
@@ -106,7 +106,7 @@
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--primary);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 0.2rem 0.6rem;
   border-radius: var(--comp-radius-pill);
 }
@@ -213,7 +213,7 @@
 
 .fin-opt-list::-webkit-scrollbar { width: 4px; }
 .fin-opt-list::-webkit-scrollbar-track { background: transparent; }
-.fin-opt-list::-webkit-scrollbar-thumb { background: rgba(255,215,0,0.2); border-radius: 2px; }
+.fin-opt-list::-webkit-scrollbar-thumb { background: var(--primary-alpha-20); border-radius: 2px; }
 
 .fin-opt-row {
   display: grid;
@@ -231,6 +231,16 @@
 .fin-opt-name {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.fin-opt-tarif {
+  font-size: 0.67rem;
+  color: rgba(255, 255, 255, 0.3);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -240,6 +250,12 @@
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fin-opt-soll {
+  color: rgba(255, 215, 0, 0.65);
+  font-size: 0.75rem;
 }
 
 .fin-opt-delta {
@@ -282,7 +298,8 @@
 .fin-legend-name {
   flex: 1;
   color: rgba(255, 255, 255, 0.65);
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
 }

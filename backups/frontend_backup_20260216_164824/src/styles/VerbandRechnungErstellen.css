@@ -1,0 +1,1954 @@
+/* VerbandRechnungErstellen.css */
+
+/* Override RechnungErstellen.css for dark mode in Buchhaltung context */
+
+/* Container - Dark Mode */
+.rechnung-erstellen-container {
+  min-height: auto;
+  background: transparent !important;
+  padding: 1rem !important;
+}
+
+/* Editor Grid */
+.rechnung-editor {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Form - Dark Mode (left side) */
+.rechnung-erstellen-container .rechnung-form {
+  background: rgba(26, 26, 46, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(201, 162, 39, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 1rem 1.25rem !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+  height: fit-content !important;
+  position: sticky !important;
+  top: 1rem !important;
+}
+
+.rechnung-erstellen-container .rechnung-form h2 {
+  margin: 0 0 0.75rem 0 !important;
+  color: #ffd700 !important;
+  font-size: 1.1rem !important;
+  text-shadow: none !important;
+}
+
+.rechnung-erstellen-container .form-section {
+  margin-bottom: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15) !important;
+}
+
+.rechnung-erstellen-container .form-section:last-of-type,
+.rechnung-erstellen-container .form-section:last-child {
+  border-bottom: none !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.rechnung-erstellen-container .form-section h3 {
+  margin: 0 0 0.5rem 0 !important;
+  color: #ffd700 !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+}
+
+.rechnung-erstellen-container .form-section select,
+.rechnung-erstellen-container .form-section input,
+.rechnung-erstellen-container .form-section textarea {
+  width: 100% !important;
+  padding: 0.4rem 0.5rem !important;
+  border: 1px solid rgba(255, 215, 0, 0.25) !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+
+.rechnung-erstellen-container .form-section select:focus,
+.rechnung-erstellen-container .form-section input:focus,
+.rechnung-erstellen-container .form-section textarea:focus {
+  outline: none !important;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1) !important;
+}
+
+.rechnung-erstellen-container .form-section select option {
+  background: #1a1a2e !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.rechnung-erstellen-container .form-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.5rem 0.75rem !important;
+  align-items: start !important;
+}
+
+.rechnung-erstellen-container .form-grid > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.15rem !important;
+}
+
+.rechnung-erstellen-container .form-grid label {
+  display: block !important;
+  margin-bottom: 0 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+/* Checkbox styling */
+.rechnung-erstellen-container input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  cursor: pointer !important;
+}
+
+/* Button styles */
+.rechnung-erstellen-container .btn-add {
+  padding: 0.4rem 0.75rem !important;
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.rechnung-erstellen-container .btn-add:hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  transform: translateY(-1px) !important;
+}
+
+.rechnung-erstellen-container .btn-save {
+  width: 100% !important;
+  padding: 0.7rem !important;
+  background: linear-gradient(135deg, #ffd700, #f59e0b) !important;
+  color: #1a1a2e !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin-top: 0.75rem !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+.rechnung-erstellen-container .btn-save:hover {
+  background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+  transform: translateY(-1px) !important;
+}
+
+.rechnung-erstellen-container .btn-save:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+/* Positions list */
+.rechnung-erstellen-container .positionen-liste-header {
+  font-size: 0.75rem !important;
+  color: #ffd700 !important;
+  margin-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+}
+
+.rechnung-erstellen-container .position-item {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 215, 0, 0.15) !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+.rechnung-erstellen-container .position-item-text {
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Position input */
+.rechnung-erstellen-container .position-input {
+  display: grid !important;
+  grid-template-columns: 1fr auto auto !important;
+  gap: 0.5rem !important;
+  align-items: end !important;
+}
+
+/* Preview - keep white/light for paper effect */
+.rechnung-erstellen-container .rechnung-preview {
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .rechnung-editor {
+    grid-template-columns: 1fr !important;
+  }
+
+  .rechnung-erstellen-container .rechnung-form {
+    position: static !important;
+  }
+}
+
+/* ============================================ */
+
+.verband-rechnung-erstellen {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.verband-rechnung-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #888;
+}
+
+.verband-rechnung-loading .spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Header */
+.verband-rechnung-erstellen .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.3);
+}
+
+.verband-rechnung-erstellen .header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.verband-rechnung-erstellen .header-left h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+.verband-rechnung-erstellen .header-left svg {
+  color: #c9a227;
+}
+
+/* Alerts */
+.verband-rechnung-erstellen .alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.verband-rechnung-erstellen .alert-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.verband-rechnung-erstellen .alert-success {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+}
+
+.verband-rechnung-erstellen .alert button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.verband-rechnung-erstellen .alert button:hover {
+  opacity: 1;
+}
+
+/* Form Sections */
+.verband-rechnung-erstellen .form-section {
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.verband-rechnung-erstellen .form-section h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #c9a227;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Empfänger Tabs */
+.verband-rechnung-erstellen .empfaenger-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.verband-rechnung-erstellen .empfaenger-tabs button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #aaa;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.verband-rechnung-erstellen .empfaenger-tabs button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.verband-rechnung-erstellen .empfaenger-tabs button.active {
+  background: rgba(201, 162, 39, 0.2);
+  border-color: #c9a227;
+  color: #c9a227;
+}
+
+/* Search Box */
+.verband-rechnung-erstellen .search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.verband-rechnung-erstellen .search-box svg {
+  color: #666;
+}
+
+.verband-rechnung-erstellen .search-box input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+/* Selected Empfänger */
+.verband-rechnung-erstellen .selected-empfaenger {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: rgba(201, 162, 39, 0.1);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.verband-rechnung-erstellen .empfaenger-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.verband-rechnung-erstellen .empfaenger-info strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+.verband-rechnung-erstellen .empfaenger-info .mitgliedsnummer {
+  color: #c9a227;
+  font-size: 0.8rem;
+}
+
+.verband-rechnung-erstellen .empfaenger-info .email,
+.verband-rechnung-erstellen .empfaenger-info .adresse {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.verband-rechnung-erstellen .selected-empfaenger button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.verband-rechnung-erstellen .selected-empfaenger button:hover {
+  color: #ef4444;
+}
+
+/* Empfänger Liste */
+.verband-rechnung-erstellen .empfaenger-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.verband-rechnung-erstellen .empfaenger-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.verband-rechnung-erstellen .empfaenger-item:hover {
+  background: rgba(201, 162, 39, 0.1);
+  border-color: rgba(201, 162, 39, 0.3);
+}
+
+.verband-rechnung-erstellen .emp-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 162, 39, 0.2);
+  border-radius: 8px;
+  color: #c9a227;
+}
+
+.verband-rechnung-erstellen .emp-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.verband-rechnung-erstellen .emp-details strong {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.verband-rechnung-erstellen .emp-details span {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.verband-rechnung-erstellen .emp-details .email {
+  color: #666;
+}
+
+/* Manuell Form */
+.verband-rechnung-erstellen .manuell-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Form Grid */
+.verband-rechnung-erstellen .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.verband-rechnung-erstellen .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.verband-rechnung-erstellen .form-row label {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.verband-rechnung-erstellen input,
+.verband-rechnung-erstellen select,
+.verband-rechnung-erstellen textarea {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  color: #fff;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.verband-rechnung-erstellen input:focus,
+.verband-rechnung-erstellen select:focus,
+.verband-rechnung-erstellen textarea:focus {
+  border-color: #c9a227;
+}
+
+.verband-rechnung-erstellen input.readonly {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Positionen Table */
+.verband-rechnung-erstellen .positionen-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.verband-rechnung-erstellen .positionen-table th {
+  text-align: left;
+  padding: 0.5rem;
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.verband-rechnung-erstellen .positionen-table td {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+.verband-rechnung-erstellen .positionen-table input,
+.verband-rechnung-erstellen .positionen-table select {
+  width: 100%;
+  padding: 0.5rem;
+}
+
+.verband-rechnung-erstellen .positionen-table .text-right {
+  text-align: right;
+  color: #fff;
+  font-weight: 500;
+}
+
+.verband-rechnung-erstellen .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.verband-rechnung-erstellen .btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.verband-rechnung-erstellen .btn-icon.danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.verband-rechnung-erstellen .btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.verband-rechnung-erstellen .add-position {
+  margin-top: 0.5rem;
+}
+
+/* Summen */
+.verband-rechnung-erstellen .summen {
+  margin-left: auto;
+  width: 280px;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+.verband-rechnung-erstellen .summe-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.verband-rechnung-erstellen .summe-row.total {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  color: #c9a227;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Buttons */
+.verband-rechnung-erstellen .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.verband-rechnung-erstellen .btn-primary {
+  background: linear-gradient(135deg, #c9a227, #a68519);
+  color: #000;
+}
+
+.verband-rechnung-erstellen .btn-primary:hover {
+  background: linear-gradient(135deg, #dbb62c, #c9a227);
+}
+
+.verband-rechnung-erstellen .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.verband-rechnung-erstellen .btn-outline {
+  background: transparent;
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  color: #c9a227;
+}
+
+.verband-rechnung-erstellen .btn-outline:hover {
+  background: rgba(201, 162, 39, 0.1);
+}
+
+/* Form Actions */
+.verband-rechnung-erstellen .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Rechnungen Liste */
+.verband-rechnung-erstellen .rechnungen-liste {
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.verband-rechnung-erstellen .rechnungen-liste h3 {
+  color: #c9a227;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.verband-rechnung-erstellen .rechnungen-liste table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.verband-rechnung-erstellen .rechnungen-liste th {
+  text-align: left;
+  padding: 0.75rem;
+  color: #888;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.verband-rechnung-erstellen .rechnungen-liste td {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1a1a2e;
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content.large {
+  width: 900px;
+  height: 85vh;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+  color: #fff;
+  margin: 0;
+}
+
+.modal-header button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.modal-header button:hover {
+  color: #fff;
+}
+
+.modal-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.modal-body iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================
+   NEW: Two-Column Split Layout with Live Preview
+   ============================================= */
+
+/* Main Split Layout */
+.rechnung-split-layout {
+  display: flex;
+  gap: 1.5rem;
+  min-height: calc(100vh - 200px);
+}
+
+.rechnung-form-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.rechnung-preview-column {
+  width: 420px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 1rem;
+  height: fit-content;
+  max-height: calc(100vh - 120px);
+}
+
+/* Compact Form Cards */
+.form-card {
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.form-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(201, 162, 39, 0.1);
+  border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+}
+
+.form-card-header h3,
+.form-card-header span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c9a227;
+  margin: 0;
+}
+
+.form-card-header svg {
+  color: #c9a227;
+  width: 16px;
+  height: 16px;
+}
+
+.form-card-body {
+  padding: 1rem;
+}
+
+/* Compact Empfänger Tabs */
+.compact-empfaenger-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.compact-empfaenger-tabs button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #888;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.compact-empfaenger-tabs button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+}
+
+.compact-empfaenger-tabs button.active {
+  background: rgba(201, 162, 39, 0.2);
+  border-color: #c9a227;
+  color: #c9a227;
+}
+
+.compact-empfaenger-tabs button svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Compact Search */
+.compact-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.compact-search svg {
+  color: #666;
+  width: 14px;
+  height: 14px;
+}
+
+.compact-search input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.85rem;
+  outline: none;
+}
+
+/* Compact Selected Empfänger */
+.compact-selected-empfaenger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(201, 162, 39, 0.1);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+}
+
+.compact-selected-empfaenger .empfaenger-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.compact-selected-empfaenger .empfaenger-info strong {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.compact-selected-empfaenger .empfaenger-info span {
+  color: #888;
+  font-size: 0.75rem;
+}
+
+.compact-selected-empfaenger button {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.compact-selected-empfaenger button:hover {
+  color: #ef4444;
+}
+
+/* Compact Empfänger List */
+.compact-empfaenger-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.compact-empfaenger-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.compact-empfaenger-item:hover {
+  background: rgba(201, 162, 39, 0.1);
+  border-color: rgba(201, 162, 39, 0.3);
+}
+
+.compact-empfaenger-item .emp-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 162, 39, 0.2);
+  border-radius: 6px;
+  color: #c9a227;
+}
+
+.compact-empfaenger-item .emp-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.compact-empfaenger-item .emp-details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.compact-empfaenger-item .emp-details strong {
+  color: #fff;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.compact-empfaenger-item .emp-details span {
+  color: #666;
+  font-size: 0.7rem;
+}
+
+/* Compact Form Grid */
+.compact-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.compact-form-grid.three-cols {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.compact-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.compact-form-row label {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.compact-form-row input,
+.compact-form-row select,
+.compact-form-row textarea {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  padding: 0.45rem 0.6rem;
+  color: #fff;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.compact-form-row input:focus,
+.compact-form-row select:focus,
+.compact-form-row textarea:focus {
+  border-color: #c9a227;
+}
+
+/* Compact Positionen Table */
+.compact-positionen-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.compact-positionen-table th {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  color: #888;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compact-positionen-table td {
+  padding: 0.35rem 0.35rem;
+  vertical-align: middle;
+}
+
+.compact-positionen-table input,
+.compact-positionen-table select {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.compact-positionen-table .text-right {
+  text-align: right;
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.compact-positionen-table .btn-icon {
+  width: 26px;
+  height: 26px;
+}
+
+/* Compact Add Position Button */
+.compact-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: 1px dashed rgba(201, 162, 39, 0.4);
+  border-radius: 5px;
+  color: #c9a227;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.compact-add-btn:hover {
+  background: rgba(201, 162, 39, 0.1);
+  border-style: solid;
+}
+
+.compact-add-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Compact Summen */
+.compact-summen {
+  margin-left: auto;
+  width: 200px;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.compact-summen .summe-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
+.compact-summen .summe-row.total {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 0.35rem;
+  padding-top: 0.5rem;
+  color: #c9a227;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Compact Form Actions */
+.compact-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.compact-form-actions .btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* =============================================
+   Preview Card & Document
+   ============================================= */
+
+.preview-card {
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-card-header,
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(201, 162, 39, 0.1);
+  border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c9a227;
+}
+
+.preview-card-header h3,
+.preview-header h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c9a227;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.preview-card-header h3 svg,
+.preview-header svg {
+  width: 16px;
+  height: 16px;
+}
+
+.preview-badge {
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.preview-badge.incomplete {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+}
+
+.preview-card-body,
+.preview-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  background: #f8f8f8;
+}
+
+/* Preview Document (looks like paper) */
+.preview-document {
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  min-height: 500px;
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.preview-document-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #c9a227;
+}
+
+.preview-sender {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.preview-sender strong {
+  color: #333;
+  font-size: 0.85rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.preview-logo {
+  text-align: right;
+}
+
+.preview-logo img {
+  max-height: 50px;
+}
+
+.preview-recipient {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.preview-recipient-label {
+  font-size: 0.6rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.preview-recipient strong {
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.preview-recipient span {
+  display: block;
+  color: #666;
+  font-size: 0.7rem;
+}
+
+.preview-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.preview-meta-item {
+  text-align: center;
+}
+
+.preview-meta-item label {
+  font-size: 0.6rem;
+  color: #888;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.preview-meta-item span {
+  font-size: 0.8rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.preview-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* Preview Table */
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.preview-table th {
+  background: #f0f0f0;
+  padding: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #666;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.preview-table th:last-child {
+  text-align: right;
+}
+
+.preview-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+  font-size: 0.75rem;
+}
+
+.preview-table td:last-child {
+  text-align: right;
+  font-weight: 500;
+}
+
+.preview-table .empty-row {
+  color: #bbb;
+  font-style: italic;
+  text-align: center;
+}
+
+/* Preview Sums */
+.preview-sums {
+  margin-left: auto;
+  width: 180px;
+  border-top: 2px solid #333;
+  padding-top: 0.5rem;
+}
+
+.preview-sums .sum-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.preview-sums .sum-row.total {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #333;
+  border-top: 1px solid #ddd;
+  margin-top: 0.25rem;
+  padding-top: 0.5rem;
+}
+
+.preview-notes {
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-left: 3px solid #c9a227;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.preview-notes strong {
+  color: #333;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.preview-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ddd;
+  text-align: center;
+  font-size: 0.6rem;
+  color: #999;
+}
+
+/* Preview Actions (button container) */
+.preview-actions {
+  padding: 1rem;
+  border-top: 1px solid rgba(201, 162, 39, 0.15);
+  background: rgba(26, 26, 46, 0.8);
+}
+
+.preview-actions .btn-large {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  justify-content: center;
+}
+
+/* Preview Info (invoice details) */
+.preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #666;
+  text-align: right;
+}
+
+.preview-info div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.preview-info span {
+  color: #888;
+}
+
+.preview-info strong {
+  color: #333;
+}
+
+/* Preview Logo adjustment */
+.preview-logo {
+  text-align: right;
+  margin-bottom: 1.5rem;
+}
+
+.preview-logo strong {
+  display: block;
+  font-size: 1rem;
+  color: #c9a227;
+}
+
+.preview-logo small {
+  color: #666;
+  font-size: 0.7rem;
+}
+
+/* Preview Meta adjustment */
+.preview-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.preview-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
+  letter-spacing: 2px;
+}
+
+/* Preview Table empty state */
+.preview-table td.empty {
+  text-align: center;
+  color: #bbb;
+  font-style: italic;
+  padding: 1rem;
+}
+
+/* Compact empfaenger tabs variant */
+.empfaenger-tabs.compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.empfaenger-tabs.compact button {
+  flex: 1 1 calc(25% - 0.4rem);
+  min-width: 100px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+/* Positionen Container */
+.positionen-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pos-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto auto auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.pos-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.pos-input label {
+  font-size: 0.65rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.pos-input input,
+.pos-input select {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.pos-input input:focus,
+.pos-input select:focus {
+  border-color: #c9a227;
+  outline: none;
+}
+
+.pos-total {
+  font-weight: 600;
+  color: #c9a227;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.btn-remove {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  padding: 0.35rem;
+  transition: all 0.2s;
+}
+
+.btn-remove:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.btn-remove:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Positionen Header */
+.positionen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.positionen-header h4 {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 500;
+}
+
+/* Summen in form column */
+.form-summen {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summen-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.summen-display .sum-row {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.summen-display .sum-row.total {
+  font-size: 1rem;
+  color: #c9a227;
+  font-weight: 600;
+}
+
+.summen-display .sum-row span:first-child {
+  min-width: 60px;
+  text-align: right;
+}
+
+/* Compact variants for form elements */
+.search-box.compact {
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.search-box.compact input {
+  font-size: 0.85rem;
+}
+
+.selected-empfaenger.compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+}
+
+.selected-empfaenger.compact > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.selected-empfaenger.compact strong {
+  font-size: 0.9rem;
+  color: #fff;
+}
+
+.selected-empfaenger.compact small {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+.empfaenger-liste.compact {
+  max-height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.empfaenger-item.compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.empfaenger-item.compact strong {
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+/* Dojo Tag */
+.dojo-tag {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: rgba(201, 162, 39, 0.2);
+  color: #c9a227;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.dojo-tag.small {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+}
+
+/* No results */
+.no-results {
+  text-align: center;
+  color: #666;
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+/* Manuell form compact */
+.manuell-form.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.manuell-form.compact input,
+.manuell-form.compact textarea {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+/* Form Grid 2 columns */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+/* Form Field */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-field label {
+  font-size: 0.7rem;
+  color: #888;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.form-field input,
+.form-field select {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+/* Readonly input */
+input.readonly {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Add button small */
+.btn-add-small {
+  margin-left: auto;
+  background: rgba(201, 162, 39, 0.2);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  border-radius: 4px;
+  color: #c9a227;
+  cursor: pointer;
+  padding: 0.3rem;
+  transition: all 0.2s;
+}
+
+.btn-add-small:hover {
+  background: rgba(201, 162, 39, 0.3);
+  border-color: #c9a227;
+}
+
+/* Form card body no padding */
+.form-card-body.no-padding {
+  padding: 0;
+}
+
+/* Positionen Compact Layout */
+.positionen-compact {
+  display: flex;
+  flex-direction: column;
+}
+
+.position-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.position-row:last-child {
+  border-bottom: none;
+}
+
+.position-main {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.position-main select {
+  width: 140px;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.position-main input {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.position-details {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.position-details input.menge {
+  width: 60px;
+  text-align: center;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.85rem;
+}
+
+.position-details .multiply {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.position-details input.preis {
+  width: 80px;
+  text-align: right;
+  padding: 0.4rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+.position-details .currency {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.position-details select.mwst {
+  width: 65px;
+  padding: 0.4rem 0.3rem;
+  font-size: 0.8rem;
+}
+
+.position-details .pos-total {
+  margin-left: auto;
+  font-weight: 600;
+  color: #c9a227;
+  font-size: 0.9rem;
+  min-width: 80px;
+  text-align: right;
+}
+
+.position-details .btn-remove {
+  padding: 0.35rem;
+}
+
+/* Preview Empty State */
+.preview-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #999;
+  text-align: center;
+}
+
+.preview-empty svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.preview-empty p {
+  font-size: 0.85rem;
+}
+
+/* =============================================
+   Responsive Adjustments
+   ============================================= */
+
+@media (max-width: 1200px) {
+  .rechnung-preview-column {
+    width: 380px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .rechnung-split-layout {
+    flex-direction: column;
+  }
+
+  .rechnung-preview-column {
+    width: 100%;
+    position: static;
+    max-height: none;
+    order: -1;
+    margin-bottom: 1rem;
+  }
+
+  .preview-card-body {
+    max-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .verband-rechnung-erstellen .empfaenger-tabs {
+    flex-direction: column;
+  }
+
+  .verband-rechnung-erstellen .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verband-rechnung-erstellen .summen {
+    width: 100%;
+  }
+
+  .verband-rechnung-erstellen .positionen-table {
+    font-size: 0.8rem;
+  }
+
+  .modal-content.large {
+    width: 95vw;
+    height: 95vh;
+  }
+
+  .compact-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-form-grid.three-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-summen {
+    width: 100%;
+  }
+
+  .compact-empfaenger-tabs {
+    flex-wrap: wrap;
+  }
+
+  .compact-empfaenger-tabs button {
+    flex: 1 1 calc(50% - 0.175rem);
+  }
+}

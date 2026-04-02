@@ -116,11 +116,13 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
   try {
     const { filter } = req.query;
 
-    // WHERE-Klausel nur für "managed" Filter: TDA (id=2) + Dojos ohne eigene Admins
-    // TDA selbst wird immer angezeigt, da es das Haupt-Dojo ist
+    // WHERE-Klausel nur für "managed" Filter: TDA (id=2) + Dojos ohne eigene Voll-Admins
+    // Dojos mit nur eingeschränkten Rollen (trainer, eingeschraenkt, checkin) werden trotzdem angezeigt
     const whereClause = filter === 'managed'
       ? `WHERE d.ist_aktiv = TRUE AND (d.id = 2 OR d.id NOT IN (
-          SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND dojo_id != 2
+          SELECT DISTINCT dojo_id FROM admin_users
+          WHERE dojo_id IS NOT NULL AND dojo_id != 2
+          AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
         ))`
       : '';
 
@@ -136,6 +138,18 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
         d.ist_aktiv,
         d.mitgliederzahl_aktuell,
         d.created_at,
+        d.steuer_status,
+        d.ust_satz,
+        d.kleinunternehmer_grenze,
+        d.ist_hauptdojo,
+        d.farbe,
+        COALESCE(
+          (SELECT SUM(v.monatsbeitrag * 12)
+           FROM vertraege v
+           WHERE v.dojo_id = d.id
+           AND v.status = 'aktiv'),
+          0
+        ) as jahresumsatz_aktuell,
         d.onboarding_completed,
         d.subscription_status,
         d.trial_ends_at,
@@ -156,6 +170,7 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
       ${whereClause}
       GROUP BY d.id, d.dojoname, d.subdomain, d.inhaber, d.ort, d.email, d.telefon,
                d.ist_aktiv, d.mitgliederzahl_aktuell, d.created_at, d.onboarding_completed,
+               d.steuer_status, d.ust_satz, d.kleinunternehmer_grenze, d.ist_hauptdojo, d.farbe,
                d.subscription_status, d.trial_ends_at, d.subscription_plan,
                d.subscription_started_at, d.subscription_ends_at, d.payment_interval, d.last_payment_at
       ORDER BY d.dojoname
@@ -427,31 +442,37 @@ router.get('/global-stats', requireSuperAdmin, async (req, res) => {
     `);
     stats.dojos = dojoStats[0];
 
-    // 2. Mitglieder (alle Dojos)
+    // 2. Mitglieder (nur aktive Dojos, kein Demo)
     const [memberStats] = await db.promise().query(`
       SELECT
         COUNT(*) as total_members,
-        SUM(CASE WHEN aktiv = 1 THEN 1 ELSE 0 END) as active_members,
-        COUNT(DISTINCT dojo_id) as dojos_with_members
-      FROM mitglieder
+        SUM(CASE WHEN m.aktiv = 1 THEN 1 ELSE 0 END) as active_members,
+        COUNT(DISTINCT m.dojo_id) as dojos_with_members
+      FROM mitglieder m
+      JOIN dojo d ON m.dojo_id = d.id
+      WHERE d.ist_aktiv = 1
     `);
     stats.members = memberStats[0];
 
-    // 3. Kurse (alle Dojos)
+    // 3. Kurse (nur aktive Dojos)
     const [courseStats] = await db.promise().query(`
       SELECT
         COUNT(*) as total_courses,
-        COUNT(DISTINCT dojo_id) as dojos_with_courses
-      FROM kurse
+        COUNT(DISTINCT k.dojo_id) as dojos_with_courses
+      FROM kurse k
+      JOIN dojo d ON k.dojo_id = d.id
+      WHERE d.ist_aktiv = 1
     `);
     stats.courses = courseStats[0];
 
-    // 4. Trainer (alle Dojos)
+    // 4. Trainer (nur aktive Dojos)
     const [trainerStats] = await db.promise().query(`
       SELECT
         COUNT(*) as total_trainers,
-        COUNT(DISTINCT dojo_id) as dojos_with_trainers
-      FROM trainer
+        COUNT(DISTINCT t.dojo_id) as dojos_with_trainers
+      FROM trainer t
+      JOIN dojo d ON t.dojo_id = d.id
+      WHERE d.ist_aktiv = 1
     `);
     stats.trainers = trainerStats[0];
 
@@ -464,14 +485,14 @@ router.get('/global-stats', requireSuperAdmin, async (req, res) => {
     `);
     stats.checkins = checkinStats[0];
 
-    // 6. Offene Beiträge (alle Dojos)
-    const [beitraegeStats] = await db.promise().query(`
-      SELECT
-        COUNT(*) as open_payments,
-        SUM(betrag) as open_amount
-      FROM beitraege
-      WHERE bezahlt = 0
-    `);
+    // 6. Offene Beiträge (vergangene + aktueller Monat, ohne demo1)
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const cutoffDate = nextMonth.toISOString().slice(0, 10);
+    const [beitraegeStats] = await db.promise().query(
+      `SELECT COUNT(*) as open_payments, SUM(betrag) as open_amount FROM beitraege WHERE bezahlt = 0 AND dojo_id != 4 AND zahlungsdatum < ?`,
+      [cutoffDate]
+    );
     stats.payments = beitraegeStats[0];
 
     // 7. Dojos nach Aktivitäts-Ranking
@@ -2123,7 +2144,7 @@ router.get('/artikel-rabatte', requireSuperAdmin, async (req, res) => {
         r.id as rabatt_id, r.rabatt_typ, r.rabatt_wert, r.gilt_fuer_dojo,
         r.gilt_fuer_einzelperson, r.mindestmenge, r.max_rabatt_cent, r.aktiv as rabatt_aktiv
       FROM artikel a
-      LEFT JOIN artikelkategorien k ON a.kategorie_id = k.kategorie_id
+      LEFT JOIN artikel_kategorien k ON a.kategorie_id = k.kategorie_id
       LEFT JOIN verband_artikel_rabatte r ON a.artikel_id = r.artikel_id
       WHERE a.dojo_id = 2 AND a.aktiv = 1
       ORDER BY k.name, a.name
@@ -2369,6 +2390,88 @@ router.post('/artikel-rabatte/bulk', requireSuperAdmin, async (req, res) => {
   } catch (err) {
     console.error('❌ Fehler beim Bulk-Speichern der Rabatte:', err.message);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+// GET /api/admin/overview-summary — Kompakte Übersicht für Dashboard
+router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+
+    // 1. Jahres-Ziele mit Ist-Werten
+    const [goals] = await db.promise().query(`
+      SELECT typ, jahr, ziel_wert FROM entwicklungsziele
+      WHERE jahr = ? AND kontext_typ = 'verband'
+      ORDER BY typ
+    `, [currentYear]);
+
+    const [[{ active_dojos }]] = await db.promise().query(`SELECT COUNT(*) as active_dojos FROM dojo WHERE ist_aktiv = 1`);
+    const [[{ aktive_verbandsmitglieder }]] = await db.promise().query(`SELECT COUNT(*) as aktive_verbandsmitglieder FROM verbandsmitgliedschaften WHERE status = 'aktiv'`);
+    const [[{ software_nutzer }]] = await db.promise().query(`SELECT COUNT(*) as software_nutzer FROM dojo WHERE subscription_status IN ('active','trial') AND ist_aktiv = 1`);
+
+    const istWerte = { dojos: active_dojos, verband_mitglieder: aktive_verbandsmitglieder, software_nutzer: software_nutzer };
+
+    const goalsWithIst = goals.map(g => ({
+      ...g,
+      ist_wert: istWerte[g.typ] || 0,
+      prozent: g.ziel_wert > 0 ? Math.round((istWerte[g.typ] || 0) / g.ziel_wert * 100) : 0
+    }));
+
+    // 2. Neuanmeldungen
+    const [[neuDojos7d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM dojo WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
+    const [[neuDojos30d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM dojo WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`);
+    const [[neuVerband7d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
+    const [[neuVerband30d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`);
+    const [[neuMitglieder7d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
+    const [[neuMitglieder30d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 30 DAY)`);
+
+    // 3. Trial läuft bald ab
+    const [trialExpiring] = await db.promise().query(`
+      SELECT dojoname, trial_ends_at, DATEDIFF(trial_ends_at, NOW()) as tage_noch
+      FROM dojo
+      WHERE subscription_status = 'trial' AND trial_ends_at BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 14 DAY) AND ist_aktiv = 1
+      ORDER BY trial_ends_at ASC LIMIT 5
+    `);
+
+    // 4. Neueste Dojo-Anmeldungen (nur aktive)
+    const [neuesteDojos] = await db.promise().query(`
+      SELECT dojoname, inhaber, ort, created_at, subscription_status FROM dojo WHERE ist_aktiv = 1 ORDER BY created_at DESC LIMIT 5
+    `);
+
+    // 5. Neueste Verbandsmitglieder
+    // 6. Neueste Dojo-Mitglieder (nur aus aktiven Dojos, kein Demo)
+    const [neuesteMitglieder] = await db.promise().query(`
+      SELECT m.vorname, m.nachname, m.eintrittsdatum, d.dojoname
+      FROM mitglieder m
+      JOIN dojo d ON m.dojo_id = d.id
+      WHERE d.ist_aktiv = 1
+      ORDER BY m.eintrittsdatum DESC, m.mitglied_id DESC
+      LIMIT 5
+    `);
+
+    const [neuesteVerbandsmitglieder] = await db.promise().query(`
+      SELECT COALESCE(NULLIF(CONCAT(TRIM(COALESCE(person_vorname,'')), ' ', TRIM(COALESCE(person_nachname,''))), ' '), dojo_name, 'Unbekannt') as name,
+        typ, status, created_at, mitgliedsnummer
+      FROM verbandsmitgliedschaften ORDER BY created_at DESC LIMIT 5
+    `);
+
+    res.json({
+      success: true,
+      goals: goalsWithIst,
+      new_registrations: {
+        dojos:      { week: neuDojos7d.cnt,      month: neuDojos30d.cnt },
+        verband:    { week: neuVerband7d.cnt,     month: neuVerband30d.cnt },
+        mitglieder: { week: neuMitglieder7d.cnt,  month: neuMitglieder30d.cnt }
+      },
+      trial_expiring: trialExpiring,
+      neueste_mitglieder: neuesteMitglieder,
+      neueste_dojos: neuesteDojos,
+      neueste_verbandsmitglieder: neuesteVerbandsmitglieder
+    });
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Übersicht:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

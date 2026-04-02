@@ -13,6 +13,8 @@ const { requireFeature } = require('../middleware/featureAccess');
 const { generateKassenbon, generateStornoBon } = require('../templates/kassenbon_template');
 const { createRechnungForVerkauf } = require('../utils/rechnungAutomation');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const logger = require('../utils/logger');
+
 
 // =====================================================================================
 // FEATURE PROTECTION: Verkauf & Kassensystem
@@ -131,8 +133,8 @@ router.post('/', async (req, res) => {
     checkin_id // Optional: Verknüpfung zur Anwesenheit
   } = req.body;
 
-  // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
-  const effectiveDojoId = getSecureDojoId(req);
+  // 🔒 SICHER: Query-Param hat Vorrang (Super-Admin), Body-dojo_id als Fallback fuer Write-Ops
+  const effectiveDojoId = getSecureDojoId(req) ?? (req.body?.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
 
   // Validierung
   if (!artikel || artikel.length === 0) {
@@ -162,6 +164,26 @@ router.post('/', async (req, res) => {
       // Artikel-Details abrufen und Verfügbarkeit prüfen
       const artikelDetails = [];
       for (const item of artikel) {
+        // Sonderfall: Manueller Nachlass / Rabatt (artikel_id === null)
+        if (!item.artikel_id) {
+          const einzelpreis_cent = item.einzelpreis_cent || 0;
+          const brutto_cent = einzelpreis_cent * (item.menge || 1);
+          const mwst_pct = item.mwst_prozent || 0;
+          const netto_cent = calculateNetto(brutto_cent, mwst_pct);
+          const mwst_cent = brutto_cent - netto_cent;
+          artikelDetails.push({
+            ...item,
+            artikel_id: null,
+            artikel_nummer: null,
+            lager_tracking: false,
+            einzelpreis_cent,
+            brutto_cent,
+            netto_cent,
+            mwst_cent
+          });
+          continue;
+        }
+
         const artikelQuery = `
           SELECT 
             artikel_id, name, artikel_nummer, verkaufspreis_cent, 
@@ -220,22 +242,25 @@ router.post('/', async (req, res) => {
         }
       }
       
+      // zahlungsstatus: lastschrift = offen, sonst bezahlt
+      const zahlungsstatus = zahlungsart === 'lastschrift' ? 'offen' : 'bezahlt';
+
       // Verkauf in DB speichern
       const verkaufQuery = `
         INSERT INTO verkaeufe (
           bon_nummer, kassen_id, mitglied_id, kunde_name,
           verkauf_datum, verkauf_uhrzeit, verkauf_timestamp,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
-          zahlungsart, gegeben_cent, rueckgeld_cent,
+          zahlungsart, zahlungsstatus, gegeben_cent, rueckgeld_cent,
           verkauft_von_name, bemerkung, dojo_id, checkin_id
-        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const verkaufResult = await new Promise((resolve, reject) => {
         connection.query(verkaufQuery, [
           bonNummer, 'KASSE_01', mitglied_id || null, kunde_name || null,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
-          zahlungsart, gegeben_cent || null, rueckgeld_cent,
+          zahlungsart, zahlungsstatus, gegeben_cent || null, rueckgeld_cent,
           verkauft_von_name || 'System', bemerkung || null, effectiveDojoId, checkin_id || null
         ], (error, results) => {
           if (error) return reject(error);
@@ -280,7 +305,7 @@ router.post('/', async (req, res) => {
       }
 
       // Beitrag erstellen (nur bei Lastschrift/digital)
-      if (zahlungsart === 'digital' && mitglied_id) {
+      if (zahlungsart === 'lastschrift' && mitglied_id) {
         const artikelNamen = artikelDetails.map(item =>
           `${item.name} (${item.menge}x)`
         ).join(', ');
@@ -393,7 +418,7 @@ router.get('/', (req, res) => {
     FROM verkaeufe v
     LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
     LEFT JOIN verkauf_positionen vp ON v.verkauf_id = vp.verkauf_id
-    LEFT JOIN dojos d ON v.dojo_id = d.id
+    LEFT JOIN dojo d ON v.dojo_id = d.id
     WHERE v.storniert = FALSE
   `;
   const params = [];
@@ -451,13 +476,166 @@ router.get('/', (req, res) => {
   });
 });
 
+// =====================================================================================
+// OFFENE ARTIKEL-EINZÜGE (Lastschrift)
+// =====================================================================================
+
+// GET /api/verkaeufe/offene-einzuege
+router.get('/offene-einzuege', async (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
+  try {
+    const pool = db.promise();
+    const dojoCondition = secureDojoId ? 'AND v.dojo_id = ?' : '';
+    const params = secureDojoId ? [secureDojoId] : [];
+
+    const [rows] = await pool.query(`
+      SELECT
+        v.mitglied_id,
+        CONCAT(m.vorname, ' ', m.nachname) AS mitglied_name,
+        m.email,
+        m.stripe_customer_id,
+        COUNT(v.verkauf_id) AS anzahl_verkaeufe,
+        SUM(v.brutto_gesamt_cent) AS gesamt_cent,
+        MIN(v.verkauf_datum) AS aeltester_verkauf,
+        MAX(v.verkauf_datum) AS neuester_verkauf,
+        JSON_ARRAYAGG(JSON_OBJECT(
+          'verkauf_id', v.verkauf_id,
+          'bon_nummer', v.bon_nummer,
+          'datum', DATE_FORMAT(v.verkauf_datum, '%Y-%m-%d'),
+          'betrag_cent', v.brutto_gesamt_cent,
+          'zahlungsstatus', v.zahlungsstatus
+        )) AS verkaeufe
+      FROM verkaeufe v
+      LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+      WHERE v.zahlungsart = 'lastschrift'
+        AND v.zahlungsstatus IN ('offen', 'in_einzug')
+        AND v.storniert = 0
+        ${dojoCondition}
+      GROUP BY v.mitglied_id, m.vorname, m.nachname, m.email, m.stripe_customer_id
+      ORDER BY neuester_verkauf DESC
+    `, params);
+
+    const result = rows.map(r => ({
+      ...r,
+      gesamt_euro: (r.gesamt_cent / 100).toFixed(2),
+    }));
+
+    res.json({ success: true, einzuege: result, anzahl: result.length });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/verkaeufe/manueller-einzug
+router.post('/manueller-einzug', async (req, res) => {
+  const { mitglied_id, verkauf_ids } = req.body;
+  const secureDojoId = getSecureDojoId(req);
+
+  if (!mitglied_id || !verkauf_ids || !verkauf_ids.length) {
+    return res.status(400).json({ error: 'mitglied_id und verkauf_ids erforderlich' });
+  }
+
+  try {
+    const pool = db.promise();
+
+    const [[mitglied]] = await pool.query(
+      'SELECT mitglied_id, vorname, nachname, email, stripe_customer_id FROM mitglieder WHERE mitglied_id = ?',
+      [mitglied_id]
+    );
+
+    if (!mitglied) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+    if (!mitglied.stripe_customer_id) {
+      return res.status(400).json({ error: 'Kein Stripe-Kunde für dieses Mitglied hinterlegt' });
+    }
+
+    const placeholders = verkauf_ids.map(() => '?').join(',');
+    const [verkaeufe] = await pool.query(
+      `SELECT verkauf_id, bon_nummer, brutto_gesamt_cent FROM verkaeufe
+       WHERE verkauf_id IN (${placeholders}) AND mitglied_id = ? AND zahlungsstatus = 'offen'`,
+      [...verkauf_ids, mitglied_id]
+    );
+
+    if (!verkaeufe.length) return res.status(400).json({ error: 'Keine offenen Verkäufe gefunden' });
+
+    const gesamtCent = verkaeufe.reduce((s, v) => s + v.brutto_gesamt_cent, 0);
+    const bonNummern = verkaeufe.map(v => v.bon_nummer).join(', ');
+
+    // Stripe-Key aus Dojo-Einstellungen laden
+    const dojoIdForStripe = secureDojoId || (await pool.query('SELECT dojo_id FROM verkaeufe WHERE verkauf_id = ? LIMIT 1', [verkauf_ids[0]]))[0][0]?.dojo_id;
+    if (!dojoIdForStripe) return res.status(400).json({ error: 'Dojo-ID konnte nicht ermittelt werden' });
+    const [[dojoConfig]] = await pool.query('SELECT stripe_secret_key FROM dojo WHERE id = ?', [dojoIdForStripe]);
+    if (!dojoConfig?.stripe_secret_key) return res.status(400).json({ error: 'Stripe nicht konfiguriert für dieses Dojo' });
+    const stripe = require('stripe')(dojoConfig.stripe_secret_key);
+
+    const [sepaList, cardList] = await Promise.all([
+      stripe.paymentMethods.list({ customer: mitglied.stripe_customer_id, type: 'sepa_debit' }),
+      stripe.paymentMethods.list({ customer: mitglied.stripe_customer_id, type: 'card' })
+    ]);
+    const allMethods = [...(sepaList.data || []), ...(cardList.data || [])];
+    if (!allMethods.length) {
+      return res.status(400).json({ error: 'Keine Zahlungsmethode für diesen Stripe-Kunden hinterlegt' });
+    }
+    const preferredMethod = sepaList.data?.[0] || allMethods[0];
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: gesamtCent,
+      currency: 'eur',
+      customer: mitglied.stripe_customer_id,
+      payment_method: preferredMethod.id,
+      payment_method_types: ['sepa_debit'],
+      confirm: true,
+      off_session: true,
+      mandate_data: { customer_acceptance: { type: 'offline' } },
+      description: `Artikelverkauf (${bonNummern}) - ${mitglied.vorname} ${mitglied.nachname}`,
+      metadata: { mitglied_id: String(mitglied_id), verkauf_ids: verkauf_ids.join(','), dojo_id: String(secureDojoId || '') }
+    });
+
+    const newStatus = paymentIntent.status === 'succeeded' ? 'eingezogen' : 'in_einzug';
+    await pool.query(
+      `UPDATE verkaeufe SET zahlungsstatus = ?, stripe_payment_intent_id = ? WHERE verkauf_id IN (${placeholders})`,
+      [newStatus, paymentIntent.id, ...verkauf_ids]
+    );
+
+    res.json({
+      success: true,
+      payment_intent_id: paymentIntent.id,
+      status: paymentIntent.status,
+      betrag_euro: (gesamtCent / 100).toFixed(2),
+      message: newStatus === 'eingezogen' ? 'Zahlung erfolgreich eingezogen' : 'Einzug wird verarbeitet'
+    });
+
+  } catch (err) {
+    if (err.raw) return res.status(400).json({ error: `Stripe-Fehler: ${err.message}` });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/verkaeufe/naechster-lauf
+router.post('/naechster-lauf', async (req, res) => {
+  const { verkauf_ids } = req.body;
+  const secureDojoId = getSecureDojoId(req);
+  if (!verkauf_ids?.length) return res.status(400).json({ error: 'verkauf_ids erforderlich' });
+  try {
+    const pool = db.promise();
+    const placeholders = verkauf_ids.map(() => '?').join(',');
+    const dojoCheck = secureDojoId ? ' AND dojo_id = ?' : '';
+    await pool.query(
+      `UPDATE verkaeufe SET zahlungsstatus = 'offen' WHERE verkauf_id IN (${placeholders})${dojoCheck}`,
+      [...verkauf_ids, ...(secureDojoId ? [secureDojoId] : [])]
+    );
+    res.json({ success: true, message: `${verkauf_ids.length} Verkäufe für nächsten Lauf vorgemerkt` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/verkaeufe/:id - Einzelnen Verkauf mit Positionen abrufen
 router.get('/:id', (req, res) => {
   // Verkaufs-Kopfdaten
   const verkaufQuery = `
     SELECT 
       v.*,
-      m.vorname, m.nachname, m.mitgliedsnummer
+      m.vorname, m.nachname
     FROM verkaeufe v
     LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
     WHERE v.verkauf_id = ?
@@ -637,7 +815,7 @@ router.get('/stats/tagesumsatz', (req, res) => {
       SUM(brutto_gesamt_cent) as umsatz_cent,
       SUM(CASE WHEN zahlungsart = 'bar' THEN brutto_gesamt_cent ELSE 0 END) as bar_umsatz_cent,
       SUM(CASE WHEN zahlungsart = 'karte' THEN brutto_gesamt_cent ELSE 0 END) as karte_umsatz_cent,
-      SUM(CASE WHEN zahlungsart = 'digital' THEN brutto_gesamt_cent ELSE 0 END) as digital_umsatz_cent,
+      SUM(CASE WHEN zahlungsart IN ('digital','lastschrift') THEN brutto_gesamt_cent ELSE 0 END) as digital_umsatz_cent,
       AVG(brutto_gesamt_cent) as durchschnitt_cent
     FROM verkaeufe
     WHERE verkauf_datum = ? AND storniert = FALSE
@@ -715,7 +893,7 @@ router.get('/:id/kassenbon', (req, res) => {
   const verkaufQuery = `
     SELECT 
       v.*,
-      m.vorname, m.nachname, m.mitgliedsnummer
+      m.vorname, m.nachname
     FROM verkaeufe v
     LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
     WHERE v.verkauf_id = ?

@@ -165,7 +165,7 @@ function DashboardTdaVib() {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.href = '/login';
   };
 
   const handleNavigation = (path) => {
@@ -187,7 +187,7 @@ function DashboardTdaVib() {
     { id: 'pruefungswesen', label: 'Prüfungswesen', icon: '🏆' },
     { id: 'events', label: 'Events', icon: '📅' },
     { id: 'finanzen', label: 'Finanzen', icon: '💰' },
-    { id: 'artikelverwaltung', label: 'Artikelverwaltung', icon: '📦' },
+    { id: 'shop', label: 'Shop & Kasse', icon: '🛒' },
     { id: 'verwaltung', label: 'Dojo-Verwaltung', icon: '🔧' },
     { id: 'personal', label: 'Personal', icon: '👨‍🏫' },
     { id: 'berichte', label: 'Berichte', icon: '📊' },
@@ -228,6 +228,13 @@ function DashboardTdaVib() {
     { icon: '🧑‍💼', title: 'Personal', description: 'Mitarbeiter & Personalverwaltung', path: '/dashboard/personal', count: stats.personal, badge: 'NEU', featured: true }
   ];
 
+  const shopCards = [
+    { icon: '💰', title: 'Barverkauf / Kasse', description: 'Direktverkauf an der Kasse', path: '/dashboard/kasse', featured: true },
+    { icon: '📦', title: 'Artikel', description: 'Artikel & Produkte verwalten', path: '/dashboard/artikel', featured: true },
+    { icon: '🗂️', title: 'Artikelgruppen', description: 'Kategorien & Gruppen', path: '/dashboard/artikelgruppen' },
+    { icon: '📋', title: 'Bestellungen', description: 'Online-Shop Bestellungen', path: '/dashboard/shop-bestellungen', featured: true },
+  ];
+
   const finanzenCards = [
     { icon: '📊', title: 'Finanzcockpit', description: 'Übersicht Finanzkennzahlen', path: '/dashboard/finanzcockpit', featured: true },
     { icon: '💰', title: 'Beiträge', description: 'Mitgliedsbeiträge', path: '/dashboard/beitraege', count: stats.beitraege, featured: true },
@@ -263,6 +270,15 @@ function DashboardTdaVib() {
         <div className="dashboard-header-right">
           {role === 'admin' && <DojoSwitcher />}
           {role === 'admin' && <StandortSwitcher />}
+          <a
+            href="https://academy.tda-intl.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="dashboard-button"
+            style={{ textDecoration: 'none' }}
+          >
+            🎓 Academy
+          </a>
           {!isMainDashboard && (
             <button onClick={() => navigate('/dashboard-tda-vib')} className="dashboard-button">
               ← Dashboard
@@ -287,7 +303,7 @@ function DashboardTdaVib() {
               {error && (
                 <div className="error-message">
                   ⚠️ {error}
-                  <button onClick={fetchDashboardStatsOptimized} className="btn btn-neutral btn-small" className="u-ml-1">
+                  <button onClick={fetchDashboardStatsOptimized} className="btn btn-neutral btn-small u-ml-1">
                     🔄 Erneut versuchen
                   </button>
                 </div>
@@ -472,8 +488,26 @@ function DashboardTdaVib() {
                       </div>
                     )}
 
+                    {/* Shop & Kasse Tab */}
+                    {activeTab === 'shop' && (
+                      <div className="nav-cards">
+                        {shopCards.map((card, index) => (
+                          <div key={index} onClick={() => handleNavigation(card.path)} className={`nav-card clickable ${card.featured ? 'featured' : ''}`}>
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>{card.title}</h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Platzhalter für andere Tabs */}
-                    {['pruefungswesen', 'events', 'artikelverwaltung', 'berichte', 'einstellungen'].includes(activeTab) && (
+                    {['pruefungswesen', 'events', 'berichte', 'einstellungen'].includes(activeTab) && (
                       <div className="nav-cards">
                         <div className="nav-card">
                           <div className="nav-content">

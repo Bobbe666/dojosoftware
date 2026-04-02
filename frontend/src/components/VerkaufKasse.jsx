@@ -5,8 +5,11 @@
 // Deutsche rechtliche Grundlagen beachtet (GoBD, KassenSichV, TSE)
 // =====================================================================================
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { X, ShoppingCart, User, CreditCard, Euro, Smartphone } from 'lucide-react';
+import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 import config from '../config/config.js';
 import { useDojoContext } from '../context/DojoContext';
@@ -69,6 +72,20 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   // DOJO CONTEXT
   // =====================================================================================
   const { activeDojo } = useDojoContext();
+  const navigate = useNavigate();
+
+  // Eingeloggter Benutzer aus JWT
+  const kassiererName = useMemo(() => {
+    try {
+      const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+      if (!token) return 'Kassierer';
+      const decoded = jwtDecode(token);
+      if (decoded.vorname && decoded.nachname) return `${decoded.vorname} ${decoded.nachname}`;
+      return decoded.name || decoded.username || decoded.email || 'Kassierer';
+    } catch {
+      return 'Kassierer';
+    }
+  }, []);
 
   // =====================================================================================
   // STATE MANAGEMENT
@@ -95,10 +112,27 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   const [checkinsHeute, setCheckinsHeute] = useState([]);
   const [selectedMitglied, setSelectedMitglied] = useState(null);
 
+  // Startup-Dialog State
+  const [showStartDialog, setShowStartDialog] = useState(!kunde);
+  const [startModus, setStartModus] = useState(null); // null | 'bar' | 'kundenkonto'
+  const [mitgliederSuche, setMitgliederSuche] = useState('');
+  const [mitgliederResults, setMitgliederResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Mitglieder-Rabatt Dialog
+  const [rabattDialog, setRabattDialog] = useState(null); // { artikelItem }
+
+  // Warenkorb-Item Editing
+  const [editingItemId, setEditingItemId] = useState(null);
+
+  // Manueller Rabatt
+  const [manualRabatt, setManualRabatt] = useState({ aktiv: false, typ: 'prozent', wert: '' });
+
   // Varianten-Modal State
   const [showVariantenModal, setShowVariantenModal] = useState(false);
   const [selectedArtikelForVariant, setSelectedArtikelForVariant] = useState(null);
   const [selectedVariante, setSelectedVariante] = useState({ groesse: '', farbe: '', material: '', preiskategorie: '' });
+  const [replacingItemId, setReplacingItemId] = useState(null); // unique_id des Warenkorb-Items das ersetzt wird
 
   // SumUp State
   const [sumupAvailable, setSumupAvailable] = useState(false);
@@ -108,6 +142,30 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     () => aggregateCheckinsByMember(checkinsHeute),
     [checkinsHeute]
   );
+
+  // Ref für kasse-layout: Höhe wird per JS gesetzt damit grid-template-rows: 1fr
+  // korrekt auflöst – unabhängig vom Eltern-Layout (Dashboard, Checkin-App etc.)
+  // showStartDialog in Dependencies: kasse-layout existiert erst wenn Dialog weg ist.
+  const kasseLayoutRef = useRef(null);
+  useLayoutEffect(() => {
+    const el = kasseLayoutRef.current;
+    if (!el) return; // kasse-layout noch nicht im DOM (z.B. showStartDialog=true)
+    // Höhe direkt setzen – kein requestAnimationFrame nötig,
+    // da useLayoutEffect nach DOM-Commit läuft (element ist positioniert)
+    const top = el.getBoundingClientRect().top;
+    const available = window.innerHeight - top;
+    if (available > 100) {
+      el.style.setProperty('height', `${available}px`, 'important');
+    }
+    const setHeight = () => {
+      if (!kasseLayoutRef.current) return;
+      const t = kasseLayoutRef.current.getBoundingClientRect().top;
+      const h = window.innerHeight - t;
+      if (h > 100) kasseLayoutRef.current.style.setProperty('height', `${h}px`, 'important');
+    };
+    window.addEventListener('resize', setHeight);
+    return () => window.removeEventListener('resize', setHeight);
+  }, [showStartDialog, aggregierteCheckins.length]);
 
   const aktivePerson = selectedMitglied || kunde;
 
@@ -134,6 +192,26 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       selectMitglied(kunde);
     }
   }, [kunde]);
+
+  const searchMitglieder = async (term) => {
+    if (!term || term.length < 2) { setMitgliederResults([]); return; }
+    setSearchLoading(true);
+    try {
+      // Super-Admin: activeDojo?.id liefert die gewählte Dojo-ID
+      // getSecureDojoId() liest dojo_id aus Query-Param für Super-Admin
+      const dojoId = activeDojo?.id;
+      const dojoParam = dojoId ? `&dojo_id=${dojoId}` : '';
+      const res = await apiCall(`/mitglieder?search=${encodeURIComponent(term)}&limit=10${dojoParam}`);
+      // Response ist direktes Array (kein Wrapper-Objekt)
+      setMitgliederResults(Array.isArray(res) ? res : (res.mitglieder || res.data || []));
+    } catch { setMitgliederResults([]); }
+    finally { setSearchLoading(false); }
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => searchMitglieder(mitgliederSuche), 300);
+    return () => clearTimeout(t);
+  }, [mitgliederSuche]);
 
   useEffect(() => {
     if (!selectedMitglied?.mitglied_id) return;
@@ -224,20 +302,39 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         return;
       }
 
+      const artikelListe = warenkorb.map(item => ({
+        artikel_id: item.artikel_id,
+        menge: item.menge,
+        einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100)
+      }));
+      // Manuellen Rabatt inline berechnen (TDZ-sicher bei Vite-Prod-Build)
+      const _base = warenkorb.reduce((s, i) => s + (i.verkaufspreis_euro || 0) * i.menge, 0);
+      const _rabatt = manualRabatt.aktiv && manualRabatt.wert
+        ? (manualRabatt.typ === 'prozent'
+          ? Math.min(_base * (parseFloat(manualRabatt.wert) || 0) / 100, _base)
+          : Math.min(parseFloat(manualRabatt.wert) || 0, _base))
+        : 0;
+      if (_rabatt > 0) {
+        artikelListe.push({
+          artikel_id: null,
+          name: manualRabatt.typ === 'prozent'
+            ? `Nachlass ${parseFloat(manualRabatt.wert)}%`
+            : 'Nachlass',
+          menge: 1,
+          einzelpreis_cent: -Math.round(_rabatt * 100),
+          mwst_prozent: 0
+        });
+      }
       const verkaufData = {
         mitglied_id: mitgliedId || null,
         kunde_name: kundeName || null,
-        artikel: warenkorb.map(item => ({
-          artikel_id: item.artikel_id,
-          menge: item.menge,
-          einzelpreis_cent: Math.round((item.verkaufspreis_euro || 0) * 100)
-        })),
+        artikel: artikelListe,
         zahlungsart,
         gegeben_cent: zahlungsart === 'bar' ? Math.round(parseFloat(gegebenBetrag) * 100) : null,
         bemerkung: bemerkung || null,
-        verkauft_von_name: 'Kassierer', // TODO: Echten Benutzer verwenden
+        verkauft_von_name: kassiererName,
         dojo_id: activeDojo?.id || null,
-        checkin_id: checkin_id || null // Verknüpfung zur Anwesenheit
+        checkin_id: checkin_id || null
       };
 
       const response = await apiCall('/verkaeufe', {
@@ -246,6 +343,8 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       });
 
       if (response.success) {
+        const _clearKey = aktivePerson?.mitglied_id ? `vk_warenkorb_${aktivePerson.mitglied_id}` : null;
+        if (_clearKey) localStorage.removeItem(_clearKey);
         setLetzterVerkauf(response);
         setVerkaufErfolgreich(true);
         setWarenkorb([]);
@@ -253,6 +352,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         setKundeName('');
         setMitgliedId('');
         setBemerkung('');
+        setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' });
         setShowZahlung(false);
         setError(null);
 
@@ -288,7 +388,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         zahlungsart: 'sumup',
         gegeben_cent: null,
         bemerkung: bemerkung || null,
-        verkauft_von_name: 'Kassierer',
+        verkauft_von_name: kassiererName,
         dojo_id: activeDojo?.id || null,
         checkin_id: checkin_id || null,
         // SumUp-spezifische Daten
@@ -401,28 +501,38 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       variante: { ...selectedVariante }
     };
 
-    setWarenkorb(prev => {
-      const existingItem = prev.find(item => item.unique_id === uniqueId);
-
-      if (existingItem) {
-        return prev.map(item =>
-          item.unique_id === uniqueId
-            ? { ...item, menge: item.menge + 1 }
-            : item
-        );
-      } else {
-        return [...prev, {
-          ...artikelMitVariante,
-          menge: 1
-        }];
-      }
-    });
-
     setShowVariantenModal(false);
     setSelectedArtikelForVariant(null);
+
+    // Variante ersetzen (Warenkorb-Item editieren)
+    if (replacingItemId) {
+      setWarenkorb(prev => prev.map(item =>
+        (item.unique_id === replacingItemId || String(item.artikel_id) === replacingItemId)
+          ? { ...artikelMitVariante, menge: item.menge }
+          : item
+      ));
+      setReplacingItemId(null);
+      return;
+    }
+
+    // Rabatt-Check (wie bei normalem addToWarenkorb)
+    if (aktivePerson?.mitglied_id && artikel.mitglieder_rabatt_wert > 0) {
+      setRabattDialog({ artikelItem: artikelMitVariante });
+      return;
+    }
+
+    setWarenkorb(prev => {
+      const existingItem = prev.find(item => item.unique_id === uniqueId);
+      if (existingItem) {
+        return prev.map(item =>
+          item.unique_id === uniqueId ? { ...item, menge: item.menge + 1 } : item
+        );
+      }
+      return [...prev, { ...artikelMitVariante, menge: 1 }];
+    });
   };
 
-  const addToWarenkorb = (artikelItem) => {
+  const addToWarenkorbDirect = (artikelItem) => {
     if (!artikelItem.verfuegbar) {
       setError('Artikel nicht verfügbar');
       return;
@@ -446,6 +556,35 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     });
   };
   
+  const addToWarenkorb = (artikelItem) => {
+    // Mitglieder-Rabatt: nur anzeigen wenn Mitglied ausgewählt und Rabatt vorhanden
+    if (aktivePerson?.mitglied_id && artikelItem.mitglieder_rabatt_wert > 0) {
+      setRabattDialog({ artikelItem });
+      return;
+    }
+    addToWarenkorbDirect(artikelItem);
+  };
+
+  const applyRabattAndAdd = (withRabatt) => {
+    if (!rabattDialog) return;
+    const item = rabattDialog.artikelItem;
+    if (withRabatt && item.mitglieder_rabatt_typ === 'prozent') {
+      const discount = item.mitglieder_rabatt_wert / 100;
+      const discountedCent = Math.round(item.verkaufspreis_cent * (1 - discount));
+      const discountedEuro = discountedCent / 100;
+      addToWarenkorbDirect({
+        ...item,
+        verkaufspreis_cent: discountedCent,
+        verkaufspreis_euro: discountedEuro,
+        rabatt_angewendet: item.mitglieder_rabatt_wert,
+        original_preis_euro: item.verkaufspreis_euro,
+      });
+    } else {
+      addToWarenkorbDirect(item);
+    }
+    setRabattDialog(null);
+  };
+
   const removeFromWarenkorb = (artikelId, uniqueId = null) => {
     setWarenkorb(prev => prev.filter(item => {
       if (uniqueId) {
@@ -473,8 +612,22 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     );
   };
   
+  const getStorageKey = (personId) =>
+    personId ? `vk_warenkorb_${personId}` : null;
+
   const clearWarenkorb = () => {
+    const key = getStorageKey(aktivePerson?.mitglied_id);
+    if (key) localStorage.removeItem(key);
     setWarenkorb([]);
+  };
+
+  // Variante eines Warenkorb-Items ändern
+  const handleEditVariant = (item) => {
+    setSelectedArtikelForVariant(item);
+    setSelectedVariante(item.variante || { groesse: '', farbe: '', material: '', preiskategorie: '' });
+    setReplacingItemId(item.unique_id || String(item.artikel_id));
+    setShowVariantenModal(true);
+    setEditingItemId(null);
   };
   
   // =====================================================================================
@@ -504,9 +657,17 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
 
   const gesamtNetto = Object.values(steuerBerechnung).reduce((sum, s) => sum + s.netto, 0);
   const gesamtSteuer = Object.values(steuerBerechnung).reduce((sum, s) => sum + s.steuer, 0);
-  
-  const rueckgeld = zahlungsart === 'bar' && gegebenBetrag 
-    ? Math.max(0, parseFloat(gegebenBetrag) - warenkorbSummeEuro)
+
+  const rabattBetrag = (() => {
+    if (!manualRabatt.aktiv || !manualRabatt.wert) return 0;
+    const wert = parseFloat(manualRabatt.wert) || 0;
+    if (manualRabatt.typ === 'prozent') return Math.min(warenkorbSummeEuro * wert / 100, warenkorbSummeEuro);
+    return Math.min(wert, warenkorbSummeEuro);
+  })();
+  const effektivSumme = warenkorbSummeEuro - rabattBetrag;
+
+  const rueckgeld = zahlungsart === 'bar' && gegebenBetrag
+    ? Math.max(0, parseFloat(gegebenBetrag) - effektivSumme)
     : 0;
   
   // =====================================================================================
@@ -517,6 +678,41 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     loadKassenArtikel();
     loadHeutigeCheckins();
   }, []);
+
+  // Warenkorb aus localStorage laden wenn Person bekannt wird
+  useEffect(() => {
+    const personId = aktivePerson?.mitglied_id;
+    if (!personId) return;
+    try {
+      const saved = localStorage.getItem(`vk_warenkorb_${personId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setWarenkorb(parsed);
+        }
+      }
+    } catch {}
+  }, [aktivePerson?.mitglied_id]);
+
+  // Warenkorb in localStorage speichern wenn er sich ändert
+  useEffect(() => {
+    const personId = aktivePerson?.mitglied_id;
+    if (!personId) return;
+    if (warenkorb.length === 0) {
+      localStorage.removeItem(`vk_warenkorb_${personId}`);
+    } else {
+      try {
+        localStorage.setItem(`vk_warenkorb_${personId}`, JSON.stringify(warenkorb));
+      } catch {}
+    }
+  }, [warenkorb, aktivePerson?.mitglied_id]);
+
+  // Zahlung Modal: gegebenBetrag vorausfüllen wenn Modal öffnet
+  useEffect(() => {
+    if (showZahlung && zahlungsart === 'bar') {
+      setGegebenBetrag(effektivSumme.toFixed(2));
+    }
+  }, [showZahlung]); // eslint-disable-line
 
   // SumUp Verfügbarkeit prüfen
   useEffect(() => {
@@ -605,58 +801,155 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       </div>
       
       <div className="warenkorb-items">
-        {warenkorb.map(item => (
-          <div key={item.unique_id || item.artikel_id} className="warenkorb-item">
-            <div className="item-info">
-              <div className="item-name">{item.name}</div>
-              <div className="item-details">
-                <span className="item-preis">
-                  {item.verkaufspreis_euro?.toFixed(2) || '0.00'}€
-                </span>
-                <span className="item-separator">×</span>
-                <span className="item-menge-display">{item.menge}</span>
-              </div>
-            </div>
-
-            <div className="item-summe">
-              {((item.verkaufspreis_euro || 0) * item.menge).toFixed(2)}€
-            </div>
-
-            <button
-              className="item-remove-btn"
-              onClick={() => removeFromWarenkorb(item.artikel_id, item.unique_id)}
-              title="Entfernen"
+        {warenkorb.map(item => {
+          const itemKey = item.unique_id || String(item.artikel_id);
+          const isEditing = editingItemId === itemKey;
+          return (
+            <div
+              key={itemKey}
+              className={`warenkorb-item${isEditing ? ' warenkorb-item--editing' : ''}`}
+              onClick={() => setEditingItemId(isEditing ? null : itemKey)}
             >
-              ×
-            </button>
-          </div>
-        ))}
+              <div className="item-info">
+                <div className="item-name">
+                  {item.name}
+                  {item.rabatt_angewendet > 0 && (
+                    <span style={{ marginLeft: '0.4rem', fontSize: '0.72rem', background: 'rgba(255,215,0,0.2)', color: 'var(--gold,#ffd700)', borderRadius: '4px', padding: '0.1rem 0.35rem' }}>
+                      -{item.rabatt_angewendet}%
+                    </span>
+                  )}
+                </div>
+                <div className="item-details">
+                  <span className="item-preis">
+                    {item.verkaufspreis_euro?.toFixed(2) || '0.00'}€
+                    {item.original_preis_euro && (
+                      <span style={{ marginLeft: '0.3rem', textDecoration: 'line-through', fontSize: '0.78rem', opacity: 0.5 }}>
+                        {item.original_preis_euro.toFixed(2)}€
+                      </span>
+                    )}
+                  </span>
+                  {!isEditing && (
+                    <>
+                      <span className="item-separator">×</span>
+                      <span className="item-menge-display">{item.menge}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {isEditing ? (
+                <div className="item-menge-controls" onClick={e => e.stopPropagation()}>
+                  <button className="item-menge-btn" onClick={() => updateMenge(item.artikel_id, item.menge - 1, item.unique_id)}>−</button>
+                  <span className="item-menge-val">{item.menge}</span>
+                  <button className="item-menge-btn" onClick={() => updateMenge(item.artikel_id, item.menge + 1, item.unique_id)}>+</button>
+                  {item.hat_varianten && item.unique_id && (
+                    <button className="item-menge-btn item-variant-btn" onClick={() => handleEditVariant(item)} title="Variante ändern">↻</button>
+                  )}
+                </div>
+              ) : (
+                <div className="item-summe">
+                  {((item.verkaufspreis_euro || 0) * item.menge).toFixed(2)}€
+                </div>
+              )}
+
+              <button
+                className="item-remove-btn"
+                onClick={e => { e.stopPropagation(); removeFromWarenkorb(item.artikel_id, item.unique_id); }}
+                title="Entfernen"
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
       </div>
-      
+
+      {warenkorb.length === 0 && (
+        <div className="warenkorb-empty">
+          <span>Warenkorb leer</span>
+        </div>
+      )}
+
       {warenkorb.length > 0 && (
         <div className="warenkorb-summe">
+          {/* Manueller Rabatt */}
+          {!manualRabatt.aktiv ? (
+            <button
+              className="wk-rabatt-btn"
+              onClick={() => setManualRabatt(r => ({ ...r, aktiv: true }))}
+            >
+              % Rabatt hinzufügen
+            </button>
+          ) : (
+            <div className="wk-rabatt-row">
+              <div className="wk-rabatt-inputs">
+                <button
+                  className={`wk-rabatt-typ${manualRabatt.typ === 'prozent' ? ' active' : ''}`}
+                  onClick={() => setManualRabatt(r => ({ ...r, typ: 'prozent', wert: '' }))}
+                >%</button>
+                <button
+                  className={`wk-rabatt-typ${manualRabatt.typ === 'betrag' ? ' active' : ''}`}
+                  onClick={() => setManualRabatt(r => ({ ...r, typ: 'betrag', wert: '' }))}
+                >€</button>
+                <input
+                  type="number"
+                  min="0"
+                  max={manualRabatt.typ === 'prozent' ? 100 : undefined}
+                  step="0.01"
+                  className="wk-rabatt-input"
+                  placeholder={manualRabatt.typ === 'prozent' ? '0 %' : '0.00 €'}
+                  value={manualRabatt.wert}
+                  onChange={e => setManualRabatt(r => ({ ...r, wert: e.target.value }))}
+                  autoFocus
+                  onClick={e => e.stopPropagation()}
+                />
+                <button
+                  className="wk-rabatt-clear"
+                  onClick={() => setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' })}
+                >×</button>
+              </div>
+              {rabattBetrag > 0 && (
+                <div className="summe-row wk-rabatt-display">
+                  <span>Nachlass</span>
+                  <span style={{ color: '#22c55e' }}>−{rabattBetrag.toFixed(2)}€</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="summe-row">
             <span>Netto:</span>
-            <span>{gesamtNetto.toFixed(2)}€</span>
+            <span>{(gesamtNetto * (effektivSumme / warenkorbSummeEuro || 1)).toFixed(2)}€</span>
           </div>
           {Object.keys(steuerBerechnung).sort().map(mwstSatz => (
             <div key={mwstSatz} className="summe-row tax">
               <span>MwSt. {parseFloat(mwstSatz).toFixed(0)}%:</span>
-              <span>{steuerBerechnung[mwstSatz].steuer.toFixed(2)}€</span>
+              <span>{(steuerBerechnung[mwstSatz].steuer * (effektivSumme / warenkorbSummeEuro || 1)).toFixed(2)}€</span>
             </div>
           ))}
           <div className="summe-row total">
             <span>Gesamt (Brutto):</span>
-            <span>{warenkorbSummeEuro.toFixed(2)}€</span>
+            <span>{effektivSumme.toFixed(2)}€</span>
           </div>
+        </div>
+      )}
+
+      {warenkorb.length > 0 && (
+        <div className="warenkorb-checkout">
+          <button
+            className="btn btn-primary btn-large"
+            onClick={() => setShowZahlung(true)}
+          >
+            Zur Kasse ({effektivSumme.toFixed(2)}€)
+          </button>
         </div>
       )}
     </div>
   );
   
   const renderZahlung = () => (
-    <div className="zahlung-modal">
-      <div className="zahlung-content">
+    <div className="zahlung-modal" onClick={() => setShowZahlung(false)}>
+      <div className="zahlung-content" onClick={e => e.stopPropagation()}>
         <h3>Zahlung</h3>
         
         <div className="zahlungsart-selection">
@@ -686,8 +979,8 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
             <input
               type="radio"
               name="zahlungsart"
-              value="digital"
-              checked={zahlungsart === 'digital'}
+              value="lastschrift"
+              checked={zahlungsart === 'lastschrift'}
               onChange={(e) => setZahlungsart(e.target.value)}
             />
             <span>💳 Lastschrift</span>
@@ -714,7 +1007,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                 <label>Zu zahlen (€):</label>
                 <input
                   type="text"
-                  value={warenkorbSummeEuro.toFixed(2)}
+                  value={effektivSumme.toFixed(2)}
                   readOnly
                   className="betrag-readonly"
                 />
@@ -727,8 +1020,8 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
                   value={gegebenBetrag}
                   onChange={(e) => setGegebenBetrag(e.target.value)}
                   step="0.01"
-                  min={warenkorbSummeEuro}
-                  placeholder={warenkorbSummeEuro.toFixed(2)}
+                  min={effektivSumme}
+                  placeholder={effektivSumme.toFixed(2)}
                 />
               </div>
 
@@ -745,7 +1038,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         {zahlungsart === 'sumup' && (
           <div className="sumup-zahlung">
             <SumUpCheckout
-              amount={warenkorbSummeEuro}
+              amount={effektivSumme}
               description={`Verkauf ${warenkorb.length} Artikel`}
               dojoId={activeDojo?.id || activeDojo}
               mitgliedId={mitgliedId}
@@ -809,7 +1102,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
             <button
               className="btn btn-primary"
               onClick={durchfuehrenVerkauf}
-              disabled={zahlungsart === 'bar' && parseFloat(gegebenBetrag) < warenkorbSummeEuro}
+              disabled={zahlungsart === 'bar' && !!gegebenBetrag && parseFloat(gegebenBetrag) < effektivSumme}
             >
               Verkauf abschließen
             </button>
@@ -934,49 +1227,51 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
               </div>
             )}
 
-            {/* Farben */}
-            {hasFarben && (
-              <div className="varianten-section">
-                <label>Farbe:</label>
-                <div className="varianten-options">
-                  {artikel.varianten_farben.map((farbe, idx) => {
-                    const farbeName = typeof farbe === 'object' ? farbe.name : farbe;
-                    const farbeHex = typeof farbe === 'object' ? farbe.hex : null;
-                    return (
-                      <button
-                        key={farbeName || idx}
-                        type="button"
-                        className={`variante-btn ${selectedVariante.farbe === farbeName ? 'selected' : ''}`}
-                        onClick={() => setSelectedVariante(prev => ({ ...prev, farbe: farbeName }))}
-                        style={farbeHex ? { borderLeftColor: farbeHex, borderLeftWidth: '4px' } : {}}
-                      >
-                        {farbeName}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Material */}
-            {hasMaterial && (
-              <div className="varianten-section">
-                <label>Material:</label>
-                <div className="varianten-options">
-                  {artikel.varianten_material.map((material, idx) => {
-                    const materialName = typeof material === 'object' ? material.name : material;
-                    return (
-                      <button
-                        key={materialName || idx}
-                        type="button"
-                        className={`variante-btn ${selectedVariante.material === materialName ? 'selected' : ''}`}
-                        onClick={() => setSelectedVariante(prev => ({ ...prev, material: materialName }))}
-                      >
-                        {materialName}
-                      </button>
-                    );
-                  })}
-                </div>
+            {/* Farbe + Material in einer Zeile */}
+            {(hasFarben || hasMaterial) && (
+              <div style={{ display: 'grid', gridTemplateColumns: hasFarben && hasMaterial ? '1fr 1fr' : '1fr', gap: '1rem' }}>
+                {hasFarben && (
+                  <div className="varianten-section" style={{ marginBottom: 0 }}>
+                    <label>Farbe:</label>
+                    <div className="varianten-options">
+                      {artikel.varianten_farben.map((farbe, idx) => {
+                        const farbeName = typeof farbe === 'object' ? farbe.name : farbe;
+                        const farbeHex = typeof farbe === 'object' ? farbe.hex : null;
+                        return (
+                          <button
+                            key={farbeName || idx}
+                            type="button"
+                            className={`variante-btn ${selectedVariante.farbe === farbeName ? 'selected' : ''}`}
+                            onClick={() => setSelectedVariante(prev => ({ ...prev, farbe: farbeName }))}
+                            style={farbeHex ? { borderLeftColor: farbeHex, borderLeftWidth: '4px' } : {}}
+                          >
+                            {farbeName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {hasMaterial && (
+                  <div className="varianten-section" style={{ marginBottom: 0 }}>
+                    <label>Material:</label>
+                    <div className="varianten-options">
+                      {artikel.varianten_material.map((material, idx) => {
+                        const materialName = typeof material === 'object' ? material.name : material;
+                        return (
+                          <button
+                            key={materialName || idx}
+                            type="button"
+                            className={`variante-btn ${selectedVariante.material === materialName ? 'selected' : ''}`}
+                            onClick={() => setSelectedVariante(prev => ({ ...prev, material: materialName }))}
+                          >
+                            {materialName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1011,22 +1306,102 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   // =====================================================================================
   
   if (loading) {
-    return (
-      <div className="verkauf-kasse">
+    return createPortal(
+      <div className="verkauf-kasse vk-fullscreen">
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>Kasse wird geladen...</p>
         </div>
-      </div>
+      </div>,
+      document.body
     );
   }
   
   if (verkaufErfolgreich) {
     return renderErfolg();
   }
-  
-  return (
-    <div className="checkin-system">
+
+  if (showStartDialog) {
+    return createPortal(
+      <div className="checkin-system vk-fullscreen vk-start-overlay">
+        <div className="vk-start-dialog">
+          <div className="vk-start-header">
+            <button className="vk-start-back" style={{ marginRight: '0.5rem' }} onClick={() => onClose ? onClose() : navigate(-1)}>←</button>
+            <ShoppingCart size={28} />
+            <h2>Verkauf starten</h2>
+          </div>
+
+          {!startModus && (
+            <div className="vk-start-choices">
+              <button className="vk-start-btn vk-start-btn--bar" onClick={() => setShowStartDialog(false)}>
+                <span className="vk-start-btn-icon">💵</span>
+                <span className="vk-start-btn-label">Bar / Karte</span>
+                <span className="vk-start-btn-sub">Direktzahlung, kein Mitglied</span>
+              </button>
+              <button className="vk-start-btn vk-start-btn--konto" onClick={() => setStartModus('kundenkonto')}>
+                <span className="vk-start-btn-icon">👤</span>
+                <span className="vk-start-btn-label">Kundenkonto</span>
+                <span className="vk-start-btn-sub">Mitglied auswählen &amp; zuordnen</span>
+              </button>
+            </div>
+          )}
+
+          {startModus === 'kundenkonto' && (
+            <div className="vk-start-search">
+              <input
+                type="text"
+                className="vk-start-search-input"
+                placeholder="Mitglied suchen (Name, Nummer…)"
+                value={mitgliederSuche}
+                onChange={e => setMitgliederSuche(e.target.value)}
+                autoFocus
+              />
+              {searchLoading && <div className="vk-start-search-loading">Suche…</div>}
+              <div className="vk-start-results">
+                {mitgliederResults.map(m => (
+                  <button
+                    key={m.mitglied_id}
+                    className="vk-start-result-row"
+                    onClick={() => {
+                      selectMitglied({ ...m, full_name: `${m.vorname} ${m.nachname}` });
+                      setShowStartDialog(false);
+                    }}
+                  >
+                    <span className="vk-start-result-name">{m.vorname} {m.nachname}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {m.mitgliedsnummer && <span className="vk-start-result-nr">#{m.mitgliedsnummer}</span>}
+                      {(() => {
+                        try {
+                          const saved = localStorage.getItem(`vk_warenkorb_${m.mitglied_id}`);
+                          if (saved) {
+                            const items = JSON.parse(saved);
+                            if (Array.isArray(items) && items.length > 0) {
+                              return <span style={{ fontSize: '0.72rem', background: 'rgba(255,215,0,0.2)', color: '#ffd700', borderRadius: '4px', padding: '0.1rem 0.4rem' }}>🛒 {items.length} offen</span>;
+                            }
+                          }
+                        } catch {}
+                        return null;
+                      })()}
+                    </div>
+                  </button>
+                ))}
+                {mitgliederSuche.length >= 2 && !searchLoading && mitgliederResults.length === 0 && (
+                  <div className="vk-start-no-results">Kein Mitglied gefunden</div>
+                )}
+              </div>
+              <button className="vk-start-back" onClick={() => { setStartModus(null); setMitgliederSuche(''); setMitgliederResults([]); }}>
+                ← Zurück
+              </button>
+            </div>
+          )}
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
+  return createPortal(
+    <div className="checkin-system vk-fullscreen">
       {/* Header im Check-in Terminal Stil */}
       <div className="checkin-header">
         <div className="checkin-header-content">
@@ -1050,9 +1425,9 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
           </div>
           
           {/* Schließen-Button */}
-          <button 
+          <button
             className="close-kasse-button"
-            onClick={onClose}
+            onClick={() => onClose ? onClose() : navigate(-1)}
             title="Zurück zum Check-in Terminal"
           >
             <X size={24} />
@@ -1118,7 +1493,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         )}
         
         {/* Kassen-Layout */}
-        <div className="kasse-layout">
+        <div className="kasse-layout" ref={kasseLayoutRef}>
         {/* Kategorien */}
         <div className="kategorien-sidebar">
           <button
@@ -1148,15 +1523,6 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         {/* Warenkorb */}
         <div className="warenkorb-section">
           {renderWarenkorb()}
-          
-          {warenkorb.length > 0 && (
-            <button 
-              className="btn btn-primary btn-large"
-              onClick={() => setShowZahlung(true)}
-            >
-              Zur Kasse ({warenkorbSummeEuro.toFixed(2)}€)
-            </button>
-          )}
         </div>
         </div>
         
@@ -1165,8 +1531,46 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
 
         {/* Varianten-Modal */}
         {renderVariantenModal()}
+
+        {/* Mitglieder-Rabatt Dialog */}
+        {rabattDialog && (
+          <div className="varianten-modal-overlay" onClick={() => applyRabattAndAdd(false)}>
+            <div className="varianten-modal" style={{ maxWidth: '460px' }} onClick={e => e.stopPropagation()}>
+              <div className="varianten-modal-header">
+                <h3>Mitglieder-Rabatt</h3>
+                <button className="modal-close-btn" onClick={() => applyRabattAndAdd(false)}>×</button>
+              </div>
+              <div className="varianten-modal-content" style={{ textAlign: 'center', padding: '1.25rem' }}>
+                <div style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏷️</div>
+                <p style={{ fontSize: '0.9rem', marginBottom: '0.35rem', color: 'var(--text-primary, #fff)' }}>
+                  <strong>{rabattDialog.artikelItem.name}</strong>
+                </p>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary, rgba(255,255,255,0.7))', marginBottom: '0.9rem' }}>
+                  Für <strong>{aktivePerson.vorname} {aktivePerson.nachname}</strong> ist ein Mitglieder-Rabatt von{' '}
+                  <strong style={{ color: 'var(--gold, #ffd700)' }}>
+                    {rabattDialog.artikelItem.mitglieder_rabatt_wert}%
+                  </strong> hinterlegt.
+                </p>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary, rgba(255,255,255,0.6))', marginBottom: '0.5rem' }}>
+                  {rabattDialog.artikelItem.verkaufspreis_euro?.toFixed(2)}€ → <strong style={{ color: 'var(--gold, #ffd700)' }}>
+                    {(rabattDialog.artikelItem.verkaufspreis_euro * (1 - rabattDialog.artikelItem.mitglieder_rabatt_wert / 100)).toFixed(2)}€
+                  </strong>
+                </p>
+              </div>
+              <div className="varianten-modal-actions">
+                <button className="btn btn-secondary" onClick={() => applyRabattAndAdd(false)}>
+                  Ohne Rabatt
+                </button>
+                <button className="btn btn-primary" onClick={() => applyRabattAndAdd(true)}>
+                  ✓ Rabatt anwenden
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

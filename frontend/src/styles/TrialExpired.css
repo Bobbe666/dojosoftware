@@ -14,7 +14,7 @@
 .trial-expired-content {
   background: var(--surface-2);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: 3rem;
   max-width: 900px;
@@ -42,7 +42,7 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 107, 53, 0.2) 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-20) 0%, rgba(255, 107, 53, 0.2) 100%);
   color: var(--primary);
 }
 
@@ -52,7 +52,7 @@
   font-weight: 700;
   color: var(--text-1);
   margin-bottom: 1.5rem;
-  text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+  text-shadow: 0 2px 10px var(--primary-alpha-30);
 }
 
 /* Message */
@@ -125,7 +125,7 @@
 
 .pricing-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   transition: transform 0.3s, box-shadow 0.3s;
@@ -134,13 +134,13 @@
 
 .pricing-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.3);
-  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 8px 24px var(--primary-alpha-30);
+  border-color: var(--primary-alpha-40);
 }
 
 .pricing-card.featured {
-  border-color: rgba(255, 215, 0, 0.5);
-  background: rgba(255, 215, 0, 0.08);
+  border-color: var(--primary-alpha-50);
+  background: var(--primary-alpha-08);
   transform: scale(1.05);
 }
 
@@ -148,7 +148,7 @@
   position: absolute;
   top: -12px;
   right: 1.5rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #0f0f23;
   padding: 0.25rem 1rem;
   border-radius: 999px;
@@ -194,8 +194,8 @@
 
 /* Contact */
 .trial-expired-contact {
-  background: rgba(255, 215, 0, 0.1);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-page-padding);
   margin-bottom: var(--ui-section-gap);
@@ -225,8 +225,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 100%);
-  border: 1px solid rgba(255, 215, 0, 0.5);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 100%);
+  border: 1px solid var(--primary-alpha-50);
   border-radius: var(--comp-radius-md);
   color: var(--text-1);
   text-decoration: none;
@@ -235,9 +235,9 @@
 }
 
 .contact-button:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-20) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .contact-note {

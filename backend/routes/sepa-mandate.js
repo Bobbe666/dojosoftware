@@ -2,130 +2,206 @@ const express = require("express");
 const logger = require('../utils/logger');
 const crypto = require("crypto");
 const db = require("../db");
+const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const router = express.Router();
 
-// API: ALLE SEPA-Mandate abrufen (für Verwaltung)
-router.get("/", (req, res) => {
-    // First check if table exists
-    const checkTableQuery = `SHOW TABLES LIKE 'sepa_mandate'`;
+const VALID_STATUS = ['aktiv', 'widerrufen', 'abgelaufen'];
+const MASSEN_LIMIT = 500;
 
-    db.query(checkTableQuery, (err, tables) => {
-        if (err) {
-            logger.error('Fehler beim Prüfen der Tabelle:', err);
-            return res.status(500).json({
-                error: 'Datenbankfehler',
-                details: err.message
-            });
-        }
+// API: ALLE SEPA-Mandate abrufen (für Verwaltung) — dojo-gefiltert
+router.get("/", authenticateToken, (req, res) => {
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+    const params = secureDojoId ? [secureDojoId] : [];
 
-        if (tables.length === 0) {
-            // Table doesn't exist yet, return empty result
-            return res.json({
-                success: true,
-                data: []
-            });
-        }
-
-        // Table exists, fetch data
-        const query = `
-            SELECT
-                sm.mandat_id,
-                sm.mitglied_id,
-                sm.iban,
-                sm.bic,
-                sm.bankname as bank_name,
-                sm.kontoinhaber,
-                sm.mandatsreferenz,
-                sm.glaeubiger_id,
-                sm.status,
-                sm.erstellungsdatum,
-                sm.letzte_nutzung,
-                sm.archiviert,
-                sm.mandat_typ,
-                sm.provider,
-                CONCAT(m.vorname, ' ', m.nachname) as mitglied_name
-            FROM sepa_mandate sm
-            LEFT JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id
-            WHERE sm.archiviert = 0 OR sm.archiviert IS NULL
-            ORDER BY sm.erstellungsdatum DESC
-        `;
-
-        db.query(query, (err, results) => {
-            if (err) {
-                logger.error('Fehler beim Abrufen aller SEPA-Mandate:', err);
-                return res.status(500).json({
-                    error: 'Datenbankfehler',
-                    details: err.message
-                });
-            }
-
-            res.json({
-                success: true,
-                data: results
-            });
-        });
-    });
-});
-
-// API: SEPA-Mandate für ein Mitglied abrufen
-router.get("/:mitglied_id/sepa-mandate", (req, res) => {
-    const { mitglied_id } = req.params;
-
-    // Prüfe ob sepa_mandate Tabelle existiert
     const query = `
-        SELECT 
+        SELECT
             sm.mandat_id,
             sm.mitglied_id,
             sm.iban,
             sm.bic,
-            sm.bank_name,
+            sm.bankname as bank_name,
+            sm.kontoinhaber,
+            sm.mandatsreferenz,
+            sm.glaeubiger_id,
+            sm.status,
+            sm.erstellungsdatum,
+            sm.letzte_nutzung,
+            sm.archiviert,
+            sm.mandat_typ,
+            sm.provider,
+            CONCAT(m.vorname, ' ', m.nachname) as mitglied_name
+        FROM sepa_mandate sm
+        LEFT JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id
+        WHERE (sm.archiviert = 0 OR sm.archiviert IS NULL)
+          ${dojoFilter}
+        ORDER BY sm.erstellungsdatum DESC
+    `;
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            logger.error('Fehler beim Abrufen aller SEPA-Mandate:', err);
+            return res.status(500).json({ error: 'Datenbankfehler' });
+        }
+        res.json({ success: true, data: results });
+    });
+});
+
+// API: Mitglieder ohne aktives SEPA-Mandat abrufen
+router.get('/ohne-mandat', authenticateToken, (req, res) => {
+    const secureDojoId = getSecureDojoId(req);
+    let where = `WHERE m.aktiv = 1
+    AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+    AND m.mitglied_id NOT IN (
+      SELECT sm.mitglied_id FROM sepa_mandate sm
+      WHERE (sm.archiviert = 0 OR sm.archiviert IS NULL)
+        AND sm.status = 'aktiv'
+    )`;
+    const params = [];
+    if (secureDojoId) { where += ' AND m.dojo_id = ?'; params.push(secureDojoId); }
+    db.query(
+        `SELECT m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber
+     FROM mitglieder m ${where} ORDER BY m.nachname, m.vorname`,
+        params,
+        (err, rows) => {
+            if (err) {
+                logger.error('Fehler bei ohne-mandat:', err);
+                return res.status(500).json({ error: 'Datenbankfehler' });
+            }
+            res.json({ success: true, data: rows });
+        }
+    );
+});
+
+// API: SEPA-Mandate massenhaft erstellen (Admin-Import ohne Unterschrift)
+router.post('/massen-erstellung', authenticateToken, async (req, res) => {
+    const role = req.user?.rolle;
+    if (role !== 'admin' && role !== 'super_admin')
+        return res.status(403).json({ error: 'Nur für Admins' });
+
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId)
+        return res.status(400).json({ error: 'Dojo-ID erforderlich' });
+
+    const { mandate } = req.body;
+    if (!Array.isArray(mandate) || mandate.length === 0)
+        return res.status(400).json({ error: 'Keine Mandate angegeben' });
+    if (mandate.length > MASSEN_LIMIT)
+        return res.status(400).json({ error: `Maximal ${MASSEN_LIMIT} Mandate pro Aufruf` });
+
+    const pool = db.promise();
+    let erstellt = 0, fehler = 0;
+    const details = [];
+
+    for (const m of mandate) {
+        if (!m.mitglied_id || !m.iban || !m.kontoinhaber) { fehler++; continue; }
+        try {
+            // Sicherheitscheck: Mitglied muss zum Dojo gehören
+            const [rows] = await pool.query(
+                'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?',
+                [m.mitglied_id, secureDojoId]
+            );
+            if (!rows.length) {
+                fehler++;
+                details.push({ mitglied_id: m.mitglied_id, fehler: 'Nicht gefunden' });
+                continue;
+            }
+            // Duplikat-Check: kein zweites aktives Mandat anlegen
+            const [existing] = await pool.query(
+                `SELECT mandat_id FROM sepa_mandate
+                 WHERE mitglied_id = ? AND status = 'aktiv'
+                   AND (archiviert = 0 OR archiviert IS NULL)`,
+                [m.mitglied_id]
+            );
+            if (existing.length) {
+                fehler++;
+                details.push({ mitglied_id: m.mitglied_id, fehler: 'Bereits aktives Mandat vorhanden' });
+                continue;
+            }
+
+            const ref = `DOJO${secureDojoId}-${m.mitglied_id}-${Date.now()}`;
+            await pool.query(
+                `INSERT INTO sepa_mandate (mitglied_id, iban, bic, bankname, kontoinhaber,
+         mandatsreferenz, status, erstellungsdatum)
+         VALUES (?, ?, ?, ?, ?, ?, 'aktiv', NOW())`,
+                [m.mitglied_id, m.iban, m.bic || '', m.bankname || null, m.kontoinhaber, ref]
+            );
+            await pool.query(
+                `UPDATE mitglieder SET zahlungsmethode = 'Lastschrift'
+         WHERE mitglied_id = ? AND dojo_id = ?`,
+                [m.mitglied_id, secureDojoId]
+            );
+            erstellt++;
+        } catch (e) {
+            logger.error('Massen-Mandat Fehler:', { error: e, mitglied_id: m.mitglied_id });
+            fehler++;
+            details.push({ mitglied_id: m.mitglied_id, fehler: 'Fehler beim Anlegen' });
+        }
+    }
+    res.json({ success: true, erstellt, fehler, details });
+});
+
+// API: SEPA-Mandate für ein Mitglied abrufen
+router.get("/:mitglied_id/sepa-mandate", authenticateToken, (req, res) => {
+    const { mitglied_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+    const params = secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id];
+
+    const query = `
+        SELECT
+            sm.mandat_id,
+            sm.mitglied_id,
+            sm.iban,
+            sm.bic,
+            sm.bankname as bank_name,
             sm.kontoinhaber,
             sm.mandatsreferenz,
             sm.status,
-            sm.erstellt_am,
-            sm.letzte_abrechnung,
+            sm.erstellungsdatum as erstellt_am,
+            sm.letzte_nutzung as letzte_abrechnung,
             CONCAT(m.vorname, ' ', m.nachname) as mitglied_name
         FROM sepa_mandate sm
         JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id
-        WHERE sm.mitglied_id = ?
-        ORDER BY sm.erstellt_am DESC
+        WHERE sm.mitglied_id = ? ${dojoFilter}
+        ORDER BY sm.erstellungsdatum DESC
     `;
 
-    db.query(query, [mitglied_id], (err, results) => {
+    db.query(query, params, (err, results) => {
         if (err) {
-            // Wenn Tabelle nicht existiert, leere Liste zurückgeben
-            if (err.code === 'ER_NO_SUCH_TABLE') {
-                return res.json([]);
-            }
-            
+            if (err.code === 'ER_NO_SUCH_TABLE') return res.json([]);
             logger.error('Fehler beim Abrufen der SEPA-Mandate:', err);
-            return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         }
-
         res.json(results);
     });
 });
 
 // API: Neues SEPA-Mandat erstellen
-router.post("/:mitglied_id/sepa-mandate", (req, res) => {
+router.post("/:mitglied_id/sepa-mandate", authenticateToken, async (req, res) => {
     const { mitglied_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId)
+        return res.status(400).json({ error: 'Dojo-ID erforderlich' });
+
+    // Ownership-Check: Mitglied muss zum Dojo gehören
+    const pool = db.promise();
+    const [ownerRows] = await pool.query(
+        'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?',
+        [mitglied_id, secureDojoId]
+    ).catch(() => [[]]);
+    if (!ownerRows.length)
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+
     const {
-        iban,
-        bic,
-        bank_name,
-        kontoinhaber,
-        mandatsreferenz,
-        // Digitale Unterschrift Felder
-        unterschrift_digital,
-        unterschrift_datum,
-        unterschrift_ip
+        iban, bic, bank_name, kontoinhaber, mandatsreferenz,
+        unterschrift_digital, unterschrift_datum, unterschrift_ip
     } = req.body;
 
-    if (!iban || !kontoinhaber) {
+    if (!iban || !kontoinhaber)
         return res.status(400).json({ error: "IBAN und Kontoinhaber sind erforderlich" });
-    }
 
-    // Generiere Hash der Unterschrift fuer Integritaet
     let unterschriftHash = null;
     if (unterschrift_digital) {
         unterschriftHash = crypto.createHash('sha256')
@@ -133,10 +209,8 @@ router.post("/:mitglied_id/sepa-mandate", (req, res) => {
             .digest('hex');
     }
 
-    // Generiere Mandatsreferenz falls nicht angegeben
     const finalMandatsreferenz = mandatsreferenz || `DOJO-${mitglied_id}-${Date.now()}`;
 
-    // Mandat erstellen mit Unterschrift
     const insertQuery = `
         INSERT INTO sepa_mandate (
             mitglied_id, iban, bic, bankname, kontoinhaber, mandatsreferenz,
@@ -146,28 +220,20 @@ router.post("/:mitglied_id/sepa-mandate", (req, res) => {
     `;
 
     const params = [
-        mitglied_id,
-        iban,
-        bic || null,
-        bank_name || null,
-        kontoinhaber,
-        finalMandatsreferenz,
-        unterschrift_digital || null,
+        mitglied_id, iban, bic || '', bank_name || null, kontoinhaber,
+        finalMandatsreferenz, unterschrift_digital || null,
         unterschrift_datum ? new Date(unterschrift_datum) : null,
-        unterschrift_ip || null,
+        req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || req.ip || null,
         unterschriftHash
     ];
 
     db.query(insertQuery, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Erstellen des SEPA-Mandats:', { error: err });
-            return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         }
-
-        // Log fuer Audit-Trail
         logger.debug(`SEPA-Mandat erstellt: ID=${result.insertId}, Mitglied=${mitglied_id}, ` +
             `Ref=${finalMandatsreferenz}, Signiert=${!!unterschrift_digital}`);
-
         res.json({
             success: true,
             mandat_id: result.insertId,
@@ -179,86 +245,84 @@ router.post("/:mitglied_id/sepa-mandate", (req, res) => {
 });
 
 // API: SEPA-Mandat aktualisieren
-router.put("/:mitglied_id/sepa-mandate/:mandat_id", (req, res) => {
+router.put("/:mitglied_id/sepa-mandate/:mandat_id", authenticateToken, (req, res) => {
     const { mitglied_id, mandat_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
     const { iban, bic, bank_name, kontoinhaber, status } = req.body;
 
-    const query = `
-        UPDATE sepa_mandate 
-        SET iban = ?, bic = ?, bank_name = ?, kontoinhaber = ?, status = ?
-        WHERE mandat_id = ? AND mitglied_id = ?
-    `;
+    if (status && !VALID_STATUS.includes(status))
+        return res.status(400).json({ error: 'Ungültiger Status' });
 
-    const params = [
-        iban,
-        bic,
-        bank_name,
-        kontoinhaber,
-        status,
-        mandat_id,
-        mitglied_id
-    ];
+    const dojoJoin = secureDojoId
+        ? 'JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id AND m.dojo_id = ?'
+        : '';
+    const params = secureDojoId
+        ? [iban, bic || '', bank_name, kontoinhaber, status, secureDojoId, mandat_id, mitglied_id]
+        : [iban, bic || '', bank_name, kontoinhaber, status, mandat_id, mitglied_id];
+
+    const query = `
+        UPDATE sepa_mandate sm
+        ${dojoJoin}
+        SET sm.iban = ?, sm.bic = ?, sm.bankname = ?, sm.kontoinhaber = ?, sm.status = ?
+        WHERE sm.mandat_id = ? AND sm.mitglied_id = ?
+    `;
 
     db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Aktualisieren des SEPA-Mandats:', err);
-            return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         }
-
-        if (result.affectedRows === 0) {
+        if (result.affectedRows === 0)
             return res.status(404).json({ error: 'SEPA-Mandat nicht gefunden' });
-        }
-
-        res.json({ 
-            success: true, 
-            message: 'SEPA-Mandat erfolgreich aktualisiert'
-        });
+        res.json({ success: true, message: 'SEPA-Mandat erfolgreich aktualisiert' });
     });
 });
 
 // API: SEPA-Mandat löschen (mit mitglied_id)
-router.delete("/:mitglied_id/sepa-mandate/:mandat_id", (req, res) => {
+router.delete("/:mitglied_id/sepa-mandate/:mandat_id", authenticateToken, (req, res) => {
     const { mitglied_id, mandat_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `DELETE FROM sepa_mandate WHERE mandat_id = ? AND mitglied_id = ?`;
+    const query = secureDojoId
+        ? `DELETE sm FROM sepa_mandate sm
+           JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id AND m.dojo_id = ?
+           WHERE sm.mandat_id = ? AND sm.mitglied_id = ?`
+        : `DELETE FROM sepa_mandate WHERE mandat_id = ? AND mitglied_id = ?`;
+    const params = secureDojoId
+        ? [secureDojoId, mandat_id, mitglied_id]
+        : [mandat_id, mitglied_id];
 
-    db.query(query, [mandat_id, mitglied_id], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Löschen des SEPA-Mandats:', err);
-            return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         }
-
-        if (result.affectedRows === 0) {
+        if (result.affectedRows === 0)
             return res.status(404).json({ error: 'SEPA-Mandat nicht gefunden' });
-        }
-
-        res.json({
-            success: true,
-            message: 'SEPA-Mandat erfolgreich gelöscht'
-        });
+        res.json({ success: true, message: 'SEPA-Mandat erfolgreich gelöscht' });
     });
 });
 
 // API: SEPA-Mandat löschen (direkter Zugriff über mandat_id für Verwaltung)
-router.delete("/:mandat_id", (req, res) => {
+router.delete("/:mandat_id", authenticateToken, (req, res) => {
     const { mandat_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `DELETE FROM sepa_mandate WHERE mandat_id = ?`;
+    const query = secureDojoId
+        ? `DELETE sm FROM sepa_mandate sm
+           JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id AND m.dojo_id = ?
+           WHERE sm.mandat_id = ?`
+        : `DELETE FROM sepa_mandate WHERE mandat_id = ?`;
+    const params = secureDojoId ? [secureDojoId, mandat_id] : [mandat_id];
 
-    db.query(query, [mandat_id], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Löschen des SEPA-Mandats:', err);
-            return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+            return res.status(500).json({ error: 'Datenbankfehler' });
         }
-
-        if (result.affectedRows === 0) {
+        if (result.affectedRows === 0)
             return res.status(404).json({ error: 'SEPA-Mandat nicht gefunden' });
-        }
-
-        res.json({
-            success: true,
-            message: 'SEPA-Mandat erfolgreich gelöscht'
-        });
+        res.json({ success: true, message: 'SEPA-Mandat erfolgreich gelöscht' });
     });
 });
 

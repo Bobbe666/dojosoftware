@@ -101,12 +101,13 @@ app.use(cors({
     // SECURITY: In Produktion - Requests ohne Origin nur in Development erlauben
     // (Server-to-Server wie Webhooks werden über separate Routen mit eigener Auth gehandelt)
     if (!origin) {
+      // CORS ist ein Browser-Mechanismus — Server-to-Server Requests (Webhooks etc.)
+      // senden kein Origin-Header und umgehen CORS ohnehin.
+      // false = kein ACAO-Header gesetzt → für nicht-Browser-Clients ohne Auswirkung.
       if (process.env.NODE_ENV === 'development') {
         return callback(null, true);
       }
-      // In Produktion: Nur für spezifische Server-to-Server Requests erlauben
-      // Diese werden über Webhook-Routes mit Signature-Validierung gehandhabt
-      return callback(null, true);  // Webhooks brauchen dies
+      return callback(null, false);
     }
 
     // Prüfe ob Origin in erlaubten Origins ist
@@ -130,13 +131,33 @@ app.use(cors({
       return callback(null, true);
     }
 
-    // Erlaube alle tda-*.de Domains (TDA-Webseiten wie tda-vib.de, tda-la.de, etc.)
-    if (origin.match(/^https:\/\/(www\.)?tda-[a-z0-9-]+\.de$/)) {
+    // Erlaube tda-intl.com (TDA Events Frontend)
+    if (origin === 'https://tda-intl.com' || origin === 'https://www.tda-intl.com') {
+      return callback(null, true);
+    }
+
+    // Erlaube events.tda-intl.org (TDA Events Platform)
+    if (origin === 'https://events.tda-intl.org') {
+      return callback(null, true);
+    }
+
+    // Erlaube hof.tda-intl.org (Hall of Fame Platform)
+    if (origin === 'https://hof.tda-intl.org') {
+      return callback(null, true);
+    }
+
+    // Erlaube bekannte tda-*.de Domains (explizite Whitelist — kein offener Regex)
+    const tdaDeDomains = [
+      'https://tda-vib.de',
+      'https://www.tda-vib.de',
+      'https://app.tda-vib.de',
+    ];
+    if (tdaDeDomains.includes(origin)) {
       return callback(null, true);
     }
 
     logger.warn('CORS abgelehnt', { origin });
-    callback(new Error('CORS nicht erlaubt für Origin: ' + origin));
+    callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -209,26 +230,12 @@ const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 
-  // Debug: Log für Badges-Route
-  if (req.path.includes("badges") || req.originalUrl.includes("badges")) {
-    console.log("🔐 Auth Debug (badges):", {
-      path: req.path,
-      originalUrl: req.originalUrl,
-      hasToken: !!token,
-      tokenStart: token ? token.substring(0, 20) + "..." : "none"
-    });
-  }
-
   if (!token) {
     return res.status(401).json({ message: "Kein Token vorhanden" });
   }
 
   jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) {
-      // Debug: Log für fehlgeschlagene Token-Verifikation
-      if (req.path.includes("badges") || req.originalUrl.includes("badges")) {
-        console.log("❌ Token-Fehler (badges):", { error: err.message, tokenStart: token.substring(0, 20) });
-      }
       return res.status(403).json({ message: "Token ungültig oder abgelaufen" });
     }
     req.user = decoded;
@@ -340,6 +347,19 @@ try {
   });
 }
 
+// 1.0.15 ÖFFENTLICHE PRÜFUNGSANMELDUNGEN (vor Authentifizierung)
+try {
+  const publicPruefungenRoutes = require('./routes/public-pruefungen');
+  app.use('/api/public/pruefungen', publicPruefungenRoutes);
+  logger.success('Route geladen', { path: '/api/public/pruefungen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'public pruefungen',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // 1.0.2 ÖFFENTLICHER STUNDENPLAN (vor Authentifizierung)
 try {
   const publicStundenplanRoutes = require('./routes/public-stundenplan');
@@ -348,6 +368,44 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
     route: 'public stundenplan',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
+try {
+  const publicEventsRoutes = require('./routes/public-events');
+  app.use('/api/public/events', publicEventsRoutes);
+  logger.success('Route geladen', { path: '/api/public/events' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'public events',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
+// 1.0.3b PUBLIC NEWS (JSON-API, Widget, RSS)
+try {
+  const publicNewsRoutes = require('./routes/public-news');
+  app.use('/api/public/news', publicNewsRoutes);
+  logger.success('Route geladen', { path: '/api/public/news' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'public-news',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
+// 1.0.4 VISITOR CHAT (Widget + öffentliche & Auth-Endpunkte für Besucher-Chat)
+try {
+  const visitorChatRoutes = require('./routes/visitor-chat');
+  app.use('/api/visitor-chat', visitorChatRoutes);
+  logger.success('Route geladen', { path: '/api/visitor-chat' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'visitor-chat',
     error: error.message,
     stack: error.stack
   });
@@ -451,7 +509,7 @@ try {
 // Verwendet loginLimiter aus config/security.js (IP+Username Kombination)
 try {
   const authRoutes = require('./routes/auth');
-  app.use('/api/auth', loginLimiter, authRoutes);
+  app.use('/api/auth', authRoutes);
   logger.success('Route gemountet', { path: '/api/auth (mit Enhanced Rate Limiting)' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -643,6 +701,19 @@ try {
     });
 }
 
+// 2.3. SHOP ROUTES — TDA + Dojo Shops (Public + Admin)
+try {
+  const shopRoutes = require('./routes/shop');
+  app.use('/api/shop', shopRoutes);
+  logger.success('Route geladen', { path: '/api/shop' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+    route: 'shop routes',
+    error: error.message,
+    stack: error.stack
+  });
+}
+
 // Mitglieder-Detail und Mitglieder-Routen
 try {
   const mitgliedDetailRoutes = require('./routes/mitglieddetail');
@@ -669,7 +740,7 @@ try {
 }
 try {
   const mitgliederDokumenteRoutes = require('./routes/mitgliederDokumente');
-  app.use('/api/mitglieder', mitgliederDokumenteRoutes);
+  app.use('/api/mitglieder', authenticateToken, mitgliederDokumenteRoutes);
   logger.success('Route gemountet', { path: '/api/mitglieder/dokumente' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -808,7 +879,7 @@ try {
   const checkinRoute = require(checkinPath);
   logger.debug('Checkin-Route geladen', { type: typeof checkinRoute });
   
-  app.use("/api/checkin", checkinRoute);
+  app.use("/api/checkin", authenticateToken, checkinRoute);
   logger.success('Route gemountet', { path: '/api/checkin' });
   
 } catch (error) {
@@ -913,11 +984,90 @@ try {
 // VERTRAGSVORLAGEN (GrapesJS Template Editor)
 try {
   const vertragsvorlagenRouter = require(path.join(__dirname, "routes", "vertragsvorlagen.js"));
-  app.use("/api/vertragsvorlagen", vertragsvorlagenRouter);
+  app.use("/api/vertragsvorlagen", authenticateToken, vertragsvorlagenRouter);
   logger.success('Route gemountet', { path: '/api/vertragsvorlagen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'vertragsvorlagen',
+      error: error.message,
+      stack: error.stack
+    });
+// VERTRAG-ANPASSUNGEN (Mitglied-seitige Anpassungsanträge)try {  const vertragAnpassungenRouter = require(path.join(__dirname, "routes", "vertrag-anpassungen.js"));  app.use("/api/vertrag-anpassungen", authenticateToken, vertragAnpassungenRouter);  logger.success("Route gemountet", { path: "/api/vertrag-anpassungen" });} catch (error) {  logger.error("Fehler beim Laden der Route", {    route: "vertrag-anpassungen",    error: error.message  });}
+}
+
+// VORLAGEN (E-Mail/Brief-Vorlagen)
+try {
+  const vorlagenRouter = require(path.join(__dirname, "routes", "vorlagen.js"));
+  app.use("/api/vorlagen", authenticateToken, vorlagenRouter);
+  logger.success('Route gemountet', { path: '/api/vorlagen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'vorlagen',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// ABSENDER-PROFILE (Briefkopf-Verwaltung)
+try {
+  const absenderProfileRouter = require(path.join(__dirname, "routes", "absender-profile.js"));
+  app.use("/api/absender-profile", authenticateToken, absenderProfileRouter);
+  logger.success('Route gemountet', { path: '/api/absender-profile' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'absender-profile',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// BRIEF-EINSTELLUNGEN (DIN 5008, Schrift, Fußzeile, Standard-Profil)
+try {
+  const briefEinstellungenRouter = require(path.join(__dirname, "routes", "brief-einstellungen.js"));
+  app.use("/api/brief-einstellungen", authenticateToken, briefEinstellungenRouter);
+  logger.success('Route gemountet', { path: '/api/brief-einstellungen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'brief-einstellungen',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// DOJO-EINSTELLUNGEN (Stammdaten: Name, Adresse, Bank, Steuer)
+try {
+  const dojoEinstellungenRouter = require(path.join(__dirname, "routes", "dojo-einstellungen.js"));
+  app.use("/api/dojo-einstellungen", authenticateToken, dojoEinstellungenRouter);
+  logger.success('Route gemountet', { path: '/api/dojo-einstellungen' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'dojo-einstellungen',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// TEXTBAUSTEINE (wiederverwendbare HTML-Textblöcke für Vorlagen)
+try {
+  const textbausteineRouter = require(path.join(__dirname, "routes", "textbausteine.js"));
+  app.use("/api/textbausteine", authenticateToken, textbausteineRouter);
+  logger.success('Route gemountet', { path: '/api/textbausteine' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'textbausteine',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// VERSANDHISTORIE (Archiv aller gesendeten Vorlagen/E-Mails)
+try {
+  const versandhistorieRouter = require(path.join(__dirname, "routes", "versandhistorie.js"));
+  app.use("/api/versandhistorie", authenticateToken, versandhistorieRouter);
+  logger.success('Route gemountet', { path: '/api/versandhistorie' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'versandhistorie',
       error: error.message,
       stack: error.stack
     });
@@ -1105,6 +1255,15 @@ try {
     });
 }
 
+// 10.2b SUPER-ADMIN KALENDER — iCloud Sync
+try {
+  const saCalRouter = require(path.join(__dirname, "routes", "super-admin-calendar.js"));
+  app.use("/api/admin/calendar", authenticateToken, saCalRouter);
+  logger.success("Route gemountet", { path: "/api/admin/calendar" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "super-admin-calendar", error: error.message });
+}
+
 // 10.3 WEBHOOKS - Zapier & externe Integrationen
 try {
   const webhooksRouter = require(path.join(__dirname, "routes", "webhooks.js"));
@@ -1170,6 +1329,18 @@ try {
     });
 }
 
+try {
+  const verbandUrkundenRouter = require(path.join(__dirname, "routes", "verband-urkunden.js"));
+  app.use("/api/verband-urkunden", verbandUrkundenRouter);
+  logger.success('Route gemountet', { path: '/api/verband-urkunden' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'verband-urkunden',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // 11. DOKUMENTE (PDF Management & Reports) - NEU
 try {
   const dokumenteRouter = require(path.join(__dirname, "routes", "dokumente.js"));
@@ -1218,6 +1389,11 @@ const tenantIsolationMiddleware = async (req, res, next) => {
   }
 
   // Subdomain → Tenant-Isolation aktivieren
+  // Nur für authentifizierte User prüfen - sonst kümmert sich die Route selbst um Auth (401)
+  if (!req.user) {
+    return next();
+  }
+
   try {
     const [dojos] = await db.promise().query(
       'SELECT id, dojoname, subdomain FROM dojo WHERE subdomain = ? AND ist_aktiv = TRUE LIMIT 1',
@@ -1311,7 +1487,7 @@ try {
 // 12.5. DOJO LOGOS (Logo-Verwaltung für Dojos) - NEU
 try {
   const dojoLogosRouter = require(path.join(__dirname, "routes", "dojo-logos.js"));
-  app.use("/api/dojos", dojoLogosRouter);
+  app.use("/api/dojos", authenticateToken, dojoLogosRouter);
   logger.success('Route gemountet', { path: '/api/dojos (logos)' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1337,7 +1513,7 @@ try {
 // 13. DOJO BANKEN (Mehrere Bankverbindungen pro Dojo) - NEU
 try {
   const dojoBankenRouter = require(path.join(__dirname, "routes", "dojo-banken.js"));
-  app.use("/api/dojo-banken", dojoBankenRouter);
+  app.use("/api/dojo-banken", authenticateToken, dojoBankenRouter);
   logger.success('Route gemountet', { path: '/api/dojo-banken' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1360,6 +1536,14 @@ try {
     });
 }
 
+try {
+  const memberPaymentsRouter = require(path.join(__dirname, "routes", "member-payments.js"));
+  app.use("/api/member-payments", memberPaymentsRouter);
+  logger.success('Route gemountet', { path: '/api/member-payments' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'member-payments', error: error.message });
+}
+
 // 15. NOTIFICATIONS SYSTEM (Newsletter & Push) - NEU
 try {
   const notificationsRouter = require(path.join(__dirname, "routes", "notifications.js"));
@@ -1372,6 +1556,7 @@ try {
       stack: error.stack
     });
 }
+
 
 // 15.1 NEWS VERWALTUNG (Nur Haupt-Admin)
 try {
@@ -1527,7 +1712,7 @@ try {
 // ZAHLLÄUFE - SEPA Payment Runs Overview
 try {
   const zahllaeufeRouter = require(path.join(__dirname, "routes", "zahllaeufe.js"));
-  app.use("/api/zahllaeufe", zahllaeufeRouter);
+  app.use("/api/zahllaeufe", authenticateToken, zahllaeufeRouter);
   logger.success('Route gemountet', { path: '/api/zahllaeufe' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1540,7 +1725,7 @@ try {
 // LASTSCHRIFT-ZEITPLÄNE - Automatische Lastschriftläufe
 try {
   const lastschriftZeitplaeneRouter = require(path.join(__dirname, "routes", "lastschrift-zeitplaene.js"));
-  app.use("/api/lastschrift-zeitplaene", lastschriftZeitplaeneRouter);
+  app.use("/api/lastschrift-zeitplaene", authenticateToken, lastschriftZeitplaeneRouter);
   logger.success('Route gemountet', { path: '/api/lastschrift-zeitplaene' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1856,6 +2041,7 @@ initCronJobs();
 const PORT = process.env.PORT || 3000;
 const HOST = '127.0.0.1'; // Listen only on localhost (behind nginx)
 
+const httpServer = 
 app.listen(PORT, HOST, () => {
   logger.success('Server gestartet', {
     port: PORT,
@@ -1885,4 +2071,97 @@ app.listen(PORT, HOST, () => {
   } catch (error) {
     logger.warn('SaaS Scheduler konnte nicht gestartet werden:', error.message);
   }
+});
+
+// =============================================
+// SOCKET.IO - CHAT ECHTZEIT
+// =============================================
+
+const { Server } = require('socket.io');
+const io = new Server(httpServer, {
+  cors: {
+    origin: (origin, callback) => {
+      // Gleiche CORS-Logik wie Express: alle dojo.tda-intl.org Subdomains + localhost
+      const allowed = !origin ||
+        /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        /^https?:\/\/([a-z0-9-]+\.)?dojo\.tda-intl\.org(:\d+)?$/.test(origin) ||
+        /^https?:\/\/([a-z0-9-]+\.)?tda-intl\.(org|com)(:\d+)?$/.test(origin);
+      callback(null, allowed ? origin : false);
+    },
+    credentials: true
+  },
+  path: '/socket.io'
+});
+
+// io-Instanz im Express-App-Objekt speichern (für Routes zugänglich via req.app.get('io'))
+app.set('io', io);
+
+// Chat Socket-Handler laden
+try {
+  require('./socket/chatSocket')(io);
+  logger.success('Socket.io Chat-Handler geladen');
+} catch (error) {
+  logger.error('Socket.io Chat-Handler Fehler', { error: error.message });
+}
+
+// Messenger Route mit io-Instanz verknüpfen (für Echtzeit-Updates bei eingehenden Nachrichten)
+try {
+  const messengerRoutes = require('./routes/messenger');
+  if (typeof messengerRoutes.setIo === 'function') {
+    messengerRoutes.setIo(io);
+    logger.success('Messenger io-Instanz gesetzt');
+  }
+} catch (error) {
+  logger.warn('Messenger io-Setup nicht möglich', { error: error.message });
+}
+
+// PLATTFORM-ZENTRALE
+try {
+  const plattformZentraleRouter = require(path.join(__dirname, 'routes', 'plattform-zentrale.js'));
+  app.use('/api/plattform-zentrale', plattformZentraleRouter);
+  logger.success('Route gemountet', { path: '/api/plattform-zentrale' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'plattform-zentrale', error: error.message });
+}
+
+
+// UMFRAGEN
+try {
+  const umfragenRouter = require(path.join(__dirname, 'routes', 'umfragen.js'));
+  app.use('/api/umfragen', umfragenRouter);
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'umfragen', error: error.message });
+}
+
+// ABWESENHEITEN
+try {
+  const abwesenheitenRouter = require(path.join(__dirname, "routes", "abwesenheiten.js"));
+  app.use("/api/abwesenheiten", abwesenheitenRouter);
+  logger.success("Route gemountet", { path: "/api/abwesenheiten" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "abwesenheiten", error: error.message });
+}
+
+// ─── Visitor Chat Socket Events ───────────────────────────────────────────────
+// Besucher: treten einem Session-Room bei (token-basiert, kein JWT)
+// Staff: treten einem Dojo-Room bei (JWT optional, dojo_id aus Query)
+io.on('connection', (socket) => {
+  // Besucher tritt Session-Room bei
+  socket.on('visitor-chat:join', ({ token }) => {
+    if (token && typeof token === 'string' && token.length === 64) {
+      socket.join(`visitor-session:${token}`);
+    }
+  });
+
+  // Staff tritt Dojo-Room bei (für Echtzeit-Benachrichtigungen)
+  socket.on('visitor-chat:staff-join', ({ dojoId }) => {
+    const room = dojoId ? `visitor-dojo:${dojoId}` : 'visitor-super-admin';
+    socket.join(room);
+    logger.info('Staff joined visitor chat room', { room, socketId: socket.id });
+  });
+
+  socket.on('visitor-chat:staff-leave', ({ dojoId }) => {
+    const room = dojoId ? `visitor-dojo:${dojoId}` : 'visitor-super-admin';
+    socket.leave(room);
+  });
 });

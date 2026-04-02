@@ -3,8 +3,8 @@ import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import { createSafeHtml } from '../utils/sanitizer';
 
-// Lazy load TemplateEditor - GrapesJS ist 1.1MB und wird nur bei Bedarf geladen
-const TemplateEditor = lazy(() => import('./TemplateEditor'));
+// TipTap-Editor für alle Vertragsvorlagen
+const TemplateEditorTipTap = lazy(() => import('./TemplateEditorTipTap'));
 import '../styles/Dashboard.css';
 import '../styles/DokumenteVerwaltung.css';
 
@@ -23,6 +23,7 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
   const viewRef = useRef(null);
   const [showTemplateEditor, setShowTemplateEditor] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [selectedEditorVersion, setSelectedEditorVersion] = useState('tiptap');
   const [activeTab, setActiveTab] = useState('dokumente'); // 'dokumente' oder 'vorlagen'
   const [vorlagen, setVorlagen] = useState([]);
   const [loadingVorlagen, setLoadingVorlagen] = useState(false);
@@ -114,10 +115,11 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
     }
   };
 
-  const handleEditVorlage = (id) => {
+  const handleEditVorlage = (id, editorVersion = 'tiptap') => {
     setSelectedTemplate(id);
+    setSelectedEditorVersion(editorVersion || 'tiptap');
     setShowTemplateEditor(true);
-    setActiveTab('vorlagen'); // Wechsle zum Vorlagen-Tab, damit der Editor sichtbar wird
+    setActiveTab('vorlagen');
   };
 
   const handleEditDokument = (dokument) => {
@@ -676,8 +678,7 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
                             </div>
                             {/* Vorschau-Inhalt */}
                             <div
-                              className="print-content"
-                              className="dv-doc-preview-content"
+                              className="print-content dv-doc-preview-content"
                               dangerouslySetInnerHTML={createSafeHtml(dok.inhalt)}
                             />
                           </div>
@@ -819,10 +820,10 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
               <Suspense fallback={
                 <div className="dv-loading-center">
                   <div className="loading-spinner"></div>
-                  <span className="u-ml-sm">Template-Editor wird geladen...</span>
+                  <span className="u-ml-sm">Editor wird geladen...</span>
                 </div>
               }>
-                <TemplateEditor
+                <TemplateEditorTipTap
                   templateId={selectedTemplate}
                   dojoId={activeDojo?.id}
                   onSave={() => {
@@ -846,6 +847,7 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
                   <button
                     onClick={() => {
                       setSelectedTemplate(null);
+                      setSelectedEditorVersion('tiptap');
                       setShowTemplateEditor(true);
                     }}
                     className="dv-btn-success"
@@ -921,6 +923,9 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
                               <span>
                                 📄 Typ: {vorlage.template_type || 'vertrag'}
                               </span>
+                              <span title={vorlage.editor_version === 'tiptap' ? 'TipTap Editor' : 'GrapeJS Editor'}>
+                                {vorlage.editor_version === 'tiptap' ? '✍️ TipTap' : '🧱 GrapeJS'}
+                              </span>
                               <span>
                                 📅 Version: {vorlage.version || 1}
                               </span>
@@ -937,7 +942,7 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
 
                           <div className="dv-btn-group">
                             <button
-                              onClick={() => handleEditVorlage(vorlage.id)}
+                              onClick={() => handleEditVorlage(vorlage.id, vorlage.editor_version)}
                               className="dv-btn-primary-outline"
                               onMouseEnter={(e) => {
                                 e.target.style.background = 'var(--primary-alpha-10, rgba(255, 215, 0, 0.1))';

@@ -1,0 +1,1076 @@
+/* ========================================
+   SPEZIFISCHE MODAL-BREITE FÜR NEUES MITGLIED
+   Überschreibt components.css für dieses Modal
+   ======================================== */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 {
+  width: 750px !important;
+  max-width: 90vw !important;
+  min-width: auto !important;
+}
+
+/* Modal Overlay - immer von oben starten */
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  z-index: 1000;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-y: auto;
+}
+
+/* ULTRA-SPEZIFISCHE SELEKTOREN FÜR MAXIMALE PRIORITÄT */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group input[type="text"],
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group input[type="email"],
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group input[type="tel"],
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group input[type="date"],
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group select {
+  padding: 0.4rem 0.5rem !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  line-height: 1.3 !important;
+  height: 32px !important;
+  transition: all 0.3s ease !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin-bottom: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Dropdown-Optionen in Select-Feldern - besser lesbar */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group select option {
+  background: var(--bg-secondary) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  padding: 0.4rem !important;
+}
+
+/* Vertrag-Formular spezifische Styles (VertragFormular.jsx verwendet .form-group statt .input-group) */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .form-group select,
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .form-group input[type="date"] {
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 6px !important;
+  padding: 0.4rem 0.5rem !important;
+  font-size: 0.85rem !important;
+  width: 100% !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .form-group select option {
+  background: var(--bg-secondary) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  padding: 0.4rem !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group textarea {
+  padding: 0.4rem 0.5rem !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  line-height: 1.3 !important;
+  transition: all 0.3s ease !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin-bottom: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  min-height: 60px !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container .input-group label {
+  font-weight: 600 !important;
+  margin-bottom: 0.4rem !important;
+  color: var(--text-color) !important;
+  font-size: 0.85rem !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-container {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0.8rem 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content .input-group {
+  display: flex !important;
+  flex-direction: column !important;
+  margin-bottom: 0 !important;
+}
+
+.modal-overlay .modal-content .step-content h3 {
+  color: var(--primary-color) !important;
+  margin-bottom: 0.6rem !important;
+  font-size: 1rem !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+  padding-bottom: 0.3rem !important;
+}
+
+.modal-overlay .modal-content .progress-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0.1rem 0 !important;
+  padding: 0.1rem 0.3rem !important;
+  height: auto !important;
+}
+
+.modal-overlay .modal-content .progress-step {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  flex: 1 !important;
+  position: relative !important;
+  min-height: 28px !important;
+}
+
+.modal-overlay .modal-content .step-number {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 600 !important;
+  font-size: 0.65rem !important;
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+  border: 2px solid #e5e7eb !important;
+  position: relative !important;
+  z-index: 2 !important;
+  transition: all 0.3s ease !important;
+}
+
+.modal-overlay .modal-content .step-label {
+  margin-top: 0.05rem !important;
+  font-size: 0.55rem !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  text-align: center !important;
+  transition: color 0.3s ease !important;
+  line-height: 1 !important;
+}
+
+/* Spezifischere Selektoren für bessere Priorität */
+.modal-overlay .modal-content {
+  background: var(--background-color) !important;
+  border-radius: 12px !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  width: 100% !important;
+  max-width: 800px !important;
+  max-height: 90vh !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Modal direkt am oberen Rand positionieren */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.modal-overlay .modal-content .progress-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0.1rem 0 !important;
+  padding: 0.1rem 0.3rem !important;
+  height: auto !important;
+}
+
+.modal-overlay .modal-content .progress-step {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  flex: 1 !important;
+  position: relative !important;
+  min-height: 28px !important;
+}
+
+.modal-overlay .modal-content .step-number {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 600 !important;
+  font-size: 0.65rem !important;
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+  border: 2px solid #e5e7eb !important;
+  position: relative !important;
+  z-index: 2 !important;
+  transition: all 0.3s ease !important;
+}
+
+.modal-overlay .modal-content .step-label {
+  margin-top: 0.05rem !important;
+  font-size: 0.55rem !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  text-align: center !important;
+  transition: color 0.3s ease !important;
+  line-height: 1 !important;
+}
+
+.modal-overlay .modal-content .input-field {
+  padding: 0.7rem !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  transition: all 0.3s ease !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin-bottom: 0.3rem !important;
+}
+
+.modal-overlay .modal-content .input-container {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 1.2rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.modal-overlay .modal-content .input-group {
+  display: flex !important;
+  flex-direction: column !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.modal-overlay .modal-content .input-label {
+  font-weight: 600 !important;
+  margin-bottom: 0.6rem !important;
+  color: var(--text-color) !important;
+  font-size: 0.8rem !important;
+}
+
+.modal-overlay .modal-content .step-content h3 {
+  color: var(--primary-color) !important;
+  margin-bottom: 0.6rem !important;
+  font-size: 1rem !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+  padding-bottom: 0.3rem !important;
+}
+
+.modal-overlay .modal-content .modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  border-bottom: 2px solid var(--border-color) !important;
+}
+
+/* Modal Content - Scroll-Reset */
+.modal-content {
+  background: var(--background-color) !important;
+  border-radius: 12px !important;
+  padding: 1rem !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  width: 100% !important;
+  max-width: 900px !important;
+  height: 95vh !important;
+  margin: 0 !important;
+  margin-top: 0 !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Mehrstufiges Anmeldemodal Styles */
+.step-modal {
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 0.4rem !important;
+  padding-bottom: 0.4rem !important;
+  border-bottom: 2px solid var(--border-color) !important;
+}
+
+.step-indicator {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 16px;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.progress-bar {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+  margin: 0.1rem 0 !important;
+  padding: 0.1rem 0.3rem !important;
+  height: auto !important;
+}
+
+.progress-step {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  flex: 1 !important;
+  position: relative !important;
+  min-height: 28px !important;
+}
+
+.progress-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 60%;
+  right: -40%;
+  height: 1px;
+  background: #e5e7eb;
+  z-index: 1;
+}
+
+.progress-step.completed:not(:last-child)::after {
+  background: #10b981 !important;
+}
+
+.step-number {
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 600 !important;
+  font-size: 0.65rem !important;
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+  border: 2px solid #e5e7eb !important;
+  position: relative !important;
+  z-index: 2 !important;
+  transition: all 0.3s ease !important;
+}
+
+.progress-step.active .step-number {
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #3b82f6 !important;
+  transform: scale(1.05) !important;
+}
+
+.progress-step.completed .step-number {
+  background: #10b981 !important;
+  color: white !important;
+  border-color: #10b981 !important;
+}
+
+.step-label {
+  margin-top: 0.05rem !important;
+  font-size: 0.55rem !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  text-align: center !important;
+  transition: color 0.3s ease !important;
+  line-height: 1 !important;
+}
+
+.progress-step.active .step-label {
+  color: #3b82f6 !important;
+  font-weight: 600 !important;
+}
+
+.progress-step.completed .step-label {
+  color: #10b981 !important;
+}
+
+.step-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  margin-bottom: 1rem !important;
+  padding-right: 0.4rem !important;
+}
+
+.step-content h3 {
+  color: var(--primary-color) !important;
+  margin-bottom: 0.6rem !important;
+  font-size: 1rem !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+  padding-bottom: 0.3rem !important;
+}
+
+/* Input Layout für Schritte */
+.input-container {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)) !important;
+  gap: 0.8rem 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.input-group {
+  display: flex !important;
+  flex-direction: column !important;
+  margin-bottom: 0 !important;
+}
+
+.input-label {
+  font-weight: 600 !important;
+  margin-bottom: 0.4rem !important;
+  color: var(--text-color) !important;
+  font-size: 0.85rem !important;
+}
+
+.input-field {
+  padding: 0.4rem 0.5rem !important;
+  border: 2px solid #cccccc !important;
+  border-radius: 6px !important;
+  font-size: 0.85rem !important;
+  line-height: 1.3 !important;
+  height: 32px !important;
+  transition: all 0.3s ease !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  margin-bottom: 0 !important;
+}
+
+.input-field[type="textarea"],
+textarea.input-field {
+  height: auto !important;
+  min-height: 60px !important;
+}
+
+/* Dropdown spezifische Styles */
+.input-field select,
+select.input-field {
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+  border: 2px solid #cccccc;
+}
+
+select.input-field option {
+  background: #ffffff !important;
+  color: #000000 !important;
+  padding: 0.5rem;
+  border: none;
+}
+
+/* Spezifisch für Geschlecht-Dropdown */
+#geschlecht {
+  background: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+#geschlecht option {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Checkbox Styles - funktional aber einfach */
+.checkbox-group {
+  margin-bottom: 1rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  padding: 0.8rem;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
+  background-color: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  user-select: none;
+  position: relative;
+}
+
+.checkbox-label:hover {
+  background-color: rgba(59, 130, 246, 0.05);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.checkbox-label:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin-top: 0.1rem;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  accent-color: var(--primary-color);
+  transform: scale(1.2);
+  border: 2px solid var(--border-color);
+  border-radius: 3px;
+  background: var(--background-color);
+}
+
+.checkbox-label input[type="checkbox"]:checked {
+  accent-color: var(--primary-color);
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+/* Minderjährige Info */
+.minor-info {
+  background: var(--warning-bg);
+  border: 2px solid var(--warning-color);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.minor-info p {
+  margin: 0;
+  color: var(--warning-text);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Duplikat-Warnung */
+.duplicate-warning {
+  background: var(--warning-bg);
+  border: 2px solid var(--warning-color);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin-top: 0.8rem;
+  color: var(--warning-text);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Kein Duplikat Info */
+.no-duplicate-info {
+  background: rgba(31, 41, 55, 0.8);
+  border: 2px solid rgba(34, 197, 94, 0.5);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+/* Validierungswarnung */
+.validation-warning {
+  background: var(--warning-bg);
+  border: 2px solid var(--warning-color);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin-top: 0.8rem;
+  color: var(--warning-text);
+  font-weight: 500;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+/* Duplikat-Dialog */
+.duplicate-dialog {
+  max-width: 450px;
+  background: var(--background-color);
+  border: 3px solid var(--warning-color);
+}
+
+.duplicate-dialog h3 {
+  color: var(--warning-color);
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.duplicate-info {
+  background: var(--light-gray);
+  border-radius: 6px;
+  padding: 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.duplicate-info p {
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+}
+
+/* Button Layout für Schritte */
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 0.8rem;
+  border-top: 2px solid var(--border-color);
+  gap: 0.8rem;
+}
+
+.modal-buttons .primary-button {
+  background: var(--primary-color) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.6rem 1.5rem !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  order: 2 !important;
+}
+
+.modal-buttons .primary-button:hover:not(:disabled) {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.modal-buttons .primary-button:disabled {
+  background: var(--disabled-color);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modal-buttons .secondary-button {
+  background: var(--secondary-color) !important;
+  color: var(--text-color) !important;
+  border: 2px solid var(--border-color) !important;
+  padding: 0.6rem 1.5rem !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  order: 1 !important;
+}
+
+.modal-buttons .secondary-button:hover:not(:disabled) {
+  background: var(--secondary-dark);
+  border-color: var(--primary-color);
+}
+
+.modal-buttons .submit-button {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  order: 2;
+}
+
+.modal-buttons .submit-button:hover:not(:disabled) {
+  background: var(--success-dark);
+  transform: translateY(-1px);
+}
+
+.modal-buttons .submit-button:disabled {
+  background: var(--disabled-color);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.modal-buttons .close-button {
+  background: var(--error-color) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.6rem 1.5rem !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  order: 3 !important;
+}
+
+.modal-buttons .close-button:hover:not(:disabled) {
+  background: var(--error-dark);
+  transform: translateY(-1px);
+}
+
+/* Readonly Input Styles */
+.input-field[readonly] {
+  background-color: var(--light-gray);
+  color: var(--text-color);
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .step-modal {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+  
+  .modal-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .input-container {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .modal-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .modal-buttons button {
+    width: 100%;
+    order: unset !important;
+  }
+}
+
+/* Animationen */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.step-content {
+  animation: slideIn 0.3s ease;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .duplicate-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: #ffc107;
+    color: #ffc107;
+  }
+  
+  .minor-info {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: #ffc107;
+    color: #ffc107;
+  }
+  
+  .duplicate-info {
+    background: var(--dark-gray);
+    color: var(--text-color);
+  }
+  
+  .input-field[readonly] {
+    background-color: var(--dark-gray);
+  }
+}
+
+/* OPTIMIERTE PROGRESS BAR STILE - KOMPAKT & LESBAR */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-bar {
+  background: transparent !important;
+  border: none !important;
+  height: auto !important;
+  margin: 0 !important;
+  margin-bottom: 2.5rem !important;
+  padding: 10px 12px !important;
+  min-height: 55px !important;
+  flex: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-content h3 {
+  background: transparent !important;
+  color: var(--primary-color) !important;
+  font-size: 1.1rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  margin-bottom: 1rem !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+  padding-bottom: 0.5rem !important;
+  font-weight: 600 !important;
+}
+
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step {
+  min-height: 60px !important;
+  margin: 0 !important;
+  padding: 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  flex: 1 !important;
+  position: relative !important;
+  gap: 5px !important;
+  min-width: 70px !important;
+}
+
+/* Aktiver Schritt: Weißer Hintergrund mit farbigem Border */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.active .step-number {
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 0.9rem !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  background: #ffffff !important;
+  color: var(--primary-color) !important;
+  border: 3px solid var(--primary-color) !important;
+  position: relative !important;
+  z-index: 2 !important;
+  transition: all 0.3s ease !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 2px 6px rgba(234, 179, 8, 0.25) !important;
+}
+
+/* Inaktive Schritte: Grauer Hintergrund */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-number {
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 0.8rem !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 700 !important;
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+  border: 2px solid #e5e7eb !important;
+  position: relative !important;
+  z-index: 2 !important;
+  transition: all 0.3s ease !important;
+  flex-shrink: 0 !important;
+}
+
+/* Completed Schritt Styling - Weißer Hintergrund mit grünem Border */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed .step-number {
+  background: #ffffff !important;
+  color: #10b981 !important;
+  border: 3px solid #10b981 !important;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Aktiver Schritt Label: Größere & fettere Schrift */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.active .step-label {
+  font-size: 0.7rem !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+  color: #1f2937 !important;
+  text-align: center !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* Completed Schritt Label - GRÜN */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed .step-label {
+  font-size: 0.7rem !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  color: #10b981 !important;
+  text-align: center !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+/* Inaktive Schritte Label */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .step-label {
+  font-size: 0.7rem !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  color: #6b7280 !important;
+  text-align: center !important;
+  transition: all 0.3s ease !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+}
+
+.neues-mitglied-modal-v2 .step-content {
+  margin-bottom: 0.5rem !important;
+  padding: 0 !important;
+}
+
+.neues-mitglied-modal-v2 .input-container {
+  gap: 0.8rem !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.neues-mitglied-modal-v2 .input-group {
+  margin-bottom: 0.3rem !important;
+}
+
+.neues-mitglied-modal-v2 .input-label {
+  margin-bottom: 0.3rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* ========================================
+   CUSTOM CHECKBOX STYLES (STEP 5)
+   Sichtbare grüne Häkchen für rechtliche Akzeptanzen
+   ======================================== */
+
+.vertrag-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(31, 41, 55, 0.8);
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid rgba(59, 130, 246, 0.5);
+  transition: all 0.3s ease;
+  margin-bottom: 0.75rem;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.vertrag-checkbox-wrapper:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(31, 41, 55, 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.vertrag-checkbox-wrapper.checked {
+  border-color: rgba(16, 185, 129, 0.7) !important;
+  background: rgba(31, 41, 55, 0.9);
+}
+
+.vertrag-checkbox {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #D1D5DB;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.vertrag-checkbox:hover {
+  border-color: #10B981;
+}
+
+.vertrag-checkbox:checked {
+  background: #10B981;
+  border-color: #10B981;
+}
+
+/* Grünes Häkchen */
+.vertrag-checkbox:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.vertrag-checkbox-label {
+  flex: 1;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  user-select: none;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.vertrag-checkbox-label strong {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* ========================================
+   🚨 FINALE ÜBERSCHREIBUNG - SCHWARZER TEXT IN INPUTS
+   Stellt sicher, dass alle Inputs im Modal schwarzen Text haben
+   ======================================== */
+.neues-mitglied-modal-v2 input,
+.neues-mitglied-modal-v2 input[type="text"],
+.neues-mitglied-modal-v2 input[type="email"],
+.neues-mitglied-modal-v2 input[type="tel"],
+.neues-mitglied-modal-v2 input[type="date"],
+.neues-mitglied-modal-v2 input[type="number"],
+.neues-mitglied-modal-v2 input[type="password"],
+.neues-mitglied-modal-v2 textarea,
+.neues-mitglied-modal-v2 select {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+  border: 2px solid #cccccc !important;
+  caret-color: #000000 !important;
+}
+
+.neues-mitglied-modal-v2 input::placeholder,
+.neues-mitglied-modal-v2 textarea::placeholder {
+  color: #666666 !important;
+  -webkit-text-fill-color: #666666 !important;
+}
+
+.neues-mitglied-modal-v2 select option {
+  background: #ffffff !important;
+  color: #000000 !important;
+}

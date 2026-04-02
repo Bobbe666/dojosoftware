@@ -194,7 +194,7 @@
 .page-title,
 .section-title,
 .card-title {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e) !important;
+  background: var(--gradient-gold);
   -webkit-background-clip: text !important;
   -webkit-text-fill-color: transparent !important;
   background-clip: text !important;
@@ -422,8 +422,9 @@
   padding: 10px 16px !important;
   cursor: pointer !important;
   color: #FFD700 !important;
-  font-size: 0.95rem !important;
+  font-size: 0.8rem !important;
   font-weight: 600 !important;
+  height: 44px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -454,11 +455,13 @@
   background: rgba(255, 215, 0, 0.1) !important;
   border: 1px solid rgba(255, 215, 0, 0.2) !important;
   border-radius: 8px;
-  padding: 6px 12px;
+  padding: 10px 14px !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.8rem !important;
 }
 
 [data-theme="midnight"] .mitglied-detail-badge.badge-warning,
@@ -492,7 +495,7 @@
   padding: 10px 14px !important;
   cursor: pointer !important;
   color: #FFD700 !important;
-  font-size: 1.5rem !important;
+  font-size: 0.8rem !important;
   font-weight: bold !important;
   display: flex !important;
   align-items: center !important;
@@ -655,7 +658,7 @@
 
 [data-theme="midnight"] .mitglied-detail-btn-primary:hover:not(.disabled),
 [data-theme="default"] .mitglied-detail-btn-primary:hover:not(.disabled) {
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%) !important;
+  background: var(--gradient-gold);
   color: #1a1a2e !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4) !important;

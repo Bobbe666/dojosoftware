@@ -374,7 +374,7 @@
 }
 
 .option-card.highlighted {
-  border-color: #f59e0b;
+  border-color: var(--status-warning);
   background: linear-gradient(180deg, #fffbeb, white);
 }
 

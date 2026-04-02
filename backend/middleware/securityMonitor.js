@@ -28,7 +28,12 @@ const SAFE_PATH_PREFIXES = [
   '/api/notifications/',
   '/api/checkin/',
   '/api/dashboard/',
-  '/api/public/'  // Öffentliche Endpunkte (Registrierung, Stundenplan, etc.)
+  '/api/public/',  // Öffentliche Endpunkte (Registrierung, Stundenplan, etc.)
+  '/api/artikel',  // Artikel-Verwaltung (Auth + Feature-Check + parametrierte Queries)
+  '/api/entwicklungsziele',  // Ziele & Planung (Enum-Werte wie 'global' triggern keine SQL-Injection)
+  '/api/artikelgruppen',
+  '/api/errors/',   // Error-Reporting
+  '/api/finanzcockpit'   // Finanzcockpit (months=3 = XSS false positive)
 ];
 
 /**

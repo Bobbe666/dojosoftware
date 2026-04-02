@@ -11,6 +11,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Prüft ob ein Dojo Zugriff auf ein Feature hat
@@ -418,7 +419,7 @@ async function processExpiredTrials() {
        WHERE ft.status = 'active' AND ft.expires_at < NOW()`
     );
 
-    console.log(`Processing ${expiredTrials.length} expired trials...`);
+    logger.info(`Processing ${expiredTrials.length} expired trials`);
 
     for (const trial of expiredTrials) {
       // Status auf 'expired' setzen

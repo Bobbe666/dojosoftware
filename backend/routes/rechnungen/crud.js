@@ -7,9 +7,13 @@ const router = express.Router();
 const db = require('../../db');
 const logger = require('../../utils/logger');
 const { generateAndSaveRechnungPDF, generatePDFFromHTML } = require('./shared');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // GET / - Alle Rechnungen mit Filter
 router.get('/', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
+
   const { status, mitglied_id, von, bis, art, archiviert } = req.query;
 
   let query = `
@@ -30,6 +34,12 @@ router.get('/', (req, res) => {
   `;
 
   const params = [];
+
+  // 🔒 Dojo-Isolation: Nur eigene Rechnungen
+  if (secureDojoId) {
+    query += ` AND m.dojo_id = ?`;
+    params.push(secureDojoId);
+  }
 
   if (status) {
     query += ` AND r.status = ?`;
@@ -75,6 +85,9 @@ router.get('/', (req, res) => {
 
 // GET /naechste-nummer - Nächste Rechnungsnummer für Datum
 router.get('/naechste-nummer', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
+
   const { datum } = req.query;
 
   if (!datum) {
@@ -87,15 +100,30 @@ router.get('/naechste-nummer', (req, res) => {
   const tag = String(datumObj.getDate()).padStart(2, '0');
   const datumPrefix = `${jahr}/${monat}/${tag}`;
 
-  // Zähle ALLE Rechnungen aus beiden Tabellen für dieses Jahr (fortlaufend)
-  const checkQuery = `
-    SELECT
-      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
-      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
-    AS count
-  `;
+  let checkQuery;
+  let checkParams;
 
-  db.query(checkQuery, [jahr, jahr], (err, results) => {
+  if (secureDojoId) {
+    // Kundendojo: Nur eigene Rechnungen zählen
+    checkQuery = `
+      SELECT COUNT(*) AS count
+      FROM rechnungen r
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE YEAR(r.datum) = ? AND m.dojo_id = ?
+    `;
+    checkParams = [jahr, secureDojoId];
+  } else {
+    // Super-Admin: Alle Rechnungen + Verband-Zahlungen (plattformweite Nummerierung)
+    checkQuery = `
+      SELECT
+        (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+        (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+      AS count
+    `;
+    checkParams = [jahr, jahr];
+  }
+
+  db.query(checkQuery, checkParams, (err, results) => {
     if (err) {
       logger.error('Fehler beim Ermitteln der nächsten Nummer:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
@@ -111,21 +139,46 @@ router.get('/naechste-nummer', (req, res) => {
 
 // GET /statistiken - Statistiken für Dashboard
 router.get('/statistiken', (req, res) => {
-  const query = `
-    SELECT
-      COUNT(*) as gesamt_rechnungen,
-      COUNT(CASE WHEN status = 'offen' THEN 1 END) as offene_rechnungen,
-      COUNT(CASE WHEN status = 'bezahlt' THEN 1 END) as bezahlte_rechnungen,
-      COUNT(CASE WHEN status = 'ueberfaellig' OR (faelligkeitsdatum < CURDATE() AND status = 'offen') THEN 1 END) as ueberfaellige_rechnungen,
-      COALESCE(SUM(CASE WHEN status = 'offen' THEN betrag ELSE 0 END), 0) as offene_summe,
-      COALESCE(SUM(CASE WHEN status = 'bezahlt' THEN betrag ELSE 0 END), 0) as bezahlte_summe,
-      COALESCE(SUM(CASE WHEN status = 'ueberfaellig' OR (faelligkeitsdatum < CURDATE() AND status = 'offen') THEN betrag ELSE 0 END), 0) as ueberfaellige_summe,
-      COALESCE(SUM(betrag), 0) as gesamt_summe
-    FROM rechnungen
-    WHERE archiviert = 0
-  `;
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
 
-  db.query(query, (err, results) => {
+  let query;
+  let params = [];
+
+  if (secureDojoId) {
+    // Kundendojo: Nur eigene Rechnungen über Mitglieder-JOIN
+    query = `
+      SELECT
+        COUNT(*) as gesamt_rechnungen,
+        COUNT(CASE WHEN r.status = 'offen' THEN 1 END) as offene_rechnungen,
+        COUNT(CASE WHEN r.status = 'bezahlt' THEN 1 END) as bezahlte_rechnungen,
+        COUNT(CASE WHEN r.status = 'ueberfaellig' OR (r.faelligkeitsdatum < CURDATE() AND r.status = 'offen') THEN 1 END) as ueberfaellige_rechnungen,
+        COALESCE(SUM(CASE WHEN r.status = 'offen' THEN r.betrag ELSE 0 END), 0) as offene_summe,
+        COALESCE(SUM(CASE WHEN r.status = 'bezahlt' THEN r.betrag ELSE 0 END), 0) as bezahlte_summe,
+        COALESCE(SUM(CASE WHEN r.status = 'ueberfaellig' OR (r.faelligkeitsdatum < CURDATE() AND r.status = 'offen') THEN r.betrag ELSE 0 END), 0) as ueberfaellige_summe,
+        COALESCE(SUM(r.betrag), 0) as gesamt_summe
+      FROM rechnungen r
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE r.archiviert = 0 AND m.dojo_id = ?
+    `;
+    params = [secureDojoId];
+  } else {
+    query = `
+      SELECT
+        COUNT(*) as gesamt_rechnungen,
+        COUNT(CASE WHEN status = 'offen' THEN 1 END) as offene_rechnungen,
+        COUNT(CASE WHEN status = 'bezahlt' THEN 1 END) as bezahlte_rechnungen,
+        COUNT(CASE WHEN status = 'ueberfaellig' OR (faelligkeitsdatum < CURDATE() AND status = 'offen') THEN 1 END) as ueberfaellige_rechnungen,
+        COALESCE(SUM(CASE WHEN status = 'offen' THEN betrag ELSE 0 END), 0) as offene_summe,
+        COALESCE(SUM(CASE WHEN status = 'bezahlt' THEN betrag ELSE 0 END), 0) as bezahlte_summe,
+        COALESCE(SUM(CASE WHEN status = 'ueberfaellig' OR (faelligkeitsdatum < CURDATE() AND status = 'offen') THEN betrag ELSE 0 END), 0) as ueberfaellige_summe,
+        COALESCE(SUM(betrag), 0) as gesamt_summe
+      FROM rechnungen
+      WHERE archiviert = 0
+    `;
+  }
+
+  db.query(query, params, (err, results) => {
     if (err) {
       logger.error('Fehler beim Laden der Statistiken:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
@@ -137,9 +190,11 @@ router.get('/statistiken', (req, res) => {
 
 // GET /:id - Einzelne Rechnung mit Details
 router.get('/:id', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
 
-  const rechnungQuery = `
+  let rechnungQuery = `
     SELECT
       r.*,
       CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
@@ -151,8 +206,14 @@ router.get('/:id', (req, res) => {
     JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
     WHERE r.rechnung_id = ?
   `;
+  const rechnungParams = [id];
 
-  db.query(rechnungQuery, [id], (err, rechnungResults) => {
+  if (secureDojoId) {
+    rechnungQuery += ` AND m.dojo_id = ?`;
+    rechnungParams.push(secureDojoId);
+  }
+
+  db.query(rechnungQuery, rechnungParams, (err, rechnungResults) => {
     if (err) {
       logger.error('Fehler beim Laden der Rechnung:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
@@ -328,19 +389,40 @@ router.post('/', (req, res) => {
 
 // PUT /:id - Rechnung aktualisieren
 router.put('/:id', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
   const { status, beschreibung, notizen, bezahlt_am, zahlungsart } = req.body;
 
-  const updateQuery = `
-    UPDATE rechnungen
-    SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?
-    WHERE rechnung_id = ?
-  `;
+  let updateQuery;
+  let updateParams;
 
-  db.query(updateQuery, [status, beschreibung, notizen, bezahlt_am, zahlungsart, id], (err, result) => {
+  if (secureDojoId) {
+    // Nur eigene Rechnung aktualisieren (via Mitglieder-Subquery)
+    updateQuery = `
+      UPDATE rechnungen
+      SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?
+      WHERE rechnung_id = ?
+        AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+    `;
+    updateParams = [status, beschreibung, notizen, bezahlt_am, zahlungsart, id, secureDojoId];
+  } else {
+    updateQuery = `
+      UPDATE rechnungen
+      SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?
+      WHERE rechnung_id = ?
+    `;
+    updateParams = [status, beschreibung, notizen, bezahlt_am, zahlungsart, id];
+  }
+
+  db.query(updateQuery, updateParams, (err, result) => {
     if (err) {
       logger.error('Fehler beim Aktualisieren der Rechnung:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
     }
 
     res.json({ success: true, message: 'Rechnung aktualisiert' });
@@ -349,15 +431,34 @@ router.put('/:id', (req, res) => {
 
 // PUT /:id/archivieren - Rechnung archivieren
 router.put('/:id/archivieren', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
   const { archiviert } = req.body;
 
-  const query = `UPDATE rechnungen SET archiviert = ? WHERE rechnung_id = ?`;
+  let query;
+  let params;
 
-  db.query(query, [archiviert ? 1 : 0, id], (err) => {
+  if (secureDojoId) {
+    query = `
+      UPDATE rechnungen SET archiviert = ?
+      WHERE rechnung_id = ?
+        AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+    `;
+    params = [archiviert ? 1 : 0, id, secureDojoId];
+  } else {
+    query = `UPDATE rechnungen SET archiviert = ? WHERE rechnung_id = ?`;
+    params = [archiviert ? 1 : 0, id];
+  }
+
+  db.query(query, params, (err, result) => {
     if (err) {
       logger.error('Fehler beim Archivieren:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
     }
 
     res.json({ success: true, message: archiviert ? 'Rechnung archiviert' : 'Archivierung aufgehoben' });
@@ -366,14 +467,33 @@ router.put('/:id/archivieren', (req, res) => {
 
 // DELETE /:id - Rechnung löschen
 router.delete('/:id', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
 
-  const query = `DELETE FROM rechnungen WHERE rechnung_id = ?`;
+  let query;
+  let params;
 
-  db.query(query, [id], (err) => {
+  if (secureDojoId) {
+    query = `
+      DELETE FROM rechnungen
+      WHERE rechnung_id = ?
+        AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+    `;
+    params = [id, secureDojoId];
+  } else {
+    query = `DELETE FROM rechnungen WHERE rechnung_id = ?`;
+    params = [id];
+  }
+
+  db.query(query, params, (err, result) => {
     if (err) {
       logger.error('Fehler beim Löschen der Rechnung:', { error: err });
       return res.status(500).json({ success: false, error: err.message });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
     }
 
     res.json({ success: true, message: 'Rechnung gelöscht' });

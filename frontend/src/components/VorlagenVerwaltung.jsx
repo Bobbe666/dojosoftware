@@ -6,22 +6,25 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import {
   Plus, Settings, Eye, Edit, Copy, Trash2, Send,
-  Building2, FileText, AlertCircle, RefreshCw
+  Building2, FileText, AlertCircle, RefreshCw, Download, History, Users
 } from 'lucide-react';
 import VorlagenEditor from './VorlagenEditor';
 import AbsenderProfileModal from './AbsenderProfileModal';
 import VorlagenSendenModal from './VorlagenSendenModal';
+import BriefEinstellungenTab from './BriefEinstellungenTab';
+import SerienBriefModal from './SerienBriefModal';
 import '../styles/VorlagenVerwaltung.css';
 
 // ── Kategorie-Filter-Tabs ──────────────────────────────────────────────────────
 const FILTER_TABS = [
   { id: 'alle', label: 'Alle' },
   { id: 'mitgliedschaft', label: 'Mitgliedschaft', kategorien: ['begruessung','geburtstag','kuendigung_bestaetigung','ruhezeit','kursanmeldung','info_brief','rundschreiben'] },
-  { id: 'finanzen', label: 'Finanzen', kategorien: ['zahlungserinnerung','mahnung','mahnbescheid','ruecklastschrift_info'] },
+  { id: 'finanzen', label: 'Finanzen', kategorien: ['rechnung','zahlungserinnerung','mahnung','mahnbescheid','ruecklastschrift_info'] },
   { id: 'pruefungen', label: 'Prüfungen', kategorien: ['pruefung_einladung','pruefung_ergebnis','guertelvergabe'] },
   { id: 'sonstiges', label: 'Sonstiges', kategorien: ['sonstiges'] },
 ];
@@ -31,10 +34,10 @@ const KATEGORIE_LABEL = {
   kuendigung_bestaetigung: 'Kündigung', ruhezeit: 'Ruhezeit',
   zahlungserinnerung: 'Zahlungserinnerung', mahnung: 'Mahnung',
   mahnbescheid: 'Mahnbescheid', ruecklastschrift_info: 'Rücklastschrift',
-  kursanmeldung: 'Kursanmeldung', pruefung_einladung: 'Prüfungs-Einladung',
-  pruefung_ergebnis: 'Prüfungsergebnis', guertelvergabe: 'Gürtelvergabe',
-  info_brief: 'Infobrief', rundschreiben: 'Rundschreiben',
-  sonstiges: 'Sonstiges',
+  rechnung: 'Rechnung', kursanmeldung: 'Kursanmeldung',
+  pruefung_einladung: 'Prüfungs-Einladung', pruefung_ergebnis: 'Prüfungsergebnis',
+  guertelvergabe: 'Gürtelvergabe', info_brief: 'Infobrief',
+  rundschreiben: 'Rundschreiben', sonstiges: 'Sonstiges',
 };
 
 export default function VorlagenVerwaltung({ embedded = false }) {
@@ -45,15 +48,19 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   const [ladeVorlagen, setLadeVorlagen] = useState(true);
   const [fehler, setFehler] = useState('');
   const [aktiverTab, setAktiverTab] = useState('alle');
-  const [ansicht, setAnsicht] = useState('vorlagen'); // 'vorlagen' | 'profile'
+  const [ansicht, setAnsicht] = useState('vorlagen'); // 'vorlagen' | 'einstellungen' | 'verlauf'
 
   // Modals
-  const [editorVorlage, setEditorVorlage] = useState(null); // null = kein Modal, objekt = bearbeiten
+  const [editorVorlage, setEditorVorlage] = useState(null);
   const [editorOffen, setEditorOffen] = useState(false);
-  const [profileModalOffen, setProfileModalOffen] = useState(false);
-  const [editProfil, setEditProfil] = useState(null);
+  const [previewHtml, setPreviewHtml] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewName, setPreviewName] = useState('');
   const [sendenVorlagenId, setSendenVorlagenId] = useState(null);
+  const [serienbriefVorlage, setSerienbriefVorlage] = useState(null); // { id, name }
   const [toast, setToast] = useState('');
+  const [verlauf, setVerlauf] = useState([]);
+  const [verlaufLaden, setVerlaufLaden] = useState(false);
 
   function zeigeToast(msg, dauer = 3000) {
     setToast(msg);
@@ -79,6 +86,18 @@ export default function VorlagenVerwaltung({ embedded = false }) {
 
   useEffect(() => { ladeAlles(); }, [ladeAlles]);
 
+  const ladeVerlauf = useCallback(async () => {
+    setVerlaufLaden(true);
+    try {
+      const res = await axios.get(withDojo('/vorlagen/dokument-verlauf'));
+      setVerlauf(res.data.dokumente || []);
+    } catch (err) {
+      // ignore
+    } finally {
+      setVerlaufLaden(false);
+    }
+  }, [activeDojo]);
+
   async function handleDuplizieren(vorlage) {
     try {
       await axios.post(withDojo(`/vorlagen/${vorlage.id}/kopieren`));
@@ -100,19 +119,34 @@ export default function VorlagenVerwaltung({ embedded = false }) {
     }
   }
 
-  async function handleProfilLoeschen(profil) {
-    if (!window.confirm(`Profil "${profil.name}" wirklich löschen?`)) return;
+  async function handleVorschau(vorlage) {
+    setPreviewLoading(true);
+    setPreviewHtml(null);
+    setPreviewName(vorlage.name || 'Vorschau');
     try {
-      await axios.delete(withDojo(`/absender-profile/${profil.id}`));
-      zeigeToast('Profil gelöscht');
-      ladeAlles();
+      const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-html`), { responseType: 'text' });
+      setPreviewHtml(res.data);
     } catch (err) {
-      zeigeToast('Fehler beim Löschen');
+      zeigeToast('Fehler bei der Vorschau');
+    } finally {
+      setPreviewLoading(false);
     }
   }
 
-  function handleVorschau(vorlage) {
-    window.open(`/api/vorlagen/${vorlage.id}/preview-html${activeDojo?.id ? `?dojo_id=${activeDojo.id}` : ''}`, '_blank');
+  async function handleVerlaufPdf(dok) {
+    try {
+      const res = await axios.get(withDojo(`/vorlagen/dokument-verlauf/${dok.id}/pdf`), { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${dok.dokumentname || 'Dokument'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      zeigeToast('Fehler beim PDF-Download');
+    }
   }
 
   // Gefilterte Vorlagen
@@ -120,6 +154,21 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   const gefilterteVorlagen = aktiverTab === 'alle'
     ? vorlagen
     : vorlagen.filter(v => aktiveTabObj?.kategorien?.includes(v.kategorie));
+
+  // Editor als Vollseite anzeigen (wie TemplateEditorTipTap)
+  if (editorOffen) {
+    return (
+      <>
+        <VorlagenEditor
+          asPage={true}
+          vorlage={editorVorlage}
+          profile={profile}
+          onClose={() => setEditorOffen(false)}
+          onSaved={() => { ladeAlles(); zeigeToast('Vorlage gespeichert'); setEditorOffen(false); }}
+        />
+      </>
+    );
+  }
 
   return (
     <div className={`vv-page${embedded ? ' vv-page--embedded' : ''}`}>
@@ -136,8 +185,11 @@ export default function VorlagenVerwaltung({ embedded = false }) {
         </div>
         )}
         <div className="vv-action-row">
-          <button onClick={() => { setAnsicht('profile'); }} className={`vv-btn-profile-nav${ansicht === 'profile' ? ' vv-btn-profile-nav--active' : ''}`}>
-            <Building2 size={14} /> Absender-Profile
+          <button onClick={() => { setAnsicht('verlauf'); ladeVerlauf(); }} className={`vv-btn-profile-nav${ansicht === 'verlauf' ? ' vv-btn-profile-nav--active' : ''}`}>
+            <History size={14} /> Verlauf
+          </button>
+          <button onClick={() => { setAnsicht('einstellungen'); }} className={`vv-btn-profile-nav${ansicht === 'einstellungen' ? ' vv-btn-profile-nav--active' : ''}`}>
+            <Settings size={14} /> Einstellungen
           </button>
           <button onClick={() => { setEditorVorlage(null); setEditorOffen(true); }} className="vv-btn-primary">
             <Plus size={14} /> Neue Vorlage
@@ -209,9 +261,9 @@ export default function VorlagenVerwaltung({ embedded = false }) {
                         )}
                       </div>
 
-                      {/* Name */}
+                      {/* Name – in Title Case normalisieren (DB speichert ALL CAPS) */}
                       <h3 className="vv-card-title">
-                        {v.name}
+                        {v.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')}
                       </h3>
 
                       {/* Absender-Profil */}
@@ -236,6 +288,9 @@ export default function VorlagenVerwaltung({ embedded = false }) {
                       <ActionBtn icon={<Edit size={13} />} label="Bearbeiten" onClick={() => { setEditorVorlage(v); setEditorOffen(true); }} />
                       <ActionBtn icon={<Copy size={13} />} label="Kopieren" onClick={() => handleDuplizieren(v)} />
                       <ActionBtn icon={<Send size={13} />} label="Senden" primary color={profilFarbe} onClick={() => setSendenVorlagenId(v.id)} />
+                      {v.email_html && (
+                        <ActionBtn icon={<Users size={13} />} label="Serienbrief" onClick={() => setSerienbriefVorlage({ id: v.id, name: v.name })} />
+                      )}
                       {v.system_vorlage !== 1 && (
                         <ActionBtn icon={<Trash2 size={13} />} label="Löschen" danger onClick={() => handleLoeschen(v)} />
                       )}
@@ -248,89 +303,107 @@ export default function VorlagenVerwaltung({ embedded = false }) {
         </>
       )}
 
-      {/* ── ANSICHT: PROFILE ── */}
-      {ansicht === 'profile' && (
+      {/* ── ANSICHT: EINSTELLUNGEN ── */}
+      {ansicht === 'einstellungen' && (
         <>
           <div className="vv-profil-header-bar">
             <div>
-              <h2 className="vv-profil-section-title">Absender-Profile</h2>
-              <p className="vv-profil-subtitle">Briefköpfe und Absender-Daten für Ihre Korrespondenz.</p>
+              <h2 className="vv-profil-section-title">Einstellungen</h2>
+              <p className="vv-profil-subtitle">DIN-Format, Schrift, Fußzeile und Absender-Profile für Ihre Briefvorlagen.</p>
+            </div>
+            <div className="vv-profil-btns">
+              <button onClick={() => setAnsicht('vorlagen')} className="vv-btn-back">&#8592; Zurück zu Vorlagen</button>
+            </div>
+          </div>
+          <BriefEinstellungenTab
+            profile={profile}
+            onProfileChanged={() => { ladeAlles(); zeigeToast('Profil gespeichert'); }}
+          />
+        </>
+      )}
+
+      {/* ── ANSICHT: VERLAUF ── */}
+      {ansicht === 'verlauf' && (
+        <>
+          <div className="vv-profil-header-bar">
+            <div>
+              <h2 className="vv-profil-section-title">Dokument-Verlauf</h2>
+              <p className="vv-profil-subtitle">Alle erstellten und versendeten Dokumente des Dojos.</p>
             </div>
             <div className="vv-profil-btns">
               <button onClick={() => setAnsicht('vorlagen')} className="vv-btn-back">&#8592; Zur&#252;ck zu Vorlagen</button>
-              <button onClick={() => { setEditProfil(null); setProfileModalOffen(true); }} className="vv-btn-primary">
-                <Plus size={13} /> Neues Profil
-              </button>
+              <button onClick={ladeVerlauf} className="vv-btn-back" title="Aktualisieren"><RefreshCw size={13} /></button>
             </div>
           </div>
 
-          {profile.length === 0 ? (
+          {verlaufLaden ? (
+            <div className="vv-empty-888">Verlauf wird geladen...</div>
+          ) : verlauf.length === 0 ? (
             <div className="vv-empty-666">
-              <Building2 size={40} className="vv-icon-fade" />
-              <p>Noch keine Absender-Profile angelegt.</p>
-              <button onClick={() => { setEditProfil(null); setProfileModalOffen(true); }} className="vv-btn-primary vv-btn-primary-mt">
-                Erstes Profil erstellen
-              </button>
+              <History size={40} className="vv-icon-fade" />
+              <p>Noch keine Dokumente erstellt oder versendet.</p>
             </div>
           ) : (
-            <div className="vv-profile-grid">
-              {profile.map(p => (
-                <div key={p.id} className="vv-profil-card">
-                  <div className="vv-color-bar-lg" style={{ '--pc': p.farbe_primaer || 'var(--primary, #ffd700)' }} />
-                  <div className="vv-card-body">
-                    <div className="vv-profil-card-header">
-                      <div>
-                        <div className="vv-profil-name">{p.name}</div>
-                        <span className="vv-profil-type-badge" style={{ '--pc': p.farbe_primaer || 'var(--primary, #ffd700)', '--pc22': p.farbe_primaer ? `${p.farbe_primaer}22` : 'var(--primary-alpha-10, rgba(255,215,0,0.1))' }}>{p.typ}</span>
-                      </div>
-                      <div className="vv-profil-icon-btns">
-                        <button onClick={() => { setEditProfil(p); setProfileModalOffen(true); }}
-                          className="vv-icon-btn-neutral">
-                          <Edit size={14} />
+            <div className="vv-verlauf-table-wrap">
+              <table className="vv-verlauf-table">
+                <thead>
+                  <tr>
+                    <th>Mitglied</th>
+                    <th>Dokument</th>
+                    <th>Versand</th>
+                    <th>Betreff</th>
+                    <th>Erstellt</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {verlauf.map(dok => (
+                    <tr key={dok.id}>
+                      <td>
+                        <span className="vv-tbl-name">{dok.vorname} {dok.nachname}</span>
+                        {dok.mitglied_email && <span className="vv-tbl-email">{dok.mitglied_email}</span>}
+                      </td>
+                      <td>{dok.dokumentname}</td>
+                      <td>
+                        <span className={`vv-versand-badge vv-versand-${dok.versand_art || 'unbekannt'}`}>
+                          {dok.versand_art === 'pdf' ? 'PDF' : dok.versand_art === 'email' ? 'E-Mail' : dok.versand_art === 'email_mit_pdf' ? 'E-Mail+PDF' : dok.versand_art || '–'}
+                        </span>
+                      </td>
+                      <td className="vv-td-betreff">{dok.betreff || '–'}</td>
+                      <td className="vv-td-date">
+                        {new Date(dok.erstellt_am).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td>
+                        <button
+                          className="vv-action-btn vv-action-btn--default"
+                          title="PDF herunterladen"
+                          onClick={() => handleVerlaufPdf(dok)}
+                        >
+                          <Download size={13} /> PDF
                         </button>
-                        <button onClick={() => handleProfilLoeschen(p)}
-                          className="vv-icon-btn-danger">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="vv-profil-info">
-                      {p.organisation && <div>{p.organisation}</div>}
-                      {p.inhaber && <div>Inhaber: {p.inhaber}</div>}
-                      {(p.strasse || p.ort) && <div>{[p.strasse, p.hausnummer, p.plz, p.ort].filter(Boolean).join(' ')}</div>}
-                      {p.email && <div>{p.email}</div>}
-                      {p.bank_iban && <div className="vv-monospace">IBAN: {p.bank_iban}</div>}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </>
       )}
 
       {/* ── Modals ── */}
-      {editorOffen && (
-        <VorlagenEditor
-          vorlage={editorVorlage}
-          profile={profile}
-          onClose={() => setEditorOffen(false)}
-          onSaved={() => { ladeAlles(); zeigeToast('Vorlage gespeichert'); }}
-        />
-      )}
-
-      {profileModalOffen && (
-        <AbsenderProfileModal
-          profil={editProfil}
-          onClose={() => setProfileModalOffen(false)}
-          onSaved={() => { ladeAlles(); zeigeToast('Profil gespeichert'); }}
-        />
-      )}
-
       {sendenVorlagenId && (
         <VorlagenSendenModal
           vorlagenId={sendenVorlagenId}
           onClose={() => setSendenVorlagenId(null)}
+        />
+      )}
+
+      {serienbriefVorlage && (
+        <SerienBriefModal
+          vorlagenId={serienbriefVorlage.id}
+          vorlagenName={serienbriefVorlage.name}
+          onClose={() => setSerienbriefVorlage(null)}
         />
       )}
 
@@ -339,6 +412,23 @@ export default function VorlagenVerwaltung({ embedded = false }) {
         <div className="vv-toast">
           {toast}
         </div>
+      )}
+
+      {/* Vorschau-Modal via Portal */}
+      {(previewLoading || previewHtml) && ReactDOM.createPortal(
+        <div className="ve-preview-overlay" onClick={() => setPreviewHtml(null)}>
+          <div className="ve-preview-modal" onClick={e => e.stopPropagation()}>
+            <div className="ve-preview-modal-bar">
+              <span>Vorschau — {previewName}</span>
+              <button onClick={() => setPreviewHtml(null)} className="ve-preview-modal-close">✕ Schließen</button>
+            </div>
+            {previewLoading
+              ? <div className="ve-preview-modal-loading">Vorschau wird geladen…</div>
+              : <iframe srcDoc={previewHtml} title="Vorschau" className="ve-preview-modal-iframe" sandbox="allow-scripts" />
+            }
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

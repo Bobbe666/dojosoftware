@@ -525,61 +525,34 @@ const LastschriftTab = ({ token }) => {
               onClick={() => setActiveCategory(cat.id)}
               className="fzt-cat-card"
               style={{ '--cat-color': cat.color, '--cat-bgcolor': cat.bgColor }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = cat.color;
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = `0 8px 24px ${cat.bgColor}`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'var(--border-default)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
             >
-              {/* Background accent */}
-              <div className="fzt-cat-accent" />
-
-              {/* Content */}
-              <div className="ft-relative-z1">
-                <div className="ft-card-icon-row">
-                  <div className="fzt-cat-icon-box">
-                    <Icon size={28} color={cat.color} />
-                  </div>
-                  <div>
-                    <h3 className="ft-h3-plain">
-                      {cat.title}
-                    </h3>
-                    <p className="ft-p-plain">
-                      {cat.subtitle}
-                    </p>
-                  </div>
+              <div className="fzt-cat-header">
+                <div className="fzt-cat-icon-box">
+                  <Icon size={22} color={cat.color} />
                 </div>
-
-                <div className="fzt-cat-bottom-row">
-                  <div>
-                    <div className="ft-sub-label">
-                      {cat.id === 'dojo-mitglieder' ? 'Mitglieder' : cat.id === 'gesamt' ? 'Einträge' : 'Dojos'}
-                    </div>
-                    <div className="fzt-cat-count">
-                      {cat.data.count}
-                    </div>
-                  </div>
-                  <div className="ft-text-right">
-                    <div className="ft-sub-label">
-                      Fälliger Betrag
-                    </div>
-                    <div className="ft-stat-value-primary">
-                      {formatCurrency(cat.data.amount)}
-                    </div>
-                  </div>
+                <div className="fzt-cat-titles">
+                  <h3 className="fzt-cat-title">{cat.title}</h3>
+                  <p className="fzt-cat-subtitle">{cat.subtitle}</p>
                 </div>
+              </div>
 
-                <button
-                  className="fzt-cat-action-btn"
-                >
-                  <Zap size={18} />
-                  Einziehen
-                </button>
+              <div className="fzt-cat-metrics">
+                <div className="fzt-cat-metric">
+                  <div className="fzt-cat-metric-label">
+                    {cat.id === 'dojo-mitglieder' ? 'Mitglieder' : cat.id === 'gesamt' ? 'Einträge' : 'Dojos'}
+                  </div>
+                  <div className="fzt-cat-count">{cat.data.count}</div>
+                </div>
+                <div className="fzt-cat-metric fzt-cat-metric--right">
+                  <div className="fzt-cat-metric-label">Fälliger Betrag</div>
+                  <div className="fzt-cat-amount">{formatCurrency(cat.data.amount)}</div>
+                </div>
+              </div>
+
+              <div className="fzt-cat-action-btn">
+                <Zap size={14} />
+                Einziehen
+                <ChevronRight size={14} className="fzt-cat-arrow" />
               </div>
             </div>
           );
@@ -822,117 +795,80 @@ const CategoryDetailView = ({
       </div>
 
       {/* Actions */}
-      <div className="ft-card-section-pad">
-        <h3 className="ft-actions-title">Aktionen</h3>
-        <div className="ft-actions-row">
-          {/* Month/Year Selection */}
-          <div>
+      <div className="fzt-actions-panel">
+        <div className="fzt-actions-panel-title">
+          <Settings size={15} /> Einzug konfigurieren
+        </div>
+        <div className="fzt-actions-fields">
+          <div className="fzt-field">
             <label className="ft-label">Monat</label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="ft-input"
-            >
-              {['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'].map((month, i) => (
-                <option key={i + 1} value={i + 1}>{month}</option>
+            <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="ft-input">
+              {['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'].map((m, i) => (
+                <option key={i+1} value={i+1}>{m}</option>
               ))}
             </select>
           </div>
-          <div>
+          <div className="fzt-field">
             <label className="ft-label">Jahr</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="ft-input"
-            >
+            <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="ft-input">
               <option value={2024}>2024</option>
               <option value={2025}>2025</option>
               <option value={2026}>2026</option>
             </select>
           </div>
 
-          {/* For dojo-mitglieder: Stripe + Export */}
           {(category.id === 'dojo-mitglieder' || category.id === 'gesamt') && (
             <>
-              <div>
+              <div className="fzt-field">
                 <label className="ft-label">Format</label>
-                <select
-                  value={selectedFormat}
-                  onChange={(e) => setSelectedFormat(e.target.value)}
-                  className="ft-input"
-                >
+                <select value={selectedFormat} onChange={(e) => setSelectedFormat(e.target.value)} className="ft-input">
                   <option value="xml">SEPA XML</option>
                   <option value="csv">CSV</option>
                 </select>
               </div>
-              <div>
+              <div className="fzt-field fzt-field--wide">
                 <label className="ft-label">Einzugsbank</label>
-                <select
-                  value={selectedBank || ''}
-                  onChange={(e) => setSelectedBank(parseInt(e.target.value))}
-                  className="ft-input ft-input-wide"
-                >
-                  {availableBanks.length === 0 ? (
-                    <option value="">Keine Bankkonten</option>
-                  ) : (
-                    availableBanks.map(bank => (
-                      <option key={bank.id} value={bank.id}>
-                        {bank.bank_name} {bank.ist_standard ? '★' : ''}
-                      </option>
-                    ))
-                  )}
+                <select value={selectedBank || ''} onChange={(e) => setSelectedBank(parseInt(e.target.value))} className="ft-input">
+                  {availableBanks.length === 0
+                    ? <option value="">Keine Bankkonten</option>
+                    : availableBanks.map(bank => (
+                        <option key={bank.id} value={bank.id}>{bank.bank_name}{bank.ist_standard ? ' ★' : ''}</option>
+                      ))
+                  }
                 </select>
               </div>
-
-              <button
-                onClick={handleExport}
-                disabled={processing || items.length === 0}
-                className="fzt-btn-export"
-              >
-                <Download size={16} /> Export
-              </button>
-
-              {stripeStatus?.stripe_configured && (
-                <button
-                  onClick={handleStripeExecute}
-                  disabled={processing || items.length === 0}
-                  className="fzt-action-btn"
-                >
-                  {processing ? <Loader size={16} /> : <Zap size={16} />}
-                  Mit Stripe einziehen
-                </button>
-              )}
             </>
           )}
+        </div>
 
-          {/* For software-kunden and verband: SEPA Batch */}
+        <div className="fzt-actions-btns">
+          {(category.id === 'dojo-mitglieder' || category.id === 'gesamt') && (
+            <button onClick={handleExport} disabled={processing || items.length === 0} className="fzt-btn-export">
+              <Download size={15} /> Export
+            </button>
+          )}
+          {(category.id === 'dojo-mitglieder' || category.id === 'gesamt') && stripeStatus?.stripe_configured && (
+            <button onClick={handleStripeExecute} disabled={processing || items.length === 0} className="fzt-action-btn">
+              {processing ? <Loader size={15} /> : <Zap size={15} />}
+              Stripe einziehen
+            </button>
+          )}
           {(category.id === 'software-kunden' || category.id === 'verband') && (
-            <button
-              onClick={handleCreateSepaBatch}
-              disabled={processing || items.length === 0}
-              className="fzt-action-btn"
-            >
-              {processing ? <Loader size={16} /> : <FileText size={16} />}
+            <button onClick={handleCreateSepaBatch} disabled={processing || items.length === 0} className="fzt-action-btn">
+              {processing ? <Loader size={15} /> : <FileText size={15} />}
               SEPA-Batch erstellen
             </button>
           )}
-
-          <button
-            onClick={onRefresh}
-            className="fzt-btn-refresh-auto"
-          >
-            <RefreshCw size={16} /> Aktualisieren
+          <button onClick={onRefresh} className="fzt-btn-refresh-auto">
+            <RefreshCw size={15} /> Aktualisieren
           </button>
         </div>
 
-        {/* Result message */}
         {result && (
           <div className={`fzt-result-box fzt-result-box--${result.status}`}>
-            <div className="u-flex-row-sm">
-              {result.status === 'success' ? <CheckCircle size={16} color="#10b981" /> : <XCircle size={16} color="#ef4444" />}
-              <span>{result.message}</span>
-              <button onClick={() => setResult(null)} className="ft-btn-dismiss">×</button>
-            </div>
+            {result.status === 'success' ? <CheckCircle size={15} color="#10b981" /> : <XCircle size={15} color="#ef4444" />}
+            <span>{result.message}</span>
+            <button onClick={() => setResult(null)} className="ft-btn-dismiss">×</button>
           </div>
         )}
       </div>

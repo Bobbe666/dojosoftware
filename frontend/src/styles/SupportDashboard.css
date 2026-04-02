@@ -196,8 +196,8 @@
 }
 
 .column-header.features {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15) 0%, rgba(255, 215, 0, 0.05) 100%);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, var(--primary-alpha-15) 0%, var(--primary-alpha-05) 100%);
+  border-color: var(--primary-alpha-30);
 }
 
 .column-header.features svg {
@@ -230,15 +230,15 @@
 }
 
 .stat-number-box.orange {
-  border-bottom: 3px solid #f59e0b;
+  border-bottom: 3px solid var(--status-warning);
 }
 
 .stat-number-box.blue {
-  border-bottom: 3px solid #3b82f6;
+  border-bottom: 3px solid var(--status-indigo);
 }
 
 .stat-number-box.green {
-  border-bottom: 3px solid #10b981;
+  border-bottom: 3px solid var(--status-success);
 }
 
 .stat-number-box.purple {
@@ -371,7 +371,7 @@
 }
 
 .bereich-item.dojo {
-  border-left: 3px solid #10b981;
+  border-left: 3px solid var(--status-success);
 }
 
 .bereich-item.verband {
@@ -379,7 +379,7 @@
 }
 
 .bereich-item.org {
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--status-indigo);
 }
 
 .bereich-icon {
@@ -488,7 +488,7 @@
 
 /* DojoSwitcher Badge für Support */
 .dropdown-item.support {
-  border-left: 3px solid #10b981;
+  border-left: 3px solid var(--status-success);
 }
 
 .dropdown-item.support:hover {
@@ -567,7 +567,7 @@
 
 /* Feature-Wünsche Statistiken */
 .feature-stats-card {
-  border-left: 3px solid #ffd700;
+  border-left: 3px solid var(--primary);
 }
 
 .feature-stats-card h3 {
@@ -592,7 +592,7 @@
 }
 
 .feature-stat-item.neu {
-  border-bottom: 3px solid #f59e0b;
+  border-bottom: 3px solid var(--status-warning);
 }
 
 .feature-stat-item.geplant {
@@ -604,7 +604,7 @@
 }
 
 .feature-stat-item.umgesetzt {
-  border-bottom: 3px solid #10b981;
+  border-bottom: 3px solid var(--status-success);
 }
 
 .feature-stat-value {

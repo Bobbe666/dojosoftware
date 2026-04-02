@@ -11,7 +11,7 @@
 .register-nav {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   padding: 1rem 0;
   position: sticky;
   top: 0;
@@ -46,7 +46,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   padding: 0;
   background: transparent;
   object-fit: cover;
@@ -58,12 +58,12 @@
 }
 
 .register-nav .nav-logo:hover .nav-logo-image {
-  border-color: rgba(255, 215, 0, 0.6);
-  box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-60);
+  box-shadow: 0 0 15px var(--primary-alpha-40);
 }
 
 .register-nav .logo-text {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -83,14 +83,14 @@
 }
 
 .register-nav .nav-links a:hover {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .register-nav .nav-login-btn {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 0.75rem 1.5rem;
@@ -98,7 +98,7 @@
   font-size: 1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -113,7 +113,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
   transition: left 0.5s;
 }
 
@@ -122,10 +122,10 @@
 }
 
 .register-nav .nav-login-btn:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-20) 50%, rgba(255, 107, 53, 0.1) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  color: #ffd700;
+  box-shadow: 0 4px 15px var(--primary-alpha-40);
+  color: var(--primary);
 }
 
 /* ===== HEADER ===== */
@@ -143,7 +143,7 @@
 .register-header h1 {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -167,7 +167,7 @@
 .plan-pill {
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--primary-alpha-20);
   padding: 0.75rem 1.5rem;
   border-radius: var(--comp-radius-xl);
   font-weight: 600;
@@ -182,20 +182,20 @@
 }
 
 .plan-pill:hover {
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-40);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 4px 12px var(--primary-alpha-20);
 }
 
 .plan-pill.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
-  border-color: #ffd700;
-  color: #ffd700;
-  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.3);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 10px 25px var(--primary-alpha-30);
 }
 
 .popular-tag {
-  background: linear-gradient(135deg, #ffd700, #ff6b35);
+  background: var(--gradient-gold);
   color: #1a1a2e;
   padding: 0.2rem 0.5rem;
   border-radius: var(--comp-radius-sm);
@@ -222,7 +222,7 @@
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .error-banner {
@@ -248,7 +248,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -257,7 +257,7 @@
 
 .form-section h3 .section-icon {
   font-size: 1.4rem;
-  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6));
+  filter: drop-shadow(0 0 5px var(--primary-alpha-60));
   display: inline-block;
   flex-shrink: 0;
   -webkit-text-fill-color: initial !important;
@@ -306,13 +306,13 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: rgba(255, 215, 0, 0.6);
+  border-color: var(--primary-alpha-60);
   background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.15);
+  box-shadow: 0 0 0 3px var(--primary-alpha-15);
 }
 
 .form-group input.error {
-  border-color: #ef4444;
+  border-color: var(--status-error);
   background: rgba(239, 68, 68, 0.1);
 }
 
@@ -348,11 +348,11 @@
 }
 
 .subdomain-input-group input:focus + .subdomain-suffix {
-  border-color: rgba(255, 215, 0, 0.6);
+  border-color: var(--primary-alpha-60);
 }
 
 .subdomain-input-group input.error + .subdomain-suffix {
-  border-color: #ef4444;
+  border-color: var(--status-error);
 }
 
 /* ===== SUBDOMAIN STATUS ===== */
@@ -368,11 +368,11 @@
 }
 
 .subdomain-status.available {
-  color: #10b981;
+  color: var(--status-success);
 }
 
 .subdomain-status.unavailable {
-  color: #ef4444;
+  color: var(--status-error);
 }
 
 /* ===== HELP TEXT ===== */
@@ -416,7 +416,7 @@
   padding: 0 !important;
   cursor: pointer;
   flex-shrink: 0;
-  accent-color: #ffd700;
+  accent-color: var(--primary);
   -webkit-appearance: checkbox;
   appearance: checkbox;
   opacity: 1 !important;
@@ -431,7 +431,7 @@
 }
 
 .checkbox-label a {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -447,7 +447,7 @@
 /* ===== SUBMIT BUTTON ===== */
 .submit-btn {
   width: 100%;
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1.25rem 2rem;
@@ -455,7 +455,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -471,7 +471,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
   transition: left 0.5s;
 }
 
@@ -480,15 +480,15 @@
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-20) 50%, rgba(255, 107, 53, 0.1) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  color: #ffd700;
+  box-shadow: 0 4px 15px var(--primary-alpha-40);
+  color: var(--primary);
 }
 
 .submit-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 6px var(--primary-alpha-20);
 }
 
 .submit-btn:disabled {
@@ -518,7 +518,7 @@
 
 .security-notes .note .note-icon {
   font-size: 1rem;
-  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6));
+  filter: drop-shadow(0 0 5px var(--primary-alpha-60));
   display: inline-block;
 }
 
@@ -530,7 +530,7 @@
 }
 
 .register-footer a {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -550,7 +550,7 @@
   padding: 3rem;
   max-width: 1000px;
   margin: 2rem auto;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 .success-header {
@@ -563,7 +563,7 @@
 .success-container h1 {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -577,7 +577,7 @@
 }
 
 .success-message strong {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -596,7 +596,7 @@
   backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 16px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   transition: all 0.3s ease;
   text-align: left;
   display: flex;
@@ -604,7 +604,7 @@
 }
 
 .info-box:hover {
-  border-color: rgba(255, 215, 0, 0.3);
+  border-color: var(--primary-alpha-30);
 }
 
 .info-box h3 {
@@ -614,7 +614,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -643,7 +643,7 @@
 }
 
 .info-box strong {
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -656,11 +656,11 @@
   border-radius: var(--comp-radius-md);
   font-weight: 700;
   font-size: 1rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   word-break: break-all;
   margin-top: 0.5rem;
 }
@@ -668,7 +668,7 @@
 .trial-date {
   font-weight: 600;
   font-size: 1rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -682,7 +682,7 @@
   backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: 16px;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   text-align: center;
 }
 
@@ -694,7 +694,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background: linear-gradient(135deg, #ffd700, #ff6b35, #f7931e);
+  background: var(--gradient-gold);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -729,7 +729,7 @@
 }
 
 .next-steps .cta-btn {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1rem 2rem;
@@ -737,7 +737,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -753,7 +753,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
   transition: left 0.5s;
 }
 
@@ -762,17 +762,17 @@
 }
 
 .next-steps .cta-btn:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
-  color: #ffd700;
+  background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-20) 50%, rgba(255, 107, 53, 0.1) 100%);
+  color: var(--primary);
 }
 
 /* ===== REDIRECT INFO ===== */
 .redirect-info {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   backdrop-filter: blur(10px);
   padding: 2rem;
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   color: white;
 }
 
@@ -783,7 +783,7 @@
 }
 
 .redirect-info .cta-btn {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.1) 50%, transparent 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-30) 0%, var(--primary-alpha-10) 50%, transparent 100%);
   color: rgba(255, 255, 255, 0.95);
   border: none;
   padding: 1rem 2rem;
@@ -791,7 +791,7 @@
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
   white-space: nowrap;
   position: relative;
   overflow: hidden;
@@ -806,7 +806,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+  background: linear-gradient(90deg, transparent, var(--primary-alpha-20), transparent);
   transition: left 0.5s;
 }
 
@@ -815,10 +815,10 @@
 }
 
 .redirect-info .cta-btn:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 107, 53, 0.1) 100%);
+  background: linear-gradient(135deg, var(--primary-alpha-40) 0%, var(--primary-alpha-20) 50%, rgba(255, 107, 53, 0.1) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-  color: #ffd700;
+  box-shadow: 0 4px 15px var(--primary-alpha-40);
+  color: var(--primary);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -935,12 +935,24 @@
   .register-header p {
     font-size: 0.95rem;
   }
+
+  .submit-btn,
+  .next-steps .cta-btn,
+  .redirect-info .cta-btn {
+    white-space: normal;
+    text-align: center;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    line-height: 1.35;
+    width: 100%;
+    box-sizing: border-box;
+  }
 }
 
 /* ===== EARLY BIRD PROMO BANNER ===== */
 .promo-banner {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 140, 0, 0.1));
-  border: 2px solid rgba(255, 215, 0, 0.4);
+  background: linear-gradient(135deg, var(--primary-alpha-15), rgba(255, 140, 0, 0.1));
+  border: 2px solid var(--primary-alpha-40);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
@@ -948,8 +960,8 @@
 }
 
 @keyframes promo-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); }
-  50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.4); }
+  0%, 100% { box-shadow: 0 0 20px var(--primary-alpha-20); }
+  50% { box-shadow: 0 0 40px var(--primary-alpha-40); }
 }
 
 .promo-badge {
@@ -992,13 +1004,13 @@
   background: rgba(0, 0, 0, 0.3);
   border-radius: var(--comp-radius-xl);
   padding: 1rem 1.5rem;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
 }
 
 .promo-discount-box .discount-value {
   font-size: 2.5rem;
   font-weight: 900;
-  color: #ffd700;
+  color: var(--primary);
   line-height: 1;
 }
 
@@ -1021,7 +1033,7 @@
 }
 
 .promo-details .highlight {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .promo-benefits {
@@ -1039,7 +1051,7 @@
 }
 
 .promo-benefits li strong {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .promo-counter {
@@ -1066,7 +1078,7 @@
 .counter-current {
   font-size: 1.5rem;
   font-weight: 900;
-  color: #ffd700;
+  color: var(--primary);
 }
 
 .counter-sep {
@@ -1087,12 +1099,12 @@
 }
 
 .spots-left strong {
-  color: #ffd700;
+  color: var(--primary);
 }
 
 /* Promo Success Highlight */
 .promo-success-highlight {
-  color: #22c55e;
+  color: var(--status-success);
   font-size: 1.1rem;
 }
 

@@ -104,7 +104,7 @@
 
 .security-tabs .tab.active {
   color: var(--primary);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .security-tabs .tab.active::after {
@@ -186,7 +186,7 @@
 }
 
 .alert-item.severity-critical {
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--status-error);
 }
 
 .alert-item.severity-high {
@@ -377,7 +377,7 @@
   background: var(--surface-2);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: var(--radius-lg);
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--status-error);
 }
 
 .blocked-icon {

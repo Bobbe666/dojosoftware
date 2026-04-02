@@ -48,7 +48,7 @@
 /* Textarea in modal */
 .meine-events-textarea {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: 8px;
   padding: 0.75rem;
   color: var(--farbe-text);

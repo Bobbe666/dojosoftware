@@ -32,8 +32,11 @@
 
 .tarife-page-header h1 {
   font-size: var(--ui-page-title);
-  font-weight: 600;
-  color: var(--text-1);
+  font-weight: 700;
+  background: var(--gradient-gold, linear-gradient(135deg, #ffd700, #ffaa00));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 0.15rem;
   line-height: 1.2;
 }
@@ -136,7 +139,7 @@
 }
 
 .tarife-container .stat-info .stat-value {
-  font-size: var(--ui-stat-value);
+  font-size: 1.55rem;
   font-weight: 700;
   color: var(--text-1);
   margin: 0 0 0.25rem;
@@ -182,27 +185,39 @@
   padding: 0;
   border-radius: 0;
   transition: none;
+  /* Reset Dashboard.css section-header.collapsible interference */
+  background: transparent !important;
+  border: none !important;
+  letter-spacing: normal;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .tarife-container .section-header.collapsible:hover {
-  background: none;
+  background: transparent !important;
   transform: none;
 }
 
 .tarife-container .section-header h2 {
-  font-size: var(--ui-section-title);
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text-1);
+  /* Override Dashboard.css Washi -webkit-text-fill-color inheritance */
+  -webkit-text-fill-color: var(--text-1);
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  text-shadow: none;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  text-shadow: none;
 }
 
 .tarife-container .section-header h2 svg {
-  color: var(--text-3);
+  color: var(--primary);
   flex-shrink: 0;
+  opacity: 0.75;
 }
 
 .tarife-container .tarif-count {
@@ -417,7 +432,7 @@
 
 .tarife-container .action-btn.archive {
   background: rgba(251,191,36,0.06);
-  color: #fbbf24;
+  color: var(--status-warning);
   border-color: rgba(251,191,36,0.18);
 }
 
@@ -456,18 +471,21 @@
 }
 
 .tarife-container .btn-primary {
-  background: linear-gradient(135deg, #c9a227 0%, #e8b923 100%);
-  color: #0d0d18;
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary-alpha-40);
   text-shadow: none;
-  -webkit-text-fill-color: #0d0d18;
+  box-shadow: none;
+  -webkit-text-fill-color: unset;
 }
 
 .tarife-container .btn-primary:hover {
-  background: linear-gradient(135deg, #d4aa2a 0%, #f0c430 100%);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-60);
   transform: none;
   box-shadow: none;
-  color: #0d0d18;
-  -webkit-text-fill-color: #0d0d18;
+  color: var(--primary);
+  -webkit-text-fill-color: unset;
 }
 
 .tarife-container .btn-primary:disabled {
@@ -479,6 +497,7 @@
   background: rgba(255,255,255,0.04);
   color: var(--text-2);
   border: 1px solid rgba(255,255,255,0.09);
+  box-shadow: none;
 }
 
 .tarife-container .btn-secondary:hover {
@@ -613,13 +632,13 @@
 
 /* Archive action button (active = reaktivieren) */
 .tp-btn-archive--active {
-  background-color: #10b981;
+  background-color: var(--status-success);
   color: white;
 }
 
 /* Archive action button (inactive = archivieren) */
 .tp-btn-archive--inactive {
-  background-color: #f59e0b;
+  background-color: var(--status-warning);
   color: white;
 }
 
@@ -661,7 +680,7 @@
 
 .tp-btn-nachfolger:hover {
   background: rgba(59, 130, 246, 0.2);
-  border-color: #3b82f6;
+  border-color: var(--status-indigo);
 }
 
 /* Migration button */
@@ -680,7 +699,7 @@
 
 .tp-btn-migrate:hover {
   background: rgba(34, 197, 94, 0.2);
-  border-color: #22c55e;
+  border-color: var(--status-success);
 }
 
 /* Modal form field wrapper */
@@ -700,4 +719,108 @@
   gap: 0.5rem;
   font-size: 0.875rem;
   cursor: pointer;
+}
+
+/* ─── Washi Theme [data-theme="tda-vib"] ─────────────── */
+[data-theme="tda-vib"] .tarife-page-header {
+  border-bottom-color: rgba(26, 26, 26, 0.08);
+}
+/* Override Dashboard.css [data-theme="tda-vib"] .section-header { -webkit-text-fill-color: #6B4423 !important }
+   which is inherited by h2 and makes text barely readable */
+[data-theme="tda-vib"] .tarife-container .section-header h2 {
+  color: var(--text-1) !important;
+  -webkit-text-fill-color: var(--text-1) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  text-shadow: none !important;
+}
+[data-theme="tda-vib"] .tarife-container .section-header h2 svg {
+  color: var(--primary) !important;
+  opacity: 0.75;
+}
+[data-theme="tda-vib"] .tarife-page-header h1 {
+  background: var(--gradient-gold, linear-gradient(135deg, #c9a227, #a07c1a));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="tda-vib"] .tarife-container .stat-card {
+  border-color: rgba(26, 26, 26, 0.1);
+  background: rgba(26, 26, 26, 0.03);
+}
+[data-theme="tda-vib"] .tarife-container .stat-card:hover {
+  background: rgba(26, 26, 26, 0.05);
+}
+[data-theme="tda-vib"] .tarife-container .stat-card.primary {
+  --tc-stat-icon-bg: rgba(201, 162, 39, 0.08);
+}
+[data-theme="tda-vib"] .tarife-container .stat-card.success {
+  --tc-stat-icon-bg: rgba(22, 163, 74, 0.08);
+  --tc-stat-icon-color: #16a34a;
+  --tc-stat-accent: #16a34a;
+}
+[data-theme="tda-vib"] .tarife-container .stat-card.info {
+  --tc-stat-icon-bg: rgba(99, 102, 241, 0.08);
+}
+[data-theme="tda-vib"] .tarife-container .stat-card.warning {
+  --tc-stat-icon-bg: rgba(180, 83, 9, 0.08);
+  --tc-stat-icon-color: #b45309;
+  --tc-stat-accent: #b45309;
+}
+[data-theme="tda-vib"] .tarife-container .stat-card.purple {
+  --tc-stat-icon-bg: rgba(109, 40, 217, 0.08);
+}
+[data-theme="tda-vib"] .tarife-container .stat-icon {
+  background: var(--tc-stat-icon-bg, rgba(26, 26, 26, 0.04));
+}
+[data-theme="tda-vib"] .tarife-container .tarif-count {
+  background: rgba(26, 26, 26, 0.06);
+}
+[data-theme="tda-vib"] .tarife-container .section {
+  border-color: rgba(26, 26, 26, 0.1);
+  background: rgba(26, 26, 26, 0.02);
+}
+[data-theme="tda-vib"] .tarife-container .tarif-card {
+  border-color: rgba(26, 26, 26, 0.1);
+  background: rgba(26, 26, 26, 0.03);
+}
+[data-theme="tda-vib"] .tarife-container .tarif-card:hover {
+  background: rgba(26, 26, 26, 0.05);
+  border-color: rgba(26, 26, 26, 0.15);
+}
+[data-theme="tda-vib"] .tarife-container .tarif-details {
+  border-color: rgba(26, 26, 26, 0.08);
+  background: rgba(26, 26, 26, 0.02);
+}
+[data-theme="tda-vib"] .tarife-container .btn-secondary {
+  background: rgba(26, 26, 26, 0.04);
+  border-color: rgba(26, 26, 26, 0.1);
+  box-shadow: none;
+}
+[data-theme="tda-vib"] .tarife-container .btn-secondary:hover {
+  background: rgba(26, 26, 26, 0.07);
+}
+[data-theme="tda-vib"] .tarife-container .btn-primary {
+  box-shadow: none;
+}
+[data-theme="tda-vib"] .tarife-container .info-box {
+  border-color: rgba(26, 26, 26, 0.08);
+  background: rgba(26, 26, 26, 0.02);
+}
+[data-theme="tda-vib"] .tarife-container .form-group input,
+[data-theme="tda-vib"] .tarife-container .form-group textarea,
+[data-theme="tda-vib"] .tarife-container .form-group select,
+[data-theme="tda-vib"] .tarife-container .ds-modal-body input,
+[data-theme="tda-vib"] .tarife-container .ds-modal-body select {
+  border-color: rgba(26, 26, 26, 0.15);
+  background: rgba(26, 26, 26, 0.04);
+}
+[data-theme="tda-vib"] .tarife-container .form-group input:focus,
+[data-theme="tda-vib"] .tarife-container .form-group textarea:focus,
+[data-theme="tda-vib"] .tarife-container .form-group select:focus,
+[data-theme="tda-vib"] .tarife-container .ds-modal-body input:focus,
+[data-theme="tda-vib"] .tarife-container .ds-modal-body select:focus {
+  border-color: rgba(26, 26, 26, 0.3);
+  background: rgba(26, 26, 26, 0.06);
 }

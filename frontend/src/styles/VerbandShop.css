@@ -126,7 +126,7 @@
 }
 
 .kategorie-btn.active svg {
-  color: var(--kat-color, #3B82F6);
+  color: var(--kat-color, var(--status-indigo));
 }
 
 /* Kategorie-Gruppe für Dropdown */
@@ -155,7 +155,7 @@
 }
 
 .shop-featured h2 svg {
-  color: #F59E0B;
+  color: var(--status-warning);
 }
 
 .featured-grid {
@@ -345,7 +345,7 @@
 }
 
 .shop-versand-info .info-item svg {
-  color: #3B82F6;
+  color: var(--status-indigo);
   flex-shrink: 0;
 }
 
@@ -485,7 +485,7 @@
 
 .item-preis {
   font-weight: 600;
-  color: #3B82F6;
+  color: var(--status-indigo);
   font-size: 0.9rem;
 }
 
@@ -544,7 +544,7 @@
 }
 
 .btn-remove:hover {
-  color: #EF4444;
+  color: var(--status-error);
 }
 
 .warenkorb-summe {
@@ -577,7 +577,7 @@
   padding: 0.5rem 0.75rem;
   background: rgba(59, 130, 246, 0.1);
   border-radius: var(--comp-radius-sm);
-  color: #3B82F6;
+  color: var(--status-indigo);
   font-size: 0.8rem;
   margin: 0.5rem 0;
 }
@@ -719,7 +719,7 @@
 }
 
 .produkt-details-liste li svg {
-  color: #22C55E;
+  color: var(--status-success);
   flex-shrink: 0;
 }
 
@@ -752,7 +752,7 @@
 
 .option-gruppe select:focus {
   outline: none;
-  border-color: #3B82F6;
+  border-color: var(--status-indigo);
 }
 
 .produkt-detail-footer {
@@ -890,7 +890,7 @@
 .form-group select:focus,
 .checkout-section textarea:focus {
   outline: none;
-  border-color: #3B82F6;
+  border-color: var(--status-indigo);
 }
 
 /* Zahlungsarten */
@@ -917,7 +917,7 @@
 }
 
 .zahlungsart.selected {
-  border-color: #3B82F6;
+  border-color: var(--status-indigo);
   background: rgba(59, 130, 246, 0.05);
 }
 
@@ -926,7 +926,7 @@
 }
 
 .zahlungsart svg {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .zahlungsart div {
@@ -1081,7 +1081,7 @@
 }
 
 .erfolg-info .info-item svg {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .btn-primary {
@@ -1120,11 +1120,11 @@
 
 .shop-loading svg,
 .shop-error svg {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .shop-error svg {
-  color: #EF4444;
+  color: var(--status-error);
 }
 
 .shop-error button {
@@ -1360,7 +1360,7 @@
 }
 
 .produkt-editor-modal h2 svg {
-  color: #3B82F6;
+  color: var(--status-indigo);
 }
 
 .editor-form {
@@ -1404,7 +1404,7 @@
 .editor-form input:focus,
 .editor-form textarea:focus,
 .editor-form select:focus {
-  border-color: #3B82F6;
+  border-color: var(--status-indigo);
 }
 
 .editor-form textarea {
@@ -1444,8 +1444,8 @@
 
 .btn-remove-detail:hover {
   background: #FEE2E2;
-  border-color: #EF4444;
-  color: #EF4444;
+  border-color: var(--status-error);
+  color: var(--status-error);
 }
 
 .btn-add-detail {
@@ -1464,8 +1464,8 @@
 
 .btn-add-detail:hover {
   background: var(--bg-secondary);
-  border-color: #3B82F6;
-  color: #3B82F6;
+  border-color: var(--status-indigo);
+  color: var(--status-indigo);
 }
 
 /* Checkboxes */
@@ -1487,7 +1487,7 @@
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #3B82F6;
+  accent-color: var(--status-indigo);
 }
 
 /* Editor Footer */

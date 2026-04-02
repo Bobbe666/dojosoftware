@@ -17,7 +17,7 @@ import {
   Globe, Award, ChevronRight, Activity, BarChart3,
   CreditCard, FileText, PieChart, RefreshCw, AlertTriangle,
   CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket,
-  Banknote
+  Banknote, Scroll
 } from 'lucide-react';
 import VerbandsMitglieder from './VerbandsMitglieder';
 import ArtikelVerwaltung from './ArtikelVerwaltung';
@@ -26,6 +26,7 @@ import SupportTickets from './SupportTickets';
 import AutoLastschriftTab from './AutoLastschriftTab';
 import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
+import VerbandUrkundenRegister from './VerbandUrkundenRegister';
 import '../styles/VerbandDashboard.css';
 
 const VerbandDashboard = () => {
@@ -124,7 +125,8 @@ const VerbandDashboard = () => {
     { id: 'turniere', label: 'Turniere', icon: Trophy },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'finanzen', label: 'Finanzen', icon: Euro },
-    { id: 'lastschrift', label: 'Lastschrift', icon: Banknote }
+    { id: 'lastschrift', label: 'Lastschrift', icon: Banknote },
+    { id: 'urkunden', label: 'Urkunden', icon: Scroll }
   ];
 
   // Status-Badge Component
@@ -365,7 +367,7 @@ const VerbandDashboard = () => {
       </div>
 
       {/* Hier könnten Turnier-Statistiken angezeigt werden */}
-      <div className="verband-stats-grid" className="u-mt-2">
+      <div className="verband-stats-grid u-mt-2">
         <div className="verband-stat-card gold">
           <div className="stat-icon"><Trophy size={24} /></div>
           <div className="stat-content">
@@ -447,7 +449,7 @@ const VerbandDashboard = () => {
         </div>
       </div>
 
-      <div className="info-banner" className="u-mt-2">
+      <div className="info-banner u-mt-2">
         <PieChart size={24} />
         <div>
           <h4>Beitragsstruktur</h4>
@@ -467,7 +469,7 @@ const VerbandDashboard = () => {
   const LastschriftContent = () => (
     <div className="verband-lastschrift">
       {/* Sub-Tab Navigation */}
-      <div className="sub-tabs-horizontal" className="u-mb-15">
+      <div className="sub-tabs-horizontal u-mb-15">
         <button
           className={`sub-tab-btn ${lastschriftSubTab === 'lastschriftlauf' ? 'active' : ''}`}
           onClick={() => setLastschriftSubTab('lastschriftlauf')}
@@ -564,6 +566,7 @@ const VerbandDashboard = () => {
         {activeTab === 'events' && <EventsContent />}
         {activeTab === 'finanzen' && <FinanzenContent />}
         {activeTab === 'lastschrift' && <LastschriftContent />}
+        {activeTab === 'urkunden'    && <VerbandUrkundenRegister />}
       </div>
     </div>
   );

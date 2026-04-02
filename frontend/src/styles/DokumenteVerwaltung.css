@@ -184,7 +184,7 @@
   margin-bottom: 0.5rem;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
-  border: 1px solid rgba(255, 215, 0, 0.1);
+  border: 1px solid var(--primary-alpha-10);
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -196,7 +196,7 @@
   background: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   padding: 1rem;
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 /* selectable item label */
@@ -257,7 +257,7 @@
 
 /* icon decoration in page title */
 .dv-title-icon {
-  filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.3));
+  filter: drop-shadow(0 2px 8px var(--primary-alpha-30));
   position: relative;
   z-index: 2;
   -webkit-text-fill-color: initial;
@@ -364,10 +364,10 @@
 /* small primary-outline button (Verwenden / Edit) */
 .dv-btn-primary-xs {
   padding: 0.4rem 0.8rem;
-  background: var(--primary-alpha-10, rgba(255,215,0,0.1));
-  border: 1px solid var(--primary-alpha-30, rgba(255,215,0,0.3));
+  background: var(--primary-alpha-10, var(--primary-alpha-10));
+  border: 1px solid var(--primary-alpha-30, var(--primary-alpha-30));
   border-radius: 6px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -379,7 +379,7 @@
   background: transparent;
   border: 1px solid var(--alert-error-border, rgba(239,68,68,0.3));
   border-radius: 6px;
-  color: var(--error, #ef4444);
+  color: var(--error, var(--status-error));
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -456,8 +456,8 @@
   font-size: 0.65rem;
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-20, var(--primary-alpha-20));
+  color: var(--primary, var(--primary));
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -468,14 +468,14 @@
   background: white;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid var(--primary-alpha-20, rgba(255,215,0,0.2));
+  border: 1px solid var(--primary-alpha-20, var(--primary-alpha-20));
 }
 
 /* doc preview toolbar */
 .dv-doc-preview-bar {
   padding: 0.75rem 1rem;
   background: var(--bg-surface, #1e293b);
-  border-bottom: 2px solid var(--primary, #ffd700);
+  border-bottom: 2px solid var(--primary, var(--primary));
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -483,7 +483,7 @@
 
 /* doc preview title label */
 .dv-preview-title {
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-weight: 600;
   font-size: 0.88rem;
 }
@@ -556,7 +556,7 @@
   width: 100%;
   max-height: 90vh;
   overflow: auto;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
 }
 
 /* copy modal panel */
@@ -570,7 +570,7 @@
   max-height: 90vh;
   overflow: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
 }
 
 /* modal heading */
@@ -608,7 +608,7 @@
   width: 100%;
   padding: 0.75rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: white;
   font-size: 0.9rem;
@@ -634,14 +634,14 @@
 /* modal submit/primary button */
 .dv-btn-submit {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  border: 1px solid #FFD700;
+  background: var(--gradient-gold);
+  border: 1px solid var(--primary);
   border-radius: 8px;
   color: var(--bg-secondary);
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 15px var(--primary-alpha-30);
 }
 
 /* loading spinner container */
@@ -742,9 +742,9 @@
 .dv-btn-primary-outline {
   padding: 0.5rem 1rem;
   background: transparent;
-  border: 1px solid var(--primary-alpha-30, rgba(255, 215, 0, 0.3));
+  border: 1px solid var(--primary-alpha-30, var(--primary-alpha-30));
   border-radius: 8px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   cursor: pointer;
   font-size: 0.85rem;
   font-weight: 500;
@@ -820,7 +820,7 @@
   background: var(--glass-bg, rgba(255,255,255,0.06));
 }
 .dv-dok-icon-box--aktiv {
-  background: var(--primary-alpha-10, rgba(255,215,0,0.1));
+  background: var(--primary-alpha-10, var(--primary-alpha-10));
 }
 
 /* Compact secondary button variant (doc list actions) */
@@ -874,8 +874,8 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 .dv-subtab-btn--active {
-  background: var(--primary-alpha-20, rgba(255,215,0,0.1));
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-20, var(--primary-alpha-10));
+  color: var(--primary, var(--primary));
   font-weight: 600;
 }
 
@@ -889,8 +889,8 @@
   font-weight: 600;
 }
 .dv-subtab-badge--active {
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-20, var(--primary-alpha-20));
+  color: var(--primary, var(--primary));
   border-radius: 10px;
   padding: 0 0.45rem;
   font-size: 0.75rem;
@@ -913,9 +913,9 @@
   gap: 0.35rem;
 }
 .dv-filter-btn--active {
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
-  border-color: var(--primary, #ffd700);
-  color: var(--primary, #ffd700);
+  background: var(--primary-alpha-20, var(--primary-alpha-20));
+  border-color: var(--primary, var(--primary));
+  color: var(--primary, var(--primary));
   font-weight: 600;
 }
 
@@ -928,22 +928,22 @@
   transition: border-color 0.2s;
 }
 .dv-dok-card--aktiv {
-  border-color: var(--primary-alpha-30, rgba(255,215,0,0.3));
+  border-color: var(--primary-alpha-30, var(--primary-alpha-30));
 }
 
 /* Anzeigen / Verbergen button */
 .dv-view-btn {
   padding: 0.4rem 0.75rem;
-  background: var(--primary-alpha-10, rgba(255,215,0,0.1));
-  border: 1px solid var(--primary-alpha-20, rgba(255,215,0,0.2));
+  background: var(--primary-alpha-10, var(--primary-alpha-10));
+  border: 1px solid var(--primary-alpha-20, var(--primary-alpha-20));
   border-radius: 6px;
-  color: var(--primary, #ffd700);
+  color: var(--primary, var(--primary));
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
 }
 .dv-view-btn--active {
-  background: var(--primary-alpha-20, rgba(255,215,0,0.2));
+  background: var(--primary-alpha-20, var(--primary-alpha-20));
 }
 
 /* Vorlagen editor category tab buttons (gold gradient when active) */
@@ -966,8 +966,8 @@
   border-color: rgba(255,255,255,0.2);
 }
 .dv-vorlage-tab-btn--active {
-  background: linear-gradient(135deg, #FFD700, #FFA500);
-  border-color: #FFD700;
+  background: var(--gradient-gold);
+  border-color: var(--primary);
   color: #1a1a2e;
 }
 
@@ -992,4 +992,45 @@
   color: rgba(255,255,255,0.3);
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* ================================================================
+   PRINT STYLES — window.print() / Drucken-Button
+   ================================================================ */
+@media print {
+  /* Alles ausblenden außer dem Dokument */
+  .dv-tabs,
+  .dv-action-bar,
+  .dv-doc-preview-bar,
+  .dv-new-version-btn,
+  .dv-modal-overlay,
+  .dv-copy-modal-overlay,
+  header, nav, aside { display: none !important; }
+
+  /* Dokument-Inhalt sauber drucken */
+  .print-content,
+  .dv-doc-preview-content {
+    background: white !important;
+    color: black !important;
+    padding: 20mm !important;
+    max-width: 210mm;
+    margin: 0 auto;
+    font-family: 'Times New Roman', Georgia, serif;
+    font-size: 11pt;
+    line-height: 1.7;
+  }
+
+  /* Überschriften im Druck */
+  .print-content h1, .dv-doc-preview-content h1 { font-size: 16pt; margin-bottom: 8pt; }
+  .print-content h2, .dv-doc-preview-content h2 { font-size: 13pt; margin-bottom: 6pt; }
+  .print-content h3, .dv-doc-preview-content h3 { font-size: 11pt; margin-bottom: 4pt; }
+
+  /* Seitenumbrüche */
+  h1, h2 { page-break-after: avoid; }
+  p, li { orphans: 3; widows: 3; }
+
+  /* Glasmorphismus & Dark Mode deaktivieren */
+  * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+  body { background: white !important; color: black !important; }
+}
 }

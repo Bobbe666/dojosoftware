@@ -272,6 +272,7 @@ router.put('/subscription-plans/:id', requireSuperAdmin, async (req, res) => {
     const {
       display_name, description, price_monthly, price_yearly,
       feature_verkauf, feature_buchfuehrung, feature_events, feature_multidojo, feature_api,
+      feature_homepage_builder,
       max_members, max_dojos, storage_limit_mb, is_visible
     } = req.body;
 
@@ -290,6 +291,7 @@ router.put('/subscription-plans/:id', requireSuperAdmin, async (req, res) => {
     if (feature_events !== undefined) { updates.push('feature_events = ?'); values.push(feature_events ? 1 : 0); }
     if (feature_multidojo !== undefined) { updates.push('feature_multidojo = ?'); values.push(feature_multidojo ? 1 : 0); }
     if (feature_api !== undefined) { updates.push('feature_api = ?'); values.push(feature_api ? 1 : 0); }
+    if (feature_homepage_builder !== undefined) { updates.push('feature_homepage_builder = ?'); values.push(feature_homepage_builder ? 1 : 0); }
     if (max_members !== undefined) { updates.push('max_members = ?'); values.push(max_members); }
     if (max_dojos !== undefined) { updates.push('max_dojos = ?'); values.push(max_dojos); }
     if (storage_limit_mb !== undefined) { updates.push('storage_limit_mb = ?'); values.push(storage_limit_mb); }

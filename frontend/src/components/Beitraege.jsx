@@ -7,7 +7,7 @@ import {
   Calendar,
   FileText,
   AlertCircle,
-  TrendingUp,
+  CheckCircle,
   PiggyBank,
   Receipt,
   Settings,
@@ -30,7 +30,8 @@ const Beitraege = () => {
   const { getDojoFilterParam, activeDojo, filter } = useDojoContext(); // 🔒 TAX COMPLIANCE
 
   const [stats, setStats] = useState({
-    totalEinnahmen: 0,
+    bezahlteRechnungen: 0,     // € Summe bezahlter Rechnungen
+    bezahlteAnzahl: 0,         // Anzahl bezahlter Rechnungen
     offeneRechnungen: 0,       // € Summe offener Rechnungen
     offeneAnzahl: 0,           // Anzahl offener Rechnungen
     ueberfaelligeAnzahl: 0,    // Anzahl überfälliger Rechnungen
@@ -81,57 +82,55 @@ const Beitraege = () => {
     try {
       setLoading(true);
 
-      const dojoFilterParam = getDojoFilterParam(); // 🔒 TAX COMPLIANCE
-      const separator = dojoFilterParam ? '?' : '';
+      const dojoFilterParam = getDojoFilterParam();
+      const dojoQuery = dojoFilterParam ? `?${dojoFilterParam}` : '';
 
-      // Basis-Daten: Mitglieder + Verträge
-      const [mitgliederResponse, vertraegeResponse] = await Promise.all([
-        fetchWithAuth(`${config.apiBaseUrl}/mitglieder${separator}${dojoFilterParam}`),
-        fetchWithAuth(`${config.apiBaseUrl}/vertraege${separator}${dojoFilterParam}`)
+      // Parallel: Finanzcockpit-Stats (korrekte Berechnung inkl. billing_cycle)
+      // + Rechnungs-Statistiken (bezahlte_summe) + Mitglieder-Zahl
+      const [fcResponse, rechnungsResponse, mitgliederResponse] = await Promise.all([
+        fetchWithAuth(`${config.apiBaseUrl}/finanzcockpit/stats${dojoQuery}`),
+        fetchWithAuth(`${config.apiBaseUrl}/rechnungen/statistiken${dojoQuery}`),
+        fetchWithAuth(`${config.apiBaseUrl}/mitglieder${dojoQuery}`)
       ]);
 
-      if (!mitgliederResponse.ok || !vertraegeResponse.ok) {
-        throw new Error('Fehler beim Laden der Daten');
-      }
-
-      const mitgliederData = await mitgliederResponse.json();
-      const vertraegeData = await vertraegeResponse.json();
-
-      const mitglieder = Array.isArray(mitgliederData) ? mitgliederData : (mitgliederData.data || []);
-      const vertraege = Array.isArray(vertraegeData) ? vertraegeData : (vertraegeData.data || []);
-
-      const aktiveMitglieder = mitglieder.length;
-      const aktiveVertraege = vertraege.filter(v => v.status === 'aktiv');
-      const monatlicheEinnahmen = aktiveVertraege.reduce((sum, v) => sum + (parseFloat(v.monatsbeitrag) || 0), 0);
-      const totalEinnahmen = monatlicheEinnahmen * 12;
-
-      // Rechnungs-Statistiken (Feature: Buchhaltung / Premium)
+      let monatlicheEinnahmen = 0;
       let offeneRechnungen = 0;
       let offeneAnzahl = 0;
       let ueberfaelligeAnzahl = 0;
+      let bezahlteRechnungen = 0;
+      let bezahlteAnzahl = 0;
+      let aktiveMitglieder = 0;
 
-      try {
-        const rechnungsResponse = await fetchWithAuth(
-          `${config.apiBaseUrl}/rechnungen/statistiken${dojoFilterParam ? `?${dojoFilterParam}` : ''}`
-        );
-        if (rechnungsResponse.ok) {
-          const rechnungsData = await rechnungsResponse.json();
-          if (rechnungsData.success && rechnungsData.data) {
-            offeneRechnungen = parseFloat(rechnungsData.data.offene_summe) || 0;
-            offeneAnzahl = parseInt(rechnungsData.data.offene_rechnungen) || 0;
-            ueberfaelligeAnzahl = parseInt(rechnungsData.data.ueberfaellige_rechnungen) || 0;
-          }
+      if (fcResponse.ok) {
+        const fcData = await fcResponse.json();
+        if (fcData.success && fcData.data) {
+          // monatlicheEinnahmen ist im Backend korrekt nach billing_cycle normalisiert
+          monatlicheEinnahmen = parseFloat(fcData.data.monatlicheEinnahmen) || 0;
+          offeneRechnungen    = parseFloat(fcData.data.offeneRechnungenBetrag) || 0;
+          offeneAnzahl        = parseInt(fcData.data.offeneRechnungen) || 0;
+          ueberfaelligeAnzahl = parseInt(fcData.data.ueberfaelligeRechnungen) || 0;
         }
-      } catch (rechnungsError) {
-        // Feature nicht verfügbar — silently fallback to 0
-        console.info('Rechnungs-Statistiken nicht verfügbar:', rechnungsError.message);
       }
 
-      setStats({ totalEinnahmen, offeneRechnungen, offeneAnzahl, ueberfaelligeAnzahl, aktiveMitglieder, monatlicheEinnahmen });
+      if (rechnungsResponse.ok) {
+        const rechnungsData = await rechnungsResponse.json();
+        if (rechnungsData.success && rechnungsData.data) {
+          bezahlteRechnungen = parseFloat(rechnungsData.data.bezahlte_summe) || 0;
+          bezahlteAnzahl     = parseInt(rechnungsData.data.bezahlte_rechnungen) || 0;
+        }
+      }
+
+      if (mitgliederResponse.ok) {
+        const mitgliederData = await mitgliederResponse.json();
+        const mitglieder = Array.isArray(mitgliederData) ? mitgliederData : (mitgliederData.data || []);
+        aktiveMitglieder = mitglieder.length;
+      }
+
+      setStats({ bezahlteRechnungen, bezahlteAnzahl, offeneRechnungen, offeneAnzahl, ueberfaelligeAnzahl, aktiveMitglieder, monatlicheEinnahmen });
       setLoading(false);
     } catch (error) {
       console.error('Fehler beim Laden der Beitrags-Statistiken:', error);
-      setStats({ totalEinnahmen: 0, offeneRechnungen: 0, offeneAnzahl: 0, ueberfaelligeAnzahl: 0, aktiveMitglieder: 0, monatlicheEinnahmen: 0 });
+      setStats({ bezahlteRechnungen: 0, bezahlteAnzahl: 0, offeneRechnungen: 0, offeneAnzahl: 0, ueberfaelligeAnzahl: 0, aktiveMitglieder: 0, monatlicheEinnahmen: 0 });
       setLoading(false);
     }
   };
@@ -169,13 +168,15 @@ const Beitraege = () => {
       {/* Statistik-Übersicht */}
       <div className="stats-grid">
         <div className="stat-card positive">
-          <div className="stat-icon"><TrendingUp size={26} /></div>
+          <div className="stat-icon"><CheckCircle size={26} /></div>
           <div className="stat-info">
-            <h3>Gesamteinnahmen</h3>
+            <h3>Bezahlte Rechnungen</h3>
             <p className="stat-value">
-              {stats.totalEinnahmen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+              {stats.bezahlteRechnungen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
             </p>
-            <span className="stat-trend">Hochrechnung 12 Monate</span>
+            <span className="stat-trend">
+              {stats.bezahlteAnzahl === 0 ? 'Keine bezahlten Rechnungen' : `${stats.bezahlteAnzahl} Rechnung${stats.bezahlteAnzahl !== 1 ? 'en' : ''} beglichen`}
+            </span>
           </div>
         </div>
 
@@ -195,18 +196,18 @@ const Beitraege = () => {
           <div className="stat-info">
             <h3>Aktive Mitglieder</h3>
             <p className="stat-value">{stats.aktiveMitglieder}</p>
-            <span className="stat-trend">Zahlende Mitglieder</span>
+            <span className="stat-trend">Mit aktivem Vertrag</span>
           </div>
         </div>
 
         <div className="stat-card success">
           <div className="stat-icon"><PiggyBank size={26} /></div>
           <div className="stat-info">
-            <h3>Monatliche Einnahmen</h3>
+            <h3>Monatl. Soll-Einnahmen</h3>
             <p className="stat-value">
               {stats.monatlicheEinnahmen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
             </p>
-            <span className="stat-trend">Laufende Verträge</span>
+            <span className="stat-trend">Summe aktiver Vertragsbeträge</span>
           </div>
         </div>
       </div>

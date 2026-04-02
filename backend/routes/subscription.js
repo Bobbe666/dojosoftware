@@ -101,8 +101,6 @@ router.get('/plans-with-features', async (req, res) => {
 // GET Features für LandingPage (vereinfachte Liste)
 router.get('/landing-features', async (req, res) => {
   try {
-    // SET NAMES für korrekte UTF-8 Encoding (Emojis)
-    await db.promise().query('SET NAMES utf8mb4');
     const [features] = await db.promise().query(
       `SELECT feature_key, feature_name, feature_icon, feature_description
        FROM plan_features
@@ -110,8 +108,6 @@ router.get('/landing-features', async (req, res) => {
        ORDER BY sort_order ASC
        LIMIT 16`
     );
-
-    res.charset = 'utf-8';
     res.json({ features });
   } catch (error) {
     logger.error('Fehler beim Laden der Landing Features:', { error: error });
@@ -126,7 +122,7 @@ router.get('/pricing-preview', async (req, res) => {
       `SELECT plan_name, display_name, price_monthly, price_yearly,
               max_members, max_dojos, storage_limit_mb, sort_order,
               feature_verkauf, feature_buchfuehrung, feature_events,
-              feature_multidojo, feature_api
+              feature_multidojo, feature_api, feature_homepage_builder
        FROM subscription_plans
        WHERE is_visible = 1 AND is_deprecated = 0
        ORDER BY sort_order ASC`
@@ -145,6 +141,7 @@ router.get('/pricing-preview', async (req, res) => {
       { key: 'buchfuehrung', label: 'Buchführung & EÜR' },
       { key: 'api', label: 'API-Zugang' },
       { key: 'multidojo', label: 'Multi-Dojo' },
+      { key: 'messenger', label: 'Facebook Messenger' },
       { key: 'priority_support', label: 'Prioritäts-Support' }
     ];
 
@@ -170,6 +167,8 @@ router.get('/pricing-preview', async (req, res) => {
           buchfuehrung: plan.feature_buchfuehrung || false,
           api: plan.feature_api || false,
           multidojo: plan.feature_multidojo || false,
+          messenger: plan.feature_messenger || isEnterprise,
+          homepage_builder: plan.feature_homepage_builder || isEnterprise,
           priority_support: isPremium || isEnterprise
         }
       };
@@ -266,6 +265,23 @@ router.use(authenticateToken);
 router.get('/current', async (req, res) => {
   try {
     const dojoId = req.user.dojo_id;
+
+    // Super-Admin (dojo_id = null) bekommt automatisch eine vollständige Enterprise-Subscription
+    if (dojoId === null || dojoId === undefined) {
+      return res.json({
+        subscription: {
+          plan_type: 'enterprise',
+          status: 'active',
+          feature_verkauf: 1, feature_buchfuehrung: 1, feature_events: 1,
+          feature_multidojo: 1, feature_api: 1, feature_messenger: 1,
+          feature_homepage_builder: 1,
+          max_members: 99999
+        },
+        trial_days_left: null,
+        current_members: 0,
+        member_limit_reached: false
+      });
+    }
 
     const [subscription] = await db.promise().query(
       `SELECT
@@ -394,6 +410,7 @@ router.post('/change-plan', async (req, res) => {
          feature_events = ?,
          feature_multidojo = ?,
          feature_api = ?,
+         feature_homepage_builder = ?,
          max_members = ?,
          max_dojos = ?,
          storage_limit_mb = ?,
@@ -409,6 +426,7 @@ router.post('/change-plan', async (req, res) => {
         plan.feature_events,
         plan.feature_multidojo,
         plan.feature_api,
+        plan.feature_homepage_builder || (new_plan === 'enterprise') ? 1 : 0,
         plan.max_members,
         plan.max_dojos,
         plan.storage_limit_mb,

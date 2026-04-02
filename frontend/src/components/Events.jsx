@@ -4,6 +4,7 @@ import config from '../config/config.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx';
 import TdaTurniereList from './TdaTurniereList.jsx';
+import EventsJahresplanung from './EventsJahresplanung.jsx';
 import '../styles/themes.css';
 import '../styles/components.css';
 import '../styles/Events.css';
@@ -275,18 +276,26 @@ const Events = () => {
   };
 
   // Event löschen
-  const handleDeleteEvent = async (eventId) => {
-    if (!window.confirm('Möchten Sie dieses Event wirklich löschen?')) return;
+  const handleDeleteEvent = async (eventId, force = false) => {
+    if (!force && !window.confirm('Möchten Sie dieses Event wirklich löschen?')) return;
 
     setError('');
     try {
-      await axios.delete(`/events/${eventId}`, {
+      const url = force ? `/events/${eventId}?force=true` : `/events/${eventId}`;
+      await axios.delete(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
       ladeEvents();
     } catch (err) {
-      console.error('Fehler beim Löschen des Events:', err);
-      setError('Fehler beim Löschen: ' + (err.response?.data?.error || err.message));
+      const data = err.response?.data;
+      if (err.response?.status === 409 && data?.anmeldungen > 0) {
+        const ok = window.confirm(
+          `⚠️ Dieses Event hat ${data.anmeldungen} Anmeldung${data.anmeldungen !== 1 ? 'en' : ''}.\n\nAlle Anmeldungen werden unwiderruflich gelöscht. Trotzdem fortfahren?`
+        );
+        if (ok) handleDeleteEvent(eventId, true);
+      } else {
+        setError('Fehler beim Löschen: ' + (data?.message || data?.error || err.message));
+      }
     }
   };
 
@@ -773,10 +782,11 @@ const Events = () => {
 
   // Tab-Konfiguration für Sidebar
   const tabs = [
-    { key: 'aktuelle', label: 'Aktuelle', icon: '📅' },
-    { key: 'geplante', label: 'Geplante', icon: '🗓️' },
-    { key: 'vergangene', label: 'Vergangene', icon: '📜' },
-    { key: 'tda-turniere', label: 'TDA Turniere', icon: '🏆' }
+    { key: 'aktuelle',      label: 'Aktuelle',      icon: '📅' },
+    { key: 'geplante',      label: 'Geplante',       icon: '🗓️' },
+    { key: 'vergangene',    label: 'Vergangene',     icon: '📜' },
+    { key: 'jahresplanung', label: 'Jahresplanung',  icon: '📆' },
+    { key: 'tda-turniere',  label: 'TDA Turniere',   icon: '🏆' },
   ];
 
   return (
@@ -826,7 +836,16 @@ const Events = () => {
 
           <div className="glass-card">
             <div className="card-body">
-            {activeTab === 'tda-turniere' ? (
+            {activeTab === 'jahresplanung' ? (
+              <EventsJahresplanung
+                token={token}
+                activeDojo={activeDojo}
+                onCreateEvent={(datum) => {
+                  setNewEvent(prev => ({ ...prev, datum }));
+                  setShowNewEvent(true);
+                }}
+              />
+            ) : activeTab === 'tda-turniere' ? (
               <TdaTurniereList />
             ) : loading ? (
               <div className="loading-state">
@@ -875,16 +894,14 @@ const Events = () => {
                           {isAdmin && (
                             <div className="ev-btn-group">
                               <button
-                                className="btn-icon"
+                                className="btn-icon ev-btn-xs"
                                 onClick={(e) => { e.stopPropagation(); handleOpenEdit(event, 'basis'); }}
                                 title="Bearbeiten"
-                                className="ev-btn-xs"
                               >✏️</button>
                               <button
-                                className="btn-icon btn-danger"
+                                className="btn-icon btn-danger ev-btn-xs"
                                 onClick={(e) => { e.stopPropagation(); handleDeleteEvent(event.event_id); }}
                                 title="Löschen"
-                                className="ev-btn-xs"
                               >🗑️</button>
                             </div>
                           )}
@@ -1443,8 +1460,7 @@ const Events = () => {
                       />
                     </div>
                     <button
-                      className="btn btn-primary"
-                      className="ev-nowrap"
+                      className="btn btn-primary ev-nowrap"
                       onClick={() => handleAddOption(selectedEvent.event_id)}
                       disabled={!neueOption.name.trim()}
                     >

@@ -24,7 +24,7 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   margin-bottom: 0.5rem;
-  text-shadow: 0 0 20px rgba(255,215,0,0.3);
+  text-shadow: 0 0 20px var(--primary-alpha-30);
 }
 
 .personal-subtitle {
@@ -69,7 +69,7 @@
 .filter-select {
   padding: 12px 16px;
   background: var(--surface-hover);
-  border: 2px solid rgba(255,215,0,0.4);
+  border: 2px solid var(--primary-alpha-40);
   border-radius: var(--comp-radius-xl);
   color: var(--text-1);
   font-size: 1rem;
@@ -82,7 +82,7 @@
 .filter-select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--surface-3);
 }
 
@@ -125,7 +125,7 @@
 
 .personal-container-modern .stat-card {
   background: var(--surface-2) !important;
-  border: 1px solid rgba(255,215,0,0.2) !important;
+  border: 1px solid var(--primary-alpha-20) !important;
   border-radius: var(--comp-radius-xl);
   padding: 1.5rem;
   display: flex;
@@ -247,7 +247,7 @@
 
 .save-btn:hover { background: rgba(0, 255, 0, 0.3); }
 .cancel-btn:hover { background: rgba(255, 0, 0, 0.3); }
-.edit-btn:hover { background: rgba(255,215,0,0.3); }
+.edit-btn:hover { background: var(--primary-alpha-30); }
 .delete-btn:hover { background: rgba(255, 0, 0, 0.3); }
 
 .personal-card-content {
@@ -307,7 +307,7 @@
 .edit-input {
   padding: 8px 12px;
   background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255,215,0,0.5);
+  border: 2px solid var(--primary-alpha-50);
   border-radius: var(--comp-radius-md);
   color: var(--text-1);
   font-size: 1rem;
@@ -320,7 +320,7 @@
 .edit-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: var(--surface-3);
 }
 
@@ -356,7 +356,7 @@
   margin: 0;
   font-size: 1.3rem;
   font-weight: 700;
-  text-shadow: 0 0 10px rgba(255,215,0,0.3);
+  text-shadow: 0 0 10px var(--primary-alpha-30);
 }
 
 .mitarbeiter-form-modern {
@@ -391,7 +391,7 @@
 .neuer-mitarbeiter-card .form-select {
   padding: 12px 16px;
   background: var(--surface-hover);
-  border: 2px solid rgba(255,215,0,0.4);
+  border: 2px solid var(--primary-alpha-40);
   border-radius: var(--comp-radius-xl);
   color: var(--text-1);
   font-size: 1rem;
@@ -405,7 +405,7 @@
 .neuer-mitarbeiter-card .form-select:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 3px var(--primary-alpha-10);
   background: rgba(255, 255, 255, 0.2);
 }
 

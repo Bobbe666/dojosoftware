@@ -344,10 +344,37 @@ router.get('/summen', async (req, res) => {
 
     const monatlich = await queryAsync(monatlichQuery, [secureDojoId, jahr]);
 
+    // Monatlich aufgeschlüsselt nach Kategorie (für gestapeltes Balkendiagramm)
+    const monatlichKategorieQuery = `
+      SELECT
+        MONTH(geschaeft_datum) as monat,
+        COALESCE(kategorie, 'sonstiges') as kategorie,
+        SUM(betrag_cent) / 100 as summe
+      FROM kassenbuch
+      WHERE dojo_id = ?
+        AND bewegungsart = 'Ausgabe'
+        AND YEAR(geschaeft_datum) = ?
+      GROUP BY MONTH(geschaeft_datum), kategorie
+      ORDER BY monat
+    `;
+    const monatlichKategorie = await queryAsync(monatlichKategorieQuery, [secureDojoId, jahr]);
+
+    // Vorjahr-Vergleich
+    const vorjahrQuery = `
+      SELECT SUM(betrag_cent) / 100 as gesamt
+      FROM kassenbuch
+      WHERE dojo_id = ?
+        AND bewegungsart = 'Ausgabe'
+        AND YEAR(geschaeft_datum) = ?
+    `;
+    const [vorjahr] = await queryAsync(vorjahrQuery, [secureDojoId, jahr - 1]);
+
     res.json({
       success: true,
       nachKategorie: summen,
-      monatlich
+      monatlich,
+      monatlichNachKategorie: monatlichKategorie,
+      vorjahrGesamt: vorjahr?.gesamt || 0
     });
 
   } catch (err) {

@@ -1,10 +1,11 @@
-// Backend/routes/vertragsvorlagen.js - Verwaltung von Vertragsvorlagen (GrapesJS)
+// Backend/routes/vertragsvorlagen.js - Verwaltung von Vertragsvorlagen (GrapesJS + TipTap)
 const express = require('express');
 const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const fs = require('fs');
 const path = require('path');
+const { generateVertragsvorlagePdf, replacePlaceholders } = require('../utils/vertragsvorlagenPdfGenerator');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -80,6 +81,7 @@ router.get('/', async (req, res) => {
         is_default,
         aktiv,
         version,
+        editor_version,
         erstellt_am,
         aktualisiert_am
       FROM vertragsvorlagen
@@ -125,14 +127,21 @@ router.post('/', async (req, res) => {
       grapesjs_css,
       grapesjs_components,
       grapesjs_styles,
+      tiptap_html,
+      editor_version,
       template_type,
       is_default,
       available_placeholders
     } = req.body;
 
-    if (!dojo_id || !name || !grapesjs_html) {
+    if (!dojo_id || !name) {
       return res.status(400).json({
-        error: 'Fehlende Pflichtfelder: dojo_id, name, grapesjs_html'
+        error: 'Fehlende Pflichtfelder: dojo_id, name'
+      });
+    }
+    if (editor_version !== 'tiptap' && !grapesjs_html) {
+      return res.status(400).json({
+        error: 'Fehlende Pflichtfelder: grapesjs_html (oder editor_version=tiptap)'
       });
     }
 
@@ -154,18 +163,22 @@ router.post('/', async (req, res) => {
         grapesjs_css,
         grapesjs_components,
         grapesjs_styles,
+        tiptap_html,
+        editor_version,
         template_type,
         is_default,
         available_placeholders
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       dojo_id,
       name,
       beschreibung || '',
-      grapesjs_html,
+      grapesjs_html || '',
       grapesjs_css || '',
       grapesjs_components || '',
       grapesjs_styles || '',
+      tiptap_html || null,
+      editor_version || 'grapesjs',
       template_type || 'vertrag',
       is_default || false,
       available_placeholders || null
@@ -192,6 +205,8 @@ router.put('/:id', async (req, res) => {
       grapesjs_css,
       grapesjs_components,
       grapesjs_styles,
+      tiptap_html,
+      editor_version,
       template_type,
       is_default,
       aktiv
@@ -226,6 +241,8 @@ router.put('/:id', async (req, res) => {
         grapesjs_css = ?,
         grapesjs_components = ?,
         grapesjs_styles = ?,
+        tiptap_html = ?,
+        editor_version = ?,
         template_type = ?,
         is_default = ?,
         aktiv = ?,
@@ -239,6 +256,8 @@ router.put('/:id', async (req, res) => {
       grapesjs_css !== undefined ? grapesjs_css : existing[0].grapesjs_css,
       grapesjs_components !== undefined ? grapesjs_components : existing[0].grapesjs_components,
       grapesjs_styles !== undefined ? grapesjs_styles : existing[0].grapesjs_styles,
+      tiptap_html !== undefined ? tiptap_html : existing[0].tiptap_html,
+      editor_version !== undefined ? editor_version : existing[0].editor_version,
       template_type !== undefined ? template_type : existing[0].template_type,
       is_default !== undefined ? is_default : existing[0].is_default,
       aktiv !== undefined ? aktiv : existing[0].aktiv,
@@ -395,7 +414,158 @@ router.get('/:id/preview', async (req, res) => {
       };
     }
 
-    // Template rendern
+    // ── TipTap-Vorlage: professionelle A4-Browser-Vorschau ───────────────────
+    if (template.editor_version === 'tiptap') {
+      const logoBase64 = await loadDojoLogo(template.dojo_id);
+
+      const resolvedHtml = replacePlaceholders(template.tiptap_html || '', {
+        mitglied: sampleData.mitglied,
+        vertrag: sampleData.vertrag,
+        dojo: sampleData.dojo,
+        system: sampleData.system,
+      });
+
+      const dojoName  = sampleData.dojo.dojoname;
+      const dojoAdr   = [sampleData.dojo.strasse, sampleData.dojo.hausnummer].filter(Boolean).join(' ');
+      const dojoOrt   = [sampleData.dojo.plz, sampleData.dojo.ort].filter(Boolean).join(' ');
+      const dojoKtkt  = [sampleData.dojo.telefon, sampleData.dojo.email].filter(Boolean).join(' | ');
+      const datumH    = sampleData.system.datum;
+      const logoHtml  = logoBase64
+        ? `<img src="${logoBase64}" alt="Logo" style="max-width:40mm;max-height:20mm;object-fit:contain;" />`
+        : '';
+
+      const previewHtml = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Vorschau — ${template.name}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #3a3a3a; min-height: 100%; }
+  body { padding: 24px 16px 40px; font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  .preview-banner {
+    max-width: 210mm; margin: 0 auto 0;
+    background: #8B0000; color: #fff;
+    font-size: 9pt; font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 3px 3px 0 0;
+    display: flex; justify-content: space-between; align-items: center;
+    letter-spacing: 0.03em;
+  }
+
+  .a4 {
+    background: #fff; color: #1a1a1a;
+    max-width: 210mm; min-height: 297mm;
+    margin: 0 auto;
+    padding: 20mm 18mm 28mm 20mm;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.65);
+    font-size: 10pt; line-height: 1.55;
+    position: relative;
+  }
+
+  /* ── KOPFZEILE ── */
+  .doc-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    border-bottom: 2pt solid #1a1a1a;
+    padding-bottom: 4mm; margin-bottom: 8mm;
+  }
+  .header-org { text-align: right; }
+  .header-org-name { font-size: 13pt; font-weight: 700; }
+  .header-org-detail { font-size: 8pt; color: #555; margin-top: 2pt; line-height: 1.4; }
+
+  /* ── TITEL ── */
+  .doc-title {
+    font-size: 15pt; font-weight: 700;
+    text-align: center; margin: 6mm 0 4mm; letter-spacing: 0.02em;
+  }
+  .doc-meta {
+    display: flex; justify-content: space-between;
+    font-size: 8.5pt; color: #555;
+    margin-bottom: 6mm; padding-bottom: 3mm;
+    border-bottom: 0.5pt solid #ccc;
+  }
+
+  /* ── INHALT ── */
+  .doc-body { font-size: 10pt; line-height: 1.6; }
+  .doc-body p { margin-bottom: 6pt; }
+  .doc-body h1 { font-size: 13pt; font-weight: 700; margin: 8pt 0 4pt; color: #1a1a1a; }
+  .doc-body h2 { font-size: 11pt; font-weight: 700; margin: 6pt 0 4pt; }
+  .doc-body h3 { font-size: 10pt; font-weight: 700; margin: 5pt 0 3pt; }
+  .doc-body ul, .doc-body ol { padding-left: 14pt; margin-bottom: 6pt; }
+  .doc-body li { margin-bottom: 2pt; }
+  .doc-body strong { font-weight: 700; }
+  .doc-body em { font-style: italic; }
+  .doc-body u { text-decoration: underline; }
+  .doc-body table { width: 100%; border-collapse: collapse; margin-bottom: 6pt; font-size: 9pt; }
+  .doc-body td, .doc-body th { border: 0.5pt solid #aaa; padding: 3pt 5pt; }
+  .doc-body th { background: #f0f0f0; font-weight: 700; }
+  .doc-body [style*="text-align: center"] { text-align: center; }
+  .doc-body [style*="text-align: right"]  { text-align: right; }
+
+  /* ── SIGNATUR ── */
+  .signature-block { margin-top: 14mm; display: flex; gap: 20mm; }
+  .signature-col { flex: 1; }
+  .signature-line { border-top: 0.75pt solid #1a1a1a; margin-bottom: 3pt; }
+  .signature-label { font-size: 8pt; color: #555; }
+
+  @media print {
+    html, body { background: #fff; padding: 0; }
+    .preview-banner { display: none; }
+    .a4 { box-shadow: none; margin: 0; padding: 0; max-width: 100%; min-height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-banner">
+  <span>VORSCHAU — Musterdaten</span>
+  <span>${template.name}</span>
+</div>
+
+<div class="a4">
+  <div class="doc-header">
+    <div>${logoHtml}</div>
+    <div class="header-org">
+      <div class="header-org-name">${dojoName}</div>
+      <div class="header-org-detail">
+        ${dojoAdr}${dojoOrt ? ', ' + dojoOrt : ''}<br>
+        ${dojoKtkt}
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-title">${template.name || 'Vertragsvorlage'}</div>
+
+  <div class="doc-meta">
+    <span>Musterdaten: ${sampleData.mitglied.vorname} ${sampleData.mitglied.nachname}</span>
+    <span>Datum: ${datumH}</span>
+  </div>
+
+  <div class="doc-body">${resolvedHtml}</div>
+
+  <div class="signature-block">
+    <div class="signature-col">
+      <div class="signature-line"></div>
+      <div class="signature-label">Ort, Datum</div>
+    </div>
+    <div class="signature-col">
+      <div class="signature-line"></div>
+      <div class="signature-label">Unterschrift Mitglied</div>
+    </div>
+    <div class="signature-col">
+      <div class="signature-line"></div>
+      <div class="signature-label">Unterschrift ${dojoName}</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>`;
+      return res.send(previewHtml);
+    }
+
+    // ── GrapeJS-Vorlage (Fallback) ────────────────────────────────────────────
     let html = template.grapesjs_html;
 
     // Platzhalter ersetzen (unterstützt beide Formate: {{kategorie.feld}} und {{feld}})
@@ -446,13 +616,9 @@ router.get('/:id/preview', async (req, res) => {
     const logoBase64 = await loadDojoLogo(template.dojo_id);
     if (logoBase64) {
       const logoHtml = `<img src="${logoBase64}" alt="Dojo Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 50%;" />`;
-      // Robustere Regex die auch GrapesJS-generierte divs mit zusätzlichen Attributen matcht
       html = html.replace(
         /<div[^>]*class="[^"]*logo-placeholder[^"]*"[^>]*>[\s\S]*?<\/div>/g,
-        (match) => {
-          // Behalte die ursprünglichen Attribute, aber ersetze den Inhalt
-          return match.replace(/>[\s\S]*?<\/div>/, `>${logoHtml}</div>`);
-        }
+        (match) => match.replace(/>[\s\S]*?<\/div>/, `>${logoHtml}</div>`)
       );
     }
 
@@ -868,6 +1034,75 @@ router.post('/:id/copy', async (req, res) => {
   } catch (err) {
     logger.error('Fehler beim Kopieren der Vorlage:', { error: err });
     res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+  }
+});
+
+// GET /api/vertragsvorlagen/:id/generate-pdf-tiptap - PDF aus TipTap-HTML generieren
+router.get('/:id/generate-pdf-tiptap', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { mitglied_id, vertrag_id } = req.query;
+
+    const vorlagen = await queryAsync('SELECT * FROM vertragsvorlagen WHERE id = ?', [id]);
+    if (vorlagen.length === 0) return res.status(404).json({ error: 'Vorlage nicht gefunden' });
+    const template = vorlagen[0];
+
+    if (!template.tiptap_html) {
+      return res.status(400).json({ error: 'Diese Vorlage hat keinen TipTap-Inhalt' });
+    }
+
+    // Dojo-Daten
+    const dojos = await queryAsync('SELECT * FROM dojo WHERE id = ?', [template.dojo_id]);
+    const dojo = dojos.length > 0 ? dojos[0] : {};
+
+    // Mitglied (optional)
+    let mitglied = null;
+    if (mitglied_id) {
+      const mitglieder = await queryAsync('SELECT * FROM mitglieder WHERE id = ?', [mitglied_id]);
+      if (mitglieder.length > 0) mitglied = mitglieder[0];
+    }
+
+    // Vertrag (optional)
+    let vertrag = null;
+    if (vertrag_id) {
+      const vertraege = await queryAsync('SELECT * FROM vertraege WHERE id = ?', [vertrag_id]);
+      if (vertraege.length > 0) vertrag = vertraege[0];
+    } else if (mitglied_id) {
+      const vertraege = await queryAsync(
+        'SELECT * FROM vertraege WHERE mitglied_id = ? AND status = "aktiv" ORDER BY vertragsbeginn DESC LIMIT 1',
+        [mitglied_id]
+      );
+      if (vertraege.length > 0) vertrag = vertraege[0];
+    }
+
+    // Logo laden
+    const logoBase64 = await loadDojoLogo(template.dojo_id);
+
+    // Format Datumsfelder
+    if (mitglied?.geburtsdatum) {
+      mitglied.geburtsdatum = new Date(mitglied.geburtsdatum).toLocaleDateString('de-DE');
+    }
+    if (vertrag?.vertragsbeginn) vertrag.vertragsbeginn = new Date(vertrag.vertragsbeginn).toLocaleDateString('de-DE');
+    if (vertrag?.vertragsende) vertrag.vertragsende = new Date(vertrag.vertragsende).toLocaleDateString('de-DE');
+
+    const pdfBuffer = await generateVertragsvorlagePdf({
+      tiptapHtml: template.tiptap_html,
+      templateName: template.name,
+      dojo,
+      mitglied,
+      vertrag,
+      logoBase64,
+    });
+
+    const filename = `${template.name}_${mitglied ? mitglied.nachname + '_' + mitglied.vorname : 'Vorlage'}.pdf`
+      .replace(/[^a-zA-Z0-9_.-]/g, '_');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(pdfBuffer);
+  } catch (err) {
+    logger.error('Fehler beim Generieren des TipTap-PDFs:', { error: err });
+    res.status(500).json({ error: 'Fehler beim Generieren des PDFs', details: err.message });
   }
 });
 

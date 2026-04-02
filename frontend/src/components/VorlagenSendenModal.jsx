@@ -8,7 +8,7 @@
 import '../styles/VorlagenSendenModal.css';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
-import { X, Search, Send, Download, Mail, FileText, Eye, CheckCircle } from 'lucide-react';
+import { X, Search, Send, Download, Mail, FileText, Eye, CheckCircle, Calendar } from 'lucide-react';
 
 // ── Kontext-Felder je Kategorie ────────────────────────────────────────────────
 const KONTEXT_FELDER = {
@@ -82,7 +82,10 @@ export default function VorlagenSendenModal({ vorlagenId: initialVorlagenId = nu
   const [vorschauLaed, setVorschauLaed] = useState(false);
   const [sending, setSending] = useState(false);
   const [erfolg, setErfolg] = useState(false);
+  const [erfolgMsg, setErfolgMsg] = useState('');
   const [error, setError] = useState('');
+  const [zeitgesteuert, setZeitgesteuert] = useState(false);
+  const [geplantFuer, setGeplantFuer] = useState('');
   const sucheRef = useRef(null);
   const vorschauTimer = useRef(null);
 
@@ -147,14 +150,17 @@ export default function VorlagenSendenModal({ vorlagenId: initialVorlagenId = nu
 
   async function handleSenden() {
     if (!mitglied) { setError('Bitte ein Mitglied auswählen'); return; }
+    if (zeitgesteuert && !geplantFuer) { setError('Bitte Datum und Uhrzeit wählen'); return; }
     setSending(true);
     setError('');
     try {
-      await axios.post(`/vorlagen/${gewaehltesVorlagenId}/senden`, {
+      const res = await axios.post(`/vorlagen/${gewaehltesVorlagenId}/senden`, {
         mitglied_id: mitglied.id,
         zusatz_daten: zusatzDaten,
         versand_art: versandArt,
+        geplant_fuer: zeitgesteuert ? geplantFuer : null,
       });
+      setErfolgMsg(res.data?.message || null);
       setErfolg(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Fehler beim Senden');
@@ -187,9 +193,10 @@ export default function VorlagenSendenModal({ vorlagenId: initialVorlagenId = nu
       <div className="vsm-overlay">
         <div className="vsm-success-box">
           <CheckCircle size={48} color="#27ae60" className="vsm-success-icon" />
-          <h3 className="vsm-success-title">Erfolgreich gesendet!</h3>
+          <h3 className="vsm-success-title">{erfolgMsg ? 'Versand geplant!' : 'Erfolgreich gesendet!'}</h3>
           <p className="vsm-success-text">
-            {versandArt === 'pdf' ? 'Das PDF wurde erstellt.' :
+            {erfolgMsg ? erfolgMsg :
+             versandArt === 'pdf' ? 'Das PDF wurde erstellt.' :
              versandArt === 'email' ? `E-Mail wurde an ${mitglied?.email} gesendet.` :
              `E-Mail mit PDF-Anhang wurde an ${mitglied?.email} gesendet.`}
           </p>
@@ -323,6 +330,31 @@ export default function VorlagenSendenModal({ vorlagenId: initialVorlagenId = nu
               </div>
             </div>
 
+            {/* Zeitgesteuert (Phase 6) */}
+            {versandArt !== 'pdf' && (
+              <div>
+                <label className="vsm-zeitgesteuert-row">
+                  <input
+                    type="checkbox"
+                    checked={zeitgesteuert}
+                    onChange={e => setZeitgesteuert(e.target.checked)}
+                    style={{ marginRight: '0.4rem' }}
+                  />
+                  <Calendar size={13} style={{ marginRight: '0.3rem', opacity: 0.7 }} />
+                  Zeitgesteuert senden
+                </label>
+                {zeitgesteuert && (
+                  <input
+                    type="datetime-local"
+                    value={geplantFuer}
+                    onChange={e => setGeplantFuer(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className="vsm-input vsm-input--mt"
+                  />
+                )}
+              </div>
+            )}
+
             {/* Senden-Button */}
             <div className="vsm-actions">
               {versandArt === 'pdf' ? (
@@ -333,7 +365,8 @@ export default function VorlagenSendenModal({ vorlagenId: initialVorlagenId = nu
               ) : (
                 <button onClick={handleSenden} disabled={sending || !mitglied || !gewaehltesVorlagenId}
                   className="vsm-action-btn">
-                  <Send size={16} /> {sending ? 'Wird gesendet...' : 'Jetzt senden'}
+                  {zeitgesteuert ? <Calendar size={16} /> : <Send size={16} />}
+                  {sending ? 'Wird verarbeitet...' : zeitgesteuert ? 'Versand planen' : 'Jetzt senden'}
                 </button>
               )}
               <button onClick={onClose} className="vsm-cancel-btn">Abbrechen</button>

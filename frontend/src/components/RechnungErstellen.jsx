@@ -1394,8 +1394,7 @@ const RechnungErstellen = () => {
                   <img
                     src={dojoLogo}
                     alt={activeDojo?.dojoname || 'Dojo Logo'}
-                    className="invoice-logo"
-                    className="re-invoice-logo"
+                    className="invoice-logo re-invoice-logo"
                   />
                 ) : (
                   <div className="logo-placeholder">{activeDojo?.dojoname?.substring(0, 3)?.toUpperCase() || 'LOGO'}</div>

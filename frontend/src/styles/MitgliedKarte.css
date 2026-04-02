@@ -19,7 +19,7 @@
   position: fixed;
   z-index: 999999;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border: 1px solid rgba(255, 215, 0, 0.35);
+  border: 1px solid var(--primary-alpha-35);
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   min-width: 210px;
@@ -29,7 +29,7 @@
 
 .mk-context-header {
   padding: 0.55rem 1rem;
-  border-bottom: 1px solid rgba(255,215,0,0.12);
+  border-bottom: 1px solid var(--primary-alpha-12);
   font-size: 0.72rem;
   color: var(--text-muted);
   letter-spacing: 1px;
@@ -51,5 +51,5 @@
 }
 
 .mk-context-btn:hover {
-  background: rgba(255,215,0,0.1);
+  background: var(--primary-alpha-10);
 }

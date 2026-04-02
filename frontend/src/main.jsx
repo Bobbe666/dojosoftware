@@ -23,7 +23,12 @@ import './styles/utility-classes.css'; // BEM-konforme Utility-Klassen (ds- Prä
 
 // Theme-spezifische Styles (global für Theme-Switching)
 import './styles/Dashboard-TdaVib.css';
-import { DatenProvider } from '@shared/DatenContext.jsx';
+// Washi Theme — MUSS nach allen Legacy-CSS-Dateien (inkl. themes.css) geladen werden!
+// themes.css setzt :root { dark vars } mit gleicher Spezifität wie [data-theme="tda-vib"].
+// CSS-Cascade: später gewinnt → theme-tda-vib.css muss als letztes im Bundle landen.
+import './design-system/themes/theme-tda-vib.css';
+// Tab-Style-System (nach allen anderen CSS geladen — source-order gewinnt)
+import './styles/tab-styles.css';
 import axios from 'axios';
 import config from './config/config.js';
 import { fetchCsrfToken, getCsrfToken } from './services/api.js';
@@ -79,18 +84,53 @@ const queryClient = new QueryClient({
   },
 });
 
+// Tab-Stil und Akzentfarbe sofort anwenden (vor erstem Render — kein Flash)
+const _savedTabStyle = localStorage.getItem('dojo-tab-style');
+if (_savedTabStyle && _savedTabStyle !== 'glass') {
+  document.documentElement.dataset.tabStyle = _savedTabStyle;
+}
+const _savedTabAccent = localStorage.getItem('dojo-tab-accent');
+if (_savedTabAccent) {
+  document.documentElement.style.setProperty('--tab-accent', _savedTabAccent);
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <DatenProvider>
-          <App />
-        </DatenProvider>
+        <App />
       </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
 
-// Service Worker DEAKTIVIERT - Verhindert Blink-Loop
-// Service Worker komplett entfernt um Reload-Probleme zu verhindern
-console.log('🚫 Service Worker ist deaktiviert');
+// Service Worker: Push-Notifications + App-Auto-Update
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      // Nur registrieren wenn noch kein aktiver SW läuft der Probleme macht
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/',
+        updateViaCache: 'none'
+      });
+
+      // Alle 5 Minuten auf neue Version prüfen
+      setInterval(() => registration.update().catch(() => {}), 5 * 60 * 1000);
+
+      // Neue Version erkannt → Banner-Event auslösen (kein Auto-Reload → verhindert Loop)
+      registration.addEventListener('updatefound', () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Update ist bereit — App informieren
+            window.dispatchEvent(new CustomEvent('sw-update-available'));
+          }
+        });
+      });
+
+    } catch (err) {
+      console.warn('Service Worker Registrierung fehlgeschlagen:', err.message);
+    }
+  });
+}

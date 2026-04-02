@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import openApiBlob from '../utils/openApiBlob';
 import {
   Calculator, FileText, Receipt, Download, Upload, Plus, Edit, Trash2, Lock, X,
   TrendingUp, TrendingDown, PieChart, Calendar, Filter, Search, ChevronDown, ChevronUp, ChevronRight,
@@ -14,7 +15,7 @@ import {
 import '../styles/BuchhaltungTab.css';
 import VerbandRechnungErstellen from './VerbandRechnungErstellen';
 
-const BuchhaltungTab = ({ token }) => {
+const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // Sub-Tab Navigation
   const [activeSubTab, setActiveSubTab] = useState('euer');
 
@@ -743,12 +744,12 @@ const BuchhaltungTab = ({ token }) => {
 
   // Jahresabschluss festschreiben
   const festschreibenJahr = async () => {
-    if (selectedOrg === 'alle') {
+    if (!dojoMode && selectedOrg === 'alle') {
       setError('Bitte wählen Sie eine Organisation aus');
       return;
     }
 
-    if (!confirm(`Jahresabschluss ${selectedJahr} für ${selectedOrg} wirklich festschreiben? Danach sind keine Änderungen mehr möglich.`)) return;
+    if (!confirm(`Jahresabschluss ${selectedJahr} wirklich festschreiben? Danach sind keine Änderungen mehr möglich.`)) return;
 
     try {
       setLoading(true);
@@ -869,6 +870,7 @@ const BuchhaltungTab = ({ token }) => {
         </div>
 
         <div className="header-filters">
+          {!dojoMode && (
           <div className="filter-group">
             <label>Organisation:</label>
             <select
@@ -880,6 +882,7 @@ const BuchhaltungTab = ({ token }) => {
               <option value="Kampfkunstschule Schreiner">Kampfkunstschule Schreiner</option>
             </select>
           </div>
+          )}
 
           <div className="filter-group">
             <label>Jahr:</label>
@@ -1000,9 +1003,8 @@ const BuchhaltungTab = ({ token }) => {
                       {Object.entries(euerData.einnahmen?.nachKategorie || {}).map(([kat, data]) => (
                         <React.Fragment key={kat}>
                           <tr
-                            className="kategorie-row clickable"
+                            className="kategorie-row clickable bt-cursor-pointer"
                             onClick={() => setExpandedKategorien(prev => ({ ...prev, [`ein_${kat}`]: !prev[`ein_${kat}`] }))}
-                            className="bt-cursor-pointer"
                           >
                             <td colSpan="2">
                               <span className="u-flex-row-sm">
@@ -1070,9 +1072,8 @@ const BuchhaltungTab = ({ token }) => {
                       {Object.entries(euerData.ausgaben?.nachKategorie || {}).map(([kat, data]) => (
                         <React.Fragment key={kat}>
                           <tr
-                            className="kategorie-row clickable"
+                            className="kategorie-row clickable bt-cursor-pointer"
                             onClick={() => setExpandedKategorien(prev => ({ ...prev, [`aus_${kat}`]: !prev[`aus_${kat}`] }))}
-                            className="bt-cursor-pointer"
                           >
                             <td colSpan="2">
                               <span className="u-flex-row-sm">
@@ -1141,7 +1142,7 @@ const BuchhaltungTab = ({ token }) => {
               <div className="header-actions">
                 <button
                   className="btn btn-secondary"
-                  onClick={() => window.open(`/api/buchhaltung/guv/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv&quartal=${selectedQuartal}`, '_blank')}
+                  onClick={() => openApiBlob(`/api/buchhaltung/guv/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv&quartal=${selectedQuartal}`, { download: true, filename: `guv-${selectedJahr}.csv` })}
                 >
                   <Download size={16} />
                   CSV Export
@@ -1284,7 +1285,7 @@ const BuchhaltungTab = ({ token }) => {
                 </button>
                 <button
                   className="btn btn-secondary"
-                  onClick={() => window.open(`/api/buchhaltung/bilanz/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv`, '_blank')}
+                  onClick={() => openApiBlob(`/api/buchhaltung/bilanz/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv`, { download: true, filename: `bilanz-${selectedJahr}.csv` })}
                 >
                   <Download size={16} />
                   CSV Export

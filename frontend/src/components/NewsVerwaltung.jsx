@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
-import config from '../config/config.js';
 import '../styles/News.css';
 
 function NewsVerwaltung({ embedded = false }) {
@@ -14,19 +12,6 @@ function NewsVerwaltung({ embedded = false }) {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('alle');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-
-  // Prüfe ob User Haupt-Admin ist
-  const isMainAdmin = () => {
-    try {
-      if (token) {
-        const decoded = jwtDecode(token);
-        return decoded.id === 1 || decoded.user_id === 1 || decoded.username === 'admin';
-      }
-    } catch (error) {
-      console.error('Token decode error:', error);
-    }
-    return false;
-  };
 
   // News laden
   const loadNews = async () => {
@@ -39,7 +24,7 @@ function NewsVerwaltung({ embedded = false }) {
       }
 
       const response = await axios.get(
-        `${config.apiBaseUrl}/news?${params.toString()}`,
+        `/news?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -53,11 +38,6 @@ function NewsVerwaltung({ embedded = false }) {
   };
 
   useEffect(() => {
-    // Nur redirecten wenn nicht embedded
-    if (!embedded && !isMainAdmin()) {
-      navigate('/dashboard');
-      return;
-    }
     loadNews();
   }, [token, filter]);
 
@@ -65,7 +45,7 @@ function NewsVerwaltung({ embedded = false }) {
   const handleDelete = async (id) => {
     try {
       await axios.delete(
-        `${config.apiBaseUrl}/news/${id}`,
+        `/news/${id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setNews(news.filter(n => n.id !== id));
@@ -79,21 +59,23 @@ function NewsVerwaltung({ embedded = false }) {
   // Status Badge
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'veroeffentlicht':
-        return <span className="news-status-badge published">Veröffentlicht</span>;
-      case 'entwurf':
-        return <span className="news-status-badge draft">Entwurf</span>;
-      case 'archiviert':
-        return <span className="news-status-badge archived">Archiviert</span>;
-      default:
-        return <span className="news-status-badge">{status}</span>;
+      case 'veroeffentlicht': return <span className="news-status-badge published">✅ Veröffentlicht</span>;
+      case 'entwurf':         return <span className="news-status-badge draft">📝 Entwurf</span>;
+      case 'archiviert':      return <span className="news-status-badge archived">📦 Archiviert</span>;
+      case 'geplant':         return <span className="news-status-badge scheduled">🕐 Geplant</span>;
+      default:                return <span className="news-status-badge">{status}</span>;
     }
+  };
+
+  const KATEGORIEN_LABEL = {
+    allgemein: '📰 Allgemein', turniere: '🏆 Turniere', events: '🎯 Events',
+    pruefungen: '🥋 Prüfungen', training: '💪 Training', verband: '🏛️ Verband',
   };
 
   // Zielgruppen Badge
   const getZielgruppeBadge = (zielgruppe) => {
     if (zielgruppe === 'homepage') {
-      return <span className="news-zielgruppe-badge homepage">Nur Homepage</span>;
+      return <span className="news-zielgruppe-badge homepage">🌐 TDA-Websites</span>;
     }
     return <span className="news-zielgruppe-badge all-dojos">Alle Dojos</span>;
   };
@@ -109,10 +91,6 @@ function NewsVerwaltung({ embedded = false }) {
       minute: '2-digit'
     });
   };
-
-  if (!isMainAdmin()) {
-    return null;
-  }
 
   return (
     <div className={`news-verwaltung ${embedded ? 'embedded' : ''}`}>
@@ -156,6 +134,12 @@ function NewsVerwaltung({ embedded = false }) {
           Veröffentlicht
         </button>
         <button
+          className={`filter-btn ${filter === 'geplant' ? 'active' : ''}`}
+          onClick={() => setFilter('geplant')}
+        >
+          🕐 Geplant
+        </button>
+        <button
           className={`filter-btn ${filter === 'archiviert' ? 'active' : ''}`}
           onClick={() => setFilter('archiviert')}
         >
@@ -184,6 +168,10 @@ function NewsVerwaltung({ embedded = false }) {
                 <h3 className="news-title">{item.titel}</h3>
                 <div className="news-badges">
                   {getStatusBadge(item.status)}
+                  {item.featured ? <span className="news-featured-badge">⭐ Featured</span> : null}
+                  {item.kategorie && item.kategorie !== 'allgemein' && (
+                    <span className="news-kategorie-badge">{KATEGORIEN_LABEL[item.kategorie] || item.kategorie}</span>
+                  )}
                   {getZielgruppeBadge(item.zielgruppe)}
                 </div>
               </div>
@@ -200,6 +188,16 @@ function NewsVerwaltung({ embedded = false }) {
                   {item.veroeffentlicht_am && (
                     <span className="news-date">
                       Veröffentlicht: {formatDate(item.veroeffentlicht_am)}
+                    </span>
+                  )}
+                  {item.status === 'geplant' && item.geplant_am && (
+                    <span className="news-date" style={{ color: '#63b3ed' }}>
+                      🕐 Geplant für: {formatDate(item.geplant_am)}
+                    </span>
+                  )}
+                  {item.ablauf_am && (
+                    <span className="news-date" style={{ color: 'var(--status-warning)' }}>
+                      ⚠️ Läuft ab: {formatDate(item.ablauf_am)}
                     </span>
                   )}
                 </div>

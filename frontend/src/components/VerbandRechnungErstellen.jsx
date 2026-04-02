@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import openApiBlob from '../utils/openApiBlob';
 import { useAuth } from '../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { Building2, Check, Search, X, Loader2, Save, Eye, Download, CheckCircle, BookOpen } from 'lucide-react';
@@ -370,12 +371,12 @@ const VerbandRechnungErstellen = ({ token: propToken }) => {
 
   // Download-Funktion für Rechnungen (öffnet Print-Dialog)
   const handleDownloadRechnung = (rechnungId) => {
-    window.open(`/api/verband-rechnungen/${rechnungId}/pdf?print=1`, '_blank');
+    openApiBlob(`/api/verband-rechnungen/${rechnungId}/pdf?print=1`);
   };
 
   // Rechnung ansehen (HTML in neuem Tab öffnen)
   const handleViewRechnung = (rechnungId) => {
-    window.open(`/api/verband-rechnungen/${rechnungId}/pdf`, '_blank');
+    openApiBlob(`/api/verband-rechnungen/${rechnungId}/pdf`);
   };
 
   // Status-Badge Farbe

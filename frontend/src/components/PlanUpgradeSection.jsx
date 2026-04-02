@@ -64,6 +64,8 @@ const PLAN_FEATURES = {
       'Unbegrenzte Mitglieder',
       'Alles aus Premium',
       'Multi-Dojo Support',
+      '🌐 Homepage Builder',
+      '📘 Facebook Messenger Integration',
       'Dedizierter Support',
       'Custom Integrationen',
       '50 GB Speicherplatz'

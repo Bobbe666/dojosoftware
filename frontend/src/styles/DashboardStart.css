@@ -42,7 +42,7 @@
   text-decoration: none;
   padding: var(--ui-card-padding);
   border-radius: var(--comp-radius-xl);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   font-weight: bold;
   font-size: 1rem;
   display: flex;
@@ -80,7 +80,7 @@
   background: conic-gradient(
     from 0deg,
     transparent,
-    rgba(255, 215, 0, 0.08),
+    var(--primary-alpha-08),
     transparent,
     rgba(255, 107, 53, 0.08),
     transparent
@@ -96,8 +96,8 @@
 
 .cta-tile:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
-  border-color: rgba(255, 215, 0, 0.5);
+  box-shadow: 0 20px 40px var(--primary-alpha-20);
+  border-color: var(--primary-alpha-50);
 }
 
 /* Ensure content is above animated backgrounds */

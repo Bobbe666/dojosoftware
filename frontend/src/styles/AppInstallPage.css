@@ -72,14 +72,14 @@
   display: flex;
   justify-content: center;
   margin-bottom: 2rem;
-  border: 3px solid #ffd700;
+  border: 3px solid var(--primary);
 }
 
 .aip-instructions {
-  background-color: rgba(255, 215, 0, 0.1);
+  background-color: var(--primary-alpha-10);
   padding: 1.5rem;
   border-radius: 12px;
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   margin-bottom: 2rem;
 }
 
@@ -145,12 +145,12 @@
   font-size: 1rem;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .aip-btn-download:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 6px 16px var(--primary-alpha-40);
 }
 
 .aip-btn-print {

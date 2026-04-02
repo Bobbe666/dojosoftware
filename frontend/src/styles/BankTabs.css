@@ -36,7 +36,7 @@
   gap: 8px;
   padding: 12px 16px;
   background: var(--surface-1);
-  border-bottom: 2px solid rgba(255,215,0,0.1);
+  border-bottom: 2px solid var(--primary-alpha-10);
   overflow-x: auto;
   flex-wrap: wrap;
   margin-bottom: var(--ui-section-gap-sm);
@@ -48,7 +48,7 @@
   gap: 8px;
   padding: 10px 16px;
   background: var(--surface-2);
-  border: 1px solid rgba(255,215,0,0.1);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: var(--comp-radius-sm);
   color: var(--text-2);
   cursor: pointer;
@@ -60,17 +60,17 @@
 
 .tab:hover {
   background: var(--surface-3);
-  border-color: rgba(255,215,0,0.1);
+  border-color: var(--primary-alpha-10);
   color: var(--text-1);
   transform: translateY(-1px);
 }
 
 .tab.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255,215,0,0.1));
+  background: linear-gradient(135deg, var(--primary-alpha-20), var(--primary-alpha-10));
   border-color: var(--primary);
   color: var(--primary);
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.2);
+  box-shadow: 0 2px 8px var(--primary-alpha-20);
 }
 
 .tab.inactive {
@@ -79,12 +79,12 @@
 
 .tab-add {
   background: transparent;
-  border: 1px dashed rgba(255,215,0,0.1);
+  border: 1px dashed var(--primary-alpha-10);
   color: var(--primary);
 }
 
 .tab-add:hover {
-  background: rgba(255,215,0,0.1);
+  background: var(--primary-alpha-10);
   border-color: var(--primary);
 }
 
@@ -131,7 +131,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding-bottom: 0.75rem;
-  border-bottom: 2px solid rgba(255,215,0,0.1);
+  border-bottom: 2px solid var(--primary-alpha-10);
 }
 
 .form-section {
@@ -147,7 +147,7 @@
   font-size: var(--ui-stat-trend);
   margin-bottom: 8px;
   padding-bottom: 4px;
-  border-bottom: 1px solid rgba(255,215,0,0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
   font-weight: 500;
 }
 
@@ -157,7 +157,7 @@
   font-size: var(--ui-btn-font);
   margin-bottom: 14px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(255,215,0,0.1);
+  border-bottom: 1px solid var(--primary-alpha-10);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -203,7 +203,7 @@
   margin-bottom: 0;
   padding: 20px;
   background: var(--surface-1);
-  border: 1px solid rgba(255,215,0,0.1);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: var(--comp-radius-md);
 }
 
@@ -273,24 +273,24 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   background: transparent;
-  border-color: rgba(255, 215, 0, 0.2);
+  border-color: var(--primary-alpha-20);
   color: rgba(255, 255, 255, 0.7);
 }
 
 .checkbox-button.active {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 215, 0, 0.1));
-  border-color: #ffd700;
-  color: #ffd700;
+  background: linear-gradient(135deg, var(--primary-alpha-20), var(--primary-alpha-10));
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .checkbox-button:hover {
   background: var(--surface-3) !important;
-  border-color: rgba(255,215,0,0.1) !important;
+  border-color: var(--primary-alpha-10) !important;
   color: rgba(255, 255, 255, 0.9) !important;
 }
 
 .checkbox-button.active:hover {
-  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.15)) !important;
+  background: linear-gradient(135deg, var(--primary-alpha-30), var(--primary-alpha-15)) !important;
   border-color: var(--primary) !important;
   color: var(--primary) !important;
 }
@@ -300,7 +300,7 @@
 .form-group textarea {
   padding: 8px 12px;
   background: var(--surface-2);
-  border: 1px solid rgba(255,215,0,0.1);
+  border: 1px solid var(--primary-alpha-10);
   border-radius: var(--comp-radius-sm);
   color: var(--text-1);
   font-size: var(--ui-btn-font);
@@ -315,7 +315,7 @@
   outline: none;
   border-color: var(--primary);
   background: var(--surface-3);
-  box-shadow: 0 0 0 2px rgba(255,215,0,0.1);
+  box-shadow: 0 0 0 2px var(--primary-alpha-10);
 }
 
 .form-group input::placeholder,
@@ -360,7 +360,7 @@
   gap: 12px;
   margin-top: 24px;
   padding: 20px;
-  border-top: 2px solid rgba(255,215,0,0.1);
+  border-top: 2px solid var(--primary-alpha-10);
   background: var(--surface-1);
   border-radius: var(--comp-radius-md);
   width: 100%;
@@ -539,7 +539,7 @@
   width: 18px;
   height: 18px;
   border: 2px solid;
-  border-color: rgba(255, 215, 0, 0.4);
+  border-color: var(--primary-alpha-40);
   border-radius: 4px;
   background: transparent;
   display: flex;
@@ -550,8 +550,8 @@
 }
 
 .checkbox-button.active .checkbox-indicator {
-  border-color: #ffd700;
-  background: #ffd700;
+  border-color: var(--primary);
+  background: var(--gradient-gold);
 }
 
 /* Star icon spacing inside checkbox-button */

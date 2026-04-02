@@ -199,7 +199,7 @@
 
 .new-order-btn {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
+  background: var(--gradient-gold);
   color: #1a1a2e;
   border: none;
   border-radius: var(--comp-radius-md);
@@ -210,7 +210,7 @@
 
 .new-order-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 /* =====================================================================================
@@ -219,7 +219,7 @@
 
 .bestellungen-table-container {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   overflow: hidden;
 }
@@ -230,14 +230,14 @@
 }
 
 .bestellungen-table th {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 1rem;
   text-align: left;
   color: var(--primary);
   font-weight: 600;
   font-size: var(--ui-stat-trend);
   text-transform: uppercase;
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
 }
 
 .bestellungen-table td {
@@ -247,7 +247,7 @@
 }
 
 .bestellungen-table tbody tr:hover {
-  background: rgba(255, 215, 0, 0.05);
+  background: var(--primary-alpha-05);
 }
 
 .bestellungen-table .order-number {
@@ -291,7 +291,7 @@
 
 .action-btn.view {
   background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  color: var(--status-indigo);
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
@@ -334,7 +334,7 @@
 
 .modal-content {
   background: var(--modal-bg-dark);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: var(--comp-radius-xl);
   max-width: 900px;
   width: 100%;
@@ -350,7 +350,7 @@
   align-items: center;
   padding: 1.25rem 1.5rem;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--primary-alpha-30);
 }
 
 .modal-header h2 {
@@ -405,7 +405,7 @@
 
 .submit-btn, .pdf-btn {
   padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #ffd700 0%, #ffb800 100%);
+  background: var(--gradient-gold);
   color: #1a1a2e;
   border: none;
   border-radius: var(--comp-radius-md);
@@ -414,7 +414,7 @@
 }
 
 .submit-btn:hover, .pdf-btn:hover {
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
 }
 
 .submit-btn:disabled, .pdf-btn:disabled {
@@ -434,7 +434,7 @@
   color: var(--primary);
   margin: 0 0 var(--ui-form-gap) 0;
   font-size: var(--ui-card-title);
-  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  border-bottom: 1px solid var(--primary-alpha-20);
   padding-bottom: 0.5rem;
 }
 
@@ -468,7 +468,7 @@
 .form-group input:focus,
 .form-section textarea:focus {
   outline: none;
-  border-color: rgba(255, 215, 0, 0.5);
+  border-color: var(--primary-alpha-50);
 }
 
 .form-section textarea {
@@ -504,8 +504,8 @@
 }
 
 .selectable-item:hover:not(.selected) {
-  background: rgba(255, 215, 0, 0.1);
-  border-color: rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-10);
+  border-color: var(--primary-alpha-30);
 }
 
 .selectable-item.selected {
@@ -536,7 +536,7 @@
 
 .position-card {
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 215, 0, 0.2);
+  border: 1px solid var(--primary-alpha-20);
   border-radius: var(--comp-radius-xl);
   padding: var(--ui-stat-card-padding);
   margin-bottom: 1rem;
@@ -608,7 +608,7 @@
 
 .size-input-group input:focus {
   outline: none;
-  border-color: rgba(255, 215, 0, 0.5);
+  border-color: var(--primary-alpha-50);
 }
 
 .position-price,
@@ -684,7 +684,7 @@
   padding: 0.5rem 1rem;
   background: rgba(59, 130, 246, 0.2);
   border: 1px solid rgba(59, 130, 246, 0.3);
-  color: #3b82f6;
+  color: var(--status-indigo);
   border-radius: var(--comp-radius-sm);
   cursor: pointer;
   font-size: 0.85rem;
@@ -701,7 +701,7 @@
 }
 
 .detail-table th {
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   padding: 0.75rem;
   text-align: left;
   color: var(--primary);
@@ -723,7 +723,7 @@
 }
 
 .detail-table .size-badge {
-  background: rgba(255, 215, 0, 0.15);
+  background: var(--primary-alpha-15);
   color: var(--primary);
   padding: 0.2rem 0.5rem;
   border-radius: var(--comp-radius-xs);
@@ -732,7 +732,7 @@
 
 .detail-table tfoot td {
   font-weight: 600;
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
 }
 
 .detail-table .total-label {
@@ -794,7 +794,7 @@
 .bestellungen-tab .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 215, 0, 0.2);
+  border: 3px solid var(--primary-alpha-20);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;

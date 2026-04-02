@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSubscription } from '../context/SubscriptionContext.jsx';
 import { useDojoContext } from '../context/DojoContext.jsx'; // 🔒 TAX COMPLIANCE
 import { useStandortContext } from '../context/StandortContext.jsx';
 import { useMitgliederUpdate } from '../context/MitgliederUpdateContext.jsx';
@@ -15,31 +17,35 @@ import '../styles/themes.css';         // Centralized theme system
 import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR components.css stehen!)
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
-import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, MessageCircle } from 'lucide-react';
+import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, MessageCircle, X, LogOut } from 'lucide-react';
 
 const logo = '/dojo-logo.png';
 import DojoSwitcher from './DojoSwitcher';
 import StandortSwitcher from './StandortSwitcher';
 import MemberDashboard from './MemberDashboard';
 import AdminRegistrationPopup from './AdminRegistrationPopup';
+import SetupWizard from './SetupWizard';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import VerbandDashboard from './VerbandDashboard';
 import SupportDashboard from './SupportDashboard';
+import ShopDashboard from './shop/ShopDashboard';
 import SupportTickets from './SupportTickets';
 import FeatureBoard from './FeatureBoard';
 import TrialBanner from './TrialBanner';
 import LanguageSwitcher from './LanguageSwitcher';
 import AgbStatusWidget from './AgbStatusWidget';
+import VisitorChatAlerts from './chat/VisitorChatAlerts';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 
 
 function Dashboard() {
-  const { t } = useTranslation('dashboard');
+  const { t, i18n } = useTranslation('dashboard');
   const location = useLocation();
   const navigate = useNavigate();
-  const { token, logout } = useAuth();
-  const { getDojoFilterParam, selectedDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
+  const { token, logout, user } = useAuth();
+  const { hasFeature } = useSubscription();
+  const { getDojoFilterParam, selectedDojo, activeDojo } = useDojoContext(); // 🔒 TAX COMPLIANCE: Dojo-Filter für alle API-Calls
   const { standorte } = useStandortContext(); // Multi-Location support
   const { updateTrigger } = useMitgliederUpdate(); // 🔄 Automatische Updates nach Mitgliedsanlage
   const { theme, setTheme, isDarkMode, toggleDarkMode, themes } = useTheme(); // 🎨 Theme Switching
@@ -66,17 +72,9 @@ function Dashboard() {
   const [error, setError] = useState('');
   const [userDisplayName, setUserDisplayName] = useState(''); // Angezeigter Username/Name
 
-  // Tab-State für Dashboard
-  const [activeTab, setActiveTab] = useState('checkin');
-  const [hilfeSupportView, setHilfeSupportView] = useState(null);
-  const [einstellungenView, setEinstellungenView] = useState(null);
-
-  // User-Dropdown State
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const userMenuRef = React.useRef(null);
-
   let role = 'mitglied';
   let isMainAdmin = false; // Haupt-Admin Check für News-Feature
+  let isSuperAdmin = false; // Nur für Super-Admin sichtbare Features
 
   try {
     if (token) {
@@ -84,10 +82,33 @@ function Dashboard() {
       role = decoded.role || 'mitglied';
       // Haupt-Admin: user.id === 1 oder username === 'admin'
       isMainAdmin = decoded.id === 1 || decoded.user_id === 1 || decoded.username === 'admin';
+      isSuperAdmin = decoded.dojo_id === null || decoded.dojo_id === undefined || decoded.role === 'super_admin' || isMainAdmin;
     }
   } catch (error) {
     console.error("Fehler beim Dekodieren des Tokens:", error);
   }
+
+  // Setup-Wizard: Zeigen wenn Dojo noch nicht eingerichtet
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
+  useEffect(() => {
+    if (
+      role === 'admin' &&
+      activeDojo &&
+      activeDojo !== 'super-admin' &&
+      activeDojo?.onboarding_completed === 0 &&
+      !localStorage.getItem(`setup_wizard_done_${activeDojo?.id}`)
+    ) {
+      setShowSetupWizard(true);
+    }
+  }, [role, activeDojo]);
+
+  // Tab-State für Dashboard
+  const [activeTab, setActiveTab] = useState('checkin');
+  const [hilfeSupportView, setHilfeSupportView] = useState(null);
+  const [einstellungenView, setEinstellungenView] = useState(null);
+
+  // User-Modal State
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // 🚀 Optimierte Dashboard-Daten mit Batch-Loading und Caching
   // 🔒 TAX COMPLIANCE: Alle API-Calls verwenden dojo_id Filter!
@@ -197,20 +218,28 @@ function Dashboard() {
     loadUserDisplayName();
   }, [token]);
 
-  // User-Dropdown schließen bei Klick außerhalb
+  // User-Dropdown: Escape-Taste + Click-Outside schließt
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
-        setShowUserMenu(false);
-      }
+    if (!showUserMenu) return;
+    const handleKey = (e) => { if (e.key === 'Escape') setShowUserMenu(false); };
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.dashboard-user-wrap') && !e.target.closest('.um-modal')) setShowUserMenu(false);
     };
+    document.addEventListener('keydown', handleKey);
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showUserMenu]);
 
   const handleLogout = () => {
+    console.log('🚪 LOGOUT: handleLogout aufgerufen');
+    console.log('🚪 LOGOUT: token vor clearSession:', !!localStorage.getItem('dojo_auth_token'));
     logout();
-    navigate('/login');
+    console.log('🚪 LOGOUT: token nach clearSession:', !!localStorage.getItem('dojo_auth_token'));
+    console.log('🚪 LOGOUT: navigiere zu /login...');
+    window.location.href = '/login';
   };
 
   const handleNavigation = (path) => {
@@ -234,7 +263,9 @@ function Dashboard() {
     { id: 'mitglieder', label: t('tabs.mitglieder'), icon: '👥' },
     { id: 'pruefungswesen', label: t('tabs.pruefungswesen'), icon: '🏆' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
+    { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
+    { id: 'shop', label: 'Shop & Kasse', icon: '🛒' },
     { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
     { id: 'berichte', label: t('tabs.berichte'), icon: '📄' },
     { id: 'einstellungen', label: t('tabs.einstellungen'), icon: '⚙️' },
@@ -280,19 +311,12 @@ function Dashboard() {
     {
       icon: '👥',
       title: 'Buddy-Gruppen',
-      description: 'Freunde-Einladungen und Gruppenverwaltung',
+      description: 'Interne Buddy-Gruppen und Einladungsverwaltung',
       path: '/dashboard/buddy-gruppen',
       badge: 'NEU',
       featured: true,
-      count: stats.buddy_gruppen || 0
-    },
-    {
-      icon: '📧',
-      title: 'Newsletter & Benachrichtigungen',
-      description: 'Email-Versand, Push-Nachrichten & Server-Einstellungen',
-      path: '/dashboard/notifications',
-      badge: 'NEU',
-      featured: true
+      count: stats.buddy_gruppen || 0,
+      superAdminOnly: true
     },
     {
       icon: '👋',
@@ -366,6 +390,13 @@ function Dashboard() {
       count: stats.trainer
     },
     {
+      icon: '⏱️',
+      title: 'Stundennachweise',
+      description: 'Trainer-Stunden erfassen und auswerten',
+      path: '/dashboard/trainer-stunden',
+      badge: 'NEU'
+    },
+    {
       icon: '🧑‍💼',
       title: 'Personal',
       description: 'Mitarbeiter & Personalverwaltung',
@@ -373,7 +404,48 @@ function Dashboard() {
       count: stats.personal,
       badge: 'NEU',
       featured: true
+    },
+    {
+      icon: '🏆',
+      title: 'Turniere',
+      description: 'Turniere verwalten, Teilnahmen und HOF-Vorschläge',
+      path: '/dashboard/turniere',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📚',
+      title: 'Lernplattform',
+      description: 'Techniken, Videos, PDFs und Lernmaterialien',
+      path: '/dashboard/lernplattform',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '👨‍👩‍👧',
+      title: 'Eltern-Zugänge',
+      description: 'Eltern-Zugangslinks für Kinder-Mitglieder verwalten',
+      path: '/dashboard/eltern-zugaenge',
+      badge: 'NEU'
+    },
+    // 🌐 HOMEPAGE BUILDER (Enterprise)
+    {
+      icon: '🌐',
+      title: 'Meine Homepage',
+      description: 'Professionelle öffentliche Homepage — inklusive im Enterprise-Paket',
+      path: '/dashboard/homepage',
+      badge: 'ENTERPRISE',
+      featured: true
     }
+  ];
+
+  // ✨ Shop & Kasse ✨
+  const shopCards = [
+    { icon: '💰', title: 'Verkauf', description: 'Bar- oder Kontoverkauf an der Kasse', path: '/dashboard/kasse', featured: true },
+    { icon: '📦', title: 'Artikel', description: 'Artikel & Produkte verwalten', path: '/dashboard/artikel', featured: true },
+    { icon: '🗂️', title: 'Artikelgruppen', description: 'Kategorien & Gruppen', path: '/dashboard/artikelgruppen' },
+    { icon: '📋', title: 'Bestellungen', description: 'Online-Shop Bestellungen', path: '/dashboard/shop-bestellungen', featured: true },
+    { icon: '💳', title: 'Offene Artikel-Einzüge', description: 'Lastschrift & Stripe Einzüge für Artikelverkäufe', path: '/dashboard/offene-einzuege', featured: true },
   ];
 
   // ✨ Finanzen - Zahlungen, Beiträge, Rechnungen ✨
@@ -446,22 +518,22 @@ function Dashboard() {
       badge: 'NEU',
       featured: true
     },
-    {
-      icon: '📁',
-      title: 'Artikelgruppen',
-      description: 'Kampfsport-Kategorien und Unterkategorien',
-      path: '/dashboard/artikelgruppen',
-      badge: 'NEU',
+    ...(hasFeature('buchfuehrung') ? [{
+      icon: '📒',
+      title: 'Buchhaltung & EÜR',
+      description: 'Belege, Bankimport, Jahresabschluss und GuV',
+      path: '/dashboard/buchhaltung',
+      badge: 'PREMIUM',
       featured: true
-    },
-    {
-      icon: '📦',
-      title: 'Artikelverwaltung',
-      description: 'Sortiment und Lagerbestände verwalten',
-      path: '/dashboard/artikel',
-      badge: 'NEU',
-      featured: true
-    }
+    }] : [{
+      icon: '📒',
+      title: 'Buchhaltung & EÜR',
+      description: 'Belege, Bankimport, Jahresabschluss und GuV',
+      path: '/dashboard/buchhaltung',
+      badge: 'PREMIUM',
+      featured: false,
+      locked: true
+    }]),
   ];
 
   // ✨ Einstellungen - System-Konfiguration ✨
@@ -541,14 +613,6 @@ function Dashboard() {
   // ✨ Prüfungswesen - Termine & Prüfungen ✨
   const pruefungswesensCards = [
     {
-      icon: '🎯',
-      title: 'Prüfung durchführen',
-      description: 'Live-Ansicht für Prüfungstag - Ergebnisse eintragen',
-      path: '/dashboard/pruefung-durchfuehren',
-      badge: 'LIVE',
-      featured: true
-    },
-    {
       icon: '🏆',
       title: 'Prüfungen & Termine',
       description: 'Events, Prüfungen und Termine verwalten',
@@ -626,6 +690,50 @@ function Dashboard() {
       path: '/dashboard/events-dashboard',
       badge: 'NEU'
     }
+  ];
+
+  // ✨ Kommunikation & Marketing ✨
+  const kommunikationCards = [
+    {
+      icon: '📱',
+      title: 'Msg-App öffnen',
+      description: 'WhatsApp-Style Messaging für Admin, Trainer & Mitglieder',
+      action: 'msg-app',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📰',
+      title: 'News & Beiträge',
+      description: 'Nachrichten für Mitglieder und Website veröffentlichen',
+      path: '/dashboard/news',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📧',
+      title: 'Newsletter & Benachrichtigungen',
+      description: 'Email-Versand, Push-Nachrichten & Server-Einstellungen',
+      path: '/dashboard/notifications',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📣',
+      title: 'Marketing-Zentrale',
+      description: 'Jahresplan, Social-Media-Aktionen und Kampagnen',
+      path: '/dashboard/marketingzentrale',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '📋',
+      title: 'Umfragen',
+      description: 'Mitglieder-Umfragen zur Veranstaltungsteilnahme und Feedback',
+      path: '/dashboard/umfragen',
+      badge: 'NEU',
+      featured: true
+    },
   ];
 
   // ✨ Hilfe & Support - kombinierter Tab ✨
@@ -831,8 +939,8 @@ function Dashboard() {
     );
   }
 
-  // 🌐 Verband Dashboard: Zeige Verbandsverwaltung
-  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'verband') {
+  // 🌐 Verband Dashboard: Zeige Verbandsverwaltung (nur auf Haupt-Dashboard, nicht auf Sub-Routen)
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'verband' && isMainDashboard) {
     console.log('✅ Zeige Verband Dashboard für TDA Verband');
     return (
       <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
@@ -892,8 +1000,8 @@ function Dashboard() {
     );
   }
 
-  // 🎫 Support Dashboard: Zeige Support-Ticketsystem
-  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'support') {
+  // 🎫 Support Dashboard: Zeige Support-Ticketsystem (nur auf Haupt-Dashboard)
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'support' && isMainDashboard) {
     console.log('✅ Zeige Support Dashboard für Support Center');
     return (
       <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
@@ -953,8 +1061,52 @@ function Dashboard() {
     );
   }
 
+  // 🛍️ Shop Dashboard: TDA Shop + Dojo-Shop Verwaltung (nur auf Haupt-Dashboard)
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'shop' && isMainDashboard) {
+    return (
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+        <header className="dashboard-header">
+          <div className="dashboard-header-left">
+            <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
+            <h2>🛍️ TDA Shop</h2>
+            <span className="version-badge">v{config.app.version}</span>
+          </div>
+          <div className="dashboard-header-right">
+            <DojoSwitcher />
+            <div className="dashboard-user-wrap">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="logout-button dashboard-user-btn"
+              >
+                <span>👤</span>
+                <span>{userDisplayName || 'User'}</span>
+                <span className="dashboard-user-btn-arrow">▼</span>
+              </button>
+              {showUserMenu && (
+                <div className="dashboard-user-dropdown">
+                  <button onClick={toggleDarkMode} className="dashboard-menu-btn">
+                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                  </button>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} className="dashboard-menu-btn danger">
+                    <span>🚪</span>
+                    <span>{t('header.logout')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+        <main className="dashboard-main">
+          <ShopDashboard />
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+      {(role === 'admin' || role === 'super_admin' || role === 'eingeschraenkt') && <VisitorChatAlerts />}
       <header className="dashboard-header">
         <div className="dashboard-header-left">
           <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
@@ -993,42 +1145,79 @@ function Dashboard() {
               <span className="chat-header-badge">{chatUnread > 99 ? '99+' : chatUnread}</span>
             )}
           </button>
-          {/* 👤 User-Dropdown mit Theme, Sprache, Logout */}
-          <div ref={userMenuRef} className="dashboard-user-wrap">
+          {/* 🌐 Besucher-Chat-Icon (für Admin/Super-Admin/Eingeschränkt) */}
+          {(role === 'admin' || role === 'super_admin' || role === 'eingeschraenkt') && (
             <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
+              onClick={() => navigate('/dashboard/besucher-chat')}
+              className="logout-button chat-header-badge-wrap dashboard-chat-wrap"
+              title="Besucher-Chat"
+            >
+              🌐
+            </button>
+          )}
+          {/* 👤 User-Modal */}
+          <div className="dashboard-user-wrap">
+            <button
+              onClick={() => { console.log('👤 USER BUTTON GEKLICKT, showUserMenu:', showUserMenu); setShowUserMenu(!showUserMenu); }}
               className="logout-button dashboard-user-btn"
             >
               <span>👤</span>
               <span>{userDisplayName || 'User'}</span>
-              <span className="dashboard-user-btn-arrow">▼</span>
+              <ChevronDown size={13} className={`dashboard-user-chevron${showUserMenu ? ' open' : ''}`} />
             </button>
+          </div>
 
-            {showUserMenu && (
-              <div className="dashboard-user-dropdown">
-                {/* Theme Toggle */}
-                <button onClick={toggleDarkMode} className="dashboard-menu-btn">
-                  {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                  <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
-                </button>
-
-                {/* Sprache */}
-                <div className="dashboard-menu-row">
-                  <span>🌐</span>
-                  <LanguageSwitcher compact={true} showLabel={false} />
+          {showUserMenu && createPortal(
+            <>
+              <div className="um-overlay" onClick={() => setShowUserMenu(false)} />
+              <div className="um-modal">
+                <div className="um-header">
+                  <div className="um-avatar">👤</div>
+                  <div className="um-info">
+                    <div className="um-name">{userDisplayName || 'User'}</div>
+                    <div className="um-role">{role}</div>
+                  </div>
+                  <button className="um-close" onClick={() => setShowUserMenu(false)}>
+                    <X size={15} />
+                  </button>
                 </div>
 
-                {/* Logout */}
-                <button
-                  onClick={() => { setShowUserMenu(false); handleLogout(); }}
-                  className="dashboard-menu-btn danger"
-                >
-                  <span>🚪</span>
-                  <span>{t('header.logout')}</span>
-                </button>
+                <div className="um-body">
+                  <button className="um-btn" onClick={toggleDarkMode}>
+                    {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
+                    <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                  </button>
+
+                  <div className="um-lang-row">
+                    <span className="um-lang-label">🌐 Sprache</span>
+                    <div className="um-lang-flags">
+                      {[{ code: 'de', flag: '🇩🇪' }, { code: 'en', flag: '🇺🇸' }, { code: 'it', flag: '🇮🇹' }].map(l => (
+                        <button
+                          key={l.code}
+                          className={`um-lang-flag${i18n.language === l.code ? ' active' : ''}`}
+                          onClick={() => i18n.changeLanguage(l.code)}
+                          title={l.code.toUpperCase()}
+                        >
+                          {l.flag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="um-footer">
+                  <button
+                    className="um-logout"
+                    onClick={() => { console.log('🚪 PORTAL LOGOUT GEKLICKT'); setShowUserMenu(false); handleLogout(); }}
+                  >
+                    <LogOut size={16} />
+                    <span>{t('header.logout')}</span>
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
+            </>,
+            document.body
+          )}
         </div>
       </header>
 
@@ -1041,8 +1230,7 @@ function Dashboard() {
                   ⚠️ {error}
                   <button
                     onClick={fetchDashboardStatsOptimized}
-                    className="btn btn-neutral btn-small"
-                    className="u-ml-1"
+                    className="btn btn-neutral btn-small u-ml-1"
                   >
                     🔄 Erneut versuchen
                   </button>
@@ -1080,7 +1268,7 @@ function Dashboard() {
                       {/* ✨ Check-in Systems Tab ✨ */}
                       {activeTab === 'checkin' && (
                         <div className="nav-cards">
-                          <div 
+                          <div
                             onClick={() => handleNavigation('/dashboard/checkin')}
                             className="nav-card clickable featured"
                           >
@@ -1096,6 +1284,21 @@ function Dashboard() {
                               <p>Touch & QR-Code Check-in für Mitglieder</p>
                             </div>
                             <div className="nav-arrow">→</div>
+                          </div>
+
+                          <div
+                            onClick={() => window.open('https://checkin.dojo.tda-intl.org', '_blank')}
+                            className="nav-card clickable featured"
+                          >
+                            <div className="nav-badge">TRAINER</div>
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">🔗</span>
+                                <h3>Trainer Check-in App</h3>
+                              </div>
+                              <p>checkin.dojo.tda-intl.org öffnen</p>
+                            </div>
+                            <div className="nav-arrow">↗</div>
                           </div>
                           
                           <div
@@ -1204,7 +1407,7 @@ function Dashboard() {
                       {/* ✨ Mitgliederverwaltung Tab ✨ */}
                       {activeTab === 'mitglieder' && (
                         <div className="nav-cards">
-                        {mitgliederCards.map((card, index) => (
+                        {mitgliederCards.filter(card => !card.superAdminOnly || isSuperAdmin).map((card, index) => (
                           <div
                             key={index}
                             onClick={() => handleNavigation(card.path)}
@@ -1292,6 +1495,41 @@ function Dashboard() {
                         </div>
                       )}
 
+                      {/* ✨ Kommunikation & Marketing Tab ✨ */}
+                      {activeTab === 'kommunikation' && (
+                        <div className="nav-cards">
+                        {kommunikationCards.map((card, index) => (
+                          <div
+                            key={index}
+                            onClick={() => {
+                              if (card.action === 'msg-app') {
+                                const dojoParam = selectedDojo?.id ? `&dojo_id=${selectedDojo.id}` : '';
+                                const msgUrl = `https://msg.dojo.tda-intl.org/?token=${token}${dojoParam}`;
+                                window.open(msgUrl, '_blank');
+                              } else {
+                                handleNavigation(card.path);
+                              }
+                            }}
+                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                          >
+                            {card.badge && (
+                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : 'live'}`}>
+                                {card.badge}
+                              </div>
+                            )}
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>{card.title}</h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                        </div>
+                      )}
+
                       {/* ✨ Finanzen Tab ✨ */}
                       {activeTab === 'finanzen' && (
                         <div className="nav-cards">
@@ -1324,6 +1562,28 @@ function Dashboard() {
                         </div>
                       )}
 
+                      {/* ✨ Shop & Kasse Tab ✨ */}
+                      {activeTab === 'shop' && (
+                        <div className="nav-cards">
+                        {shopCards.map((card, index) => (
+                          <div
+                            key={index}
+                            onClick={() => handleNavigation(card.path)}
+                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                          >
+                            <div className="nav-content">
+                              <div className="nav-card-header">
+                                <span className="nav-icon">{card.icon}</span>
+                                <h3>{card.title}</h3>
+                              </div>
+                              <p>{card.description}</p>
+                            </div>
+                            <div className="nav-arrow">→</div>
+                          </div>
+                        ))}
+                        </div>
+                      )}
+
                       {/* ✨ Dojo-Verwaltung Tab ✨ */}
                       {activeTab === 'verwaltung' && (
                         <div className="nav-cards">
@@ -1334,7 +1594,7 @@ function Dashboard() {
                             className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
                           >
                             {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : 'live'}`}>
+                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'ENTERPRISE' ? 'enterprise' : 'live'}`}>
                                 {card.badge}
                               </div>
                             )}
@@ -1395,8 +1655,7 @@ function Dashboard() {
                             <>
                               <button
                                 onClick={() => setEinstellungenView(null)}
-                                className="quick-action-btn info"
-                                className="u-mb-1"
+                                className="quick-action-btn info u-mb-1"
                               >
                                 ← Zurück
                               </button>
@@ -1448,7 +1707,7 @@ function Dashboard() {
                                   </div>
                                 </div>
                                 <div className="dashboard-info-box full-width transparent">
-                                  <SystemChangelog maxItems={3} />
+                                  <SystemChangelog maxItems={3} isAdmin={user?.role === 'admin' || user?.rolle === 'admin'} />
                                 </div>
                               </div>
                             </>
@@ -1551,8 +1810,7 @@ function Dashboard() {
                             <>
                               <button
                                 onClick={() => setHilfeSupportView(null)}
-                                className="quick-action-btn info"
-                                className="u-mb-1"
+                                className="quick-action-btn info u-mb-1"
                               >
                                 ← Zurück
                               </button>
@@ -1607,6 +1865,9 @@ function Dashboard() {
 
       {/* Admin Registration Popup - Zeigt neue Mitglieder-Registrierungen */}
       {role === 'admin' && <AdminRegistrationPopup />}
+
+      {/* Setup Wizard - Ersteinrichtung für neue Dojos */}
+      {showSetupWizard && <SetupWizard onClose={() => setShowSetupWizard(false)} />}
     </div>
   );
 }

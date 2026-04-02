@@ -6,7 +6,7 @@ import {
   BarChart3, PieChart, MapPin, TrendingDown, ArrowUpRight, ArrowDownRight,
   Activity, Target, DollarSign, UserPlus, UserMinus,
   HardDrive, AlertCircle, CheckCircle2, Info, Flag, Heart, Server,
-  Download, Power, PowerOff
+  Download, Power, PowerOff, FileText, X
 } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -37,13 +37,18 @@ const FREE_PLANS = ['trial', 'basic', 'free'];
 
 // Default Plan-Feature Zuordnung
 const DEFAULT_PLAN_FEATURES = {
-  trial: ['mitgliederverwaltung', 'checkin', 'dashboard', 'sicherheit'],
+  // Trial: Alle Features außer Multi-Dojo + White-Label (volle 14-Tage-Erfahrung)
+  trial: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'buchfuehrung', 'api', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats', 'homepage_builder'],
   basic: ['mitgliederverwaltung', 'checkin', 'dashboard', 'sicherheit'],
   free: ['mitgliederverwaltung', 'checkin', 'dashboard', 'sicherheit'],
-  starter: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'dashboard', 'benachrichtigungen', 'sicherheit', 'interessenten', 'probetraining', 'mahnwesen'],
-  professional: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen'],
-  premium: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'buchfuehrung', 'api', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb'],
-  enterprise: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'multidojo', 'dokumente', 'api', 'sicherheit', 'buchfuehrung', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'whitelabel']
+  // Starter: Kern-Operations — alles was ein kleines Dojo von Tag 1 braucht inkl. Stundenplan
+  starter: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'dashboard', 'benachrichtigungen', 'sicherheit', 'interessenten', 'probetraining', 'mahnwesen', 'badges', 'wallet_pass', 'freunde_werben', 'stundenplan', 'kalender_abo'],
+  // Professional: Wachstums-Tools — Kommunikation, Events, Familie, Verkauf; ohne Spezialfeatures
+  professional: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo'],
+  // Premium: Vollausstattung — inkl. Lernplattform, Eltern-Portal, Trainer-Stunden, externe Chats
+  premium: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'buchfuehrung', 'api', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats'],
+  // Enterprise: Franchise & Multi-Standort — alles inkl. Multi-Dojo, White-Label, Homepage Builder, externe Chats
+  enterprise: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'multidojo', 'dokumente', 'api', 'sicherheit', 'buchfuehrung', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'whitelabel', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats', 'homepage_builder']
 };
 
 const PLAN_NAMES = {
@@ -132,158 +137,275 @@ const DEFAULT_FEATURES = [
     id: 'mitgliederverwaltung',
     label: 'Mitgliederverwaltung',
     description: 'Verträge, Kündigungen, Dokumente, Familienverbund - alles an einem Ort',
-    emoji: '👥'
+    emoji: '👥',
+    files: ['MitgliedDetail.jsx', 'MitgliedDetailShared.jsx', 'MitgliederListe.jsx', 'MitgliederFilter.jsx', 'MitgliedsAusweis.jsx', 'Personal.jsx', 'backend/routes/mitglieder/']
   },
   {
     id: 'online_registrierung',
     label: 'Online-Registrierung',
     description: 'Selbstständige Anmeldung mit automatischer Vertragserstellung',
-    emoji: '🌐'
+    emoji: '🌐',
+    files: ['PublicRegistration.jsx', 'BuddyInviteRegistration.jsx', 'backend/routes/registrierung.js']
   },
   {
     id: 'mitglieder_portal',
     label: 'Mitglieder-Portal',
     description: 'Self-Service: Adressänderung, Kündigung, Ruhepause - ohne deinen Aufwand',
-    emoji: '👤'
+    emoji: '👤',
+    files: ['MemberDashboard.jsx', 'MemberHeader.jsx', 'MemberPayments.jsx', 'MemberProfilePage.jsx', 'MemberStats.jsx', 'MemberSchedule.jsx', 'MemberCheckin.jsx']
   },
   {
     id: 'checkin',
     label: 'Check-In System',
     description: 'QR-Code basiertes Check-In mit Live-Display für dein Dojo',
-    emoji: '✅'
+    emoji: '✅',
+    files: ['CheckinSystem.jsx', 'PersonalCheckin.jsx', 'PublicCheckinDisplay.jsx', 'QRScanner.jsx', 'MemberCheckin.jsx', 'backend/routes/checkin.js']
   },
   {
     id: 'sepa',
     label: 'SEPA & Finanzen',
     description: 'Automatische Lastschriften, Rabattsystem, Mahnwesen',
-    emoji: '🏦'
+    emoji: '🏦',
+    files: ['SepaMandateVerwaltung.jsx', 'SepaTab.jsx', 'LastschriftManagement.jsx', 'Lastschriftlauf.jsx', 'AutoLastschriftTab.jsx', 'RuecklastschriftVerwaltung.jsx', 'Zahllaeufe.jsx', 'backend/routes/sepa.js']
   },
   {
     id: 'pruefungen',
     label: 'Prüfungswesen',
     description: 'Gürtelprüfungen, historische Prüfungen, Lehrgänge & Ehrungen',
-    emoji: '🥋'
+    emoji: '🥋',
+    files: ['PruefungsVerwaltung.jsx', 'PruefungDurchfuehren.jsx', 'PruefungsStatus.jsx', 'GuertelMassenzuweisung.jsx', 'GurtStatistikDropdown.jsx', 'backend/routes/pruefungen.js']
   },
   {
     id: 'vertraege',
     label: 'Vertragsverwaltung',
     description: 'Automatische Verlängerung, Tarifwechsel, Rabatte, PDF-Export',
-    emoji: '📄'
+    emoji: '📄',
+    files: ['ContractsTab.jsx', 'VertragFormular.jsx', 'backend/routes/vertraege.js']
   },
   {
     id: 'familien',
     label: 'Familienverwaltung',
     description: 'Familienrabatte, Erziehungsberechtigte, verknüpfte Konten',
-    emoji: '👨‍👩‍👧‍👦'
+    emoji: '👨‍👩‍👧‍👦',
+    files: ['MemberFamilyTab.jsx', 'backend/routes/familien.js']
   },
   {
     id: 'verkauf',
     label: 'Verkauf & Lager',
     description: 'Artikel, Kassensystem, Bestandsverwaltung, Verkaufsstatistik',
-    emoji: '🛒'
+    emoji: '🛒',
+    files: ['ArtikelVerwaltung.jsx', 'ArtikelFormular.jsx', 'VerkaufKasse.jsx', 'TresenUebersicht.jsx', 'BestellungenTab.jsx', 'ZehnerkartenVerwaltung.jsx', 'ArtikelgruppenVerwaltung.jsx', 'backend/routes/verkauf.js']
   },
   {
     id: 'dashboard',
     label: 'Dashboard & Statistiken',
     description: 'Echtzeit-Auswertungen, Einnahmen, Austritte, Anwesenheit',
-    emoji: '📊'
+    emoji: '📊',
+    files: ['Dashboard.jsx', 'DashboardStart.jsx', 'AnwesenheitDashboard.jsx', 'AnwesenheitStatistik.jsx', 'StatisticsTab.jsx', 'backend/routes/statistiken.js']
   },
   {
     id: 'stundenplan',
     label: 'Stundenplan & Kurse',
     description: 'Trainingszeiten, Kursbuchung, Wartelisten, Trainer-Zuordnung',
-    emoji: '📅'
+    emoji: '📅',
+    files: ['Stundenplan.jsx', 'Stundenplan.css', 'Kurse.jsx', 'PublicTimetableDisplay.jsx', 'CourseSelectionModal.jsx', 'MemberSchedule.jsx', 'GruppenStilverwaltung.jsx', 'backend/routes/stundenplan.js', 'backend/routes/kurse.js']
   },
   {
     id: 'kommunikation',
     label: 'Kommunikation',
     description: 'E-Mail-Versand, Newsletter, Vorlagen, Massen-Mails',
-    emoji: '📧'
+    emoji: '📧',
+    files: ['NotificationSystem.jsx', 'NewsVerwaltung.jsx', 'VorlagenVerwaltung.jsx', 'VorlagenEditor.jsx', 'TemplateEditor.jsx', 'TrainingReminders.jsx', 'backend/routes/email-service.js']
   },
   {
     id: 'benachrichtigungen',
     label: 'Benachrichtigungen',
     description: 'Automatische Erinnerungen, Zahlungseingänge, Kündigungen',
-    emoji: '🔔'
+    emoji: '🔔',
+    files: ['NotificationSystem.jsx', 'EventNotificationPopup.jsx', 'backend/routes/notifications.js', 'backend/routes/trainer.js (Push)']
   },
   {
     id: 'multidojo',
     label: 'Multi-Dojo',
     description: 'Mehrere Standorte zentral verwalten mit einem Account',
-    emoji: '🏢'
+    emoji: '🏢',
+    files: ['DojosVerwaltung.jsx', 'DojoEdit.jsx', 'DojoSwitcher.jsx', 'SuperAdminDashboard.jsx', 'StandortVerwaltung.jsx', 'context/DojoContext.jsx', 'backend/routes/dojos.js']
   },
   {
     id: 'dokumente',
     label: 'Dokumentenverwaltung',
     description: 'Upload, Speicherung und Verwaltung aller Dokumente',
-    emoji: '📁'
+    emoji: '📁',
+    files: ['DokumentenZentrale.jsx', 'DokumenteVerwaltung.jsx', 'BerichteDokumente.jsx', 'backend/routes/dokumente.js']
   },
   {
     id: 'api',
     label: 'API-Zugang',
     description: 'Externe Integrationen, Webhooks, Zapier-Anbindung',
-    emoji: '🔌'
+    emoji: '🔌',
+    files: ['WebhookVerwaltung.jsx', 'IntegrationsEinstellungen.jsx', 'backend/routes/webhooks.js']
   },
   {
     id: 'sicherheit',
     label: 'Sicherheit & DSGVO',
     description: 'Verschlüsselte Daten, deutsche Server, 100% DSGVO-konform',
-    emoji: '🔒'
+    emoji: '🔒',
+    files: ['MemberSecurityTab.jsx', 'PasswortVerwaltung.jsx', 'AuditLog.jsx', 'SecurityDashboard.jsx', 'backend/middleware/auth.js', 'backend/middleware/tenantSecurity.js']
   },
   {
     id: 'buchfuehrung',
     label: 'Buchführung & EÜR',
     description: 'Einnahmen-Überschuss-Rechnung, DATEV-Export, Steuervorbereitung',
-    emoji: '📒'
+    emoji: '📒',
+    files: ['BuchhaltungTab.jsx', 'DatevExport.jsx', 'EuerUebersicht.jsx', 'Jahresuebersicht.jsx', 'AusgabenVerwaltung.jsx', 'FinanzenTab.jsx', 'Finanzcockpit.jsx', 'backend/routes/buchfuehrung.js']
   },
-  // ===== NEUE FEATURES =====
   {
     id: 'wettbewerb',
     label: 'Wettbewerbssystem',
     description: 'Turnierverwaltung, Sportler, Nominierungen, Hall-of-Fame, Medaillen',
-    emoji: '🏆'
+    emoji: '🏆',
+    files: ['Turnierverwaltung.jsx', 'TdaTurniereList.jsx', 'backend/routes/wettbewerb.js']
   },
   {
     id: 'interessenten',
     label: 'Interessenten & Leads',
     description: 'Probetraining-Anfragen, Lead-Verwaltung, Conversion-Tracking',
-    emoji: '🎯'
+    emoji: '🎯',
+    files: ['InterestentenListe.jsx', 'backend/routes/interessenten.js']
   },
   {
     id: 'probetraining',
     label: 'Probetraining',
     description: 'Online-Buchung, Terminverwaltung, automatische Erinnerungen',
-    emoji: '🥊'
+    emoji: '🥊',
+    files: ['InterestentenListe.jsx', 'backend/routes/interessenten.js (probetraining-Endpunkte)']
   },
   {
     id: 'events',
     label: 'Events & Lehrgänge',
     description: 'Veranstaltungen, Seminare, Lehrgänge, Online-Anmeldung',
-    emoji: '🎪'
+    emoji: '🎪',
+    files: ['Events.jsx', 'EventsDashboard.jsx', 'EventGastAnmeldung.jsx', 'MeineEvents.jsx', 'EventPaymentCheckout.jsx', 'backend/routes/events.js']
   },
   {
     id: 'ruhepause',
     label: 'Ruhepause & Pausieren',
     description: 'Mitgliedschaft pausieren, automatische Reaktivierung',
-    emoji: '⏸️'
+    emoji: '⏸️',
+    files: ['MemberDashboard.jsx (Ruhepause-Sektion)', 'backend/routes/mitglieder/crud.js (ruhepause-Endpunkte)']
   },
   {
     id: 'mahnwesen',
     label: 'Mahnwesen',
     description: 'Automatische Mahnungen, Mahnstufen, Zahlungserinnerungen',
-    emoji: '⚠️'
+    emoji: '⚠️',
+    files: ['Mahnwesen.jsx', 'MahnstufenEinstellungen.jsx', 'OffeneZahlungen.jsx', 'backend/routes/mahnwesen.js']
   },
   {
     id: 'auswertungen',
     label: 'Berichte & Auswertungen',
     description: 'Detaillierte Reports, Export-Funktionen, grafische Analysen',
-    emoji: '📈'
+    emoji: '📈',
+    files: ['Auswertungen.jsx', 'StatisticsTab.jsx', 'AnwesenheitStatistik.jsx', 'Jahresuebersicht.jsx', 'AnwesenheitExport.jsx', 'backend/routes/auswertungen.js']
   },
   {
     id: 'whitelabel',
     label: 'White-Label',
     description: 'Eigenes Branding, Custom Domain, individuelles Design',
-    emoji: '🎨'
+    emoji: '🎨',
+    files: ['EinstellungenDojo.jsx', 'DojoLogos.jsx', 'backend/routes/dojos.js (branding-Endpunkte)']
+  },
+  // ===== FEATURES AUS 2.8/2.9 =====
+  {
+    id: 'chat',
+    label: 'Mitglieder-Chat',
+    description: 'Echtzeit-Chat zwischen Mitgliedern, Direktchats, Gruppenräume & Ankündigungs-Kanal',
+    emoji: '💬',
+    files: ['chat/ChatPage.jsx', 'chat/ChatRoomList.jsx', 'chat/ChatWindow.jsx', 'chat/ChatNewRoom.jsx', 'chat/ChatRoomSettings.jsx', 'chat/AdminChatPage.jsx', 'chat/ChatPopup.jsx', 'chat/ChatMessage.jsx', 'context/ChatContext.jsx', 'backend/routes/chat.js', 'backend/chatSocket.js']
+  },
+  {
+    id: 'lernplattform',
+    label: 'Lernplattform',
+    description: 'Technik-Videos und PDFs nach Stil und Graduierung gefiltert',
+    emoji: '🎓',
+    files: ['Lernplattform.jsx', 'backend/routes/lernplattform.js']
+  },
+  {
+    id: 'badges',
+    label: 'Badges & Auszeichnungen',
+    description: 'Digitale Abzeichen vergeben, im Mitglieder-Portal sichtbar, mit Benachrichtigung',
+    emoji: '🏅',
+    files: ['BadgeDisplay.jsx', 'BadgeAdminOverview.jsx', 'MemberDashboard.jsx (Badge-Sektion)', 'backend/routes/badges.js']
+  },
+  {
+    id: 'eltern_portal',
+    label: 'Eltern-Portal',
+    description: 'Lesezugang für Erziehungsberechtigte auf die Daten ihrer Kinder',
+    emoji: '👨‍👩‍👧',
+    files: ['ElternPortal.jsx', 'ElternZugaenge.jsx', 'backend/routes/eltern.js']
+  },
+  {
+    id: 'trainer_stunden',
+    label: 'Trainer-Stundennachweise',
+    description: 'Stunden nach Kurs buchen, Monatsabrechnung erstellen und exportieren',
+    emoji: '⏱️',
+    files: ['TrainerStunden.jsx', 'TrainerDashboard.jsx', 'backend/routes/trainer.js (stunden-Endpunkte)']
+  },
+  {
+    id: 'freunde_werben',
+    label: 'Freunde werben',
+    description: 'Referral-System: Mitglieder werben Mitglieder mit individuellen Einladungscodes',
+    emoji: '🤝',
+    files: ['FreundeWerbenFreunde.jsx', 'ReferralCodeVerwaltung.jsx', 'BuddyVerwaltung.jsx', 'BuddyInviteRegistration.jsx', 'backend/routes/referral.js']
+  },
+  {
+    id: 'marketing',
+    label: 'Marketing & Aktionen',
+    description: 'Marketingaktionen, Jahresplan, Rabattaktionen und Kampagnen verwalten',
+    emoji: '📣',
+    files: ['MarketingAktionen.jsx', 'MarketingJahresplan.jsx', 'Rabattsystem.jsx', 'backend/routes/marketing.js']
+  },
+  {
+    id: 'ausruestung',
+    label: 'Ausrüstungsverwaltung',
+    description: 'Ausrüstungsgegenstände erfassen, Checklisten für Mitglieder und Kurse',
+    emoji: '🛡️',
+    files: ['EquipmentManagement.jsx', 'EquipmentChecklist.jsx', 'backend/routes/ausruestung.js']
+  },
+  {
+    id: 'wallet_pass',
+    label: 'Digitaler Mitgliedsausweis',
+    description: 'QR-Code-Ausweis als Apple Wallet / Google Wallet Pass exportierbar',
+    emoji: '📱',
+    files: ['MemberQRCode.jsx', 'MitgliedsAusweis.jsx', 'AppInstallQRCode.jsx', 'backend/routes/wallet.js']
+  },
+  {
+    id: 'entwicklungsziele',
+    label: 'Entwicklungsziele',
+    description: 'Persönliche Trainingsziele, Fortschrittserfassung und Entwicklungsberichte',
+    emoji: '🎯',
+    files: ['ZieleEntwicklung.jsx', 'MitgliedFortschritt.jsx', 'backend/routes/entwicklungsziele.js']
+  },
+  {
+    id: 'kalender_abo',
+    label: 'Kalender-Abo',
+    description: 'Stundenplan als iCal-Abo in Kalender-Apps einbinden (Google, Apple, Outlook)',
+    emoji: '📆',
+    files: ['KalenderAbo.jsx', 'backend/routes/kalender.js']
+  },
+  {
+    id: 'externe_chats',
+    label: 'Externe Chat-Integrationen',
+    description: 'Facebook Messenger, WhatsApp Business und weitere externe Messaging-Kanäle direkt im Dashboard empfangen und beantworten',
+    emoji: '📲',
+    files: ['chat/BesucherChat.jsx', 'backend/routes/visitor-chat.js', 'backend/routes/messenger.js']
+  },
+  {
+    id: 'homepage_builder',
+    label: 'Homepage Builder',
+    description: 'Kostenlose professionelle Homepage im japanischen Martial-Arts-Design — Drag & Drop Editor mit Live-Vorschau, Logo-Upload, Custom Domain möglich',
+    emoji: '🌐',
+    files: ['HomepageDashboard.jsx', 'DojoSite.jsx', 'backend/routes/homepage.js']
   },
 ];
 
@@ -300,7 +422,8 @@ const DojoLizenzverwaltung = () => {
   // Features Management
   const [allFeatures, setAllFeatures] = useState(DEFAULT_FEATURES);
   const [showAddFeature, setShowAddFeature] = useState(false);
-  const [newFeature, setNewFeature] = useState({ id: '', label: '', description: '', emoji: '⭐' });
+  const [expandedFeatureId, setExpandedFeatureId] = useState(null);
+  const [newFeature, setNewFeature] = useState({ id: '', label: '', description: '', emoji: '⭐', plans: [] });
   const [editingFeature, setEditingFeature] = useState(null);
 
   // Plan-Feature Management
@@ -492,6 +615,16 @@ const DojoLizenzverwaltung = () => {
   const loadFeatureTrials = async () => {
     setFeatureTrialsLoading(true);
     try {
+      // Auto-Sync: DEFAULT_FEATURES + DEFAULT_PLAN_FEATURES → DB (plan_features, feature_addon_prices, plan_feature_mapping)
+      await fetchWithAuth(`${config.apiBaseUrl}/admin/sync-features`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          features: DEFAULT_FEATURES.map(f => ({ id: f.id, label: f.label, emoji: f.emoji })),
+          planFeatures: DEFAULT_PLAN_FEATURES
+        })
+      });
+
       const [trialsRes, statsRes, pricesRes] = await Promise.all([
         fetchWithAuth(`${config.apiBaseUrl}/admin/feature-trials`),
         fetchWithAuth(`${config.apiBaseUrl}/admin/feature-trial-stats`),
@@ -1096,7 +1229,35 @@ const DojoLizenzverwaltung = () => {
     }
 
     setAllFeatures(prev => [...prev, feature]);
-    setNewFeature({ id: '', label: '', description: '', emoji: '⭐' });
+
+    // Plan-Zuordnung: Feature zu ausgewählten Plänen hinzufügen
+    if (newFeature.plans.length > 0) {
+      const updatedPlanFeatures = { ...planFeatures };
+      newFeature.plans.forEach(plan => {
+        if (!(updatedPlanFeatures[plan] || []).includes(featureId)) {
+          updatedPlanFeatures[plan] = [...(updatedPlanFeatures[plan] || []), featureId];
+        }
+      });
+      setPlanFeatures(updatedPlanFeatures);
+
+      // Plan-Features für jeden betroffenen Plan in der DB speichern
+      for (const plan of newFeature.plans) {
+        try {
+          await fetchWithAuth(
+            `${config.apiBaseUrl}/admin/subscription-plans/${plan}/features`,
+            {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ features: updatedPlanFeatures[plan] })
+            }
+          );
+        } catch (e) {
+          console.log(`Plan-Features für ${plan} lokal gesetzt`);
+        }
+      }
+    }
+
+    setNewFeature({ id: '', label: '', description: '', emoji: '⭐', plans: [] });
     setShowAddFeature(false);
   };
 
@@ -1543,7 +1704,7 @@ const DojoLizenzverwaltung = () => {
           <h1><Shield size={28} /> Software-Lizenzverwaltung</h1>
           <p>Verwalte DojoSoftware-Lizenzen, Pläne und Features</p>
         </div>
-        <button className="btn-refresh" onClick={loadDojos} disabled={loading}>
+        <button className="btn-refresh" onClick={loadDojos} disabled={loading} title="Daten neu laden">
           <RefreshCw size={18} className={loading ? 'spinning' : ''} />
         </button>
       </div>
@@ -1556,57 +1717,57 @@ const DojoLizenzverwaltung = () => {
       )}
 
       {/* Tabs */}
-      <div className="lizenz-tabs">
+      <div className="sub-tabs">
         <button
-          className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
           onClick={() => setActiveTab('overview')}
         >
           Übersicht
         </button>
         <button
-          className={`tab ${activeTab === 'list' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
           onClick={() => setActiveTab('list')}
         >
           Alle Dojos ({dojos.length})
         </button>
         <button
-          className={`tab ${activeTab === 'plans' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'plans' ? 'active' : ''}`}
           onClick={() => setActiveTab('plans')}
         >
           Pläne
         </button>
         <button
-          className={`tab ${activeTab === 'statistics' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'statistics' ? 'active' : ''}`}
           onClick={() => setActiveTab('statistics')}
         >
           Statistiken
         </button>
         <button
-          className={`tab ${activeTab === 'features' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'features' ? 'active' : ''}`}
           onClick={() => setActiveTab('features')}
         >
           Features ({allFeatures.length})
         </button>
         <button
-          className={`tab ${activeTab === 'vergleich' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'vergleich' ? 'active' : ''}`}
           onClick={() => { setActiveTab('vergleich'); loadComparisonData(); }}
         >
           Vergleich
         </button>
         <button
-          className={`tab ${activeTab === 'trials' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'trials' ? 'active' : ''}`}
           onClick={() => { setActiveTab('trials'); loadFeatureTrials(); }}
         >
           Feature-Trials
         </button>
         <button
-          className={`tab ${activeTab === 'audit' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
           onClick={() => { setActiveTab('audit'); loadAuditLogs(); }}
         >
           Audit-Log
         </button>
         <button
-          className={`tab ${activeTab === 'settings' ? 'active' : ''}`}
+          className={`sub-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => { setActiveTab('settings'); loadSaasSettings(); }}
         >
           <Settings size={16} />
@@ -1614,7 +1775,7 @@ const DojoLizenzverwaltung = () => {
         </button>
         {selectedDojo && (
           <button
-            className={`tab ${activeTab === 'details' ? 'active' : ''}`}
+            className={`sub-tab-btn ${activeTab === 'details' ? 'active' : ''}`}
             onClick={() => setActiveTab('details')}
           >
             {selectedDojo.dojoname}
@@ -1671,11 +1832,17 @@ const DojoLizenzverwaltung = () => {
                   <div className="stat-label">Mitglieder gesamt</div>
                 </div>
               </div>
-              <div className="stat-card revenue">
+              <div
+                className="stat-card revenue stat-card--tooltip"
+                data-tooltip={`Potenzielle MRR = was alle Dojos zahlen würden, wenn sie ihren Plan vollständig nutzen (inkl. Trial-Konvertierung). Tatsächliche MRR aktuell: €${stats.mrr.toLocaleString('de-DE')}`}
+              >
                 <div className="stat-icon"><DollarSign size={24} /></div>
                 <div className="stat-info">
                   <div className="stat-value">€{stats.potentialMrr.toLocaleString('de-DE')}</div>
-                  <div className="stat-label">Potenzielle MRR</div>
+                  <div className="stat-label stat-label--info">
+                    Potenzielle MRR
+                    <Info size={11} className="stat-info-icon" />
+                  </div>
                   {stats.mrr !== stats.potentialMrr && (
                     <div className="stat-sublabel">(Aktuell: €{stats.mrr.toLocaleString('de-DE')})</div>
                   )}
@@ -2236,7 +2403,7 @@ const DojoLizenzverwaltung = () => {
                             )}
                           </div>
                           <button
-                            className="btn-sm btn-view"
+                            className="btn btn-sm btn-ghost"
                             onClick={() => handleSelectDojo(d)}
                           >
                             Details
@@ -2343,14 +2510,14 @@ const DojoLizenzverwaltung = () => {
                           <td>{formatDate(dojo.created_at)}</td>
                           <td className="actions-cell">
                             <button
-                              className="btn-sm btn-view"
+                              className="btn btn-sm btn-ghost"
                               onClick={() => handleSelectDojo(dojo)}
                             >
                               Details
                             </button>
                             {isTrial && (
                               <button
-                                className="btn-sm btn-extend"
+                                className="btn btn-sm btn-success"
                                 onClick={() => handleExtendTrial(dojo.id)}
                               >
                                 +14d
@@ -2381,7 +2548,6 @@ const DojoLizenzverwaltung = () => {
                 { key: 'premium', icon: '⭐', name: 'Premium' },
                 { key: 'enterprise', icon: '🏢', name: 'Enterprise' }
               ].map(plan => {
-                const dbPlanInfo = subscriptionPlans.find(p => p.plan_name === plan.key);
                 const featureCount = (planFeatures[plan.key] || []).length;
                 return (
                   <button
@@ -2398,7 +2564,7 @@ const DojoLizenzverwaltung = () => {
               })}
             </div>
 
-            {/* Plan Settings Bar */}
+            {/* Plan Settings Card */}
             {(() => {
               const dbPlan = subscriptionPlans.find(p => p.plan_name === activePlanTab);
               const currentPrices = editingPlanPrices[activePlanTab] || {
@@ -2407,93 +2573,96 @@ const DojoLizenzverwaltung = () => {
                 max_members: dbPlan?.max_members || null,
                 is_visible: dbPlan?.is_visible ?? true
               };
+              const planIcons = { trial: '🎁', basic: '📦', free: '🆓', starter: '🚀', professional: '💼', premium: '⭐', enterprise: '🏢' };
 
               return (
-                <div className="plan-settings-bar">
-                  <div className="psb-left">
-                    <span className="psb-title">{PLAN_NAMES[activePlanTab]}</span>
-                    <div className="psb-inputs">
-                      <div className="psb-field">
-                        <label>Monat</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={currentPrices.price_monthly}
-                          onChange={(e) => setEditingPlanPrices(prev => ({
-                            ...prev,
-                            [activePlanTab]: { ...currentPrices, price_monthly: parseFloat(e.target.value) || 0 }
-                          }))}
-                        />
-                        <span>€</span>
-                      </div>
-                      <div className="psb-field">
-                        <label>Jahr</label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={currentPrices.price_yearly}
-                          onChange={(e) => setEditingPlanPrices(prev => ({
-                            ...prev,
-                            [activePlanTab]: { ...currentPrices, price_yearly: parseFloat(e.target.value) || 0 }
-                          }))}
-                        />
-                        <span>€</span>
-                      </div>
-                      <div className="psb-field">
-                        <label>Max</label>
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="∞"
-                          value={currentPrices.max_members || ''}
-                          onChange={(e) => setEditingPlanPrices(prev => ({
-                            ...prev,
-                            [activePlanTab]: { ...currentPrices, max_members: e.target.value ? parseInt(e.target.value) : null }
-                          }))}
-                        />
-                      </div>
+                <div className="plan-settings-card">
+                  {/* Zeile 1: Plan-Name + Sichtbarkeit + Speichern */}
+                  <div className="psc-header">
+                    <div className="psc-plan-name">
+                      <span className="psc-icon">{planIcons[activePlanTab]}</span>
+                      <span className="psc-title">{PLAN_NAMES[activePlanTab]}</span>
+                      <span className="psc-feature-count">
+                        {(planFeatures[activePlanTab] || []).length} / {allFeatures.length} Features
+                      </span>
+                    </div>
+                    <div className="psc-actions">
+                      <button
+                        className={`psb-visibility ${currentPrices.is_visible ? 'visible' : 'hidden'}`}
+                        onClick={() => setEditingPlanPrices(prev => ({
+                          ...prev,
+                          [activePlanTab]: { ...currentPrices, is_visible: !currentPrices.is_visible }
+                        }))}
+                        title={currentPrices.is_visible ? 'Plan ist öffentlich sichtbar' : 'Plan ist versteckt'}
+                      >
+                        {currentPrices.is_visible ? <Globe size={14} /> : <PowerOff size={14} />}
+                        {currentPrices.is_visible ? 'Öffentlich' : 'Versteckt'}
+                      </button>
+                      {dbPlan && (
+                        <button
+                          className="psb-save"
+                          onClick={() => savePlanPrices(dbPlan.plan_id, PLAN_NAMES[activePlanTab], currentPrices)}
+                        >
+                          <Check size={14} /> Preise speichern
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="psb-center">
-                    <button
-                      onClick={() => setFeatureStatusFilter('all')}
-                      className={`psb-filter ${featureStatusFilter === 'all' ? 'active' : ''}`}
-                    >
-                      Alle
-                    </button>
-                    <button
-                      onClick={() => setFeatureStatusFilter('active')}
-                      className={`psb-filter ${featureStatusFilter === 'active' ? 'active' : ''}`}
-                    >
-                      ✓ Aktiv
-                    </button>
-                    <button
-                      onClick={() => setFeatureStatusFilter('inactive')}
-                      className={`psb-filter ${featureStatusFilter === 'inactive' ? 'active' : ''}`}
-                    >
-                      ✕ Nicht aktiv
-                    </button>
-                  </div>
-                  <div className="psb-right">
-                    <button
-                      className={`psb-visibility ${currentPrices.is_visible ? 'visible' : 'hidden'}`}
-                      onClick={() => setEditingPlanPrices(prev => ({
-                        ...prev,
-                        [activePlanTab]: { ...currentPrices, is_visible: !currentPrices.is_visible }
-                      }))}
-                      title={currentPrices.is_visible ? 'Plan ist öffentlich sichtbar' : 'Plan ist versteckt'}
-                    >
-                      {currentPrices.is_visible ? <Globe size={14} /> : <PowerOff size={14} />}
-                      {currentPrices.is_visible ? 'Öffentlich' : 'Versteckt'}
-                    </button>
-                    {dbPlan && (
-                      <button
-                        className="psb-save"
-                        onClick={() => savePlanPrices(dbPlan.plan_id, PLAN_NAMES[activePlanTab], currentPrices)}
-                      >
-                        <Check size={14} /> Speichern
-                      </button>
-                    )}
+                  {/* Zeile 2: Preisfelder + Filter */}
+                  <div className="psc-body">
+                    <div className="psc-price-fields">
+                      <div className="psc-field">
+                        <label>Monatspreis</label>
+                        <div className="psc-input-wrap">
+                          <input
+                            type="number"
+                            min="0"
+                            value={currentPrices.price_monthly}
+                            onChange={(e) => setEditingPlanPrices(prev => ({
+                              ...prev,
+                              [activePlanTab]: { ...currentPrices, price_monthly: parseFloat(e.target.value) || 0 }
+                            }))}
+                          />
+                          <span className="psc-unit">€</span>
+                        </div>
+                      </div>
+                      <div className="psc-field">
+                        <label>Jahrespreis</label>
+                        <div className="psc-input-wrap">
+                          <input
+                            type="number"
+                            min="0"
+                            value={currentPrices.price_yearly}
+                            onChange={(e) => setEditingPlanPrices(prev => ({
+                              ...prev,
+                              [activePlanTab]: { ...currentPrices, price_yearly: parseFloat(e.target.value) || 0 }
+                            }))}
+                          />
+                          <span className="psc-unit">€</span>
+                        </div>
+                      </div>
+                      <div className="psc-field">
+                        <label>Max. Mitglieder</label>
+                        <div className="psc-input-wrap">
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="∞"
+                            value={currentPrices.max_members || ''}
+                            onChange={(e) => setEditingPlanPrices(prev => ({
+                              ...prev,
+                              [activePlanTab]: { ...currentPrices, max_members: e.target.value ? parseInt(e.target.value) : null }
+                            }))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="psc-filters">
+                      <span className="psc-filter-label">Anzeigen:</span>
+                      <button onClick={() => setFeatureStatusFilter('all')} className={`psb-filter ${featureStatusFilter === 'all' ? 'active' : ''}`}>Alle</button>
+                      <button onClick={() => setFeatureStatusFilter('active')} className={`psb-filter ${featureStatusFilter === 'active' ? 'active' : ''}`}>✓ Aktiv</button>
+                      <button onClick={() => setFeatureStatusFilter('inactive')} className={`psb-filter ${featureStatusFilter === 'inactive' ? 'active' : ''}`}>✕ Inaktiv</button>
+                    </div>
                   </div>
                 </div>
               );
@@ -2638,6 +2807,38 @@ const DojoLizenzverwaltung = () => {
                       placeholder="Kurze Beschreibung des Features..."
                     />
                   </div>
+                  <div className="form-group full-width">
+                    <label>📋 In welchen Plänen soll das Feature verfügbar sein?</label>
+                    <div className="plan-checkboxes">
+                      {[
+                        { key: 'trial', icon: '🎁' },
+                        { key: 'basic', icon: '📦' },
+                        { key: 'free', icon: '🆓' },
+                        { key: 'starter', icon: '🚀' },
+                        { key: 'professional', icon: '💼' },
+                        { key: 'premium', icon: '⭐' },
+                        { key: 'enterprise', icon: '🏢' },
+                      ].map(({ key, icon }) => (
+                        <label key={key} className={`plan-checkbox-label ${newFeature.plans.includes(key) ? 'checked' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={newFeature.plans.includes(key)}
+                            onChange={(e) => setNewFeature(prev => ({
+                              ...prev,
+                              plans: e.target.checked
+                                ? [...prev.plans, key]
+                                : prev.plans.filter(p => p !== key)
+                            }))}
+                          />
+                          {icon} {PLAN_NAMES[key]}
+                          <span className="pcl-price">{PLAN_PRICES[key]}</span>
+                        </label>
+                      ))}
+                    </div>
+                    {newFeature.plans.length === 0 && (
+                      <p className="plan-warning">⚠️ Kein Plan ausgewählt — Feature ist für niemanden sichtbar!</p>
+                    )}
+                  </div>
                 </div>
                 <div className="form-actions">
                   <button className="btn-cancel" onClick={() => setShowAddFeature(false)}>Abbrechen</button>
@@ -2698,10 +2899,11 @@ const DojoLizenzverwaltung = () => {
                 const isPublic = feature.is_public !== false;
                 // Zähle in wie vielen Plänen dieses Feature aktiv ist
                 const planCount = Object.values(planFeatures).filter(pf => pf.includes(feature.id)).length;
+                const isExpanded = expandedFeatureId === feature.id;
                 return (
                   <div
                     key={feature.id}
-                    className="feature-card-mini"
+                    className={`feature-card-mini ${isExpanded ? 'fcm-expanded' : ''}`}
                   >
                     <div className="fcm-header">
                       <span className="fcm-emoji">{feature.emoji}</span>
@@ -2713,6 +2915,16 @@ const DojoLizenzverwaltung = () => {
                     <div className="fcm-desc">{feature.description}</div>
                     <div className="fcm-id">{feature.id}</div>
                     <div className="fcm-actions">
+                      {feature.files && feature.files.length > 0 && (
+                        <button
+                          className={`fcm-files-btn ${isExpanded ? 'active' : ''}`}
+                          onClick={() => setExpandedFeatureId(isExpanded ? null : feature.id)}
+                          title="Beteiligte Dateien anzeigen"
+                        >
+                          <FileText size={12} />
+                          Dateien
+                        </button>
+                      )}
                       <button
                         className={`fcm-public-btn ${isPublic ? 'visible' : 'hidden'}`}
                         onClick={async () => {
@@ -2747,6 +2959,21 @@ const DojoLizenzverwaltung = () => {
                         <Trash2 size={12} />
                       </button>
                     </div>
+                    {isExpanded && feature.files && (
+                      <div className="fcm-files-panel">
+                        <div className="fcm-files-title">📂 Beteiligte Dateien</div>
+                        <div className="fcm-files-list">
+                          {feature.files.map((file, i) => {
+                            const isBackend = file.startsWith('backend/');
+                            return (
+                              <span key={i} className={`fcm-file-tag ${isBackend ? 'fcm-file-tag--backend' : 'fcm-file-tag--frontend'}`}>
+                                {isBackend ? '⚙️' : '⚛️'} {file}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -3058,7 +3285,7 @@ const DojoLizenzverwaltung = () => {
             <div className="details-header">
               <h2>{selectedDojo.dojoname}</h2>
               <button
-                className="btn-back"
+                className="logout-button"
                 onClick={() => { setSelectedDojo(null); setActiveTab('list'); }}
               >
                 Zurück zur Liste
@@ -3439,18 +3666,28 @@ const DojoLizenzverwaltung = () => {
                 {/* Addon-Preise */}
                 <div className="trials-section">
                   <h4>Feature-Addon Preise</h4>
-                  <div className="addon-prices-grid">
-                    {addonPrices.map(price => (
-                      <div key={price.feature_id} className="addon-price-card">
-                        <div className="apc-header">
-                          <span className="apc-icon">{price.feature_icon}</span>
-                          <span className="apc-name">{price.feature_name}</span>
-                        </div>
-                        <div className="apc-prices">
-                          <div className="apc-field">
-                            <label>Monat</label>
+                  <table className="addon-prices-table">
+                    <thead>
+                      <tr>
+                        <th>Feature</th>
+                        <th>Monat €</th>
+                        <th>Jahr €</th>
+                        <th>Trial-Tage</th>
+                        <th>Trial</th>
+                        <th>Addon</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {addonPrices.map(price => (
+                        <tr key={price.feature_id}>
+                          <td className="apt-feature">
+                            <span className="apt-icon">{price.feature_icon}</span>
+                            <span className="apt-name">{price.feature_name}</span>
+                          </td>
+                          <td>
                             <input
                               type="number"
+                              className="apt-input"
                               defaultValue={price.monthly_price}
                               min="0"
                               step="0.01"
@@ -3459,12 +3696,11 @@ const DojoLizenzverwaltung = () => {
                                 monthly_price: parseFloat(e.target.value)
                               })}
                             />
-                            <span>€</span>
-                          </div>
-                          <div className="apc-field">
-                            <label>Jahr</label>
+                          </td>
+                          <td>
                             <input
                               type="number"
+                              className="apt-input"
                               defaultValue={price.yearly_price}
                               min="0"
                               step="0.01"
@@ -3473,12 +3709,11 @@ const DojoLizenzverwaltung = () => {
                                 yearly_price: parseFloat(e.target.value)
                               })}
                             />
-                            <span>€</span>
-                          </div>
-                          <div className="apc-field">
-                            <label>Trial</label>
+                          </td>
+                          <td>
                             <input
                               type="number"
+                              className="apt-input apt-input--small"
                               defaultValue={price.trial_days}
                               min="0"
                               max="30"
@@ -3487,11 +3722,8 @@ const DojoLizenzverwaltung = () => {
                                 trial_days: parseInt(e.target.value)
                               })}
                             />
-                            <span>T</span>
-                          </div>
-                        </div>
-                        <div className="apc-toggles">
-                          <label className="apc-toggle">
+                          </td>
+                          <td className="apt-toggle-cell">
                             <input
                               type="checkbox"
                               defaultChecked={price.trial_enabled}
@@ -3500,9 +3732,8 @@ const DojoLizenzverwaltung = () => {
                                 trial_enabled: e.target.checked
                               })}
                             />
-                            <span>Trial</span>
-                          </label>
-                          <label className="apc-toggle">
+                          </td>
+                          <td className="apt-toggle-cell">
                             <input
                               type="checkbox"
                               defaultChecked={price.addon_enabled}
@@ -3511,12 +3742,11 @@ const DojoLizenzverwaltung = () => {
                                 addon_enabled: e.target.checked
                               })}
                             />
-                            <span>Addon</span>
-                          </label>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </>
             )}

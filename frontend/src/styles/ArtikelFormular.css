@@ -61,7 +61,7 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-bottom: 2px solid var(--border-primary, var(--primary-alpha-20));
 }
 
 .af3-page-title {
@@ -88,7 +88,7 @@
   padding: 0.75rem 1.5rem;
   background: var(--glass-bg);
   color: var(--text-primary);
-  border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 1px solid var(--border-primary, var(--primary-alpha-20));
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
@@ -111,7 +111,7 @@
 .af3-error-banner {
   padding: 1rem;
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
+  border: 1px solid var(--status-error);
   border-radius: 8px;
   color: var(--error);
   margin-bottom: 1rem;
@@ -127,14 +127,14 @@
   padding: 0.25rem;
   background: var(--glass-bg);
   border-radius: 12px;
-  border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 1px solid var(--border-primary, var(--primary-alpha-20));
   flex-wrap: wrap;
 }
 
 /* Tab content wrapper */
 .af3-tab-content {
   background: var(--glass-bg);
-  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 2px solid var(--border-primary, var(--primary-alpha-20));
   border-radius: 12px;
   padding: 2rem;
   min-height: 600px;
@@ -411,7 +411,7 @@
 /* -------------------------------------------------- */
 .af3-laufzeit-section {
   background: var(--glass-bg);
-  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 2px solid var(--border-primary, var(--primary-alpha-20));
   border-radius: 12px;
   padding: 1.5rem;
 }
@@ -626,7 +626,7 @@
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
-  border: 2px solid rgba(255, 215, 0, 0.25);
+  border: 2px solid var(--primary-alpha-25);
 }
 
 .af3-kalk-params-title {
@@ -652,8 +652,8 @@
 
 /* Größen kalkulation result box (gold) */
 .af3-groessen-result-box {
-  background: rgba(255, 215, 0, 0.08);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-08);
+  border: 2px solid var(--primary-alpha-30);
   border-radius: 10px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -759,7 +759,7 @@
   margin-bottom: 1rem;
   padding: 1rem;
   background: rgba(255, 215, 0, 0.06);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   border-radius: 8px;
 }
 
@@ -1142,11 +1142,19 @@
   font-size: 0.9rem;
 }
 
-/* Bestand-input (center, smaller padding) */
+/* Bestand-input row — same grid as header */
 .af3-lager-input {
-  padding: 0.5rem 0.75rem;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 120px;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem 1.5rem;
   font-size: 0.95rem;
-  text-align: center;
+}
+
+/* Mindestbestand Input — gelbliche Border zur Unterscheidung */
+.af3-lager-mindest-input {
+  border-color: rgba(234, 179, 8, 0.5) !important;
 }
 
 /* Zusammenfassung grid */
@@ -1393,7 +1401,7 @@
   width: 100%;
   padding: 0.75rem 1rem;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 215, 0, 0.3);
+  border: 1px solid var(--primary-alpha-30);
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1rem;
@@ -1444,7 +1452,7 @@
   padding: 0.2rem 0.4rem;
   border-radius: 6px;
   border: 1px solid var(--primary);
-  background: rgba(255, 215, 0, 0.1);
+  background: var(--primary-alpha-10);
   color: var(--text-primary);
   font-size: 0.85rem;
 }
@@ -1482,8 +1490,8 @@
   align-items: center;
   gap: 0.2rem;
   padding: 0.25rem 0.5rem;
-  background: rgba(255, 215, 0, 0.15);
-  border: 1px solid var(--gold, #ffd700);
+  background: var(--primary-alpha-15);
+  border: 1px solid var(--gold, var(--primary));
   color: var(--primary);
   border-radius: 20px;
   font-size: 0.85rem;
@@ -1572,6 +1580,15 @@
   height: 28px;
   padding: 0.2rem 0.4rem;
   font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-primary, #fff) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px;
+}
+[data-theme="tda-vib"] .af3-kalk-field-input {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #0f172a !important;
+  border-color: rgba(0, 0, 0, 0.2) !important;
 }
 
 /* kalkulation sub-section wrapper spacing */
@@ -1678,7 +1695,7 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border-bottom: 2px solid var(--border-primary, var(--primary-alpha-20));
 }
 
 .af3-page-title {
@@ -1706,13 +1723,13 @@
   padding: 0.25rem;
   background: var(--glass-bg);
   border-radius: 12px;
-  border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 1px solid var(--border-primary, var(--primary-alpha-20));
   flex-wrap: wrap;
 }
 
 .af3-tab-content {
   background: var(--glass-bg);
-  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 2px solid var(--border-primary, var(--primary-alpha-20));
   border-radius: 12px;
   padding: 2rem;
   min-height: 600px;
@@ -1722,7 +1739,7 @@
 .af3-error-banner {
   padding: 1rem;
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
+  border: 1px solid var(--status-error);
   border-radius: 8px;
   color: var(--error);
   margin-bottom: 1rem;
@@ -1844,7 +1861,7 @@
 /* Laufzeit */
 .af3-laufzeit-section {
   background: var(--glass-bg);
-  border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2));
+  border: 2px solid var(--border-primary, var(--primary-alpha-20));
   border-radius: 12px;
   padding: 1.5rem;
 }
@@ -2080,7 +2097,7 @@
   padding: 1rem;
   border-radius: 8px;
   margin-bottom: 1rem;
-  border: 2px solid rgba(255, 215, 0, 0.25);
+  border: 2px solid var(--primary-alpha-25);
 }
 
 .af3-kalk-params-title {
@@ -2092,8 +2109,8 @@
 
 /* Groessen result */
 .af3-groessen-result-box {
-  background: rgba(255, 215, 0, 0.08);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  background: var(--primary-alpha-08);
+  border: 2px solid var(--primary-alpha-30);
   border-radius: 10px;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -2175,7 +2192,7 @@
   margin-bottom: 1rem;
   padding: 1rem;
   background: rgba(255, 215, 0, 0.06);
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--primary-alpha-30);
   border-radius: 8px;
 }
 
@@ -2456,8 +2473,8 @@
 .af3-rabatt-neupreis { color: var(--success); font-weight: 700; font-size: 1.3rem; }
 .af3-rabatt-ersparnis { background: rgba(34, 197, 94, 0.2); color: var(--success); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600; }
 .af3-rabatt-speichern-row { margin-top: 1rem; }
-.af3-rabatt-check { width: 22px; height: 22px; accent-color: #22c55e; }
-.af3-rabatt-save-btn { padding: 0.75rem 2rem; background: #22c55e; color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; }
+.af3-rabatt-check { width: 22px; height: 22px; accent-color: var(--status-success); }
+.af3-rabatt-save-btn { padding: 0.75rem 2rem; background: var(--status-success); color: #000; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; }
 
 .af3-varianten-aktivieren-box { margin-bottom: 2rem; padding: 1rem; background: rgba(107, 68, 35, 0.05); border-radius: 12px; border: 2px solid rgba(107, 68, 35, 0.2); }
 .af3-varianten-aktivieren-label { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
@@ -2477,7 +2494,7 @@
 .af3-tag-primary { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: var(--primary); color: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .af3-tag-remove-btn { background: rgba(255,255,255,0.3); border: none; border-radius: 50%; width: 18px; height: 18px; cursor: pointer; color: var(--text-primary); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; }
 
-.af3-laufzeit-section { background: var(--glass-bg); border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2)); border-radius: 12px; padding: 1.5rem; }
+.af3-laufzeit-section { background: var(--glass-bg); border: 2px solid var(--border-primary, var(--primary-alpha-20)); border-radius: 12px; padding: 1.5rem; }
 .af3-laufzeit-h3 { margin: 0; color: var(--primary); font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; }
 
 .af3-varianten-zusammenfassung { background: rgba(107, 68, 35, 0.05); border: 2px solid rgba(107, 68, 35, 0.2); border-radius: 12px; padding: 1.5rem; }
@@ -2485,30 +2502,30 @@
 .af3-varianten-zusammenfassung-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
 
 .af3-groesse-editing-span { display: flex; align-items: center; gap: 0.25rem; }
-.af3-groesse-edit-input { width: 80px; padding: 0.2rem 0.4rem; border-radius: 6px; border: 1px solid var(--primary); background: rgba(255,215,0,0.1); color: var(--text-primary); font-size: 0.85rem; }
+.af3-groesse-edit-input { width: 80px; padding: 0.2rem 0.4rem; border-radius: 6px; border: 1px solid var(--primary); background: var(--primary-alpha-10); color: var(--text-primary); font-size: 0.85rem; }
 .af3-groesse-confirm-btn { padding: 0.2rem 0.4rem; background: #4ade80; color: #000; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 700; }
 .af3-groesse-cancel-btn { padding: 0.2rem 0.4rem; background: rgba(255,255,255,0.15); color: var(--text-primary); border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
-.af3-groesse-tag-custom { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: rgba(255,215,0,0.15); border: 1px solid var(--gold, #ffd700); color: var(--primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+.af3-groesse-tag-custom { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: var(--primary-alpha-15); border: 1px solid var(--gold, #ffd700); color: var(--primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .af3-groesse-tag-standard { display: flex; align-items: center; gap: 0.2rem; padding: 0.25rem 0.5rem; background: var(--primary); color: var(--bg-primary); border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
 .af3-groesse-edit-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: var(--primary); font-size: 0.75rem; line-height: 1; }
 .af3-groesse-delete-btn { background: none; border: none; cursor: pointer; padding: 0 2px; color: rgba(255,100,100,0.9); font-size: 0.85rem; font-weight: 700; line-height: 1; }
 
 .af3-page-root { padding: 2rem; max-width: 1600px; margin: 0 auto; }
-.af3-page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2)); }
+.af3-page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--border-primary, var(--primary-alpha-20)); }
 .af3-page-h1 { font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem; }
 .af3-page-subtitle { font-size: 1.1rem; color: var(--text-secondary); }
 .af3-header-actions { display: flex; gap: 1rem; }
-.af3-btn-back { padding: 0.75rem 1.5rem; background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2)); border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; }
-.af3-error-banner { padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; border-radius: 8px; color: var(--error); margin-bottom: 1rem; }
-.af3-tab-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.25rem; background: var(--glass-bg); border-radius: 12px; border: 1px solid var(--border-primary, rgba(255, 215, 0, 0.2)); flex-wrap: wrap; }
-.af3-tab-content-wrapper { background: var(--glass-bg); border: 2px solid var(--border-primary, rgba(255, 215, 0, 0.2)); border-radius: 12px; padding: 2rem; min-height: 600px; }
+.af3-btn-back { padding: 0.75rem 1.5rem; background: var(--glass-bg); color: var(--text-primary); border: 1px solid var(--border-primary, var(--primary-alpha-20)); border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; }
+.af3-error-banner { padding: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--status-error); border-radius: 8px; color: var(--error); margin-bottom: 1rem; }
+.af3-tab-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; padding: 0.25rem; background: var(--glass-bg); border-radius: 12px; border: 1px solid var(--border-primary, var(--primary-alpha-20)); flex-wrap: wrap; }
+.af3-tab-content-wrapper { background: var(--glass-bg); border: 2px solid var(--border-primary, var(--primary-alpha-20)); border-radius: 12px; padding: 2rem; min-height: 600px; }
 
 .af3-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 9999; }
 .af3-modal-panel { background: var(--bg-secondary, #1a1a2e); border: 2px solid var(--primary); border-radius: 16px; padding: 2rem; min-width: 400px; max-width: 500px; }
 .af3-modal-h3 { color: var(--primary); margin-bottom: 1.5rem; font-size: 1.25rem; }
 .af3-modal-hint { margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem; }
 .af3-modal-label { display: block; margin-bottom: 0.5rem; color: var(--primary); font-weight: 600; }
-.af3-modal-input { width: 100%; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 8px; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; }
+.af3-modal-input { width: 100%; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--primary-alpha-30); border-radius: 8px; color: var(--text-primary); font-size: 1rem; box-sizing: border-box; }
 .af3-modal-actions { display: flex; gap: 1rem; justify-content: flex-end; }
 .af3-modal-btn-cancel { padding: 0.75rem 1.5rem; background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: var(--text-primary); cursor: pointer; font-size: 0.95rem; }
 
@@ -2620,13 +2637,13 @@
 .af3-varianten-table-row--other { background: rgba(255,215,0,0.06); }
 .af3-gewinn-span--kids { color: #4ade80; }
 .af3-gewinn-span--erw { color: #63b3ed; }
-.af3-gewinn-span--other { color: #ffd700; }
+.af3-gewinn-span--other { color: var(--primary); }
 
 /* Gewinn row colors */
 .af3-gewinn--positive { color: #4ade80; }
 .af3-gewinn--positive-blue { color: #63b3ed; }
 .af3-gewinn--primary { color: var(--primary); }
-.af3-gewinn--negative { color: #ef4444; }
+.af3-gewinn--negative { color: var(--status-error); }
 
 /* Checkbox container active state */
 .af3-checkbox-container--active {
@@ -2647,7 +2664,7 @@
   padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem;
   font-weight: 600; text-align: center;
 }
-.af3-lager-status--leer { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.af3-lager-status--leer { background: #fef2f2; color: var(--status-error); border: 1px solid #fca5a5; }
 .af3-lager-status--kritisch { background: #fef3c7; color: #d97706; border: 1px solid #fcd34d; }
 .af3-lager-status--ok { background: #ecfdf5; color: var(--primary); border: 1px solid #6ee7b7; }
 
@@ -2657,7 +2674,7 @@
 
 /* Rabatt typ labels */
 .af3-rabatt-typ-label { background: var(--glass-bg); border: 2px solid var(--border-secondary, rgba(255, 255, 255, 0.1)); }
-.af3-rabatt-typ-label--active { background: rgba(34, 197, 94, 0.15); border-color: #22c55e; }
+.af3-rabatt-typ-label--active { background: rgba(34, 197, 94, 0.15); border-color: var(--status-success); }
 
 /* Loading/disabled buttons via :disabled */
 .af3-rabatt-speichern-btn:disabled { cursor: not-allowed; opacity: 0.5; }
@@ -2675,7 +2692,7 @@
 
 /* Farbe button */
 .af3-varianten-btn-base { background: rgba(255, 255, 255, 0.08); border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)); }
-.af3-varianten-btn-base--selected { border-color: var(--primary); background: rgba(255, 215, 0, 0.2); }
+.af3-varianten-btn-base--selected { border-color: var(--primary); background: var(--primary-alpha-20); }
 
 /* Laufzeit button */
 .af3-laufzeit-select-btn {
@@ -2689,7 +2706,7 @@
 
 /* Laufzeit rabatt badge */
 .af3-laufzeit-rabatt-badge {
-  font-size: 0.75rem; font-weight: 700; color: #10B981;
+  font-size: 0.75rem; font-weight: 700; color: var(--status-success);
   background: rgba(16, 185, 129, 0.15); padding: 0.15rem 0.5rem; border-radius: 4px;
 }
 .af3-laufzeit-rabatt-badge--selected { color: #16A34A; background: rgba(0,0,0,0.1); }

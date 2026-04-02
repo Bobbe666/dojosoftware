@@ -1,0 +1,13 @@
+# DojoSoftware - robots.txt
+# https://dojo.tda-intl.org/
+
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /admin/
+Disallow: /login
+Disallow: /register
+
+# Sitemap
+Sitemap: https://dojo.tda-intl.org/sitemap.xml

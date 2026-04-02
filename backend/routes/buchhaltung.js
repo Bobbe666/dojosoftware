@@ -598,20 +598,55 @@ const generateBelegNummer = async (dojoId, jahr) => {
   });
 };
 
-// Prüfe Super Admin Berechtigung
+// Prüfe Super Admin Berechtigung (unverändert, für interne Nutzung)
 const requireSuperAdmin = (req, res, next) => {
-  // Check various ways super admin might be indicated
   const isSuperAdmin =
     req.user?.is_super_admin === true ||
     req.user?.rolle === 'super_admin' ||
-    req.user?.role === 'admin' ||  // Main admin user has role "admin"
+    req.user?.role === 'admin' ||
     req.user?.role === 'super_admin' ||
     (req.user?.username === 'admin' && req.user?.dojo_id === null);
+  if (isSuperAdmin) { return next(); }
+  return res.status(403).json({ message: 'Nur für Super-Admin zugänglich' });
+};
 
+// Buchhaltung-Zugriff: Super-Admin ODER Dojo-Admin (buchfuehrung-Feature ab Premium)
+const requireBuchhaltungAccess = (req, res, next) => {
+  const isSuperAdmin =
+    req.user?.is_super_admin === true ||
+    req.user?.rolle === 'super_admin' ||
+    req.user?.role === 'admin' ||
+    req.user?.role === 'super_admin' ||
+    (req.user?.username === 'admin' && req.user?.dojo_id === null);
   if (isSuperAdmin) {
+    req.buchhaltungDojoId = null; // null = alle Dojos sichtbar (Super-Admin)
     return next();
   }
-  return res.status(403).json({ message: 'Nur für Super-Admin zugänglich' });
+  const dojoId = req.user?.dojo_id;
+  if (!dojoId) return res.status(403).json({ message: 'Kein Zugriff auf Buchhaltung' });
+  req.buchhaltungDojoId = dojoId; // Dojo-Admin: nur eigene Daten
+  return next();
+};
+
+// Baut SQL-Filter: dojo_id für Dojo-Admins, organisation_name für Super-Admin
+const buildOrgFilter = (req, organisation) => {
+  if (req.buchhaltungDojoId !== null && req.buchhaltungDojoId !== undefined) {
+    return { sql: 'AND dojo_id = ?', params: [req.buchhaltungDojoId] };
+  }
+  if (organisation && organisation !== 'alle') {
+    return { sql: 'AND organisation_name = ?', params: [organisation] };
+  }
+  return { sql: '', params: [] };
+};
+
+// Ownership-Check: Gibt 403 wenn Dojo-Admin fremde Daten zugreifen will
+const checkDojoOwnership = (req, res, dojoId) => {
+  if (req.buchhaltungDojoId !== null && req.buchhaltungDojoId !== undefined
+      && parseInt(dojoId) !== parseInt(req.buchhaltungDojoId)) {
+    res.status(403).json({ message: 'Keine Berechtigung für diesen Datensatz' });
+    return false;
+  }
+  return true;
 };
 
 // Log to Audit
@@ -638,9 +673,10 @@ const logAudit = async (belegId, aktion, alteWerte, neueWerte, benutzerId, benut
 // ===================================================================
 // 📊 GET /api/buchhaltung/dashboard - Dashboard Übersicht
 // ===================================================================
-router.get('/dashboard', requireSuperAdmin, (req, res) => {
+router.get('/dashboard', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr } = req.query;
   const currentYear = jahr || new Date().getFullYear();
+  const _df = buildOrgFilter(req, organisation);
 
   // EÜR Zusammenfassung für Dashboard
   const einnahmenSql = `
@@ -649,7 +685,7 @@ router.get('/dashboard', requireSuperAdmin, (req, res) => {
       MONTH(datum) as monat
     FROM v_euer_einnahmen
     WHERE jahr = ?
-    ${organisation && organisation !== 'alle' ? `AND organisation_name = ?` : ''}
+    ${_df.sql}
     GROUP BY MONTH(datum)
     ORDER BY monat
   `;
@@ -660,12 +696,12 @@ router.get('/dashboard', requireSuperAdmin, (req, res) => {
       MONTH(datum) as monat
     FROM v_euer_ausgaben
     WHERE jahr = ?
-    ${organisation && organisation !== 'alle' ? `AND organisation_name = ?` : ''}
+    ${_df.sql}
     GROUP BY MONTH(datum)
     ORDER BY monat
   `;
 
-  const params = organisation && organisation !== 'alle' ? [currentYear, organisation] : [currentYear];
+  const params = [currentYear, ..._df.params];
 
   Promise.all([
     new Promise((resolve, reject) => {
@@ -709,7 +745,7 @@ router.get('/dashboard', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📊 GET /api/buchhaltung/euer - EÜR Übersicht nach Kategorien
 // ===================================================================
-router.get('/euer', requireSuperAdmin, (req, res) => {
+router.get('/euer', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, quartal } = req.query;
   const currentYear = jahr || new Date().getFullYear();
 
@@ -721,9 +757,8 @@ router.get('/euer', requireSuperAdmin, (req, res) => {
     dateFilter += ` AND monat BETWEEN ${startMonth} AND ${endMonth}`;
   }
 
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
   // Einnahmen - Gruppiert nach Kategorie und Quelle
   const einnahmenGroupedSql = `
@@ -881,16 +916,17 @@ router.get('/euer', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📋 GET /api/buchhaltung/belege - Alle Belege abrufen
 // ===================================================================
-router.get('/belege', requireSuperAdmin, (req, res) => {
+router.get('/belege', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, kategorie, buchungsart, seite = 1, limit = 50 } = req.query;
   const offset = (parseInt(seite) - 1) * parseInt(limit);
 
   let whereClause = '1=1';
   const params = [];
 
-  if (organisation && organisation !== 'alle') {
-    whereClause += ' AND organisation_name = ?';
-    params.push(organisation);
+  const _orgFilter = buildOrgFilter(req, organisation);
+  if (_orgFilter.sql) {
+    whereClause += ' ' + _orgFilter.sql;
+    params.push(..._orgFilter.params);
   }
 
   if (jahr) {
@@ -967,7 +1003,7 @@ router.get('/belege', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // ➕ POST /api/buchhaltung/belege - Neuen Beleg erstellen
 // ===================================================================
-router.post('/belege', requireSuperAdmin, async (req, res) => {
+router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
   try {
     const {
       organisation_name,
@@ -983,7 +1019,7 @@ router.post('/belege', requireSuperAdmin, async (req, res) => {
     } = req.body;
 
     // Validierung
-    if (!organisation_name || !buchungsart || !beleg_datum || !betrag_netto || !kategorie || !beschreibung) {
+    if (!(organisation_name || req.buchhaltungDojoId) || !buchungsart || !beleg_datum || !betrag_netto || !kategorie || !beschreibung) {
       return res.status(400).json({ message: 'Pflichtfelder fehlen' });
     }
 
@@ -993,8 +1029,9 @@ router.post('/belege', requireSuperAdmin, async (req, res) => {
     const mwstBetrag = Math.round(netto * (mwst / 100) * 100) / 100;
     const brutto = Math.round((netto + mwstBetrag) * 100) / 100;
 
-    // Dojo ID basierend auf Organisation
-    const dojoId = organisation_name === 'TDA International' ? 2 : 1;
+    // Dojo ID: Dojo-Admin nutzt eigene dojo_id, Super-Admin nutzt Organisation
+    const dojoId = req.buchhaltungDojoId || (organisation_name === 'TDA International' ? 2 : 1);
+    const effectiveOrgName = organisation_name || `Dojo ${dojoId}`;
     const jahr = new Date(buchungsdatum || beleg_datum).getFullYear();
 
     // Generiere Belegnummer
@@ -1057,7 +1094,7 @@ router.post('/belege', requireSuperAdmin, async (req, res) => {
 // ===================================================================
 // ✏️ PUT /api/buchhaltung/belege/:id - Beleg bearbeiten
 // ===================================================================
-router.put('/belege/:id', requireSuperAdmin, (req, res) => {
+router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
   const belegId = req.params.id;
 
   // Erst prüfen ob festgeschrieben
@@ -1067,6 +1104,7 @@ router.put('/belege/:id', requireSuperAdmin, (req, res) => {
     }
 
     const beleg = results[0];
+    if (!checkDojoOwnership(req, res, beleg.dojo_id)) return;
     if (beleg.festgeschrieben) {
       return res.status(403).json({ message: 'Beleg ist festgeschrieben und kann nicht mehr geändert werden' });
     }
@@ -1144,7 +1182,7 @@ router.put('/belege/:id', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📎 POST /api/buchhaltung/belege/:id/upload - Beleg-Datei hochladen
 // ===================================================================
-router.post('/belege/:id/upload', requireSuperAdmin, upload.single('datei'), (req, res) => {
+router.post('/belege/:id/upload', requireBuchhaltungAccess, upload.single('datei'), (req, res) => {
   const belegId = req.params.id;
 
   if (!req.file) {
@@ -1152,13 +1190,14 @@ router.post('/belege/:id/upload', requireSuperAdmin, upload.single('datei'), (re
   }
 
   // Erst prüfen ob festgeschrieben
-  db.query('SELECT festgeschrieben FROM buchhaltung_belege WHERE beleg_id = ?', [belegId], (err, results) => {
+  db.query('SELECT festgeschrieben, dojo_id FROM buchhaltung_belege WHERE beleg_id = ?', [belegId], (err, results) => {
     if (err || results.length === 0) {
       // Lösche hochgeladene Datei wieder
       fs.unlinkSync(req.file.path);
       return res.status(404).json({ message: 'Beleg nicht gefunden' });
     }
 
+    if (!checkDojoOwnership(req, res, results[0].dojo_id)) { fs.unlinkSync(req.file.path); return; }
     if (results[0].festgeschrieben) {
       fs.unlinkSync(req.file.path);
       return res.status(403).json({ message: 'Beleg ist festgeschrieben' });
@@ -1198,14 +1237,15 @@ router.post('/belege/:id/upload', requireSuperAdmin, upload.single('datei'), (re
 // ===================================================================
 // 📥 GET /api/buchhaltung/belege/:id/datei - Beleg-Datei herunterladen
 // ===================================================================
-router.get('/belege/:id/datei', requireSuperAdmin, (req, res) => {
+router.get('/belege/:id/datei', requireBuchhaltungAccess, (req, res) => {
   const belegId = req.params.id;
 
-  db.query('SELECT datei_pfad, datei_name, datei_typ FROM buchhaltung_belege WHERE beleg_id = ?', [belegId], (err, results) => {
+  db.query('SELECT datei_pfad, datei_name, datei_typ, dojo_id FROM buchhaltung_belege WHERE beleg_id = ?', [belegId], (err, results) => {
     if (err || results.length === 0 || !results[0].datei_pfad) {
       return res.status(404).json({ message: 'Datei nicht gefunden' });
     }
 
+    if (!checkDojoOwnership(req, res, results[0].dojo_id)) return;
     const { datei_pfad, datei_name, datei_typ } = results[0];
 
     if (!fs.existsSync(datei_pfad)) {
@@ -1221,7 +1261,7 @@ router.get('/belege/:id/datei', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 🔒 POST /api/buchhaltung/belege/:id/festschreiben - Beleg festschreiben
 // ===================================================================
-router.post('/belege/:id/festschreiben', requireSuperAdmin, (req, res) => {
+router.post('/belege/:id/festschreiben', requireBuchhaltungAccess, (req, res) => {
   const belegId = req.params.id;
 
   db.query(
@@ -1229,8 +1269,8 @@ router.post('/belege/:id/festschreiben', requireSuperAdmin, (req, res) => {
       festgeschrieben = TRUE,
       festgeschrieben_am = NOW(),
       festgeschrieben_von = ?
-    WHERE beleg_id = ? AND festgeschrieben = FALSE`,
-    [req.user?.id || 1, belegId],
+    WHERE beleg_id = ? AND (? IS NULL OR dojo_id = ?) AND festgeschrieben = FALSE`,
+    [req.user?.id || 1, belegId, req.buchhaltungDojoId ?? null, req.buchhaltungDojoId ?? null],
     async (err, result) => {
       if (err) {
         console.error('Festschreiben-Fehler:', err);
@@ -1251,7 +1291,7 @@ router.post('/belege/:id/festschreiben', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // ❌ POST /api/buchhaltung/belege/:id/stornieren - Beleg stornieren
 // ===================================================================
-router.post('/belege/:id/stornieren', requireSuperAdmin, (req, res) => {
+router.post('/belege/:id/stornieren', requireBuchhaltungAccess, (req, res) => {
   const belegId = req.params.id;
   const { grund } = req.body;
 
@@ -1265,8 +1305,8 @@ router.post('/belege/:id/stornieren', requireSuperAdmin, (req, res) => {
       storno_grund = ?,
       storno_am = NOW(),
       storno_von = ?
-    WHERE beleg_id = ? AND storniert = FALSE`,
-    [grund, req.user?.id || 1, belegId],
+    WHERE beleg_id = ? AND (? IS NULL OR dojo_id = ?) AND storniert = FALSE`,
+    [grund, req.user?.id || 1, belegId, req.buchhaltungDojoId ?? null, req.buchhaltungDojoId ?? null],
     async (err, result) => {
       if (err) {
         console.error('Storno-Fehler:', err);
@@ -1287,14 +1327,16 @@ router.post('/belege/:id/stornieren', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📈 GET /api/buchhaltung/einnahmen-auto - Automatische Einnahmen
 // ===================================================================
-router.get('/einnahmen-auto', requireSuperAdmin, (req, res) => {
+router.get('/einnahmen-auto', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, monat, seite = 1, limit = 50 } = req.query;
   const currentYear = jahr || new Date().getFullYear();
   const offset = (parseInt(seite) - 1) * parseInt(limit);
 
   let whereClause = `jahr = ${db.escape(currentYear)}`;
-  if (organisation && organisation !== 'alle') {
-    whereClause += ` AND organisation_name = ${db.escape(organisation)}`;
+  const _wof = buildOrgFilter(req, organisation);
+  if (_wof.sql) {
+    if (_wof.params.length) whereClause += ` AND ${_wof.sql.replace('?', db.escape(_wof.params[0]))}`;
+    else whereClause += ` ${_wof.sql}`;
   }
   if (monat) {
     whereClause += ` AND monat = ${db.escape(monat)}`;
@@ -1334,22 +1376,20 @@ router.get('/einnahmen-auto', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📊 GET /api/buchhaltung/abschluss/:jahr - Jahresabschluss
 // ===================================================================
-router.get('/abschluss/:jahr', requireSuperAdmin, (req, res) => {
+router.get('/abschluss/:jahr', requireBuchhaltungAccess, (req, res) => {
   const { jahr } = req.params;
   const { organisation } = req.query;
 
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
   // Prüfe ob Abschluss existiert
   const abschlussSql = `
     SELECT * FROM euer_abschluesse
-    WHERE jahr = ? ${organisation && organisation !== 'alle' ? `AND organisation_name = ?` : ''}
+    WHERE jahr = ? ${orgFilter}
   `;
-  const abschlussParams = organisation && organisation !== 'alle' ? [jahr, organisation] : [jahr];
 
-  db.query(abschlussSql, abschlussParams, (err, abschlussResults) => {
+  db.query(abschlussSql, [jahr], (err, abschlussResults) => {
     if (err) {
       console.error('Abschluss-Fehler:', err);
       return res.status(500).json({ message: 'Fehler beim Laden des Abschlusses' });
@@ -1432,15 +1472,13 @@ router.get('/abschluss/:jahr', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 🔐 POST /api/buchhaltung/abschluss/:jahr/festschreiben - Jahr festschreiben
 // ===================================================================
-router.post('/abschluss/:jahr/festschreiben', requireSuperAdmin, (req, res) => {
+router.post('/abschluss/:jahr/festschreiben', requireBuchhaltungAccess, (req, res) => {
   const { jahr } = req.params;
   const { organisation } = req.body;
 
-  if (!organisation) {
-    return res.status(400).json({ message: 'Organisation ist erforderlich' });
-  }
-
-  const dojoId = organisation === 'TDA International' ? 2 : 1;
+  // Für Dojo-Admin: organisation aus dojo_id ableiten; Super-Admin: organisation aus Body
+  const dojoId = req.buchhaltungDojoId || (organisation === 'TDA International' ? 2 : 1);
+  if (!dojoId) return res.status(400).json({ message: 'Organisation oder dojo_id erforderlich' });
 
   // Erst alle nicht-festgeschriebenen Belege des Jahres festschreiben
   const festschreibenBelegeSql = `
@@ -1448,10 +1486,10 @@ router.post('/abschluss/:jahr/festschreiben', requireSuperAdmin, (req, res) => {
       festgeschrieben = TRUE,
       festgeschrieben_am = NOW(),
       festgeschrieben_von = ?
-    WHERE YEAR(buchungsdatum) = ? AND organisation_name = ? AND festgeschrieben = FALSE
+    WHERE YEAR(buchungsdatum) = ? AND dojo_id = ? AND festgeschrieben = FALSE
   `;
 
-  db.query(festschreibenBelegeSql, [req.user?.id || 1, jahr, organisation], (err, belegeResult) => {
+  db.query(festschreibenBelegeSql, [req.user?.id || 1, jahr, dojoId], (err, belegeResult) => {
     if (err) {
       console.error('Belege-Festschreiben-Fehler:', err);
       return res.status(500).json({ message: 'Fehler beim Festschreiben der Belege' });
@@ -1467,14 +1505,15 @@ router.post('/abschluss/:jahr/festschreiben', requireSuperAdmin, (req, res) => {
         abgeschlossen_von = ?
     `;
 
-    db.query(upsertSql, [dojoId, organisation, jahr, req.user?.id || 1, req.user?.id || 1], (err) => {
+    const orgName = organisation || `Dojo ${dojoId}`;
+    db.query(upsertSql, [dojoId, orgName, jahr, req.user?.id || 1, req.user?.id || 1], (err) => {
       if (err) {
         console.error('Abschluss-Festschreiben-Fehler:', err);
         return res.status(500).json({ message: 'Fehler beim Erstellen des Abschlusses' });
       }
 
       res.json({
-        message: `Jahresabschluss ${jahr} für ${organisation} erfolgreich festgeschrieben`,
+        message: `Jahresabschluss ${jahr} erfolgreich festgeschrieben`,
         belege_festgeschrieben: belegeResult.affectedRows
       });
     });
@@ -1484,13 +1523,12 @@ router.post('/abschluss/:jahr/festschreiben', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📤 GET /api/buchhaltung/abschluss/:jahr/export - CSV Export
 // ===================================================================
-router.get('/abschluss/:jahr/export', requireSuperAdmin, (req, res) => {
+router.get('/abschluss/:jahr/export', requireBuchhaltungAccess, (req, res) => {
   const { jahr } = req.params;
   const { organisation, format = 'csv' } = req.query;
 
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
   // Hole alle Buchungen des Jahres
   const einnahmenSql = `
@@ -1546,11 +1584,11 @@ router.get('/abschluss/:jahr/export', requireSuperAdmin, (req, res) => {
     csv += `;Gewinn/Verlust;;;${gewinn.toFixed(2)};;\n`;
 
     // Update Export-Tracking
-    if (organisation && organisation !== 'alle') {
-      const dojoId = organisation === 'TDA International' ? 2 : 1;
+    const _exportDojoId = req.buchhaltungDojoId || (organisation === 'TDA International' ? 2 : (organisation ? 1 : null));
+    if (_exportDojoId) {
       db.query(
         `UPDATE euer_abschluesse SET letzter_export_datum = NOW(), letzter_export_format = ? WHERE dojo_id = ? AND jahr = ?`,
-        [format, dojoId, jahr]
+        [format, _exportDojoId, jahr]
       );
     }
 
@@ -1567,7 +1605,7 @@ router.get('/abschluss/:jahr/export', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📋 GET /api/buchhaltung/kategorien - Alle EÜR-Kategorien
 // ===================================================================
-router.get('/kategorien', requireSuperAdmin, (req, res) => {
+router.get('/kategorien', requireBuchhaltungAccess, (req, res) => {
   const kategorien = [
     { id: 'betriebseinnahmen', name: 'Betriebseinnahmen', typ: 'einnahme', beschreibung: 'Umsatzerlöse, Mitgliedsbeiträge' },
     { id: 'wareneingang', name: 'Wareneingang', typ: 'ausgabe', beschreibung: 'Einkauf Artikel, Material' },
@@ -1607,14 +1645,14 @@ const generateImportId = () => {
 // ===================================================================
 // 📤 POST /api/buchhaltung/bank-import/upload - Bank-Datei hochladen
 // ===================================================================
-router.post('/bank-import/upload', requireSuperAdmin, bankUpload.single('datei'), async (req, res) => {
+router.post('/bank-import/upload', requireBuchhaltungAccess, bankUpload.single('datei'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Keine Datei hochgeladen' });
     }
 
     const { organisation = 'Kampfkunstschule Schreiner', format: requestedFormat } = req.body;
-    const dojoId = organisation === 'TDA International' ? 2 : 1;
+    const dojoId = req.buchhaltungDojoId || (organisation === 'TDA International' ? 2 : 1);
     const importId = generateImportId();
 
     // Lese Datei
@@ -1972,7 +2010,7 @@ const runAutoMatching = async (transaktionId, dojoId) => {
 // ===================================================================
 // 📋 GET /api/buchhaltung/bank-import/transaktionen - Transaktionen abrufen
 // ===================================================================
-router.get('/bank-import/transaktionen', requireSuperAdmin, (req, res) => {
+router.get('/bank-import/transaktionen', requireBuchhaltungAccess, (req, res) => {
   const { status, import_id, organisation, von, bis, seite = 1, limit = 50 } = req.query;
   const offset = (parseInt(seite) - 1) * parseInt(limit);
 
@@ -1989,9 +2027,10 @@ router.get('/bank-import/transaktionen', requireSuperAdmin, (req, res) => {
     params.push(import_id);
   }
 
-  if (organisation && organisation !== 'alle') {
-    whereClause += ' AND organisation_name = ?';
-    params.push(organisation);
+  const _orgFilter = buildOrgFilter(req, organisation);
+  if (_orgFilter.sql) {
+    whereClause += ' ' + _orgFilter.sql;
+    params.push(..._orgFilter.params);
   }
 
   if (von) {
@@ -2056,15 +2095,16 @@ router.get('/bank-import/transaktionen', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📊 GET /api/buchhaltung/bank-import/statistik - Import-Statistiken
 // ===================================================================
-router.get('/bank-import/statistik', requireSuperAdmin, (req, res) => {
+router.get('/bank-import/statistik', requireBuchhaltungAccess, (req, res) => {
   const { organisation } = req.query;
 
   let whereClause = '1=1';
   const params = [];
 
-  if (organisation && organisation !== 'alle') {
-    whereClause += ' AND organisation_name = ?';
-    params.push(organisation);
+  const _orgFilter = buildOrgFilter(req, organisation);
+  if (_orgFilter.sql) {
+    whereClause += ' ' + _orgFilter.sql;
+    params.push(..._orgFilter.params);
   }
 
   db.query(`
@@ -2105,7 +2145,7 @@ router.get('/bank-import/statistik', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // ✅ POST /api/buchhaltung/bank-import/zuordnen/:id - Transaktion zuordnen
 // ===================================================================
-router.post('/bank-import/zuordnen/:id', requireSuperAdmin, async (req, res) => {
+router.post('/bank-import/zuordnen/:id', requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
     const { kategorie, match_typ, match_id, lerne_regel = false } = req.body;
@@ -2127,6 +2167,7 @@ router.post('/bank-import/zuordnen/:id', requireSuperAdmin, async (req, res) => 
     }
 
     const tx = txResult[0];
+    if (!checkDojoOwnership(req, res, tx.dojo_id)) return;
     const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
 
     // Erstelle Buchhaltungs-Beleg
@@ -2214,7 +2255,7 @@ router.post('/bank-import/zuordnen/:id', requireSuperAdmin, async (req, res) => 
 // Verknüpft Bank-Transaktion mit Verbandsrechnung OHNE EÜR-Buchung
 // (EÜR kommt aus der Bank-Transaktion selbst)
 // ===================================================================
-router.post('/bank-import/rechnung-verknuepfen/:id', requireSuperAdmin, async (req, res) => {
+router.post('/bank-import/rechnung-verknuepfen/:id', requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
     const { rechnung_id } = req.body;
@@ -2305,7 +2346,7 @@ router.post('/bank-import/rechnung-verknuepfen/:id', requireSuperAdmin, async (r
 // ✅ GET /api/buchhaltung/bank-import/offene-rechnungen
 // Lädt offene Verbandsrechnungen für Verknüpfung
 // ===================================================================
-router.get('/bank-import/offene-rechnungen', requireSuperAdmin, async (req, res) => {
+router.get('/bank-import/offene-rechnungen', requireBuchhaltungAccess, async (req, res) => {
   try {
     const rechnungen = await new Promise((resolve, reject) => {
       db.query(`
@@ -2329,7 +2370,7 @@ router.get('/bank-import/offene-rechnungen', requireSuperAdmin, async (req, res)
 // ===================================================================
 // ✅ POST /api/buchhaltung/bank-import/batch-zuordnen - Mehrere zuordnen
 // ===================================================================
-router.post('/bank-import/batch-zuordnen', requireSuperAdmin, async (req, res) => {
+router.post('/bank-import/batch-zuordnen', requireBuchhaltungAccess, async (req, res) => {
   try {
     const { transaktionen } = req.body;
 
@@ -2422,7 +2463,7 @@ router.post('/bank-import/batch-zuordnen', requireSuperAdmin, async (req, res) =
 // ===================================================================
 // ❌ POST /api/buchhaltung/bank-import/ignorieren/:id - Transaktion ignorieren
 // ===================================================================
-router.post('/bank-import/ignorieren/:id', requireSuperAdmin, (req, res) => {
+router.post('/bank-import/ignorieren/:id', requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
   const { lerne_regel = false } = req.body;
 
@@ -2432,6 +2473,7 @@ router.post('/bank-import/ignorieren/:id', requireSuperAdmin, (req, res) => {
     }
 
     const tx = results[0];
+    if (!checkDojoOwnership(req, res, tx.dojo_id)) return;
 
     db.query(`
       UPDATE bank_transaktionen SET status = 'ignoriert'
@@ -2461,7 +2503,7 @@ router.post('/bank-import/ignorieren/:id', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 🔄 POST /api/buchhaltung/bank-import/umbuchen/:id - Kategorie ändern (Umbuchung)
 // ===================================================================
-router.post('/bank-import/umbuchen/:id', requireSuperAdmin, (req, res) => {
+router.post('/bank-import/umbuchen/:id', requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
   const { kategorie } = req.body;
 
@@ -2475,6 +2517,7 @@ router.post('/bank-import/umbuchen/:id', requireSuperAdmin, (req, res) => {
     }
 
     const tx = results[0];
+    if (!checkDojoOwnership(req, res, tx.dojo_id)) return;
 
     // Update Kategorie in bank_transaktionen
     db.query(`
@@ -2507,7 +2550,7 @@ router.post('/bank-import/umbuchen/:id', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 🔄 POST /api/buchhaltung/bank-import/vorschlag-annehmen/:id - Vorschlag annehmen
 // ===================================================================
-router.post('/bank-import/vorschlag-annehmen/:id', requireSuperAdmin, async (req, res) => {
+router.post('/bank-import/vorschlag-annehmen/:id', requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
 
@@ -2525,6 +2568,7 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireSuperAdmin, async (req
     }
 
     const tx = txResult[0];
+    if (!checkDojoOwnership(req, res, tx.dojo_id)) return;
     let matchDetails = tx.match_details;
     if (typeof matchDetails === 'string') {
       try { matchDetails = JSON.parse(matchDetails); } catch (e) {}
@@ -2622,7 +2666,7 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireSuperAdmin, async (req
 // ===================================================================
 // 🗑️ DELETE /api/buchhaltung/bank-import/transaktion/:id - Einzelne Transaktion löschen
 // ===================================================================
-router.delete('/bank-import/transaktion/:id', requireSuperAdmin, (req, res) => {
+router.delete('/bank-import/transaktion/:id', requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
 
   db.query('DELETE FROM bank_transaktionen WHERE transaktion_id = ? AND beleg_id IS NULL', [transaktionId], (err, result) => {
@@ -2642,7 +2686,7 @@ router.delete('/bank-import/transaktion/:id', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 🗑️ DELETE /api/buchhaltung/bank-import/import/:importId - Ganzen Import löschen
 // ===================================================================
-router.delete('/bank-import/import/:importId', requireSuperAdmin, (req, res) => {
+router.delete('/bank-import/import/:importId', requireBuchhaltungAccess, (req, res) => {
   const importId = req.params.importId;
 
   // Lösche nur Transaktionen ohne Beleg-Verknüpfung
@@ -2665,15 +2709,16 @@ router.delete('/bank-import/import/:importId', requireSuperAdmin, (req, res) => 
 // ===================================================================
 // 📜 GET /api/buchhaltung/bank-import/historie - Import-Historie
 // ===================================================================
-router.get('/bank-import/historie', requireSuperAdmin, (req, res) => {
+router.get('/bank-import/historie', requireBuchhaltungAccess, (req, res) => {
   const { organisation, limit = 20 } = req.query;
 
   let whereClause = '1=1';
   const params = [];
 
-  if (organisation && organisation !== 'alle') {
-    whereClause += ' AND organisation_name = ?';
-    params.push(organisation);
+  const _orgFilter = buildOrgFilter(req, organisation);
+  if (_orgFilter.sql) {
+    whereClause += ' ' + _orgFilter.sql;
+    params.push(..._orgFilter.params);
   }
 
   db.query(`
@@ -2697,7 +2742,7 @@ router.get('/bank-import/historie', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📊 GET /api/buchhaltung/guv - GuV (Gewinn- und Verlustrechnung)
 // ===================================================================
-router.get('/guv', requireSuperAdmin, (req, res) => {
+router.get('/guv', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, quartal } = req.query;
   const currentYear = jahr || new Date().getFullYear();
 
@@ -2709,9 +2754,8 @@ router.get('/guv', requireSuperAdmin, (req, res) => {
     dateFilter += ` AND monat BETWEEN ${startMonth} AND ${endMonth}`;
   }
 
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
   // Fetch GuV structured data
   const guvSql = `
@@ -2761,7 +2805,7 @@ router.get('/guv', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📊 GET /api/buchhaltung/guv/details - GuV with detailed breakdowns
 // ===================================================================
-router.get('/guv/details', requireSuperAdmin, (req, res) => {
+router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, quartal } = req.query;
   const currentYear = jahr || new Date().getFullYear();
 
@@ -2773,9 +2817,8 @@ router.get('/guv/details', requireSuperAdmin, (req, res) => {
     dateFilter += ` AND monat BETWEEN ${startMonth} AND ${endMonth}`;
   }
 
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
   // Detailed revenue breakdown
   const einnahmenDetailsSql = `
@@ -2888,17 +2931,14 @@ router.get('/guv/details', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📊 GET /api/buchhaltung/bilanz - Balance Sheet
 // ===================================================================
-router.get('/bilanz', requireSuperAdmin, (req, res) => {
+router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr } = req.query;
   const currentYear = jahr || new Date().getFullYear();
 
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
-  const dojoFilter = organisation && organisation !== 'alle'
-    ? `AND dojo_id = ${organisation === 'TDA International' ? 2 : 1}`
-    : '';
+  const dojoFilter = _of.params.length ? `AND dojo_id = ${db.escape(_of.params[0])}` : '';
 
   // Fetch initial balance data
   const stammdatenSql = `
@@ -3014,7 +3054,7 @@ router.get('/bilanz', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📝 POST /api/buchhaltung/bilanz/stammdaten - Update opening balances
 // ===================================================================
-router.post('/bilanz/stammdaten', requireSuperAdmin, (req, res) => {
+router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
   const {
     organisation,
     jahr,
@@ -3074,14 +3114,13 @@ router.post('/bilanz/stammdaten', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📤 GET /api/buchhaltung/guv/export - GuV Export (PDF/CSV)
 // ===================================================================
-router.get('/guv/export', requireSuperAdmin, (req, res) => {
+router.get('/guv/export', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, format = 'csv' } = req.query;
   const currentYear = jahr || new Date().getFullYear();
 
   let dateFilter = `jahr = ${db.escape(currentYear)}`;
-  const orgFilter = organisation && organisation !== 'alle'
-    ? `AND organisation_name = ${db.escape(organisation)}`
-    : '';
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
 
   // Fetch GuV data
   const einnahmenSql = `SELECT kategorie, quelle, SUM(betrag_brutto) as summe FROM v_euer_einnahmen WHERE ${dateFilter} ${orgFilter} GROUP BY kategorie, quelle`;
@@ -3135,12 +3174,13 @@ router.get('/guv/export', requireSuperAdmin, (req, res) => {
 // ===================================================================
 // 📤 GET /api/buchhaltung/bilanz/export - Bilanz Export (CSV)
 // ===================================================================
-router.get('/bilanz/export', requireSuperAdmin, (req, res) => {
+router.get('/bilanz/export', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr, format = 'csv' } = req.query;
   const currentYear = jahr || new Date().getFullYear();
 
-  const orgFilter = organisation && organisation !== 'alle' ? `AND organisation_name = ${db.escape(organisation)}` : '';
-  const dojoFilter = organisation && organisation !== 'alle' ? `AND dojo_id = ${organisation === 'TDA International' ? 2 : 1}` : '';
+  const _bef = buildOrgFilter(req, organisation);
+  const orgFilter = _bef.params.length ? `AND ${_bef.sql.replace('?', db.escape(_bef.params[0]))}` : '';
+  const dojoFilter = _bef.params.length ? `AND dojo_id = ${db.escape(_bef.params[0])}` : '';
 
   const stammdatenSql = `SELECT * FROM bilanz_stammdaten WHERE jahr = ? ${dojoFilter} LIMIT 1`;
   const bankBestandSql = `SELECT COALESCE(SUM(bank_saldo), 0) as bank_saldo FROM v_bilanz_bank_bestand WHERE jahr <= ? ${orgFilter}`;

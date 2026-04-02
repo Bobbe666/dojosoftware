@@ -2,7 +2,6 @@
 
 .sepa-mandate-container {
   min-height: 100vh;
-  background: var(--modal-bg-dark);
   color: var(--text-1);
   padding: var(--ui-section-gap-sm);
 }
@@ -517,4 +516,268 @@
 
 .sepa-signature-wrapper {
   margin-top: 1.5rem;
+}
+
+/* ===== MASSENERSTELLUNG ===== */
+
+.modal-content--wide {
+  max-width: 800px;
+  width: 90vw;
+}
+
+.sepa-massen-info {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(212, 175, 55, 0.08);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.sepa-massen-table-wrap {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-radius: 8px;
+}
+
+.sepa-massen-row--disabled {
+  opacity: 0.45;
+}
+
+.sepa-massen-result {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sepa-massen-result-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+}
+
+.sepa-massen-result-row.success {
+  background: rgba(46, 213, 115, 0.12);
+  color: #2ed573;
+}
+
+.sepa-massen-result-row.error {
+  background: rgba(255, 71, 87, 0.12);
+  color: #ff4757;
+}
+
+.sepa-massen-fehler-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* ===== OHNE-MANDAT VORSCHAU ===== */
+
+.sepa-ohne-mandat-preview {
+  margin-bottom: var(--ui-section-gap-sm);
+  background: rgba(255, 71, 87, 0.05);
+  border: 1px solid rgba(255, 71, 87, 0.25);
+  border-radius: var(--comp-radius-xl);
+  overflow: hidden;
+}
+
+.sepa-ohne-mandat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  background: rgba(255, 71, 87, 0.08);
+  border-bottom: 1px solid rgba(255, 71, 87, 0.15);
+  flex-wrap: wrap;
+}
+
+.sepa-ohne-mandat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sepa-ohne-mandat-header-info svg {
+  color: var(--status-error);
+  flex-shrink: 0;
+}
+
+.sepa-ohne-mandat-header-info strong {
+  color: var(--status-error);
+  font-size: 0.95rem;
+}
+
+.sepa-preview-hint {
+  font-size: 0.82rem;
+  color: var(--text-3);
+  padding: 0.2rem 0.6rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+}
+
+.sepa-ohne-mandat-list {
+  padding: 0.25rem 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.sepa-ohne-mandat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.sepa-ohne-mandat-item:last-child {
+  border-bottom: none;
+}
+
+.sepa-ohne-mandat-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sepa-ohne-mandat-item.no-iban {
+  opacity: 0.5;
+}
+
+.sepa-item-name {
+  font-size: 0.9rem;
+  color: var(--text-1);
+  font-weight: 500;
+  min-width: 160px;
+}
+
+.sepa-item-iban {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: var(--status-indigo);
+  background: var(--status-indigo-bg);
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--comp-radius-xs);
+}
+
+.sepa-item-bic {
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+
+/* ─── Stat Card Size Override ─────────────────────────── */
+.sepa-mandate-container .stat-info .stat-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0 0 0.3rem;
+  line-height: 1.1;
+}
+
+/* ─── Button Overrides (beat legacy designsystem.css .btn) */
+.sepa-mandate-container .btn.btn-primary {
+  background: transparent;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: var(--text-2);
+  box-shadow: none;
+  transform: none;
+}
+.sepa-mandate-container .btn.btn-primary:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 215, 0, 0.5);
+  color: var(--text-1);
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+.sepa-mandate-container .btn.btn-secondary {
+  background: var(--surface-2);
+  color: var(--text-2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  transform: none;
+}
+.sepa-mandate-container .btn.btn-secondary:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text-1);
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+
+/* ─── Washi Theme [data-theme="tda-vib"] ─────────────── */
+[data-theme="tda-vib"] .sepa-mandate-container {
+  background: transparent;
+}
+[data-theme="tda-vib"] .sepa-mandate-header {
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.08);
+}
+[data-theme="tda-vib"] .sepa-mandate-header h1 {
+  text-shadow: none;
+}
+[data-theme="tda-vib"] .search-bar input::placeholder {
+  color: rgba(26, 26, 26, 0.4);
+}
+[data-theme="tda-vib"] .mandate-table tbody tr {
+  border-bottom-color: rgba(26, 26, 26, 0.06);
+}
+[data-theme="tda-vib"] .mandate-table tbody tr:hover {
+  background: rgba(26, 26, 26, 0.03);
+}
+[data-theme="tda-vib"] .badge-neutral {
+  border-color: rgba(26, 26, 26, 0.15);
+}
+[data-theme="tda-vib"] .sepa-mandate-container .btn-close {
+  color: rgba(26, 26, 26, 0.5) !important;
+}
+[data-theme="tda-vib"] .sepa-mandate-container .btn-close:hover {
+  color: rgba(26, 26, 26, 0.9) !important;
+}
+[data-theme="tda-vib"] .sepa-mandate-container .detail-item label {
+  color: rgba(26, 26, 26, 0.5) !important;
+}
+[data-theme="tda-vib"] .sepa-mandate-container .detail-value {
+  color: rgba(26, 26, 26, 0.9) !important;
+}
+[data-theme="tda-vib"] .sepa-mandate-container .detail-value strong {
+  color: rgba(26, 26, 26, 0.9) !important;
+}
+[data-theme="tda-vib"] .sepa-mandate-container .detail-value small {
+  color: rgba(26, 26, 26, 0.5) !important;
+}
+[data-theme="tda-vib"] .sepa-mandate-text {
+  background-color: rgba(26, 26, 26, 0.03);
+  border-color: rgba(26, 26, 26, 0.1);
+}
+[data-theme="tda-vib"] .sepa-massen-table-wrap {
+  border-color: rgba(26, 26, 26, 0.1);
+}
+[data-theme="tda-vib"] .sepa-massen-result-row {
+  background: rgba(26, 26, 26, 0.04);
+}
+[data-theme="tda-vib"] .sepa-preview-hint {
+  background: rgba(26, 26, 26, 0.04);
+}
+[data-theme="tda-vib"] .sepa-ohne-mandat-item {
+  border-bottom-color: rgba(26, 26, 26, 0.04);
+}
+[data-theme="tda-vib"] .sepa-ohne-mandat-item:hover {
+  background: rgba(26, 26, 26, 0.03);
+}
+[data-theme="tda-vib"] .sepa-mandate-container .btn.btn-primary {
+  box-shadow: none;
+}
+[data-theme="tda-vib"] .sepa-mandate-container .btn.btn-secondary {
+  box-shadow: none;
+  border-color: rgba(26, 26, 26, 0.15);
 }

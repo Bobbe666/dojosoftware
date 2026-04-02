@@ -339,9 +339,8 @@ const Zahllaeufe = ({ embedded = false }) => {
               {!statusFilter && !searchTerm && 'Es wurden noch keine Zahlläufe erstellt.'}
             </p>
             <button
-              className="btn btn-primary"
+              className="btn btn-primary u-mt-1"
               onClick={() => navigate('/dashboard/lastschriftlauf')}
-              className="u-mt-1"
             >
               Ersten Zahllauf erstellen
             </button>

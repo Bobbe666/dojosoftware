@@ -30,3 +30,41 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* Familien-Switcher */
+.family-switcher {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 12px 16px 0;
+}
+
+.family-switcher-btn {
+  padding: 6px 20px;
+  border-radius: 20px;
+  border: 2px solid var(--color-primary, #c9a84c);
+  background: transparent;
+  color: var(--color-primary, #c9a84c);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.family-switcher-btn:hover:not(:disabled) {
+  background: var(--color-primary, #c9a84c);
+  color: #000;
+}
+
+.family-switcher-btn--active {
+  background: var(--color-primary, #c9a84c);
+  color: #000;
+  cursor: default;
+}
+
+.family-switcher-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}

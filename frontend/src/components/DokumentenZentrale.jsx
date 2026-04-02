@@ -11,7 +11,7 @@ import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import {
   ArrowLeft, FileText, Mail, Shield, BarChart3,
-  LayoutGrid, Loader2
+  LayoutGrid, Loader2, History, Zap, Paperclip
 } from 'lucide-react';
 import '../styles/DokumentenZentrale.css';
 
@@ -19,12 +19,18 @@ import '../styles/DokumentenZentrale.css';
 const VorlagenVerwaltung = lazy(() => import('./VorlagenVerwaltung'));
 const DokumenteVerwaltung = lazy(() => import('./DokumenteVerwaltung'));
 const BerichteDokumente = lazy(() => import('./BerichteDokumente'));
+const VersandhistorieTab = lazy(() => import('./VersandhistorieTab'));
+const AutomatisierungTab = lazy(() => import('./AutomatisierungTab'));
+const AnhangBibliothek = lazy(() => import('./AnhangBibliothek'));
 
 const TABS = [
   { id: 'uebersicht', label: 'Übersicht', icon: LayoutGrid },
   { id: 'vorlagen', label: 'Vorlagen', icon: Mail },
   { id: 'vertraege', label: 'Verträge & Recht', icon: Shield },
   { id: 'berichte', label: 'Berichte & PDFs', icon: BarChart3 },
+  { id: 'archiv', label: 'Versandarchiv', icon: History },
+  { id: 'automatisierungen', label: 'Automatisierungen', icon: Zap },
+  { id: 'anhaenge', label: 'Anhang-Bibliothek', icon: Paperclip },
 ];
 
 const LazyFallback = () => (
@@ -214,6 +220,27 @@ export default function DokumentenZentrale({ embedded = false }) {
         {activeTab === 'berichte' && (
           <Suspense fallback={<LazyFallback />}>
             <BerichteDokumente embedded />
+          </Suspense>
+        )}
+
+        {/* Versandarchiv */}
+        {activeTab === 'archiv' && (
+          <Suspense fallback={<LazyFallback />}>
+            <VersandhistorieTab withDojo={withDojo} />
+          </Suspense>
+        )}
+
+        {/* Automatisierungen */}
+        {activeTab === 'automatisierungen' && (
+          <Suspense fallback={<LazyFallback />}>
+            <AutomatisierungTab />
+          </Suspense>
+        )}
+
+        {/* Anhang-Bibliothek */}
+        {activeTab === 'anhaenge' && (
+          <Suspense fallback={<LazyFallback />}>
+            <AnhangBibliothek />
           </Suspense>
         )}
       </div>

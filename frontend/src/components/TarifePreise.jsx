@@ -828,10 +828,9 @@ const TarifePreise = () => {
                           <Trash2 size={16} />
                         </button>
                         <button
-                          className="action-btn archive"
+                          className={tarif.ist_archiviert ? 'action-btn archive tp-btn-archive--active' : 'action-btn archive tp-btn-archive--inactive'}
                           onClick={() => handleArchiveTarif(tarif.id, tarif.ist_archiviert)}
                           title={tarif.ist_archiviert ? "Reaktivieren" : "Als alter Tarif markieren"}
-                          className={tarif.ist_archiviert ? 'tp-btn-archive--active' : 'tp-btn-archive--inactive'}
                         >
                           {tarif.ist_archiviert ? '↺' : '📦'}
                         </button>

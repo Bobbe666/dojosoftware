@@ -3,13 +3,43 @@
 // =====================================================================================
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, MessageCircle, Users, Megaphone, Search, UserPlus, UsersRound } from 'lucide-react';
+import { MessageCircle, Users, Megaphone, Search, UserPlus, UsersRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useDojoContext } from '../../context/DojoContext.jsx';
 import { useChatContext } from '../../context/ChatContext.jsx';
 import ChatNewRoom from './ChatNewRoom.jsx';
 
-const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
+const STATUS_TABS = [
+  { key: 'active',   label: 'Aktiv',       color: '#22c55e' },
+  { key: 'archived', label: 'Archiviert',   color: '#f59e0b' },
+  { key: 'closed',   label: 'Geschlossen',  color: '#64748b' },
+];
+
+const StatusDot = ({ status }) => {
+  const map = {
+    active:   { color: '#22c55e', label: 'Aktiv' },
+    archived: { color: '#f59e0b', label: 'Archiviert' },
+    closed:   { color: '#64748b', label: 'Geschlossen' },
+  };
+  const s = map[status] || map.active;
+  return (
+    <span
+      title={s.label}
+      style={{
+        display: 'inline-block',
+        width: 7,
+        height: 7,
+        borderRadius: '50%',
+        background: s.color,
+        flexShrink: 0,
+        marginLeft: 4,
+        verticalAlign: 'middle',
+      }}
+    />
+  );
+};
+
+const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
   const { token, user } = useAuth();
   const { activeDojo } = useDojoContext();
   const { socket, unreadCount } = useChatContext();
@@ -17,13 +47,15 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showNewRoom, setShowNewRoom] = useState(null); // null | 'direct' | 'group'
   const [filter, setFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('active');
 
   const dojoId = activeDojo?.id || user?.dojo_id;
 
-  const loadRooms = useCallback(async () => {
+  const loadRooms = useCallback(async (status) => {
     try {
       const params = new URLSearchParams();
       if (dojoId) params.append('dojo_id', dojoId);
+      params.append('status', status || statusFilter);
       const res = await fetch(`/api/chat/rooms?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -34,11 +66,16 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [token, dojoId]);
+  }, [token, dojoId, statusFilter]);
 
   useEffect(() => {
     loadRooms();
   }, [loadRooms]);
+
+  // Bei Löschung / Status-Wechsel Raumliste neu laden
+  useEffect(() => {
+    if (refreshVersion > 0) loadRooms();
+  }, [refreshVersion]);
 
   // Neue Nachricht empfangen → Raumliste aktualisieren
   useEffect(() => {
@@ -81,6 +118,13 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
     onSelectRoom(room.id, room);
   };
 
+  const handleStatusTabChange = (key) => {
+    setStatusFilter(key);
+    setRooms([]);
+    setIsLoading(true);
+    loadRooms(key);
+  };
+
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
     const d = new Date(dateStr);
@@ -90,10 +134,35 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
     return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
   };
 
-  const roomIcon = (type) => {
-    if (type === 'announcement') return <Megaphone size={16} />;
-    if (type === 'group') return <Users size={16} />;
-    return <MessageCircle size={16} />;
+  // Emoji-Avatar für Gruppen-/Ankündigungs-Räume
+  const RoomAvatar = ({ room }) => {
+    if (room.type === 'direct') {
+      // Initialen-Avatar
+      const initial = (room.name || '?')[0].toUpperCase();
+      return (
+        <div className="chat-room-avatar chat-room-avatar--direct">
+          {initial}
+        </div>
+      );
+    }
+    if (room.type === 'announcement') {
+      return (
+        <div className="chat-room-avatar chat-room-avatar--announcement">
+          📣
+        </div>
+      );
+    }
+    // Gruppen-Avatar: Emoji + Farbe
+    const emoji = room.avatar_emoji || '👥';
+    const color = room.avatar_color || '#4f7cff';
+    return (
+      <div
+        className="chat-room-avatar chat-room-avatar--group"
+        style={{ background: color }}
+      >
+        {emoji}
+      </div>
+    );
   };
 
   const filteredRooms = rooms.filter(r =>
@@ -129,6 +198,20 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
         </div>
       </div>
 
+      {/* Status-Filter Tabs */}
+      <div className="chat-status-tabs">
+        {STATUS_TABS.map(tab => (
+          <button
+            key={tab.key}
+            className={`chat-status-tab ${statusFilter === tab.key ? 'chat-status-tab--active' : ''}`}
+            onClick={() => handleStatusTabChange(tab.key)}
+            style={statusFilter === tab.key ? { borderBottomColor: tab.color, color: tab.color } : {}}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* Suche */}
       <div className="chat-room-filter">
         <Search size={14} />
@@ -149,10 +232,12 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
         {!isLoading && filteredRooms.length === 0 && (
           <div className="chat-room-empty">
             <MessageCircle size={32} />
-            <p>Noch keine Chats</p>
-            <button className="chat-btn-primary" onClick={() => setShowNewRoom(true)}>
-              Ersten Chat starten
-            </button>
+            <p>Keine {STATUS_TABS.find(t => t.key === statusFilter)?.label?.toLowerCase()} Chats</p>
+            {statusFilter === 'active' && (
+              <button className="chat-btn-primary" onClick={() => setShowNewRoom('direct')}>
+                Ersten Chat starten
+              </button>
+            )}
           </div>
         )}
 
@@ -162,12 +247,13 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom }) => {
             className={`chat-room-item ${room.id === activeRoomId ? 'chat-room-item--active' : ''} ${room.unread_count > 0 ? 'chat-room-item--unread' : ''}`}
             onClick={() => handleSelectRoom(room)}
           >
-            <div className="chat-room-item-avatar">
-              {roomIcon(room.type)}
-            </div>
+            <RoomAvatar room={room} />
             <div className="chat-room-item-content">
               <div className="chat-room-item-top">
-                <span className="chat-room-item-name">{room.name || 'Chat'}</span>
+                <span className="chat-room-item-name">
+                  {room.name || 'Chat'}
+                  {room.status !== 'active' && <StatusDot status={room.status} />}
+                </span>
                 <span className="chat-room-item-time">{formatTime(room.last_message_at)}</span>
               </div>
               <div className="chat-room-item-bottom">

@@ -7,20 +7,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import config from '../config/config.js';
-import MarketingAktionen from './MarketingAktionen';
-import MarketingJahresplan from './MarketingJahresplan';
 import FreundeWerbenFreunde from './FreundeWerbenFreunde';
-import FreieAktionen from './FreieAktionen';
-import { Users, Calendar, CalendarDays, Gift, Zap } from 'lucide-react';
+import { Users, Gift } from 'lucide-react';
 import '../styles/Dashboard.css';
-import '../styles/MarketingAktionen.css';
 import '../styles/BuddyVerwaltung.css';
 
 const BuddyVerwaltung = () => {
     const { token } = useAuth();
 
-    // Tab State - Jahresplan ist der erste Tab
-    const [activeTab, setActiveTab] = useState('jahresplan');
+    const [activeTab, setActiveTab] = useState('gruppen');
 
     // State Management
     const [groups, setGroups] = useState([]);
@@ -265,17 +260,17 @@ const BuddyVerwaltung = () => {
                     <span className="buddy-title-icon">👥</span>
                     <span className="buddy-title-text">Buddy-Gruppen Verwaltung</span>
                 </h1>
-                <p>Verwalte Freunde-Gruppen, Einladungen und Marketing-Aktionen</p>
+                <p>Freunde-Einladungen und Buddy-Gruppen verwalten</p>
             </div>
 
-            {/* Tabs - Jahresplan zuerst */}
+            {/* Tabs */}
             <div className="buddy-tabs">
                 <button
-                    className={`buddy-tab ${activeTab === 'jahresplan' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('jahresplan')}
+                    className={`buddy-tab ${activeTab === 'gruppen' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('gruppen')}
                 >
-                    <CalendarDays size={18} />
-                    Jahresplan
+                    <Users size={18} />
+                    Buddy-Gruppen
                 </button>
                 <button
                     className={`buddy-tab ${activeTab === 'referral' ? 'active' : ''}`}
@@ -284,38 +279,11 @@ const BuddyVerwaltung = () => {
                     <Gift size={18} />
                     Freunde werben
                 </button>
-                <button
-                    className={`buddy-tab ${activeTab === 'freie-aktionen' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('freie-aktionen')}
-                >
-                    <Zap size={18} />
-                    Freie Aktionen
-                </button>
-                <button
-                    className={`buddy-tab ${activeTab === 'aktionen' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('aktionen')}
-                >
-                    <Calendar size={18} />
-                    Social Media
-                </button>
-                <button
-                    className={`buddy-tab ${activeTab === 'gruppen' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('gruppen')}
-                >
-                    <Users size={18} />
-                    Buddy-Gruppen
-                </button>
             </div>
 
             {/* Tab Content */}
-            {activeTab === 'jahresplan' ? (
-                <MarketingJahresplan />
-            ) : activeTab === 'referral' ? (
+            {activeTab === 'referral' ? (
                 <FreundeWerbenFreunde />
-            ) : activeTab === 'freie-aktionen' ? (
-                <FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} />
-            ) : activeTab === 'aktionen' ? (
-                <MarketingAktionen />
             ) : (
                 <>
 
