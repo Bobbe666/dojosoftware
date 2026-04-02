@@ -2307,3 +2307,141 @@
 }
 .steuer-empty svg { margin-bottom: 1rem; opacity: 0.4; }
 .steuer-empty p { margin: 0.5rem 0; }
+
+/* =============================================
+   CASHFLOW CHART
+   ============================================= */
+
+.cashflow-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 160px;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 0.5rem;
+}
+.cashflow-month {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+.cashflow-bars {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.cashflow-bar {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  transition: height 0.3s ease;
+}
+.cashflow-bar--ein { background: rgba(34, 197, 94, 0.7); }
+.cashflow-bar--aus { background: rgba(239, 68, 68, 0.7); }
+.cashflow-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.cashflow-legend {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+.legend-ein { color: rgba(34, 197, 94, 0.9); }
+.legend-aus { color: rgba(239, 68, 68, 0.9); }
+
+/* =============================================
+   ABGLEICH STATUS
+   ============================================= */
+
+.abgleich-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.abgleich-kpi {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+.abgleich-kpi--ok   { border-color: rgba(34, 197, 94, 0.3); }
+.abgleich-kpi--info { border-color: rgba(99, 102, 241, 0.3); }
+.abgleich-kpi--warn { border-color: rgba(234, 179, 8, 0.3); }
+.abgleich-kpi--grau { border-color: rgba(156, 163, 175, 0.2); }
+
+.abgleich-hinweis {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: rgba(234, 179, 8, 0.06);
+  border: 1px solid rgba(234, 179, 8, 0.2);
+  border-radius: 6px;
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+}
+
+.abgleich-filter-row {
+  display: flex;
+  gap: 0.4rem;
+}
+.filter-chip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-chip:hover, .filter-chip.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+  color: var(--text-primary);
+}
+
+.abgleich-table-wrap {
+  max-height: 400px;
+  overflow-y: auto;
+}
+.abgleich-auftraggeber { font-weight: 500; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.abgleich-zweck { color: var(--text-muted); font-size: 0.82rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.abgleich-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.abgleich-badge--bereits_erfasst {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+.abgleich-badge--neu_kategorisiert {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+}
+.abgleich-badge--offen {
+  background: rgba(234, 179, 8, 0.12);
+  color: #fde047;
+}
+.abgleich-badge--ignoriert {
+  background: rgba(156, 163, 175, 0.1);
+  color: #9ca3af;
+}

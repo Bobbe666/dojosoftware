@@ -85,6 +85,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [steuerauswertung, setSteuerauswertung] = useState(null);
   const [steuerLoading, setSteuerLoading] = useState(false);
   const [steuerUebertragenLoading, setSteuerUebertragenLoading] = useState(false);
+  const [cashflow, setCashflow] = useState(null);
+  const [abgleichBericht, setAbgleichBericht] = useState(null);
+  const [abgleichFilter, setAbgleichFilter] = useState('alle'); // alle | neu | bereits_erfasst | offen
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -587,11 +590,23 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     if (!hasKontoauszug) return;
     setSteuerLoading(true);
     try {
-      const res = await axios.get('/buchhaltung/bank-import/steuerauswertung', {
-        params: { jahr: selectedJahr },
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSteuerauswertung(res.data);
+      const [auswRes, cashRes, abgRes] = await Promise.all([
+        axios.get('/buchhaltung/bank-import/steuerauswertung', {
+          params: { jahr: selectedJahr },
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('/buchhaltung/bank-import/cashflow', {
+          params: { jahr: selectedJahr },
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('/buchhaltung/bank-import/abgleich-bericht', {
+          params: { jahr: selectedJahr },
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+      ]);
+      setSteuerauswertung(auswRes.data);
+      setCashflow(cashRes.data);
+      setAbgleichBericht(abgRes.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Laden der Steuerauswertung');
     } finally {
@@ -626,7 +641,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // ===================================================================
   const fetchGuvData = useCallback(() => {
     setLoading(true);
-    axios.get('/api/buchhaltung/guv/details', {
+    axios.get('/buchhaltung/guv/details', {
       params: {
         organisation: selectedOrg,
         jahr: selectedJahr,
@@ -650,7 +665,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // ===================================================================
   const fetchBilanzData = useCallback(() => {
     setLoading(true);
-    axios.get('/api/buchhaltung/bilanz', {
+    axios.get('/buchhaltung/bilanz', {
       params: {
         organisation: selectedOrg,
         jahr: selectedJahr
@@ -2167,6 +2182,111 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </div>
                 )}
 
+                {/* Cashflow-Chart (CSS-Balkendiagramm) */}
+                {cashflow && cashflow.monate.length > 0 && (
+                  <div className="steuer-section">
+                    <h4><TrendingUp size={16} /> Monatlicher Cashflow {selectedJahr}</h4>
+                    <div className="cashflow-chart">
+                      {(() => {
+                        const maxVal = Math.max(...cashflow.monate.map(m => Math.max(m.einnahmen, m.ausgaben)), 1);
+                        return cashflow.monate.map((m, i) => (
+                          <div key={i} className="cashflow-month">
+                            <div className="cashflow-bars">
+                              <div className="cashflow-bar cashflow-bar--ein"
+                                style={{ height: `${(m.einnahmen / maxVal) * 100}%` }}
+                                title={`Einnahmen: ${formatCurrency(m.einnahmen)}`} />
+                              <div className="cashflow-bar cashflow-bar--aus"
+                                style={{ height: `${(m.ausgaben / maxVal) * 100}%` }}
+                                title={`Ausgaben: ${formatCurrency(m.ausgaben)}`} />
+                            </div>
+                            <div className="cashflow-label">{m.label}</div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    <div className="cashflow-legend">
+                      <span className="legend-ein">■ Einnahmen</span>
+                      <span className="legend-aus">■ Ausgaben</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Abgleich-Status: Was ist neu, was ist schon in EÜR */}
+                {cashflow && cashflow.abgleich_status.length > 0 && (
+                  <div className="steuer-section">
+                    <h4><CheckCircle size={16} /> Abgleich-Status — Doppelzählung vermeiden</h4>
+                    <div className="abgleich-status-grid">
+                      {cashflow.abgleich_status.map((s, i) => (
+                        <div key={i} className={`abgleich-kpi abgleich-kpi--${s.gruppe === 'Bereits in EÜR' ? 'ok' : s.gruppe === 'Ignoriert' ? 'grau' : s.gruppe === 'Nicht zugeordnet' ? 'warn' : 'info'}`}>
+                          <div className="kpi-label">{s.gruppe}</div>
+                          <div className="kpi-value">{s.anzahl}</div>
+                          <div className="kpi-sub">{formatCurrency(s.summe)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="abgleich-hinweis">
+                      <AlertCircle size={12} /> Transaktionen die auf <strong>Rechnung, Beitrag oder Verkauf</strong> gemappt sind, werden bei der EÜR-Übertragung automatisch übersprungen — sie sind bereits via ihre Quelltabelle in der EÜR enthalten.
+                    </p>
+                  </div>
+                )}
+
+                {/* Abgleich-Detailtabelle */}
+                {abgleichBericht && (
+                  <div className="steuer-section">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <h4 style={{ margin: 0 }}><FileText size={16} /> Transaktionsdetails</h4>
+                      <div className="abgleich-filter-row">
+                        {['alle', 'neu_kategorisiert', 'bereits_erfasst', 'offen'].map(f => (
+                          <button key={f}
+                            className={`filter-chip ${abgleichFilter === f ? 'active' : ''}`}
+                            onClick={() => setAbgleichFilter(f)}>
+                            {f === 'alle' ? 'Alle' : f === 'neu_kategorisiert' ? 'Neu' : f === 'bereits_erfasst' ? 'Bereits in EÜR' : 'Offen'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="abgleich-table-wrap">
+                      <table className="steuer-table">
+                        <thead>
+                          <tr>
+                            <th>Datum</th>
+                            <th>Auftraggeber / Empfänger</th>
+                            <th>Verwendungszweck</th>
+                            <th>Kategorie</th>
+                            <th>EÜR-Status</th>
+                            <th className="right">Betrag</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {abgleichBericht.transaktionen
+                            .filter(t => abgleichFilter === 'alle' || t.abgleich_typ === abgleichFilter)
+                            .slice(0, 50)
+                            .map((t, i) => (
+                            <tr key={i} className={`abgleich-row abgleich-row--${t.abgleich_typ}`}>
+                              <td>{t.buchungsdatum?.substring(0, 10)}</td>
+                              <td className="abgleich-auftraggeber">{t.auftraggeber_empfaenger}</td>
+                              <td className="abgleich-zweck">{t.verwendungszweck?.substring(0, 60)}</td>
+                              <td>{t.kategorie || '—'}</td>
+                              <td>
+                                <span className={`abgleich-badge abgleich-badge--${t.abgleich_typ}`}>
+                                  {t.abgleich_typ === 'bereits_erfasst' ? <CheckCircle size={10} /> : t.abgleich_typ === 'ignoriert' ? <XCircle size={10} /> : t.abgleich_typ === 'neu_kategorisiert' ? <Check size={10} /> : <AlertCircle size={10} />}
+                                  {t.abgleich_typ === 'bereits_erfasst' ? 'In EÜR' : t.abgleich_typ === 'ignoriert' ? 'Ignoriert' : t.abgleich_typ === 'neu_kategorisiert' ? 'Neu' : 'Offen'}
+                                </span>
+                              </td>
+                              <td className={`right ${parseFloat(t.betrag) >= 0 ? 'einnahme-betrag' : 'ausgabe-betrag'}`}>
+                                {formatCurrency(Math.abs(parseFloat(t.betrag)))}
+                              </td>
+                            </tr>
+                          ))}
+                          {abgleichBericht.transaktionen.filter(t => abgleichFilter === 'alle' || t.abgleich_typ === abgleichFilter).length === 0 && (
+                            <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Keine Transaktionen in diesem Filter</td></tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {steuerauswertung.transaktionen_gesamt === 0 && (
                   <div className="steuer-empty">
                     <BarChart3 size={32} />
@@ -2820,7 +2940,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 darlehen_beschreibung: formData.get('darlehen_beschreibung')
               };
 
-              axios.post('/api/buchhaltung/bilanz/stammdaten', data, {
+              axios.post('/buchhaltung/bilanz/stammdaten', data, {
                 headers: { Authorization: `Bearer ${token}` }
               })
               .then(() => {

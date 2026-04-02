@@ -2109,6 +2109,53 @@ const runAutoMatching = async (transaktionId, dojoId) => {
         }
       }
 
+      // 3b. Verkaufs-Matching: Barverkauf / Kartenzahlung (Einnahmen, Betrag + Datum ±1 Tag)
+      if (!bestMatch && isEinnahme) {
+        const verkaufe = await new Promise((resolve) => {
+          db.query(`
+            SELECT v.verkauf_id, v.bon_nummer, v.brutto_gesamt_cent, v.verkauf_datum,
+                   v.zahlungsart, v.kunde_name
+            FROM verkaeufe v
+            WHERE v.dojo_id = ?
+              AND ABS(v.brutto_gesamt_cent / 100.0 - ?) < 0.02
+              AND ABS(DATEDIFF(v.verkauf_datum, ?)) <= 2
+              AND v.storniert = 0
+            ORDER BY ABS(DATEDIFF(v.verkauf_datum, ?)) ASC
+            LIMIT 1
+          `, [dojoId, betrag, tx.buchungsdatum, tx.buchungsdatum], (err, results) => {
+            resolve(err ? [] : results);
+          });
+        });
+        if (verkaufe.length > 0) {
+          bestMatch = {
+            typ: 'verkauf',
+            id: verkaufe[0].verkauf_id,
+            details: {
+              bon_nummer: verkaufe[0].bon_nummer,
+              betrag: verkaufe[0].brutto_gesamt_cent / 100,
+              zahlungsart: verkaufe[0].zahlungsart,
+              kunde: verkaufe[0].kunde_name,
+              datum: verkaufe[0].verkauf_datum,
+            }
+          };
+          bestConfidence = 0.82;
+        }
+      }
+
+      // 3c. Verbandsbeitrag-Matching (Ausgaben)
+      if (!bestMatch && !isEinnahme) {
+        const searchText = verwendungszweck + ' ' + auftraggeber;
+        const isVerbandsbeitrag = /tda|verband|djb|djjv|dkv|jjv|landesverband/i.test(searchText);
+        if (isVerbandsbeitrag) {
+          bestMatch = {
+            typ: 'verbandsbeitrag',
+            id: null,
+            details: { hinweis: 'Verbandsbeitrag erkannt', text: auftraggeber }
+          };
+          bestConfidence = 0.72;
+        }
+      }
+
       // 4. Prüfe gelernte Regeln
       if (!bestMatch) {
         const regeln = await new Promise((resolve) => {
@@ -3035,6 +3082,8 @@ router.post('/bank-import/euer-uebertragen', requireFeature('kontoauszug'), requ
     const dojoFilter = 'AND t.dojo_id = ?';
 
     // Alle noch nicht übertragenen, kategorisierten Transaktionen
+    // WICHTIG: Transaktionen die auf eine Rechnung, Beitrag oder Verkauf gemappt sind
+    // NICHT übertragen — diese sind bereits in der EÜR via v_euer_einnahmen (views)!
     const [txList] = await pool.query(`
       SELECT t.*,
         COALESCE(t.kategorie, t.auto_kategorie) AS eff_kategorie,
@@ -3045,20 +3094,39 @@ router.post('/bank-import/euer-uebertragen', requireFeature('kontoauszug'), requ
         AND t.status != 'ignoriert'
         AND e.id IS NULL
         AND (t.kategorie IS NOT NULL OR t.auto_kategorie IS NOT NULL)
+        -- Bereits im System vorhandene Einnahmen NICHT doppelt zählen:
+        -- rechnung → in v_euer_einnahmen via rechnungen-Tabelle
+        -- beitrag  → in v_euer_einnahmen via beitraege-Tabelle
+        -- verkauf  → in v_euer_einnahmen via verkaeufe-Tabelle
+        AND (t.match_typ IS NULL OR t.match_typ NOT IN ('rechnung', 'beitrag', 'verkauf'))
         ${dojoFilter}
     `, [parseInt(jahr), dojoId]);
+
+    // Ausgaben die bereits als Kassenbuch-Beleg erfasst sind, herausfiltern
+    const [existingBelege] = await pool.query(`
+      SELECT extern_ref_id FROM buchhaltung_belege
+      WHERE dojo_id = ? AND YEAR(buchungsdatum) = ? AND extern_ref_id IS NOT NULL
+    `, [dojoId, parseInt(jahr)]);
+    const bereitsUebertragene = new Set(existingBelege.map(b => b.extern_ref_id));
+    const zuUebertragen = txList.filter(tx => !bereitsUebertragene.has(tx.transaktion_id));
 
     if (nur_vorschau) {
       return res.json({
         vorschau: true,
-        anzahl: txList.length,
-        summe_einnahmen: txList.filter(t => parseFloat(t.betrag) > 0).reduce((s, t) => s + Math.abs(parseFloat(t.betrag)), 0),
-        summe_ausgaben: txList.filter(t => parseFloat(t.betrag) < 0).reduce((s, t) => s + Math.abs(parseFloat(t.betrag)), 0),
+        anzahl: zuUebertragen.length,
+        uebersprungen_bereits_in_euer: txList.length - zuUebertragen.length +
+          (await pool.query(`
+            SELECT COUNT(*) AS c FROM bank_transaktionen
+            WHERE dojo_id = ? AND YEAR(buchungsdatum) = ?
+              AND match_typ IN ('rechnung','beitrag','verkauf')
+          `, [dojoId, parseInt(jahr)]))[0][0]?.c || 0,
+        summe_einnahmen: zuUebertragen.filter(t => parseFloat(t.betrag) > 0).reduce((s, t) => s + Math.abs(parseFloat(t.betrag)), 0),
+        summe_ausgaben: zuUebertragen.filter(t => parseFloat(t.betrag) < 0).reduce((s, t) => s + Math.abs(parseFloat(t.betrag)), 0),
       });
     }
 
     let uebertragen = 0;
-    for (const tx of txList) {
+    for (const tx of zuUebertragen) {
       // Eintrag in bank_euer_zuordnungen
       await pool.query(`
         INSERT INTO bank_euer_zuordnungen
@@ -3131,6 +3199,216 @@ router.get('/bank-import/kategorien-liste', requireFeature('kontoauszug'), requi
     keywords_count: r.keywords.length,
   }));
   res.json(kategorien);
+});
+
+// ===================================================================
+// 📊 BANK-IMPORT ABGLEICH & CASHFLOW ANALYSE
+// ===================================================================
+
+/**
+ * GET /api/buchhaltung/bank-import/abgleich-bericht
+ * Zeigt welche Bank-Transaktionen bereits im System vorhanden sind
+ * und welche neu (bisher unbekannt) sind — verhindert Doppelzählung in EÜR.
+ */
+router.get('/bank-import/abgleich-bericht', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { jahr = new Date().getFullYear() } = req.query;
+    const dojoId = req.buchhaltungDojoId;
+    const pool = db.promise();
+    const dojoFilter = dojoId ? 'AND t.dojo_id = ?' : '';
+    const params = dojoId ? [parseInt(jahr), dojoId] : [parseInt(jahr)];
+
+    const [rows] = await pool.query(`
+      SELECT
+        t.transaktion_id,
+        t.buchungsdatum,
+        t.betrag,
+        t.verwendungszweck,
+        t.auftraggeber_empfaenger,
+        t.status,
+        t.match_typ,
+        t.match_confidence,
+        t.match_details,
+        COALESCE(t.auto_kategorie, t.kategorie) AS kategorie,
+        CASE
+          WHEN t.match_typ = 'rechnung'       THEN 'In EÜR via Rechnung — kein Doppeleintrag'
+          WHEN t.match_typ = 'beitrag'        THEN 'In EÜR via Mitgliedsbeitrag — kein Doppeleintrag'
+          WHEN t.match_typ = 'verkauf'        THEN 'In EÜR via Verkauf — kein Doppeleintrag'
+          WHEN t.match_typ = 'verbandsbeitrag' THEN 'Als Verbandsbeitrag kategorisiert'
+          WHEN t.match_typ = 'manuell'        THEN 'Manuelle Regel — wird übertragen wenn kategorisiert'
+          WHEN t.status = 'ignoriert'         THEN 'Ignoriert'
+          WHEN t.auto_kategorie IS NOT NULL   THEN 'Auto-kategorisiert — bereit zur EÜR-Übertragung'
+          ELSE 'Unkategorisiert — bitte manuell zuordnen'
+        END AS euer_status,
+        CASE
+          WHEN t.match_typ IN ('rechnung','beitrag','verkauf') THEN 'bereits_erfasst'
+          WHEN t.status = 'ignoriert'         THEN 'ignoriert'
+          WHEN t.auto_kategorie IS NOT NULL   THEN 'neu_kategorisiert'
+          ELSE 'offen'
+        END AS abgleich_typ
+      FROM bank_transaktionen t
+      WHERE YEAR(t.buchungsdatum) = ?
+        ${dojoFilter}
+      ORDER BY t.buchungsdatum DESC
+    `, params);
+
+    // Zusammenfassung
+    const zusammenfassung = rows.reduce((acc, r) => {
+      acc[r.abgleich_typ] = (acc[r.abgleich_typ] || 0) + 1;
+      if (r.abgleich_typ === 'bereits_erfasst') {
+        acc.bereits_erfasst_summe = (acc.bereits_erfasst_summe || 0) + Math.abs(parseFloat(r.betrag));
+      }
+      if (r.abgleich_typ === 'neu_kategorisiert') {
+        acc.neu_kategorisiert_summe = (acc.neu_kategorisiert_summe || 0) + Math.abs(parseFloat(r.betrag));
+      }
+      return acc;
+    }, {});
+
+    res.json({
+      jahr: parseInt(jahr),
+      zusammenfassung,
+      transaktionen: rows.map(r => ({
+        ...r,
+        match_details: typeof r.match_details === 'string' ? JSON.parse(r.match_details || '{}') : r.match_details,
+        betrag: parseFloat(r.betrag),
+      })),
+    });
+  } catch (err) {
+    logger.error('Abgleich-Bericht-Fehler:', { error: err.message });
+    res.status(500).json({ message: 'Fehler beim Laden des Abgleich-Berichts', error: err.message });
+  }
+});
+
+/**
+ * GET /api/buchhaltung/bank-import/cashflow
+ * Monatlicher Cashflow aus Bank-Transaktionen für Charts.
+ * Liefert Einnahmen, Ausgaben und Saldo je Monat + Kategorie-Breakdown.
+ */
+router.get('/bank-import/cashflow', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { jahr = new Date().getFullYear() } = req.query;
+    const dojoId = req.buchhaltungDojoId;
+    const pool = db.promise();
+    const dojoFilter = dojoId ? 'AND dojo_id = ?' : '';
+    const params = dojoId ? [parseInt(jahr), dojoId] : [parseInt(jahr)];
+
+    // Monatliche Übersicht
+    const [monatsRows] = await pool.query(`
+      SELECT
+        MONTH(buchungsdatum) AS monat,
+        SUM(CASE WHEN betrag > 0 THEN betrag ELSE 0 END) AS einnahmen,
+        SUM(CASE WHEN betrag < 0 THEN ABS(betrag) ELSE 0 END) AS ausgaben,
+        SUM(betrag) AS netto,
+        COUNT(*) AS anzahl
+      FROM bank_transaktionen
+      WHERE YEAR(buchungsdatum) = ?
+        AND status != 'ignoriert'
+        ${dojoFilter}
+      GROUP BY MONTH(buchungsdatum)
+      ORDER BY monat
+    `, params);
+
+    // Kategorie-Breakdown (Top 10)
+    const [katRows] = await pool.query(`
+      SELECT
+        COALESCE(auto_kategorie, kategorie, 'Unkategorisiert') AS kategorie,
+        SUM(CASE WHEN betrag > 0 THEN betrag ELSE 0 END) AS einnahmen,
+        SUM(CASE WHEN betrag < 0 THEN ABS(betrag) ELSE 0 END) AS ausgaben,
+        COUNT(*) AS anzahl
+      FROM bank_transaktionen
+      WHERE YEAR(buchungsdatum) = ?
+        AND status != 'ignoriert'
+        ${dojoFilter}
+      GROUP BY COALESCE(auto_kategorie, kategorie, 'Unkategorisiert')
+      ORDER BY (SUM(CASE WHEN betrag > 0 THEN betrag ELSE 0 END) + SUM(CASE WHEN betrag < 0 THEN ABS(betrag) ELSE 0 END)) DESC
+      LIMIT 15
+    `, params);
+
+    // Abgleich-Status-Verteilung
+    const [abgleichRows] = await pool.query(`
+      SELECT
+        CASE
+          WHEN match_typ IN ('rechnung','beitrag','verkauf') THEN 'Bereits in EÜR'
+          WHEN status = 'ignoriert'    THEN 'Ignoriert'
+          WHEN auto_kategorie IS NOT NULL THEN 'Auto-kategorisiert'
+          WHEN status = 'vorgeschlagen' THEN 'Vorschlag vorhanden'
+          ELSE 'Nicht zugeordnet'
+        END AS gruppe,
+        COUNT(*) AS anzahl,
+        SUM(ABS(betrag)) AS summe
+      FROM bank_transaktionen
+      WHERE YEAR(buchungsdatum) = ?
+        ${dojoFilter}
+      GROUP BY gruppe
+    `, params);
+
+    // Monatsnamen
+    const MONATE = ['', 'Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+
+    // Jahressummen
+    const jahresEinnahmen = monatsRows.reduce((s, m) => s + parseFloat(m.einnahmen || 0), 0);
+    const jahresAusgaben  = monatsRows.reduce((s, m) => s + parseFloat(m.ausgaben  || 0), 0);
+
+    res.json({
+      jahr: parseInt(jahr),
+      jahressummen: {
+        einnahmen: Math.round(jahresEinnahmen * 100) / 100,
+        ausgaben:  Math.round(jahresAusgaben  * 100) / 100,
+        netto:     Math.round((jahresEinnahmen - jahresAusgaben) * 100) / 100,
+      },
+      monate: monatsRows.map(m => ({
+        monat: m.monat,
+        label: MONATE[m.monat],
+        einnahmen: Math.round(parseFloat(m.einnahmen || 0) * 100) / 100,
+        ausgaben:  Math.round(parseFloat(m.ausgaben  || 0) * 100) / 100,
+        netto:     Math.round(parseFloat(m.netto     || 0) * 100) / 100,
+        anzahl: m.anzahl,
+      })),
+      kategorien: katRows.map(k => ({
+        kategorie: k.kategorie,
+        einnahmen: Math.round(parseFloat(k.einnahmen || 0) * 100) / 100,
+        ausgaben:  Math.round(parseFloat(k.ausgaben  || 0) * 100) / 100,
+        anzahl: k.anzahl,
+      })),
+      abgleich_status: abgleichRows.map(a => ({
+        gruppe: a.gruppe,
+        anzahl: a.anzahl,
+        summe: Math.round(parseFloat(a.summe || 0) * 100) / 100,
+      })),
+    });
+  } catch (err) {
+    logger.error('Cashflow-Fehler:', { error: err.message });
+    res.status(500).json({ message: 'Fehler beim Laden des Cashflows', error: err.message });
+  }
+});
+
+/**
+ * POST /api/buchhaltung/bank-import/rematch-all
+ * Führt Auto-Matching für alle unzugeordneten Transaktionen eines Jahres erneut durch.
+ */
+router.post('/bank-import/rematch-all', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { jahr = new Date().getFullYear() } = req.body;
+    const dojoId = req.buchhaltungDojoId;
+    if (!dojoId) return res.status(400).json({ message: 'Dojo-ID erforderlich' });
+
+    const [rows] = await db.promise().query(`
+      SELECT transaktion_id FROM bank_transaktionen
+      WHERE dojo_id = ? AND YEAR(buchungsdatum) = ?
+        AND status IN ('unzugeordnet', 'vorgeschlagen')
+    `, [dojoId, parseInt(jahr)]);
+
+    let matched = 0;
+    for (const row of rows) {
+      await runAutoMatching(row.transaktion_id, dojoId);
+      matched++;
+    }
+
+    res.json({ message: `${matched} Transaktionen neu abgeglichen`, matched });
+  } catch (err) {
+    logger.error('Rematch-Fehler:', { error: err.message });
+    res.status(500).json({ message: 'Fehler beim Neu-Abgleich', error: err.message });
+  }
 });
 
 // ===================================================================
