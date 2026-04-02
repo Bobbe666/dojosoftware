@@ -10,12 +10,16 @@ import {
   Calculator, FileText, Receipt, Download, Upload, Plus, Edit, Trash2, Lock, X,
   TrendingUp, TrendingDown, PieChart, Calendar, Filter, Search, ChevronDown, ChevronUp, ChevronRight,
   AlertCircle, CheckCircle, RefreshCw, Building2, Euro, FileSpreadsheet,
-  Landmark, Check, XCircle, Lightbulb, FileUp, History
+  Landmark, Check, XCircle, Lightbulb, FileUp, History, BarChart3, Star, ArrowUpRight
 } from 'lucide-react';
 import '../styles/BuchhaltungTab.css';
 import VerbandRechnungErstellen from './VerbandRechnungErstellen';
+import { useSubscription } from '../context/SubscriptionContext';
 
 const BuchhaltungTab = ({ token, dojoMode = false }) => {
+  const { hasFeature } = useSubscription();
+  const hasKontoauszug = hasFeature('kontoauszug');
+
   // Sub-Tab Navigation
   const [activeSubTab, setActiveSubTab] = useState('euer');
 
@@ -76,6 +80,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [showRechnungModal, setShowRechnungModal] = useState(false);
   const [offeneRechnungen, setOffeneRechnungen] = useState([]);
   const [rechnungTx, setRechnungTx] = useState(null);
+
+  // Steuerauswertung States
+  const [steuerauswertung, setSteuerauswertung] = useState(null);
+  const [steuerLoading, setSteuerLoading] = useState(false);
+  const [steuerUebertragenLoading, setSteuerUebertragenLoading] = useState(false);
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -572,6 +581,47 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   };
 
   // ===================================================================
+  // 📊 STEUERAUSWERTUNG
+  // ===================================================================
+  const loadSteuerauswertung = useCallback(async () => {
+    if (!hasKontoauszug) return;
+    setSteuerLoading(true);
+    try {
+      const res = await axios.get('/buchhaltung/bank-import/steuerauswertung', {
+        params: { jahr: selectedJahr },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSteuerauswertung(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Laden der Steuerauswertung');
+    } finally {
+      setSteuerLoading(false);
+    }
+  }, [selectedJahr, token, hasKontoauszug]);
+
+  const euerUebertragen = async (nurVorschau = false) => {
+    setSteuerUebertragenLoading(true);
+    setError('');
+    try {
+      const res = await axios.post('/buchhaltung/bank-import/euer-uebertragen', {
+        jahr: selectedJahr,
+        nur_vorschau: nurVorschau
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      if (nurVorschau) {
+        alert(`Vorschau: ${res.data.anzahl} Transaktionen bereit zur Übertragung.\nEinnahmen: ${formatCurrency(res.data.summe_einnahmen)}\nAusgaben: ${formatCurrency(res.data.summe_ausgaben)}`);
+      } else {
+        setSuccess(res.data.message);
+        loadSteuerauswertung();
+        setTimeout(() => setSuccess(''), 4000);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler bei der EÜR-Übertragung');
+    } finally {
+      setSteuerUebertragenLoading(false);
+    }
+  };
+
+  // ===================================================================
   // 📊 GuV DATA FETCHING
   // ===================================================================
   const fetchGuvData = useCallback(() => {
@@ -639,6 +689,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     } else if (activeSubTab === 'bankimport') {
       loadBankTransaktionen();
       loadBankStatistik();
+    } else if (activeSubTab === 'steuerauswertung') {
+      loadSteuerauswertung();
     } else if (activeSubTab === 'abschluss') {
       loadAbschluss();
     }
@@ -856,7 +908,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     { id: 'belege', label: 'Belegerfassung', icon: <Receipt size={16} /> },
     { id: 'rechnungen', label: 'Rechnungen', icon: <FileText size={16} /> },
     { id: 'auto', label: 'Auto. Buchungen', icon: <RefreshCw size={16} /> },
-    { id: 'bankimport', label: 'Bank-Import', icon: <Landmark size={16} /> },
+    { id: 'bankimport', label: 'Kontoauszüge', icon: <Landmark size={16} />, enterprise: true },
+    { id: 'steuerauswertung', label: 'Steuerauswertung', icon: <BarChart3 size={16} />, enterprise: true },
     { id: 'abschluss', label: 'Jahresabschluss', icon: <FileSpreadsheet size={16} /> }
   ];
 
@@ -931,16 +984,26 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
 
       {/* Sub-Tab Navigation */}
       <div className="sub-tabs">
-        {subTabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`sub-tab ${activeSubTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveSubTab(tab.id)}
-          >
-            {tab.icon}
-            <span>{tab.label}</span>
-          </button>
-        ))}
+        {subTabs.map(tab => {
+          const locked = tab.enterprise && !hasKontoauszug;
+          return (
+            <button
+              key={tab.id}
+              className={`sub-tab ${activeSubTab === tab.id ? 'active' : ''} ${locked ? 'sub-tab--locked' : ''}`}
+              onClick={() => !locked && setActiveSubTab(tab.id)}
+              title={locked ? 'Nur im Enterprise-Plan verfügbar' : undefined}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {tab.enterprise && (
+                <span className={`enterprise-badge ${locked ? 'enterprise-badge--locked' : 'enterprise-badge--active'}`}>
+                  {locked ? <Lock size={10} /> : <Star size={10} />}
+                  Enterprise
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Sub-Tab Content */}
@@ -1588,7 +1651,24 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         )}
 
         {/* ==================== BANK-IMPORT ==================== */}
-        {activeSubTab === 'bankimport' && (
+        {activeSubTab === 'bankimport' && !hasKontoauszug && (
+          <div className="enterprise-locked-view">
+            <div className="enterprise-locked-icon"><Landmark size={48} /></div>
+            <h3>Kontoauszug-Import</h3>
+            <p>Importieren Sie Kontoauszüge direkt aus Ihrem Online-Banking und ordnen Sie Transaktionen automatisch zu.</p>
+            <ul className="enterprise-feature-list">
+              <li><Check size={14} /> Alle deutschen Banken (Sparkasse, Volksbank, DKB, ING, Comdirect, N26, Deutsche Bank, Postbank)</li>
+              <li><Check size={14} /> Formate: CSV, XLSX, MT940/STA</li>
+              <li><Check size={14} /> Auto-Kategorisierung per Keyword-Erkennung</li>
+              <li><Check size={14} /> Duplikaterkennung & Rechnungsabgleich</li>
+              <li><Check size={14} /> Direkte EÜR-Übertragung</li>
+            </ul>
+            <div className="enterprise-badge-large">
+              <Star size={16} /> Enterprise-Feature — Upgrade erforderlich
+            </div>
+          </div>
+        )}
+        {activeSubTab === 'bankimport' && hasKontoauszug && (
           <div className="bankimport-content">
             {/* Statistik-Karten */}
             {bankStatistik && (
@@ -1957,6 +2037,144 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== STEUERAUSWERTUNG ==================== */}
+        {activeSubTab === 'steuerauswertung' && !hasKontoauszug && (
+          <div className="enterprise-locked-view">
+            <div className="enterprise-locked-icon"><BarChart3 size={48} /></div>
+            <h3>Steuerauswertung</h3>
+            <p>Analysiert automatisch Ihre importierten Kontoauszüge und bereitet die Daten für EÜR und Bilanz auf.</p>
+            <ul className="enterprise-feature-list">
+              <li><Check size={14} /> Betriebseinnahmen & -ausgaben automatisch erkannt</li>
+              <li><Check size={14} /> Gewinn-/Verlust-Vorschau</li>
+              <li><Check size={14} /> Ein-Klick-Übertragung in EÜR</li>
+              <li><Check size={14} /> Nicht kategorisierte Buchungen im Blick</li>
+            </ul>
+            <div className="enterprise-badge-large">
+              <Star size={16} /> Enterprise-Feature — Upgrade erforderlich
+            </div>
+          </div>
+        )}
+        {activeSubTab === 'steuerauswertung' && hasKontoauszug && (
+          <div className="steuerauswertung-content">
+            <div className="steuer-header">
+              <div>
+                <h3><BarChart3 size={18} /> Steuerauswertung {selectedJahr}</h3>
+                <p className="steuer-subtitle">Auswertung aller importierten Kontoauszüge</p>
+              </div>
+              <div className="steuer-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => euerUebertragen(true)}
+                  disabled={steuerUebertragenLoading}
+                >
+                  <AlertCircle size={14} /> Vorschau
+                </button>
+                <button
+                  className="btn-primary"
+                  onClick={() => euerUebertragen(false)}
+                  disabled={steuerUebertragenLoading}
+                >
+                  {steuerUebertragenLoading ? 'Übertrage...' : <><ArrowUpRight size={14} /> In EÜR übertragen</>}
+                </button>
+              </div>
+            </div>
+
+            {steuerLoading && <div className="loading-spinner">Lade Auswertung...</div>}
+
+            {steuerauswertung && !steuerLoading && (
+              <>
+                {/* Kennzahlen-Karten */}
+                <div className="steuer-kpi-grid">
+                  <div className="steuer-kpi steuer-kpi--einnahmen">
+                    <div className="kpi-label">Betriebseinnahmen</div>
+                    <div className="kpi-value">{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</div>
+                    <div className="kpi-sub">{steuerauswertung.auswertung.betriebseinnahmen.length} Kategorien</div>
+                  </div>
+                  <div className="steuer-kpi steuer-kpi--ausgaben">
+                    <div className="kpi-label">Betriebsausgaben</div>
+                    <div className="kpi-value">{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</div>
+                    <div className="kpi-sub">{steuerauswertung.auswertung.betriebsausgaben.length} Kategorien</div>
+                  </div>
+                  <div className={`steuer-kpi ${steuerauswertung.auswertung.gewinn >= 0 ? 'steuer-kpi--gewinn' : 'steuer-kpi--verlust'}`}>
+                    <div className="kpi-label">{steuerauswertung.auswertung.gewinn >= 0 ? 'Gewinn' : 'Verlust'}</div>
+                    <div className="kpi-value">{formatCurrency(Math.abs(steuerauswertung.auswertung.gewinn))}</div>
+                    <div className="kpi-sub">vor Steuern</div>
+                  </div>
+                  {steuerauswertung.auswertung.nicht_kategorisiert.anzahl > 0 && (
+                    <div className="steuer-kpi steuer-kpi--warnung">
+                      <div className="kpi-label">Nicht kategorisiert</div>
+                      <div className="kpi-value">{steuerauswertung.auswertung.nicht_kategorisiert.anzahl}</div>
+                      <div className="kpi-sub">{formatCurrency(steuerauswertung.auswertung.nicht_kategorisiert.summe)}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Einnahmen nach Kategorien */}
+                {steuerauswertung.auswertung.betriebseinnahmen.length > 0 && (
+                  <div className="steuer-section">
+                    <h4><TrendingUp size={16} /> Betriebseinnahmen nach Kategorie</h4>
+                    <table className="steuer-table">
+                      <thead>
+                        <tr><th>Kategorie</th><th>Anzahl</th><th className="right">Summe</th></tr>
+                      </thead>
+                      <tbody>
+                        {steuerauswertung.auswertung.betriebseinnahmen.map((e, i) => (
+                          <tr key={i}>
+                            <td>{e.kategorie}</td>
+                            <td>{e.anzahl}</td>
+                            <td className="right einnahme-betrag">{formatCurrency(e.summe)}</td>
+                          </tr>
+                        ))}
+                        <tr className="summen-zeile">
+                          <td><strong>Gesamt</strong></td>
+                          <td></td>
+                          <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Ausgaben nach Kategorien */}
+                {steuerauswertung.auswertung.betriebsausgaben.length > 0 && (
+                  <div className="steuer-section">
+                    <h4><TrendingDown size={16} /> Betriebsausgaben nach Kategorie</h4>
+                    <table className="steuer-table">
+                      <thead>
+                        <tr><th>Kategorie</th><th>EÜR-Typ</th><th>Anzahl</th><th className="right">Summe</th></tr>
+                      </thead>
+                      <tbody>
+                        {steuerauswertung.auswertung.betriebsausgaben.map((a, i) => (
+                          <tr key={i}>
+                            <td>{a.kategorie}</td>
+                            <td><span className="euer-typ-badge">{a.euer_typ || '—'}</span></td>
+                            <td>{a.anzahl}</td>
+                            <td className="right ausgabe-betrag">{formatCurrency(a.summe)}</td>
+                          </tr>
+                        ))}
+                        <tr className="summen-zeile">
+                          <td><strong>Gesamt</strong></td>
+                          <td></td>
+                          <td></td>
+                          <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {steuerauswertung.transaktionen_gesamt === 0 && (
+                  <div className="steuer-empty">
+                    <BarChart3 size={32} />
+                    <p>Noch keine kategorisierten Transaktionen für {selectedJahr}.</p>
+                    <p>Importieren Sie zuerst Kontoauszüge im Tab <strong>Kontoauszüge</strong>.</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

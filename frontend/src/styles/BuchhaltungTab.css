@@ -2097,3 +2097,213 @@
   background: rgba(34, 197, 94, 0.15);
   border-color: rgba(34, 197, 94, 0.4);
 }
+
+/* =============================================
+   ENTERPRISE FEATURE GATES
+   ============================================= */
+
+.sub-tab--locked {
+  opacity: 0.65;
+  cursor: not-allowed !important;
+}
+.sub-tab--locked:hover {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+.enterprise-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+.enterprise-badge--locked {
+  background: rgba(156, 163, 175, 0.2);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+.enterprise-badge--active {
+  background: rgba(234, 179, 8, 0.15);
+  color: #eab308;
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.enterprise-locked-view {
+  text-align: center;
+  padding: 4rem 2rem;
+  max-width: 560px;
+  margin: 0 auto;
+}
+.enterprise-locked-icon {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
+}
+.enterprise-locked-view h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+.enterprise-locked-view p {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.enterprise-feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem;
+  text-align: left;
+  display: inline-block;
+}
+.enterprise-feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.4rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.enterprise-feature-list li svg {
+  color: #22c55e;
+  flex-shrink: 0;
+}
+.enterprise-badge-large {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+  color: #eab308;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+}
+
+/* =============================================
+   STEUERAUSWERTUNG TAB
+   ============================================= */
+
+.steuerauswertung-content {
+  padding: 0;
+}
+.steuer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+.steuer-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+}
+.steuer-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+.steuer-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.steuer-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.steuer-kpi {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.steuer-kpi--einnahmen { border-color: rgba(34, 197, 94, 0.3); }
+.steuer-kpi--ausgaben  { border-color: rgba(239, 68, 68, 0.3); }
+.steuer-kpi--gewinn    { border-color: rgba(59, 130, 246, 0.3); }
+.steuer-kpi--verlust   { border-color: rgba(239, 68, 68, 0.5); }
+.steuer-kpi--warnung   { border-color: rgba(234, 179, 8, 0.3); }
+.kpi-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.kpi-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.steuer-section {
+  margin-bottom: 2rem;
+}
+.steuer-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+}
+.steuer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.steuer-table th {
+  text-align: left;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+.steuer-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.steuer-table .right { text-align: right; }
+.einnahme-betrag { color: #22c55e; font-weight: 600; }
+.ausgabe-betrag  { color: #f87171; font-weight: 600; }
+.summen-zeile td { border-top: 2px solid rgba(255, 255, 255, 0.15); background: rgba(255,255,255,0.03); }
+
+.euer-typ-badge {
+  font-size: 0.7rem;
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.steuer-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+.steuer-empty svg { margin-bottom: 1rem; opacity: 0.4; }
+.steuer-empty p { margin: 0.5rem 0; }

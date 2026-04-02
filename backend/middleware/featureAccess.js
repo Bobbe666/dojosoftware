@@ -46,6 +46,7 @@ function requireFeature(featureName) {
         `SELECT s.plan_type, s.status,
                 s.feature_verkauf, s.feature_buchfuehrung,
                 s.feature_events, s.feature_multidojo, s.feature_api,
+                s.feature_kontoauszug,
                 s.trial_ends_at, s.subscription_ends_at,
                 d.dojoname as dojo_name, d.subdomain
          FROM dojo_subscriptions s
@@ -96,7 +97,8 @@ function requireFeature(featureName) {
         buchfuehrung: 'feature_buchfuehrung',
         events: 'feature_events',
         multidojo: 'feature_multidojo',
-        api: 'feature_api'
+        api: 'feature_api',
+        kontoauszug: 'feature_kontoauszug'  // Enterprise: Bank-Import + EÜR-Auswertung
       };
 
       const featureColumn = featureColumnMap[featureName];

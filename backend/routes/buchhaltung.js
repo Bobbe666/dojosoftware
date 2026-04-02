@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const iconv = require('iconv-lite');
 const ExcelJS = require('exceljs');
 const logger = require('../utils/logger');
+const { requireFeature } = require('../middleware/featureAccess');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -81,84 +82,219 @@ const bankUpload = multer({
 });
 
 // ===================================================================
-// 🏦 BANK CSV PARSER (Deutsche Banken)
+// 🏦 BANK CSV PARSER (Deutsche Banken — erweitertes Multi-Bank-Format)
 // ===================================================================
 
-// Erkennt Bank-Format anhand der Header-Zeile
-const detectBankFormat = (headerLine) => {
-  const lower = headerLine.toLowerCase();
-  if (lower.includes('auftragskonto') || lower.includes('kontonummer des auftraggebers')) {
-    return 'sparkasse';
+// Erkennungsregeln je Bank — geordnet nach Spezifität (spezifischste zuerst)
+const BANK_SIGNATURES = [
+  {
+    format: 'comdirect',
+    name: 'comdirect',
+    test: (h) => h.includes('buchungstag') && h.includes('vorgang') && h.includes('umsatz in eur'),
+    dateCol: 'buchungstag',
+    amountCol: 'umsatz in eur',
+    descCol: 'vorgang',
+    payeeCol: 'buchungstext',
+    signCol: true, // S/H Spalte ohne Name
+  },
+  {
+    format: 'ing',
+    name: 'ING',
+    test: (h) => h.includes('buchungstag') && h.includes('auftraggeber/empfänger') && h.includes('buchungstext') && h.includes('betrag'),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag',
+    descCol: 'buchungstext',
+    payeeCol: 'auftraggeber/empfänger',
+  },
+  {
+    format: 'dkb2',
+    name: 'DKB',
+    test: (h) => h.includes('buchungsdatum') && h.includes('glaeubiger-id') && h.includes('verwendungszweck'),
+    dateCol: 'buchungsdatum',
+    amountCol: 'betrag (eur)',
+    descCol: 'verwendungszweck',
+    payeeCol: 'zahlungsempfaenger*in',
+  },
+  {
+    format: 'dkb',
+    name: 'DKB',
+    test: (h) => h.includes('buchungstag') && (h.includes('gläubiger-id') || h.includes('glaeubiger-id') || h.includes('mandatsreferenz')) && h.includes('verwendungszweck'),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag (eur)',
+    descCol: 'verwendungszweck',
+    payeeCol: 'auftraggeber / begünstigter',
+  },
+  {
+    format: 'n26',
+    name: 'N26',
+    test: (h) => h.includes('datum') && h.includes('empfänger') && h.includes('transaktionstyp') && h.includes('betrag (eur)'),
+    dateCol: 'datum',
+    amountCol: 'betrag (eur)',
+    descCol: 'verwendungszweck',
+    payeeCol: 'empfänger',
+    delimiter: ',',
+  },
+  {
+    format: 'deutsche_bank',
+    name: 'Deutsche Bank',
+    test: (h) => h.includes('buchungstag') && h.includes('umsatzart') && (h.includes('begünstigter / auftraggeber') || h.includes('beguenstigter / auftraggeber')),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag',
+    descCol: 'verwendungszweck',
+    payeeCol: 'begünstigter / auftraggeber',
+  },
+  {
+    format: 'postbank',
+    name: 'Postbank',
+    test: (h) => h.includes('buchungsdatum') && h.includes('empfänger/auftraggeber') && h.includes('buchungsdetails'),
+    dateCol: 'buchungsdatum',
+    amountCol: 'betrag',
+    descCol: 'buchungsdetails',
+    payeeCol: 'empfänger/auftraggeber',
+  },
+  {
+    format: 'sparkasse2',
+    name: 'Sparkasse',
+    test: (h) => h.includes('auftragskonto') && h.includes('buchungstag') && h.includes('beguenstigter/zahlungspflichtiger'),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag',
+    descCol: 'verwendungszweck',
+    payeeCol: 'beguenstigter/zahlungspflichtiger',
+  },
+  {
+    format: 'sparkasse',
+    name: 'Sparkasse',
+    test: (h) => h.includes('auftragskonto') || h.includes('kontonummer des auftraggebers'),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag',
+    descCol: 'verwendungszweck',
+    payeeCol: 'beguenstigter/zahlungspflichtiger',
+  },
+  {
+    format: 'volksbank',
+    name: 'Volksbank / Raiffeisenbank',
+    test: (h) => h.includes('textschlüssel') || h.includes('textschluessel') || h.includes('bezeichnung auftragskonto'),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag',
+    descCol: 'verwendungszweck',
+    payeeCol: 'empfaenger/auftraggeber',
+  },
+  {
+    format: 'generic',
+    name: 'Unbekannte Bank',
+    test: (h) => (h.includes('buchungstag') || h.includes('buchungsdatum') || h.includes('datum')) && h.includes('betrag'),
+    dateCol: 'buchungstag',
+    amountCol: 'betrag',
+    descCol: 'verwendungszweck',
+    payeeCol: 'auftraggeber',
+  },
+];
+
+// Erkennt Bank-Format anhand der normalisierten Header-Zeile
+const detectBankSignature = (headerLine) => {
+  const lower = headerLine.toLowerCase().replace(/"/g, '');
+  for (const sig of BANK_SIGNATURES) {
+    if (sig.test(lower)) return sig;
   }
-  if (lower.includes('textschlüssel') || lower.includes('textschluessel')) {
-    return 'volksbank';
-  }
-  if (lower.includes('gläubiger-id') || lower.includes('glaeubiger-id') || lower.includes('mandatsreferenz')) {
-    return 'dkb';
-  }
-  if (lower.includes('buchungstag') && lower.includes('betrag')) {
-    return 'generic';
-  }
-  return 'unknown';
+  return null;
 };
 
 // Parsed deutschen Betrag (1.234,56 -> 1234.56)
 const parseGermanAmount = (str) => {
   if (!str) return 0;
-  // Entferne Währungssymbole und Leerzeichen
   let cleaned = str.replace(/[€\s]/g, '').trim();
+  // Wenn kein Komma aber Punkt (z.B. 1234.56 von N26): direkt parsen
+  if (cleaned.includes('.') && !cleaned.includes(',')) return parseFloat(cleaned) || 0;
   // Deutsche Notation: 1.234,56 -> 1234.56
   cleaned = cleaned.replace(/\./g, '').replace(',', '.');
   return parseFloat(cleaned) || 0;
 };
 
-// Parsed deutsches Datum (DD.MM.YYYY -> YYYY-MM-DD)
+// Parsed deutsches Datum (DD.MM.YYYY oder YYYY-MM-DD)
 const parseGermanDate = (str) => {
   if (!str) return null;
-  const parts = str.trim().split('.');
+  str = str.trim();
+  // ISO
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+  // DD.MM.YYYY
+  const parts = str.split('.');
   if (parts.length === 3) {
     const day = parts[0].padStart(2, '0');
     const month = parts[1].padStart(2, '0');
-    let year = parts[2];
-    if (year.length === 2) {
-      year = parseInt(year) > 50 ? '19' + year : '20' + year;
-    }
+    let year = parts[2].trim().split(' ')[0]; // ggf. Zeitanteil entfernen
+    if (year.length === 2) year = parseInt(year) > 50 ? '19' + year : '20' + year;
     return `${year}-${month}-${day}`;
   }
-  // Falls ISO-Format
-  if (str.includes('-')) return str;
   return null;
 };
 
-// CSV Parser für verschiedene Bank-Formate
-const parseCSVContent = (content, encoding = 'utf-8') => {
-  // Konvertiere Encoding falls nötig
-  let text = content;
-  if (encoding !== 'utf-8') {
-    text = iconv.decode(Buffer.from(content), encoding);
+// Parsed eine CSV-Zeile (respektiert Anführungszeichen)
+const parseCSVRow = (line, sep) => {
+  const values = [];
+  let current = '';
+  let inQuotes = false;
+  for (const char of line + sep) {
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === sep && !inQuotes) {
+      values.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
   }
+  return values;
+};
 
-  const lines = text.split(/\r?\n/).filter(line => line.trim());
-  if (lines.length < 2) return { error: 'Datei ist leer oder hat keine Daten', transaktionen: [] };
-
-  // Finde Header-Zeile (kann in Zeile 0-5 sein)
-  let headerIndex = 0;
-  let format = 'unknown';
-  for (let i = 0; i < Math.min(lines.length, 6); i++) {
-    format = detectBankFormat(lines[i]);
-    if (format !== 'unknown') {
-      headerIndex = i;
-      break;
+// CSV Parser für verschiedene Bank-Formate
+const parseCSVContent = (content) => {
+  // Encoding-Normalisierung (BOM entfernen, Latin-1 Fallback)
+  let text = content;
+  if (typeof content !== 'string') {
+    const buf = Buffer.isBuffer(content) ? content : Buffer.from(content);
+    if (buf[0] === 0xEF && buf[1] === 0xBB && buf[2] === 0xBF) {
+      text = buf.toString('utf-8').substring(1);
+    } else {
+      try { text = buf.toString('utf-8'); } catch { text = iconv.decode(buf, 'latin-1'); }
     }
   }
 
-  if (format === 'unknown') {
-    return { error: 'Unbekanntes Bank-Format', transaktionen: [] };
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return { error: 'Datei ist leer oder hat keine Daten', transaktionen: [] };
+
+  // Finde Header-Zeile und Bank-Signatur (erste 10 Zeilen)
+  let headerIndex = 0;
+  let signature = null;
+  for (let i = 0; i < Math.min(lines.length, 10); i++) {
+    signature = detectBankSignature(lines[i]);
+    if (signature) { headerIndex = i; break; }
+  }
+
+  if (!signature) {
+    return { error: 'Unbekanntes Bank-Format. Unterstützt: Sparkasse, Volksbank, DKB, ING, Comdirect, N26, Deutsche Bank, Postbank und MT940.', transaktionen: [] };
   }
 
   const headerLine = lines[headerIndex];
-  const separator = headerLine.includes('\t') ? '\t' : ';';
-  const headers = headerLine.split(separator).map(h => h.replace(/"/g, '').trim().toLowerCase());
+  const sep = signature.delimiter || (headerLine.includes('\t') ? '\t' : ';');
+  const headers = headerLine.split(sep).map(h => h.replace(/"/g, '').trim().toLowerCase());
+
+  // Spaltenpositionen bestimmen
+  const colIdx = (name) => {
+    if (!name) return -1;
+    const n = name.toLowerCase();
+    return headers.findIndex(h => h === n || h.includes(n) || n.includes(h));
+  };
+
+  const dateIdx  = colIdx(signature.dateCol);
+  const amtIdx   = colIdx(signature.amountCol);
+  const descIdx  = colIdx(signature.descCol);
+  const payeeIdx = colIdx(signature.payeeCol);
+  const ibanIdx  = headers.findIndex(h => h === 'iban' || h === 'kontonummer' || h.includes('iban'));
+  const bicIdx   = headers.findIndex(h => h === 'bic' || h === 'blz');
+
+  if (dateIdx < 0 || amtIdx < 0) {
+    return { error: `Bank-Format erkannt (${signature.name}), aber Pflicht-Spalten nicht gefunden.`, transaktionen: [] };
+  }
 
   const transaktionen = [];
 
@@ -166,118 +302,143 @@ const parseCSVContent = (content, encoding = 'utf-8') => {
     const line = lines[i];
     if (!line.trim()) continue;
 
-    // Parse CSV-Zeile (berücksichtigt Anführungszeichen)
-    const values = [];
-    let current = '';
-    let inQuotes = false;
-    for (const char of line + separator) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === separator && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-
+    const values = parseCSVRow(line, sep);
     if (values.length < 3) continue;
 
-    // Erstelle Objekt aus Spalten
-    const row = {};
-    headers.forEach((header, idx) => {
-      row[header] = values[idx] || '';
-    });
-
-    // Normalisiere basierend auf Format
-    let transaktion;
     try {
-      transaktion = normalizeTransaction(row, format);
-      if (transaktion && transaktion.buchungsdatum && transaktion.betrag !== 0) {
-        transaktionen.push(transaktion);
+      let betrag = parseGermanAmount(values[amtIdx] || '');
+
+      // Comdirect: S/H-Zeichen in letzter Spalte gibt Vorzeichen an
+      if (signature.signCol) {
+        const lastVal = values[values.length - 1]?.trim().toUpperCase();
+        if (lastVal === 'S' || lastVal === 'H') {
+          betrag = lastVal === 'S' ? -Math.abs(betrag) : Math.abs(betrag);
+        }
       }
+
+      if (betrag === 0) continue;
+
+      const buchungsdatum = parseGermanDate(values[dateIdx] || '');
+      if (!buchungsdatum) continue;
+
+      const t = {
+        buchungsdatum,
+        valutadatum: null,
+        betrag,
+        verwendungszweck: (descIdx >= 0 ? values[descIdx] : '') || '',
+        auftraggeber_empfaenger: (payeeIdx >= 0 ? values[payeeIdx] : '') || '',
+        iban_gegenkonto: (ibanIdx >= 0 ? values[ibanIdx] : '') || '',
+        bic: (bicIdx >= 0 ? values[bicIdx] : '') || '',
+        buchungstext: '',
+        mandatsreferenz: '',
+      };
+
+      transaktionen.push(t);
     } catch (e) {
-      console.error('Fehler beim Parsen der Zeile:', e, row);
+      logger.debug('CSV-Zeile übersprungen:', { error: e.message });
     }
   }
 
-  return { format, bank: getBankName(format), transaktionen };
+  return { format: signature.format, bank: signature.name, transaktionen };
 };
 
-// Normalisiert Transaktion basierend auf Bank-Format
-const normalizeTransaction = (row, format) => {
-  let t = {
-    buchungsdatum: null,
-    valutadatum: null,
-    betrag: 0,
-    verwendungszweck: '',
-    auftraggeber_empfaenger: '',
-    iban_gegenkonto: '',
-    bic: '',
-    buchungstext: '',
-    mandatsreferenz: '',
-    kundenreferenz: ''
-  };
-
-  switch (format) {
-    case 'sparkasse':
-      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum']);
-      t.valutadatum = parseGermanDate(row['valuta'] || row['wertstellung']);
-      t.betrag = parseGermanAmount(row['betrag']);
-      t.verwendungszweck = row['verwendungszweck'] || '';
-      t.auftraggeber_empfaenger = row['beguenstigter/zahlungspflichtiger'] || row['begünstigter'] || row['name'] || '';
-      t.iban_gegenkonto = row['iban'] || row['kontonummer'] || '';
-      t.bic = row['bic'] || row['blz'] || '';
-      t.buchungstext = row['buchungstext'] || '';
-      break;
-
-    case 'volksbank':
-      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum']);
-      t.valutadatum = parseGermanDate(row['valuta'] || row['wertstellung']);
-      t.betrag = parseGermanAmount(row['betrag']);
-      t.verwendungszweck = row['verwendungszweck'] || '';
-      t.auftraggeber_empfaenger = row['auftraggeber/zahlungsempfänger'] || row['auftraggeber/zahlungsempfaenger'] || row['name'] || '';
-      t.iban_gegenkonto = row['iban'] || '';
-      t.bic = row['bic'] || '';
-      t.buchungstext = row['textschlüssel'] || row['textschluessel'] || row['buchungstext'] || '';
-      break;
-
-    case 'dkb':
-      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum']);
-      t.valutadatum = parseGermanDate(row['wertstellung'] || row['valuta']);
-      t.betrag = parseGermanAmount(row['betrag (eur)'] || row['betrag']);
-      t.verwendungszweck = row['verwendungszweck'] || '';
-      t.auftraggeber_empfaenger = row['auftraggeber / begünstigter'] || row['auftraggeber/begünstigter'] || row['auftraggeber / beguenstigter'] || '';
-      t.iban_gegenkonto = row['kontonummer'] || row['iban'] || '';
-      t.bic = row['blz'] || row['bic'] || '';
-      t.buchungstext = row['buchungstext'] || '';
-      t.mandatsreferenz = row['mandatsreferenz'] || '';
-      break;
-
-    case 'generic':
-    default:
-      // Versuche häufige Spaltennamen
-      t.buchungsdatum = parseGermanDate(row['buchungstag'] || row['buchungsdatum'] || row['datum']);
-      t.valutadatum = parseGermanDate(row['valuta'] || row['wertstellung'] || row['valutadatum']);
-      t.betrag = parseGermanAmount(row['betrag'] || row['betrag (eur)'] || row['umsatz']);
-      t.verwendungszweck = row['verwendungszweck'] || row['beschreibung'] || row['text'] || '';
-      t.auftraggeber_empfaenger = row['name'] || row['auftraggeber'] || row['empfaenger'] || row['begünstigter'] || '';
-      t.iban_gegenkonto = row['iban'] || row['konto'] || row['kontonummer'] || '';
-      break;
-  }
-
-  return t;
+// Legacy-Alias (wird intern noch referenziert)
+const detectBankFormat = (headerLine) => {
+  const sig = detectBankSignature(headerLine);
+  return sig ? sig.format : 'unknown';
 };
-
-// Bank-Name für Anzeige
 const getBankName = (format) => {
-  const names = {
-    'sparkasse': 'Sparkasse',
-    'volksbank': 'Volksbank',
-    'dkb': 'DKB',
-    'generic': 'Unbekannte Bank'
-  };
-  return names[format] || 'Unbekannte Bank';
+  const sig = BANK_SIGNATURES.find(s => s.format === format);
+  return sig ? sig.name : 'Unbekannte Bank';
+};
+
+// ===================================================================
+// 🏷️ AUTO-KATEGORISIERUNG (Keyword-Regeln)
+// ===================================================================
+
+// Standardkategorien mit Keywords — Kampfkunstschule + allgemein
+const AUTO_KATEGORISIERUNG_REGELN = [
+  // ---- Betriebseinnahmen ----
+  { kategorie: 'Mitgliedsbeiträge', typ: 'einnahme', euer_typ: 'betriebseinnahme',
+    keywords: ['mitgliedsbeitrag', 'monatsbeitrag', 'jahresbeitrag', 'kursbeitrag', 'vereinsbeitrag'] },
+  { kategorie: 'Prüfungsgebühren', typ: 'einnahme', euer_typ: 'betriebseinnahme',
+    keywords: ['prüfungsgebühr', 'pruefungsgebuehr', 'prüfung', 'graduierung', 'gürtelprüfung', 'danprüfung'] },
+  { kategorie: 'Seminar-/Lehrgangsgebühren', typ: 'einnahme', euer_typ: 'betriebseinnahme',
+    keywords: ['seminargebühr', 'lehrgangsgebühr', 'lehrgangsbeitrag', 'seminarbeitrag', 'workshop'] },
+  { kategorie: 'Shopverkäufe', typ: 'einnahme', euer_typ: 'betriebseinnahme',
+    keywords: ['shopverkauf', 'artikelverkauf', 'ausrüstung', 'gi', 'judogi', 'karateanzug', 'kimono', 'gürtel'] },
+  { kategorie: 'Spenden', typ: 'einnahme', euer_typ: 'betriebseinnahme',
+    keywords: ['spende', 'förderung', 'zuschuss', 'donation'] },
+
+  // ---- Betriebsausgaben: Raumkosten ----
+  { kategorie: 'Miete / Hallenmiete', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['miete', 'raummiete', 'hallenmiete', 'hallenbenutzung', 'sportstätte', 'mietvertrag', 'nebenkosten wohnraum'] },
+  { kategorie: 'Strom / Energie', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['strom', 'energie', 'stadtwerke', 'eon ', 'e.on', 'rwe ', 'vattenfall', 'stromanbieter'] },
+  { kategorie: 'Wasser / Abwasser', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['wasser', 'abwasser', 'wasserwerk'] },
+
+  // ---- Betriebsausgaben: Versicherung ----
+  { kategorie: 'Versicherungen', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['versicherung', 'haftpflicht', 'betriebshaftpflicht', 'sportversicherung', 'unfallversicherung', 'allianz', 'axa ', 'huk ', 'generali', 'zurich versicherung', 'dak ', 'techniker krankenkasse', 'krankenkasse', 'aok '] },
+
+  // ---- Betriebsausgaben: Sportausrüstung / Material ----
+  { kategorie: 'Sportmaterial / Ausrüstung', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['budosport', 'kampfsport', 'tatami', 'matten', 'schutzausrüstung', 'wettkampf', 'fightsport', 'budo', 'ippon', 'judo', 'karate', 'taekwondo', 'boxen', 'ju-jutsu', 'jiu-jitsu'] },
+
+  // ---- Betriebsausgaben: Verbandsbeiträge ----
+  { kategorie: 'Verbandsbeiträge', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['djb ', 'djjv', 'dkv ', 'jjv', 'bjj', 'verband', 'bund ', 'tda ', 'landesverband', 'regionalverband'] },
+
+  // ---- Betriebsausgaben: Verwaltung ----
+  { kategorie: 'Büro / Verwaltung', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['bürobedarf', 'briefpapier', 'druckkosten', 'kopierpapier', 'büromaterial', 'toner', 'druckerpatrone'] },
+  { kategorie: 'Software / IT', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['software', 'lizenz', 'hosting', 'domain', 'webhosting', 'microsoft', 'adobe', 'zoom ', 'slack ', 'apple ', 'google workspace'] },
+  { kategorie: 'Steuerberater / Buchführung', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['steuerberater', 'steuerbüro', 'buchhaltung', 'datev ', 'lexware', 'steuerberatung'] },
+
+  // ---- Betriebsausgaben: Marketing ----
+  { kategorie: 'Marketing / Werbung', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['werbung', 'anzeige', 'flyer', 'plakat', 'facebook ads', 'google ads', 'instagram', 'marketing', 'druck'] },
+
+  // ---- Betriebsausgaben: Fortbildung ----
+  { kategorie: 'Fortbildung / Lehrgänge', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['fortbildung', 'lehrgang', 'seminar trainer', 'trainerschein', 'c-lizenz', 'b-lizenz', 'a-lizenz'] },
+
+  // ---- Betriebsausgaben: Fahrt ----
+  { kategorie: 'Fahrtkosten', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['fahrtkosten', 'reisekosten', 'tankstelle', 'shell ', 'aral ', 'bp ', 'esso ', 'bahn ', 'db ', 'deutsche bahn', 'bus ', 'taxi', 'uber ', 'flug', 'parkgebühr', 'parkhaus'] },
+
+  // ---- Betriebsausgaben: Löhne ----
+  { kategorie: 'Trainer-Honorare / Löhne', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['honorar', 'trainer', 'übungsleiter', 'übungsleiterpauschale', 'lohn', 'gehalt'] },
+
+  // ---- Transfers / Intern ----
+  { kategorie: 'Eigene Konten (Transfer)', typ: 'transfer', euer_typ: null,
+    keywords: ['umbuchung', 'übertrag eigene', 'kontoübertrag', 'girokonto', 'sparkonto', 'eigentransfer'] },
+
+  // ---- Bankgebühren ----
+  { kategorie: 'Bankgebühren', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['kontoführungsgebühr', 'kontoführung', 'bankgebühr', 'gebühr konto', 'entgelt konto', 'jahresgebühr karte', 'kartengebühr'] },
+];
+
+/**
+ * Ermittelt automatisch eine Kategorie für eine Transaktion.
+ * @param {string} verwendungszweck
+ * @param {string} auftraggeber
+ * @returns {{ kategorie: string, typ: string, euer_typ: string|null }|null}
+ */
+const autoKategorisieren = (verwendungszweck, auftraggeber) => {
+  const searchText = `${verwendungszweck} ${auftraggeber}`.toLowerCase();
+  for (const regel of AUTO_KATEGORISIERUNG_REGELN) {
+    for (const kw of regel.keywords) {
+      if (searchText.includes(kw)) {
+        return { kategorie: regel.kategorie, typ: regel.typ, euer_typ: regel.euer_typ };
+      }
+    }
+  }
+  return null;
 };
 
 // ===================================================================
@@ -1645,7 +1806,7 @@ const generateImportId = () => {
 // ===================================================================
 // 📤 POST /api/buchhaltung/bank-import/upload - Bank-Datei hochladen
 // ===================================================================
-router.post('/bank-import/upload', requireBuchhaltungAccess, bankUpload.single('datei'), async (req, res) => {
+router.post('/bank-import/upload', requireFeature('kontoauszug'), requireBuchhaltungAccess, bankUpload.single('datei'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Keine Datei hochgeladen' });
@@ -1783,8 +1944,24 @@ router.post('/bank-import/upload', requireBuchhaltungAccess, bankUpload.single('
       });
     });
 
-    // Führe Auto-Matching für alle neuen Transaktionen durch
+    // Auto-Kategorisierung + Auto-Matching für alle neuen Transaktionen
+    let autoKatCount = 0;
     for (const tx of insertedTransactions) {
+      // Auto-Kategorisierung anwenden
+      const kat = autoKategorisieren(tx.verwendungszweck, tx.auftraggeber_empfaenger);
+      if (kat) {
+        await new Promise((resolve) => {
+          db.query(
+            `UPDATE bank_transaktionen
+             SET auto_kategorie = ?, auto_kategorie_typ = ?, auto_kategorie_euer = ?
+             WHERE transaktion_id = ?`,
+            [kat.kategorie, kat.typ, kat.euer_typ, tx.transaktion_id],
+            () => resolve()
+          );
+        });
+        autoKatCount++;
+      }
+      // Bestehendes Auto-Matching (Rechnungsabgleich etc.)
       await runAutoMatching(tx.transaktion_id, dojoId);
     }
 
@@ -1795,7 +1972,8 @@ router.post('/bank-import/upload', requireBuchhaltungAccess, bankUpload.single('
       format: isExcel ? 'excel' : (isMT940 ? 'mt940' : 'csv'),
       count: insertedCount,
       duplikate: duplicateCount,
-      gesamt: parseResult.transaktionen.length
+      gesamt: parseResult.transaktionen.length,
+      auto_kategorisiert: autoKatCount
     });
 
   } catch (err) {
@@ -2010,7 +2188,7 @@ const runAutoMatching = async (transaktionId, dojoId) => {
 // ===================================================================
 // 📋 GET /api/buchhaltung/bank-import/transaktionen - Transaktionen abrufen
 // ===================================================================
-router.get('/bank-import/transaktionen', requireBuchhaltungAccess, (req, res) => {
+router.get('/bank-import/transaktionen', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const { status, import_id, organisation, von, bis, seite = 1, limit = 50 } = req.query;
   const offset = (parseInt(seite) - 1) * parseInt(limit);
 
@@ -2095,7 +2273,7 @@ router.get('/bank-import/transaktionen', requireBuchhaltungAccess, (req, res) =>
 // ===================================================================
 // 📊 GET /api/buchhaltung/bank-import/statistik - Import-Statistiken
 // ===================================================================
-router.get('/bank-import/statistik', requireBuchhaltungAccess, (req, res) => {
+router.get('/bank-import/statistik', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const { organisation } = req.query;
 
   let whereClause = '1=1';
@@ -2145,7 +2323,7 @@ router.get('/bank-import/statistik', requireBuchhaltungAccess, (req, res) => {
 // ===================================================================
 // ✅ POST /api/buchhaltung/bank-import/zuordnen/:id - Transaktion zuordnen
 // ===================================================================
-router.post('/bank-import/zuordnen/:id', requireBuchhaltungAccess, async (req, res) => {
+router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
     const { kategorie, match_typ, match_id, lerne_regel = false } = req.body;
@@ -2255,7 +2433,7 @@ router.post('/bank-import/zuordnen/:id', requireBuchhaltungAccess, async (req, r
 // Verknüpft Bank-Transaktion mit Verbandsrechnung OHNE EÜR-Buchung
 // (EÜR kommt aus der Bank-Transaktion selbst)
 // ===================================================================
-router.post('/bank-import/rechnung-verknuepfen/:id', requireBuchhaltungAccess, async (req, res) => {
+router.post('/bank-import/rechnung-verknuepfen/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
     const { rechnung_id } = req.body;
@@ -2346,7 +2524,7 @@ router.post('/bank-import/rechnung-verknuepfen/:id', requireBuchhaltungAccess, a
 // ✅ GET /api/buchhaltung/bank-import/offene-rechnungen
 // Lädt offene Verbandsrechnungen für Verknüpfung
 // ===================================================================
-router.get('/bank-import/offene-rechnungen', requireBuchhaltungAccess, async (req, res) => {
+router.get('/bank-import/offene-rechnungen', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const rechnungen = await new Promise((resolve, reject) => {
       db.query(`
@@ -2370,7 +2548,7 @@ router.get('/bank-import/offene-rechnungen', requireBuchhaltungAccess, async (re
 // ===================================================================
 // ✅ POST /api/buchhaltung/bank-import/batch-zuordnen - Mehrere zuordnen
 // ===================================================================
-router.post('/bank-import/batch-zuordnen', requireBuchhaltungAccess, async (req, res) => {
+router.post('/bank-import/batch-zuordnen', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const { transaktionen } = req.body;
 
@@ -2463,7 +2641,7 @@ router.post('/bank-import/batch-zuordnen', requireBuchhaltungAccess, async (req,
 // ===================================================================
 // ❌ POST /api/buchhaltung/bank-import/ignorieren/:id - Transaktion ignorieren
 // ===================================================================
-router.post('/bank-import/ignorieren/:id', requireBuchhaltungAccess, (req, res) => {
+router.post('/bank-import/ignorieren/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
   const { lerne_regel = false } = req.body;
 
@@ -2503,7 +2681,7 @@ router.post('/bank-import/ignorieren/:id', requireBuchhaltungAccess, (req, res) 
 // ===================================================================
 // 🔄 POST /api/buchhaltung/bank-import/umbuchen/:id - Kategorie ändern (Umbuchung)
 // ===================================================================
-router.post('/bank-import/umbuchen/:id', requireBuchhaltungAccess, (req, res) => {
+router.post('/bank-import/umbuchen/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
   const { kategorie } = req.body;
 
@@ -2550,7 +2728,7 @@ router.post('/bank-import/umbuchen/:id', requireBuchhaltungAccess, (req, res) =>
 // ===================================================================
 // 🔄 POST /api/buchhaltung/bank-import/vorschlag-annehmen/:id - Vorschlag annehmen
 // ===================================================================
-router.post('/bank-import/vorschlag-annehmen/:id', requireBuchhaltungAccess, async (req, res) => {
+router.post('/bank-import/vorschlag-annehmen/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
 
@@ -2666,7 +2844,7 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireBuchhaltungAccess, asy
 // ===================================================================
 // 🗑️ DELETE /api/buchhaltung/bank-import/transaktion/:id - Einzelne Transaktion löschen
 // ===================================================================
-router.delete('/bank-import/transaktion/:id', requireBuchhaltungAccess, (req, res) => {
+router.delete('/bank-import/transaktion/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const transaktionId = req.params.id;
 
   db.query('DELETE FROM bank_transaktionen WHERE transaktion_id = ? AND beleg_id IS NULL', [transaktionId], (err, result) => {
@@ -2686,7 +2864,7 @@ router.delete('/bank-import/transaktion/:id', requireBuchhaltungAccess, (req, re
 // ===================================================================
 // 🗑️ DELETE /api/buchhaltung/bank-import/import/:importId - Ganzen Import löschen
 // ===================================================================
-router.delete('/bank-import/import/:importId', requireBuchhaltungAccess, (req, res) => {
+router.delete('/bank-import/import/:importId', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const importId = req.params.importId;
 
   // Lösche nur Transaktionen ohne Beleg-Verknüpfung
@@ -2709,7 +2887,7 @@ router.delete('/bank-import/import/:importId', requireBuchhaltungAccess, (req, r
 // ===================================================================
 // 📜 GET /api/buchhaltung/bank-import/historie - Import-Historie
 // ===================================================================
-router.get('/bank-import/historie', requireBuchhaltungAccess, (req, res) => {
+router.get('/bank-import/historie', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
   const { organisation, limit = 20 } = req.query;
 
   let whereClause = '1=1';
@@ -2737,6 +2915,222 @@ router.get('/bank-import/historie', requireBuchhaltungAccess, (req, res) => {
 
     res.json(results);
   });
+});
+
+// ===================================================================
+// 📊 BANK-IMPORT STEUERAUSWERTUNG (Enterprise)
+// ===================================================================
+
+/**
+ * GET /api/buchhaltung/bank-import/steuerauswertung
+ * EÜR-relevante Transaktionen aus Kontoauszügen auswerten.
+ * Gruppiert nach EÜR-Typ (Betriebseinnahmen, Betriebsausgaben) und Kategorie.
+ * Liefert auch eine Übertragungsvorschau für die EÜR.
+ */
+router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { jahr = new Date().getFullYear() } = req.query;
+    const dojoId = req.buchhaltungDojoId;
+    const pool = db.promise();
+
+    const dojoFilter = dojoId ? 'AND t.dojo_id = ?' : '';
+    const params = dojoId ? [parseInt(jahr), parseInt(jahr), dojoId] : [parseInt(jahr), parseInt(jahr)];
+
+    // Alle zugeordneten + auto-kategorisierten Transaktionen des Jahres
+    const [transaktionen] = await pool.query(`
+      SELECT
+        t.transaktion_id,
+        t.buchungsdatum,
+        t.betrag,
+        t.verwendungszweck,
+        t.auftraggeber_empfaenger,
+        COALESCE(t.kategorie, t.auto_kategorie) AS kategorie,
+        COALESCE(t.kategorie_typ, t.auto_kategorie_typ) AS kategorie_typ,
+        COALESCE(t.auto_kategorie_euer, '') AS euer_typ,
+        t.status,
+        e.euer_kategorie AS manueller_euer_typ,
+        e.euer_unterkategorie
+      FROM bank_transaktionen t
+      LEFT JOIN bank_euer_zuordnungen e ON e.transaktion_id = t.transaktion_id
+      WHERE YEAR(t.buchungsdatum) = ?
+        AND t.status != 'ignoriert'
+        AND (t.kategorie IS NOT NULL OR t.auto_kategorie IS NOT NULL)
+        ${dojoFilter}
+      ORDER BY t.buchungsdatum
+    `, dojoId ? [parseInt(jahr), dojoId] : [parseInt(jahr)]);
+
+    // Summieren nach EÜR-Typ
+    const einnahmen = {};
+    const ausgaben  = {};
+    let sumEinnahmen = 0;
+    let sumAusgaben  = 0;
+
+    for (const tx of transaktionen) {
+      const euerTyp = tx.manueller_euer_typ || tx.euer_typ;
+      const kat = tx.kategorie || 'Unkategorisiert';
+      const betrag = parseFloat(tx.betrag) || 0;
+
+      if (betrag > 0 || euerTyp === 'betriebseinnahme') {
+        const key = kat;
+        if (!einnahmen[key]) einnahmen[key] = { kategorie: key, summe: 0, anzahl: 0 };
+        einnahmen[key].summe += Math.abs(betrag);
+        einnahmen[key].anzahl++;
+        sumEinnahmen += Math.abs(betrag);
+      } else {
+        const key = kat;
+        if (!ausgaben[key]) ausgaben[key] = { kategorie: key, euer_typ: euerTyp, summe: 0, anzahl: 0 };
+        ausgaben[key].summe += Math.abs(betrag);
+        ausgaben[key].anzahl++;
+        sumAusgaben += Math.abs(betrag);
+      }
+    }
+
+    // Nicht kategorisierte Transaktionen zählen
+    const [unkategorisiert] = await pool.query(`
+      SELECT COUNT(*) AS anzahl, SUM(ABS(betrag)) AS summe
+      FROM bank_transaktionen t
+      WHERE YEAR(t.buchungsdatum) = ?
+        AND t.status != 'ignoriert'
+        AND t.kategorie IS NULL AND t.auto_kategorie IS NULL
+        ${dojoFilter}
+    `, dojoId ? [parseInt(jahr), dojoId] : [parseInt(jahr)]);
+
+    // Übertragungsvorschau EÜR
+    const uebertragungsvorschau = {
+      betriebseinnahmen: Object.values(einnahmen).map(e => ({ ...e, summe: Math.round(e.summe * 100) / 100 })),
+      betriebsausgaben: Object.values(ausgaben).map(a => ({ ...a, summe: Math.round(a.summe * 100) / 100 })),
+      gewinn: Math.round((sumEinnahmen - sumAusgaben) * 100) / 100,
+      summe_einnahmen: Math.round(sumEinnahmen * 100) / 100,
+      summe_ausgaben: Math.round(sumAusgaben * 100) / 100,
+      nicht_kategorisiert: {
+        anzahl: unkategorisiert[0]?.anzahl || 0,
+        summe: Math.round((unkategorisiert[0]?.summe || 0) * 100) / 100,
+      },
+    };
+
+    res.json({
+      jahr: parseInt(jahr),
+      transaktionen_gesamt: transaktionen.length,
+      auswertung: uebertragungsvorschau,
+    });
+
+  } catch (err) {
+    logger.error('Steuerauswertung-Fehler:', { error: err.message });
+    res.status(500).json({ message: 'Fehler bei der Steuerauswertung', error: err.message });
+  }
+});
+
+/**
+ * POST /api/buchhaltung/bank-import/euer-uebertragen
+ * Überträgt kategorisierte Bank-Transaktionen als Belege in die EÜR.
+ * Nur Transaktionen mit status='zugeordnet' oder auto_kategorie_euer gesetzt.
+ */
+router.post('/bank-import/euer-uebertragen', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { jahr = new Date().getFullYear(), nur_vorschau = false } = req.body;
+    const dojoId = req.buchhaltungDojoId;
+    if (!dojoId) return res.status(400).json({ message: 'Dojo-ID erforderlich' });
+
+    const pool = db.promise();
+    const dojoFilter = 'AND t.dojo_id = ?';
+
+    // Alle noch nicht übertragenen, kategorisierten Transaktionen
+    const [txList] = await pool.query(`
+      SELECT t.*,
+        COALESCE(t.kategorie, t.auto_kategorie) AS eff_kategorie,
+        COALESCE(t.auto_kategorie_euer, 'betriebsausgabe') AS eff_euer_typ
+      FROM bank_transaktionen t
+      LEFT JOIN bank_euer_zuordnungen e ON e.transaktion_id = t.transaktion_id
+      WHERE YEAR(t.buchungsdatum) = ?
+        AND t.status != 'ignoriert'
+        AND e.id IS NULL
+        AND (t.kategorie IS NOT NULL OR t.auto_kategorie IS NOT NULL)
+        ${dojoFilter}
+    `, [parseInt(jahr), dojoId]);
+
+    if (nur_vorschau) {
+      return res.json({
+        vorschau: true,
+        anzahl: txList.length,
+        summe_einnahmen: txList.filter(t => parseFloat(t.betrag) > 0).reduce((s, t) => s + Math.abs(parseFloat(t.betrag)), 0),
+        summe_ausgaben: txList.filter(t => parseFloat(t.betrag) < 0).reduce((s, t) => s + Math.abs(parseFloat(t.betrag)), 0),
+      });
+    }
+
+    let uebertragen = 0;
+    for (const tx of txList) {
+      // Eintrag in bank_euer_zuordnungen
+      await pool.query(`
+        INSERT INTO bank_euer_zuordnungen
+          (dojo_id, transaktion_id, euer_kategorie, betrag_eur, buchungsjahr, notiz)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE euer_kategorie = VALUES(euer_kategorie)
+      `, [
+        dojoId,
+        tx.transaktion_id,
+        tx.eff_euer_typ,
+        Math.abs(parseFloat(tx.betrag)),
+        parseInt(jahr),
+        tx.eff_kategorie,
+      ]);
+
+      // Optional: Beleg in buchhaltung_belege anlegen
+      const buchungsart = parseFloat(tx.betrag) > 0 ? 'Einnahme' : 'Ausgabe';
+      const betragCent  = Math.round(Math.abs(parseFloat(tx.betrag)) * 100);
+      await pool.query(`
+        INSERT INTO buchhaltung_belege
+          (dojo_id, organisation_name, buchungsart, buchungsdatum, betrag_cent,
+           beschreibung, kategorie, quelle, extern_ref_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'bank_import', ?)
+        ON DUPLICATE KEY UPDATE beschreibung = VALUES(beschreibung)
+      `, [
+        dojoId,
+        `Dojo ${dojoId}`,
+        buchungsart,
+        tx.buchungsdatum,
+        betragCent,
+        tx.verwendungszweck?.substring(0, 200) || tx.eff_kategorie,
+        tx.eff_kategorie,
+        tx.transaktion_id,
+      ]).catch(() => {}); // Fehler ignorieren wenn Spalte extern_ref_id fehlt
+
+      uebertragen++;
+    }
+
+    res.json({
+      message: `${uebertragen} Transaktionen in EÜR übertragen`,
+      uebertragen,
+      jahr: parseInt(jahr),
+    });
+
+  } catch (err) {
+    logger.error('EÜR-Übertragung-Fehler:', { error: err.message });
+    res.status(500).json({ message: 'Fehler bei der EÜR-Übertragung', error: err.message });
+  }
+});
+
+/**
+ * GET /api/buchhaltung/bank-import/kategorien-vorschlag
+ * Liefert Auto-Kategorisierungsvorschlag für eine einzelne Transaktion.
+ */
+router.get('/bank-import/kategorien-vorschlag', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
+  const { verwendungszweck = '', auftraggeber = '' } = req.query;
+  const kat = autoKategorisieren(verwendungszweck, auftraggeber);
+  res.json(kat || { kategorie: null, typ: null, euer_typ: null });
+});
+
+/**
+ * GET /api/buchhaltung/bank-import/kategorien-liste
+ * Liefert alle verfügbaren Standard-Kategorien mit EÜR-Typ.
+ */
+router.get('/bank-import/kategorien-liste', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {
+  const kategorien = AUTO_KATEGORISIERUNG_REGELN.map(r => ({
+    name: r.kategorie,
+    typ: r.typ,
+    euer_typ: r.euer_typ,
+    keywords_count: r.keywords.length,
+  }));
+  res.json(kategorien);
 });
 
 // ===================================================================
