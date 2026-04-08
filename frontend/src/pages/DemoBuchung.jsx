@@ -45,7 +45,7 @@ export default function DemoBuchung() {
   const [buchungsToken, setBuchungsToken] = useState('');
 
   useEffect(() => {
-    axios.get('/api/demo-termine/slots')
+    axios.get('demo-termine/slots')
       .then(r => setSlots(r.data.slots || []))
       .catch(() => setLoadError('Termine konnten nicht geladen werden. Bitte versuche es später erneut.'))
       .finally(() => setLoading(false));
@@ -56,7 +56,7 @@ export default function DemoBuchung() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      const r = await axios.post('/api/demo-termine/buchung', {
+      const r = await axios.post('demo-termine/buchung', {
         slot_id: selectedSlot.id,
         ...form
       });
