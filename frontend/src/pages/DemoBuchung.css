@@ -280,3 +280,50 @@
 }
 .db-footer a { color: #64748b; text-decoration: none; }
 .db-footer a:hover { color: #818cf8; }
+
+/* ── Belegte Slots ── */
+.db-slot-belegt {
+  background: #0f172a;
+  border: 2px solid #1e293b;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  opacity: 0.55;
+  cursor: not-allowed;
+  position: relative;
+}
+.db-slot-belegt .db-slot-day  { font-size: 0.8rem; color: #475569; margin-bottom: 0.15rem; }
+.db-slot-belegt .db-slot-time { font-size: 1rem; font-weight: 700; color: #475569; }
+.db-slot-belegt-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ef4444;
+  margin-top: 0.2rem;
+}
+
+/* ── Nachfrage-Hinweis ── */
+.db-demand-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  color: #fca5a5;
+  margin-bottom: 1.25rem;
+}
+.db-demand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+  animation: blink-red 1.4s infinite;
+}
+@keyframes blink-red {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}

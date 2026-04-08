@@ -40,18 +40,20 @@ async function checkICalConflict(start, end) {
 // ÖFFENTLICHE ROUTEN (kein Auth)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/demo-termine/slots — freie buchbare Slots
+// GET /api/demo-termine/slots — alle sichtbaren Slots (frei + belegt) für die Buchungsseite
 router.get('/slots', async (req, res) => {
   try {
     const now = new Date();
+    // Beide zurückgeben: freie (buchbar) UND belegte (für Social Proof sichtbar)
     const [slots] = await pool.query(`
-      SELECT id, slot_start, slot_end, duration_minutes
+      SELECT id, slot_start, slot_end, duration_minutes,
+             is_booked,
+             CASE WHEN is_booked = 1 THEN 'belegt' ELSE 'frei' END AS status
       FROM demo_termine_slots
       WHERE is_available = 1
-        AND is_booked    = 0
         AND slot_start   > ?
       ORDER BY slot_start ASC
-      LIMIT 60
+      LIMIT 300
     `, [now]);
     res.json({ success: true, slots });
   } catch (err) {

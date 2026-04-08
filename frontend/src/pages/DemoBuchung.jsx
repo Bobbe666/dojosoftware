@@ -114,6 +114,15 @@ export default function DemoBuchung() {
         {step === 1 && (
           <div>
             <h2 className="db-card-title">Verfügbare Termine</h2>
+
+            {/* Auslastungs-Hinweis */}
+            {!loading && slots.length > 0 && (
+              <div className="db-demand-hint">
+                <span className="db-demand-dot" />
+                <span>Hohe Nachfrage — viele Termine bereits vergeben. Jetzt schnell einen freien Slot sichern!</span>
+              </div>
+            )}
+
             {loading && <div className="db-center db-muted">Lade verfügbare Termine...</div>}
             {loadError && <div className="db-alert db-alert-error">{loadError}</div>}
             {!loading && !loadError && slots.length === 0 && (
@@ -131,7 +140,17 @@ export default function DemoBuchung() {
                   <div className="db-slot-grid">
                     {slotsByWeek[weekKey].map(slot => {
                       const { day, time, dur } = fmtSlot(slot);
+                      const isBelegt = slot.is_booked === 1 || slot.status === 'belegt';
                       const isSelected = selectedSlot?.id === slot.id;
+                      if (isBelegt) {
+                        return (
+                          <div key={slot.id} className="db-slot-btn db-slot-belegt" aria-disabled="true">
+                            <div className="db-slot-day">{day}</div>
+                            <div className="db-slot-time">{time} Uhr</div>
+                            <div className="db-slot-belegt-label">Belegt</div>
+                          </div>
+                        );
+                      }
                       return (
                         <button
                           key={slot.id}
