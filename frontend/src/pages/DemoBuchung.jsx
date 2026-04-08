@@ -1,11 +1,8 @@
 /**
  * DEMO-TERMIN BUCHUNG — Öffentliche Seite
- * =========================================
- * Interessenten können hier einen Demo-Termin für die Dojosoftware buchen.
- * Kein Login erforderlich.
  */
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './DemoBuchung.css';
 
@@ -15,32 +12,88 @@ const BUNDESLAENDER = [
   'Rheinland-Pfalz','Saarland','Sachsen','Sachsen-Anhalt',
   'Schleswig-Holstein','Thüringen','Österreich','Schweiz','Andere'
 ];
+const MITGLIEDER_OPTIONEN = ['bis 20', '20–50', '50–100', '100–200', 'über 200'];
 
-const MITGLIEDER_OPTIONEN = [
-  'bis 20', '20–50', '50–100', '100–200', 'über 200'
+const FILTER_OPTIONS = [
+  { key: 'tag',     label: 'Tag' },
+  { key: 'woche',   label: 'Woche' },
+  { key: 'monat',   label: 'Monat' },
+  { key: 'quartal', label: 'Quartal' },
+  { key: 'jahr',    label: 'Jahr' },
 ];
 
 function fmtSlot(slot) {
   const d = new Date(slot.slot_start);
-  const day = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const day  = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
   const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   return { day, time, dur: slot.duration_minutes };
+}
+
+// Zeitraum-Grenzen für einen Filter ab heute
+function getRange(filter) {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const from = new Date(now);
+  const to   = new Date(now);
+
+  if (filter === 'tag') {
+    to.setDate(to.getDate() + 1);
+  } else if (filter === 'woche') {
+    // Montag dieser Woche bis Sonntag
+    const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    from.setDate(now.getDate() - day);
+    to.setDate(from.getDate() + 7);
+  } else if (filter === 'monat') {
+    from.setDate(1);
+    to.setMonth(from.getMonth() + 1); to.setDate(1);
+  } else if (filter === 'quartal') {
+    const q = Math.floor(now.getMonth() / 3);
+    from.setMonth(q * 3); from.setDate(1);
+    to.setMonth(q * 3 + 3); to.setDate(1);
+  } else if (filter === 'jahr') {
+    from.setMonth(0); from.setDate(1);
+    to.setFullYear(from.getFullYear() + 1); to.setMonth(0); to.setDate(1);
+  }
+  return { from, to };
+}
+
+// Label für aktiven Zeitraum
+function rangeLabel(filter) {
+  const now = new Date();
+  if (filter === 'tag') return now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' });
+  if (filter === 'woche') {
+    const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
+    const mo = new Date(now); mo.setDate(now.getDate() - day);
+    const so = new Date(mo); so.setDate(mo.getDate() + 6);
+    return `${mo.toLocaleDateString('de-DE', { day:'2-digit', month:'short' })} – ${so.toLocaleDateString('de-DE', { day:'2-digit', month:'short', year:'numeric' })}`;
+  }
+  if (filter === 'monat') return now.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+  if (filter === 'quartal') {
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    return `Q${q} ${now.getFullYear()}`;
+  }
+  if (filter === 'jahr') return String(now.getFullYear());
+  return '';
 }
 
 export default function DemoBuchung() {
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1); // 1=Slot wählen, 2=Formular, 3=Bestätigung
-  const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const [step, setStep]               = useState(1);
+  const [slots, setSlots]             = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [loadError, setLoadError]     = useState('');
   const [selectedSlot, setSelectedSlot] = useState(null);
+
+  // Filter-State
+  const [zeitFilter, setZeitFilter]   = useState('monat');
+  const [nurFrei, setNurFrei]         = useState(false);
 
   const [form, setForm] = useState({
     vorname: '', nachname: '', email: '', telefon: '',
     vereinsname: '', bundesland: '', mitglieder_anzahl: '', nachricht: ''
   });
-  const [submitting, setSubmitting] = useState(false);
+  const [submitting, setSubmitting]   = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [buchungsToken, setBuchungsToken] = useState('');
 
@@ -51,15 +104,38 @@ export default function DemoBuchung() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Gefilterte Slots
+  const filteredSlots = useMemo(() => {
+    const { from, to } = getRange(zeitFilter);
+    return slots.filter(s => {
+      const d = new Date(s.slot_start);
+      if (d < from || d >= to) return false;
+      if (nurFrei && (s.is_booked === 1 || s.status === 'belegt')) return false;
+      return true;
+    });
+  }, [slots, zeitFilter, nurFrei]);
+
+  // Slots nach Wochen gruppieren
+  const slotsByWeek = useMemo(() => filteredSlots.reduce((acc, slot) => {
+    const d  = new Date(slot.slot_start);
+    const mo = new Date(d);
+    const diff = d.getDay() === 0 ? -6 : 1 - d.getDay();
+    mo.setDate(d.getDate() + diff);
+    const key = mo.toISOString().slice(0, 10);
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(slot);
+    return acc;
+  }, {}), [filteredSlots]);
+
+  const freieAnzahl = filteredSlots.filter(s => s.is_booked !== 1 && s.status !== 'belegt').length;
+  const belegteAnzahl = filteredSlots.filter(s => s.is_booked === 1 || s.status === 'belegt').length;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setSubmitError('');
     try {
-      const r = await axios.post('demo-termine/buchung', {
-        slot_id: selectedSlot.id,
-        ...form
-      });
+      const r = await axios.post('demo-termine/buchung', { slot_id: selectedSlot.id, ...form });
       setBuchungsToken(r.data.buchungs_token);
       setStep(3);
     } catch (err) {
@@ -68,16 +144,6 @@ export default function DemoBuchung() {
       setSubmitting(false);
     }
   };
-
-  // Slots nach Wochen gruppieren
-  const slotsByWeek = slots.reduce((acc, slot) => {
-    const d  = new Date(slot.slot_start);
-    const mo = new Date(d); mo.setDate(d.getDate() - d.getDay() + 1); // Montag der Woche
-    const key = mo.toISOString().slice(0,10);
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(slot);
-    return acc;
-  }, {});
 
   return (
     <div className="db-page">
@@ -110,12 +176,13 @@ export default function DemoBuchung() {
       )}
 
       <div className="db-card">
+
         {/* ── SCHRITT 1: SLOT WÄHLEN ── */}
         {step === 1 && (
           <div>
             <h2 className="db-card-title">Verfügbare Termine</h2>
 
-            {/* Auslastungs-Hinweis */}
+            {/* Nachfrage-Hinweis */}
             {!loading && slots.length > 0 && (
               <div className="db-demand-hint">
                 <span className="db-demand-dot" />
@@ -123,14 +190,57 @@ export default function DemoBuchung() {
               </div>
             )}
 
-            {loading && <div className="db-center db-muted">Lade verfügbare Termine...</div>}
-            {loadError && <div className="db-alert db-alert-error">{loadError}</div>}
-            {!loading && !loadError && slots.length === 0 && (
-              <div className="db-empty">
-                <p>Aktuell sind keine Termine verfügbar.</p>
-                <p className="db-muted">Schreib uns gerne direkt unter <a href="mailto:info@tda-intl.org">info@tda-intl.org</a> und wir finden einen passenden Termin.</p>
+            {/* ── Filter-Leiste ── */}
+            {!loading && !loadError && (
+              <div className="db-filter-bar">
+                <div className="db-filter-left">
+                  <span className="db-filter-label">Zeitraum:</span>
+                  <div className="db-filter-pills">
+                    {FILTER_OPTIONS.map(f => (
+                      <button
+                        key={f.key}
+                        className={`db-filter-pill ${zeitFilter === f.key ? 'active' : ''}`}
+                        onClick={() => { setZeitFilter(f.key); setSelectedSlot(null); }}
+                      >
+                        {f.label}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="db-filter-range">{rangeLabel(zeitFilter)}</span>
+                </div>
+                <button
+                  className={`db-frei-toggle ${nurFrei ? 'active' : ''}`}
+                  onClick={() => { setNurFrei(v => !v); setSelectedSlot(null); }}
+                >
+                  <span className={`db-frei-dot ${nurFrei ? 'on' : ''}`} />
+                  Nur freie Termine
+                </button>
               </div>
             )}
+
+            {/* Zähler */}
+            {!loading && !loadError && filteredSlots.length > 0 && (
+              <div className="db-filter-counts">
+                <span className="db-count-free">{freieAnzahl} frei</span>
+                <span className="db-count-sep">·</span>
+                <span className="db-count-booked">{belegteAnzahl} belegt</span>
+                <span className="db-count-sep">·</span>
+                <span className="db-count-total">{filteredSlots.length} gesamt</span>
+              </div>
+            )}
+
+            {loading && <div className="db-center db-muted">Lade verfügbare Termine...</div>}
+            {loadError && <div className="db-alert db-alert-error">{loadError}</div>}
+
+            {!loading && !loadError && filteredSlots.length === 0 && (
+              <div className="db-empty">
+                {nurFrei
+                  ? <><p>Keine freien Termine in diesem Zeitraum.</p><p className="db-muted">Wähle einen anderen Zeitraum oder deaktiviere den Filter.</p></>
+                  : <><p>Keine Termine in diesem Zeitraum.</p><p className="db-muted">Wähle einen anderen Zeitraum.</p></>
+                }
+              </div>
+            )}
+
             {!loading && !loadError && Object.keys(slotsByWeek).map(weekKey => {
               const weekDate = new Date(weekKey);
               const weekLabel = weekDate.toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -140,7 +250,7 @@ export default function DemoBuchung() {
                   <div className="db-slot-grid">
                     {slotsByWeek[weekKey].map(slot => {
                       const { day, time, dur } = fmtSlot(slot);
-                      const isBelegt = slot.is_booked === 1 || slot.status === 'belegt';
+                      const isBelegt  = slot.is_booked === 1 || slot.status === 'belegt';
                       const isSelected = selectedSlot?.id === slot.id;
                       if (isBelegt) {
                         return (
@@ -168,6 +278,7 @@ export default function DemoBuchung() {
                 </div>
               );
             })}
+
             {selectedSlot && (
               <div className="db-selected-bar">
                 <span>Ausgewählt: <strong>{fmtSlot(selectedSlot).day}, {fmtSlot(selectedSlot).time} Uhr</strong></span>
@@ -184,7 +295,6 @@ export default function DemoBuchung() {
             <div className="db-selected-info">
               Termin: <strong>{fmtSlot(selectedSlot).day}, {fmtSlot(selectedSlot).time} Uhr ({fmtSlot(selectedSlot).dur} Min)</strong>
             </div>
-
             <h2 className="db-card-title">Deine Angaben</h2>
             <form onSubmit={handleSubmit}>
               <div className="db-form-row">
@@ -236,9 +346,7 @@ export default function DemoBuchung() {
                   placeholder="z.B. Mitgliederverwaltung, Beitragszahlungen, Kursbuchungen, App für Mitglieder..."
                 />
               </div>
-
               {submitError && <div className="db-alert db-alert-error">{submitError}</div>}
-
               <div className="db-form-submit">
                 <button type="submit" className="db-btn db-btn-primary db-btn-lg" disabled={submitting}>
                   {submitting ? 'Buche Termin...' : 'Termin verbindlich buchen'}
@@ -259,18 +367,9 @@ export default function DemoBuchung() {
             </p>
             {selectedSlot && (
               <div className="db-success-detail">
-                <div className="db-success-detail-row">
-                  <span>Termin</span>
-                  <strong>{fmtSlot(selectedSlot).day}, {fmtSlot(selectedSlot).time} Uhr</strong>
-                </div>
-                <div className="db-success-detail-row">
-                  <span>Dauer</span>
-                  <strong>ca. {fmtSlot(selectedSlot).dur} Minuten</strong>
-                </div>
-                <div className="db-success-detail-row">
-                  <span>E-Mail</span>
-                  <strong>{form.email}</strong>
-                </div>
+                <div className="db-success-detail-row"><span>Termin</span><strong>{fmtSlot(selectedSlot).day}, {fmtSlot(selectedSlot).time} Uhr</strong></div>
+                <div className="db-success-detail-row"><span>Dauer</span><strong>ca. {fmtSlot(selectedSlot).dur} Minuten</strong></div>
+                <div className="db-success-detail-row"><span>E-Mail</span><strong>{form.email}</strong></div>
               </div>
             )}
             <p className="db-success-hint">
