@@ -3,54 +3,83 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import '../styles/DemoTermine.css';
 
-// ─── Hilfsfunktionen ──────────────────────────────────────────────────────────
-function fmt(dt) {
-  if (!dt) return '—';
-  const d = new Date(dt);
-  return d.toLocaleString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-function fmtDate(dt) {
-  if (!dt) return '';
-  return new Date(dt).toISOString().slice(0, 16); // für datetime-local input
-}
+// ─── Konstanten ───────────────────────────────────────────────────────────────
+const WOCHENTAGE = [
+  { id: 1, kurz: 'Mo', lang: 'Montag' },
+  { id: 2, kurz: 'Di', lang: 'Dienstag' },
+  { id: 3, kurz: 'Mi', lang: 'Mittwoch' },
+  { id: 4, kurz: 'Do', lang: 'Donnerstag' },
+  { id: 5, kurz: 'Fr', lang: 'Freitag' },
+  { id: 6, kurz: 'Sa', lang: 'Samstag' },
+  { id: 0, kurz: 'So', lang: 'Sonntag' },
+];
 
 const STATUS_LABELS = { ausstehend: 'Ausstehend', bestaetigt: 'Bestätigt', abgesagt: 'Abgesagt' };
 const STATUS_COLORS = { ausstehend: '#f59e0b', bestaetigt: '#22c55e', abgesagt: '#ef4444' };
+
+function fmt(dt) {
+  if (!dt) return '—';
+  return new Date(dt).toLocaleString('de-DE', {
+    weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+// Nächsten Wochentag (0=So…6=Sa) ab einem Datum berechnen
+function naechsterWochentag(vonDatum, wochentag) {
+  const d = new Date(vonDatum);
+  d.setHours(0, 0, 0, 0);
+  const diff = (wochentag - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + (diff === 0 ? 7 : diff)); // gleicher Tag → nächste Woche
+  return d;
+}
+
+// Alle Vorkommen eines Wochentags in einem Zeitraum
+function alleVorkommen(wochentag, wochen, startDatum) {
+  const result = [];
+  let d = naechsterWochentag(startDatum || new Date(), wochentag);
+  for (let i = 0; i < wochen; i++) {
+    result.push(new Date(d));
+    d = new Date(d);
+    d.setDate(d.getDate() + 7);
+  }
+  return result;
+}
 
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
 export default function DemoTermine() {
   const { token } = useAuth();
   const authHeader = { Authorization: `Bearer ${token}` };
 
-  const [view, setView] = useState('slots'); // 'slots' | 'buchungen'
+  const [view, setView] = useState('slots');
   const [slots, setSlots] = useState([]);
   const [buchungen, setBuchungen] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
 
-  // Slot-Formular
-  const [showSlotForm, setShowSlotForm] = useState(false);
+  // Welches Formular ist offen: null | 'einzeln' | 'wochenplan'
+  const [openForm, setOpenForm] = useState(null);
+
+  // ── Einzelner Slot ────────────────────────────────────────────────────────
   const [slotForm, setSlotForm] = useState({ slot_start: '', duration_minutes: '60', notes: '' });
   const [slotSaving, setSlotSaving] = useState(false);
-
-  // Bulk-Slot Wizard
-  const [showBulk, setShowBulk] = useState(false);
-  const [bulkDate, setBulkDate] = useState('');
-  const [bulkTimes, setBulkTimes] = useState('09:00\n10:30\n14:00\n15:30');
-  const [bulkDur, setBulkDur] = useState('60');
-  const [bulkSaving, setBulkSaving] = useState(false);
-
-  // iCloud Konflikt-Check
   const [conflictCheck, setConflictCheck] = useState(null);
   const [checkingConflict, setCheckingConflict] = useState(false);
 
-  // Buchungs-Detail
+  // ── Wochenplan ────────────────────────────────────────────────────────────
+  // selectedDays: { [wochentag_id]: Set<'HH:MM'> }
+  const [selectedDays, setSelectedDays] = useState({});
+  const [wochenplanDur, setWochenplanDur] = useState('60');
+  const [wochenplanWochen, setWochenplanWochen] = useState('8');
+  const [wochenplanSaving, setWochenplanSaving] = useState(false);
+  const [neueUhrzeitInputs, setNeueUhrzeitInputs] = useState({}); // pro Tag ein Input-Value
+
+  // ── Buchungs-Detail ───────────────────────────────────────────────────────
   const [selectedBuchung, setSelectedBuchung] = useState(null);
   const [buchungNotiz, setBuchungNotiz] = useState('');
   const [buchungSaving, setBuchungSaving] = useState(false);
 
-  // Buchungs-Link
   const bookingUrl = `${window.location.origin}/demo-buchen`;
 
   const showMsg = (type, text) => {
@@ -63,11 +92,8 @@ export default function DemoTermine() {
     try {
       const r = await axios.get('/demo-termine/admin/slots', { headers: authHeader });
       setSlots(r.data.slots || []);
-    } catch (e) {
-      showMsg('error', 'Fehler beim Laden der Slots');
-    } finally {
-      setLoading(false);
-    }
+    } catch { showMsg('error', 'Fehler beim Laden der Slots'); }
+    finally { setLoading(false); }
   }, [token]);
 
   const loadBuchungen = useCallback(async () => {
@@ -75,11 +101,8 @@ export default function DemoTermine() {
     try {
       const r = await axios.get('/demo-termine/admin/buchungen', { headers: authHeader });
       setBuchungen(r.data.buchungen || []);
-    } catch (e) {
-      showMsg('error', 'Fehler beim Laden der Buchungen');
-    } finally {
-      setLoading(false);
-    }
+    } catch { showMsg('error', 'Fehler beim Laden der Buchungen'); }
+    finally { setLoading(false); }
   }, [token]);
 
   const loadStats = useCallback(async () => {
@@ -89,16 +112,10 @@ export default function DemoTermine() {
     } catch {}
   }, [token]);
 
-  useEffect(() => {
-    loadSlots();
-    loadStats();
-  }, [loadSlots, loadStats]);
+  useEffect(() => { loadSlots(); loadStats(); }, [loadSlots, loadStats]);
+  useEffect(() => { if (view === 'buchungen') loadBuchungen(); }, [view, loadBuchungen]);
 
-  useEffect(() => {
-    if (view === 'buchungen') loadBuchungen();
-  }, [view, loadBuchungen]);
-
-  // iCloud Konflikt-Check beim Tippen
+  // iCloud Konflikt-Check für Einzelslot
   useEffect(() => {
     if (!slotForm.slot_start) { setConflictCheck(null); return; }
     const timer = setTimeout(async () => {
@@ -117,7 +134,90 @@ export default function DemoTermine() {
     return () => clearTimeout(timer);
   }, [slotForm.slot_start, slotForm.duration_minutes]);
 
-  // ── Slot anlegen ──────────────────────────────────────────────────────────
+  // ── Wochenplan: Tag an/abwählen ───────────────────────────────────────────
+  const toggleDay = (dayId) => {
+    setSelectedDays(prev => {
+      const next = { ...prev };
+      if (next[dayId]) {
+        delete next[dayId];
+      } else {
+        next[dayId] = new Set();
+      }
+      return next;
+    });
+  };
+
+  // ── Wochenplan: Uhrzeit zu einem Tag hinzufügen ───────────────────────────
+  const addTime = (dayId) => {
+    const val = (neueUhrzeitInputs[dayId] || '').trim();
+    if (!val || !/^\d{2}:\d{2}$/.test(val)) return;
+    setSelectedDays(prev => {
+      const next = { ...prev };
+      next[dayId] = new Set([...(next[dayId] || []), val]);
+      return next;
+    });
+    setNeueUhrzeitInputs(prev => ({ ...prev, [dayId]: '' }));
+  };
+
+  const removeTime = (dayId, time) => {
+    setSelectedDays(prev => {
+      const next = { ...prev };
+      const set = new Set(next[dayId]);
+      set.delete(time);
+      next[dayId] = set;
+      return next;
+    });
+  };
+
+  // ── Wochenplan-Vorschau: wie viele Slots werden erstellt? ─────────────────
+  const wochenplanPreview = () => {
+    let count = 0;
+    Object.entries(selectedDays).forEach(([dayId, times]) => {
+      count += alleVorkommen(parseInt(dayId), parseInt(wochenplanWochen)).length * times.size;
+    });
+    return count;
+  };
+
+  // ── Wochenplan anlegen ────────────────────────────────────────────────────
+  const handleWochenplanCreate = async (e) => {
+    e.preventDefault();
+    const preview = wochenplanPreview();
+    if (preview === 0) { showMsg('error', 'Wähle mindestens einen Wochentag mit einer Uhrzeit.'); return; }
+
+    setWochenplanSaving(true);
+    const slotsToCreate = [];
+    const dur = parseInt(wochenplanDur);
+    const wochen = parseInt(wochenplanWochen);
+
+    Object.entries(selectedDays).forEach(([dayId, times]) => {
+      const vorkommen = alleVorkommen(parseInt(dayId), wochen);
+      vorkommen.forEach(datum => {
+        [...times].forEach(time => {
+          const [h, m] = time.split(':').map(Number);
+          const start = new Date(datum);
+          start.setHours(h, m, 0, 0);
+          slotsToCreate.push({ slot_start: start.toISOString(), duration_minutes: dur });
+        });
+      });
+    });
+
+    // Zeitlich sortieren
+    slotsToCreate.sort((a, b) => new Date(a.slot_start) - new Date(b.slot_start));
+
+    try {
+      const r = await axios.post('/demo-termine/admin/slots/bulk', { slots: slotsToCreate }, { headers: authHeader });
+      showMsg('success', `${r.data.created} Slots angelegt${r.data.skipped > 0 ? `, ${r.data.skipped} übersprungen (Überschneidung)` : ''}`);
+      setOpenForm(null);
+      setSelectedDays({});
+      loadSlots(); loadStats();
+    } catch (e) {
+      showMsg('error', e.response?.data?.error || 'Fehler');
+    } finally {
+      setWochenplanSaving(false);
+    }
+  };
+
+  // ── Einzelslot anlegen ────────────────────────────────────────────────────
   const handleCreateSlot = async (e) => {
     e.preventDefault();
     setSlotSaving(true);
@@ -128,12 +228,11 @@ export default function DemoTermine() {
         notes: slotForm.notes || null
       }, { headers: authHeader });
       showMsg('success', 'Slot angelegt!');
-      setShowSlotForm(false);
+      setOpenForm(null);
       setSlotForm({ slot_start: '', duration_minutes: '60', notes: '' });
       loadSlots(); loadStats();
     } catch (e) {
-      const err = e.response?.data?.error || 'Fehler';
-      showMsg('error', err);
+      showMsg('error', e.response?.data?.error || 'Fehler');
     } finally {
       setSlotSaving(false);
     }
@@ -147,9 +246,7 @@ export default function DemoTermine() {
         { headers: authHeader }
       );
       loadSlots(); loadStats();
-    } catch (e) {
-      showMsg('error', e.response?.data?.error || 'Fehler');
-    }
+    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
   };
 
   // ── Slot löschen ──────────────────────────────────────────────────────────
@@ -159,52 +256,26 @@ export default function DemoTermine() {
       await axios.delete(`/demo-termine/admin/slots/${id}`, { headers: authHeader });
       showMsg('success', 'Slot gelöscht');
       loadSlots(); loadStats();
-    } catch (e) {
-      showMsg('error', e.response?.data?.error || 'Fehler');
-    }
+    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
   };
 
-  // ── Bulk Slots ────────────────────────────────────────────────────────────
-  const handleBulkCreate = async (e) => {
-    e.preventDefault();
-    setBulkSaving(true);
-    const times = bulkTimes.split('\n').map(t => t.trim()).filter(Boolean);
-    const slotsToCreate = times.map(t => ({
-      slot_start: `${bulkDate}T${t}:00`,
-      duration_minutes: parseInt(bulkDur)
-    }));
-    try {
-      const r = await axios.post('/demo-termine/admin/slots/bulk', { slots: slotsToCreate }, { headers: authHeader });
-      showMsg('success', `${r.data.created} Slots angelegt, ${r.data.skipped} übersprungen`);
-      setShowBulk(false);
-      loadSlots(); loadStats();
-    } catch (e) {
-      showMsg('error', e.response?.data?.error || 'Fehler');
-    } finally {
-      setBulkSaving(false);
-    }
-  };
-
-  // ── Buchungsstatus ändern ─────────────────────────────────────────────────
+  // ── Buchung aktualisieren ─────────────────────────────────────────────────
   const updateBuchung = async (id, updates) => {
     setBuchungSaving(true);
     try {
       await axios.put(`/demo-termine/admin/buchungen/${id}`, updates, { headers: authHeader });
       showMsg('success', 'Gespeichert');
-      // Lokales Update
       setBuchungen(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
       if (selectedBuchung?.id === id) setSelectedBuchung(prev => ({ ...prev, ...updates }));
       loadStats();
-    } catch (e) {
-      showMsg('error', e.response?.data?.error || 'Fehler');
-    } finally {
-      setBuchungSaving(false);
-    }
+    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
+    finally { setBuchungSaving(false); }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="dt-wrapper">
+
       {/* Header */}
       <div className="dt-header">
         <div className="dt-header-left">
@@ -222,10 +293,7 @@ export default function DemoTermine() {
         </div>
       </div>
 
-      {/* Meldung */}
-      {msg.text && (
-        <div className={`dt-alert dt-alert-${msg.type}`}>{msg.text}</div>
-      )}
+      {msg.text && <div className={`dt-alert dt-alert-${msg.type}`}>{msg.text}</div>}
 
       {/* Stats */}
       {stats && (
@@ -244,12 +312,12 @@ export default function DemoTermine() {
           </div>
           <div className="dt-stat-card">
             <div className="dt-stat-num dt-stat-muted">{stats.gesamt_slots}</div>
-            <div className="dt-stat-label">Slots gesamt (Zukunft)</div>
+            <div className="dt-stat-label">Slots gesamt</div>
           </div>
         </div>
       )}
 
-      {/* View-Umschalter */}
+      {/* View-Tabs */}
       <div className="dt-tabs">
         <button className={`dt-tab ${view === 'slots' ? 'active' : ''}`} onClick={() => setView('slots')}>
           Zeitfenster
@@ -260,22 +328,133 @@ export default function DemoTermine() {
         </button>
       </div>
 
-      {/* ── SLOTS VIEW ── */}
+      {/* ══════════════ SLOTS VIEW ══════════════ */}
       {view === 'slots' && (
         <div className="dt-section">
+
+          {/* Aktions-Buttons */}
           <div className="dt-section-actions">
-            <button className="dt-btn dt-btn-primary" onClick={() => { setShowSlotForm(!showSlotForm); setShowBulk(false); }}>
-              + Einzelner Slot
+            <button
+              className={`dt-btn dt-btn-primary ${openForm === 'wochenplan' ? 'dt-btn-active-border' : ''}`}
+              onClick={() => setOpenForm(openForm === 'wochenplan' ? null : 'wochenplan')}
+            >
+              🗓 Wochenplan anlegen
             </button>
-            <button className="dt-btn" onClick={() => { setShowBulk(!showBulk); setShowSlotForm(false); }}>
-              Mehrere Slots anlegen
+            <button
+              className={`dt-btn ${openForm === 'einzeln' ? 'dt-btn-active-border' : ''}`}
+              onClick={() => setOpenForm(openForm === 'einzeln' ? null : 'einzeln')}
+            >
+              + Einzelner Termin
             </button>
           </div>
 
-          {/* Einzelner Slot anlegen */}
-          {showSlotForm && (
+          {/* ── WOCHENPLAN WIZARD ── */}
+          {openForm === 'wochenplan' && (
+            <form className="dt-form dt-form-wide" onSubmit={handleWochenplanCreate}>
+              <h3 className="dt-form-title">Wochenplan — wiederkehrende Termine anlegen</h3>
+              <p className="dt-form-hint">
+                Wähle Wochentage und trage die Uhrzeiten ein. Die Slots werden für die gewählte Anzahl an Wochen automatisch erstellt.
+              </p>
+
+              {/* Wochentag-Auswahl */}
+              <div className="dt-weekday-row">
+                {WOCHENTAGE.map(tag => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    className={`dt-weekday-btn ${selectedDays[tag.id] ? 'selected' : ''}`}
+                    onClick={() => toggleDay(tag.id)}
+                  >
+                    <span className="dt-weekday-kurz">{tag.kurz}</span>
+                    <span className="dt-weekday-lang">{tag.lang}</span>
+                    {selectedDays[tag.id] && selectedDays[tag.id].size > 0 && (
+                      <span className="dt-weekday-count">{selectedDays[tag.id].size}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Uhrzeiten pro gewähltem Tag */}
+              {WOCHENTAGE.filter(tag => selectedDays[tag.id]).map(tag => (
+                <div key={tag.id} className="dt-day-times">
+                  <div className="dt-day-times-label">{tag.lang}</div>
+                  <div className="dt-day-times-chips">
+                    {[...selectedDays[tag.id]].sort().map(time => (
+                      <span key={time} className="dt-time-chip">
+                        {time}
+                        <button type="button" className="dt-time-chip-remove" onClick={() => removeTime(tag.id, time)}>×</button>
+                      </span>
+                    ))}
+                    <div className="dt-time-add">
+                      <input
+                        type="time"
+                        value={neueUhrzeitInputs[tag.id] || ''}
+                        onChange={e => setNeueUhrzeitInputs(prev => ({ ...prev, [tag.id]: e.target.value }))}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTime(tag.id); } }}
+                        placeholder="HH:MM"
+                      />
+                      <button type="button" className="dt-btn dt-btn-sm dt-btn-success" onClick={() => addTime(tag.id)}>
+                        + Hinzufügen
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {Object.keys(selectedDays).length === 0 && (
+                <p className="dt-muted" style={{ textAlign: 'center', padding: '0.75rem' }}>
+                  Klicke auf einen oder mehrere Wochentage oben, um loszulegen.
+                </p>
+              )}
+
+              {/* Einstellungen */}
+              <div className="dt-form-row" style={{ marginTop: '1.25rem' }}>
+                <div className="dt-form-group dt-form-group-sm">
+                  <label>Dauer pro Termin (Min)</label>
+                  <select value={wochenplanDur} onChange={e => setWochenplanDur(e.target.value)}>
+                    <option value="30">30 Minuten</option>
+                    <option value="45">45 Minuten</option>
+                    <option value="60">60 Minuten</option>
+                    <option value="90">90 Minuten</option>
+                    <option value="120">2 Stunden</option>
+                  </select>
+                </div>
+                <div className="dt-form-group dt-form-group-sm">
+                  <label>Für wie viele Wochen?</label>
+                  <select value={wochenplanWochen} onChange={e => setWochenplanWochen(e.target.value)}>
+                    <option value="2">2 Wochen</option>
+                    <option value="4">4 Wochen</option>
+                    <option value="6">6 Wochen</option>
+                    <option value="8">8 Wochen</option>
+                    <option value="12">12 Wochen</option>
+                    <option value="16">16 Wochen</option>
+                  </select>
+                </div>
+                <div className="dt-form-group dt-form-group-sm dt-preview-box">
+                  <label>Vorschau</label>
+                  <div className="dt-preview-count">
+                    {wochenplanPreview()} Slots
+                  </div>
+                </div>
+              </div>
+
+              <div className="dt-form-actions">
+                <button
+                  type="submit"
+                  className="dt-btn dt-btn-primary"
+                  disabled={wochenplanSaving || wochenplanPreview() === 0}
+                >
+                  {wochenplanSaving ? 'Erstelle Slots...' : `${wochenplanPreview()} Slots anlegen`}
+                </button>
+                <button type="button" className="dt-btn" onClick={() => setOpenForm(null)}>Abbrechen</button>
+              </div>
+            </form>
+          )}
+
+          {/* ── EINZELNER SLOT ── */}
+          {openForm === 'einzeln' && (
             <form className="dt-form" onSubmit={handleCreateSlot}>
-              <h3 className="dt-form-title">Neuen Zeitfenster anlegen</h3>
+              <h3 className="dt-form-title">Einzelnen Termin anlegen</h3>
               <div className="dt-form-row">
                 <div className="dt-form-group">
                   <label>Datum & Uhrzeit *</label>
@@ -284,17 +463,18 @@ export default function DemoTermine() {
                     value={slotForm.slot_start}
                     onChange={e => setSlotForm(f => ({ ...f, slot_start: e.target.value }))}
                     required
-                    min={new Date().toISOString().slice(0,16)}
+                    min={new Date().toISOString().slice(0, 16)}
                   />
                 </div>
                 <div className="dt-form-group dt-form-group-sm">
                   <label>Dauer (Min)</label>
-                  <input
-                    type="number"
-                    value={slotForm.duration_minutes}
-                    onChange={e => setSlotForm(f => ({ ...f, duration_minutes: e.target.value }))}
-                    min="15" max="180" step="15"
-                  />
+                  <select value={slotForm.duration_minutes} onChange={e => setSlotForm(f => ({ ...f, duration_minutes: e.target.value }))}>
+                    <option value="30">30 Min</option>
+                    <option value="45">45 Min</option>
+                    <option value="60">60 Min</option>
+                    <option value="90">90 Min</option>
+                    <option value="120">120 Min</option>
+                  </select>
                 </div>
               </div>
               <div className="dt-form-group">
@@ -306,67 +486,30 @@ export default function DemoTermine() {
                   placeholder="z.B. Zoom-Link, Raum ..."
                 />
               </div>
-
-              {/* Konflikt-Check Ergebnis */}
               {slotForm.slot_start && (
                 <div className={`dt-conflict-check ${conflictCheck?.length > 0 ? 'dt-conflict-warn' : conflictCheck !== null ? 'dt-conflict-ok' : ''}`}>
-                  {checkingConflict && <span>Prüfe iCloud-Kalender...</span>}
-                  {!checkingConflict && conflictCheck === null && slotForm.slot_start && <span className="dt-muted">Kein iCloud-Kalender verbunden</span>}
-                  {!checkingConflict && conflictCheck?.length === 0 && <span>Kein Konflikt im Kalender</span>}
-                  {!checkingConflict && conflictCheck?.length > 0 && (
-                    <span>Achtung: Kalenderkonflikt mit "{conflictCheck[0].summary}"</span>
-                  )}
+                  {checkingConflict ? 'Prüfe iCloud-Kalender...' :
+                    conflictCheck === null ? <span className="dt-muted">Kein iCloud-Kalender verbunden</span> :
+                    conflictCheck.length === 0 ? 'Kein Konflikt im Kalender' :
+                    `Achtung: Kalenderkonflikt mit "${conflictCheck[0].summary}"`}
                 </div>
               )}
-
               <div className="dt-form-actions">
                 <button type="submit" className="dt-btn dt-btn-primary" disabled={slotSaving}>
-                  {slotSaving ? 'Speichere...' : 'Slot anlegen'}
+                  {slotSaving ? 'Speichere...' : 'Termin anlegen'}
                 </button>
-                <button type="button" className="dt-btn" onClick={() => setShowSlotForm(false)}>Abbrechen</button>
+                <button type="button" className="dt-btn" onClick={() => setOpenForm(null)}>Abbrechen</button>
               </div>
             </form>
           )}
 
-          {/* Bulk Slots */}
-          {showBulk && (
-            <form className="dt-form" onSubmit={handleBulkCreate}>
-              <h3 className="dt-form-title">Mehrere Zeitfenster an einem Tag anlegen</h3>
-              <div className="dt-form-row">
-                <div className="dt-form-group">
-                  <label>Datum *</label>
-                  <input type="date" value={bulkDate} onChange={e => setBulkDate(e.target.value)} required min={new Date().toISOString().slice(0,10)} />
-                </div>
-                <div className="dt-form-group dt-form-group-sm">
-                  <label>Dauer (Min)</label>
-                  <input type="number" value={bulkDur} onChange={e => setBulkDur(e.target.value)} min="15" max="180" step="15" />
-                </div>
-              </div>
-              <div className="dt-form-group">
-                <label>Uhrzeiten (eine pro Zeile, Format HH:MM)</label>
-                <textarea
-                  value={bulkTimes}
-                  onChange={e => setBulkTimes(e.target.value)}
-                  rows={6}
-                  placeholder="09:00&#10;10:30&#10;14:00&#10;15:30"
-                />
-              </div>
-              <div className="dt-form-actions">
-                <button type="submit" className="dt-btn dt-btn-primary" disabled={bulkSaving}>
-                  {bulkSaving ? 'Anlege...' : `${bulkTimes.split('\n').filter(t=>t.trim()).length} Slots anlegen`}
-                </button>
-                <button type="button" className="dt-btn" onClick={() => setShowBulk(false)}>Abbrechen</button>
-              </div>
-            </form>
-          )}
-
-          {/* Slots-Liste */}
+          {/* ── SLOT-LISTE ── */}
           {loading && <div className="dt-loading">Lade...</div>}
           {!loading && slots.length === 0 && (
             <div className="dt-empty">
               <div className="dt-empty-icon">📅</div>
               <p>Noch keine Zeitfenster angelegt.</p>
-              <p className="dt-muted">Lege Slots an und gib sie frei, damit Interessenten Termine buchen können.</p>
+              <p className="dt-muted">Nutze den Wochenplan, um mehrere Termine auf einen Schlag freizugeben.</p>
             </div>
           )}
           {!loading && slots.length > 0 && (
@@ -382,7 +525,7 @@ export default function DemoTermine() {
                   </div>
                   <div className="dt-slot-status">
                     {slot.is_booked ? (
-                      <span className="dt-pill dt-pill-booked">Gebucht von {slot.vorname} {slot.nachname}</span>
+                      <span className="dt-pill dt-pill-booked">Gebucht — {slot.vorname} {slot.nachname}</span>
                     ) : slot.is_available ? (
                       <span className="dt-pill dt-pill-free">Frei</span>
                     ) : (
@@ -395,16 +538,17 @@ export default function DemoTermine() {
                         <button
                           className={`dt-btn dt-btn-sm ${slot.is_available ? 'dt-btn-warn' : 'dt-btn-success'}`}
                           onClick={() => toggleSlot(slot)}
-                          title={slot.is_available ? 'Slot sperren' : 'Slot freigeben'}
                         >
                           {slot.is_available ? 'Sperren' : 'Freigeben'}
                         </button>
-                        <button className="dt-btn dt-btn-sm dt-btn-danger" onClick={() => deleteSlot(slot.id)}>Löschen</button>
+                        <button className="dt-btn dt-btn-sm dt-btn-danger" onClick={() => deleteSlot(slot.id)}>
+                          Löschen
+                        </button>
                       </>
                     )}
                     {slot.is_booked && (
                       <button className="dt-btn dt-btn-sm" onClick={() => { setView('buchungen'); loadBuchungen(); }}>
-                        Buchung ansehen
+                        Buchung →
                       </button>
                     )}
                   </div>
@@ -415,7 +559,7 @@ export default function DemoTermine() {
         </div>
       )}
 
-      {/* ── BUCHUNGEN VIEW ── */}
+      {/* ══════════════ BUCHUNGEN VIEW ══════════════ */}
       {view === 'buchungen' && (
         <div className="dt-section">
           {loading && <div className="dt-loading">Lade...</div>}
@@ -427,7 +571,6 @@ export default function DemoTermine() {
           )}
           {!loading && buchungen.length > 0 && (
             <div className="dt-buchungen-layout">
-              {/* Liste */}
               <div className="dt-buchungen-list">
                 {buchungen.map(b => (
                   <div
@@ -438,21 +581,16 @@ export default function DemoTermine() {
                     <div className="dt-buchung-name">{b.vorname} {b.nachname}</div>
                     <div className="dt-buchung-verein">{b.vereinsname || b.email}</div>
                     <div className="dt-buchung-time">{fmt(b.slot_start)}</div>
-                    <span
-                      className="dt-pill"
-                      style={{ backgroundColor: STATUS_COLORS[b.status] + '33', color: STATUS_COLORS[b.status] }}
-                    >
+                    <span className="dt-pill" style={{ backgroundColor: STATUS_COLORS[b.status] + '33', color: STATUS_COLORS[b.status] }}>
                       {STATUS_LABELS[b.status]}
                     </span>
                   </div>
                 ))}
               </div>
 
-              {/* Detail */}
               {selectedBuchung && (
                 <div className="dt-buchung-detail">
                   <h3 className="dt-detail-name">{selectedBuchung.vorname} {selectedBuchung.nachname}</h3>
-
                   <div className="dt-detail-grid">
                     <div className="dt-detail-row"><span>Termin</span><strong>{fmt(selectedBuchung.slot_start)}</strong></div>
                     <div className="dt-detail-row"><span>Dauer</span><strong>{selectedBuchung.duration_minutes} Minuten</strong></div>
@@ -468,8 +606,6 @@ export default function DemoTermine() {
                       </div>
                     )}
                   </div>
-
-                  {/* Status */}
                   <div className="dt-detail-status-row">
                     <span>Status:</span>
                     <div className="dt-status-btns">
@@ -486,8 +622,6 @@ export default function DemoTermine() {
                       ))}
                     </div>
                   </div>
-
-                  {/* Admin-Notiz */}
                   <div className="dt-detail-notiz">
                     <label>Interne Notiz</label>
                     <textarea
@@ -504,7 +638,6 @@ export default function DemoTermine() {
                       {buchungSaving ? 'Speichere...' : 'Notiz speichern'}
                     </button>
                   </div>
-
                   <div className="dt-detail-buchdat">
                     Buchung eingegangen: {fmt(selectedBuchung.buchung_created_at || selectedBuchung.created_at)}
                   </div>

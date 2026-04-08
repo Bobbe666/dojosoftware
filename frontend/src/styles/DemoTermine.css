@@ -317,3 +317,149 @@
 .dt-detail-notiz textarea:focus { outline: none; border-color: #6366f1; }
 
 .dt-detail-buchdat { font-size: 0.75rem; color: var(--text-secondary, #94a3b8); border-top: 1px solid var(--border-color, #334155); padding-top: 0.75rem; }
+
+/* ── Wochenplan Wizard ─────────────────────────────────────────────────────── */
+.dt-form-wide { max-width: 100%; }
+.dt-form-hint {
+  font-size: 0.85rem;
+  color: var(--text-secondary, #94a3b8);
+  margin: -0.5rem 0 1.25rem;
+}
+
+/* Wochentag-Buttons */
+.dt-weekday-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.dt-weekday-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 2px solid var(--border-color, #334155);
+  background: var(--bg-primary, #0f172a);
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  min-width: 64px;
+  position: relative;
+  transition: all 0.15s;
+}
+.dt-weekday-btn:hover {
+  border-color: #6366f1;
+  color: var(--text-primary, #f1f5f9);
+}
+.dt-weekday-btn.selected {
+  border-color: #6366f1;
+  background: #6366f122;
+  color: #a5b4fc;
+}
+.dt-weekday-kurz {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.dt-weekday-lang {
+  font-size: 0.65rem;
+  opacity: 0.75;
+}
+.dt-weekday-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 1px 5px;
+  min-width: 16px;
+  text-align: center;
+}
+
+/* Uhrzeiten pro Tag */
+.dt-day-times {
+  background: var(--bg-primary, #0f172a);
+  border: 1px solid #6366f144;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.6rem;
+}
+.dt-day-times-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #818cf8;
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dt-day-times-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Zeit-Chips */
+.dt-time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #6366f133;
+  border: 1px solid #6366f166;
+  color: #a5b4fc;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem 0.25rem 0.65rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  font-family: monospace;
+}
+.dt-time-chip-remove {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s;
+}
+.dt-time-chip-remove:hover { color: #ef4444; }
+
+/* Uhrzeit hinzufügen */
+.dt-time-add {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.dt-time-add input[type="time"] {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 7px;
+  color: var(--text-primary, #f1f5f9);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.88rem;
+  width: 110px;
+}
+.dt-time-add input[type="time"]:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+/* Vorschau-Box */
+.dt-preview-box { justify-content: center; }
+.dt-preview-count {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #6366f1;
+  text-align: center;
+  padding-top: 0.2rem;
+}
+
+/* Aktiver Formular-Button */
+.dt-btn-active-border {
+  border-color: #6366f1 !important;
+  color: #a5b4fc !important;
+}
