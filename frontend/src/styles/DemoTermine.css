@@ -463,3 +463,99 @@
   border-color: #6366f1 !important;
   color: #a5b4fc !important;
 }
+
+/* ── Wochenplan: verbesserte Uhrzeiten-Auswahl ── */
+.dt-weekday-hint {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.88rem;
+  background: var(--bg-primary, #0f172a);
+  border: 1px dashed #334155;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.dt-day-times-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.dt-day-times-count {
+  font-size: 0.75rem;
+  color: #6366f1;
+  background: #6366f120;
+  border-radius: 99px;
+  padding: 2px 8px;
+}
+
+/* Schnellauswahl-Zeile */
+.dt-quick-times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+}
+.dt-quick-label {
+  font-size: 0.72rem;
+  color: #64748b;
+  white-space: nowrap;
+  margin-right: 0.1rem;
+}
+.dt-quick-btn {
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: var(--bg-secondary, #1e293b);
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-family: monospace;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.dt-quick-btn:hover {
+  border-color: #6366f1;
+  color: #f1f5f9;
+}
+.dt-quick-btn.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Aktive Chips-Zeile */
+.dt-day-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.65rem;
+  padding: 0.5rem 0.6rem;
+  background: #6366f108;
+  border-radius: 8px;
+  border: 1px solid #6366f130;
+}
+
+/* Manuelle Uhrzeit */
+.dt-time-manual {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.dt-time-manual input[type="time"] {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid #334155;
+  border-radius: 7px;
+  color: var(--text-primary, #f1f5f9);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.88rem;
+  width: 120px;
+}
+.dt-time-manual input[type="time"]:focus {
+  outline: none;
+  border-color: #6366f1;
+}

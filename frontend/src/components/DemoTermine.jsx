@@ -148,14 +148,18 @@ export default function DemoTermine() {
   };
 
   // ── Wochenplan: Uhrzeit zu einem Tag hinzufügen ───────────────────────────
-  const addTime = (dayId) => {
-    const val = (neueUhrzeitInputs[dayId] || '').trim();
+  const addTimeVal = (dayId, val) => {
     if (!val || !/^\d{2}:\d{2}$/.test(val)) return;
     setSelectedDays(prev => {
       const next = { ...prev };
       next[dayId] = new Set([...(next[dayId] || []), val]);
       return next;
     });
+  };
+
+  const addTime = (dayId) => {
+    const val = (neueUhrzeitInputs[dayId] || '').trim();
+    addTimeVal(dayId, val);
     setNeueUhrzeitInputs(prev => ({ ...prev, [dayId]: '' }));
   };
 
@@ -375,37 +379,67 @@ export default function DemoTermine() {
               </div>
 
               {/* Uhrzeiten pro gewähltem Tag */}
+              {Object.keys(selectedDays).length === 0 && (
+                <div className="dt-weekday-hint">
+                  Klicke auf einen oder mehrere Wochentage oben, um Uhrzeiten festzulegen.
+                </div>
+              )}
+
               {WOCHENTAGE.filter(tag => selectedDays[tag.id]).map(tag => (
                 <div key={tag.id} className="dt-day-times">
-                  <div className="dt-day-times-label">{tag.lang}</div>
-                  <div className="dt-day-times-chips">
-                    {[...selectedDays[tag.id]].sort().map(time => (
-                      <span key={time} className="dt-time-chip">
-                        {time}
-                        <button type="button" className="dt-time-chip-remove" onClick={() => removeTime(tag.id, time)}>×</button>
-                      </span>
-                    ))}
-                    <div className="dt-time-add">
-                      <input
-                        type="time"
-                        value={neueUhrzeitInputs[tag.id] || ''}
-                        onChange={e => setNeueUhrzeitInputs(prev => ({ ...prev, [tag.id]: e.target.value }))}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTime(tag.id); } }}
-                        placeholder="HH:MM"
-                      />
-                      <button type="button" className="dt-btn dt-btn-sm dt-btn-success" onClick={() => addTime(tag.id)}>
-                        + Hinzufügen
-                      </button>
+                  <div className="dt-day-times-header">
+                    <span className="dt-day-times-label">{tag.lang}</span>
+                    {selectedDays[tag.id].size > 0 && (
+                      <span className="dt-day-times-count">{selectedDays[tag.id].size} Uhrzeit{selectedDays[tag.id].size !== 1 ? 'en' : ''}</span>
+                    )}
+                  </div>
+
+                  {/* Schnellauswahl */}
+                  <div className="dt-quick-times">
+                    <span className="dt-quick-label">Schnellauswahl:</span>
+                    {['08:00','09:00','10:00','11:00','12:00','13:00','14:00','14:15',
+                      '15:00','16:00','17:00','18:00','19:00','20:00','21:00'].map(t => {
+                      const active = selectedDays[tag.id]?.has(t);
+                      return (
+                        <button
+                          key={t}
+                          type="button"
+                          className={`dt-quick-btn ${active ? 'active' : ''}`}
+                          onClick={() => active ? removeTime(tag.id, t) : addTimeVal(tag.id, t)}
+                        >
+                          {t}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Gewählte Uhrzeiten als Chips */}
+                  {selectedDays[tag.id].size > 0 && (
+                    <div className="dt-day-chips-row">
+                      {[...selectedDays[tag.id]].sort().map(time => (
+                        <span key={time} className="dt-time-chip">
+                          {time}
+                          <button type="button" className="dt-time-chip-remove" onClick={() => removeTime(tag.id, time)}>×</button>
+                        </span>
+                      ))}
                     </div>
+                  )}
+
+                  {/* Manuelle Uhrzeit */}
+                  <div className="dt-time-manual">
+                    <span className="dt-quick-label">Eigene Uhrzeit:</span>
+                    <input
+                      type="time"
+                      value={neueUhrzeitInputs[tag.id] || ''}
+                      onChange={e => setNeueUhrzeitInputs(prev => ({ ...prev, [tag.id]: e.target.value }))}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTime(tag.id); } }}
+                    />
+                    <button type="button" className="dt-btn dt-btn-sm dt-btn-success" onClick={() => addTime(tag.id)}>
+                      + Hinzufügen
+                    </button>
                   </div>
                 </div>
               ))}
-
-              {Object.keys(selectedDays).length === 0 && (
-                <p className="dt-muted" style={{ textAlign: 'center', padding: '0.75rem' }}>
-                  Klicke auf einen oder mehrere Wochentage oben, um loszulegen.
-                </p>
-              )}
 
               {/* Einstellungen */}
               <div className="dt-form-row" style={{ marginTop: '1.25rem' }}>
