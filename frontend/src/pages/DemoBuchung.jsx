@@ -22,6 +22,31 @@ const FILTER_OPTIONS = [
   { key: 'jahr',    label: 'Jahr' },
 ];
 
+const CURRENT_YEAR = new Date().getFullYear();
+const MONTH_LABELS = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+function parseWeekStr(weekStr) {
+  if (!weekStr) return null;
+  const [yearStr, weekPart] = weekStr.split('-W');
+  const year = parseInt(yearStr), week = parseInt(weekPart);
+  const jan4 = new Date(year, 0, 4);
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - (jan4.getDay() + 6) % 7 + (week - 1) * 7);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { monday, sunday };
+}
+
 function fmtSlot(slot) {
   const d = new Date(slot.slot_start);
   const day  = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
@@ -29,51 +54,58 @@ function fmtSlot(slot) {
   return { day, time, dur: slot.duration_minutes };
 }
 
-// Zeitraum-Grenzen für einen Filter ab heute
-function getRange(filter) {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const from = new Date(now);
-  const to   = new Date(now);
-
-  if (filter === 'tag') {
-    to.setDate(to.getDate() + 1);
-  } else if (filter === 'woche') {
-    // Montag dieser Woche bis Sonntag
-    const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
-    from.setDate(now.getDate() - day);
-    to.setDate(from.getDate() + 7);
-  } else if (filter === 'monat') {
-    from.setDate(1);
-    to.setMonth(from.getMonth() + 1); to.setDate(1);
-  } else if (filter === 'quartal') {
-    const q = Math.floor(now.getMonth() / 3);
-    from.setMonth(q * 3); from.setDate(1);
-    to.setMonth(q * 3 + 3); to.setDate(1);
-  } else if (filter === 'jahr') {
-    from.setMonth(0); from.setDate(1);
-    to.setFullYear(from.getFullYear() + 1); to.setMonth(0); to.setDate(1);
+// Zeitraum-Grenzen berechnen
+function getRange(filter, vals) {
+  const { tag, woche, monat, quartal, jahr } = vals || {};
+  switch (filter) {
+    case 'tag':
+      if (!tag) return { from: new Date(0), to: new Date(0) };
+      return { from: new Date(tag + 'T00:00:00'), to: new Date(tag + 'T23:59:59') };
+    case 'woche': {
+      const p = parseWeekStr(woche);
+      if (!p) return { from: new Date(0), to: new Date(0) };
+      return { from: p.monday, to: p.sunday };
+    }
+    case 'monat': {
+      if (!monat) return { from: new Date(0), to: new Date(0) };
+      const [y, m] = monat.split('-').map(Number);
+      return { from: new Date(y, m - 1, 1), to: new Date(y, m, 0, 23, 59, 59) };
+    }
+    case 'quartal': {
+      if (!quartal) return { from: new Date(0), to: new Date(0) };
+      const sm = (quartal.q - 1) * 3;
+      return { from: new Date(quartal.year, sm, 1), to: new Date(quartal.year, sm + 3, 0, 23, 59, 59) };
+    }
+    case 'jahr':
+      return { from: new Date(jahr || CURRENT_YEAR, 0, 1), to: new Date(jahr || CURRENT_YEAR, 11, 31, 23, 59, 59) };
+    default:
+      return { from: new Date(0), to: new Date(8640000000000000) };
   }
-  return { from, to };
 }
 
 // Label für aktiven Zeitraum
-function rangeLabel(filter) {
-  const now = new Date();
-  if (filter === 'tag') return now.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long' });
-  if (filter === 'woche') {
-    const day = now.getDay() === 0 ? 6 : now.getDay() - 1;
-    const mo = new Date(now); mo.setDate(now.getDate() - day);
-    const so = new Date(mo); so.setDate(mo.getDate() + 6);
-    return `${mo.toLocaleDateString('de-DE', { day:'2-digit', month:'short' })} – ${so.toLocaleDateString('de-DE', { day:'2-digit', month:'short', year:'numeric' })}`;
+function rangeLabel(filter, vals) {
+  const { tag, woche, monat, quartal, jahr } = vals || {};
+  const loc = (d, opts) => d.toLocaleDateString('de-DE', opts);
+  switch (filter) {
+    case 'tag':
+      return tag ? loc(new Date(tag + 'T12:00:00'), { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric' }) : '';
+    case 'woche': {
+      const p = parseWeekStr(woche);
+      if (!p) return '';
+      const kw = parseInt(woche.split('-W')[1]);
+      return `KW ${kw} · ${loc(p.monday, { day:'2-digit', month:'short' })}–${loc(p.sunday, { day:'2-digit', month:'short', year:'numeric' })}`;
+    }
+    case 'monat':
+      return monat ? loc(new Date(monat + '-01T12:00:00'), { month: 'long', year: 'numeric' }) : '';
+    case 'quartal': {
+      if (!quartal) return '';
+      return `Q${quartal.q} ${quartal.year} · ${['Jan–Mär','Apr–Jun','Jul–Sep','Okt–Dez'][quartal.q - 1]}`;
+    }
+    case 'jahr':
+      return String(jahr || CURRENT_YEAR);
+    default: return '';
   }
-  if (filter === 'monat') return now.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-  if (filter === 'quartal') {
-    const q = Math.floor(now.getMonth() / 3) + 1;
-    return `Q${q} ${now.getFullYear()}`;
-  }
-  if (filter === 'jahr') return String(now.getFullYear());
-  return '';
 }
 
 export default function DemoBuchung() {
@@ -88,6 +120,47 @@ export default function DemoBuchung() {
   // Filter-State
   const [zeitFilter, setZeitFilter]   = useState('monat');
   const [nurFrei, setNurFrei]         = useState(false);
+
+  // Universeller Datepicker — synchronisiert alle Modus-States
+  const [navDate, setNavDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+
+  // Zeitraum-Werte pro Modus
+  const [zeitraumTag, setZeitraumTag] = useState(new Date().toISOString().slice(0, 10));
+  const [zeitraumWoche, setZeitraumWoche] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-W${String(getISOWeek(d)).padStart(2, '0')}`;
+  });
+  const [zeitraumMonatJahr, setZeitraumMonatJahr] = useState(CURRENT_YEAR);
+  const [zeitraumMonat, setZeitraumMonat] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [zeitraumQuartal, setZeitraumQuartal] = useState({
+    q: Math.ceil((new Date().getMonth() + 1) / 3),
+    year: new Date().getFullYear(),
+  });
+  const [zeitraumJahr, setZeitraumJahr] = useState(new Date().getFullYear());
+
+  // Datepicker → alle Modus-States synchronisieren + auf Tag-Ansicht springen
+  const syncFromDate = (dateStr) => {
+    if (!dateStr || dateStr.length < 10) return;
+    setNavDate(dateStr);
+    setSelectedSlot(null);
+    const d = new Date(dateStr + 'T12:00:00');
+    if (isNaN(d.getTime())) return;
+    setZeitraumTag(dateStr);
+    setZeitraumWoche(`${d.getFullYear()}-W${String(getISOWeek(d)).padStart(2, '0')}`);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    setZeitraumMonat(`${d.getFullYear()}-${mm}`);
+    setZeitraumMonatJahr(d.getFullYear());
+    setZeitraumQuartal({ q: Math.ceil((d.getMonth() + 1) / 3), year: d.getFullYear() });
+    setZeitraumJahr(d.getFullYear());
+    // Automatisch auf Tag-Ansicht springen, damit der gewählte Tag sofort sichtbar wird
+    setZeitFilter('tag');
+  };
 
   const [form, setForm] = useState({
     vorname: '', nachname: '', email: '', telefon: '',
@@ -104,16 +177,19 @@ export default function DemoBuchung() {
       .finally(() => setLoading(false));
   }, []);
 
+  const zeitraumVals = { tag: zeitraumTag, woche: zeitraumWoche, monat: zeitraumMonat, quartal: zeitraumQuartal, jahr: zeitraumJahr };
+
   // Gefilterte Slots
   const filteredSlots = useMemo(() => {
-    const { from, to } = getRange(zeitFilter);
+    const { from, to } = getRange(zeitFilter, zeitraumVals);
     return slots.filter(s => {
       const d = new Date(s.slot_start);
-      if (d < from || d >= to) return false;
+      if (d < from || d > to) return false;
       if (nurFrei && (s.is_booked === 1 || s.status === 'belegt')) return false;
       return true;
     });
-  }, [slots, zeitFilter, nurFrei]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots, zeitFilter, zeitraumTag, zeitraumWoche, zeitraumMonat, zeitraumQuartal, zeitraumJahr, nurFrei]);
 
   // Slots nach Wochen gruppieren
   const slotsByWeek = useMemo(() => filteredSlots.reduce((acc, slot) => {
@@ -193,28 +269,48 @@ export default function DemoBuchung() {
             {/* ── Filter-Leiste ── */}
             {!loading && !loadError && (
               <div className="db-filter-bar">
-                <div className="db-filter-left">
-                  <span className="db-filter-label">Zeitraum:</span>
-                  <div className="db-filter-pills">
-                    {FILTER_OPTIONS.map(f => (
-                      <button
-                        key={f.key}
-                        className={`db-filter-pill ${zeitFilter === f.key ? 'active' : ''}`}
-                        onClick={() => { setZeitFilter(f.key); setSelectedSlot(null); }}
-                      >
-                        {f.label}
-                      </button>
-                    ))}
+                <div className="db-filter-top">
+                  <div className="db-filter-left">
+                    <span className="db-filter-label">Zeitraum:</span>
+                    <div className="db-filter-pills">
+                      {FILTER_OPTIONS.map(f => (
+                        <button
+                          key={f.key}
+                          className={`db-filter-pill ${zeitFilter === f.key ? 'active' : ''}`}
+                          onClick={() => { setZeitFilter(f.key); setSelectedSlot(null); }}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <span className="db-filter-range">{rangeLabel(zeitFilter)}</span>
+                  <button
+                    className={`db-frei-toggle ${nurFrei ? 'active' : ''}`}
+                    onClick={() => { setNurFrei(v => !v); setSelectedSlot(null); }}
+                  >
+                    <span className={`db-frei-dot ${nurFrei ? 'on' : ''}`} />
+                    Nur freie Termine
+                  </button>
                 </div>
-                <button
-                  className={`db-frei-toggle ${nurFrei ? 'active' : ''}`}
-                  onClick={() => { setNurFrei(v => !v); setSelectedSlot(null); }}
-                >
-                  <span className={`db-frei-dot ${nurFrei ? 'on' : ''}`} />
-                  Nur freie Termine
-                </button>
+
+                {/* ── Zeitraum-Wähler ── */}
+                <div className="db-period-picker">
+
+                  {/* Universeller Datepicker — immer sichtbar */}
+                  <div className="db-period-nav">
+                    <span className="db-period-nav-label">Zum Datum springen:</span>
+                    <input
+                      key={navDate}
+                      type="date"
+                      className="db-period-input"
+                      defaultValue={navDate}
+                      onChange={e => syncFromDate(e.target.value)}
+                      onInput={e => syncFromDate(e.target.value)}
+                      onBlur={e => syncFromDate(e.target.value)}
+                    />
+                    <span className="db-period-info">{rangeLabel(zeitFilter, zeitraumVals)}</span>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -234,9 +330,12 @@ export default function DemoBuchung() {
 
             {!loading && !loadError && filteredSlots.length === 0 && (
               <div className="db-empty">
+                <div className="db-empty-period">
+                  {rangeLabel(zeitFilter, zeitraumVals) || 'Gewählter Zeitraum'}
+                </div>
                 {nurFrei
-                  ? <><p>Keine freien Termine in diesem Zeitraum.</p><p className="db-muted">Wähle einen anderen Zeitraum oder deaktiviere den Filter.</p></>
-                  : <><p>Keine Termine in diesem Zeitraum.</p><p className="db-muted">Wähle einen anderen Zeitraum.</p></>
+                  ? <><p>Keine freien Termine in diesem Zeitraum.</p><p className="db-muted">Anderen Zeitraum wählen oder Filter deaktivieren.</p></>
+                  : <><p>Keine Termine in diesem Zeitraum.</p><p className="db-muted">Anderen Tag oder Zeitraum wählen.</p></>
                 }
               </div>
             )}

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../services/api';
 import { useDojoContext } from '../context/DojoContext';
 
@@ -12,7 +12,6 @@ export const DatenProvider = ({ children }) => {
   const [gruppen, setGruppen] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
-  const isLoggedIn = useRef(false);
 
   const ladeAlleDaten = useCallback(async () => {
     console.log('📊 DatenContext: Lade Daten...');
@@ -38,7 +37,7 @@ export const DatenProvider = ({ children }) => {
           console.warn('⚠️ Fehler beim Laden der Trainer:', err.response?.status);
           return { data: [] };
         }),
-        apiClient.get('/stile').catch((err) => {
+        apiClient.get('/stile?aktiv=true').catch((err) => {
           console.warn('⚠️ Fehler beim Laden der Stile:', err.response?.status);
           return { data: [] };
         }),
@@ -61,19 +60,18 @@ export const DatenProvider = ({ children }) => {
     }
   }, [getDojoFilterParam]);
 
-  // Bei Dojo-Wechsel: neu laden (nur wenn schon eingeloggt)
+  // Bei Dojo-Wechsel oder Session-Restore: neu laden
   useEffect(() => {
-    if (isLoggedIn.current && activeDojo !== undefined) {
+    if (activeDojo !== undefined) {
       console.log('📊 DatenContext: Dojo gewechselt - Lade Daten neu');
       ladeAlleDaten();
     }
   }, [activeDojo]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Login-Event: Daten beim ersten Login laden
+  // Login-Event: Daten nach frischem Login (re-)laden
   useEffect(() => {
     const handleUserLoggedIn = () => {
       console.log('📊 DatenContext: User eingeloggt - Lade Daten');
-      isLoggedIn.current = true;
       ladeAlleDaten();
     };
 

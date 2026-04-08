@@ -1,42 +1,71 @@
 /* Modern Stundenplan CSS - Matching Current Design System */
 
-/* Container */
+/* ============================================================
+   QUICK FILTER BAR
+   ============================================================ */
+.sp-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.sp-filter-select {
+  padding: 0.4rem 0.75rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.8);
+  font-size: 0.83rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.sp-filter-select:hover,
+.sp-filter-select:focus {
+  border-color: rgba(200,16,46,0.4);
+  outline: none;
+}
+
+.sp-filter-select option { background: #1a1a2e; }
+
+.sp-filter-clear {
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.1);
+  color: #f87171;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sp-filter-clear:hover { background: rgba(239,68,68,0.2); }
+
+/* Container — eingebettet in kurse-container-modern, kein eigenes min-height/padding */
 .stundenplan-container-modern {
-  min-height: 100vh;
-  background: var(--bg-body);
-  padding: var(--ui-page-padding);
+  background: transparent;
+  padding: 0;
   color: var(--text-primary);
 }
 
-/* Header Section */
+/* Header Section — kompakt, links ausgerichtet, nicht redundant zum Tab-Label */
 .stundenplan-header {
-  text-align: center;
-  margin-bottom: 0.5rem;
-  animation: fadeInUp 0.6s ease-out;
+  display: none; /* Redundant — Tab-Label liefert genug Kontext */
 }
 
 .stundenplan-header h2 {
-  font-size: 1.4rem;
-  font-weight: 700;
-  background: var(--gradient-gold);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.3rem;
-  letter-spacing: 0.5px;
-  position: relative;
-  z-index: 2;
-  display: inline-block;
-  white-space: nowrap;
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .stundenplan-subtitle {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1.1rem;
-  font-weight: 400;
-  margin: 0;
-  position: relative;
-  z-index: 2;
+  display: none;
 }
 
 /* Overlap Warning */
@@ -95,32 +124,34 @@
 .accordion-tabs::-webkit-scrollbar { display: none; }
 
 .accordion-tab {
-  background: var(--surface-3);
-  border: 1px solid var(--primary-alpha-15);
-  border-radius: var(--comp-radius-md);
-  padding: 0.45rem 0.85rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  height: 34px;
+  padding: 0 0.85rem;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.5);
   white-space: nowrap;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .accordion-tab:hover {
-  background: var(--primary-alpha-08, rgba(212,175,55,0.08));
-  border-color: var(--primary-alpha-30);
-  color: var(--text-primary);
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.88);
 }
 
 .accordion-tab.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #1a1400;
+  background: rgba(212,175,55,0.88);
+  border-color: rgba(212,175,55,0.9);
+  color: #1a1000;
   font-weight: 700;
 }
 
@@ -132,15 +163,15 @@
   background: rgba(0, 0, 0, 0.18);
   padding: 0.05rem 0.4rem;
   border-radius: 99px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   flex-shrink: 0;
-  min-width: 1.4rem;
+  min-width: 1.3rem;
   text-align: center;
 }
 
 .accordion-tab.active .tab-count {
-  background: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.22);
 }
 
 /* Modal Styles */
@@ -695,63 +726,107 @@
 .stundenplan-controls {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
   margin-bottom: 0.75rem;
-  animation: fadeInUp 0.6s ease-out 0.1s both;
+  animation: fadeInUp 0.4s ease-out both;
 }
 
+/* Stunde hinzufügen — ku-ctrl gold-Variante */
+.sp-add-btn,
+.add-button-modern.sp-add-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  height: 34px !important;
+  padding: 0 0.9rem !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(212,175,55,0.38) !important;
+  background: rgba(212,175,55,0.14) !important;
+  color: #d4af37 !important;
+  cursor: pointer !important;
+  transition: background 0.14s, border-color 0.14s, color 0.14s !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+  transform: none !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1 !important;
+  max-width: none !important;
+  grid-column: auto !important;
+  justify-self: auto !important;
+}
+.sp-add-btn:hover,
+.add-button-modern.sp-add-btn:hover {
+  background: rgba(212,175,55,0.24) !important;
+  border-color: rgba(212,175,55,0.6) !important;
+  color: #f0d060 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* CSV Export — ku-ctrl Standard-Variante */
 .export-button-modern {
-  background: var(--surface-3);
-  color: var(--primary);
-  border: 1px solid var(--primary-alpha-30);
-  border-radius: var(--comp-radius-lg);
-  padding: 0.5rem 1.1rem;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
 .export-button-modern:hover {
-  background: var(--primary-alpha-15);
-  border-color: var(--primary-alpha-50);
-  transform: translateY(-1px);
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.88);
+  transform: none;
 }
 
 /* Statistics Cards */
 .stundenplan-stats {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: var(--ui-stats-gap);
-  margin-bottom: 0.5rem;
-  margin-top: 0.3rem;
-  animation: fadeInUp 0.6s ease-out 0.2s both;
+  gap: 6px;
+  margin-bottom: 0.75rem;
+  margin-top: 0;
+  animation: fadeInUp 0.4s ease-out both;
 }
 
 .stundenplan-container-modern .stat-card {
-  background: var(--surface-3) !important;
-  backdrop-filter: var(--glass-blur) !important;
-  border-radius: var(--comp-radius-md) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-  padding: 0.6rem 0.4rem !important;
+  background: rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: none !important;
+  padding: 0.55rem 0.4rem !important;
   text-align: center !important;
-  transition: all 0.3s ease !important;
+  transition: background 0.15s, border-color 0.15s !important;
   position: relative !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
-  gap: 0.2rem !important;
+  gap: 0.15rem !important;
 }
 
 .stundenplan-container-modern .stat-card:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 6px 20px var(--primary-alpha-25) !important;
-  border-color: var(--primary-alpha-40) !important;
+  background: rgba(212,175,55,0.07) !important;
+  border-color: rgba(212,175,55,0.22) !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 .stundenplan-container-modern .stat-icon {
@@ -1051,33 +1126,38 @@
   padding: 8px 12px;
 }
 
+/* add-button-modern base — wird durch .sp-add-btn überschrieben */
 .add-button-modern {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: var(--bg-secondary);
-  border: none;
-  border-radius: var(--comp-radius-xl);
-  padding: 0.75rem var(--ui-card-padding);
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 15px var(--primary-alpha-30);
-  grid-column: span 2;
-  max-width: 300px;
-  justify-self: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(212,175,55,0.38);
+  background: rgba(212,175,55,0.14);
+  color: #d4af37;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+  white-space: nowrap;
+  box-shadow: none;
+  line-height: 1;
+  letter-spacing: 0.01em;
 }
 
 .add-button-modern:hover {
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: 0 8px 25px var(--primary-alpha-50);
+  background: rgba(212,175,55,0.24);
+  border-color: rgba(212,175,55,0.6);
+  color: #f0d060;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-icon {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
 }
 
 /* Empty State */
@@ -1313,19 +1393,22 @@
   letter-spacing: 0.2px;
 }
 
-.mini-name {
+/* Stil = Vordergrund (prominent) */
+.mini-style {
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.1rem;
   line-height: 1.2;
 }
 
-.mini-style {
+/* Gruppenname = sekundär */
+.mini-name {
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--text-secondary);
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
+  line-height: 1.2;
 }
 
 .mini-raum {
@@ -1497,4 +1580,58 @@
   letter-spacing: 0.4px;
   line-height: 1;
   white-space: nowrap;
+}
+
+/* Modal für "Stunde hinzufügen" */
+.ku-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  backdrop-filter: blur(3px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ku-modal {
+  background: #1a1c2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 540px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  animation: fadeInDown 0.18s ease-out;
+}
+
+.ku-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.025);
+}
+
+.ku-modal-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.88);
+}
+
+.ku-modal-close {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.ku-modal-close:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.75);
 }

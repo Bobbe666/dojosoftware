@@ -40,12 +40,17 @@ router.get("/", (req, res) => {
         `;
         let queryParams = [];
 
+        // Super-Admin "Alle Dojos": Demo-Dojos ausblenden
+        if (dojoId === null || dojoId === undefined) {
+            query += " JOIN dojo d ON k.dojo_id = d.id AND d.dojoname NOT LIKE '%demo%'";
+        }
+
         // Dojo-Filter
         if (dojoId !== null && dojoId !== undefined) {
             query += ' WHERE k.dojo_id = ?';
             queryParams.push(dojoId);
         }
-        // Super-Admin ohne dojo_id: alle Kurse (kein WHERE-Filter)
+        // Super-Admin ohne dojo_id: alle Kurse außer Demo-Dojos
 
         // Add standort filter if provided
         if (standort_id && standort_id !== 'all') {
@@ -158,12 +163,17 @@ router.get("/", (req, res) => {
     `;
     let queryParams = [];
 
+    // Super-Admin "Alle Dojos": Demo-Dojos ausblenden
+    if (dojoId === null || dojoId === undefined) {
+        query += " JOIN dojo d ON k.dojo_id = d.id AND d.dojoname NOT LIKE '%demo%'";
+    }
+
     // Dojo-Filter: Normaler Admin sieht nur eigenes Dojo; Super-Admin ohne dojo_id sieht alle
     if (dojoId !== null && dojoId !== undefined) {
         query += ' WHERE k.dojo_id = ?';
         queryParams.push(dojoId);
     }
-    // Super-Admin ohne dojo_id: kein WHERE → alle Kurse
+    // Super-Admin ohne dojo_id: alle Kurse außer Demo-Dojos
 
     // Add standort filter if provided
     if (standort_id && standort_id !== 'all') {
@@ -204,8 +214,9 @@ router.get("/", (req, res) => {
 
 // Neuen Kurs hinzufügen
 router.post("/", (req, res) => {
-    // Tenant check
-    if (!req.tenant?.dojo_id) {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
+                   (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
+    if (!dojoId) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -220,7 +231,7 @@ router.post("/", (req, res) => {
     // If standort_id provided, use it; otherwise get the main location
     const insertCourse = (finalStandortId) => {
         const query = "INSERT INTO kurse (gruppenname, stil, trainer_ids, raum_id, dojo_id, standort_id) VALUES (?, ?, ?, ?, ?, ?)";
-        db.query(query, [gruppenname, stil, JSON.stringify(trainers), raum_id || null, req.tenant.dojo_id, finalStandortId], (err, result) => {
+        db.query(query, [gruppenname, stil, JSON.stringify(trainers), raum_id || null, dojoId, finalStandortId], (err, result) => {
             if (err) {
                 logger.error('Fehler beim Hinzufügen des Kurses:', { error: err });
                 return res.status(500).json({ error: "Fehler beim Speichern des Kurses" });
@@ -230,23 +241,21 @@ router.post("/", (req, res) => {
                 gruppenname,
                 stil,
                 trainer_ids: trainers,
-                dojo_id: req.tenant.dojo_id,
+                dojo_id: dojoId,
                 standort_id: finalStandortId
             });
         });
     };
 
     if (standort_id) {
-        // Validate that standort_id belongs to this dojo
-        db.query('SELECT standort_id FROM standorte WHERE standort_id = ? AND dojo_id = ?', [standort_id, req.tenant.dojo_id], (err, results) => {
+        db.query('SELECT standort_id FROM standorte WHERE standort_id = ? AND dojo_id = ?', [standort_id, dojoId], (err, results) => {
             if (err || results.length === 0) {
                 return res.status(400).json({ error: 'Ungültiger Standort' });
             }
             insertCourse(standort_id);
         });
     } else {
-        // No standort_id provided, use main location
-        db.query('SELECT standort_id FROM standorte WHERE dojo_id = ? AND ist_hauptstandort = TRUE LIMIT 1', [req.tenant.dojo_id], (err, results) => {
+        db.query('SELECT standort_id FROM standorte WHERE dojo_id = ? AND ist_hauptstandort = TRUE LIMIT 1', [dojoId], (err, results) => {
             if (err || results.length === 0) {
                 return res.status(500).json({ error: 'Kein Hauptstandort gefunden' });
             }
@@ -255,10 +264,42 @@ router.post("/", (req, res) => {
     }
 });
 
+// GET /kurse/:id/auslastung — Teilnehmeranzahl (letzte 30 Tage) vs. max. Kapazität
+router.get('/:id/auslastung', async (req, res) => {
+  const kursId = parseInt(req.params.id, 10);
+  if (isNaN(kursId)) return res.status(400).json({ error: 'Ungültige ID' });
+
+  const dojoId = req.tenant?.dojo_id ?? req.dojo_id ?? null;
+
+  try {
+    const whereExtra = (dojoId !== null && dojoId !== undefined) ? ' AND k.dojo_id = ?' : '';
+    const params = (dojoId !== null && dojoId !== undefined) ? [kursId, dojoId] : [kursId];
+    const [rows] = await db.promise().query(
+      `SELECT k.max_teilnehmer,
+              COUNT(DISTINCT a.mitglied_id) AS teilnehmer
+       FROM kurse k
+       LEFT JOIN stundenplan sp ON k.kurs_id = sp.kurs_id
+       LEFT JOIN anwesenheit a ON sp.stundenplan_id = a.stundenplan_id
+         AND a.anwesend = 1
+         AND a.datum >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+       WHERE k.kurs_id = ?${whereExtra}
+       GROUP BY k.kurs_id, k.max_teilnehmer`,
+      params
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Kurs nicht gefunden' });
+    res.json({ teilnehmer: rows[0].teilnehmer, max_teilnehmer: rows[0].max_teilnehmer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Kurs löschen
 router.delete("/:id", (req, res) => {
-    // Tenant check
-    if (!req.tenant?.dojo_id) {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
+                   (req.query.dojo_id ? parseInt(req.query.dojo_id, 10) : null);
+    const isSuperAdmin = req.user && req.user.dojo_id === null;
+
+    if (!dojoId && !isSuperAdmin) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -268,12 +309,32 @@ router.delete("/:id", (req, res) => {
         return res.status(400).json({ error: "Ungültige ID" });
     }
 
-    // Use tenant dojo_id from middleware
-    const query = `DELETE FROM kurse WHERE kurs_id = ? AND dojo_id = ?`;
-    const queryParams = [id, req.tenant.dojo_id];
+    // Nur den Kurs selbst löschen — Anwesenheit & Stundenplan bleiben erhalten
+    const query = (isSuperAdmin && !dojoId)
+        ? `DELETE FROM kurse WHERE kurs_id = ?`
+        : `DELETE FROM kurse WHERE kurs_id = ? AND dojo_id = ?`;
+    const queryParams = (isSuperAdmin && !dojoId) ? [id] : [id, dojoId];
 
     db.query(query, queryParams, (err, result) => {
         if (err) {
+            // FK-Constraint: Stundenplan referenziert den Kurs → erst Stundenplan-Einträge entfernen
+            if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {
+                // Stundenplan-Einträge des Kurses löschen, dann Kurs löschen
+                db.query('DELETE FROM stundenplan WHERE kurs_id = ?', [id], (err2) => {
+                    if (err2) {
+                        logger.error('Fehler beim Löschen des Stundenplans:', { error: err2 });
+                        return res.status(500).json({ error: "Fehler beim Löschen des Kurses" });
+                    }
+                    db.query(query, queryParams, (err3, result3) => {
+                        if (err3) {
+                            logger.error('Fehler beim Löschen des Kurses (2):', { error: err3 });
+                            return res.status(500).json({ error: "Fehler beim Löschen des Kurses" });
+                        }
+                        res.json({ success: true, message: "Kurs erfolgreich gelöscht" });
+                    });
+                });
+                return;
+            }
             logger.error('Fehler beim Löschen des Kurses:', { error: err });
             return res.status(500).json({ error: "Fehler beim Löschen des Kurses" });
         }
@@ -287,8 +348,11 @@ router.delete("/:id", (req, res) => {
 
 // Kurs aktualisieren (PUT)
 router.put("/:id", (req, res) => {
-    // Tenant check
-    if (!req.tenant?.dojo_id) {
+    const dojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
+                   (req.query.dojo_id ? parseInt(req.query.dojo_id, 10) : null);
+    const isSuperAdmin = req.user && req.user.dojo_id === null;
+
+    if (!dojoId && !isSuperAdmin) {
         return res.status(403).json({ error: 'No tenant' });
     }
 
@@ -305,9 +369,10 @@ router.put("/:id", (req, res) => {
         return res.status(400).json({ error: "Gruppenname, Stil und mindestens ein Trainer sind erforderlich" });
     }
 
-    // Use tenant dojo_id from middleware
-    const checkQuery = `SELECT kurs_id FROM kurse WHERE kurs_id = ? AND dojo_id = ?`;
-    const checkParams = [id, req.tenant.dojo_id];
+    const checkQuery = (isSuperAdmin && !dojoId)
+        ? `SELECT kurs_id FROM kurse WHERE kurs_id = ?`
+        : `SELECT kurs_id FROM kurse WHERE kurs_id = ? AND dojo_id = ?`;
+    const checkParams = (isSuperAdmin && !dojoId) ? [id] : [id, dojoId];
 
     db.query(checkQuery, checkParams, (err, results) => {
         if (err) {
@@ -319,9 +384,12 @@ router.put("/:id", (req, res) => {
             return res.status(404).json({ error: "Kurs nicht gefunden oder keine Berechtigung" });
         }
 
-        // Use tenant dojo_id for update
-        const updateQuery = `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ? WHERE kurs_id = ? AND dojo_id = ?`;
-        const updateParams = [gruppenname, stil, JSON.stringify(trainers), raum_id || null, id, req.tenant.dojo_id];
+        const updateQuery = (isSuperAdmin && !dojoId)
+            ? `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ? WHERE kurs_id = ?`
+            : `UPDATE kurse SET gruppenname = ?, stil = ?, trainer_ids = ?, raum_id = ? WHERE kurs_id = ? AND dojo_id = ?`;
+        const updateParams = (isSuperAdmin && !dojoId)
+            ? [gruppenname, stil, JSON.stringify(trainers), raum_id || null, id]
+            : [gruppenname, stil, JSON.stringify(trainers), raum_id || null, id, dojoId];
 
         db.query(updateQuery, updateParams, (err, result) => {
             if (err) {

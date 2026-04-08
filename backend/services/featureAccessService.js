@@ -31,6 +31,19 @@ async function hasFeatureAccess(dojoId, featureKey) {
       return { hasAccess: false, accessType: 'none', reason: 'Feature existiert nicht' };
     }
 
+    // Super-Admin (dojo_id = null) hat Zugriff auf alle Features
+    if (dojoId === null || dojoId === undefined) {
+      return {
+        hasAccess: true,
+        accessType: 'plan',
+        details: {
+          planType: 'enterprise',
+          featureId: features[0].feature_id,
+          featureName: features[0].feature_name
+        }
+      };
+    }
+
     const featureId = features[0].feature_id;
     const featureName = features[0].feature_name;
 

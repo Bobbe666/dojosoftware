@@ -1,5 +1,327 @@
 /* Modern Kurse CSS - Matching Current Design System */
 
+/* ============================================================
+   TOAST NOTIFICATION
+   ============================================================ */
+@keyframes kuToastIn {
+  from { opacity: 0; transform: translateY(-16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ku-toast {
+  position: fixed;
+  top: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  padding: 0.65rem 1.4rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  animation: kuToastIn 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+}
+
+.ku-toast--success {
+  background: rgba(34, 197, 94, 0.18);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #4ade80;
+}
+
+.ku-toast--error {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+/* ============================================================
+   WARNING BANNER (Kurse ohne Zeiten)
+   ============================================================ */
+.ku-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1.1rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.ku-warning-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.ku-warning-content {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.86rem;
+  color: rgba(255,255,255,0.85);
+}
+
+.ku-warning-list {
+  display: inline;
+  color: #fbbf24;
+  margin-left: 0.3rem;
+}
+
+.ku-warning-action {
+  flex-shrink: 0;
+  padding: 0.35rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ku-warning-action:hover { background: rgba(245, 158, 11, 0.22); }
+
+/* ============================================================
+   WIZARD MODAL
+   ============================================================ */
+.ku-wizard-modal { max-width: 540px; }
+
+.ku-wizard-step-badge {
+  margin-left: 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  vertical-align: middle;
+}
+
+.ku-wizard-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 1rem 1.5rem 0.5rem;
+}
+
+.ku-wizard-step-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.ku-wizard-step-dot > span:first-child {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.1);
+  border: 2px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.4);
+  transition: all 0.2s;
+}
+
+.ku-wizard-step-dot--active > span:first-child {
+  background: rgba(200, 16, 46, 0.3);
+  border-color: #c8102e;
+  color: #fff;
+}
+
+.ku-wizard-step-label {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+}
+
+.ku-wizard-step-dot--active .ku-wizard-step-label {
+  color: rgba(255,255,255,0.8);
+}
+
+.ku-wizard-step-line {
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.12);
+  margin: 0 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ku-wizard-body {
+  padding: 1rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ku-wizard-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.ku-wizard-summary-pill {
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  background: rgba(200,16,46,0.15);
+  border: 1px solid rgba(200,16,46,0.3);
+  color: rgba(255,255,255,0.85);
+  font-size: 0.8rem;
+}
+
+.ku-wizard-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ku-wizard-entry-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(255,255,255,0.04);
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.ku-sp-form--wizard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.ku-sp-bis {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.ku-wizard-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ============================================================
+   STAMMDATEN NEW TAB SYSTEM
+   ============================================================ */
+.ku-sd-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ku-sd-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.ku-sd-tab:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+
+.ku-sd-tab--active {
+  background: rgba(200,16,46,0.18);
+  border-color: rgba(200,16,46,0.45);
+  color: #fff;
+}
+
+.ku-sd-tab-count {
+  font-size: 0.72rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+}
+
+.ku-sd-tab--active .ku-sd-tab-count {
+  background: rgba(200,16,46,0.3);
+  color: rgba(255,255,255,0.8);
+}
+
+.ku-sd-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  align-items: center;
+}
+
+.ku-sd-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.ku-sd-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ku-sd-list-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.ku-sd-list-row:hover { background: rgba(255,255,255,0.07); }
+
+.ku-sd-list-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ku-sd-list-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+}
+
+.ku-sd-list-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+}
+
+.ku-sd-stile-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
+}
+
+.ku-sd-list-actions {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
 /* Animationen - Dashboard Style */
 @keyframes spin {
   0% { transform: rotate(0deg); }
@@ -169,23 +491,23 @@ html body div.kurse-container-modern div.stats-grid {
 html body div.kurse-container-modern div.kurse-stats div.stat-card,
 html body .kurse-container-modern .stat-card,
 .kurse-container-modern .stat-card {
-  padding: 0.3rem 0.4rem !important;
+  padding: 0.5rem 0.6rem !important;
   border-radius: var(--comp-radius-sm) !important;
   box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
   text-align: center !important;
-  min-height: 32px !important;
-  max-height: 36px !important;
+  min-height: 64px !important;
+  max-height: none !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 0.3rem !important;
+  gap: 0.2rem !important;
   background: rgba(255, 255, 255, 0.08) !important;
   backdrop-filter: blur(20px) !important;
   border: 1px solid var(--primary-alpha-20) !important;
   transition: all 0.3s ease !important;
   position: relative !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 .kurse-container-modern .stat-card:hover {
@@ -1626,6 +1948,508 @@ html .kurs-card h3 {
 
 .ku-stil-chevron-span--collapsed { transform: rotate(-90deg); }
 
+/* ============================================================================
+   MODERNIZATION OVERRIDES — 2026-04
+   Scope: .kurse-container-modern for safe specificity
+   ============================================================================ */
+
+/* 1. Header — compact, subtle, left-aligned */
+.kurse-container-modern .ku-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+}
+
+.kurse-container-modern .ku-header-title {
+  font-size: 1.4rem !important;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  margin: 0 !important;
+}
+
+/* Stat-Karten neben dem Titel */
+.kurse-container-modern .ku-header-stats {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-hstat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 18px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  min-width: 64px;
+  gap: 3px;
+}
+
+.kurse-container-modern .ku-hstat-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.kurse-container-modern .ku-hstat-label {
+  font-size: 0.6rem;
+  color: rgba(255,255,255,0.32);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+/* Einheitliche Kontrollleiste: Tabs + Sort + Filter + Buttons */
+.kurse-container-modern .ku-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.kurse-container-modern .ku-controls-divider {
+  display: inline-block;
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 4px;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.kurse-container-modern .ku-controls-spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+.kurse-container-modern .ku-filter-select {
+  padding: 0.35rem 1.6rem 0.35rem 0.8rem;
+  font-size: 0.78rem;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.55);
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.3)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  max-width: 160px;
+}
+
+.kurse-container-modern .ku-filter-select:focus,
+.kurse-container-modern .ku-filter-select:hover {
+  border-color: rgba(212,175,55,0.3);
+  color: rgba(255,255,255,0.8);
+}
+
+.kurse-container-modern .ku-filter-select option {
+  background: #1a1a2e;
+  color: rgba(255,255,255,0.85);
+}
+
+/* 2. Tab system — segmented pill */
+.kurse-container-modern .tab-navigation.ku-tab-nav {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 3px;
+  width: fit-content;
+  justify-content: flex-start;
+  animation: none;
+  flex-shrink: 0;
+  height: 34px;
+  box-sizing: border-box;
+}
+
+.kurse-container-modern .tab-button {
+  background: transparent;
+  border: 1px solid transparent !important;
+  border-radius: 6px;
+  padding: 0 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  transition: background 0.15s, color 0.15s;
+  text-shadow: none;
+  letter-spacing: 0.01em;
+  box-shadow: none !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.kurse-container-modern .tab-button:hover {
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  transform: none;
+  border-color: transparent !important;
+}
+
+.kurse-container-modern .tab-button.active {
+  background: rgba(212, 175, 55, 0.15) !important;
+  color: #d4af37 !important;
+  border-color: rgba(212, 175, 55, 0.3) !important;
+  font-weight: 600;
+  transform: none;
+  box-shadow: none !important;
+}
+
+.kurse-container-modern .tab-button.active::before {
+  display: none;
+}
+
+/* ── Einheitlicher Stil für alle Controls in der Kontrollleiste ─────────── */
+.kurse-container-modern .ku-ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 0.85rem;
+  height: 34px;
+  box-sizing: border-box;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+.kurse-container-modern .ku-ctrl:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.88);
+}
+.kurse-container-modern .ku-ctrl--active,
+.kurse-container-modern .ku-ctrl.active {
+  background: rgba(212,175,55,0.14);
+  border-color: rgba(212,175,55,0.38);
+  color: #d4af37;
+  font-weight: 600;
+}
+.kurse-container-modern .ku-ctrl--active:hover,
+.kurse-container-modern .ku-ctrl.active:hover {
+  background: rgba(212,175,55,0.22);
+  border-color: rgba(212,175,55,0.55);
+  color: #e8c84a;
+}
+/* CTA — Neuer Kurs */
+.kurse-container-modern .ku-ctrl--gold {
+  background: rgba(212,175,55,0.14);
+  border-color: rgba(212,175,55,0.38);
+  color: #d4af37;
+  font-weight: 600;
+}
+.kurse-container-modern .ku-ctrl--gold:hover {
+  background: rgba(212,175,55,0.24);
+  border-color: rgba(212,175,55,0.6);
+  color: #f0d060;
+}
+/* Select-Variante — gleiche Höhe wie Buttons */
+.kurse-container-modern .ku-ctrl-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0 1.8rem 0 0.85rem;
+  height: 34px;
+  box-sizing: border-box;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(255,255,255,0.3)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  max-width: 170px;
+}
+.kurse-container-modern .ku-ctrl-select option {
+  background: #1a1a2e;
+  color: rgba(255,255,255,0.85);
+}
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* 3. Sort row */
+.kurse-container-modern .ku-sort-row {
+  gap: 0.4rem;
+  margin-bottom: 0.875rem;
+}
+
+.kurse-container-modern .ku-sort-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-right: 0.25rem;
+}
+
+.kurse-container-modern .ku-sort-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.kurse-container-modern .ku-sort-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.kurse-container-modern .ku-sort-btn.active {
+  background: rgba(212, 175, 55, 0.13);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #e2c96e;
+  font-weight: 600;
+}
+
+/* 4. Filter controls */
+.kurse-container-modern .filter-group label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: none;
+  margin-bottom: 0.25rem;
+}
+
+.kurse-container-modern .filter-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 400;
+  min-width: 180px;
+  padding: 0.5rem 0.875rem;
+  transition: border-color 0.15s ease;
+}
+
+.kurse-container-modern .filter-select:focus {
+  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.08);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* 5. Export button */
+.kurse-container-modern .export-button-modern {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.5);
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border-radius: 7px;
+  box-shadow: none;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kurse-container-modern .export-button-modern:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.85);
+  transform: none;
+  box-shadow: none;
+}
+
+/* 6. Stats grid — legible numbers */
+.kurse-container-modern .ku-stats-grid {
+  gap: 0.625rem !important;
+  margin-bottom: 1.5rem !important;
+  margin-top: 0 !important;
+}
+
+.kurse-container-modern .ku-stat-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 8px !important;
+  min-height: 72px !important;
+  max-height: none !important;
+  padding: 0.75rem 0.625rem !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+
+.kurse-container-modern .ku-stat-card:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(212, 175, 55, 0.18) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.kurse-container-modern .ku-stat-number,
+.kurse-container-modern .ku-stat-number-dark {
+  font-size: 1.55rem !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  text-shadow: none !important;
+  letter-spacing: -0.03em;
+  line-height: 1 !important;
+}
+
+.kurse-container-modern .ku-stat-label,
+.kurse-container-modern .ku-stat-label-muted {
+  font-size: 0.6rem !important;
+  color: rgba(255, 255, 255, 0.3) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.07em !important;
+  font-weight: 500;
+  margin-top: 0.2rem;
+}
+
+.kurse-container-modern .ku-stat-emoji-lg,
+.kurse-container-modern .ku-stat-emoji {
+  font-size: 1rem;
+  opacity: 0.55;
+}
+
+/* 7. Stil section header — gold left-border accent */
+.kurse-container-modern .stil-section .stil-header,
+.kurse-container-modern .stil-section h2.stil-header {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-left: 3px solid rgba(212, 175, 55, 0.55) !important;
+  border-radius: 8px !important;
+  padding: 0.8rem 1.125rem !important;
+  margin-bottom: 0.875rem !important;
+  cursor: pointer;
+}
+
+.kurse-container-modern .stil-section .stil-header:hover,
+.kurse-container-modern .stil-section h2.stil-header:hover {
+  background: rgba(212, 175, 55, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-left-color: #d4af37 !important;
+}
+
+.kurse-container-modern .ku-stil-title {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em;
+}
+
+.kurse-container-modern .ku-stil-count {
+  font-size: 0.72rem !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: rgba(255, 255, 255, 0.38) !important;
+  padding: 0.15rem 0.55rem !important;
+  border-radius: 20px !important;
+  font-weight: 500 !important;
+}
+
+/* 8. Kurs cards — no orange gradient header */
+.kurse-container-modern .kurs-card {
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease !important;
+  box-shadow: none !important;
+}
+
+.kurse-container-modern .kurs-card:hover {
+  background: rgba(255, 255, 255, 0.055);
+  border-color: rgba(212, 175, 55, 0.22);
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+.kurse-container-modern .kurs-card-header {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.625rem 0.875rem;
+}
+
+.kurse-container-modern .kurs-stil-badge {
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  color: rgba(255, 255, 255, 0.88) !important;
+  text-shadow: none !important;
+  min-width: auto !important;
+  letter-spacing: 0.01em;
+}
+
+.kurse-container-modern .kurs-card .action-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+.kurse-container-modern .kurs-card .action-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  transform: none;
+}
+
+.kurse-container-modern .kurs-card .delete-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+}
+
+.kurse-container-modern .kurs-field label {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-shadow: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.kurse-container-modern .kurs-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: none;
+}
+
+/* 9. Neuer Kurs card */
+.kurse-container-modern .neuer-kurs-card .card-header {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 0.875rem 1.25rem;
+}
+
+.kurse-container-modern .neuer-kurs-card .card-header h3 {
+  color: rgba(255, 255, 255, 0.7) !important;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+}
+
 /* Standort badge — background via --standort-color CSS var */
 .kurs-standort-badge {
   color: white;
@@ -1640,3 +2464,1208 @@ html .kurs-card h3 {
   margin-top: 8px;
   margin-bottom: 4px;
 }
+
+
+/* ===================================================
+   ACCORDION — Kurs-Liste im Prüfungs-Stil
+   =================================================== */
+
+.kurse-container-modern .ku-accordion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kurse-container-modern .ku-acc-stil-section {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.kurse-container-modern .ku-acc-stil-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 18px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.08));
+  border-bottom: 1px solid rgba(212,175,55,0.18);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.kurse-container-modern .ku-acc-stil-header:hover {
+  background: linear-gradient(135deg, rgba(212,175,55,0.26), rgba(212,175,55,0.13));
+}
+
+.kurse-container-modern .ku-acc-stil-icon { font-size: 1rem; }
+
+.kurse-container-modern .ku-acc-stil-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e8d580;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.kurse-container-modern .ku-acc-stil-count {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.08);
+  padding: 2px 9px;
+  border-radius: 10px;
+}
+
+.kurse-container-modern .ku-acc-chevron {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.4);
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.kurse-container-modern .ku-acc-chevron--closed {
+  transform: rotate(-90deg);
+}
+
+/* Accordion list: 3 kompakte Karten nebeneinander */
+.kurse-container-modern .ku-acc-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background: rgba(0,0,0,0.15);
+}
+
+@media (max-width: 1100px) {
+  .kurse-container-modern .ku-acc-list { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .kurse-container-modern .ku-acc-list { grid-template-columns: 1fr; }
+}
+
+/* Jedes Item: kompakte Karte */
+.kurse-container-modern .ku-acc-item {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.025);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.kurse-container-modern .ku-acc-item:hover {
+  border-color: rgba(212,175,55,0.25);
+}
+
+/* Aufgeklappt → volle Breite */
+.kurse-container-modern .ku-acc-item--open {
+  grid-column: 1 / -1;
+  background: rgba(212,175,55,0.04);
+  border-color: rgba(212,175,55,0.22);
+}
+
+/* Karten-Header (immer sichtbar) */
+.kurse-container-modern .ku-acc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.kurse-container-modern .ku-acc-header:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.kurse-container-modern .ku-acc-item--open .ku-acc-header {
+  border-bottom: 1px solid rgba(212,175,55,0.14);
+}
+
+/* Header-Inhalt: vertikal gestapelt */
+.kurse-container-modern .ku-acc-header-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.kurse-container-modern .ku-acc-gruppenname {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kurse-container-modern .ku-acc-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-acc-trainer-preview {
+  font-size: 0.71rem;
+  color: rgba(212,175,55,0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Expanded body */
+.kurse-container-modern .ku-acc-body {
+  padding: 16px 18px;
+}
+
+.kurse-container-modern .ku-acc-details {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.kurse-container-modern .ku-acc-info-grid {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.kurse-container-modern .ku-info-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.28);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.kurse-container-modern .ku-info-value {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.78);
+}
+
+.kurse-container-modern .ku-info-trainer {
+  color: #d4c070;
+  font-weight: 500;
+}
+
+.kurse-container-modern .ku-acc-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.kurse-container-modern .ku-row-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.7);
+  transition: all 0.13s ease;
+}
+
+.kurse-container-modern .ku-row-btn:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: #fff;
+}
+
+.kurse-container-modern .ku-row-btn--delete:hover {
+  background: rgba(220,60,60,0.15);
+  border-color: rgba(220,60,60,0.3);
+  color: #ff9090;
+}
+
+/* Inline edit panel */
+.kurse-container-modern .ku-edit-panel { width: 100%; }
+
+.kurse-container-modern .ku-edit-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 640px) {
+  .kurse-container-modern .ku-edit-fields { grid-template-columns: 1fr; }
+}
+
+.kurse-container-modern .ku-edit-field > label,
+.kurse-container-modern .ku-edit-trainers > label {
+  display: block;
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.38);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+
+.kurse-container-modern .ku-edit-trainers { margin-bottom: 12px; }
+
+.kurse-container-modern .ku-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Stats grid fix — kein Clipping */
+.kurse-container-modern .ku-stats-grid,
+.kurse-container-modern .kurse-stats {
+  overflow: visible !important;
+}
+
+/* ===================================================
+   STAMMDATEN-EINSTELLUNGEN — Modern redesign
+   =================================================== */
+
+.kurse-container-modern .sd-container {
+  padding: 4px 0;
+}
+
+/* Accordion-List für Einstellungen (Trainer, Gruppen, Stile, Räume) */
+.kurse-container-modern .sd-sections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kurse-container-modern .sd-section {
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.015);
+}
+
+.kurse-container-modern .sd-section--open {
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* Items-Grid: etwas mehr Spalten für kleinere Karten */
+.kurse-container-modern .sd-items-grid {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+
+@media (max-width: 1200px) {
+  .kurse-container-modern .sd-items-grid { grid-template-columns: repeat(4, 1fr) !important; }
+}
+@media (max-width: 900px) {
+  .kurse-container-modern .sd-items-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 600px) {
+  .kurse-container-modern .sd-items-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+.kurse-container-modern .sd-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 800px) {
+  .kurse-container-modern .sd-grid { grid-template-columns: 1fr; }
+}
+
+/* Card */
+.kurse-container-modern .sd-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Card header — same gold style as stil-header */
+.kurse-container-modern .sd-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  background: linear-gradient(135deg, rgba(212,175,55,0.15), rgba(212,175,55,0.06));
+  border-bottom: 1px solid rgba(212,175,55,0.15);
+}
+
+.kurse-container-modern .sd-card-icon { font-size: 1rem; }
+
+.kurse-container-modern .sd-card-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #e8d580;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex: 1;
+}
+
+.kurse-container-modern .sd-card-count {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.07);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* List */
+.kurse-container-modern .sd-list {
+  flex: 1;
+}
+
+.kurse-container-modern .sd-empty {
+  padding: 14px 16px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.25);
+  font-style: italic;
+}
+
+.kurse-container-modern .sd-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 10px;
+  transition: background 0.1s;
+}
+
+.kurse-container-modern .sd-list-item:last-child { border-bottom: none; }
+
+.kurse-container-modern .sd-list-item:hover { background: rgba(255,255,255,0.025); }
+
+.kurse-container-modern .sd-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.kurse-container-modern .sd-item-name {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kurse-container-modern .sd-item-sub {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.32);
+}
+
+.kurse-container-modern .sd-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.kurse-container-modern .sd-item-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  cursor: pointer;
+  font-size: 0.68rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.kurse-container-modern .sd-item-btn:hover {
+  background: rgba(255,255,255,0.09);
+  border-color: rgba(255,255,255,0.18);
+}
+
+.kurse-container-modern .sd-item-btn--del:hover {
+  background: rgba(220,60,60,0.14);
+  border-color: rgba(220,60,60,0.28);
+}
+
+/* Add section */
+.kurse-container-modern .sd-add-section {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.kurse-container-modern .sd-add-trigger {
+  font-size: 0.78rem;
+  color: rgba(212,175,55,0.7);
+  background: rgba(212,175,55,0.06);
+  border: 1px dashed rgba(212,175,55,0.25);
+  border-radius: 7px;
+  padding: 7px 14px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.kurse-container-modern .sd-add-trigger:hover {
+  background: rgba(212,175,55,0.1);
+  border-color: rgba(212,175,55,0.45);
+  color: #e8d580;
+}
+
+/* Add form */
+.kurse-container-modern .sd-add-form { width: 100%; }
+
+.kurse-container-modern .sd-add-grid {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.kurse-container-modern .sd-add-grid--2 { grid-template-columns: 1fr 1fr; }
+
+@media (max-width: 600px) {
+  .kurse-container-modern .sd-add-grid--2 { grid-template-columns: 1fr; }
+}
+
+.kurse-container-modern .sd-inline-form {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.kurse-container-modern .sd-input {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 7px;
+  padding: 7px 11px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.82);
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.kurse-container-modern .sd-input:focus {
+  border-color: rgba(212,175,55,0.45);
+  background: rgba(255,255,255,0.08);
+}
+
+.kurse-container-modern .sd-input::placeholder { color: rgba(255,255,255,0.25); }
+
+.kurse-container-modern .sd-form-actions {
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+.kurse-container-modern .sd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.13s;
+}
+
+.kurse-container-modern .sd-btn--save {
+  background: rgba(212,175,55,0.14);
+  border-color: rgba(212,175,55,0.3);
+  color: #e8d580;
+}
+
+.kurse-container-modern .sd-btn--save:hover {
+  background: rgba(212,175,55,0.22);
+  border-color: rgba(212,175,55,0.5);
+}
+
+.kurse-container-modern .sd-btn--cancel {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.5);
+}
+
+.kurse-container-modern .sd-btn--cancel:hover {
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.75);
+}
+
+/* ===================================================
+   KURS-LISTE — Cards nebeneinander + Detail-Panel
+   =================================================== */
+
+.kurse-container-modern .ku-kurslist-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .kurse-container-modern .ku-kurslist-container { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .kurse-container-modern .ku-kurslist-container { grid-template-columns: 1fr; }
+}
+
+.kurse-container-modern .ku-kurslist-section {
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Aufgeklappte Sektion nimmt volle Breite ein */
+.kurse-container-modern .ku-kurslist-section--open {
+  grid-column: 1 / -1;
+}
+
+/* Card-Grid: 4 nebeneinander */
+.kurse-container-modern .ku-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 10px;
+  background: rgba(0,0,0,0.12);
+}
+
+@media (max-width: 1200px) {
+  .kurse-container-modern .ku-cards-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 900px) {
+  .kurse-container-modern .ku-cards-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .kurse-container-modern .ku-cards-grid { grid-template-columns: 1fr; }
+}
+
+/* Kurs-Karte (kompakt) */
+.kurse-container-modern .ku-card {
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 9px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.025);
+  transition: border-color 0.14s, background 0.14s;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.kurse-container-modern .ku-card:hover {
+  border-color: rgba(212,175,55,0.25);
+  background: rgba(255,255,255,0.045);
+}
+
+.kurse-container-modern .ku-card--selected {
+  border-color: rgba(212,175,55,0.5) !important;
+  background: rgba(212,175,55,0.07) !important;
+  box-shadow: 0 0 0 1px rgba(212,175,55,0.2);
+}
+
+.kurse-container-modern .ku-card-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.2;
+}
+
+.kurse-container-modern .ku-card-meta {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-card-trainer {
+  font-size: 0.68rem;
+  color: rgba(212,175,55,0.65);
+  margin-top: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Detail-Panel — unterhalb des Card-Grids */
+.kurse-container-modern .ku-detail-panel {
+  border-top: 1px solid rgba(212,175,55,0.15);
+  background: rgba(212,175,55,0.03);
+  padding: 16px 18px;
+  animation: fadeInDown 0.15s ease-out;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.kurse-container-modern .ku-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kurse-container-modern .ku-detail-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e8d580;
+  letter-spacing: 0.02em;
+}
+
+.kurse-container-modern .ku-detail-info {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-detail-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-detail-del-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px solid rgba(220,60,60,0.25);
+  background: rgba(220,60,60,0.08);
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: #ff9090;
+  transition: all 0.13s;
+}
+
+.kurse-container-modern .ku-detail-del-btn:hover {
+  background: rgba(220,60,60,0.18);
+  border-color: rgba(220,60,60,0.4);
+}
+
+/* ===================================================
+   KURS-COCKPIT
+   =================================================== */
+.kurse-container-modern .ku-cockpit {
+  padding: 0;
+  overflow: hidden;
+}
+
+.kurse-container-modern .ku-cockpit-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(212,175,55,0.12);
+  flex-wrap: wrap;
+}
+
+.kurse-container-modern .ku-cockpit-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e8d580;
+  flex-shrink: 0;
+}
+
+.kurse-container-modern .ku-cockpit-tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.kurse-container-modern .ku-cockpit-tab {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.55);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.13s;
+  white-space: nowrap;
+}
+
+.kurse-container-modern .ku-cockpit-tab:hover {
+  background: rgba(255,255,255,0.09);
+  color: rgba(255,255,255,0.8);
+}
+
+.kurse-container-modern .ku-cockpit-tab--active {
+  background: rgba(212,175,55,0.15);
+  border-color: rgba(212,175,55,0.35);
+  color: #e8d580;
+  font-weight: 600;
+}
+
+.kurse-container-modern .ku-cockpit-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.kurse-container-modern .ku-cockpit-close:hover {
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.07);
+}
+
+.kurse-container-modern .ku-cockpit-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kurse-container-modern .ku-cockpit-loading,
+.kurse-container-modern .ku-cockpit-empty {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.8rem;
+  padding: 8px 0;
+}
+
+/* Stundenplan-Tab */
+.kurse-container-modern .ku-cockpit-sp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.kurse-container-modern .ku-sp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.kurse-container-modern .ku-sp-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #93c5fd;
+  min-width: 72px;
+}
+
+.kurse-container-modern .ku-sp-time {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+  font-variant-numeric: tabular-nums;
+}
+
+.kurse-container-modern .ku-sp-raum {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.4);
+  margin-left: auto;
+}
+
+.kurse-container-modern .ku-sp-del {
+  background: none;
+  border: none;
+  color: rgba(220,80,80,0.5);
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+
+.kurse-container-modern .ku-sp-del:hover {
+  color: #ff8080;
+  background: rgba(220,60,60,0.1);
+}
+
+.kurse-container-modern .ku-sp-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(212,175,55,0.1);
+}
+
+.kurse-container-modern .ku-sp-input {
+  flex: 1;
+  min-width: 100px;
+  max-width: 200px;
+  font-size: 0.8rem;
+  padding: 5px 8px;
+}
+
+.kurse-container-modern .ku-sp-form-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.kurse-container-modern .ku-cockpit-add-btn {
+  align-self: flex-start;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1px dashed rgba(212,175,55,0.3);
+  background: rgba(212,175,55,0.05);
+  color: rgba(212,175,55,0.7);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.13s;
+}
+
+.kurse-container-modern .ku-cockpit-add-btn:hover {
+  border-color: rgba(212,175,55,0.5);
+  background: rgba(212,175,55,0.1);
+  color: #e8d580;
+}
+
+/* Mitglieder-Tab */
+.kurse-container-modern .ku-cockpit-member-count {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 4px;
+}
+
+.kurse-container-modern .ku-cockpit-member-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 5px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.kurse-container-modern .ku-member-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.kurse-container-modern .ku-member-name {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.75);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kurse-container-modern .ku-member-nr {
+  font-size: 0.66rem;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+/* Schedule tag */
+.kurse-container-modern .ku-schedule-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(59,130,246,0.18);
+  color: rgba(147,197,253,0.9);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.kurse-container-modern .ku-schedule-tags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ===================================================
+   NEUER KURS BUTTON (toolbar)
+   =================================================== */
+
+.kurse-container-modern .ku-new-kurs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0.35rem 0.9rem;
+  background: rgba(212,175,55,0.13);
+  border: 1px solid rgba(212,175,55,0.35);
+  border-radius: 7px;
+  color: #e2c96e;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kurse-container-modern .ku-new-kurs-btn:hover {
+  background: rgba(212,175,55,0.22);
+  border-color: rgba(212,175,55,0.6);
+  color: #f0d878;
+}
+
+/* ===================================================
+   MODAL — Neuer Kurs
+   =================================================== */
+
+.ku-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.62);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.ku-modal {
+  background: #1a1a2a;
+  border: 1px solid rgba(212,175,55,0.22);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+  animation: modalIn 0.18s ease-out;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.ku-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  background: linear-gradient(135deg, rgba(212,175,55,0.14), rgba(212,175,55,0.06));
+}
+
+.ku-modal-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e8d580;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ku-modal-close {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 7px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.8rem;
+  transition: all 0.12s;
+}
+
+.ku-modal-close:hover {
+  background: rgba(220,60,60,0.18);
+  border-color: rgba(220,60,60,0.3);
+  color: #ff9090;
+}
+
+.ku-modal .kurs-form-modern {
+  padding: 18px 20px;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ku-modal .kurs-form-left {
+  min-width: unset;
+  width: 100%;
+}
+
+/* Hint box */
+.kurse-container-modern .sd-hint {
+  padding: 8px 16px;
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.28);
+  border-top: 1px solid rgba(255,255,255,0.04);
+  background: rgba(0,0,0,0.1);
+}
+
+/* ── Trainer Card — Bleistift-Edit ──────────────────────────────────────── */
+.ku-card--trainer {
+  position: relative;
+  cursor: default !important;
+}
+.ku-card--trainer:hover {
+  transform: none !important;
+}
+
+.ku-card-edit-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+  color: rgba(255,255,255,0.55);
+  opacity: 0;
+}
+.ku-card--trainer:hover .ku-card-edit-btn {
+  opacity: 1;
+}
+.ku-card-edit-btn:hover {
+  background: rgba(212,175,55,0.18) !important;
+  border-color: rgba(212,175,55,0.4) !important;
+  color: #d4af37 !important;
+}
+
+.ku-card-stile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.ku-stil-tag {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #d4af37;
+  background: rgba(212,175,55,0.1);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* ── Trainer Edit Modal ─────────────────────────────────────────────────── */
+.ku-trainer-modal {
+  max-width: 520px;
+}
+
+.ku-trainer-modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.ku-trainer-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.ku-trainer-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ku-trainer-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ku-trainer-stile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ku-trainer-stile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ku-trainer-stile-empty {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.8rem;
+  padding: 12px;
+}
+
+.ku-trainer-stil-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.13s;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  user-select: none;
+}
+.ku-trainer-stil-row:last-child {
+  border-bottom: none;
+}
+.ku-trainer-stil-row:hover {
+  background: rgba(255,255,255,0.04);
+}
+.ku-trainer-stil-row--checked {
+  background: rgba(212,175,55,0.08);
+}
+.ku-trainer-stil-row--checked:hover {
+  background: rgba(212,175,55,0.13);
+}
+
+.ku-trainer-stil-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #d4af37;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ku-trainer-stil-name {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.75);
+}
+.ku-trainer-stil-row--checked .ku-trainer-stil-name {
+  color: #d4af37;
+  font-weight: 600;
+}
+
+.ku-trainer-stil-check {
+  font-size: 0.8rem;
+  color: #d4af37;
+  font-weight: 700;
+}
+
+.ku-trainer-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+/* ─────────────────────────────────────────────────────────────────────────── */

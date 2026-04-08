@@ -140,6 +140,81 @@ router.post("/", (req, res) => {
     });
 });
 
+// Trainer aktualisieren (inkl. Stile)
+router.put("/:id", (req, res) => {
+    const trainerId = req.params.id;
+    const { vorname, nachname, email, telefon, stile } = req.body;
+
+    if (!vorname || !nachname) {
+        return res.status(400).json({ error: "Vorname und Nachname erforderlich." });
+    }
+
+    // Dojo-Sicherheit: Trainer muss zum eigenen Dojo gehören (oder kein Dojo haben = Altdaten)
+    const dojoId = req.user?.dojo_id || req.dojo_id;
+    const dojoCheck = dojoId ? ' AND (dojo_id = ? OR dojo_id IS NULL)' : '';
+    const checkParams = dojoId ? [trainerId, dojoId] : [trainerId];
+
+    db.getConnection((err, connection) => {
+        if (err) return res.status(500).json({ error: "Datenbankverbindungsfehler" });
+
+        connection.beginTransaction((err) => {
+            if (err) { connection.release(); return res.status(500).json({ error: "Transaktionsfehler" }); }
+
+            connection.query(`SELECT trainer_id FROM trainer WHERE trainer_id = ?${dojoCheck}`, checkParams, (err, rows) => {
+                if (err || rows.length === 0) {
+                    connection.rollback(() => connection.release());
+                    logger.warn('Trainer PUT: nicht gefunden', { trainerId, dojoId });
+                    return res.status(404).json({ error: "Trainer nicht gefunden" });
+                }
+
+                connection.query(
+                    "UPDATE trainer SET vorname=?, nachname=?, email=?, telefon=? WHERE trainer_id=?",
+                    [vorname, nachname, email || '', telefon || '', trainerId],
+                    (err) => {
+                        if (err) {
+                            connection.rollback(() => connection.release());
+                            logger.error('Trainer PUT: UPDATE fehlgeschlagen', { error: err });
+                            return res.status(500).json({ error: "Fehler beim Aktualisieren" });
+                        }
+
+                        connection.query("DELETE FROM trainer_stile WHERE trainer_id = ?", [trainerId], (err) => {
+                            if (err) {
+                                connection.rollback(() => connection.release());
+                                return res.status(500).json({ error: "Fehler beim Löschen der Stile" });
+                            }
+
+                            const doCommit = () => {
+                                connection.commit((err) => {
+                                    if (err) {
+                                        connection.rollback(() => connection.release());
+                                        return res.status(500).json({ error: "Commit fehlgeschlagen" });
+                                    }
+                                    connection.release();
+                                    res.json({ trainer_id: parseInt(trainerId), vorname, nachname, email, telefon, stile: stile || [] });
+                                });
+                            };
+
+                            if (stile && Array.isArray(stile) && stile.length > 0) {
+                                const stilInsert = stile.map(s => [trainerId, s]);
+                                connection.query("INSERT INTO trainer_stile (trainer_id, stil) VALUES ?", [stilInsert], (err) => {
+                                    if (err) {
+                                        logger.error('Trainer PUT: Stile INSERT fehlgeschlagen', { error: err, stilInsert });
+                                        connection.rollback(() => connection.release());
+                                        return res.status(500).json({ error: "Fehler beim Speichern der Stile: " + err.sqlMessage });
+                                    }
+                                    doCommit();
+                                });
+                            } else {
+                                doCommit();
+                            }
+                        });
+                    }
+                );
+            });
+        });
+    });
+});
+
 // Trainer löschen (inklusive verbundene Stile)
 router.delete("/:id", (req, res) => {
     const trainerId = req.params.id;

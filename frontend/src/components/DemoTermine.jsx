@@ -34,16 +34,44 @@ function naechsterWochentag(vonDatum, wochentag) {
   return d;
 }
 
-// Alle Vorkommen eines Wochentags in einem Zeitraum
-function alleVorkommen(wochentag, wochen, startDatum) {
+// Alle Vorkommen eines Wochentags innerhalb eines Datums-Bereichs
+function alleVorkommenInRange(wochentag, startDate, endDate) {
   const result = [];
-  let d = naechsterWochentag(startDatum || new Date(), wochentag);
-  for (let i = 0; i < wochen; i++) {
+  const d = new Date(startDate);
+  d.setHours(0, 0, 0, 0);
+  const diff = (wochentag - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + diff);
+  while (d <= endDate) {
     result.push(new Date(d));
-    d = new Date(d);
     d.setDate(d.getDate() + 7);
   }
   return result;
+}
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+// ISO-Kalenderwoche berechnen
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  return 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+}
+
+// '2026-W15' → { monday, sunday }
+function parseWeekStr(weekStr) {
+  if (!weekStr) return null;
+  const [yearStr, weekPart] = weekStr.split('-W');
+  const year = parseInt(yearStr), week = parseInt(weekPart);
+  const jan4 = new Date(year, 0, 4);
+  const monday = new Date(jan4);
+  monday.setDate(jan4.getDate() - (jan4.getDay() + 6) % 7 + (week - 1) * 7);
+  monday.setHours(0, 0, 0, 0);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  sunday.setHours(23, 59, 59, 999);
+  return { monday, sunday };
 }
 
 // ─── Haupt-Komponente ─────────────────────────────────────────────────────────
@@ -57,6 +85,14 @@ export default function DemoTermine() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
+
+  // ── iCal Feed ────────────────────────────────────────────────────────────
+  const [icalFeedUrl, setIcalFeedUrl] = useState('');
+
+  // ── Kalender-Ansicht ──────────────────────────────────────────────────────
+  const [calView, setCalView] = useState('liste'); // 'liste' | 'monat'
+  const [calMonth, setCalMonth] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() });
+  const [calSelectedDay, setCalSelectedDay] = useState(null); // 'YYYY-MM-DD' | null
 
   // Welches Formular ist offen: null | 'einzeln' | 'wochenplan'
   const [openForm, setOpenForm] = useState(null);
@@ -75,6 +111,24 @@ export default function DemoTermine() {
   const [wochenplanSaving, setWochenplanSaving] = useState(false);
   const [neueUhrzeitInputs, setNeueUhrzeitInputs] = useState({}); // pro Tag ein Input-Value
 
+  // ── Wochenplan: Zeitraum-Modus ────────────────────────────────────────────
+  const [zeitraumMode, setZeitraumMode] = useState('woche');
+  const [zeitraumTag, setZeitraumTag] = useState(new Date().toISOString().slice(0, 10));
+  const [zeitraumWoche, setZeitraumWoche] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-W${String(getISOWeek(d)).padStart(2, '0')}`;
+  });
+  const [zeitraumMonatJahr, setZeitraumMonatJahr] = useState(CURRENT_YEAR);
+  const [zeitraumMonat, setZeitraumMonat] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [zeitraumQuartal, setZeitraumQuartal] = useState({
+    q: Math.ceil((new Date().getMonth() + 1) / 3),
+    year: new Date().getFullYear(),
+  });
+  const [zeitraumJahr, setZeitraumJahr] = useState(new Date().getFullYear());
+
   // ── Buchungs-Detail ───────────────────────────────────────────────────────
   const [selectedBuchung, setSelectedBuchung] = useState(null);
   const [buchungNotiz, setBuchungNotiz] = useState('');
@@ -86,6 +140,49 @@ export default function DemoTermine() {
     setMsg({ type, text });
     setTimeout(() => setMsg({ type: '', text: '' }), 4000);
   };
+
+  // ── Zeitraum berechnen ────────────────────────────────────────────────────
+  const getZeitraumRange = () => {
+    switch (zeitraumMode) {
+      case 'tag': {
+        if (!zeitraumTag) return null;
+        return { start: new Date(zeitraumTag + 'T00:00:00'), end: new Date(zeitraumTag + 'T23:59:59') };
+      }
+      case 'woche': {
+        const parsed = parseWeekStr(zeitraumWoche);
+        if (!parsed) return null;
+        return { start: parsed.monday, end: parsed.sunday };
+      }
+      case 'monat': {
+        const [y, m] = zeitraumMonat.split('-').map(Number);
+        return { start: new Date(y, m - 1, 1), end: new Date(y, m, 0, 23, 59, 59) };
+      }
+      case 'quartal': {
+        const { q, year } = zeitraumQuartal;
+        const sm = (q - 1) * 3;
+        return { start: new Date(year, sm, 1), end: new Date(year, sm + 3, 0, 23, 59, 59) };
+      }
+      case 'jahr':
+        return { start: new Date(zeitraumJahr, 0, 1), end: new Date(zeitraumJahr, 11, 31, 23, 59, 59) };
+      default: return null;
+    }
+  };
+
+  // Woche als lesbaren String formatieren
+  const formatWoche = (weekStr) => {
+    const parsed = parseWeekStr(weekStr);
+    if (!parsed) return '';
+    const { monday, sunday } = parsed;
+    const fmt = (d) => d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    return `KW ${parseInt(weekStr.split('-W')[1])} · ${fmt(monday)} – ${fmt(sunday)} ${sunday.getFullYear()}`;
+  };
+
+  // 12 Monate für ein Jahr als Chips
+  const MONTH_LABELS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+  const getMonthChips = (year) => MONTH_LABELS.map((label, i) => ({
+    value: `${year}-${String(i + 1).padStart(2, '0')}`,
+    label,
+  }));
 
   const loadSlots = useCallback(async () => {
     setLoading(true);
@@ -114,6 +211,13 @@ export default function DemoTermine() {
 
   useEffect(() => { loadSlots(); loadStats(); }, [loadSlots, loadStats]);
   useEffect(() => { if (view === 'buchungen') loadBuchungen(); }, [view, loadBuchungen]);
+
+  // iCal-Feed-URL laden
+  useEffect(() => {
+    axios.get('/demo-termine/admin/ical-token', { headers: authHeader })
+      .then(r => { if (r.data.feedUrl) setIcalFeedUrl(r.data.feedUrl); })
+      .catch(() => {});
+  }, [token]);
 
   // iCloud Konflikt-Check für Einzelslot
   useEffect(() => {
@@ -175,9 +279,11 @@ export default function DemoTermine() {
 
   // ── Wochenplan-Vorschau: wie viele Slots werden erstellt? ─────────────────
   const wochenplanPreview = () => {
+    const range = getZeitraumRange();
+    if (!range) return 0;
     let count = 0;
     Object.entries(selectedDays).forEach(([dayId, times]) => {
-      count += alleVorkommen(parseInt(dayId), parseInt(wochenplanWochen)).length * times.size;
+      count += alleVorkommenInRange(parseInt(dayId), range.start, range.end).length * times.size;
     });
     return count;
   };
@@ -185,16 +291,17 @@ export default function DemoTermine() {
   // ── Wochenplan anlegen ────────────────────────────────────────────────────
   const handleWochenplanCreate = async (e) => {
     e.preventDefault();
+    const range = getZeitraumRange();
+    if (!range) { showMsg('error', 'Bitte einen gültigen Zeitraum auswählen.'); return; }
     const preview = wochenplanPreview();
     if (preview === 0) { showMsg('error', 'Wähle mindestens einen Wochentag mit einer Uhrzeit.'); return; }
 
     setWochenplanSaving(true);
     const slotsToCreate = [];
     const dur = parseInt(wochenplanDur);
-    const wochen = parseInt(wochenplanWochen);
 
     Object.entries(selectedDays).forEach(([dayId, times]) => {
-      const vorkommen = alleVorkommen(parseInt(dayId), wochen);
+      const vorkommen = alleVorkommenInRange(parseInt(dayId), range.start, range.end);
       vorkommen.forEach(datum => {
         [...times].forEach(time => {
           const [h, m] = time.split(':').map(Number);
@@ -263,6 +370,59 @@ export default function DemoTermine() {
     } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
   };
 
+  // ── Kalender-Hilfsfunktionen ──────────────────────────────────────────────
+  const calMonthLabel = () => {
+    const d = new Date(calMonth.year, calMonth.month, 1);
+    return d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+  };
+
+  const prevCalMonth = () => setCalMonth(m => {
+    const month = m.month === 0 ? 11 : m.month - 1;
+    const year  = m.month === 0 ? m.year - 1 : m.year;
+    return { year, month };
+  });
+
+  const nextCalMonth = () => setCalMonth(m => {
+    const month = m.month === 11 ? 0 : m.month + 1;
+    const year  = m.month === 11 ? m.year + 1 : m.year;
+    return { year, month };
+  });
+
+  // Slot-Map: 'YYYY-MM-DD' → { free, booked }
+  const slotsByDay = (() => {
+    const map = {};
+    slots.forEach(s => {
+      const d = new Date(s.slot_start);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      if (!map[key]) map[key] = { free: 0, booked: 0 };
+      if (s.is_booked) map[key].booked++; else if (s.is_available) map[key].free++;
+    });
+    return map;
+  })();
+
+  // Wochen-Arrays für den Kalender-Monat bauen (Mo–So, ISO)
+  const buildCalendarWeeks = () => {
+    const firstDay = new Date(calMonth.year, calMonth.month, 1);
+    const lastDay  = new Date(calMonth.year, calMonth.month + 1, 0);
+    // Erster Montag der Anzeige
+    const startMon = new Date(firstDay);
+    const dow = (firstDay.getDay() + 6) % 7; // 0=Mo
+    startMon.setDate(firstDay.getDate() - dow);
+
+    const weeks = [];
+    const cur = new Date(startMon);
+    while (cur <= lastDay || cur.getDay() !== 1) {
+      const week = [];
+      for (let i = 0; i < 7; i++) {
+        week.push(new Date(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+      weeks.push(week);
+      if (cur > lastDay && weeks.length >= 4) break;
+    }
+    return weeks;
+  };
+
   // ── Buchung aktualisieren ─────────────────────────────────────────────────
   const updateBuchung = async (id, updates) => {
     setBuchungSaving(true);
@@ -280,77 +440,69 @@ export default function DemoTermine() {
   return (
     <div className="dt-wrapper">
 
-      {/* Header */}
-      <div className="dt-header">
-        <div className="dt-header-left">
-          <h2 className="dt-title">Demo-Termine</h2>
-          <p className="dt-subtitle">Zeitfenster freigeben und Interessenten-Buchungen verwalten</p>
+      {/* ── Kompakter Top-Bereich ── */}
+      <div className="dt-topbar">
+        <div className="dt-links-row">
+          <div className="dt-link-chip">
+            <span className="dt-link-lbl">🔗 Buchungs-Link</span>
+            <code className="dt-link-url">{bookingUrl}</code>
+            <button className="dt-btn dt-btn-xs" onClick={() => { navigator.clipboard.writeText(bookingUrl); showMsg('success', 'Link kopiert!'); }}>Kopieren</button>
+          </div>
+          {icalFeedUrl && (
+            <div className="dt-link-chip">
+              <span className="dt-link-lbl">📅 iCal-Abo</span>
+              <code className="dt-link-url dt-link-ical">{icalFeedUrl}</code>
+              <button className="dt-btn dt-btn-xs" onClick={() => { navigator.clipboard.writeText(icalFeedUrl); showMsg('success', 'iCal-URL kopiert!'); }}>Kopieren</button>
+            </div>
+          )}
         </div>
-        <div className="dt-header-right">
-          <div className="dt-booking-link">
-            <span className="dt-booking-label">Buchungs-Link</span>
-            <code className="dt-booking-url">{bookingUrl}</code>
-            <button className="dt-btn dt-btn-sm" onClick={() => { navigator.clipboard.writeText(bookingUrl); showMsg('success', 'Link kopiert!'); }}>
-              Kopieren
+
+        <div className="dt-toolbar">
+          <div className="dt-toolbar-left">
+            <button className={`dt-btn dt-btn-primary dt-btn-sm ${openForm === 'wochenplan' ? 'dt-btn-active-border' : ''}`}
+              onClick={() => setOpenForm(openForm === 'wochenplan' ? null : 'wochenplan')}>🗓 Wochenplan</button>
+            <button className={`dt-btn dt-btn-sm ${openForm === 'einzeln' ? 'dt-btn-active-border' : ''}`}
+              onClick={() => setOpenForm(openForm === 'einzeln' ? null : 'einzeln')}>+ Einzelner Termin</button>
+          </div>
+          <div className="dt-toolbar-sep" />
+          {stats && (
+            <div className="dt-stat-cards">
+              <div className="dt-stat-mini" style={{'--c':'#6366f1'}}>
+                <span className="dt-stat-mini-num">{stats.freie_slots}</span>
+                <span className="dt-stat-mini-lbl">Freie Slots</span>
+              </div>
+              <div className="dt-stat-mini" style={{'--c':'#f59e0b'}}>
+                <span className="dt-stat-mini-num">{stats.offene_buchungen}</span>
+                <span className="dt-stat-mini-lbl">Offen</span>
+              </div>
+              <div className="dt-stat-mini" style={{'--c':'#6366f1'}}>
+                <span className="dt-stat-mini-num">{stats.gesamt_buchungen}</span>
+                <span className="dt-stat-mini-lbl">Buchungen</span>
+              </div>
+              <div className="dt-stat-mini" style={{'--c':'#475569'}}>
+                <span className="dt-stat-mini-num">{stats.gesamt_slots}</span>
+                <span className="dt-stat-mini-lbl">Slots gesamt</span>
+              </div>
+            </div>
+          )}
+          <div className="dt-toolbar-sep" />
+          <div className="dt-toolbar-right">
+            <button className={`dt-tab-pill ${view === 'slots' ? 'active' : ''}`} onClick={() => setView('slots')}>Zeitfenster</button>
+            <button className={`dt-tab-pill ${view === 'buchungen' ? 'active' : ''}`} onClick={() => setView('buchungen')}>
+              Buchungen{stats?.offene_buchungen > 0 && <span className="dt-badge">{stats.offene_buchungen}</span>}
             </button>
+            <span className="dt-toolbar-divider" />
+            <button className={`dt-view-btn ${calView === 'liste' ? 'active' : ''}`} onClick={() => { setCalView('liste'); setCalSelectedDay(null); }}>☰ Liste</button>
+            <button className={`dt-view-btn ${calView === 'monat' ? 'active' : ''}`} onClick={() => setCalView('monat')}>📅 Monat</button>
           </div>
         </div>
       </div>
 
       {msg.text && <div className={`dt-alert dt-alert-${msg.type}`}>{msg.text}</div>}
 
-      {/* Stats */}
-      {stats && (
-        <div className="dt-stats">
-          <div className="dt-stat-card">
-            <div className="dt-stat-num">{stats.freie_slots}</div>
-            <div className="dt-stat-label">Freie Slots</div>
-          </div>
-          <div className="dt-stat-card">
-            <div className="dt-stat-num dt-stat-orange">{stats.offene_buchungen}</div>
-            <div className="dt-stat-label">Offene Buchungen</div>
-          </div>
-          <div className="dt-stat-card">
-            <div className="dt-stat-num">{stats.gesamt_buchungen}</div>
-            <div className="dt-stat-label">Buchungen gesamt</div>
-          </div>
-          <div className="dt-stat-card">
-            <div className="dt-stat-num dt-stat-muted">{stats.gesamt_slots}</div>
-            <div className="dt-stat-label">Slots gesamt</div>
-          </div>
-        </div>
-      )}
-
-      {/* View-Tabs */}
-      <div className="dt-tabs">
-        <button className={`dt-tab ${view === 'slots' ? 'active' : ''}`} onClick={() => setView('slots')}>
-          Zeitfenster
-        </button>
-        <button className={`dt-tab ${view === 'buchungen' ? 'active' : ''}`} onClick={() => setView('buchungen')}>
-          Buchungen
-          {stats?.offene_buchungen > 0 && <span className="dt-badge">{stats.offene_buchungen}</span>}
-        </button>
-      </div>
-
       {/* ══════════════ SLOTS VIEW ══════════════ */}
       {view === 'slots' && (
         <div className="dt-section">
-
-          {/* Aktions-Buttons */}
-          <div className="dt-section-actions">
-            <button
-              className={`dt-btn dt-btn-primary ${openForm === 'wochenplan' ? 'dt-btn-active-border' : ''}`}
-              onClick={() => setOpenForm(openForm === 'wochenplan' ? null : 'wochenplan')}
-            >
-              🗓 Wochenplan anlegen
-            </button>
-            <button
-              className={`dt-btn ${openForm === 'einzeln' ? 'dt-btn-active-border' : ''}`}
-              onClick={() => setOpenForm(openForm === 'einzeln' ? null : 'einzeln')}
-            >
-              + Einzelner Termin
-            </button>
-          </div>
 
           {/* ── WOCHENPLAN WIZARD ── */}
           {openForm === 'wochenplan' && (
@@ -442,9 +594,9 @@ export default function DemoTermine() {
               ))}
 
               {/* Einstellungen */}
-              <div className="dt-form-row" style={{ marginTop: '1.25rem' }}>
+              <div className="dt-einstellungen-row">
                 <div className="dt-form-group dt-form-group-sm">
-                  <label>Dauer pro Termin (Min)</label>
+                  <label>Dauer pro Termin</label>
                   <select value={wochenplanDur} onChange={e => setWochenplanDur(e.target.value)}>
                     <option value="30">30 Minuten</option>
                     <option value="45">45 Minuten</option>
@@ -453,22 +605,115 @@ export default function DemoTermine() {
                     <option value="120">2 Stunden</option>
                   </select>
                 </div>
-                <div className="dt-form-group dt-form-group-sm">
-                  <label>Für wie viele Wochen?</label>
-                  <select value={wochenplanWochen} onChange={e => setWochenplanWochen(e.target.value)}>
-                    <option value="2">2 Wochen</option>
-                    <option value="4">4 Wochen</option>
-                    <option value="6">6 Wochen</option>
-                    <option value="8">8 Wochen</option>
-                    <option value="12">12 Wochen</option>
-                    <option value="16">16 Wochen</option>
-                  </select>
+
+                {/* Zeitraum-Auswahl */}
+                <div className="dt-zeitraum-wrapper">
+                  <label className="dt-zeitraum-lbl">Zeitraum</label>
+                  <div className="dt-zeitraum-tabs">
+                    {[
+                      { id: 'tag',     label: 'Tag' },
+                      { id: 'woche',   label: 'Woche' },
+                      { id: 'monat',   label: 'Monat' },
+                      { id: 'quartal', label: 'Quartal' },
+                      { id: 'jahr',    label: 'Jahr' },
+                    ].map(m => (
+                      <button key={m.id} type="button"
+                        className={`dt-zeitraum-tab ${zeitraumMode === m.id ? 'active' : ''}`}
+                        onClick={() => setZeitraumMode(m.id)}
+                      >{m.label}</button>
+                    ))}
+                  </div>
+
+                  <div className="dt-zeitraum-content">
+                    {/* Tag: einzelner Datepicker */}
+                    {zeitraumMode === 'tag' && (
+                      <div className="dt-tag-picker">
+                        <input type="date" value={zeitraumTag}
+                          onChange={e => setZeitraumTag(e.target.value)} />
+                        {zeitraumTag && (
+                          <span className="dt-zeitraum-info">
+                            {new Date(zeitraumTag + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Woche: KW-Picker */}
+                    {zeitraumMode === 'woche' && (
+                      <div className="dt-woche-picker">
+                        <input type="week" value={zeitraumWoche}
+                          onChange={e => setZeitraumWoche(e.target.value)} />
+                        {zeitraumWoche && (
+                          <span className="dt-zeitraum-info">{formatWoche(zeitraumWoche)}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Monat: Jahres-Tabs + alle 12 Monate */}
+                    {zeitraumMode === 'monat' && (
+                      <div className="dt-monat-picker">
+                        <div className="dt-chips-row">
+                          {[CURRENT_YEAR, CURRENT_YEAR + 1, CURRENT_YEAR + 2].map(y => (
+                            <button key={y} type="button"
+                              className={`dt-quick-btn ${zeitraumMonatJahr === y ? 'active' : ''}`}
+                              onClick={() => setZeitraumMonatJahr(y)}
+                            >{y}</button>
+                          ))}
+                        </div>
+                        <div className="dt-chips-row dt-monat-chips">
+                          {getMonthChips(zeitraumMonatJahr).map(({ value, label }) => (
+                            <button key={value} type="button"
+                              className={`dt-quick-btn dt-monat-btn ${zeitraumMonat === value ? 'active' : ''}`}
+                              onClick={() => setZeitraumMonat(value)}
+                            >{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quartal */}
+                    {zeitraumMode === 'quartal' && (
+                      <div className="dt-quartal-picker">
+                        <div className="dt-chips-row">
+                          {[CURRENT_YEAR, CURRENT_YEAR + 1, CURRENT_YEAR + 2].map(y => (
+                            <button key={y} type="button"
+                              className={`dt-quick-btn ${zeitraumQuartal.year === y ? 'active' : ''}`}
+                              onClick={() => setZeitraumQuartal(q => ({ ...q, year: y }))}
+                            >{y}</button>
+                          ))}
+                        </div>
+                        <div className="dt-chips-row">
+                          {[1, 2, 3, 4].map(q => (
+                            <button key={q} type="button"
+                              className={`dt-quick-btn dt-quartal-btn ${zeitraumQuartal.q === q ? 'active' : ''}`}
+                              onClick={() => setZeitraumQuartal(prev => ({ ...prev, q }))}
+                            >
+                              Q{q} <span className="dt-quartal-hint">
+                                {['Jan–Mär', 'Apr–Jun', 'Jul–Sep', 'Okt–Dez'][q - 1]}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Jahr */}
+                    {zeitraumMode === 'jahr' && (
+                      <div className="dt-chips-row">
+                        {[CURRENT_YEAR, CURRENT_YEAR + 1, CURRENT_YEAR + 2].map(y => (
+                          <button key={y} type="button"
+                            className={`dt-quick-btn dt-jahr-btn ${zeitraumJahr === y ? 'active' : ''}`}
+                            onClick={() => setZeitraumJahr(y)}
+                          >{y}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
+
                 <div className="dt-form-group dt-form-group-sm dt-preview-box">
                   <label>Vorschau</label>
-                  <div className="dt-preview-count">
-                    {wochenplanPreview()} Slots
-                  </div>
+                  <div className="dt-preview-count">{wochenplanPreview()} Slots</div>
                 </div>
               </div>
 
@@ -537,16 +782,101 @@ export default function DemoTermine() {
             </form>
           )}
 
+          {/* ── MONATS-KALENDER ── */}
+          {calView === 'monat' && (
+            <div className="dt-calendar">
+              <div className="dt-cal-nav">
+                <button className="dt-btn dt-btn-sm" onClick={prevCalMonth}>‹</button>
+                <span className="dt-cal-month-label">{calMonthLabel()}</span>
+                <button className="dt-btn dt-btn-sm" onClick={nextCalMonth}>›</button>
+              </div>
+              <div className="dt-cal-grid">
+                {['Mo','Di','Mi','Do','Fr','Sa','So'].map(d => (
+                  <div key={d} className="dt-cal-hdr">{d}</div>
+                ))}
+                {buildCalendarWeeks().map((week, wi) =>
+                  week.map((day, di) => {
+                    const key = `${day.getFullYear()}-${String(day.getMonth()+1).padStart(2,'0')}-${String(day.getDate()).padStart(2,'0')}`;
+                    const info = slotsByDay[key];
+                    const isCurrentMonth = day.getMonth() === calMonth.month;
+                    const isToday = key === new Date().toISOString().slice(0,10);
+                    const isSelected = calSelectedDay === key;
+                    return (
+                      <div
+                        key={`${wi}-${di}`}
+                        className={`dt-cal-cell ${!isCurrentMonth ? 'dt-cal-other-month' : ''} ${isToday ? 'dt-cal-today' : ''} ${isSelected ? 'dt-cal-selected' : ''} ${info ? 'dt-cal-has-slots' : ''}`}
+                        onClick={() => {
+                          if (!isCurrentMonth || !info) return;
+                          setCalSelectedDay(isSelected ? null : key);
+                        }}
+                      >
+                        <span className="dt-cal-day-num">{day.getDate()}</span>
+                        {info && (
+                          <div className="dt-cal-dots">
+                            {info.free > 0 && <span className="dt-cal-dot dt-cal-dot-free" title={`${info.free} frei`}>{info.free}</span>}
+                            {info.booked > 0 && <span className="dt-cal-dot dt-cal-dot-booked" title={`${info.booked} gebucht`}>{info.booked}</span>}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              {calSelectedDay && (
+                <div className="dt-cal-day-detail">
+                  <div className="dt-cal-day-detail-hdr">
+                    {new Date(calSelectedDay + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                    <button className="dt-btn dt-btn-sm" onClick={() => setCalSelectedDay(null)}>✕</button>
+                  </div>
+                  {slots.filter(s => {
+                    const d = new Date(s.slot_start);
+                    const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    return k === calSelectedDay;
+                  }).sort((a, b) => new Date(a.slot_start) - new Date(b.slot_start)).map(slot => (
+                    <div key={slot.id} className={`dt-slot-card dt-slot-compact ${slot.is_booked ? 'dt-slot-booked' : slot.is_available ? 'dt-slot-free' : 'dt-slot-locked'}`}>
+                      <div className="dt-slot-main">
+                        <div className="dt-slot-time">{new Date(slot.slot_start).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr · {slot.duration_minutes} Min</div>
+                        {slot.notes && <div className="dt-slot-note">{slot.notes}</div>}
+                      </div>
+                      <div className="dt-slot-status">
+                        {slot.is_booked ? (
+                          <span className="dt-pill dt-pill-booked">Gebucht — {slot.vorname} {slot.nachname}</span>
+                        ) : slot.is_available ? (
+                          <span className="dt-pill dt-pill-free">Frei</span>
+                        ) : (
+                          <span className="dt-pill dt-pill-locked">Gesperrt</span>
+                        )}
+                      </div>
+                      <div className="dt-slot-actions">
+                        {!slot.is_booked && (
+                          <>
+                            <button className={`dt-btn dt-btn-sm ${slot.is_available ? 'dt-btn-warn' : 'dt-btn-success'}`} onClick={() => toggleSlot(slot)}>
+                              {slot.is_available ? 'Sperren' : 'Freigeben'}
+                            </button>
+                            <button className="dt-btn dt-btn-sm dt-btn-danger" onClick={() => deleteSlot(slot.id)}>Löschen</button>
+                          </>
+                        )}
+                        {slot.is_booked && (
+                          <button className="dt-btn dt-btn-sm" onClick={() => { setView('buchungen'); loadBuchungen(); }}>Buchung →</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* ── SLOT-LISTE ── */}
-          {loading && <div className="dt-loading">Lade...</div>}
-          {!loading && slots.length === 0 && (
+          {calView === 'liste' && loading && <div className="dt-loading">Lade...</div>}
+          {calView === 'liste' && !loading && slots.length === 0 && (
             <div className="dt-empty">
               <div className="dt-empty-icon">📅</div>
               <p>Noch keine Zeitfenster angelegt.</p>
               <p className="dt-muted">Nutze den Wochenplan, um mehrere Termine auf einen Schlag freizugeben.</p>
             </div>
           )}
-          {!loading && slots.length > 0 && (
+          {calView === 'liste' && !loading && slots.length > 0 && (
             <div className="dt-slots-list">
               {slots.map(slot => (
                 <div key={slot.id} className={`dt-slot-card ${slot.is_booked ? 'dt-slot-booked' : slot.is_available ? 'dt-slot-free' : 'dt-slot-locked'}`}>

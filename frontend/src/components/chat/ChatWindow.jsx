@@ -306,17 +306,39 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
 
         {messages.length === 0 && !isLoading && (
           <div className="chat-empty">
-            <div className="chat-empty-icon">💬</div>
+            <div className="chat-empty-icon">🥋</div>
             <div className="chat-empty-text">Noch keine Nachrichten</div>
-            <div className="chat-empty-hint">Schreibe die erste Nachricht!</div>
+            <div className="chat-empty-hint">Starte die erste Runde!</div>
           </div>
         )}
 
-        {messages.map(message => (
-          <ChatMessage
-            key={message.id}
-            message={message}
-            onReact={(messageId, emoji) => {
+        {messages.map((message, index) => {
+          const msgDate = new Date(message.sent_at);
+          const msgDateKey = `${msgDate.getFullYear()}-${msgDate.getMonth()}-${msgDate.getDate()}`;
+          const prevMsg = messages[index - 1];
+          const prevDate = prevMsg ? new Date(prevMsg.sent_at) : null;
+          const prevDateKey = prevDate
+            ? `${prevDate.getFullYear()}-${prevDate.getMonth()}-${prevDate.getDate()}`
+            : null;
+          const showSeparator = msgDateKey !== prevDateKey;
+          const today = new Date();
+          const isToday = msgDate.getFullYear() === today.getFullYear() &&
+            msgDate.getMonth() === today.getMonth() &&
+            msgDate.getDate() === today.getDate();
+          const separatorLabel = isToday
+            ? 'Heute'
+            : msgDate.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+          return (
+            <React.Fragment key={message.id}>
+              {showSeparator && (
+                <div className={`chat-date-separator${isToday ? ' chat-date-separator--today' : ''}`}>
+                  <span className="chat-date-separator-label">{separatorLabel}</span>
+                </div>
+              )}
+              <ChatMessage
+                message={message}
+                onReact={(messageId, emoji) => {
               // Optimistische UI-Aktualisierung
               setMessages(prev => prev.map(m => {
                 if (m.id !== messageId) return m;
@@ -334,7 +356,9 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
               }));
             }}
           />
-        ))}
+            </React.Fragment>
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 

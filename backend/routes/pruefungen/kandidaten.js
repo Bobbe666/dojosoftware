@@ -7,6 +7,7 @@ const logger = require('../../utils/logger');
 const db = require('../../db');
 const router = express.Router();
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
+const { sendPushToMitglied } = require('../../utils/pushNotification');
 
 // GET /kandidaten - Ermittelt alle Prüfungskandidaten (mit Tenant-Isolation)
 router.get('/', (req, res) => {
@@ -131,7 +132,7 @@ router.post('/extern', (req, res) => {
 router.post('/:mitglied_id/zulassen', (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
   const secureDojoId = getSecureDojoId(req);
-  const { stil_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, pruefungszeit = '10:00' } = req.body;
+  const { stil_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, pruefungszeit = '10:00', zahlungsart } = req.body;
 
   // Dojo-ID immer aus Token erzwingen
   const dojo_id = secureDojoId || parseInt(req.body.dojo_id);
@@ -153,16 +154,52 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
       const finalPruefungsdatum = pruefungsdatum || defaultDate.toISOString().split('T')[0];
 
       const insertQuery = `
-        INSERT INTO pruefungen (mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, pruefungsdatum, pruefungszeit, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, status, bestanden, erstellt_am, aktualisiert_am)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'geplant', FALSE, NOW(), NOW())
+        INSERT INTO pruefungen (mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, pruefungsdatum, pruefungszeit, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, zahlungsart, status, bestanden, erstellt_am, aktualisiert_am)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'geplant', FALSE, NOW(), NOW())
       `;
 
-      db.query(insertQuery, [mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, finalPruefungsdatum, pruefungszeit, pruefungsort || null, pruefungsgebuehr || null, anmeldefrist || null, gurtlaenge || null, bemerkungen || null, teilnahmebedingungen || null], (insertErr, result) => {
+      db.query(insertQuery, [mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, finalPruefungsdatum, pruefungszeit, pruefungsort || null, pruefungsgebuehr || null, anmeldefrist || null, gurtlaenge || null, bemerkungen || null, teilnahmebedingungen || null, zahlungsart || null], (insertErr, result) => {
         if (insertErr) return res.status(500).json({ error: 'Fehler beim Zulassen zur Prüfung', details: insertErr.message });
 
-        db.query(`INSERT INTO notifications (recipient_type, recipient_id, title, message, notification_type, priority, action_url, created_at) VALUES ('mitglied', ?, 'Prüfungszulassung', 'Sie wurden für eine Gürtelprüfung zugelassen!', 'pruefung', 'high', '/member/pruefungen', NOW())`, [mitglied_id], () => {});
-
         res.status(201).json({ success: true, message: 'Mitglied erfolgreich zur Prüfung zugelassen', pruefung_id: result.insertId, mitglied_id });
+
+        // Notification + Push (fire and forget)
+        db.query('SELECT email, vorname, nachname FROM mitglieder WHERE mitglied_id = ? LIMIT 1', [mitglied_id], (emailErr, emailRows) => {
+          if (emailErr || !emailRows[0]?.email) return;
+          const { email, vorname } = emailRows[0];
+          // Datum ohne Timezone-Shift
+          const [y, m, d] = finalPruefungsdatum.split('-');
+          const datum = `${d}.${m}.${y}`;
+          const pruefungId = result.insertId;
+
+          // 1. Zulassungs-Notification (requires_confirmation = 1 → bleibt bis Antwort)
+          const subject = 'Pruefungszulassung';
+          const message = `Hallo ${vorname}, du wurdest zur Guertelprüfung am ${datum} zugelassen! Kannst du kommen?`.replace(/ü/g,'ue').replace(/ö/g,'oe').replace(/ä/g,'ae').replace(/Ü/g,'Ue').replace(/Ö/g,'Oe').replace(/Ä/g,'Ae').replace(/ß/g,'ss');
+          const meta = JSON.stringify({ type: 'pruefung_zulassung', pruefung_id: pruefungId, pruefungsdatum: finalPruefungsdatum, zahlungsart: zahlungsart || null });
+
+          db.query(
+            `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
+             VALUES ('push', ?, ?, ?, 'unread', 1, ?, NOW())`,
+            [email, subject, message, meta],
+            () => {}
+          );
+
+          // 2. Falls Lastschrift: separate Zustimmungs-Notification
+          if (zahlungsart === 'lastschrift' && pruefungsgebuehr) {
+            const subjectLS = 'SEPA-Lastschrift Pruefungsgebuehr';
+            const messageLS = `Die Pruefungsgebuehr von ${Number(pruefungsgebuehr).toFixed(2)} EUR wird per Lastschrift von deinem Konto abgebucht. Bist du damit einverstanden?`;
+            const metaLS = JSON.stringify({ type: 'pruefung_lastschrift', pruefung_id: pruefungId, betrag: pruefungsgebuehr });
+            db.query(
+              `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
+               VALUES ('push', ?, ?, ?, 'unread', 1, ?, NOW())`,
+              [email, subjectLS, messageLS, metaLS],
+              () => {}
+            );
+          }
+
+          sendPushToMitglied(mitglied_id, subject, message, '/member/dashboard', { type: 'pruefung_zulassung' })
+            .catch(() => {});
+        });
       });
     });
   });
@@ -213,6 +250,52 @@ router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
       res.json({ success: true, message: 'Teilnahme erfolgreich bestätigt', pruefung_id, teilnahme_bestaetigt_am: new Date() });
     });
   });
+});
+
+// POST /kandidaten/antwort - Mitglied antwortet auf Prüfungszulassung
+router.post('/antwort', (req, res) => {
+  const { pruefung_id, antwort, notification_id } = req.body;
+  if (!pruefung_id || !['kommt', 'kommt_nicht'].includes(antwort)) {
+    return res.status(400).json({ error: 'pruefung_id und antwort (kommt/kommt_nicht) erforderlich.' });
+  }
+  db.query(
+    'UPDATE pruefungen SET mitglied_antwort = ?, mitglied_antwort_am = NOW() WHERE pruefung_id = ?',
+    [antwort, pruefung_id],
+    (err) => {
+      if (err) return res.status(500).json({ error: 'Fehler beim Speichern der Antwort.' });
+
+      // Notification als confirmed markieren
+      if (notification_id) {
+        db.query(
+          "UPDATE notifications SET status = 'read', confirmed_at = NOW() WHERE id = ?",
+          [notification_id], () => {}
+        );
+      }
+      res.json({ success: true });
+    }
+  );
+});
+
+// POST /kandidaten/lastschrift-zustimmung - Mitglied stimmt Lastschrift zu/ab
+router.post('/lastschrift-zustimmung', (req, res) => {
+  const { pruefung_id, zugestimmt, notification_id } = req.body;
+  if (!pruefung_id || zugestimmt === undefined) {
+    return res.status(400).json({ error: 'pruefung_id und zugestimmt erforderlich.' });
+  }
+  db.query(
+    'UPDATE pruefungen SET lastschrift_zugestimmt = ?, lastschrift_zugestimmt_am = NOW() WHERE pruefung_id = ?',
+    [zugestimmt ? 1 : 0, pruefung_id],
+    (err) => {
+      if (err) return res.status(500).json({ error: 'Fehler beim Speichern.' });
+      if (notification_id) {
+        db.query(
+          "UPDATE notifications SET status = 'read', confirmed_at = NOW() WHERE id = ?",
+          [notification_id], () => {}
+        );
+      }
+      res.json({ success: true });
+    }
+  );
 });
 
 module.exports = router;

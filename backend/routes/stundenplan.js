@@ -40,6 +40,12 @@ router.get("/", async (req, res) => {
     queryParams.push(parseInt(standort_id));
   }
 
+  // Add kurs_id filter if provided (Cockpit: Stundenplan für einzelnen Kurs)
+  if (req.query.kurs_id) {
+    whereConditions.push('s.kurs_id = ?');
+    queryParams.push(parseInt(req.query.kurs_id, 10));
+  }
+
   const whereClause = whereConditions.length > 0 ? ` WHERE ${whereConditions.join(' AND ')}` : '';
 
   const query = `

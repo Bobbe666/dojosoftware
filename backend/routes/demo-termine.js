@@ -323,6 +323,100 @@ router.put('/admin/buchungen/:id', authenticateToken, onlySuperAdmin, async (req
   }
 });
 
+// GET /api/demo-termine/ical — iCal-Feed (token-geschützt, für Kalender-Abonnement)
+router.get('/ical', async (req, res) => {
+  try {
+    const { token } = req.query;
+    const [rows] = await pool.query(
+      "SELECT setting_value FROM saas_settings WHERE setting_key = 'demo_ical_token' LIMIT 1"
+    );
+    const validToken = rows[0]?.setting_value;
+    if (!validToken || token !== validToken) {
+      return res.status(401).type('text').send('Ungültiger Token');
+    }
+
+    const [slots] = await pool.query(`
+      SELECT s.id, s.slot_start, s.slot_end, s.duration_minutes, s.notes,
+             s.is_booked, s.is_available,
+             b.vorname, b.nachname, b.vereinsname, b.email, b.status AS buchung_status
+      FROM demo_termine_slots s
+      LEFT JOIN demo_buchungen b ON b.slot_id = s.id
+      WHERE s.slot_start > DATE_SUB(NOW(), INTERVAL 7 DAY)
+      ORDER BY s.slot_start ASC
+      LIMIT 500
+    `);
+
+    const fmtDt = (d) => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Dojosoftware//Demo-Termine//DE',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:Demo-Termine',
+      'X-WR-CALDESC:Freie und gebuchte Demo-Termine',
+    ];
+
+    for (const s of slots) {
+      const start = new Date(s.slot_start);
+      const end   = s.slot_end
+        ? new Date(s.slot_end)
+        : new Date(start.getTime() + s.duration_minutes * 60000);
+
+      const summary = s.is_booked
+        ? `Demo: ${s.vorname} ${s.nachname}${s.vereinsname ? ' – ' + s.vereinsname : ''}`
+        : 'Demo-Termin (frei)';
+
+      let desc = s.is_booked
+        ? `Status: ${s.buchung_status || 'ausstehend'}\nKontakt: ${s.email || ''}`
+        : 'Freier Demo-Slot (buchbar)';
+      if (s.notes) desc += `\nNotiz: ${s.notes}`;
+
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:demo-slot-${s.id}@dojosoftware`,
+        `DTSTART:${fmtDt(start)}`,
+        `DTEND:${fmtDt(end)}`,
+        `SUMMARY:${summary.replace(/,/g, '\\,')}`,
+        `DESCRIPTION:${desc.replace(/\n/g, '\\n')}`,
+        `STATUS:${s.is_booked ? 'CONFIRMED' : 'TENTATIVE'}`,
+        `CATEGORIES:${s.is_booked ? 'Demo gebucht' : 'Demo frei'}`,
+        'END:VEVENT'
+      );
+    }
+
+    lines.push('END:VCALENDAR');
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename="demo-termine.ics"');
+    res.send(lines.join('\r\n'));
+  } catch (err) {
+    res.status(500).type('text').send('Fehler: ' + err.message);
+  }
+});
+
+// GET /api/admin/demo-termine/ical-token — iCal-Feed-URL generieren/abrufen
+router.get('/admin/ical-token', authenticateToken, onlySuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT setting_value FROM saas_settings WHERE setting_key = 'demo_ical_token' LIMIT 1"
+    );
+    let token = rows[0]?.setting_value;
+    if (!token) {
+      token = crypto.randomBytes(24).toString('hex');
+      await pool.query(
+        "INSERT INTO saas_settings (setting_key, setting_value) VALUES ('demo_ical_token', ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+        [token, token]
+      );
+    }
+    const feedUrl = `https://dojo.tda-intl.org/api/demo-termine/ical?token=${token}`;
+    res.json({ success: true, feedUrl });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // GET /api/admin/demo-termine/stats — Kennzahlen für Dashboard
 router.get('/admin/stats', authenticateToken, onlySuperAdmin, async (req, res) => {
   try {

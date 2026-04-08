@@ -12,7 +12,7 @@ const router = express.Router();
 const PROMO_CONFIG = {
     name: 'early-bird-2026',
     maxDojos: 50,
-    startCount: 9,  // Beginnt bei 9 (bereits registrierte Dojos simulieren)
+    startCount: 15,  // Beginnt bei 15 (bereits registrierte Dojos simulieren)
     discountPercent: 50,
     discountMonths: 12,
     freeMonths: 2,

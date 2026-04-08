@@ -2,19 +2,26 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import '../styles/PlattformZentrale.css';
+import DemoTermine from './DemoTermine';
 
 // ─── Hilfsfunktionen ────────────────────────────────────────────────────────
 
+// Datums-Strings sicher parsen: "2026-04-09" als lokale Zeit (nicht UTC-Mitternacht)
+const parseDate = (dateStr) => {
+  if (!dateStr) return new Date(NaN);
+  // Nur-Datum-Strings (YYYY-MM-DD) → T12:00:00 anhängen, sonst UTC-Bug (-1 Tag in UTC+1/+2)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return new Date(dateStr + 'T12:00:00');
+  return new Date(dateStr);
+};
+
 const fmt = (dateStr) => {
   if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return parseDate(dateStr).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 const fmtTime = (dateStr) => {
   if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return parseDate(dateStr).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 };
 
 const PLATFORM_COLORS = {
@@ -22,6 +29,7 @@ const PLATFORM_COLORS = {
   events:  { bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.35)', text: '#fcd34d', dot: '#f59e0b'  },
   hof:     { bg: 'rgba(234,179,8,0.12)',   border: 'rgba(234,179,8,0.35)',  text: '#fde047', dot: '#eab308'  },
   pruefung:{ bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.3)',   text: '#86efac', dot: '#22c55e'  },
+  demo:    { bg: 'rgba(244,114,182,0.15)', border: 'rgba(244,114,182,0.4)', text: '#f9a8d4', dot: '#f472b6'  },
 };
 
 const PLATFORM_LABELS = {
@@ -29,11 +37,12 @@ const PLATFORM_LABELS = {
   events:  'EventSoftware',
   hof:     'Hall of Fame',
   pruefung:'Prüfungen',
+  demo:    'Demo-Buchung',
 };
 
 // ─── Kalender Hilfsfunktionen ────────────────────────────────────────────────
 
-const getEvtDate = (ev) => new Date(ev.datum || ev.date || '');
+const getEvtDate = (ev) => parseDate(ev.datum || ev.date || '');
 const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 const getWeekStart = (d) => { const c = new Date(d); c.setDate(c.getDate() - ((c.getDay() + 6) % 7)); c.setHours(0,0,0,0); return c; };
 
@@ -303,6 +312,7 @@ function KalenderView({ token }) {
     { key: 'events',   label: 'Events' },
     { key: 'hof',      label: 'HoF' },
     { key: 'pruefung', label: 'Prüfungen' },
+    { key: 'demo',     label: 'Demo' },
   ];
 
   return (
@@ -1344,8 +1354,8 @@ function UebersichtView({ token }) {
         const allUmfragen = rUmfragen.status === 'fulfilled' ? (rUmfragen.value.data.umfragen || []) : [];
         const allHof = rHof.status === 'fulfilled' ? (rHof.value.data.veranstaltungen || []) : [];
         const upcomingHof = allHof
-          .filter(v => v.datum && new Date(v.datum) >= today)
-          .sort((a, b) => new Date(a.datum) - new Date(b.datum));
+          .filter(v => v.datum && parseDate(v.datum) >= today)
+          .sort((a, b) => parseDate(a.datum) - parseDate(b.datum));
 
         setData({ events: upcoming, news: allNews.slice(0, 5), umfragen: allUmfragen, hof: upcomingHof, loading: false, error: '' });
       } catch (e) {
@@ -1788,12 +1798,13 @@ function UmfragenView({ token }) {
 // ─── Haupt-Komponente ────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'uebersicht', icon: '🏠', label: 'Übersicht' },
-  { id: 'kalender',   icon: '📅', label: 'Kalender' },
-  { id: 'news',       icon: '📰', label: 'News' },
-  { id: 'turniere',   icon: '🥊', label: 'Turniere' },
-  { id: 'hof',        icon: '🌟', label: 'HoF Events' },
-  { id: 'umfragen',   icon: '📋', label: 'Umfragen' },
+  { id: 'uebersicht',   icon: '🏠', label: 'Übersicht' },
+  { id: 'kalender',     icon: '📅', label: 'Kalender' },
+  { id: 'demo-termine', icon: '🎯', label: 'Demo-Termine' },
+  { id: 'news',         icon: '📰', label: 'News' },
+  { id: 'turniere',     icon: '🥊', label: 'Turniere' },
+  { id: 'hof',          icon: '🌟', label: 'HoF Events' },
+  { id: 'umfragen',     icon: '📋', label: 'Umfragen' },
 ];
 
 export default function PlattformZentrale() {
@@ -1827,12 +1838,13 @@ export default function PlattformZentrale() {
       </div>
 
       {/* Tab-Inhalt */}
-      {activeTab === 'uebersicht' && <UebersichtView token={token} />}
-      {activeTab === 'kalender'   && <KalenderView   token={token} />}
-      {activeTab === 'news'       && <NewsView        token={token} />}
-      {activeTab === 'turniere'   && <TurnierView     token={token} />}
-      {activeTab === 'hof'        && <HofView         token={token} />}
-      {activeTab === 'umfragen'   && <UmfragenView    token={token} />}
+      {activeTab === 'uebersicht'   && <UebersichtView token={token} />}
+      {activeTab === 'kalender'     && <KalenderView   token={token} />}
+      {activeTab === 'news'         && <NewsView        token={token} />}
+      {activeTab === 'turniere'     && <TurnierView     token={token} />}
+      {activeTab === 'hof'          && <HofView         token={token} />}
+      {activeTab === 'umfragen'     && <UmfragenView    token={token} />}
+      {activeTab === 'demo-termine' && <DemoTermine />}
     </div>
   );
 }

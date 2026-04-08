@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { useChatContext } from '../../context/ChatContext.jsx';
 
-const EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+const EMOJIS = ['🥋', '🤜', '🏆', '🎯', '💪', '⚡'];
 
 const ChatMessage = ({ message, onReact }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -17,9 +17,19 @@ const ChatMessage = ({ message, onReact }) => {
     setShowEmojiPicker(false);
   };
 
+  const isToday = (dateStr) => {
+    const d = new Date(dateStr);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate();
+  };
+
   const formatTime = (dateStr) => {
     const d = new Date(dateStr);
-    return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const date = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+    return `${date} ${time}`;
   };
 
   const isPushRef = message.message_type === 'push_ref';
@@ -54,7 +64,9 @@ const ChatMessage = ({ message, onReact }) => {
           ) : (
             <span className="chat-message-text">{message.content}</span>
           )}
-          <span className="chat-message-time">{formatTime(message.sent_at)}</span>
+          <span className={`chat-message-time${isToday(message.sent_at) ? ' chat-message-time--today' : ''}`}>
+            {formatTime(message.sent_at)}
+          </span>
         </div>
 
         {/* Emoji-Picker (bei Hover/Doppelklick) */}

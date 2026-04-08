@@ -93,7 +93,7 @@
   border: 1px solid #334155;
   border-radius: 16px;
   padding: 2rem;
-  max-width: 700px;
+  max-width: 920px;
   margin: 0 auto 1.5rem;
 }
 .db-card-title {
@@ -113,6 +113,12 @@
 
 /* Empty */
 .db-empty { text-align: center; padding: 2rem; color: #94a3b8; }
+.db-empty-period {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #6366f1;
+  margin-bottom: 0.5rem;
+}
 .db-muted { color: #94a3b8; }
 .db-muted a { color: #818cf8; }
 .db-center { text-align: center; padding: 1rem; }
@@ -331,15 +337,20 @@
 /* ── Filter-Leiste ── */
 .db-filter-bar {
   display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.75rem;
+}
+.db-filter-top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
-  background: #0f172a;
-  border: 1px solid #1e293b;
-  border-radius: 12px;
-  padding: 0.65rem 1rem;
-  margin-bottom: 0.75rem;
 }
 .db-filter-left {
   display: flex;
@@ -375,10 +386,116 @@
   color: #fff;
   font-weight: 600;
 }
-.db-filter-range {
+
+/* ── Zeitraum-Wähler (unter den Pills) ── */
+.db-period-picker {
+  border-top: 1px solid #1e293b;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Universeller Datepicker */
+.db-period-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.1rem;
+}
+.db-period-nav-label {
   font-size: 0.78rem;
-  color: #475569;
+  color: #64748b;
   white-space: nowrap;
+}
+
+/* Einzel-Zeile (Tag / Woche) */
+.db-period-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.db-period-input {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  color-scheme: dark;
+  font-family: inherit;
+}
+.db-period-input:focus { outline: none; border-color: #6366f1; }
+/* Safari: Datepicker-Teile explizit einfärben */
+.db-period-input::-webkit-datetime-edit { color: #f1f5f9; }
+.db-period-input::-webkit-datetime-edit-fields-wrapper { color: #f1f5f9; }
+.db-period-input::-webkit-datetime-edit-text { color: #94a3b8; }
+.db-period-input::-webkit-datetime-edit-day-field,
+.db-period-input::-webkit-datetime-edit-month-field,
+.db-period-input::-webkit-datetime-edit-year-field { color: #f1f5f9; }
+.db-period-input::-webkit-calendar-picker-indicator {
+  filter: invert(0.8) brightness(1.2);
+  cursor: pointer;
+}
+
+/* Info-Label neben dem Picker */
+.db-period-info {
+  font-size: 0.82rem;
+  color: #818cf8;
+  background: #6366f115;
+  border: 1px solid #6366f130;
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+}
+
+/* Chip-Zeile */
+.db-period-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.db-period-chip {
+  padding: 0.28rem 0.7rem;
+  border-radius: 99px;
+  border: 1px solid #334155;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.db-period-chip:hover { border-color: #6366f1; color: #f1f5f9; }
+.db-period-chip.active {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+  font-weight: 600;
+}
+.db-period-chip-monat { min-width: 2.8rem; justify-content: center; }
+.db-period-chip-q { border-radius: 8px; }
+.db-period-chip-jahr { font-size: 0.9rem; font-weight: 600; padding: 0.3rem 0.9rem; }
+.db-period-chip-sub { font-size: 0.7em; opacity: 0.7; }
+
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .db-card { padding: 1.25rem; }
+  .db-filter-top { flex-direction: column; align-items: flex-start; }
+  .db-period-range-label { text-align: left; }
+  .db-slot-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+@media (max-width: 480px) {
+  .db-page { padding: 1rem 0.75rem 3rem; }
+  .db-card { padding: 1rem; border-radius: 12px; }
+  .db-period-chip-monat { min-width: 2.4rem; font-size: 0.75rem; }
 }
 
 /* ── Nur-Frei Toggle ── */

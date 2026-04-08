@@ -2506,6 +2506,14 @@ h2.pv3-zug-h2 {
   accent-color: var(--primary);
 }
 
+.pv3-checkbox-warning {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #f59e0b;
+  opacity: 0.8;
+}
+
 .pv3-th-sortable {
   min-width: 140px;
   color: var(--warning);

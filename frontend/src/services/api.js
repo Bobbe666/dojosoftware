@@ -88,9 +88,18 @@ apiClient.interceptors.response.use(
       window.location.href = '/login';
     }
 
-    // Bei 403 Forbidden -> Access Denied
+    // Bei 403: Token abgelaufen → Logout, sonst Access Denied loggen
     if (error.response?.status === 403) {
-      console.error('Access Denied:', error.response.data);
+      const msg = error.response.data?.message || '';
+      if (msg.includes('Token ungültig') || msg.includes('abgelaufen')) {
+        localStorage.removeItem('dojo_auth_token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('dojo_user');
+        localStorage.removeItem('dojo_session_expiry');
+        window.location.href = '/login?expired=1';
+      } else {
+        console.error('Access Denied:', error.response.data);
+      }
     }
 
     // Bei 500 Server Error

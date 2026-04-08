@@ -193,8 +193,12 @@ router.get('/health', (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { mitglied_id, stundenplan_id, datum, checkin_type } = req.body;
-    // datum: optional — wenn übergeben, aktuelle Uhrzeit beibehalten (kein T12:00:00!)
+    // datum: optional — wenn übergeben, Datum des Eintrags verwenden (aktuelle Uhrzeit beibehalten)
     const checkinDate = new Date();
+    if (datum) {
+      const [year, month, day] = datum.split('-').map(Number);
+      checkinDate.setFullYear(year, month - 1, day);
+    }
 
     // Basic validation
     if (!mitglied_id || !stundenplan_id) {

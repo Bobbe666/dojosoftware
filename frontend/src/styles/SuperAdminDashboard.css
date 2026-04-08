@@ -3976,6 +3976,146 @@
   display: block;
 }
 
+/* HOF Live Section — new stats + table */
+.sad-hof-refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.sad-hof-refresh-btn:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.sad-hof-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.sad-hof-error {
+  padding: 0.75rem 1rem;
+  background: rgba(220, 50, 30, 0.08);
+  border: 1px solid rgba(220, 80, 50, 0.22);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.sad-hof-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.sad-hof-stat-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-align: center;
+}
+
+.sad-hof-stat-card--gold {
+  border-color: rgba(200, 134, 10, 0.4);
+  background: rgba(200, 134, 10, 0.05);
+}
+
+.sad-hof-stat-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  margin-bottom: 0.2rem;
+}
+
+.sad-hof-stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.sad-hof-stat-nr {
+  font-size: 1.2rem;
+  color: #C8860A;
+  letter-spacing: 0.04em;
+}
+
+.sad-hof-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.sad-hof-table-wrap {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sad-hof-table-title {
+  padding: 0.85rem 1.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--text-primary);
+}
+
+.sad-hof-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.sad-hof-table th {
+  padding: 0.65rem 1.25rem;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-tertiary);
+}
+
+.sad-hof-table td {
+  padding: 0.65rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+  color: var(--text-primary);
+}
+
+.sad-hof-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sad-hof-table tr:hover td {
+  background: var(--bg-hover, rgba(255,255,255,0.03));
+}
+
+.sad-hof-td-nr {
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: #C8860A;
+  font-weight: 600;
+}
+
 /* Email settings alert */
 .sad-email-info-box {
   margin-top: 2rem;
@@ -5065,4 +5205,117 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 160px;
+}
+
+/* =============================================
+   SSL-ZERTIFIKAT-WARNUNGEN
+   ============================================= */
+
+/* Briefing-Popup: SSL-Item */
+.sad-ssl-item {
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.82rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.sad-ssl-item--urgent { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+.sad-ssl-item--warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+.sad-ssl-item-header { display: flex; justify-content: space-between; align-items: center; }
+.sad-ssl-badge { font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 4px; }
+.sad-ssl-badge--urgent { color: #ef4444; background: rgba(239,68,68,0.15); }
+.sad-ssl-badge--warning { color: #f59e0b; background: rgba(245,158,11,0.15); }
+.sad-ssl-item-type { font-size: 0.78rem; opacity: 0.8; }
+.sad-ssl-cmd-block { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.15rem; }
+.sad-ssl-dns-hint { font-size: 0.75rem; opacity: 0.75; font-style: italic; }
+
+/* Persistent Overview-Tab: Alert-Bar */
+.sad-ssl-alert-bar {
+  margin-bottom: 1.2rem;
+  border-radius: 10px;
+  border: 1px solid rgba(239,68,68,0.4);
+  background: rgba(239,68,68,0.06);
+  overflow: hidden;
+}
+.sad-ssl-alert-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: rgba(239,68,68,0.12);
+  border-bottom: 1px solid rgba(239,68,68,0.2);
+  color: #f87171;
+}
+.sad-ssl-refresh-btn {
+  background: none;
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #f87171;
+  border-radius: 5px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.sad-ssl-refresh-btn:hover { background: rgba(239,68,68,0.15); }
+
+.sad-ssl-alert-item {
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.sad-ssl-alert-item--urgent { border-left: 3px solid #ef4444; }
+.sad-ssl-alert-item--warning { border-left: 3px solid #f59e0b; }
+
+.sad-ssl-alert-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  list-style: none;
+  user-select: none;
+}
+.sad-ssl-alert-summary::-webkit-details-marker { display: none; }
+.sad-ssl-alert-summary::before { content: '▶'; font-size: 0.6rem; opacity: 0.5; transition: transform 0.15s; }
+details[open] .sad-ssl-alert-summary::before { transform: rotate(90deg); }
+
+.sad-ssl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.sad-ssl-dot--urgent { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.6); }
+.sad-ssl-dot--warning { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+
+.sad-ssl-alert-days {
+  margin-left: auto;
+  font-size: 0.78rem;
+  opacity: 0.75;
+}
+
+.sad-ssl-alert-body {
+  padding: 0.5rem 1rem 0.85rem 1rem;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.sad-ssl-step {
+  margin: 0;
+  opacity: 0.85;
+  line-height: 1.5;
+}
+.sad-ssl-cmd {
+  display: block;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.72rem;
+  color: #93c5fd;
+  word-break: break-all;
+  white-space: pre-wrap;
 }

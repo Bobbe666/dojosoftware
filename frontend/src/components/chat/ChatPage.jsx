@@ -95,10 +95,10 @@ const ChatPage = () => {
             />
           ) : (
             <div className="chat-placeholder">
-              <div className="chat-placeholder-icon">💬</div>
+              <div className="chat-placeholder-icon">🥋</div>
               <div className="chat-placeholder-title">Wähle einen Chat</div>
               <div className="chat-placeholder-hint">
-                Wähle links einen Chat aus oder starte eine neue Unterhaltung.
+                Wähle links einen Chat aus oder starte eine neue Runde.
               </div>
             </div>
           )}

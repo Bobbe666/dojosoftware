@@ -107,7 +107,7 @@ router.get("/", (req, res) => {
 
     if (stil) {
         const query = `
-            SELECT DISTINCT m.mitglied_id, m.vorname, m.nachname, m.strasse as adresse, m.hausnummer, m.plz, m.ort, m.email, m.telefon_mobil, m.foto_pfad
+            SELECT DISTINCT m.mitglied_id, m.vorname, m.nachname, m.geschlecht, DATE_FORMAT(m.geburtsdatum, '%Y-%m-%d') AS geburtsdatum, m.strasse as adresse, m.hausnummer, m.plz, m.ort, m.email, m.telefon_mobil, m.foto_pfad
             FROM mitglieder m
             JOIN mitglied_stile ms ON m.mitglied_id = ms.mitglied_id
             ${whereClause}
@@ -125,7 +125,7 @@ router.get("/", (req, res) => {
     } else {
         // Standard: Alle aktiven Mitglieder
         const query = `
-            SELECT mitglied_id, vorname, nachname, magicline_customer_number AS mitgliedsnummer, strasse as adresse, hausnummer, plz, ort, email, telefon_mobil, foto_pfad
+            SELECT mitglied_id, vorname, nachname, magicline_customer_number AS mitgliedsnummer, geschlecht, DATE_FORMAT(geburtsdatum, '%Y-%m-%d') AS geburtsdatum, strasse as adresse, hausnummer, plz, ort, email, telefon_mobil, foto_pfad
             FROM mitglieder m
             ${whereClause}
             ORDER BY nachname, vorname

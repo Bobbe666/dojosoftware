@@ -2475,4 +2475,60 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/ssl-status — SSL-Zertifikat-Status aller Domains (certbot)
+router.get('/ssl-status', requireSuperAdmin, async (req, res) => {
+  const { exec } = require('child_process');
+  const fsSync = require('fs');
+
+  exec('certbot certificates 2>/dev/null', { timeout: 30000 }, (error, stdout) => {
+    try {
+      const certs = [];
+      const blocks = stdout.split(/\n(?=  Certificate Name:)/);
+
+      for (const block of blocks) {
+        const nameMatch = block.match(/Certificate Name:\s+(\S+)/);
+        const domainsMatch = block.match(/Domains:\s+(.+)/);
+        const validMatch = block.match(/VALID:\s+(\d+)\s+days?/);
+        const expiredMatch = /EXPIRED/.test(block);
+        const expiryDateMatch = block.match(/Expiry Date:\s+([\d-]+ [\d:]+)/);
+
+        if (!nameMatch) continue;
+
+        const name = nameMatch[1].trim();
+        const domains = domainsMatch ? domainsMatch[1].trim() : '';
+        const daysLeft = validMatch ? parseInt(validMatch[1]) : (expiredMatch ? 0 : null);
+        const expiryDate = expiryDateMatch ? expiryDateMatch[1] : null;
+
+        let status = 'ok';
+        if (daysLeft === null) status = 'unknown';
+        else if (expiredMatch || daysLeft === 0) status = 'expired';
+        else if (daysLeft <= 7) status = 'critical';
+        else if (daysLeft <= 30) status = 'warning';
+
+        // Renewal-Typ aus Config-Datei lesen
+        let renewalType = 'auto';
+        let renewalAuthenticator = 'nginx';
+        const isWildcard = domains.includes('*.');
+        try {
+          const conf = fsSync.readFileSync(`/etc/letsencrypt/renewal/${name}.conf`, 'utf8');
+          if (conf.includes('authenticator = manual')) { renewalType = 'manual'; renewalAuthenticator = 'manual'; }
+          else if (conf.includes('authenticator = nginx')) renewalAuthenticator = 'nginx';
+          else if (conf.includes('authenticator = webroot')) renewalAuthenticator = 'webroot';
+          if (conf.includes('dns-01')) renewalType = 'manual';
+        } catch (_) {}
+
+        certs.push({ name, domains, daysLeft, expiryDate, status, renewalType, renewalAuthenticator, isWildcard });
+      }
+
+      certs.sort((a, b) => (a.daysLeft ?? 999) - (b.daysLeft ?? 999));
+      const warnings = certs.filter(c => ['expired', 'critical', 'warning'].includes(c.status));
+
+      res.json({ success: true, certs, warnings });
+    } catch (err) {
+      console.error('SSL-Status Fehler:', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+});
+
 module.exports = router;

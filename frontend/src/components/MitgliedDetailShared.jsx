@@ -28,6 +28,7 @@ import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab, MemberInjuryTab } from './mitglied-detail';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import VorlagenSendenModal from './VorlagenSendenModal';
+import HofNominierungModal from './HofNominierungModal';
 
 // ── Versandhistorie-Sektion im Mitgliederprofil ────────────────────────────────
 function MitgliedVersandhistorie({ mitgliedId, activeDojo }) {
@@ -511,6 +512,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showMitgliedsausweis, setShowMitgliedsausweis] = useState(false);
   const [showVorlagenSenden, setShowVorlagenSenden] = useState(false);
+  const [showHofNominierung, setShowHofNominierung] = useState(false);
   const [showVertragAnpassungModal, setShowVertragAnpassungModal] = useState(false);
   const [vertragAnpassungen, setVertragAnpassungen] = useState([]);
   const [vertragAnpassungForm, setVertragAnpassungForm] = useState({
@@ -2925,6 +2927,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       >
                         <span className="menu-item-icon">📧</span>
                         <span>Dokument senden</span>
+                      </button>
+
+                      <button
+                        className="mitglied-detail-menu-item"
+                        onClick={() => {
+                          setShowHofNominierung(true);
+                          setShowActionsMenu(false);
+                        }}
+                      >
+                        <span className="menu-item-icon">🏛️</span>
+                        <span>Für Hall of Fame nominieren</span>
                       </button>
 
                       <button
@@ -7445,6 +7458,15 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           vorlagenId={null}
           mitgliedId={member.id}
           onClose={() => setShowVorlagenSenden(false)}
+        />
+      )}
+
+      {/* Hall of Fame Nominierung */}
+      {showHofNominierung && (
+        <HofNominierungModal
+          mitglied={mitglied}
+          onClose={() => setShowHofNominierung(false)}
+          onSuccess={() => setTimeout(() => setShowHofNominierung(false), 2500)}
         />
       )}
 

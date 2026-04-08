@@ -65,6 +65,14 @@ router.get('/kalender.ics', async (req, res) => {
        ORDER BY p.pruefungsdatum`,
       [von, bis]
     ),
+    pool.query(
+      `SELECT s.id, s.slot_start, s.duration_minutes, b.vorname, b.nachname, b.vereinsname
+       FROM demo_termine_slots s
+       LEFT JOIN demo_buchungen b ON b.slot_id = s.id AND b.status != 'abgesagt'
+       WHERE s.slot_start BETWEEN ? AND ? AND s.is_booked = 1
+       ORDER BY s.slot_start`,
+      [von, bis]
+    ),
   ]);
 
   const evList = [];
@@ -98,6 +106,24 @@ router.get('/kalender.ics', async (req, res) => {
       evList.push({ uid: 'pruefung-' + p.id + '@tda', summary: p.titel || ('Pruefung - ' + (p.dojo_name || 'Dojo')), datum: d, pruefungszeit: zeit, location: p.ort, description: 'Pruefung | dojo.tda-intl.org' });
     });
   }
+  if (sources[4].status === 'fulfilled') {
+    const rows = sources[4].value[0] || [];
+    rows.forEach(s => {
+      const start = s.slot_start instanceof Date ? s.slot_start : new Date(s.slot_start);
+      const datum = toLocalDate(start);
+      const uhrzeit = `${String(start.getHours()).padStart(2,'0')}:${String(start.getMinutes()).padStart(2,'0')}`;
+      const name = (s.vorname && s.nachname) ? `${s.vorname} ${s.nachname}` : 'Interessent';
+      const verein = s.vereinsname ? ` – ${s.vereinsname}` : '';
+      evList.push({
+        uid: 'demo-' + s.id + '@tda',
+        summary: `Demo: ${name}${verein}`,
+        datum,
+        pruefungszeit: uhrzeit,  // pruefungszeit-Feld = Uhrzeit → wird mit TZID=Berlin ausgegeben
+        dauer_min: s.duration_minutes || 60,
+        description: 'Demo-Buchung | dojo.tda-intl.org'
+      });
+    });
+  }
 
   const now = toICSDate(new Date().toISOString());
   const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//TDA Plattform-Zentrale//DE','X-WR-CALNAME:TDA Plattform-Kalender','X-WR-TIMEZONE:Europe/Berlin','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
@@ -114,10 +140,12 @@ router.get('/kalender.ics', async (req, res) => {
       // Mit Uhrzeit: lokale Zeit Berlin
       const timeStr = ev.pruefungszeit.replace(':', '') + '00';
       lines.push('DTSTART;TZID=Europe/Berlin:' + dateOnly + 'T' + timeStr);
-      // Standarddauer Prüfung: 2 Stunden
       const [hh, mm] = ev.pruefungszeit.split(':').map(Number);
-      const endH = String(hh + 2).padStart(2, '0');
-      lines.push('DTEND;TZID=Europe/Berlin:' + dateOnly + 'T' + endH + mm.toString().padStart(2,'0') + '00');
+      const dauer = ev.dauer_min || 120; // Demo: aus Slot, Prüfung: 2h Standard
+      const totalMin = hh * 60 + mm + dauer;
+      const endH = String(Math.floor(totalMin / 60) % 24).padStart(2, '0');
+      const endM = String(totalMin % 60).padStart(2, '0');
+      lines.push('DTEND;TZID=Europe/Berlin:' + dateOnly + 'T' + endH + endM + '00');
     } else {
       lines.push('DTSTART;VALUE=DATE:' + dateOnly);
       lines.push('DTEND;VALUE=DATE:' + dtend.substring(0, 8));
@@ -186,8 +214,16 @@ router.get('/kalender', async (req, res) => {
       GROUP BY p.pruefungsdatum, p.dojo_id, p.pruefungsort
       ORDER BY p.pruefungsdatum
     `, [von, bis]),
-    // 5. (reserviert)
-    Promise.resolve([[]])
+    // 5. Demo-Termine (gebuchte Slots)
+    pool.query(`
+      SELECT s.id, s.slot_start, s.slot_end, s.duration_minutes,
+             b.vorname, b.nachname, b.vereinsname, b.email
+      FROM demo_termine_slots s
+      LEFT JOIN demo_buchungen b ON b.slot_id = s.id AND b.status != 'abgesagt'
+      WHERE s.slot_start BETWEEN ? AND ?
+        AND s.is_booked = 1
+      ORDER BY s.slot_start
+    `, [von, bis])
   ]);
 
   const all = [];
@@ -273,6 +309,29 @@ router.get('/kalender', async (req, res) => {
   }
 
 
+  // Demo-Buchungen
+  if (sources[4].status === 'fulfilled') {
+    const rows = sources[4].value[0] || [];
+    rows.forEach(d => {
+      const start = d.slot_start instanceof Date ? d.slot_start : new Date(d.slot_start);
+      const datum = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
+      const uhrzeit = start.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      const name = (d.vorname && d.nachname) ? `${d.vorname} ${d.nachname}` : 'Interessent';
+      const verein = d.vereinsname ? ` – ${d.vereinsname}` : '';
+      all.push({
+        id: `demo-${d.id}`,
+        typ: 'demo', platform: 'demo',
+        titel: `Demo: ${name}${verein}`,
+        datum,
+        uhrzeit,
+        ort: null,
+        farbe: '#f472b6',
+        url: null,
+        raw_id: d.id
+      });
+    });
+  }
+
   all.sort((a, b) => new Date(a.datum) - new Date(b.datum));
 
   res.json({
@@ -283,12 +342,14 @@ router.get('/kalender', async (req, res) => {
       events: all.filter(e => e.typ === 'event').length,
       hof: all.filter(e => e.typ === 'hof').length,
       pruefungen: all.filter(e => e.typ === 'pruefung').length,
+      demo: all.filter(e => e.typ === 'demo').length,
       gesamt: all.length,
       quellen: {
         events_turniere: sources[0].status,
         events_events: sources[1].status,
         hof: sources[2].status,
-        dojo_pruefungen: sources[3].status
+        dojo_pruefungen: sources[3].status,
+        demo: sources[4].status
       }
     }
   });

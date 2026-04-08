@@ -29,6 +29,7 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import VerbandDashboard from './VerbandDashboard';
 import SupportDashboard from './SupportDashboard';
 import ShopDashboard from './shop/ShopDashboard';
+import HofDashboard from './HofDashboard';
 import SupportTickets from './SupportTickets';
 import FeatureBoard from './FeatureBoard';
 import TrialBanner from './TrialBanner';
@@ -262,6 +263,7 @@ function Dashboard() {
     { id: 'checkin', label: t('tabs.checkin'), icon: '📱' },
     { id: 'mitglieder', label: t('tabs.mitglieder'), icon: '👥' },
     { id: 'pruefungswesen', label: t('tabs.pruefungswesen'), icon: '🏆' },
+    { id: 'hof', label: 'Hall of Fame', icon: '🏛️' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -347,16 +349,10 @@ function Dashboard() {
   const verwaltungCards = [
     {
       icon: '🥋',
-      title: 'Kurse',
-      description: 'Kurse und Gruppen verwalten',
+      title: 'Kursverwaltung',
+      description: 'Kurse, Stundenplan & Trainer',
       path: '/dashboard/kurse',
-      count: stats.kurse
-    },
-    {
-      icon: '📋',
-      title: 'Stundenplan',
-      description: 'Stundenplan und Kurszeiten verwalten',
-      path: '/dashboard/stundenplan',
+      count: stats.kurse,
       featured: true
     },
     // ✨ NEUE STIL-VERWALTUNG ✨
@@ -370,24 +366,11 @@ function Dashboard() {
       count: stats.stile || 0
     },
     {
-      icon: '👥',
-      title: 'Gruppen',
-      description: 'Trainingsgruppen verwalten',
-      path: '/dashboard/gruppen'
-    },
-    {
       icon: '📍',
       title: 'Standorte',
       description: 'Standorte & Filialen verwalten',
       path: '/dashboard/standorte',
       count: standorte?.length || 0
-    },
-    {
-      icon: '👨‍🏫',
-      title: 'Trainer',
-      description: 'Trainer und Qualifikationen verwalten',
-      path: '/dashboard/trainer',
-      count: stats.trainer
     },
     {
       icon: '⏱️',
@@ -1465,6 +1448,13 @@ function Dashboard() {
                             <div className="nav-arrow">→</div>
                           </div>
                         ))}
+                        </div>
+                      )}
+
+                      {/* 🏛️ Hall of Fame Tab */}
+                      {activeTab === 'hof' && (
+                        <div className="content-card">
+                          <HofDashboard />
                         </div>
                       )}
 

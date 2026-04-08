@@ -68,7 +68,9 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         // Tenant check
-        if (!req.tenant?.dojo_id) {
+        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
+                            (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
+        if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
@@ -83,7 +85,7 @@ router.post('/', async (req, res) => {
             // Get main location for this dojo
             const hauptstandort = await queryAsync(
                 'SELECT standort_id FROM standorte WHERE dojo_id = ? AND ist_hauptstandort = TRUE LIMIT 1',
-                [req.tenant.dojo_id]
+                [_raumDojoId]
             );
             if (hauptstandort.length === 0) {
                 return res.status(500).json({ error: 'Kein Hauptstandort gefunden' });
@@ -93,7 +95,7 @@ router.post('/', async (req, res) => {
             // Validate that standort_id belongs to this dojo
             const standort = await queryAsync(
                 'SELECT standort_id FROM standorte WHERE standort_id = ? AND dojo_id = ?',
-                [standort_id, req.tenant.dojo_id]
+                [standort_id, _raumDojoId]
             );
             if (standort.length === 0) {
                 return res.status(400).json({ error: 'Ungültiger Standort' });
@@ -103,7 +105,7 @@ router.post('/', async (req, res) => {
         // Höchste Reihenfolge ermitteln (pro dojo)
         const maxReihenfolge = await queryAsync(`
             SELECT MAX(reihenfolge) as max_reihenfolge FROM raeume WHERE dojo_id = ?
-        `, [req.tenant.dojo_id]);
+        `, [_raumDojoId]);
         const neueReihenfolge = (maxReihenfolge[0].max_reihenfolge || 0) + 1;
 
         const result = await queryAsync(`
@@ -117,7 +119,7 @@ router.post('/', async (req, res) => {
             farbe || '#4F46E5',
             aktiv !== false ? 1 : 0,
             neueReihenfolge,
-            req.tenant.dojo_id,
+            _raumDojoId,
             finalStandortId
         ]);
         res.json({
@@ -131,7 +133,7 @@ router.post('/', async (req, res) => {
                 farbe: farbe || '#4F46E5',
                 aktiv: aktiv !== false ? 1 : 0,
                 reihenfolge: neueReihenfolge,
-                dojo_id: req.tenant.dojo_id,
+                dojo_id: _raumDojoId,
                 standort_id: finalStandortId
             }
         });
@@ -145,7 +147,8 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         // Tenant check
-        if (!req.tenant?.dojo_id) {
+        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
@@ -158,7 +161,7 @@ router.put('/:id', async (req, res) => {
         // Verify room belongs to this dojo
         const existingRaum = await queryAsync(
             'SELECT raum_id FROM raeume WHERE raum_id = ? AND dojo_id = ?',
-            [id, req.tenant.dojo_id]
+            [id, _raumDojoId]
         );
         if (existingRaum.length === 0) {
             return res.status(404).json({ error: 'Raum nicht gefunden' });
@@ -168,7 +171,7 @@ router.put('/:id', async (req, res) => {
         if (standort_id) {
             const standort = await queryAsync(
                 'SELECT standort_id FROM standorte WHERE standort_id = ? AND dojo_id = ?',
-                [standort_id, req.tenant.dojo_id]
+                [standort_id, _raumDojoId]
             );
             if (standort.length === 0) {
                 return res.status(400).json({ error: 'Ungültiger Standort' });
@@ -194,7 +197,7 @@ router.put('/:id', async (req, res) => {
         }
 
         updateQuery += ' WHERE raum_id = ? AND dojo_id = ?';
-        params.push(id, req.tenant.dojo_id);
+        params.push(id, _raumDojoId);
 
         await queryAsync(updateQuery, params);
         res.json({ success: true, message: 'Raum erfolgreich aktualisiert' });
@@ -208,7 +211,8 @@ router.put('/:id', async (req, res) => {
 router.put('/:id/reihenfolge', async (req, res) => {
     try {
         // Tenant check
-        if (!req.tenant?.dojo_id) {
+        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
@@ -218,7 +222,7 @@ router.put('/:id/reihenfolge', async (req, res) => {
             UPDATE raeume
             SET reihenfolge = ?
             WHERE raum_id = ? AND dojo_id = ?
-        `, [neue_reihenfolge, id, req.tenant.dojo_id]);
+        `, [neue_reihenfolge, id, _raumDojoId]);
         res.json({ success: true, message: 'Reihenfolge erfolgreich aktualisiert' });
     } catch (err) {
         logger.error('Fehler beim Aktualisieren der Reihenfolge:', { error: err });
@@ -230,7 +234,8 @@ router.put('/:id/reihenfolge', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         // Tenant check
-        if (!req.tenant?.dojo_id) {
+        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
@@ -239,7 +244,7 @@ router.delete('/:id', async (req, res) => {
         // Verify room belongs to this dojo
         const existingRaum = await queryAsync(
             'SELECT raum_id FROM raeume WHERE raum_id = ? AND dojo_id = ?',
-            [id, req.tenant.dojo_id]
+            [id, _raumDojoId]
         );
         if (existingRaum.length === 0) {
             return res.status(404).json({ error: 'Raum nicht gefunden' });
@@ -248,7 +253,7 @@ router.delete('/:id', async (req, res) => {
         // Prüfen ob Raum in Kursen verwendet wird
         const kursVerwendung = await queryAsync(`
             SELECT COUNT(*) as count FROM kurse WHERE raum_id = ? AND dojo_id = ?
-        `, [id, req.tenant.dojo_id]);
+        `, [id, _raumDojoId]);
 
         if (kursVerwendung[0].count > 0) {
             return res.status(400).json({
@@ -257,7 +262,7 @@ router.delete('/:id', async (req, res) => {
             });
         }
 
-        await queryAsync('DELETE FROM raeume WHERE raum_id = ? AND dojo_id = ?', [id, req.tenant.dojo_id]);
+        await queryAsync('DELETE FROM raeume WHERE raum_id = ? AND dojo_id = ?', [id, _raumDojoId]);
         res.json({ success: true, message: 'Raum erfolgreich gelöscht' });
     } catch (err) {
         logger.error('Fehler beim Löschen des Raums:', { error: err });
@@ -269,11 +274,12 @@ router.delete('/:id', async (req, res) => {
 router.get('/stats', async (req, res) => {
     try {
         // Tenant check
-        if (!req.tenant?.dojo_id) {
+        const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
+        if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
-        const dojoId = req.tenant.dojo_id;
+        const dojoId = _raumDojoId;
         const [
             gesamtRaeume,
             aktiveRaeume,

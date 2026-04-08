@@ -35,7 +35,6 @@ import DokumentenZentrale from './DokumentenZentrale';
 import Auswertungen from './Auswertungen';
 import PlattformZentrale from './PlattformZentrale';
 import PlattformZugangsdaten from './PlattformZugangsdaten';
-import DemoTermine from './DemoTermine';
 import '../styles/SuperAdminDashboard.css';
 
 // ── EventSoftware-Sektion ──────────────────────────────────────────────────
@@ -2008,16 +2007,11 @@ const SuperAdminDashboard = () => {
               <div>
             {renderSubTabs('dojosoftware', [
               { id: 'lizenzen', icon: '📜', label: 'Lizenzen' },
-              { id: 'demo-termine', icon: '📅', label: 'Demo-Termine' },
               { id: 'dokumente', icon: '📂', label: 'Dokumente' }
             ])}
 
             {subActiveTab.dojosoftware === 'lizenzen' && (
               <DojoLizenzverwaltung />
-            )}
-
-            {subActiveTab.dojosoftware === 'demo-termine' && (
-              <DemoTermine />
             )}
 
             {subActiveTab.dojosoftware === 'dokumente' && (

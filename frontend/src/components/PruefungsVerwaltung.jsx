@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useDojoContext } from '../context/DojoContext';
 import { Check, X, Calendar, Award, Users, TrendingUp, ChevronUp, ChevronDown, Download, Edit, Trash2, Play, FileText, Scroll, Printer } from 'lucide-react';
@@ -82,6 +83,7 @@ const PruefungsVerwaltung = () => {
     pruefer_name: '',
     stil_id: '',
     pruefungsgebuehr: '',
+    zahlungsart: '',
     anmeldefrist: '',
     gurtlaenge: '',
     bemerkungen: '',
@@ -971,7 +973,8 @@ const PruefungsVerwaltung = () => {
             bemerkungen: datenZuVerwenden.bemerkungen || null,
             teilnahmebedingungen: datenZuVerwenden.teilnahmebedingungen || null,
             dojo_id: parseInt(dojoId),
-            pruefungszeit: datenZuVerwenden.pruefungszeit || '10:00'
+            pruefungszeit: datenZuVerwenden.pruefungszeit || '10:00',
+            zahlungsart: datenZuVerwenden.zahlungsart || null
           })
         }
       );
@@ -3247,19 +3250,48 @@ ${pages}
                 </div>
               </div>
             </div>
-            {selectedKandidaten.length > 0 && (
-              <button
-                onClick={() => {
-                  // Batch-Zulassung für ausgewählte Kandidaten
-                  selectedKandidaten.forEach(kandidat => handleKandidatZulassen(kandidat));
-                  setSelectedKandidaten([]);
-                }}
-                className="btn btn-primary pv3-batch-btn"
-              >
-                <Check size={20} />
-                {selectedKandidaten.length} Kandidat{selectedKandidaten.length > 1 ? 'en' : ''} zulassen
-              </button>
-            )}
+            {selectedKandidaten.length > 0 && (() => {
+              const berechtigt = selectedKandidaten.filter(k => k.berechtigt);
+              const nichtBerechtigt = selectedKandidaten.filter(k => !k.berechtigt);
+              return (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {berechtigt.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        for (const k of berechtigt) await handleKandidatZulassen(k);
+                        setSelectedKandidaten([]);
+                      }}
+                      className="btn btn-primary pv3-batch-btn"
+                    >
+                      <Check size={18} />
+                      {berechtigt.length} zulassen
+                    </button>
+                  )}
+                  {nichtBerechtigt.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        const namen = nichtBerechtigt.map(k => `${k.vorname} ${k.nachname}`).join(', ');
+                        if (!window.confirm(
+                          `Ausnahme-Zulassung für ${nichtBerechtigt.length} Kandidat${nichtBerechtigt.length > 1 ? 'en' : ''} erteilen?\n\n${namen}`
+                        )) return;
+                        for (const k of nichtBerechtigt) await handleKandidatZulassen(k, null);
+                        setSelectedKandidaten([]);
+                      }}
+                      className="btn btn-warning pv3-batch-btn"
+                      style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.4)' }}
+                    >
+                      ⚠ {nichtBerechtigt.length} Ausnahme zulassen
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedKandidaten([])}
+                    style={{ padding: '6px 10px', background: 'none', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    Auswahl aufheben
+                  </button>
+                </div>
+              );
+            })()}
           </div>
 
           {loading ? (
@@ -3294,14 +3326,14 @@ ${pages}
                         className="pv3-checkbox-gold"
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedKandidaten(filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen));
+                            setSelectedKandidaten(filteredKandidaten.filter(k => !k.bereits_zugelassen));
                           } else {
                             setSelectedKandidaten([]);
                           }
                         }}
                         checked={
-                          filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen).length > 0 &&
-                          selectedKandidaten.length === filteredKandidaten.filter(k => k.berechtigt && !k.bereits_zugelassen).length
+                          filteredKandidaten.filter(k => !k.bereits_zugelassen).length > 0 &&
+                          selectedKandidaten.length === filteredKandidaten.filter(k => !k.bereits_zugelassen).length
                         }
                       />
                     </th>
@@ -3348,13 +3380,14 @@ ${pages}
                       className={`hover-row ${kandidat.bereits_zugelassen ? 'pv3-kandidat-row--zugelassen' : kandidat.berechtigt ? 'pv3-kandidat-row--berechtigt' : ''}`}
                     >
                       <td className="pv2-text-center">
-                        {kandidat.berechtigt && !kandidat.bereits_zugelassen ? (
+                        {!kandidat.bereits_zugelassen ? (
                           <input
                             type="checkbox"
-                            className="pv3-checkbox-gold"
+                            className={kandidat.berechtigt ? 'pv3-checkbox-gold' : 'pv3-checkbox-warning'}
                             checked={selectedKandidaten.some(k =>
                               k.mitglied_id === kandidat.mitglied_id && k.stil_id === kandidat.stil_id
                             )}
+                            title={kandidat.berechtigt ? 'Zur Prüfung zulassen' : 'Ausnahme-Zulassung'}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setSelectedKandidaten([...selectedKandidaten, kandidat]);
@@ -4712,7 +4745,7 @@ ${pages}
       )}
 
       {/* Ergebnis Modal */}
-      {showErgebnisModal && selectedPruefung && (
+      {showErgebnisModal && selectedPruefung && createPortal(
         <div className="modal-overlay" onClick={() => setShowErgebnisModal(false)}>
           <div className="modal-content pv3-modal-max600" onClick={(e) => e.stopPropagation()}>
             <h2>Prüfungsergebnis eintragen</h2>
@@ -4847,10 +4880,10 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Batch-Ergebnis Modal */}
-      {showBatchErgebnisModal && batchTermin && (
+      {showBatchErgebnisModal && batchTermin && createPortal(
         <div className="modal-overlay" onClick={() => setShowBatchErgebnisModal(false)}>
           <div className="modal-content pv3-batch-modal" onClick={(e) => e.stopPropagation()}>
 
@@ -5208,10 +5241,10 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Neuer Termin Modal - CACHE BREAK v8.0 GOLDEN HEADER */}
-      {showNeuerTerminModal && (
+      {showNeuerTerminModal && createPortal(
         <div
           className="pv3-modal-overlay-dark"
           onClick={() => { setShowNeuerTerminModal(false); setTerminStep(1); }}
@@ -5346,6 +5379,18 @@ ${pages}
                       />
                     </div>
                     <div>
+                      <label className="pv-form-label">Zahlungsart Prüfungsgebühr</label>
+                      <select
+                        value={neuerTermin.zahlungsart || ''}
+                        onChange={(e) => setNeuerTermin({ ...neuerTermin, zahlungsart: e.target.value })}
+                        className="pv3-dark-input"
+                      >
+                        <option value="">— Bitte wählen —</option>
+                        <option value="bar">Barzahlung</option>
+                        <option value="lastschrift">SEPA-Lastschrift</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="pv-form-label">
                         Anmeldefrist
                       </label>
@@ -5469,9 +5514,9 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
       {/* Termin bearbeiten Modal - CACHE BREAK v6.0 NO PADDING */}
-      {showEditTerminModal && editTermin && (
+      {showEditTerminModal && editTermin && createPortal(
         <div
           className="pv3-edit-modal-overlay"
           onClick={() => setShowEditTerminModal(false)}
@@ -5675,9 +5720,9 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
       {/* Termin-Auswahl Modal */}
-      {terminAuswahlModal.open && (
+      {terminAuswahlModal.open && createPortal(
         <div
           className="pv3-auswahl-modal-overlay"
           onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false })}
@@ -5728,7 +5773,7 @@ ${pages}
             </button>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Teilnehmerliste Druck-Auswahl-Modal */}
       {druckAuswahlModal.open && druckAuswahlModal.termin && (() => {
@@ -5739,7 +5784,7 @@ ${pages}
           { key: 'board_of_black_belts',  label: 'Board of Black Belts', img: '/assets/urkunde_bobb.jpg' },
         ];
         const closeModal = () => setDruckAuswahlModal({ open: false, termin: null, selected: [], vorlage: 'pruefungsurkunde' });
-        return (
+        return createPortal(
           <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}
             onClick={closeModal}>
             <div style={{background:'#1e1e35',borderRadius:'12px',width:'100%',maxWidth:'580px',boxShadow:'0 20px 60px rgba(0,0,0,0.7)',border:'1px solid rgba(255,255,255,0.1)',overflow:'hidden'}}
@@ -5869,11 +5914,11 @@ ${pages}
 
             </div>
           </div>
-        );
+        , document.body);
       })()}
 
       {/* Drucken Vorschau-Modal */}
-      {showDruckPreview && druckPreviewData && (
+      {showDruckPreview && druckPreviewData && createPortal(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',zIndex:9999,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-start',overflowY:'auto',padding:'24px 16px'}} onClick={() => setShowDruckPreview(false)}>
           <div style={{background:'#fff',borderRadius:'8px',width:'100%',maxWidth:'210mm',boxShadow:'0 20px 60px rgba(0,0,0,0.5)'}} onClick={e => e.stopPropagation()}>
             {/* Toolbar */}
@@ -5904,10 +5949,10 @@ ${pages}
             <div style={{padding:'20mm 16mm',color:'#1a1a1a'}} dangerouslySetInnerHTML={{ __html: druckPreviewData.html || '' }} />
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Modal: Externe Anmeldung bearbeiten */}
-      {showEditAnmeldungModal && editAnmeldung && (
+      {showEditAnmeldungModal && editAnmeldung && createPortal(
         <div className="pv3-modal-overlay-dark" onClick={() => setShowEditAnmeldungModal(false)}>
           <div className="pv3-modal-dark" style={{maxWidth:'520px'}} onClick={e => e.stopPropagation()}>
             <div className="pv3-modal-header">
@@ -5984,10 +6029,10 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Modal: Externen Teilnehmer manuell hinzufügen */}
-      {showExternModal && externModalTermin && (
+      {showExternModal && externModalTermin && createPortal(
         <div className="pv3-modal-overlay-dark" onClick={() => setShowExternModal(false)}>
           <div className="pv3-modal-dark" style={{maxWidth:'480px'}} onClick={e => e.stopPropagation()}>
             <div className="pv3-modal-header">
@@ -6055,10 +6100,10 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Trainingskonflikt-Dialog */}
-      {trainingsKonfliktDialog && (
+      {trainingsKonfliktDialog && createPortal(
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:10000,display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'}}>
           <div style={{background:'#fff',borderRadius:'10px',padding:'28px',maxWidth:'480px',width:'100%',boxShadow:'0 20px 60px rgba(0,0,0,0.4)'}}>
             <div style={{fontSize:'22px',marginBottom:'8px'}}>⚠️ Trainingskonflikt</div>
@@ -6114,7 +6159,7 @@ ${pages}
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
     </div>
   );

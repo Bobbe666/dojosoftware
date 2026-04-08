@@ -2992,7 +2992,7 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
         t.verwendungszweck,
         t.auftraggeber_empfaenger,
         COALESCE(t.kategorie, t.auto_kategorie) AS kategorie,
-        COALESCE(t.kategorie_typ, t.auto_kategorie_typ) AS kategorie_typ,
+        t.auto_kategorie_typ AS kategorie_typ,
         COALESCE(t.auto_kategorie_euer, '') AS euer_typ,
         t.status,
         e.euer_kategorie AS manueller_euer_typ,

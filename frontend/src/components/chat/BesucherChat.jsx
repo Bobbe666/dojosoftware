@@ -20,7 +20,29 @@ function fmtTime(ts) {
 function fmtTimeShort(ts) {
   if (!ts) return '';
   const d = new Date(ts);
-  return d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  const date = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+  const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return `${date} ${time}`;
+}
+
+function isToday(ts) {
+  if (!ts) return false;
+  const d = new Date(ts);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+}
+
+function dateSeparatorLabel(ts) {
+  const d = new Date(ts);
+  if (isToday(ts)) return 'Heute';
+  return d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function msgDateKey(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
 // Status-Badge
@@ -480,41 +502,59 @@ const BesucherChat = () => {
                     Noch keine Nachrichten
                   </div>
                 ) : (
-                  messages.map(msg => (
-                    <div
-                      key={msg.id}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: msg.sender_type === 'staff' ? 'flex-end' : 'flex-start'
-                      }}
-                    >
-                      {msg.sender_type === 'staff' && (
-                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2, paddingRight: 4 }}>
-                          {msg.sender_name || 'Team'}
+                  messages.map((msg, idx) => {
+                    const prevMsg = messages[idx - 1];
+                    const showSep = msgDateKey(msg.created_at) !== msgDateKey(prevMsg?.created_at);
+                    const today = isToday(msg.created_at);
+                    return (
+                      <React.Fragment key={msg.id}>
+                        {showSep && (
+                          <div className={`chat-date-separator${today ? ' chat-date-separator--today' : ''}`}>
+                            <span className="chat-date-separator-label">{dateSeparatorLabel(msg.created_at)}</span>
+                          </div>
+                        )}
+                        <div
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: msg.sender_type === 'staff' ? 'flex-end' : 'flex-start'
+                          }}
+                        >
+                          {msg.sender_type === 'staff' && (
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 2, paddingRight: 4 }}>
+                              {msg.sender_name || 'Team'}
+                            </div>
+                          )}
+                          <div style={{
+                            maxWidth: '75%',
+                            padding: '9px 14px',
+                            borderRadius: msg.sender_type === 'staff' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                            background: msg.sender_type === 'staff'
+                              ? 'var(--chat-bubble-own)'
+                              : 'var(--bg-card, #fff)',
+                            color: msg.sender_type === 'staff' ? '#fff' : 'var(--text-primary)',
+                            border: msg.sender_type === 'visitor' ? '1px solid var(--border-color)' : 'none',
+                            fontSize: 14,
+                            lineHeight: 1.45,
+                            wordBreak: 'break-word',
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {msg.message}
+                          </div>
+                          <div style={{
+                            fontSize: 10,
+                            color: today ? 'var(--chat-accent)' : 'var(--text-secondary)',
+                            fontWeight: today ? 600 : 400,
+                            marginTop: 2,
+                            paddingLeft: msg.sender_type === 'visitor' ? 4 : 0,
+                            paddingRight: msg.sender_type === 'staff' ? 4 : 0
+                          }}>
+                            {fmtTimeShort(msg.created_at)}
+                          </div>
                         </div>
-                      )}
-                      <div style={{
-                        maxWidth: '75%',
-                        padding: '9px 14px',
-                        borderRadius: msg.sender_type === 'staff' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                        background: msg.sender_type === 'staff'
-                          ? 'var(--chat-bubble-own)'
-                          : 'var(--bg-card, #fff)',
-                        color: msg.sender_type === 'staff' ? '#fff' : 'var(--text-primary)',
-                        border: msg.sender_type === 'visitor' ? '1px solid var(--border-color)' : 'none',
-                        fontSize: 14,
-                        lineHeight: 1.45,
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap'
-                      }}>
-                        {msg.message}
-                      </div>
-                      <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2, paddingLeft: msg.sender_type === 'visitor' ? 4 : 0, paddingRight: msg.sender_type === 'staff' ? 4 : 0 }}>
-                        {fmtTimeShort(msg.created_at)}
-                      </div>
-                    </div>
-                  ))
+                      </React.Fragment>
+                    );
+                  })
                 )}
                 <div ref={messagesEndRef} />
               </div>

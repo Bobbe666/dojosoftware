@@ -234,6 +234,83 @@ router.post('/rooms', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// PUT /api/chat/rooms/:id — Raum-Einstellungen aktualisieren (Name, Avatar, Status)
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.put('/rooms/:id', async (req, res) => {
+  try {
+    const { sender_id, sender_type } = getSenderInfo(req);
+    const room_id = parseInt(req.params.id);
+    const { name, avatar_emoji, avatar_color, status } = req.body;
+    const isAdminUser = req.user.role === 'admin' || req.user.role === 'super_admin';
+
+    // Nur Owner, Admin im Raum oder globale Admins dürfen bearbeiten
+    if (!isAdminUser) {
+      const [myRole] = await pool.query(
+        `SELECT role FROM chat_room_members WHERE room_id = ? AND member_id = ? AND member_type = ?`,
+        [room_id, sender_id, sender_type]
+      );
+      if (!myRole[0] || !['owner', 'admin'].includes(myRole[0].role)) {
+        return res.status(403).json({ success: false, message: 'Keine Berechtigung' });
+      }
+    }
+
+    const updates = [];
+    const values = [];
+    if (name !== undefined)         { updates.push('name = ?');         values.push(name || null); }
+    if (avatar_emoji !== undefined)  { updates.push('avatar_emoji = ?');  values.push(avatar_emoji); }
+    if (avatar_color !== undefined)  { updates.push('avatar_color = ?');  values.push(avatar_color); }
+    if (status !== undefined)        { updates.push('status = ?');        values.push(status); }
+
+    if (updates.length === 0) return res.json({ success: true });
+
+    values.push(room_id);
+    await pool.query(`UPDATE chat_rooms SET ${updates.join(', ')} WHERE id = ?`, values);
+
+    logger.info('Chat-Raum aktualisiert', { room_id, updates: Object.keys(req.body) });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Chat room update Fehler', { error: error.message });
+    res.status(500).json({ success: false, message: 'Fehler beim Speichern' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/chat/rooms/:id — Raum dauerhaft löschen (nur Owner/Admin)
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.delete('/rooms/:id', async (req, res) => {
+  try {
+    const { sender_id, sender_type } = getSenderInfo(req);
+    const room_id = parseInt(req.params.id);
+    const isAdminUser = req.user.role === 'admin' || req.user.role === 'super_admin';
+
+    if (!isAdminUser) {
+      const [myRole] = await pool.query(
+        `SELECT role FROM chat_room_members WHERE room_id = ? AND member_id = ? AND member_type = ?`,
+        [room_id, sender_id, sender_type]
+      );
+      if (!myRole[0] || myRole[0].role !== 'owner') {
+        return res.status(403).json({ success: false, message: 'Keine Berechtigung' });
+      }
+    }
+
+    // Kaskadenweise löschen
+    await pool.query(`DELETE FROM chat_message_reactions WHERE message_id IN (SELECT id FROM chat_messages WHERE room_id = ?)`, [room_id]);
+    await pool.query(`DELETE FROM chat_message_reads WHERE room_id = ?`, [room_id]);
+    await pool.query(`DELETE FROM chat_messages WHERE room_id = ?`, [room_id]);
+    await pool.query(`DELETE FROM chat_room_members WHERE room_id = ?`, [room_id]);
+    await pool.query(`DELETE FROM chat_rooms WHERE id = ?`, [room_id]);
+
+    logger.info('Chat-Raum gelöscht', { room_id });
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Chat room löschen Fehler', { error: error.message });
+    res.status(500).json({ success: false, message: 'Fehler beim Löschen' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PUT /api/chat/rooms/:id/pin — Anpinnen/Lösen (toggle)
 // ─────────────────────────────────────────────────────────────────────────────
 

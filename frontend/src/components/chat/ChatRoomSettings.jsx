@@ -2,9 +2,10 @@
 // CHAT ROOM SETTINGS - Gruppeneinstellungen: Name, Avatar, Mitglieder
 // =====================================================================================
 
-import React, { useState, useEffect } from 'react';
-import { X, Check, Users, Trash2, UserMinus } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Check, Users, Trash2, UserMinus, UserPlus, Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useDojoContext } from '../../context/DojoContext.jsx';
 
 const GROUP_EMOJIS = [
   '🥋','👊','🏆','⚔️','🎯','💪','🔥','🌟','🦁','🐉',
@@ -25,6 +26,7 @@ const AVATAR_COLORS = [
 
 const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
   const { user } = useAuth();
+  const { activeDojo } = useDojoContext();
   const [name, setName] = useState(room.name || '');
   const [avatarEmoji, setAvatarEmoji] = useState(room.avatar_emoji || '🥋');
   const [avatarColor, setAvatarColor] = useState(room.avatar_color || '#4f7cff');
@@ -37,12 +39,18 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [roomStatus, setRoomStatus] = useState(room.status || 'active');
-  const [isSavingStatus, setIsSavingStatus] = useState(false);
+
+  // Mitglied hinzufügen
+  const [addQuery, setAddQuery] = useState('');
+  const [addResults, setAddResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [addingId, setAddingId] = useState(null);
 
   const ownId = user?.mitglied_id || user?.user_id || user?.admin_id || user?.id;
   const ownType = user?.role === 'member' ? 'mitglied' : user?.role;
   const isAdminUser = user?.role === 'admin' || user?.role === 'super_admin';
   const canDeleteRoom = room.my_role === 'owner' || isAdminUser;
+  const dojoId = activeDojo?.id || user?.dojo_id;
 
   useEffect(() => {
     loadMembers();
@@ -60,6 +68,57 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
       console.error('Mitglieder laden Fehler:', e);
     } finally {
       setIsLoadingMembers(false);
+    }
+  };
+
+  // Mitglieder-Suche (debounced)
+  const searchMembers = useCallback(async (q) => {
+    if (q.length < 2) { setAddResults([]); return; }
+    setIsSearching(true);
+    try {
+      const params = new URLSearchParams({ q });
+      if (dojoId) params.append('dojo_id', dojoId);
+      const res = await fetch(`/api/chat/members/search?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      // Bereits vorhandene Mitglieder herausfiltern
+      const memberKeys = new Set(members.map(m => `${m.member_id}:${m.member_type}`));
+      setAddResults((data.results || []).filter(r => !memberKeys.has(`${r.member_id}:${r.member_type}`)));
+    } catch (e) {
+      // Suche still fehlschlagen lassen
+    } finally {
+      setIsSearching(false);
+    }
+  }, [token, dojoId, members]);
+
+  useEffect(() => {
+    if (addQuery.length === 0) { setAddResults([]); return; }
+    const t = setTimeout(() => searchMembers(addQuery), 280);
+    return () => clearTimeout(t);
+  }, [addQuery, searchMembers]);
+
+  const handleAddMember = async (person) => {
+    const key = `${person.member_id}:${person.member_type}`;
+    setAddingId(key);
+    try {
+      const res = await fetch(`/api/chat/rooms/${room.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ member_id: person.member_id, member_type: person.member_type })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMembers(prev => [...prev, { ...person, role: 'member' }]);
+        setAddResults(prev => prev.filter(r => `${r.member_id}:${r.member_type}` !== key));
+        setAddQuery('');
+      } else {
+        setError(data.message || 'Fehler beim Hinzufügen');
+      }
+    } catch (e) {
+      setError('Netzwerkfehler');
+    } finally {
+      setAddingId(null);
     }
   };
 
@@ -114,7 +173,7 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
       );
       const data = await res.json();
       if (data.success) {
-        onUpdated(null); // null = Gruppe verlassen, zurück zur Liste
+        onUpdated(null);
       }
     } catch (e) {
       setError('Fehler');
@@ -150,6 +209,13 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
     return '';
   };
 
+  const typeLabel = (t) => {
+    if (t === 'mitglied') return 'Mitglied';
+    if (t === 'trainer')  return 'Trainer';
+    if (t === 'verband')  return 'Verband';
+    return 'Admin';
+  };
+
   const isSelf = (member) =>
     String(member.member_id) === String(ownId) && member.member_type === ownType;
 
@@ -181,7 +247,7 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
             className={`crs-tab ${tab === 'members' ? 'crs-tab--active' : ''}`}
             onClick={() => setTab('members')}
           >
-            <Users size={14} /> Mitglieder
+            <Users size={14} /> Mitglieder ({members.length})
           </button>
         </div>
 
@@ -263,6 +329,71 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
 
           {tab === 'members' && (
             <>
+              {/* Mitglied hinzufügen */}
+              <div className="crs-section">
+                <label className="crs-label"><UserPlus size={12} /> Mitglied hinzufügen</label>
+                <div className="cnr-search" style={{ marginBottom: addResults.length > 0 ? 0 : undefined }}>
+                  <Search size={13} className="cnr-search-icon" />
+                  <input
+                    className="cnr-search-input"
+                    type="text"
+                    placeholder="Name suchen… (mind. 2 Zeichen)"
+                    value={addQuery}
+                    onChange={e => setAddQuery(e.target.value)}
+                    autoComplete="off"
+                  />
+                  {addQuery && (
+                    <button className="cnr-search-clear" onClick={() => { setAddQuery(''); setAddResults([]); }}>
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Suchergebnisse */}
+                {isSearching && (
+                  <div className="cnr-list-loading" style={{ padding: '0.5rem' }}>
+                    <span className="cnr-spinner" /> Suche…
+                  </div>
+                )}
+                {addResults.length > 0 && (
+                  <div style={{
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    borderRadius: 10,
+                    overflow: 'hidden',
+                    marginTop: '0.3rem',
+                    maxHeight: 180,
+                    overflowY: 'auto'
+                  }}>
+                    {addResults.map(person => {
+                      const key = `${person.member_id}:${person.member_type}`;
+                      const isAdding = addingId === key;
+                      return (
+                        <button
+                          key={key}
+                          className="cnr-item"
+                          onClick={() => handleAddMember(person)}
+                          disabled={isAdding}
+                          style={{ borderRadius: 0, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                        >
+                          <div className="cnr-item-avatar">{(person.name || '?')[0].toUpperCase()}</div>
+                          <div className="cnr-item-info">
+                            <div className="cnr-item-name">{person.name.split(' (')[0]}</div>
+                            <div className="cnr-item-meta">{typeLabel(person.member_type)}</div>
+                          </div>
+                          <UserPlus size={15} style={{ color: isAdding ? '#888' : '#4f7cff', flexShrink: 0 }} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {addQuery.length >= 2 && !isSearching && addResults.length === 0 && (
+                  <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', padding: '0.5rem 0.2rem' }}>
+                    Keine Treffer — alle gefundenen Personen sind bereits Mitglied.
+                  </div>
+                )}
+              </div>
+
+              {/* Mitgliederliste */}
               {isLoadingMembers ? (
                 <div className="cnr-list-loading"><span className="cnr-spinner" /> Lädt…</div>
               ) : (
@@ -279,11 +410,7 @@ const ChatRoomSettings = ({ room, token, onClose, onUpdated }) => {
                             <span className="crs-member-role">{roleLabel(member.role)}</span>
                           )}
                         </span>
-                        <span className="crs-member-type">
-                          {member.member_type === 'mitglied' ? 'Mitglied' :
-                           member.member_type === 'trainer' ? 'Trainer' :
-                           member.member_type === 'verband' ? 'Verband' : 'Admin'}
-                        </span>
+                        <span className="crs-member-type">{typeLabel(member.member_type)}</span>
                       </div>
                       {!isSelf(member) && (
                         <button

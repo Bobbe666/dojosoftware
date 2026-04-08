@@ -174,8 +174,8 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
       {/* Header */}
       <div className="chat-room-list-header">
         <h2 className="chat-room-list-title">
-          <MessageCircle size={18} />
-          Chat
+          <span style={{ fontSize: '1.1rem' }}>🥋</span>
+          Dojo Chat
           {unreadCount > 0 && (
             <span className="chat-badge-large">{unreadCount > 99 ? '99+' : unreadCount}</span>
           )}
@@ -231,11 +231,11 @@ const ChatRoomList = ({ activeRoomId, onSelectRoom, refreshVersion }) => {
 
         {!isLoading && filteredRooms.length === 0 && (
           <div className="chat-room-empty">
-            <MessageCircle size={32} />
+            <span style={{ fontSize: '2rem' }}>🥋</span>
             <p>Keine {STATUS_TABS.find(t => t.key === statusFilter)?.label?.toLowerCase()} Chats</p>
             {statusFilter === 'active' && (
               <button className="chat-btn-primary" onClick={() => setShowNewRoom('direct')}>
-                Ersten Chat starten
+                Erste Runde starten
               </button>
             )}
           </div>

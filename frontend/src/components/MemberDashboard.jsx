@@ -557,24 +557,29 @@ const MemberDashboard = () => {
             });
           }
 
-          // Popup nur für Nachrichten zeigen, die noch NICHT gesehen wurden
-          // localStorage statt sessionStorage → bleibt auch nach App-Neustart erhalten
+          // Popup-Logik:
+          // - Normale Notifications: einmalig zeigen, in localStorage tracken, sofort als gelesen markieren
+          // - requires_confirmation: bei JEDEM Login zeigen bis bestaetigt, NICHT in localStorage speichern
           if (unread.length > 0) {
             const storageKey = `pnp_shown_${email}`;
             const alreadyShown = new Set(JSON.parse(localStorage.getItem(storageKey) || '[]'));
-            // Nur Notifications ohne Bestätigungspflicht — Bestätigungen brauchen expliziten Klick
-            const newOnes = unread.filter(n => !alreadyShown.has(String(n.id)) && !n.requires_confirmation);
-            if (newOnes.length > 0) {
-              newOnes.forEach(n => alreadyShown.add(String(n.id)));
-              localStorage.setItem(storageKey, JSON.stringify([...alreadyShown]));
+
+            const newRegular = unread.filter(n => !n.requires_confirmation && !alreadyShown.has(String(n.id)));
+            const pendingConfirm = unread.filter(n => n.requires_confirmation && !n.confirmed_at);
+            const toShow = [...pendingConfirm, ...newRegular];
+
+            if (toShow.length > 0) {
+              // Normale als gesehen markieren
+              newRegular.forEach(n => alreadyShown.add(String(n.id)));
+              if (newRegular.length > 0) {
+                localStorage.setItem(storageKey, JSON.stringify([...alreadyShown]));
+                fetchWithAuth(`${config.apiBaseUrl}/notifications/member/mark-read`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email, ids: newRegular.map(n => n.id) })
+                }).catch(() => {});
+              }
               setShowPushPopup(true);
-              // Sofort als gelesen markieren (nicht-Bestätigungs-Nachrichten)
-              const nonConfirmIds = newOnes.map(n => n.id);
-              fetchWithAuth(`${config.apiBaseUrl}/notifications/member/mark-read`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, ids: nonConfirmIds })
-              }).catch(() => {});
             }
           }
         }
@@ -1115,9 +1120,9 @@ const MemberDashboard = () => {
       )}
 
       {/* Push-Benachrichtigungs-Popup */}
-      {showPushPopup && notifications.filter(n => n.status === 'unread').length > 0 && (
+      {showPushPopup && notifications.filter(n => n.status === 'unread' || (n.requires_confirmation && !n.confirmed_at)).length > 0 && (
         <PushNotificationPopup
-          notifications={notifications.filter(n => n.status === 'unread')}
+          notifications={notifications.filter(n => n.status === 'unread' || (n.requires_confirmation && !n.confirmed_at))}
           onClose={() => setShowPushPopup(false)}
           onConfirm={async (id) => {
             await confirmNotification(id);
@@ -2176,6 +2181,51 @@ const MemberDashboard = () => {
                       <div className="md-notif-timestamp">
                         {notification.created_at ? new Date(notification.created_at).toLocaleString('de-DE') : 'Gerade eben'}
                       </div>
+                      {(() => {
+                        try {
+                          const meta = typeof notification.metadata === 'string'
+                            ? JSON.parse(notification.metadata)
+                            : notification.metadata;
+                          if (meta?.nominierung_id && (meta.type === 'hof_approved' || meta.type === 'hof_nominiert')) {
+                            const downloadPdf = async (e) => {
+                              e.stopPropagation();
+                              const token = localStorage.getItem('memberToken') || localStorage.getItem('token') || localStorage.getItem('dojo_auth_token');
+                              try {
+                                const resp = await fetch(`/api/hof/nominierung/${meta.nominierung_id}/pdf`, {
+                                  headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                                });
+                                if (!resp.ok) throw new Error('PDF nicht verfügbar');
+                                const blob = await resp.blob();
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `HOF_Nominierung_${meta.nominierungsnummer || meta.nominierung_id}.pdf`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                              } catch {
+                                alert('Urkunde konnte nicht geladen werden. Bitte versuche es später erneut.');
+                              }
+                            };
+                            return (
+                              <button
+                                onClick={downloadPdf}
+                                style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                  marginTop: '8px', padding: '7px 14px',
+                                  background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.4)',
+                                  borderRadius: '8px', color: '#d4af37', fontSize: '13px', fontWeight: 600,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                📄 Nominierungsurkunde herunterladen
+                              </button>
+                            );
+                          }
+                        } catch {}
+                        return null;
+                      })()}
                       {!!notification.requires_confirmation && !notification.confirmed_at && (
                         <button
                           onClick={() => confirmNotification(notification.id)}

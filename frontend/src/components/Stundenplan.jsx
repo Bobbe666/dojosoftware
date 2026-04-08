@@ -44,6 +44,12 @@ const Stundenplan = () => {
   const [vertForm, setVertForm] = useState({ original_trainer_id: '', vertretung_trainer_id: '', datum: '', grund: '' });
   const [vertList, setVertList] = useState([]);
   const [vertLoading, setVertLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // Quick-Filter
+  const [filterTrainerSP, setFilterTrainerSP] = useState('');
+  const [filterStilSP, setFilterStilSP] = useState('');
+  const [filterRaumSP, setFilterRaumSP] = useState('');
 
   const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 
@@ -53,17 +59,20 @@ const Stundenplan = () => {
 
   const ladeDaten = async () => {
     const dojoParam = getDojoFilterParam();
+    const isSuperAdmin = activeDojo === 'super-admin';
     // Kein Dojo-Filter → kein Laden (verhindert Daten aus fremden Dojos)
-    if (!dojoParam) {
+    // Ausnahme: Super-Admin darf ohne dojo_id laden (Backend liefert alle Dojos)
+    if (!dojoParam && !isSuperAdmin) {
       setStundenplan([]);
       setRaeume([]);
       setLoading(false);
       return;
     }
+    const queryStr = dojoParam ? `?${dojoParam}` : '';
     try {
       const [stundenRes, raeumeRes] = await Promise.all([
-        axios.get(`/stundenplan?${dojoParam}`),
-        axios.get(`/raeume?${dojoParam}`)
+        axios.get(`/stundenplan${queryStr}`),
+        axios.get(`/raeume${queryStr}`)
       ]);
       setStundenplan(stundenRes.data);
       setRaeume(raeumeRes.data.data || raeumeRes.data || []);
@@ -165,12 +174,17 @@ const Stundenplan = () => {
     return sortConfig.direction === "asc" ? "↑" : "↓";
   };
 
-  // Filter by active standort
+  // Filter by active standort + quick filters
   const filteredStundenplan = stundenplan.filter(eintrag => {
-    if (activeStandort === 'all') return true;
-    if (!eintrag.standort_id) return true; // Show entries without standort
-    return eintrag.standort_id === activeStandort;
+    if (activeStandort !== 'all' && eintrag.standort_id && eintrag.standort_id !== activeStandort) return false;
+    if (filterTrainerSP && eintrag.trainer_id?.toString() !== filterTrainerSP) return false;
+    if (filterStilSP && eintrag.stil !== filterStilSP) return false;
+    if (filterRaumSP && eintrag.raum_id?.toString() !== filterRaumSP) return false;
+    return true;
   });
+
+  const uniqueStile = [...new Set(stundenplan.map(s => s.stil).filter(Boolean))].sort();
+  const hasActiveFilter = filterTrainerSP || filterStilSP || filterRaumSP;
 
   const sortedEintraege = [...filteredStundenplan].sort((a, b) => {
     if (!sortConfig.key) return 0;
@@ -377,11 +391,52 @@ const Stundenplan = () => {
         <p className="stundenplan-subtitle">Kurszeiten und Trainingsplan verwalten</p>
       </div>
 
-      {/* Export Controls */}
+      {/* Controls */}
       <div className="stundenplan-controls">
+        <button className="add-button-modern sp-add-btn" onClick={() => setShowAddModal(true)}>
+          <span className="btn-icon">➕</span> Stunde hinzufügen
+        </button>
         <button className="export-button-modern" onClick={handleCSVExport}>
           📊 CSV Export
         </button>
+      </div>
+
+      {/* Quick Filter Bar */}
+      <div className="sp-filter-bar">
+        <select
+          className="sp-filter-select"
+          value={filterTrainerSP}
+          onChange={e => setFilterTrainerSP(e.target.value)}
+        >
+          <option value="">👨‍🏫 Alle Trainer</option>
+          {trainer.map(tr => (
+            <option key={tr.trainer_id} value={tr.trainer_id}>
+              {tr.vorname} {tr.nachname}
+            </option>
+          ))}
+        </select>
+        <select
+          className="sp-filter-select"
+          value={filterStilSP}
+          onChange={e => setFilterStilSP(e.target.value)}
+        >
+          <option value="">🥋 Alle Stile</option>
+          {uniqueStile.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select
+          className="sp-filter-select"
+          value={filterRaumSP}
+          onChange={e => setFilterRaumSP(e.target.value)}
+        >
+          <option value="">🏛️ Alle Räume</option>
+          {raeume.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+        {hasActiveFilter && (
+          <button
+            className="sp-filter-clear"
+            onClick={() => { setFilterTrainerSP(''); setFilterStilSP(''); setFilterRaumSP(''); }}
+          >✕ Filter zurücksetzen</button>
+        )}
       </div>
 
       {/* Statistiken */}
@@ -1067,92 +1122,57 @@ const Stundenplan = () => {
             <div className="empty-state">
               <div className="empty-icon">📅</div>
               <h3>Kein Stundenplan vorhanden</h3>
-              <p>Fügen Sie unten den ersten Stundenplan-Eintrag hinzu.</p>
+              <p>Klicken Sie auf „Stunde hinzufügen" um den ersten Eintrag zu erstellen.</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Formular für neuen Stundenplan-Eintrag */}
-      <div className="neuer-stundenplan-card sp-form-card-overrides" style={{
-        animationDelay: `${sortedEintraege.length * 0.1 + 0.3}s`
-      }}>
-        <div className="card-header">
-          <h3 className="sp-form-header-h3">➕ Neuen Stundenplan-Eintrag hinzufügen</h3>
+      {/* Modal: Neuen Stundenplan-Eintrag hinzufügen */}
+      {showAddModal && (
+        <div className="ku-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowAddModal(false); }}>
+          <div className="ku-modal">
+            <div className="ku-modal-header">
+              <span className="ku-modal-title">➕ Stunde hinzufügen</span>
+              <button className="ku-modal-close" onClick={() => setShowAddModal(false)}>✕</button>
+            </div>
+            <div className="stundenplan-form-modern" style={{padding: '20px'}}>
+              <div className="form-group">
+                <label>📅 Wochentag:</label>
+                <select className="form-select" value={neuerKurs.tag} onChange={(e) => setNeuerKurs({ ...neuerKurs, tag: e.target.value })}>
+                  <option value="">Tag auswählen</option>
+                  {wochentage.map((tag) => <option key={tag} value={tag}>{tag}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>🕐 Startzeit:</label>
+                <input type="time" className="form-input" value={neuerKurs.uhrzeit_start} onChange={(e) => setNeuerKurs({ ...neuerKurs, uhrzeit_start: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>🕑 Endzeit:</label>
+                <input type="time" className="form-input" value={neuerKurs.uhrzeit_ende} onChange={(e) => setNeuerKurs({ ...neuerKurs, uhrzeit_ende: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>🥋 Kurs:</label>
+                <select className="form-select" value={neuerKurs.kurs_id} onChange={(e) => setNeuerKurs({ ...neuerKurs, kurs_id: e.target.value })}>
+                  <option value="">Kurs auswählen</option>
+                  {kurse.map((kurs) => <option key={kurs.kurs_id} value={kurs.kurs_id}>{kurs.gruppenname} ({kurs.stil})</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>🏢 Raum:</label>
+                <select className="form-select" value={neuerKurs.raum_id} onChange={(e) => setNeuerKurs({ ...neuerKurs, raum_id: e.target.value })}>
+                  <option value="">Kein Raum</option>
+                  {raeume.filter(raum => raum.aktiv).map((raum) => <option key={raum.id} value={raum.id}>{raum.name} {raum.groesse ? `(${raum.groesse})` : ''}</option>)}
+                </select>
+              </div>
+              <button className="add-button-modern" onClick={async () => { await handleHinzufuegen(); setShowAddModal(false); }}>
+                <span className="btn-icon">➕</span> Hinzufügen
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="stundenplan-form-modern">
-          <div className="form-group">
-            <label>📅 Wochentag:</label>
-            <select
-              className="form-select"
-              value={neuerKurs.tag}
-              onChange={(e) => setNeuerKurs({ ...neuerKurs, tag: e.target.value })}
-            >
-              <option value="">Tag auswählen</option>
-              {wochentage.map((tag) => (
-                <option key={tag} value={tag}>{tag}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>🕐 Startzeit:</label>
-            <input
-              type="time"
-              className="form-input"
-              value={neuerKurs.uhrzeit_start}
-              onChange={(e) => setNeuerKurs({ ...neuerKurs, uhrzeit_start: e.target.value })}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>🕑 Endzeit:</label>
-            <input
-              type="time"
-              className="form-input"
-              value={neuerKurs.uhrzeit_ende}
-              onChange={(e) => setNeuerKurs({ ...neuerKurs, uhrzeit_ende: e.target.value })}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>🥋 Kurs:</label>
-            <select
-              className="form-select"
-              value={neuerKurs.kurs_id}
-              onChange={(e) => setNeuerKurs({ ...neuerKurs, kurs_id: e.target.value })}
-            >
-              <option value="">Kurs auswählen</option>
-              {kurse.map((kurs) => (
-                <option key={kurs.kurs_id} value={kurs.kurs_id}>
-                  {kurs.gruppenname} ({kurs.stil})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>🏢 Raum:</label>
-            <select
-              className="form-select"
-              value={neuerKurs.raum_id}
-              onChange={(e) => setNeuerKurs({ ...neuerKurs, raum_id: e.target.value })}
-            >
-              <option value="">Kein Raum</option>
-              {raeume.filter(raum => raum.aktiv).map((raum) => (
-                <option key={raum.id} value={raum.id}>
-                  {raum.name} {raum.groesse ? `(${raum.groesse})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button className="add-button-modern" onClick={handleHinzufuegen}>
-            <span className="btn-icon">➕</span>
-            Stundenplan-Eintrag hinzufügen
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
 };
