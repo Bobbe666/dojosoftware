@@ -1264,6 +1264,17 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "super-admin-calendar", error: error.message });
 }
 
+// 10.2c DEMO-TERMIN BUCHUNGSSYSTEM
+try {
+  const demoTermineRouter = require(path.join(__dirname, "routes", "demo-termine.js"));
+  // Öffentlich: /api/demo-termine/slots|buchung|bestaetigung/:token
+  // Admin:      /api/demo-termine/admin/slots|buchungen|stats  (auth per Route)
+  app.use("/api/demo-termine", demoTermineRouter);
+  logger.success("Route gemountet", { path: "/api/demo-termine" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "demo-termine", error: error.message });
+}
+
 // 10.3 WEBHOOKS - Zapier & externe Integrationen
 try {
   const webhooksRouter = require(path.join(__dirname, "routes", "webhooks.js"));
@@ -2140,6 +2151,15 @@ try {
   logger.success("Route gemountet", { path: "/api/abwesenheiten" });
 } catch (error) {
   logger.error("Fehler beim Laden der Route", { route: "abwesenheiten", error: error.message });
+}
+
+// HALL OF FAME INTEGRATION
+try {
+  const hofRouter = require(path.join(__dirname, "routes", "hof.js"));
+  app.use("/api/hof", hofRouter);
+  logger.success("Route gemountet", { path: "/api/hof" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "hof", error: error.message });
 }
 
 // ─── Visitor Chat Socket Events ───────────────────────────────────────────────

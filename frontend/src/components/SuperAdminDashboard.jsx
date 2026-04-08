@@ -35,6 +35,7 @@ import DokumentenZentrale from './DokumentenZentrale';
 import Auswertungen from './Auswertungen';
 import PlattformZentrale from './PlattformZentrale';
 import PlattformZugangsdaten from './PlattformZugangsdaten';
+import DemoTermine from './DemoTermine';
 import '../styles/SuperAdminDashboard.css';
 
 // ── EventSoftware-Sektion ──────────────────────────────────────────────────
@@ -421,6 +422,124 @@ function AcademySection() {
   );
 }
 
+// ── HoF Live Section ──────────────────────────────────────────────────────
+const HOF_API = 'https://hof.tda-intl.org/api';
+
+function HofLiveSection() {
+  const [stats, setStats]       = useState(null);
+  const [neueste, setNeueste]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true); setError('');
+    try {
+      const [sRes, nRes] = await Promise.all([
+        axios.get(HOF_API + '/nominierungen/stats'),
+        axios.get(HOF_API + '/nominierungen/neueste'),
+      ]);
+      setStats(sRes.data);
+      setNeueste(Array.isArray(nRes.data) ? nRes.data : []);
+    } catch {
+      setError('HOF-Daten konnten nicht geladen werden.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="sad-hof-header">
+        <h2 className="sad-hof-title">🌟 TDA Hall of Fame</h2>
+        <div className="sad-hof-btn-row">
+          <button onClick={load} className="sad-hof-refresh-btn" title="Daten neu laden">
+            <RefreshCw size={14} />
+          </button>
+          <a href="https://hof.tda-intl.org/login" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
+            🔐 HoF Admin Login
+          </a>
+          <a href="https://hof.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
+            ↗ hof.tda-intl.org
+          </a>
+        </div>
+      </div>
+
+      {/* Nav Links */}
+      <div className="sad-hof-nav-grid">
+        {[
+          { icon: '🏠', label: 'Übersicht',       url: 'https://hof.tda-intl.org/dashboard' },
+          { icon: '🏅', label: 'Sportler',        url: 'https://hof.tda-intl.org/dashboard/sportler' },
+          { icon: '🏷️', label: 'Kategorien',      url: 'https://hof.tda-intl.org/dashboard/kategorien' },
+          { icon: '📋', label: 'Nominierungen',   url: 'https://hof.tda-intl.org/dashboard/nominierungen' },
+          { icon: '🏟️', label: 'Veranstaltungen', url: 'https://hof.tda-intl.org/dashboard/veranstaltungen' },
+        ].map(item => (
+          <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="sad-hof-nav-link">
+            <span className="sad2-fs-12">{item.icon}</span>
+            {item.label}
+          </a>
+        ))}
+      </div>
+
+      {error && <div className="sad-hof-error">{error}</div>}
+
+      {/* Stats */}
+      {loading ? (
+        <div className="sad-hof-loading">Lade HOF-Daten…</div>
+      ) : stats && (
+        <div className="sad-hof-stats-grid">
+          <div className="sad-hof-stat-card">
+            <div className="sad-hof-stat-icon">🏆</div>
+            <div className="sad-hof-stat-value">{stats.gesamt}</div>
+            <div className="sad-hof-stat-label">Nominierungen gesamt</div>
+          </div>
+          <div className="sad-hof-stat-card">
+            <div className="sad-hof-stat-icon">📅</div>
+            <div className="sad-hof-stat-value">{stats.dieses_jahr}</div>
+            <div className="sad-hof-stat-label">In {stats.year}</div>
+          </div>
+          <div className="sad-hof-stat-card sad-hof-stat-card--gold">
+            <div className="sad-hof-stat-icon">🔢</div>
+            <div className="sad-hof-stat-value sad-hof-stat-nr">{stats.naechste_nummer}</div>
+            <div className="sad-hof-stat-label">Nächste Nummer</div>
+          </div>
+        </div>
+      )}
+
+      {/* Neueste Nominierungen */}
+      {!loading && neueste.length > 0 && (
+        <div className="sad-hof-table-wrap">
+          <div className="sad-hof-table-title">Neueste Nominierungen</div>
+          <table className="sad-hof-table">
+            <thead>
+              <tr>
+                <th>Nummer</th>
+                <th>Sportler</th>
+                <th>Kategorie</th>
+                <th>Jahr</th>
+                <th>Bezahlt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {neueste.map(n => (
+                <tr key={n.id}>
+                  <td className="sad-hof-td-nr">{n.nominierungsnummer || '—'}</td>
+                  <td>{n.vorname} {n.nachname}</td>
+                  <td>{n.kategorie}</td>
+                  <td>{n.jahr}</td>
+                  <td>{n.bezahlt ? '✓' : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const SuperAdminDashboard = () => {
   const { token } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -454,6 +573,7 @@ const SuperAdminDashboard = () => {
 
   // State für Daily Briefing Popup
   const [showDailyBriefing, setShowDailyBriefing] = useState(false);
+  const [sslWarnings, setSslWarnings] = useState([]);
   const [todos, setTodos] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sa-todos') || '[]'); } catch { return []; }
   });
@@ -596,6 +716,12 @@ const SuperAdminDashboard = () => {
         const acRes = await fetch('https://academy.tda-intl.org/api/admin/public-stats');
         const acData = await acRes.json();
         if (acData.success) setAcademyStats(acData.stats);
+      } catch (_) {}
+
+      // SSL-Zertifikat-Status
+      try {
+        const sslRes = await axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } });
+        if (sslRes.data.success) setSslWarnings(sslRes.data.warnings || []);
       } catch (_) {}
 
       // Daily Briefing: einmal pro Tag anzeigen
@@ -1248,6 +1374,46 @@ const SuperAdminDashboard = () => {
                 </div>
               )}
 
+              {/* SSL-Zertifikat-Warnungen */}
+              {sslWarnings.length > 0 && (
+                <div>
+                  <div className="sad-trial-warning-meta">🔒 SSL-Zertifikate — Handlungsbedarf</div>
+                  <div className="sad2-flex-col-04">
+                    {sslWarnings.map((cert, i) => {
+                      const isUrgent = cert.status === 'expired' || cert.status === 'critical';
+                      const renewCmd = cert.renewalType === 'manual'
+                        ? `certbot certonly --manual --preferred-challenges dns --force-renewal -d '${cert.domains}'`
+                        : `certbot renew --cert-name ${cert.name}`;
+                      return (
+                        <div key={i} className={`sad-ssl-item ${isUrgent ? 'sad-ssl-item--urgent' : 'sad-ssl-item--warning'}`}>
+                          <div className="sad-ssl-item-header">
+                            <span className="sad2-fw600">{cert.domains}</span>
+                            <span className={`sad-ssl-badge ${isUrgent ? 'sad-ssl-badge--urgent' : 'sad-ssl-badge--warning'}`}>
+                              {cert.status === 'expired' ? 'ABGELAUFEN' : `noch ${cert.daysLeft} Tag${cert.daysLeft !== 1 ? 'e' : ''}`}
+                            </span>
+                          </div>
+                          <div className="sad-ssl-item-type">
+                            {cert.renewalType === 'manual' ? '⚠️ Manuell erneuern (DNS-Challenge)' : '✅ Auto-Renewal (nginx) — läuft automatisch'}
+                          </div>
+                          <div className="sad-ssl-cmd-block">
+                            <code className="sad-ssl-cmd">
+                              ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "{renewCmd}"
+                            </code>
+                            {cert.renewalType === 'manual' && (
+                              <div className="sad-ssl-dns-hint">
+                                Dann: Bei <strong>Alfahosting → DNS-System → Zonendatei importieren</strong>:<br/>
+                                <code style={{fontSize:'0.82em', display:'block', marginTop:'0.3rem', wordBreak:'break-all'}}>_acme-challenge.{cert.domains.replace('*.', '').replace('tda-intl.org', 'dojo')} IN TXT "[Wert]"</code>
+                                Warten bis DNS propagiert (<code>dig TXT _acme-challenge.{cert.domains.replace('*.', '')} @8.8.8.8 +short</code>), dann Enter drücken.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Jahresziele */}
               {overviewSummary?.goals?.length > 0 && (
                 <div>
@@ -1376,6 +1542,58 @@ const SuperAdminDashboard = () => {
                 <span className="compact-stat-label">Speicher ({globalStats?.storage?.used_gb || 0}/{globalStats?.storage?.total_gb || 0} GB)</span>
               </div>
             </div>
+
+            {/* ── SSL-Zertifikat-Warnungen ────────────────────────────── */}
+            {sslWarnings.length > 0 && (
+              <div className="sad-ssl-alert-bar">
+                <div className="sad-ssl-alert-bar-header">
+                  <span>🔒 SSL-Zertifikate — Handlungsbedarf ({sslWarnings.length})</span>
+                  <button className="sad-ssl-refresh-btn" onClick={async () => {
+                    try {
+                      const r = await axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } });
+                      if (r.data.success) setSslWarnings(r.data.warnings || []);
+                    } catch (_) {}
+                  }}>↺ Aktualisieren</button>
+                </div>
+                {sslWarnings.map((cert, i) => {
+                  const isUrgent = cert.status === 'expired' || cert.status === 'critical';
+                  const renewCmd = cert.renewalType === 'manual'
+                    ? `certbot certonly --manual --preferred-challenges dns --force-renewal -d '${cert.domains}'`
+                    : `certbot renew --cert-name ${cert.name}`;
+                  return (
+                    <details key={i} className={`sad-ssl-alert-item ${isUrgent ? 'sad-ssl-alert-item--urgent' : 'sad-ssl-alert-item--warning'}`}>
+                      <summary className="sad-ssl-alert-summary">
+                        <span className={`sad-ssl-dot ${isUrgent ? 'sad-ssl-dot--urgent' : 'sad-ssl-dot--warning'}`} />
+                        <span className="sad2-fw600">{cert.domains}</span>
+                        <span className="sad-ssl-alert-days">
+                          {cert.status === 'expired' ? 'ABGELAUFEN' : `läuft in ${cert.daysLeft} Tag${cert.daysLeft !== 1 ? 'en' : ''} ab`}
+                          {' '}· {cert.renewalType === 'manual' ? 'Manuell' : 'Auto'}
+                        </span>
+                      </summary>
+                      <div className="sad-ssl-alert-body">
+                        {cert.renewalType === 'manual' ? (
+                          <>
+                            <p className="sad-ssl-step"><strong>1.</strong> SSH-Befehl auf dem Server ausführen:</p>
+                            <code className="sad-ssl-cmd">ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "{renewCmd}"</code>
+                            <p className="sad-ssl-step"><strong>2.</strong> Certbot zeigt einen TXT-Record-Wert an. Bei <strong>Alfahosting → DNS-System → Zonendatei importieren</strong> einfügen:</p>
+                            <code className="sad-ssl-cmd">_acme-challenge.{cert.domains.replace('*.', '').replace('tda-intl.org', 'dojo')} IN TXT "[Wert von certbot]"</code>
+                            <p className="sad-ssl-step" style={{fontSize:'0.85em', color:'var(--text-muted, #aaa)', marginTop:'-0.5rem'}}>Falls der alte _acme-challenge-Eintrag noch existiert: zuerst löschen (Mülleimer), dann Speichern, dann Zonendatei importieren.</p>
+                            <p className="sad-ssl-step"><strong>3.</strong> DNS-Propagation prüfen (ca. 1–5 Min.):<br/><code style={{fontSize:'0.85em'}}>dig TXT _acme-challenge.{cert.domains.replace('*.', '')} @8.8.8.8 +short</code></p>
+                            <p className="sad-ssl-step"><strong>4.</strong> Erst wenn der neue Wert erscheint → im Terminal <strong>Enter</strong> drücken.</p>
+                            <p className="sad-ssl-step"><strong>5.</strong> Nginx neu laden: <code>systemctl reload nginx</code></p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="sad-ssl-step">Wird automatisch erneuert (certbot.timer läuft täglich). Bei Problemen manuell anstoßen:</p>
+                            <code className="sad-ssl-cmd">ssh -i ~/.ssh/id_ed25519_dojo_deploy -p 2222 root@dojo.tda-intl.org "{renewCmd}"</code>
+                          </>
+                        )}
+                      </div>
+                    </details>
+                  );
+                })}
+              </div>
+            )}
 
             {/* ── Jahres-Ziele Soll/Ist ───────────────────────────────── */}
             {overviewSummary?.goals?.length > 0 && (
@@ -1790,11 +2008,16 @@ const SuperAdminDashboard = () => {
               <div>
             {renderSubTabs('dojosoftware', [
               { id: 'lizenzen', icon: '📜', label: 'Lizenzen' },
+              { id: 'demo-termine', icon: '📅', label: 'Demo-Termine' },
               { id: 'dokumente', icon: '📂', label: 'Dokumente' }
             ])}
 
             {subActiveTab.dojosoftware === 'lizenzen' && (
               <DojoLizenzverwaltung />
+            )}
+
+            {subActiveTab.dojosoftware === 'demo-termine' && (
+              <DemoTermine />
             )}
 
             {subActiveTab.dojosoftware === 'dokumente' && (
@@ -1816,45 +2039,7 @@ const SuperAdminDashboard = () => {
 
             {/* ── Hall of Fame ───────────────────────────────────────── */}
             {softwareSection === 'halloffame' && (
-              <div>
-                <div className="sad-hof-header">
-                  <h2 className="sad-hof-title">🌟 TDA Hall of Fame</h2>
-                  <div className="sad-hof-btn-row">
-                    <a href="https://hof.tda-intl.org/login" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
-                      🔐 HoF Admin Login
-                    </a>
-                    <a href="https://hof.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
-                      ↗ hof.tda-intl.org
-                    </a>
-                  </div>
-                </div>
-                <div className="sad-hof-nav-grid">
-                  {[
-                    { icon: '🏠', label: 'Übersicht',       url: 'https://hof.tda-intl.org/dashboard' },
-                    { icon: '🏅', label: 'Sportler',        url: 'https://hof.tda-intl.org/dashboard/sportler' },
-                    { icon: '🏷️', label: 'Kategorien',      url: 'https://hof.tda-intl.org/dashboard/kategorien' },
-                    { icon: '📋', label: 'Nominierungen',   url: 'https://hof.tda-intl.org/dashboard/nominierungen' },
-                    { icon: '🏟️', label: 'Veranstaltungen', url: 'https://hof.tda-intl.org/dashboard/veranstaltungen' },
-                  ].map(item => (
-                    <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="sad-hof-nav-link">
-                      <span className="sad2-fs-12">{item.icon}</span>
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-                <div className="sad-hof-preview-wrapper">
-                  <div className="sad-hof-preview-bar">
-                    <span className="sad-hof-live-dot" />
-                    Live-Vorschau — hof.tda-intl.org
-                  </div>
-                  <iframe
-                    src="https://hof.tda-intl.org"
-                    title="Hall of Fame"
-                    className="sad-hof-iframe"
-                    loading="lazy"
-                  />
-                </div>
-              </div>
+              <HofLiveSection />
             )}
 
             {/* ── TDA-Dojos ──────────────────────────────────────────── */}
