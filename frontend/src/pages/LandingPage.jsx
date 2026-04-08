@@ -247,9 +247,9 @@ function LandingPage() {
                 <span className="cta-icon">🚀</span>
                 Jetzt kostenlos testen (14 Tage)
               </button>
-              <button className="cta-secondary" onClick={() => navigate('/demo')}>
-                <span className="cta-icon">📺</span>
-                Demo ansehen
+              <button className="cta-demo-book" onClick={() => navigate('/demo-buchen')}>
+                <span className="cta-icon">📅</span>
+                Demo-Termin buchen
               </button>
             </div>
             <div className="hero-benefits">
@@ -667,6 +667,34 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* Demo-Termin Sektion */}
+      <section className="demo-booking-section">
+        <div className="container">
+          <div className="demo-booking-inner">
+            <div className="demo-booking-badge">Kostenlos & unverbindlich</div>
+            <h2 className="demo-booking-title">
+              Sieh die Software live in Aktion
+            </h2>
+            <p className="demo-booking-sub">
+              In einem persönlichen 60-Minuten-Demo zeigen wir dir genau, wie DojoSoftware
+              deinen Alltag vereinfacht — abgestimmt auf deine Schule und deine Fragen.
+            </p>
+            <div className="demo-booking-features">
+              <div className="demo-booking-feat"><span>✓</span> Persönliche Präsentation per Zoom</div>
+              <div className="demo-booking-feat"><span>✓</span> Alle deine Fragen direkt beantwortet</div>
+              <div className="demo-booking-feat"><span>✓</span> Setup-Beratung inklusive</div>
+              <div className="demo-booking-feat"><span>✓</span> Kein Verkaufsdruck</div>
+            </div>
+            <button className="demo-booking-btn" onClick={() => navigate('/demo-buchen')}>
+              <span>📅</span>
+              Jetzt Demo-Termin buchen
+              <span className="demo-booking-arrow">→</span>
+            </button>
+            <p className="demo-booking-hint">Wähle einfach einen freien Termin — wir bestätigen innerhalb von 24h.</p>
+          </div>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="final-cta">
         <div className="container">
@@ -688,7 +716,8 @@ function LandingPage() {
               <h4>Produkt</h4>
               <a href="#features">Features</a>
               <a href="/pricing">Preise</a>
-              <a href="/demo">Demo</a>
+              <a href="/demo">Demo-Video</a>
+              <a href="/demo-buchen">Demo-Termin buchen</a>
             </div>
             <div className="footer-col">
               <h4>Unternehmen</h4>
