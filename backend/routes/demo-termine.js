@@ -222,6 +222,23 @@ router.post('/admin/slots/bulk', authenticateToken, onlySuperAdmin, async (req, 
   res.json({ success: true, created: created.length, skipped: skipped.length, details: skipped });
 });
 
+// PUT /api/admin/demo-termine/slots/tag-sperren — alle Slots eines Tages sperren/freigeben
+router.put('/admin/slots/tag-sperren', authenticateToken, onlySuperAdmin, async (req, res) => {
+  const { date, sperren } = req.body; // date: 'YYYY-MM-DD', sperren: true/false
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ success: false, error: 'date (YYYY-MM-DD) fehlt oder ungültig' });
+  }
+  try {
+    const [result] = await pool.query(
+      `UPDATE demo_termine_slots SET is_available = ? WHERE DATE(slot_start) = ? AND is_booked = 0`,
+      [sperren ? 0 : 1, date]
+    );
+    res.json({ success: true, updated: result.affectedRows });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // PUT /api/admin/demo-termine/slots/:id — Slot bearbeiten (freigeben/sperren, Notiz)
 router.put('/admin/slots/:id', authenticateToken, onlySuperAdmin, async (req, res) => {
   const { is_available, notes, slot_start, duration_minutes } = req.body;

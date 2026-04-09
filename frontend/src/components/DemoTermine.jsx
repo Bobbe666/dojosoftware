@@ -388,14 +388,25 @@ export default function DemoTermine() {
     return { year, month };
   });
 
-  // Slot-Map: 'YYYY-MM-DD' → { free, booked }
+  // ── Tag komplett sperren / freigeben ─────────────────────────────────────
+  const blockTag = async (date, sperren) => {
+    try {
+      await axios.put('/demo-termine/admin/slots/tag-sperren', { date, sperren }, { headers: authHeader });
+      showMsg('success', sperren ? `${date} gesperrt — alle Slots nicht mehr buchbar` : `${date} freigegeben`);
+      loadSlots(); loadStats();
+    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
+  };
+
+  // Slot-Map: 'YYYY-MM-DD' → { free, booked, locked }
   const slotsByDay = (() => {
     const map = {};
     slots.forEach(s => {
       const d = new Date(s.slot_start);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      if (!map[key]) map[key] = { free: 0, booked: 0 };
-      if (s.is_booked) map[key].booked++; else if (s.is_available) map[key].free++;
+      if (!map[key]) map[key] = { free: 0, booked: 0, locked: 0 };
+      if (s.is_booked) map[key].booked++;
+      else if (s.is_available) map[key].free++;
+      else map[key].locked++;
     });
     return map;
   })();
@@ -500,6 +511,37 @@ export default function DemoTermine() {
 
       {msg.text && <div className={`dt-alert dt-alert-${msg.type}`}>{msg.text}</div>}
 
+      {/* ── Wochentag-Übersicht ── */}
+      {view === 'slots' && slots.length > 0 && (() => {
+        const now = new Date();
+        const byDow = {};
+        slots.forEach(s => {
+          if (!s.is_available && !s.is_booked) return;
+          const d = new Date(s.slot_start);
+          if (d < now) return; // nur zukünftige
+          const dow = d.getDay(); // 0=So
+          if (!byDow[dow]) byDow[dow] = [];
+          const hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+          if (!byDow[dow].includes(hm)) byDow[dow].push(hm);
+        });
+        return (
+          <div className="dt-week-strip">
+            {WOCHENTAGE.map(tag => {
+              const zeiten = (byDow[tag.id] || []).sort();
+              return (
+                <div key={tag.id} className={`dt-week-day ${zeiten.length > 0 ? 'dt-week-day--active' : 'dt-week-day--empty'}`}>
+                  <span className="dt-week-day-name">{tag.kurz}</span>
+                  {zeiten.length > 0
+                    ? <div className="dt-week-times">{zeiten.map(z => <span key={z} className="dt-week-time">{z}</span>)}</div>
+                    : <span className="dt-week-none">—</span>
+                  }
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* ══════════════ SLOTS VIEW ══════════════ */}
       {view === 'slots' && (
         <div className="dt-section">
@@ -552,12 +594,20 @@ export default function DemoTermine() {
                     {['08:00','09:00','10:00','11:00','12:00','13:00','14:00','14:15',
                       '15:00','16:00','17:00','18:00','19:00','20:00','21:00'].map(t => {
                       const active = selectedDays[tag.id]?.has(t);
+                      // Bereits vorhandene Zeiten für diesen Wochentag aus bestehenden Slots
+                      const alreadyExists = slots.some(s => {
+                        const d = new Date(s.slot_start);
+                        if (d.getDay() !== tag.id) return false;
+                        const hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        return hm === t;
+                      });
                       return (
                         <button
                           key={t}
                           type="button"
-                          className={`dt-quick-btn ${active ? 'active' : ''}`}
+                          className={`dt-quick-btn ${active ? 'active' : ''} ${alreadyExists && !active ? 'exists' : ''}`}
                           onClick={() => active ? removeTime(tag.id, t) : addTimeVal(tag.id, t)}
+                          title={alreadyExists && !active ? 'Bereits vorhanden' : ''}
                         >
                           {t}
                         </button>
@@ -801,10 +851,12 @@ export default function DemoTermine() {
                     const isCurrentMonth = day.getMonth() === calMonth.month;
                     const isToday = key === new Date().toISOString().slice(0,10);
                     const isSelected = calSelectedDay === key;
+                    const isDayBlocked = info && info.free === 0 && info.locked > 0 && info.booked === 0;
+                    const isDayPartiallyBlocked = info && info.free === 0 && info.locked > 0 && info.booked > 0;
                     return (
                       <div
                         key={`${wi}-${di}`}
-                        className={`dt-cal-cell ${!isCurrentMonth ? 'dt-cal-other-month' : ''} ${isToday ? 'dt-cal-today' : ''} ${isSelected ? 'dt-cal-selected' : ''} ${info ? 'dt-cal-has-slots' : ''}`}
+                        className={`dt-cal-cell ${!isCurrentMonth ? 'dt-cal-other-month' : ''} ${isToday ? 'dt-cal-today' : ''} ${isSelected ? 'dt-cal-selected' : ''} ${info ? 'dt-cal-has-slots' : ''} ${isDayBlocked ? 'dt-cal-day-blocked' : ''}`}
                         onClick={() => {
                           if (!isCurrentMonth || !info) return;
                           setCalSelectedDay(isSelected ? null : key);
@@ -815,7 +867,17 @@ export default function DemoTermine() {
                           <div className="dt-cal-dots">
                             {info.free > 0 && <span className="dt-cal-dot dt-cal-dot-free" title={`${info.free} frei`}>{info.free}</span>}
                             {info.booked > 0 && <span className="dt-cal-dot dt-cal-dot-booked" title={`${info.booked} gebucht`}>{info.booked}</span>}
+                            {info.locked > 0 && info.free === 0 && <span className="dt-cal-dot dt-cal-dot-locked" title="Gesperrt">🚫</span>}
                           </div>
+                        )}
+                        {info && isCurrentMonth && !info.booked && (
+                          <button
+                            className={`dt-cal-block-btn ${isDayBlocked ? 'dt-cal-block-btn--unblock' : ''}`}
+                            title={isDayBlocked ? 'Tag freigeben' : 'Tag sperren'}
+                            onClick={e => { e.stopPropagation(); blockTag(key, !isDayBlocked); }}
+                          >
+                            {isDayBlocked ? '✓' : '🚫'}
+                          </button>
                         )}
                       </div>
                     );
@@ -825,8 +887,24 @@ export default function DemoTermine() {
               {calSelectedDay && (
                 <div className="dt-cal-day-detail">
                   <div className="dt-cal-day-detail-hdr">
-                    {new Date(calSelectedDay + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                    <button className="dt-btn dt-btn-sm" onClick={() => setCalSelectedDay(null)}>✕</button>
+                    <span>{new Date(calSelectedDay + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
+                    <div className="dt-cal-day-detail-actions">
+                      {(() => {
+                        const info = slotsByDay[calSelectedDay];
+                        const allLocked = info && info.free === 0 && info.locked > 0;
+                        const hasUnbooked = info && (info.free > 0 || info.locked > 0);
+                        if (!hasUnbooked) return null;
+                        return (
+                          <button
+                            className={`dt-btn dt-btn-sm ${allLocked ? 'dt-btn-success' : 'dt-btn-warn'}`}
+                            onClick={() => blockTag(calSelectedDay, !allLocked)}
+                          >
+                            {allLocked ? '✓ Tag freigeben' : '🚫 Tag sperren'}
+                          </button>
+                        );
+                      })()}
+                      <button className="dt-btn dt-btn-sm" onClick={() => setCalSelectedDay(null)}>✕</button>
+                    </div>
                   </div>
                   {slots.filter(s => {
                     const d = new Date(s.slot_start);
