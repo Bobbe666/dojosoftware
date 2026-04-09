@@ -151,7 +151,7 @@ router.get('/admin/slots', authenticateToken, onlySuperAdmin, async (req, res) =
              b.created_at AS buchung_created_at
       FROM demo_termine_slots s
       LEFT JOIN demo_buchungen b ON b.slot_id = s.id
-      WHERE s.slot_start > DATE_SUB(NOW(), INTERVAL 30 DAY)
+      WHERE s.slot_start > NOW()
       ORDER BY s.slot_start ASC
     `);
     res.json({ success: true, slots });
