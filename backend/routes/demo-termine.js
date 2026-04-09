@@ -44,14 +44,14 @@ async function checkICalConflict(start, end) {
 router.get('/slots', async (req, res) => {
   try {
     const now = new Date();
-    // Beide zurückgeben: freie (buchbar) UND belegte (für Social Proof sichtbar)
     const [slots] = await pool.query(`
       SELECT id, slot_start, slot_end, duration_minutes,
              is_booked,
              CASE WHEN is_booked = 1 THEN 'belegt' ELSE 'frei' END AS status
       FROM demo_termine_slots
       WHERE is_available = 1
-        AND slot_start   > ?
+        AND slot_start > ?
+        AND DATE(slot_start) NOT IN (SELECT datum FROM demo_gesperrte_tage)
       ORDER BY slot_start ASC
       LIMIT 300
     `, [now]);
@@ -220,6 +220,53 @@ router.post('/admin/slots/bulk', authenticateToken, onlySuperAdmin, async (req, 
   }
 
   res.json({ success: true, created: created.length, skipped: skipped.length, details: skipped });
+});
+
+// GET /api/admin/demo-termine/gesperrte-tage — alle gesperrten Tage abrufen
+router.get('/admin/gesperrte-tage', authenticateToken, onlySuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT datum, notiz FROM demo_gesperrte_tage ORDER BY datum ASC'
+    );
+    const tage = rows.map(r => {
+      const d = new Date(r.datum);
+      return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+    });
+    res.json({ success: true, tage });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/admin/demo-termine/gesperrte-tage — Tag sperren
+router.post('/admin/gesperrte-tage', authenticateToken, onlySuperAdmin, async (req, res) => {
+  const { datum, notiz } = req.body;
+  if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
+    return res.status(400).json({ success: false, error: 'datum (YYYY-MM-DD) fehlt oder ungültig' });
+  }
+  try {
+    await pool.query(
+      'INSERT IGNORE INTO demo_gesperrte_tage (datum, notiz) VALUES (?, ?)',
+      [datum, notiz || null]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// DELETE /api/admin/demo-termine/gesperrte-tage/:datum — Tag freigeben
+router.delete('/admin/gesperrte-tage/:datum', authenticateToken, onlySuperAdmin, async (req, res) => {
+  const { datum } = req.params;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) {
+    return res.status(400).json({ success: false, error: 'Ungültiges Datum' });
+  }
+  try {
+    await pool.query('DELETE FROM demo_gesperrte_tage WHERE datum = ?', [datum]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // PUT /api/admin/demo-termine/slots/tag-sperren — alle Slots eines Tages sperren/freigeben

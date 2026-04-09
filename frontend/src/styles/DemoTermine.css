@@ -991,6 +991,93 @@
 }
 .dt-slot-compact { padding: 0.6rem 0.75rem; }
 
+/* Icon für gesperrten Tag in der Monatsansicht */
+.dt-cal-blocked-icon {
+  font-size: 0.9rem;
+  display: block;
+  text-align: center;
+  margin-top: 2px;
+}
+
+/* ── Tagesansicht ── */
+.dt-tag-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dt-tag-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.dt-tag-nav-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dt-tag-date-input {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 6px;
+  color: var(--text-primary, #f1f5f9);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.dt-tag-nav-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.dt-tag-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+.dt-tag-status-bar--blocked {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.3);
+}
+.dt-tag-status-bar--active {
+  background: rgba(34,197,94,0.08);
+  border-color: rgba(34,197,94,0.25);
+}
+.dt-tag-status-bar--empty {
+  background: var(--bg-secondary, #1e293b);
+  border-color: var(--border-color, #334155);
+}
+
+.dt-tag-status-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--text-primary, #f1f5f9);
+}
+.dt-tag-status-icon { font-size: 1rem; }
+
+.dt-tag-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dt-tag-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-secondary, #94a3b8);
+}
+
 @media (max-width: 700px) {
   .dt-cal-cell { min-height: 48px; }
   .dt-cal-dot { font-size: 0.6rem; padding: 1px 3px; }

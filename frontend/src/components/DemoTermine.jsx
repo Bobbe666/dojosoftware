@@ -90,9 +90,13 @@ export default function DemoTermine() {
   const [icalFeedUrl, setIcalFeedUrl] = useState('');
 
   // ── Kalender-Ansicht ──────────────────────────────────────────────────────
-  const [calView, setCalView] = useState('liste'); // 'liste' | 'monat'
+  const [calView, setCalView] = useState('liste'); // 'liste' | 'monat' | 'tag'
   const [calMonth, setCalMonth] = useState({ year: new Date().getFullYear(), month: new Date().getMonth() });
   const [calSelectedDay, setCalSelectedDay] = useState(null); // 'YYYY-MM-DD' | null
+  const [tagViewDate, setTagViewDate] = useState(new Date().toISOString().slice(0, 10));
+
+  // ── Gesperrte Tage ────────────────────────────────────────────────────────
+  const [gesperrte, setGesperrte] = useState(new Set()); // Set<'YYYY-MM-DD'>
 
   // Welches Formular ist offen: null | 'einzeln' | 'wochenplan'
   const [openForm, setOpenForm] = useState(null);
@@ -193,6 +197,13 @@ export default function DemoTermine() {
     finally { setLoading(false); }
   }, [token]);
 
+  const loadGesperrte = useCallback(async () => {
+    try {
+      const r = await axios.get('/demo-termine/admin/gesperrte-tage', { headers: authHeader });
+      setGesperrte(new Set(r.data.tage || []));
+    } catch {}
+  }, [token]);
+
   const loadBuchungen = useCallback(async () => {
     setLoading(true);
     try {
@@ -209,7 +220,7 @@ export default function DemoTermine() {
     } catch {}
   }, [token]);
 
-  useEffect(() => { loadSlots(); loadStats(); }, [loadSlots, loadStats]);
+  useEffect(() => { loadSlots(); loadStats(); loadGesperrte(); }, [loadSlots, loadStats, loadGesperrte]);
   useEffect(() => { if (view === 'buchungen') loadBuchungen(); }, [view, loadBuchungen]);
 
   // iCal-Feed-URL laden
@@ -388,12 +399,19 @@ export default function DemoTermine() {
     return { year, month };
   });
 
-  // ── Tag komplett sperren / freigeben ─────────────────────────────────────
+  // ── Tag komplett sperren / freigeben (datum-basiert, unabhängig von Slots) ─
   const blockTag = async (date, sperren) => {
     try {
-      await axios.put('/demo-termine/admin/slots/tag-sperren', { date, sperren }, { headers: authHeader });
-      showMsg('success', sperren ? `${date} gesperrt — alle Slots nicht mehr buchbar` : `${date} freigegeben`);
-      loadSlots(); loadStats();
+      if (sperren) {
+        await axios.post('/demo-termine/admin/gesperrte-tage', { datum: date }, { headers: authHeader });
+        setGesperrte(prev => new Set([...prev, date]));
+        showMsg('success', 'Tag gesperrt — an diesem Tag sind keine Buchungen möglich');
+      } else {
+        await axios.delete(`/demo-termine/admin/gesperrte-tage/${date}`, { headers: authHeader });
+        setGesperrte(prev => { const n = new Set(prev); n.delete(date); return n; });
+        showMsg('success', 'Tag wieder freigegeben');
+      }
+      loadStats();
     } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
   };
 
@@ -505,6 +523,7 @@ export default function DemoTermine() {
             <span className="dt-toolbar-divider" />
             <button className={`dt-view-btn ${calView === 'liste' ? 'active' : ''}`} onClick={() => { setCalView('liste'); setCalSelectedDay(null); }}>☰ Liste</button>
             <button className={`dt-view-btn ${calView === 'monat' ? 'active' : ''}`} onClick={() => setCalView('monat')}>📅 Monat</button>
+            <button className={`dt-view-btn ${calView === 'tag' ? 'active' : ''}`} onClick={() => setCalView('tag')}>📆 Tag</button>
           </div>
         </div>
       </div>
@@ -851,32 +870,31 @@ export default function DemoTermine() {
                     const isCurrentMonth = day.getMonth() === calMonth.month;
                     const isToday = key === new Date().toISOString().slice(0,10);
                     const isSelected = calSelectedDay === key;
-                    const isDayBlocked = info && info.free === 0 && info.locked > 0 && info.booked === 0;
-                    const isDayPartiallyBlocked = info && info.free === 0 && info.locked > 0 && info.booked > 0;
+                    const isGesperrt = gesperrte.has(key);
                     return (
                       <div
                         key={`${wi}-${di}`}
-                        className={`dt-cal-cell ${!isCurrentMonth ? 'dt-cal-other-month' : ''} ${isToday ? 'dt-cal-today' : ''} ${isSelected ? 'dt-cal-selected' : ''} ${info ? 'dt-cal-has-slots' : ''} ${isDayBlocked ? 'dt-cal-day-blocked' : ''}`}
+                        className={`dt-cal-cell ${!isCurrentMonth ? 'dt-cal-other-month' : ''} ${isToday ? 'dt-cal-today' : ''} ${isSelected ? 'dt-cal-selected' : ''} ${info ? 'dt-cal-has-slots' : ''} ${isGesperrt ? 'dt-cal-day-blocked' : ''}`}
                         onClick={() => {
-                          if (!isCurrentMonth || !info) return;
+                          if (!isCurrentMonth) return;
                           setCalSelectedDay(isSelected ? null : key);
                         }}
                       >
                         <span className="dt-cal-day-num">{day.getDate()}</span>
-                        {info && (
+                        {isGesperrt && <span className="dt-cal-blocked-icon" title="Ganztägig gesperrt">🚫</span>}
+                        {info && !isGesperrt && (
                           <div className="dt-cal-dots">
                             {info.free > 0 && <span className="dt-cal-dot dt-cal-dot-free" title={`${info.free} frei`}>{info.free}</span>}
                             {info.booked > 0 && <span className="dt-cal-dot dt-cal-dot-booked" title={`${info.booked} gebucht`}>{info.booked}</span>}
-                            {info.locked > 0 && info.free === 0 && <span className="dt-cal-dot dt-cal-dot-locked" title="Gesperrt">🚫</span>}
                           </div>
                         )}
-                        {info && isCurrentMonth && !info.booked && (
+                        {isCurrentMonth && (
                           <button
-                            className={`dt-cal-block-btn ${isDayBlocked ? 'dt-cal-block-btn--unblock' : ''}`}
-                            title={isDayBlocked ? 'Tag freigeben' : 'Tag sperren'}
-                            onClick={e => { e.stopPropagation(); blockTag(key, !isDayBlocked); }}
+                            className={`dt-cal-block-btn ${isGesperrt ? 'dt-cal-block-btn--unblock' : ''}`}
+                            title={isGesperrt ? 'Tag freigeben' : 'Tag sperren'}
+                            onClick={e => { e.stopPropagation(); blockTag(key, !isGesperrt); }}
                           >
-                            {isDayBlocked ? '✓' : '🚫'}
+                            {isGesperrt ? '✓' : '🚫'}
                           </button>
                         )}
                       </div>
@@ -890,16 +908,13 @@ export default function DemoTermine() {
                     <span>{new Date(calSelectedDay + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}</span>
                     <div className="dt-cal-day-detail-actions">
                       {(() => {
-                        const info = slotsByDay[calSelectedDay];
-                        const allLocked = info && info.free === 0 && info.locked > 0;
-                        const hasUnbooked = info && (info.free > 0 || info.locked > 0);
-                        if (!hasUnbooked) return null;
+                        const isGesperrt = gesperrte.has(calSelectedDay);
                         return (
                           <button
-                            className={`dt-btn dt-btn-sm ${allLocked ? 'dt-btn-success' : 'dt-btn-warn'}`}
-                            onClick={() => blockTag(calSelectedDay, !allLocked)}
+                            className={`dt-btn dt-btn-sm ${isGesperrt ? 'dt-btn-success' : 'dt-btn-warn'}`}
+                            onClick={() => blockTag(calSelectedDay, !isGesperrt)}
                           >
-                            {allLocked ? '✓ Tag freigeben' : '🚫 Tag sperren'}
+                            {isGesperrt ? '✓ Tag freigeben' : '🚫 Tag sperren'}
                           </button>
                         );
                       })()}
@@ -944,6 +959,108 @@ export default function DemoTermine() {
               )}
             </div>
           )}
+
+          {/* ── TAGESANSICHT ── */}
+          {calView === 'tag' && (() => {
+            const isGesperrt = gesperrte.has(tagViewDate);
+            const tagSlots = slots.filter(s => {
+              const d = new Date(s.slot_start);
+              const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+              return k === tagViewDate;
+            }).sort((a, b) => new Date(a.slot_start) - new Date(b.slot_start));
+
+            const prevDay = () => {
+              const d = new Date(tagViewDate + 'T12:00:00');
+              d.setDate(d.getDate() - 1);
+              setTagViewDate(d.toISOString().slice(0, 10));
+            };
+            const nextDay = () => {
+              const d = new Date(tagViewDate + 'T12:00:00');
+              d.setDate(d.getDate() + 1);
+              setTagViewDate(d.toISOString().slice(0, 10));
+            };
+
+            return (
+              <div className="dt-tag-view">
+                {/* Navigation */}
+                <div className="dt-tag-nav">
+                  <button className="dt-btn dt-btn-sm" onClick={prevDay}>‹</button>
+                  <div className="dt-tag-nav-center">
+                    <input
+                      type="date"
+                      className="dt-tag-date-input"
+                      value={tagViewDate}
+                      onChange={e => setTagViewDate(e.target.value)}
+                    />
+                    <span className="dt-tag-nav-label">
+                      {new Date(tagViewDate + 'T12:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <button className="dt-btn dt-btn-sm" onClick={nextDay}>›</button>
+                </div>
+
+                {/* Status-Banner */}
+                <div className={`dt-tag-status-bar ${isGesperrt ? 'dt-tag-status-bar--blocked' : tagSlots.length > 0 ? 'dt-tag-status-bar--active' : 'dt-tag-status-bar--empty'}`}>
+                  <div className="dt-tag-status-info">
+                    {isGesperrt ? (
+                      <><span className="dt-tag-status-icon">🚫</span><span>Dieser Tag ist gesperrt — keine Buchungen möglich</span></>
+                    ) : tagSlots.length > 0 ? (
+                      <><span className="dt-tag-status-icon">✅</span><span>{tagSlots.filter(s => s.is_available && !s.is_booked).length} freie · {tagSlots.filter(s => s.is_booked).length} gebuchte Slots</span></>
+                    ) : (
+                      <><span className="dt-tag-status-icon">○</span><span>Keine Slots an diesem Tag</span></>
+                    )}
+                  </div>
+                  <button
+                    className={`dt-btn dt-btn-sm ${isGesperrt ? 'dt-btn-success' : 'dt-btn-warn'}`}
+                    onClick={() => blockTag(tagViewDate, !isGesperrt)}
+                  >
+                    {isGesperrt ? '✓ Tag freigeben' : '🚫 Tag sperren'}
+                  </button>
+                </div>
+
+                {/* Slots des Tages */}
+                {tagSlots.length === 0 ? (
+                  <div className="dt-tag-empty">
+                    <p>Keine Slots für diesen Tag angelegt.</p>
+                    <p className="dt-muted">Nutze „+ Einzelner Termin" oder den Wochenplan, um Slots hinzuzufügen.</p>
+                  </div>
+                ) : (
+                  <div className="dt-tag-slots">
+                    {tagSlots.map(slot => (
+                      <div key={slot.id} className={`dt-slot-card dt-slot-compact ${slot.is_booked ? 'dt-slot-booked' : slot.is_available ? 'dt-slot-free' : 'dt-slot-locked'}`}>
+                        <div className="dt-slot-main">
+                          <div className="dt-slot-time">{new Date(slot.slot_start).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} – {new Date(slot.slot_end).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr · {slot.duration_minutes} Min</div>
+                          {slot.notes && <div className="dt-slot-note">{slot.notes}</div>}
+                        </div>
+                        <div className="dt-slot-status">
+                          {slot.is_booked ? (
+                            <span className="dt-pill dt-pill-booked">Gebucht — {slot.vorname} {slot.nachname}</span>
+                          ) : slot.is_available ? (
+                            <span className="dt-pill dt-pill-free">Frei</span>
+                          ) : (
+                            <span className="dt-pill dt-pill-locked">Gesperrt</span>
+                          )}
+                        </div>
+                        <div className="dt-slot-actions">
+                          {!slot.is_booked && (
+                            <>
+                              <button className={`dt-btn dt-btn-sm ${slot.is_available ? 'dt-btn-warn' : 'dt-btn-success'}`} onClick={() => toggleSlot(slot)}>
+                                {slot.is_available ? 'Sperren' : 'Freigeben'}
+                              </button>
+                              <button className="dt-btn dt-btn-sm dt-btn-danger" onClick={() => deleteSlot(slot.id)}>Löschen</button>
+                            </>
+                          )}
+                          {slot.is_booked && (
+                            <button className="dt-btn dt-btn-sm" onClick={() => { setView('buchungen'); loadBuchungen(); }}>Buchung →</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── SLOT-LISTE ── */}
           {calView === 'liste' && loading && <div className="dt-loading">Lade...</div>}
