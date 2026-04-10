@@ -199,6 +199,13 @@ function generateCalendarToken(mitgliedId, dojoId) {
 }
 
 /**
+ * Generiert den Super-Admin iCal-Token (statisch, basiert nur auf JWT_SECRET)
+ */
+function generateSuperAdminCalendarToken() {
+  return crypto.createHash('sha256').update(`super-admin-ical-${JWT_SECRET}`).digest('hex').substring(0, 32);
+}
+
+/**
  * Validiert einen Kalender-Token
  */
 async function validateCalendarToken(token, mitgliedId) {
@@ -254,7 +261,7 @@ router.get('/member/:mitgliedId/:token', async (req, res) => {
         s.tag,
         s.uhrzeit_start,
         s.uhrzeit_ende,
-        k.gruppenname AS kursname,
+        CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
         k.stil,
         t.vorname AS trainer_vorname,
         t.nachname AS trainer_nachname,
@@ -333,7 +340,7 @@ router.get('/dojo/:dojoId/schedule', async (req, res) => {
         s.tag,
         s.uhrzeit_start,
         s.uhrzeit_ende,
-        k.gruppenname AS kursname,
+        CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
         k.stil,
         t.vorname AS trainer_vorname,
         t.nachname AS trainer_nachname,
@@ -542,6 +549,68 @@ router.get('/admin/member/:mitgliedId/token', authenticateToken, async (req, res
   } catch (error) {
     logger.error('Fehler:', { error: error });
     res.status(500).json({ error: 'Fehler beim Generieren des Tokens' });
+  }
+});
+
+// ============================================================================
+// SUPER-ADMIN FEED (Token-basiert, kein Login — für iPhone-Abo)
+// ============================================================================
+
+/**
+ * GET /api/ical/super-admin/:token
+ * Alle Events aller Dojos — für Super-Admin iPhone-Abo
+ */
+router.get('/super-admin/:token', async (req, res) => {
+  const { token } = req.params;
+  const expectedToken = generateSuperAdminCalendarToken();
+  if (token !== expectedToken) {
+    return res.status(403).send('Ungültiger Token');
+  }
+
+  try {
+    const [eventRows] = await db.promise().query(`
+      SELECT e.*, d.dojoname
+      FROM events e
+      JOIN dojo d ON e.dojo_id = d.id
+      WHERE e.status != 'archiviert' AND e.datum >= CURDATE()
+      ORDER BY e.datum ASC
+      LIMIT 500
+    `);
+
+    let ical = generateIcalHeader('TDA — Alle Dojo-Events');
+
+    for (const event of eventRows) {
+      const startDateTime = formatDateTimeIcal(event.datum, event.uhrzeit_beginn || '10:00:00');
+      const endDateTime   = formatDateTimeIcal(event.datum, event.uhrzeit_ende   || '18:00:00');
+
+      const description = [
+        event.beschreibung || '',
+        event.dojoname ? `Dojo: ${event.dojoname}` : '',
+        event.ort ? `Ort: ${event.ort}` : '',
+        event.max_teilnehmer ? `Max. Teilnehmer: ${event.max_teilnehmer}` : ''
+      ].filter(Boolean).join('\\n');
+
+      ical += `BEGIN:VEVENT\r\n`;
+      ical += `UID:${generateUID('super-event', event.event_id)}\r\n`;
+      ical += `DTSTAMP:${formatDateTimeIcal(new Date(), '00:00:00')}Z\r\n`;
+      ical += `DTSTART;TZID=Europe/Berlin:${startDateTime}\r\n`;
+      ical += `DTEND;TZID=Europe/Berlin:${endDateTime}\r\n`;
+      ical += `SUMMARY:${escapeIcalText('[' + (event.dojoname || 'Dojo') + '] ' + event.titel)}\r\n`;
+      ical += `DESCRIPTION:${escapeIcalText(description)}\r\n`;
+      ical += `LOCATION:${escapeIcalText(event.ort || '')}\r\n`;
+      ical += `CATEGORIES:Event,Dojo\r\n`;
+      ical += `STATUS:${event.status === 'abgesagt' ? 'CANCELLED' : 'CONFIRMED'}\r\n`;
+      ical += `END:VEVENT\r\n`;
+    }
+
+    ical += generateIcalFooter();
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', 'inline; filename="tda-alle-events.ics"');
+    res.send(ical);
+  } catch (error) {
+    logger.error('Fehler beim Generieren des Super-Admin iCal:', { error });
+    res.status(500).send('Fehler beim Generieren des Kalenders');
   }
 });
 

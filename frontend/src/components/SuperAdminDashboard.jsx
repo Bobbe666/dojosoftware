@@ -628,6 +628,9 @@ const SuperAdminDashboard = () => {
   const [icalEvents, setIcalEvents] = useState([]);
   const [icalLoading, setIcalLoading] = useState(false);
   const [icalSaveMsg, setIcalSaveMsg] = useState('');
+  const [myFeedUrl, setMyFeedUrl] = useState('');
+  const [myFeedWebcalUrl, setMyFeedWebcalUrl] = useState('');
+  const [feedCopied, setFeedCopied] = useState(false);
 
   // State für Aktivitäten und Pushnachrichten
   const [activities, setActivities] = useState([]);
@@ -692,36 +695,28 @@ const SuperAdminDashboard = () => {
       setDojos(dojosRes.data.dojos);
       if (overviewRes.data.success) setOverviewSummary(overviewRes.data);
 
-      // HoF Stats (externer Aufruf, kein Auth nötig)
-      try {
-        const hofRes = await fetch('https://hof.tda-intl.org/api/stats/overview');
-        const hofData = await hofRes.json();
-        if (hofData.success) setHofStats(hofData.stats);
-      } catch (_) {}
+      // Externe/optionale Calls parallel
+      const [hofResult, evResult, acResult, sslResult] = await Promise.allSettled([
+        fetch('https://hof.tda-intl.org/api/stats/overview').then(r => r.json()),
+        axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } }),
+        fetch('https://academy.tda-intl.org/api/admin/public-stats').then(r => r.json()),
+        axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } })
+      ]);
 
-      // EventSoftware Stats
-      try {
-        const evRes = await axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } });
-        const turniere = evRes.data.turniere || [];
+      if (hofResult.status === 'fulfilled' && hofResult.value?.success) setHofStats(hofResult.value.stats);
+
+      if (evResult.status === 'fulfilled') {
+        const turniere = evResult.value.data?.turniere || [];
         const heute = new Date(); heute.setHours(0, 0, 0, 0);
         const upcoming = turniere.filter(t => new Date(t.start_datum || t.datum) >= heute);
         const offen = turniere.filter(t => t.anmeldeschluss && new Date(t.anmeldeschluss) >= heute);
         const naechstes = upcoming.sort((a, b) => new Date(a.start_datum || a.datum) - new Date(b.start_datum || b.datum))[0];
         setEventStats({ gesamt: turniere.length, upcoming: upcoming.length, offen: offen.length, naechstes });
-      } catch (_) {}
+      }
 
-      // Academy Stats (public endpoint — kein Auth nötig)
-      try {
-        const acRes = await fetch('https://academy.tda-intl.org/api/admin/public-stats');
-        const acData = await acRes.json();
-        if (acData.success) setAcademyStats(acData.stats);
-      } catch (_) {}
+      if (acResult.status === 'fulfilled' && acResult.value?.success) setAcademyStats(acResult.value.stats);
 
-      // SSL-Zertifikat-Status
-      try {
-        const sslRes = await axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } });
-        if (sslRes.data.success) setSslWarnings(sslRes.data.warnings || []);
-      } catch (_) {}
+      if (sslResult.status === 'fulfilled' && sslResult.value?.data?.success) setSslWarnings(sslResult.value.data.warnings || []);
 
       // Daily Briefing: einmal pro Tag anzeigen
       const today = new Date().toDateString();
@@ -732,7 +727,8 @@ const SuperAdminDashboard = () => {
       console.log('✅ Super-Admin Daten geladen');
     } catch (err) {
       console.error('❌ Fehler beim Laden der Super-Admin Daten:', err);
-      setError(err.response?.data?.message || 'Fehler beim Laden der Daten');
+      const errMsg = err.response?.data?.message;
+      setError(typeof errMsg === 'string' ? errMsg : 'Fehler beim Laden der Daten');
     } finally {
       setLoading(false);
     }
@@ -889,6 +885,16 @@ const SuperAdminDashboard = () => {
     } catch (e) { console.error('ical settings:', e); }
   };
 
+  const loadMyFeedUrl = async () => {
+    try {
+      const r = await axios.get('/admin/calendar/my-feed-url', { headers: { Authorization: `Bearer ${token}` } });
+      if (r.data.success) {
+        setMyFeedUrl(r.data.feedUrl || '');
+        setMyFeedWebcalUrl(r.data.webcalUrl || '');
+      }
+    } catch (e) { console.error('feed url:', e); }
+  };
+
   const loadIcalEvents = async () => {
     setIcalLoading(true);
     try {
@@ -922,6 +928,7 @@ const SuperAdminDashboard = () => {
     if (activeTab === 'system' && subActiveTab.system === 'kalender') {
       loadIcalSettings();
       loadIcalEvents();
+      loadMyFeedUrl();
     }
   }, [activeTab, subActiveTab.system]);
 
@@ -2507,6 +2514,7 @@ const SuperAdminDashboard = () => {
             )}
 
             {subActiveTab.system === 'kalender' && (
+              <>
               <div className="section-card">
                 <h3 style={{ marginBottom: '0.5rem' }}>📅 Privater iCloud Kalender</h3>
                 <p style={{ color: 'var(--text-3)', fontSize: '13px', marginBottom: '1.2rem' }}>
@@ -2559,6 +2567,55 @@ const SuperAdminDashboard = () => {
                   </p>
                 )}
               </div>
+
+              <div className="section-card" style={{ marginTop: '1rem' }}>
+                <h3 style={{ marginBottom: '0.5rem' }}>📲 Dojo-Events auf dem iPhone abonnieren</h3>
+                <p style={{ color: 'var(--text-3)', fontSize: '13px', marginBottom: '1.2rem' }}>
+                  Abonniere alle Dojo-Events direkt im iPhone-Kalender. Neue Events erscheinen automatisch —
+                  so siehst du auf einen Blick ob sich ein Dojo-Termin mit einem privaten Eintrag überschneidet.
+                </p>
+                {myFeedUrl ? (
+                  <>
+                    <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-end', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                      <div className="form-group" style={{ flex: 1, marginBottom: 0, minWidth: '200px' }}>
+                        <label>Kalender-Feed-URL</label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={myFeedUrl}
+                          style={{ fontFamily: 'monospace', fontSize: '12px', cursor: 'text' }}
+                          onFocus={e => e.target.select()}
+                        />
+                      </div>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => {
+                          navigator.clipboard.writeText(myFeedUrl);
+                          setFeedCopied(true);
+                          setTimeout(() => setFeedCopied(false), 2500);
+                        }}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        {feedCopied ? '✅ Kopiert' : '📋 URL kopieren'}
+                      </button>
+                      <a
+                        href={myFeedWebcalUrl}
+                        className="btn-primary"
+                        style={{ whiteSpace: 'nowrap', textDecoration: 'none' }}
+                      >
+                        📲 Zu iPhone hinzufügen
+                      </a>
+                    </div>
+                    <p style={{ color: 'var(--text-3)', fontSize: '12px' }}>
+                      <strong>Auf dem iPhone:</strong> Tippe auf "Zu iPhone hinzufügen" — der Kalender öffnet sich und du kannst ihn abonnieren.
+                      Oder kopiere die URL und füge sie manuell unter <strong>Kalender → Kalenderabonnement hinzufügen</strong> ein.
+                    </p>
+                  </>
+                ) : (
+                  <p style={{ color: 'var(--text-3)', fontSize: '13px' }}>Feed-URL wird geladen…</p>
+                )}
+              </div>
+              </>
             )}
           </div>
         )}
@@ -3210,7 +3267,8 @@ const DojoFormModal = ({ dojo, onClose, onSuccess, token }) => {
       onSuccess();
     } catch (err) {
       console.error('❌ Fehler beim Speichern:', err);
-      setError(err.response?.data?.error || 'Fehler beim Speichern');
+      const errMsg = err.response?.data?.error;
+      setError(typeof errMsg === 'string' ? errMsg : 'Fehler beim Speichern');
     } finally {
       setSubmitting(false);
     }
@@ -3446,7 +3504,7 @@ const SuperAdminChatZentrale = ({ token }) => {
       const res = await fetch('/api/chat/admin/all-rooms', { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) setAllRooms(data.rooms || []);
-      else setError(data.message || 'Fehler beim Laden');
+      else setError(typeof data.message === 'string' ? data.message : 'Fehler beim Laden');
     } catch (e) {
       setError('Verbindungsfehler: ' + e.message);
     } finally {

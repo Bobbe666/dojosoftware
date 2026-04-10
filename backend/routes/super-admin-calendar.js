@@ -6,7 +6,9 @@ const express = require('express');
 const router  = express.Router();
 const https   = require('https');
 const http    = require('http');
+const crypto  = require('crypto');
 const db      = require('../db');
+const { JWT_SECRET } = require('../middleware/auth');
 
 const pool = db.promise();
 
@@ -187,6 +189,14 @@ router.post('/check-conflict', onlySuperAdmin, async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
+});
+
+// ── GET /api/admin/calendar/my-feed-url ───────────────────────────────────────
+router.get('/my-feed-url', onlySuperAdmin, (req, res) => {
+  const token   = crypto.createHash('sha256').update(`super-admin-ical-${JWT_SECRET}`).digest('hex').substring(0, 32);
+  const baseUrl = (process.env.API_BASE_URL || 'https://dojo.tda-intl.org/api').replace(/\/api$/, '');
+  const feedUrl = `${baseUrl}/api/ical/super-admin/${token}`;
+  res.json({ success: true, feedUrl, webcalUrl: feedUrl.replace(/^https?:\/\//, 'webcal://') });
 });
 
 module.exports = router;

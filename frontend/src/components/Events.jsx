@@ -175,6 +175,29 @@ const Events = () => {
   // Event erstellen
   const handleCreateEvent = async () => {
     setError('');
+
+    // Konflikt-Check gegen privaten iCloud-Kalender (nur wenn Datum gesetzt)
+    if (newEvent.datum) {
+      try {
+        const start = `${newEvent.datum}T${newEvent.uhrzeit_beginn || '00:00:00'}`;
+        const end   = `${newEvent.datum}T${newEvent.uhrzeit_ende   || '23:59:59'}`;
+        const cr = await axios.post(
+          '/admin/calendar/check-conflict',
+          { start, end },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (cr.data.conflicts?.length > 0) {
+          const names = cr.data.conflicts.map(c => `• ${c.summary}`).join('\n');
+          const ok = window.confirm(
+            `⚠️ Terminkonflikt mit privatem Kalender!\n\n${names}\n\nTrotzdem anlegen?`
+          );
+          if (!ok) return;
+        }
+      } catch (e) {
+        // Kein iCal konfiguriert oder kein Super-Admin → still ignorieren
+      }
+    }
+
     try {
       const response = await axios.post(
         `/events`,
