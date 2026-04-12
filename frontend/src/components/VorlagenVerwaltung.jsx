@@ -66,6 +66,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   const [sendenVorlagenId, setSendenVorlagenId] = useState(null);
   const [serienbriefVorlage, setSerienbriefVorlage] = useState(null); // { id, name }
   const [toast, setToast] = useState('');
+  const [pdfModal, setPdfModal] = useState(null); // { name, dataUri }
   const [verlauf, setVerlauf] = useState([]);
   const [verlaufLaden, setVerlaufLaden] = useState(false);
 
@@ -141,20 +142,18 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   }
 
   async function handlePdfVorschau(vorlage) {
-    zeigeToast('PDF wird generiert…', 8000);
+    zeigeToast('PDF wird generiert…', 10000);
     try {
       const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'arraybuffer' });
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${vorlage.name.replace(/\s+/g, '_')}_Vorlage.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      // ArrayBuffer → Base64 → Data-URI (funktioniert zuverlässig in Safari)
+      const bytes = new Uint8Array(res.data);
+      let binary = '';
+      bytes.forEach(b => { binary += String.fromCharCode(b); });
+      const base64 = window.btoa(binary);
+      const dataUri = `data:application/pdf;base64,${base64}`;
+      setPdfModal({ name: vorlage.name, dataUri });
     } catch (err) {
-      zeigeToast('Fehler beim PDF-Download');
+      zeigeToast('Fehler beim Laden des PDFs');
     }
   }
 
@@ -310,7 +309,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
                     {/* Aktionen */}
                     <div className="vv-card-actions">
                       {['trainer_vereinbarung', 'trainer_infoblatt'].includes(v.kategorie) ? (
-                        <ActionBtn icon={<FileDown size={13} />} label="PDF laden" onClick={() => handlePdfVorschau(v)} />
+                        <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handlePdfVorschau(v)} />
                       ) : (
                         <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handleVorschau(v)} />
                       )}
@@ -434,6 +433,34 @@ export default function VorlagenVerwaltung({ embedded = false }) {
           vorlagenName={serienbriefVorlage.name}
           onClose={() => setSerienbriefVorlage(null)}
         />
+      )}
+
+      {/* PDF-Viewer Modal */}
+      {pdfModal && ReactDOM.createPortal(
+        <div className="vv-pdf-overlay" onClick={() => setPdfModal(null)}>
+          <div className="vv-pdf-modal" onClick={e => e.stopPropagation()}>
+            <div className="vv-pdf-modal-bar">
+              <span>{pdfModal.name}</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <a
+                  href={pdfModal.dataUri}
+                  download={`${pdfModal.name.replace(/\s+/g, '_')}.pdf`}
+                  className="vv-pdf-download-btn"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Download size={13} /> Herunterladen
+                </a>
+                <button className="vv-pdf-close-btn" onClick={() => setPdfModal(null)}>✕ Schließen</button>
+              </div>
+            </div>
+            <iframe
+              src={pdfModal.dataUri}
+              title={pdfModal.name}
+              className="vv-pdf-iframe"
+            />
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Toast */}

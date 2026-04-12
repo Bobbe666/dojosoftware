@@ -520,3 +520,70 @@
 .vv-versand-email { background: rgba(16,185,129,0.15); color: #34d399; }
 .vv-versand-email_mit_pdf { background: rgba(245,158,11,0.15); color: var(--status-warning); }
 .vv-versand-unbekannt { background: rgba(255,255,255,0.05); color: var(--text-secondary, #888); }
+
+/* ── PDF-Viewer Modal ──────────────────────────────────────────────────────── */
+.vv-pdf-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.vv-pdf-modal {
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid var(--border-default, #2a2a3a);
+  border-radius: 10px;
+  width: min(95vw, 1000px);
+  height: min(90vh, 900px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+.vv-pdf-modal-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-elevated, #12122a);
+  border-bottom: 1px solid var(--border-default, #2a2a3a);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+  flex-shrink: 0;
+}
+.vv-pdf-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+  background: #525659;
+}
+.vv-pdf-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid var(--border-default, #2a2a3a);
+  border-radius: 5px;
+  color: var(--text-primary, #e2e8f0);
+  font-size: 0.82rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.vv-pdf-download-btn:hover { background: var(--bg-hover, rgba(255,255,255,0.05)); }
+.vv-pdf-close-btn {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border-default, #2a2a3a);
+  border-radius: 5px;
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.vv-pdf-close-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-primary, #e2e8f0); }
