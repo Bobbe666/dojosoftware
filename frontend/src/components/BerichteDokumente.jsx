@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Trash2, Edit, Plus, FileCheck, Calendar, Users, TrendingUp, DollarSign, Award } from 'lucide-react';
+import { FileText, Download, Trash2, Edit, Plus, FileCheck, Calendar, Users, TrendingUp, DollarSign } from 'lucide-react';
 import '../styles/BerichteDokumente.css';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -15,12 +15,10 @@ const BerichteDokumente = ({ embedded = false }) => {
   // Dokumenttypen
   const documentTypes = [
     { id: 'all', label: 'Alle Dokumente', icon: <FileText size={18} /> },
-    { id: 'vertrag', label: 'Mitgliedschaftsvertrag', icon: <FileText size={18} />, featured: true },
     { id: 'mitgliederliste', label: 'Mitgliederliste', icon: <Users size={18} /> },
     { id: 'anwesenheit', label: 'Anwesenheitsberichte', icon: <FileCheck size={18} /> },
     { id: 'beitraege', label: 'Beitragsübersicht', icon: <DollarSign size={18} /> },
     { id: 'statistiken', label: 'Statistiken', icon: <TrendingUp size={18} /> },
-    { id: 'pruefungen', label: 'Prüfungsurkunden', icon: <Award size={18} /> },
     { id: 'custom', label: 'Benutzerdefiniert', icon: <FileText size={18} /> }
   ];
 
