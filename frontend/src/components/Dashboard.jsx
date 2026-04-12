@@ -38,6 +38,7 @@ import AgbStatusWidget from './AgbStatusWidget';
 import VisitorChatAlerts from './chat/VisitorChatAlerts';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
+import CockpitUebersicht from './CockpitUebersicht';
 
 
 function Dashboard() {
@@ -501,6 +502,14 @@ function Dashboard() {
       badge: 'NEU',
       featured: true
     },
+    {
+      icon: '🧾',
+      title: 'Steuer-Assistent',
+      description: 'UStVA & EÜR — ELSTER XML, Jahresabschluss, Steuerberater-Export',
+      path: '/dashboard/steuer',
+      badge: 'NEU',
+      featured: true
+    },
     ...(hasFeature('buchfuehrung') ? [{
       icon: '📒',
       title: 'Buchhaltung & EÜR',
@@ -619,7 +628,7 @@ function Dashboard() {
     {
       icon: '📂',
       title: 'DokumentenZentrale',
-      description: 'Alle Dokumente, Vorlagen & Verträge zentral verwalten',
+      description: 'Vorlagen, Verträge, AGB, Datenschutz & Automatisierungen',
       path: '/dashboard/dokumentenzentrale',
       badge: 'NEU',
       featured: true
@@ -637,13 +646,6 @@ function Dashboard() {
       title: 'Berichte & Dokumente',
       description: 'PDF-Berichte erstellen, ändern & verwalten',
       path: '/dashboard/berichte',
-      featured: true
-    },
-    {
-      icon: '📋',
-      title: 'Vertragsdokumente',
-      description: 'AGB, Datenschutz & Hausordnung verwalten',
-      path: '/dashboard/vertragsdokumente',
       featured: true
     },
     {
@@ -1222,6 +1224,9 @@ function Dashboard() {
 
               {/* 🔔 Trial/Subscription Banner */}
               <TrialBanner stats={stats} />
+
+              {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
+              {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
 
               {/* Navigation basierend auf Rolle */}
               {role === 'admin' && (
