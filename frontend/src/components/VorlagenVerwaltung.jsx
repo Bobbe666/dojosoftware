@@ -141,11 +141,15 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   }
 
   async function handlePdfVorschau(vorlage) {
+    // Fenster synchron öffnen (vor await) — Safari blockt window.open nach async
+    const win = window.open('', '_blank');
+    if (!win) { zeigeToast('Popup wurde geblockt – bitte Popup-Blocker deaktivieren'); return; }
     try {
       const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'blob' });
       const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      window.open(url, '_blank');
+      win.location.href = url;
     } catch (err) {
+      win.close();
       zeigeToast('Fehler bei der PDF-Vorschau');
     }
   }
