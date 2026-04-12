@@ -66,7 +66,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   const [sendenVorlagenId, setSendenVorlagenId] = useState(null);
   const [serienbriefVorlage, setSerienbriefVorlage] = useState(null); // { id, name }
   const [toast, setToast] = useState('');
-  const [pdfModal, setPdfModal] = useState(null); // { name, dataUri }
+  const [pdfModal, setPdfModal] = useState(null); // { name, blobUrl, dataUri }
   const [verlauf, setVerlauf] = useState([]);
   const [verlaufLaden, setVerlaufLaden] = useState(false);
 
@@ -145,16 +145,24 @@ export default function VorlagenVerwaltung({ embedded = false }) {
     zeigeToast('PDF wird generiert…', 10000);
     try {
       const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'arraybuffer' });
-      // ArrayBuffer → Base64 → Data-URI (funktioniert zuverlässig in Safari)
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(blob);
+      // data URI für den Download-Link
       const bytes = new Uint8Array(res.data);
       let binary = '';
-      bytes.forEach(b => { binary += String.fromCharCode(b); });
-      const base64 = window.btoa(binary);
-      const dataUri = `data:application/pdf;base64,${base64}`;
-      setPdfModal({ name: vorlage.name, dataUri });
+      for (let i = 0; i < bytes.length; i += 1024) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 1024));
+      }
+      const dataUri = `data:application/pdf;base64,${window.btoa(binary)}`;
+      setPdfModal({ name: vorlage.name, blobUrl, dataUri });
     } catch (err) {
       zeigeToast('Fehler beim Laden des PDFs');
     }
+  }
+
+  function closePdfModal() {
+    if (pdfModal?.blobUrl) URL.revokeObjectURL(pdfModal.blobUrl);
+    setPdfModal(null);
   }
 
   async function handleVerlaufPdf(dok) {
@@ -437,7 +445,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
 
       {/* PDF-Viewer Modal */}
       {pdfModal && ReactDOM.createPortal(
-        <div className="vv-pdf-overlay" onClick={() => setPdfModal(null)}>
+        <div className="vv-pdf-overlay" onClick={closePdfModal}>
           <div className="vv-pdf-modal" onClick={e => e.stopPropagation()}>
             <div className="vv-pdf-modal-bar">
               <span>{pdfModal.name}</span>
@@ -450,14 +458,16 @@ export default function VorlagenVerwaltung({ embedded = false }) {
                 >
                   <Download size={13} /> Herunterladen
                 </a>
-                <button className="vv-pdf-close-btn" onClick={() => setPdfModal(null)}>✕ Schließen</button>
+                <button className="vv-pdf-close-btn" onClick={closePdfModal}>✕ Schließen</button>
               </div>
             </div>
-            <iframe
-              src={pdfModal.dataUri}
-              title={pdfModal.name}
+            <object
+              data={pdfModal.blobUrl}
+              type="application/pdf"
               className="vv-pdf-iframe"
-            />
+            >
+              <embed src={pdfModal.blobUrl} type="application/pdf" className="vv-pdf-iframe" />
+            </object>
           </div>
         </div>,
         document.body
