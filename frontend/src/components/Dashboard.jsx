@@ -643,7 +643,7 @@ function Dashboard() {
     },
     {
       icon: '📄',
-      title: 'Berichte & Dokumente',
+      title: 'Berichte',
       description: 'PDF-Berichte erstellen, ändern & verwalten',
       path: '/dashboard/berichte',
       featured: true
