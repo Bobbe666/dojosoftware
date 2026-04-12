@@ -11,7 +11,7 @@ import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import {
   Plus, Settings, Eye, Edit, Copy, Trash2, Send,
-  Building2, FileText, AlertCircle, RefreshCw, Download, History, Users, FileDown
+  Building2, FileText, AlertCircle, RefreshCw, Download, History, Users
 } from 'lucide-react';
 import VorlagenEditor from './VorlagenEditor';
 import AbsenderProfileModal from './AbsenderProfileModal';
@@ -66,7 +66,6 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   const [sendenVorlagenId, setSendenVorlagenId] = useState(null);
   const [serienbriefVorlage, setSerienbriefVorlage] = useState(null); // { id, name }
   const [toast, setToast] = useState('');
-  const [pdfModal, setPdfModal] = useState(null); // { name, blobUrl, dataUri }
   const [verlauf, setVerlauf] = useState([]);
   const [verlaufLaden, setVerlaufLaden] = useState(false);
 
@@ -141,29 +140,6 @@ export default function VorlagenVerwaltung({ embedded = false }) {
     }
   }
 
-  async function handlePdfVorschau(vorlage) {
-    zeigeToast('PDF wird generiert…', 10000);
-    try {
-      const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'arraybuffer' });
-      const blob = new Blob([res.data], { type: 'application/pdf' });
-      const blobUrl = URL.createObjectURL(blob);
-      // data URI für den Download-Link
-      const bytes = new Uint8Array(res.data);
-      let binary = '';
-      for (let i = 0; i < bytes.length; i += 1024) {
-        binary += String.fromCharCode(...bytes.subarray(i, i + 1024));
-      }
-      const dataUri = `data:application/pdf;base64,${window.btoa(binary)}`;
-      setPdfModal({ name: vorlage.name, blobUrl, dataUri });
-    } catch (err) {
-      zeigeToast('Fehler beim Laden des PDFs');
-    }
-  }
-
-  function closePdfModal() {
-    if (pdfModal?.blobUrl) URL.revokeObjectURL(pdfModal.blobUrl);
-    setPdfModal(null);
-  }
 
   async function handleVerlaufPdf(dok) {
     try {
@@ -316,11 +292,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
 
                     {/* Aktionen */}
                     <div className="vv-card-actions">
-                      {['trainer_vereinbarung', 'trainer_infoblatt'].includes(v.kategorie) ? (
-                        <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handlePdfVorschau(v)} />
-                      ) : (
-                        <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handleVorschau(v)} />
-                      )}
+                      <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handleVorschau(v)} />
                       <ActionBtn icon={<Edit size={13} />} label="Bearbeiten" onClick={() => { setEditorVorlage(v); setEditorOffen(true); }} />
                       <ActionBtn icon={<Copy size={13} />} label="Kopieren" onClick={() => handleDuplizieren(v)} />
                       <ActionBtn icon={<Send size={13} />} label="Senden" primary color={profilFarbe} onClick={() => setSendenVorlagenId(v.id)} />
@@ -444,35 +416,6 @@ export default function VorlagenVerwaltung({ embedded = false }) {
       )}
 
       {/* PDF-Viewer Modal */}
-      {pdfModal && ReactDOM.createPortal(
-        <div className="vv-pdf-overlay" onClick={closePdfModal}>
-          <div className="vv-pdf-modal" onClick={e => e.stopPropagation()}>
-            <div className="vv-pdf-modal-bar">
-              <span>{pdfModal.name}</span>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <a
-                  href={pdfModal.dataUri}
-                  download={`${pdfModal.name.replace(/\s+/g, '_')}.pdf`}
-                  className="vv-pdf-download-btn"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <Download size={13} /> Herunterladen
-                </a>
-                <button className="vv-pdf-close-btn" onClick={closePdfModal}>✕ Schließen</button>
-              </div>
-            </div>
-            <object
-              data={pdfModal.blobUrl}
-              type="application/pdf"
-              className="vv-pdf-iframe"
-            >
-              <embed src={pdfModal.blobUrl} type="application/pdf" className="vv-pdf-iframe" />
-            </object>
-          </div>
-        </div>,
-        document.body
-      )}
-
       {/* Toast */}
       {toast && (
         <div className="vv-toast">

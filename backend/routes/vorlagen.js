@@ -386,7 +386,35 @@ router.get('/:id/preview-html', async (req, res) => {
     const [[vorlage]] = await pool.query('SELECT * FROM dokument_vorlagen WHERE id = ? AND (dojo_id = ? OR dojo_id IS NULL)', [req.params.id, dojoId]);
     if (!vorlage) return res.status(404).json({ error: 'Vorlage nicht gefunden' });
 
-    // Echtes Mitglied oder Beispieldaten
+    // ── Trainer-Kategorien: direktes HTML aus trainerPdfGenerator ────────────
+    if (TRAINER_KATEGORIEN.includes(vorlage.kategorie)) {
+      const [[dojoRow]] = await pool.query(
+        'SELECT dojoname, inhaber, strasse, hausnummer, plz, ort, steuernummer FROM dojo WHERE id = ? LIMIT 1',
+        [dojoId]
+      );
+      const dojo = dojoRow || {};
+      const beispielTrainer = {
+        vorname: 'Max', nachname: 'Mustermann',
+        anschrift: 'Musterstraße 1, 12345 Musterstadt',
+        geburtsdatum: '1985-06-15',
+        graduierung: '3',
+        steuer_id: '12 345 678 900',
+      };
+      const beispielParams = {
+        mitgliedsbeitrag_monatlich: '79',
+        sachleistungen_jahreswert: '1200',
+        vertragsbeginn: new Date().toISOString().slice(0, 10),
+        wettbewerb_radius: '10',
+        trainingsbereich: 'Karate, Kumite',
+      };
+      const html = vorlage.kategorie === 'trainer_vereinbarung'
+        ? require('../utils/trainerPdfGenerator').generateVereinbarungHtml(beispielTrainer, dojo, beispielParams)
+        : require('../utils/trainerPdfGenerator').generateInfoblattHtml(beispielTrainer, dojo);
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(html);
+    }
+
+    // ── Standard Briefkopf ────────────────────────────────────────────────────
     let mitglied = BEISPIEL_MITGLIED;
     if (req.query.mitglied_id) {
       const [[gefunden]] = await pool.query('SELECT * FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?', [req.query.mitglied_id, dojoId]);
