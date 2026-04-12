@@ -50,47 +50,39 @@ function getBaseCss() {
 
     /* ── Kopfzeile ── */
     .doc-header {
-      background: ${ROT};
-      margin: 0 -20mm 8mm -20mm;
-      padding: 0;
-      color: #fff;
+      margin-bottom: 6mm;
     }
-    /* Logo-Zeile oben */
     .doc-header-logo-row {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      padding: 6mm 20mm 5mm 20mm;
-      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 4mm;
+      border-bottom: 3px solid ${ROT};
+      margin-bottom: 4mm;
     }
     .doc-header-logo {
-      height: 18mm;
-      max-width: 70mm;
+      height: 20mm;
+      max-width: 75mm;
       object-fit: contain;
       display: block;
     }
     .doc-header-meta {
       text-align: right;
       font-size: 8.5pt;
-      color: rgba(255,255,255,0.8);
+      color: #555;
       line-height: 1.6;
     }
-    /* Titel-Zeile unten */
-    .doc-header-title-row {
-      padding: 5mm 20mm 6mm 20mm;
-    }
     .doc-header-title-row h1 {
-      font-size: 20pt;
+      font-size: 18pt;
       font-weight: 700;
-      color: #fff;
-      letter-spacing: 0.04em;
-      line-height: 1.15;
-      margin: 0;
+      color: ${ROT};
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+      margin: 0 0 2px 0;
     }
     .doc-header-title-row .subtitle {
-      font-size: 10pt;
-      color: rgba(255,255,255,0.85);
-      margin-top: 3px;
+      font-size: 9.5pt;
+      color: #555;
     }
 
     /* ── Rote Trennlinie ── */
@@ -148,12 +140,13 @@ function getBaseCss() {
     /* ── Tabellen ── */
     table { width: 100%; border-collapse: collapse; margin: 2.5mm 0 4mm; font-size: 9.5pt; }
     th {
-      background: ${ROT};
-      color: #fff;
+      background: ${ROT_BG};
+      color: ${ROT};
       padding: 2mm 3mm;
       text-align: left;
-      font-weight: 600;
-      border: 1px solid ${ROT};
+      font-weight: 700;
+      border: 1px solid ${ROT_BORDER};
+      border-bottom: 2px solid ${ROT};
     }
     td { padding: 2mm 3mm; border: 1px solid ${ROT_BORDER}; vertical-align: top; }
     tr:nth-child(even) td { background: #fafafa; }
@@ -510,7 +503,7 @@ function buildInfoblattHtml(trainer, dojo) {
       <div class="doc-header-meta">
         ${dojoName}<br/>
         ${today}<br/>
-        für: <strong style="color:#fff">${trainerName}</strong>
+        für: <strong>${trainerName}</strong>
       </div>
     </div>
     <div class="doc-header-title-row">
