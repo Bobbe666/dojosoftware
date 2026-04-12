@@ -11,7 +11,7 @@ import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import {
   Plus, Settings, Eye, Edit, Copy, Trash2, Send,
-  Building2, FileText, AlertCircle, RefreshCw, Download, History, Users
+  Building2, FileText, AlertCircle, RefreshCw, Download, History, Users, FileDown
 } from 'lucide-react';
 import VorlagenEditor from './VorlagenEditor';
 import AbsenderProfileModal from './AbsenderProfileModal';
@@ -23,21 +23,28 @@ import '../styles/VorlagenVerwaltung.css';
 // ── Kategorie-Filter-Tabs ──────────────────────────────────────────────────────
 const FILTER_TABS = [
   { id: 'alle', label: 'Alle' },
-  { id: 'mitgliedschaft', label: 'Mitgliedschaft', kategorien: ['begruessung','geburtstag','kuendigung_bestaetigung','ruhezeit','kursanmeldung','info_brief','rundschreiben'] },
+  { id: 'mitgliedschaft', label: 'Mitgliedschaft', kategorien: ['begruessung','geburtstag','kuendigung_bestaetigung','ruhezeit','vertrag_verlaengerung','vertrag_bestaetigung','kursanmeldung','info_brief','rundschreiben'] },
   { id: 'finanzen', label: 'Finanzen', kategorien: ['rechnung','zahlungserinnerung','mahnung','mahnbescheid','ruecklastschrift_info'] },
   { id: 'pruefungen', label: 'Prüfungen', kategorien: ['pruefung_einladung','pruefung_ergebnis','guertelvergabe'] },
+  { id: 'lizenzen', label: 'Lizenzen & Verband', kategorien: ['lizenz_ausstellung','lizenz_verlaengerung','verband_info'] },
+  { id: 'personal', label: 'Personal & Trainer', kategorien: ['trainer_vereinbarung','trainer_infoblatt'] },
   { id: 'sonstiges', label: 'Sonstiges', kategorien: ['sonstiges'] },
 ];
 
 const KATEGORIE_LABEL = {
   begruessung: 'Begrüßung', geburtstag: 'Geburtstag',
   kuendigung_bestaetigung: 'Kündigung', ruhezeit: 'Ruhezeit',
+  vertrag_verlaengerung: 'Vertragsverlängerung', vertrag_bestaetigung: 'Vertragsbestätigung',
   zahlungserinnerung: 'Zahlungserinnerung', mahnung: 'Mahnung',
   mahnbescheid: 'Mahnbescheid', ruecklastschrift_info: 'Rücklastschrift',
   rechnung: 'Rechnung', kursanmeldung: 'Kursanmeldung',
   pruefung_einladung: 'Prüfungs-Einladung', pruefung_ergebnis: 'Prüfungsergebnis',
   guertelvergabe: 'Gürtelvergabe', info_brief: 'Infobrief',
-  rundschreiben: 'Rundschreiben', sonstiges: 'Sonstiges',
+  rundschreiben: 'Rundschreiben',
+  lizenz_ausstellung: 'Lizenz-Ausstellung', lizenz_verlaengerung: 'Lizenzverlängerung',
+  verband_info: 'Verbandsinfo', sonstiges: 'Sonstiges',
+  trainer_vereinbarung: 'Trainervereinbarung',
+  trainer_infoblatt: 'Trainer-Infoblatt',
 };
 
 export default function VorlagenVerwaltung({ embedded = false }) {
@@ -130,6 +137,16 @@ export default function VorlagenVerwaltung({ embedded = false }) {
       zeigeToast('Fehler bei der Vorschau');
     } finally {
       setPreviewLoading(false);
+    }
+  }
+
+  async function handlePdfVorschau(vorlage) {
+    try {
+      const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      window.open(url, '_blank');
+    } catch (err) {
+      zeigeToast('Fehler bei der PDF-Vorschau');
     }
   }
 
@@ -284,7 +301,11 @@ export default function VorlagenVerwaltung({ embedded = false }) {
 
                     {/* Aktionen */}
                     <div className="vv-card-actions">
-                      <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handleVorschau(v)} />
+                      {['trainer_vereinbarung', 'trainer_infoblatt'].includes(v.kategorie) ? (
+                        <ActionBtn icon={<FileDown size={13} />} label="PDF-Vorschau" onClick={() => handlePdfVorschau(v)} />
+                      ) : (
+                        <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handleVorschau(v)} />
+                      )}
                       <ActionBtn icon={<Edit size={13} />} label="Bearbeiten" onClick={() => { setEditorVorlage(v); setEditorOffen(true); }} />
                       <ActionBtn icon={<Copy size={13} />} label="Kopieren" onClick={() => handleDuplizieren(v)} />
                       <ActionBtn icon={<Send size={13} />} label="Senden" primary color={profilFarbe} onClick={() => setSendenVorlagenId(v.id)} />

@@ -20,6 +20,9 @@ const nodemailer = require('nodemailer');
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { generateVorlagePdf, buildLetterheadHtml } = require('../utils/vorlagenPdfGenerator');
+const { generateVereinbarungPdf, generateInfoblattPdf } = require('../utils/trainerPdfGenerator');
+
+const TRAINER_KATEGORIEN = ['trainer_vereinbarung', 'trainer_infoblatt'];
 
 router.use(authenticateToken);
 
@@ -225,6 +228,8 @@ router.get('/kategorien', (req, res) => {
       { key: 'info_brief', label: 'Allgemeiner Infobrief', gruppe: 'allgemein' },
       { key: 'rundschreiben', label: 'Rundschreiben', gruppe: 'allgemein' },
       { key: 'sonstiges', label: 'Sonstiges', gruppe: 'allgemein' },
+      { key: 'trainer_vereinbarung', label: 'Trainervereinbarung freie Mitarbeit', gruppe: 'personal' },
+      { key: 'trainer_infoblatt', label: 'Trainer-Infoblatt', gruppe: 'personal' },
     ],
     platzhalter: [
       { gruppe: 'Empfänger', felder: ['{{anrede}}', '{{anrede_formal}}', '{{anrede_persoenlich}}', '{{vorname}}', '{{nachname}}', '{{vollname}}', '{{mitgliedsnummer}}', '{{email}}', '{{strasse}}', '{{plz}}', '{{ort}}', '{{geburtstag}}', '{{eintrittsdatum}}'] },
@@ -419,6 +424,43 @@ router.get('/:id/preview-pdf', async (req, res) => {
     const [[vorlage]] = await pool.query('SELECT * FROM dokument_vorlagen WHERE id = ? AND (dojo_id = ? OR dojo_id IS NULL)', [req.params.id, dojoId]);
     if (!vorlage) return res.status(404).json({ error: 'Vorlage nicht gefunden' });
 
+    // ── Trainer-Kategorien: spezielles rotes KKS-Design ──────────────────────
+    if (TRAINER_KATEGORIEN.includes(vorlage.kategorie)) {
+      const [[dojoRow]] = await pool.query(
+        'SELECT dojoname, strasse, hausnummer, plz, ort, steuernummer FROM dojos WHERE dojo_id = ? LIMIT 1',
+        [dojoId]
+      );
+      const [[einst]] = await pool.query('SELECT inhaber FROM brief_einstellungen WHERE dojo_id = ? LIMIT 1', [dojoId]);
+      const dojo = { ...(dojoRow || {}), inhaber: einst?.inhaber || null };
+
+      const beispielTrainer = {
+        vorname: 'Max', nachname: 'Mustermann',
+        anschrift: 'Musterstraße 1, 12345 Musterstadt',
+        geburtsdatum: '1985-06-15',
+        graduierung: '3',
+        steuer_id: '12 345 678 900',
+      };
+      const beispielParams = {
+        mitgliedsbeitrag_monatlich: '79',
+        sachleistungen_jahreswert: '1200',
+        vertragsbeginn: new Date().toISOString().slice(0, 10),
+        wettbewerb_radius: '10',
+        trainingsbereich: 'Karate, Kumite',
+      };
+
+      let pdfBuffer;
+      if (vorlage.kategorie === 'trainer_vereinbarung') {
+        pdfBuffer = await generateVereinbarungPdf(beispielTrainer, dojo, beispielParams);
+      } else {
+        pdfBuffer = await generateInfoblattPdf(beispielTrainer, dojo);
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="Vorschau_${vorlage.name.replace(/\s+/g, '_')}.pdf"`);
+      return res.send(pdfBuffer);
+    }
+
+    // ── Standard Briefkopf-Design ─────────────────────────────────────────────
     let absenderProfil = await getAbsenderProfil(vorlage.absender_profil_id, dojoId);
     const [[einstellungen]] = await pool.query('SELECT * FROM brief_einstellungen WHERE dojo_id = ? LIMIT 1', [dojoId]);
     const banken = await getBanken(einstellungen, dojoId);
