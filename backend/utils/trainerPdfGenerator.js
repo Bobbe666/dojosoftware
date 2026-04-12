@@ -50,43 +50,47 @@ function getBaseCss() {
 
     /* ── Kopfzeile ── */
     .doc-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: stretch;
       background: ${ROT};
-      margin: 0 -20mm 10mm -20mm;
-      padding: 10mm 20mm 8mm 20mm;
+      margin: 0 -20mm 8mm -20mm;
+      padding: 0;
       color: #fff;
     }
-    .doc-header-left { flex: 1; }
-    .doc-header-left h1 {
-      font-size: 19pt;
+    /* Logo-Zeile oben */
+    .doc-header-logo-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6mm 20mm 5mm 20mm;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+    }
+    .doc-header-logo {
+      height: 18mm;
+      max-width: 70mm;
+      object-fit: contain;
+      display: block;
+    }
+    .doc-header-meta {
+      text-align: right;
+      font-size: 8.5pt;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.6;
+    }
+    /* Titel-Zeile unten */
+    .doc-header-title-row {
+      padding: 5mm 20mm 6mm 20mm;
+    }
+    .doc-header-title-row h1 {
+      font-size: 20pt;
       font-weight: 700;
       color: #fff;
-      letter-spacing: 0.03em;
-      line-height: 1.2;
+      letter-spacing: 0.04em;
+      line-height: 1.15;
+      margin: 0;
     }
-    .doc-header-left .subtitle {
+    .doc-header-title-row .subtitle {
       font-size: 10pt;
       color: rgba(255,255,255,0.85);
       margin-top: 3px;
-    }
-    .doc-header-right {
-      text-align: right;
-      font-size: 9pt;
-      color: rgba(255,255,255,0.85);
-      line-height: 1.6;
-      flex-shrink: 0;
-    }
-    .doc-header-logo {
-      height: 16mm;
-      max-width: 50mm;
-      object-fit: contain;
-      display: block;
-      margin-left: auto;
-      margin-bottom: 4px;
-      /* Weißes Logo auf rotem Hintergrund — Filter zu weiß */
-      filter: brightness(0) invert(1);
     }
 
     /* ── Rote Trennlinie ── */
@@ -276,18 +280,20 @@ function buildVereinbarungHtml(trainer, dojo, params) {
 
   const logoTag = LOGO_B64
     ? `<img src="${LOGO_B64}" class="doc-header-logo" alt="KKS Logo" />`
-    : '';
+    : `<span style="color:#fff;font-weight:700;font-size:13pt">${dojoName}</span>`;
 
   return htmlShell('Trainervereinbarung', `
   <div class="doc-header">
-    <div class="doc-header-left">
+    <div class="doc-header-logo-row">
+      ${logoTag}
+      <div class="doc-header-meta">
+        ${dojoName}<br/>
+        Erstellt: ${today}
+      </div>
+    </div>
+    <div class="doc-header-title-row">
       <h1>TRAINERVEREINBARUNG</h1>
       <div class="subtitle">über freie Mitarbeit als Kampfkunsttrainer &bull; Sachleistungsvergütung</div>
-    </div>
-    <div class="doc-header-right">
-      ${logoTag}
-      ${dojoName}<br/>
-      Erstellt: ${today}
     </div>
   </div>
 
@@ -495,19 +501,21 @@ function buildInfoblattHtml(trainer, dojo) {
 
   const logoTag = LOGO_B64
     ? `<img src="${LOGO_B64}" class="doc-header-logo" alt="KKS Logo" />`
-    : '';
+    : `<span style="color:#fff;font-weight:700;font-size:13pt">${dojoName}</span>`;
 
   return htmlShell('Infoblatt Trainervereinbarung', `
   <div class="doc-header">
-    <div class="doc-header-left">
+    <div class="doc-header-logo-row">
+      ${logoTag}
+      <div class="doc-header-meta">
+        ${dojoName}<br/>
+        ${today}<br/>
+        für: <strong style="color:#fff">${trainerName}</strong>
+      </div>
+    </div>
+    <div class="doc-header-title-row">
       <h1>DEIN WEG ALS TRAINER</h1>
       <div class="subtitle">Was sich für dich als Schwarzgurt ändert – und was nicht</div>
-    </div>
-    <div class="doc-header-right">
-      ${logoTag}
-      ${dojoName}<br/>
-      ${today}<br/>
-      für: <strong style="color:#fff">${trainerName}</strong>
     </div>
   </div>
 
