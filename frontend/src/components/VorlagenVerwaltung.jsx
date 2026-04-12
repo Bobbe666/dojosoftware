@@ -143,8 +143,9 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   async function handlePdfVorschau(vorlage) {
     zeigeToast('PDF wird generiert…', 8000);
     try {
-      const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const res = await axios.get(withDojo(`/vorlagen/${vorlage.id}/preview-pdf`), { responseType: 'arraybuffer' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `${vorlage.name.replace(/\s+/g, '_')}_Vorlage.pdf`;
@@ -153,7 +154,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      zeigeToast('Fehler bei der PDF-Vorschau');
+      zeigeToast('Fehler beim PDF-Download');
     }
   }
 
