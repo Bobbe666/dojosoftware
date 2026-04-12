@@ -427,11 +427,10 @@ router.get('/:id/preview-pdf', async (req, res) => {
     // ── Trainer-Kategorien: spezielles rotes KKS-Design ──────────────────────
     if (TRAINER_KATEGORIEN.includes(vorlage.kategorie)) {
       const [[dojoRow]] = await pool.query(
-        'SELECT dojoname, strasse, hausnummer, plz, ort, steuernummer FROM dojos WHERE dojo_id = ? LIMIT 1',
+        'SELECT dojoname, inhaber, strasse, hausnummer, plz, ort, steuernummer FROM dojo WHERE dojo_id = ? LIMIT 1',
         [dojoId]
       );
-      const [[einst]] = await pool.query('SELECT inhaber FROM brief_einstellungen WHERE dojo_id = ? LIMIT 1', [dojoId]);
-      const dojo = { ...(dojoRow || {}), inhaber: einst?.inhaber || null };
+      const dojo = dojoRow || {};
 
       const beispielTrainer = {
         vorname: 'Max', nachname: 'Mustermann',
