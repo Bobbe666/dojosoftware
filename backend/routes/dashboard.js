@@ -656,31 +656,19 @@ router.get('/cockpit-uebersicht', async (req, res) => {
       anstehende_lastschriften,
     });
 
-    // ── 6. Neue Verträge heute / diese Woche ────────────────────────────────
-    let neue_vertraege_heute = 0;
-    let neue_vertraege_woche = 0;
+    // ── 6. Neue Verträge (nicht zur Kenntnis genommen) ───────────────────────
+    let neue_vertraege_unbestaetigt = 0;
     try {
-      const [[{ nv_heute }]] = await pool.query(
-        `SELECT COUNT(*) AS nv_heute
+      const [[{ nv_count }]] = await pool.query(
+        `SELECT COUNT(*) AS nv_count
          FROM vertraege v
          JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
-         WHERE DATE(v.created_at) = CURDATE()
+         WHERE v.admin_acknowledged_at IS NULL
            ${dojoFilterM}`,
         dojoParams
       );
-      const [[{ nv_woche }]] = await pool.query(
-        `SELECT COUNT(*) AS nv_woche
-         FROM vertraege v
-         JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
-         WHERE v.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
-           ${dojoFilterM}`,
-        dojoParams
-      );
-      neue_vertraege_heute = Number(nv_heute) || 0;
-      neue_vertraege_woche = Number(nv_woche) || 0;
-    } catch (_) {
-      // vertraege-Tabelle evtl. nicht vorhanden — ignorieren
-    }
+      neue_vertraege_unbestaetigt = Number(nv_count) || 0;
+    } catch (_) { /* Spalte noch nicht migriert — ignorieren */ }
 
     logger.debug('CockpitUebersicht geladen', {
       dojo_id: secureDojoId,
@@ -689,18 +677,16 @@ router.get('/cockpit-uebersicht', async (req, res) => {
       ablaufende_vertraege,
       offene_mahnungen,
       anstehende_lastschriften,
-      neue_vertraege_heute,
-      neue_vertraege_woche,
+      neue_vertraege_unbestaetigt,
     });
 
     res.json({
-      geburtstage_heute:        Number(geburtstage_heute)        || 0,
-      geburtstage_woche:        Number(geburtstage_woche)        || 0,
-      ablaufende_vertraege:     Number(ablaufende_vertraege)     || 0,
-      offene_mahnungen:         Number(offene_mahnungen)         || 0,
-      anstehende_lastschriften: Number(anstehende_lastschriften) || 0,
-      neue_vertraege_heute,
-      neue_vertraege_woche,
+      geburtstage_heute:             Number(geburtstage_heute)             || 0,
+      geburtstage_woche:             Number(geburtstage_woche)             || 0,
+      ablaufende_vertraege:          Number(ablaufende_vertraege)          || 0,
+      offene_mahnungen:              Number(offene_mahnungen)              || 0,
+      anstehende_lastschriften:      Number(anstehende_lastschriften)      || 0,
+      neue_vertraege_unbestaetigt,
     });
   } catch (error) {
     logger.error('CockpitUebersicht Fehler:', error);
@@ -709,15 +695,20 @@ router.get('/cockpit-uebersicht', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// GET /api/dashboard/geburtstage-details
-// Liefert die Geburtstagsliste (diese Woche) mit Name, Datum, Alter
+// GET /api/dashboard/geburtstage-details?typ=heute|woche
+// Liefert die Geburtstagsliste (heute oder nächste 7 Tage) mit Name, Datum, Alter
 // ──────────────────────────────────────────────────────────────────────────────
 router.get('/geburtstage-details', async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
+    const typ = req.query.typ === 'heute' ? 'heute' : 'woche';
     const pool = db.promise();
     const dojoFilter = secureDojoId ? ' AND dojo_id = ?' : '';
     const dojoParams = secureDojoId ? [secureDojoId] : [];
+
+    const tagesBedingung = typ === 'heute'
+      ? `DAY(geburtsdatum) = DAY(CURDATE()) AND MONTH(geburtsdatum) = MONTH(CURDATE())`
+      : `MOD(DAYOFYEAR(DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(geburtsdatum), '-', DAY(geburtsdatum)))) - DAYOFYEAR(CURDATE()) + 366, 366) < 7`;
 
     const [rows] = await pool.query(
       `SELECT
@@ -730,9 +721,7 @@ router.get('/geburtstage-details', async (req, res) => {
        FROM mitglieder
        WHERE aktiv = 1
          AND geburtsdatum IS NOT NULL
-         AND (
-           MOD(DAYOFYEAR(DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(geburtsdatum), '-', DAY(geburtsdatum)))) - DAYOFYEAR(CURDATE()) + 366, 366) < 7
-         )
+         AND (${tagesBedingung})
          ${dojoFilter}
        ORDER BY tage_bis ASC`,
       dojoParams
@@ -749,97 +738,66 @@ router.get('/geburtstage-details', async (req, res) => {
 // POST /api/dashboard/neue-vertraege-email
 // Sendet eine E-Mail-Übersicht der neuen Verträge (heute oder diese Woche)
 // ──────────────────────────────────────────────────────────────────────────────
-router.post('/neue-vertraege-email', async (req, res) => {
+// GET /api/dashboard/neue-vertraege-details
+// Liefert unbestätigte neue Verträge mit Mitgliedname, Laufzeit, Beitrag,
+// angelegtvon (created_by → users)
+// ──────────────────────────────────────────────────────────────────────────────
+router.get('/neue-vertraege-details', async (req, res) => {
   try {
     const secureDojoId = getSecureDojoId(req);
     if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
-
-    const { zeitraum = 'heute' } = req.body; // 'heute' | 'woche'
     const pool = db.promise();
 
-    // Neue Verträge laden
-    const datumFilter = zeitraum === 'heute'
-      ? 'DATE(v.created_at) = CURDATE()'
-      : 'v.created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)';
-
-    const [vertraege] = await pool.query(
+    const [rows] = await pool.query(
       `SELECT
-         m.vorname, m.nachname, m.email,
-         v.vertragsart, v.vertragsbeginn, v.vertragsende,
-         v.beitrag_monatlich, v.created_at
+         v.id,
+         m.vorname, m.nachname,
+         v.vertragsbeginn, v.vertragsende,
+         COALESCE(v.monatlicher_beitrag, v.monatsbeitrag) AS beitrag_monatlich,
+         v.mindestlaufzeit_monate,
+         v.automatische_verlaengerung,
+         v.created_at,
+         u.username AS angelegt_von_username,
+         CONCAT(mu.vorname, ' ', mu.nachname) AS angelegt_von_name
        FROM vertraege v
        JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
-       WHERE ${datumFilter}
+       LEFT JOIN users u ON u.id = v.created_by
+       LEFT JOIN mitglieder mu ON mu.mitglied_id = u.mitglied_id
+       WHERE v.admin_acknowledged_at IS NULL
          AND m.dojo_id = ?
        ORDER BY v.created_at DESC`,
       [secureDojoId]
     );
 
-    if (vertraege.length === 0) {
-      return res.json({ success: false, message: 'Keine neuen Verträge im gewählten Zeitraum.' });
-    }
+    res.json(rows);
+  } catch (error) {
+    logger.error('Neue-Verträge-Details Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
-    // Admin-E-Mail des Dojos ermitteln
-    const [adminRows] = await pool.query(
-      `SELECT u.email FROM users u
-       JOIN mitglieder m ON u.mitglied_id = m.mitglied_id
-       WHERE m.dojo_id = ? AND u.role IN ('admin','Admin')
-       LIMIT 1`,
+// ──────────────────────────────────────────────────────────────────────────────
+// POST /api/dashboard/neue-vertraege-acknowledge
+// Markiert alle unbestätigten Verträge als "zur Kenntnis genommen"
+// ──────────────────────────────────────────────────────────────────────────────
+router.post('/neue-vertraege-acknowledge', async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
+    const pool = db.promise();
+
+    const [result] = await pool.query(
+      `UPDATE vertraege v
+       JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
+       SET v.admin_acknowledged_at = NOW()
+       WHERE v.admin_acknowledged_at IS NULL
+         AND m.dojo_id = ?`,
       [secureDojoId]
     );
-    const adminEmail = adminRows[0]?.email;
-    if (!adminEmail) return res.status(400).json({ error: 'Keine Admin-E-Mail gefunden' });
 
-    // Dojo-Name laden
-    const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [secureDojoId]);
-    const dojoName = dojo?.dojoname || 'Ihr Dojo';
-
-    // E-Mail zusammenbauen
-    const zeitraumText = zeitraum === 'heute' ? 'heute' : 'in den letzten 7 Tagen';
-    const zeilenHtml = vertraege.map(v => {
-      const beginn = v.vertragsbeginn ? new Date(v.vertragsbeginn).toLocaleDateString('de-DE') : '—';
-      const ende = v.vertragsende ? new Date(v.vertragsende).toLocaleDateString('de-DE') : 'unbefristet';
-      const beitrag = v.beitrag_monatlich ? `${Number(v.beitrag_monatlich).toFixed(2)} €/Monat` : '—';
-      return `<tr>
-        <td style="padding:6px 12px;border-bottom:1px solid #eee;">${v.vorname} ${v.nachname}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #eee;">${v.vertragsart || '—'}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #eee;">${beginn}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #eee;">${ende}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #eee;">${beitrag}</td>
-      </tr>`;
-    }).join('');
-
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:700px;">
-        <h2 style="color:#1a1a2e;">📋 Neue Verträge — ${dojoName}</h2>
-        <p>Es wurden <strong>${vertraege.length} neue Vertrag/Verträge</strong> ${zeitraumText} abgeschlossen.</p>
-        <table style="width:100%;border-collapse:collapse;margin-top:16px;">
-          <thead>
-            <tr style="background:#1a1a2e;color:#fff;">
-              <th style="padding:8px 12px;text-align:left;">Mitglied</th>
-              <th style="padding:8px 12px;text-align:left;">Vertragsart</th>
-              <th style="padding:8px 12px;text-align:left;">Beginn</th>
-              <th style="padding:8px 12px;text-align:left;">Ende</th>
-              <th style="padding:8px 12px;text-align:left;">Beitrag</th>
-            </tr>
-          </thead>
-          <tbody>${zeilenHtml}</tbody>
-        </table>
-        <p style="color:#888;font-size:12px;margin-top:24px;">Diese E-Mail wurde automatisch aus dem Dojosoftware-Dashboard versendet.</p>
-      </div>`;
-
-    const emailService = require('../services/emailService');
-    await emailService.sendEmailForDojo({
-      to: adminEmail,
-      subject: `📋 ${vertraege.length} neue Verträge ${zeitraumText} — ${dojoName}`,
-      html,
-      text: `${vertraege.length} neue Verträge ${zeitraumText}:\n\n` +
-        vertraege.map(v => `• ${v.vorname} ${v.nachname} (${v.vertragsart || '—'})`).join('\n'),
-    }, secureDojoId);
-
-    res.json({ success: true, count: vertraege.length, to: adminEmail });
+    res.json({ success: true, count: result.affectedRows });
   } catch (error) {
-    logger.error('Neue-Verträge-Email Fehler:', error);
+    logger.error('Neue-Verträge-Acknowledge Fehler:', error);
     res.status(500).json({ error: error.message });
   }
 });

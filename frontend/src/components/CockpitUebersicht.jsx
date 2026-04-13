@@ -13,83 +13,63 @@ function withDojoParam(url, activeDojo) {
 
 // ─── Geburtstags-Popup ───────────────────────────────────────────────────────
 
-function GeburtstagePopup({ onClose, activeDojo }) {
+function GeburtstagePopup({ typ, onClose, activeDojo }) {
   const [list, setList] = useState(null);
   const [loading, setLoading] = useState(true);
   const overlayRef = useRef(null);
 
   useEffect(() => {
-    const url = withDojoParam('/dashboard/geburtstage-details', activeDojo);
+    const base = `/dashboard/geburtstage-details?typ=${typ}`;
+    const url = withDojoParam(base, activeDojo);
     axios.get(url)
       .then(r => setList(r.data))
       .catch(() => setList([]))
       .finally(() => setLoading(false));
-  }, [activeDojo]);
+  }, [typ, activeDojo]);
 
-  // Schließen bei Klick außerhalb
-  const handleOverlayClick = (e) => {
-    if (e.target === overlayRef.current) onClose();
-  };
-
-  // Schließen bei ESC
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const today = new Date();
+  const titel = typ === 'heute' ? '🎂 Geburtstage heute' : '🎁 Geburtstage diese Woche';
 
   const popup = (
     <div
       ref={overlayRef}
-      onClick={handleOverlayClick}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(0,0,0,.55)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center',
-        padding: '16px',
+        alignItems: 'center', justifyContent: 'center', padding: '16px',
       }}
     >
       <div style={{
         background: 'var(--bg-card, #1a1a2e)',
         border: '1px solid rgba(255,215,0,.2)',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        minWidth: '320px',
-        maxWidth: '480px',
-        width: '100%',
+        borderRadius: '12px', padding: '20px 24px',
+        minWidth: '320px', maxWidth: '480px', width: '100%',
         boxShadow: '0 8px 32px rgba(0,0,0,.5)',
       }}>
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <span style={{ fontWeight: 700, fontSize: '.9rem', color: 'var(--text-primary, #fff)' }}>
-            🎁 Geburtstage diese Woche
-          </span>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-muted, #888)', fontSize: '1.1rem', lineHeight: 1,
-              padding: '2px 6px', borderRadius: '4px',
-            }}
-            title="Schließen"
-          >×</button>
+          <span style={{ fontWeight: 700, fontSize: '.9rem', color: 'var(--text-primary, #fff)' }}>{titel}</span>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-muted, #888)', fontSize: '1.1rem', lineHeight: 1, padding: '2px 6px', borderRadius: '4px',
+          }}>×</button>
         </div>
 
-        {/* Content */}
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>
-            Wird geladen…
-          </div>
+          <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>Wird geladen…</div>
         ) : !list || list.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>
-            Keine Geburtstage in den nächsten 7 Tagen.
+            {typ === 'heute' ? 'Heute hat niemand Geburtstag.' : 'Keine Geburtstage in den nächsten 7 Tagen.'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {list.map((p, i) => {
-              const istHeute = p.tage_bis === 0;
+              const istHeute = Number(p.tage_bis) === 0;
               const datum = new Date(p.geburtstag_dieses_jahr);
               const datumStr = datum.toLocaleDateString('de-DE', { day: '2-digit', month: 'long' });
               return (
@@ -97,8 +77,7 @@ function GeburtstagePopup({ onClose, activeDojo }) {
                   display: 'flex', alignItems: 'center', gap: '10px',
                   background: istHeute ? 'rgba(255,215,0,.08)' : 'var(--bg-secondary, rgba(255,255,255,.04))',
                   border: `1px solid ${istHeute ? 'rgba(255,215,0,.3)' : 'rgba(255,255,255,.07)'}`,
-                  borderRadius: '8px',
-                  padding: '10px 12px',
+                  borderRadius: '8px', padding: '10px 12px',
                 }}>
                   <span style={{ fontSize: '1.2rem', flexShrink: 0 }}>{istHeute ? '🎂' : '🎁'}</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -117,7 +96,7 @@ function GeburtstagePopup({ onClose, activeDojo }) {
                     fontSize: '.7rem', fontWeight: 700, textAlign: 'right', flexShrink: 0,
                     color: istHeute ? '#ffd700' : 'var(--text-muted, #888)',
                   }}>
-                    {istHeute ? 'heute' : `in ${p.tage_bis} Tag${p.tage_bis === 1 ? '' : 'en'}`}
+                    {istHeute ? 'heute' : `in ${p.tage_bis} Tag${Number(p.tage_bis) === 1 ? '' : 'en'}`}
                   </div>
                 </div>
               );
@@ -131,113 +110,165 @@ function GeburtstagePopup({ onClose, activeDojo }) {
   return createPortal(popup, document.body);
 }
 
-// ─── Neue-Verträge-Karte ─────────────────────────────────────────────────────
+// ─── Neue-Verträge-Popup ─────────────────────────────────────────────────────
 
-function NeueVertraegeCard({ data, loading, activeDojo }) {
-  const [zeitraum, setZeitraum] = useState('heute'); // 'heute' | 'woche'
-  const [sending, setSending] = useState(false);
-  const [sent, setSent] = useState(null); // null | 'ok' | 'err'
-  const [errMsg, setErrMsg] = useState('');
+function NeueVertraegePopup({ onClose, onAcknowledged, activeDojo }) {
+  const [list, setList] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [confirming, setConfirming] = useState(false);
+  const overlayRef = useRef(null);
 
-  const count = loading ? null : (zeitraum === 'heute' ? (data?.neue_vertraege_heute ?? 0) : (data?.neue_vertraege_woche ?? 0));
-  const isActive = count != null && count > 0;
+  const load = useCallback(() => {
+    if (!activeDojo?.id) return;
+    const url = `/dashboard/neue-vertraege-details?dojo_id=${activeDojo.id}`;
+    axios.get(url)
+      .then(r => setList(r.data))
+      .catch(() => setList([]))
+      .finally(() => setLoading(false));
+  }, [activeDojo]);
 
-  const sendEmail = async (e) => {
-    e.stopPropagation();
-    setSending(true);
-    setSent(null);
-    setErrMsg('');
+  useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  const handleAcknowledge = async () => {
+    setConfirming(true);
     try {
       const url = activeDojo?.id
-        ? `/dashboard/neue-vertraege-email?dojo_id=${activeDojo.id}`
-        : '/dashboard/neue-vertraege-email';
-      const res = await axios.post(url, { zeitraum });
-      if (res.data.success) {
-        setSent('ok');
-        setTimeout(() => setSent(null), 4000);
-      } else {
-        setSent('err');
-        setErrMsg(res.data.message || 'Keine Verträge gefunden.');
-        setTimeout(() => setSent(null), 5000);
-      }
+        ? `/dashboard/neue-vertraege-acknowledge?dojo_id=${activeDojo.id}`
+        : '/dashboard/neue-vertraege-acknowledge';
+      await axios.post(url);
+      onAcknowledged(); // Zähler in Elternkomponente zurücksetzen
+      onClose();
     } catch (err) {
-      setSent('err');
-      setErrMsg(err.response?.data?.error || 'E-Mail-Versand fehlgeschlagen.');
-      setTimeout(() => setSent(null), 5000);
+      console.error('Acknowledge fehlgeschlagen', err);
     } finally {
-      setSending(false);
+      setConfirming(false);
     }
   };
 
-  return (
-    <div
-      className={`cu-card cu-vertraege${isActive ? ' cu-active' : ''}`}
-      style={{ '--cu-color': '#22c55e', flexDirection: 'column', alignItems: 'stretch', gap: '6px', cursor: 'default' }}
-    >
-      {/* Zeile 1: Icon + Label + Count */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <span className="cu-card-icon">📝</span>
-        <span className="cu-card-label" style={{ flex: 1 }}>Neue Verträge</span>
-        <span className="cu-card-count">
-          {loading ? '…' : count}
-        </span>
-      </div>
+  const fmt = (val) => val != null ? val : '—';
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '—';
+  const fmtBetrag = (b) => b != null ? `${Number(b).toFixed(2)} €/Monat` : '—';
 
-      {/* Zeile 2: Toggle + E-Mail-Button */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-        {/* Toggle Heute | Woche */}
-        <div style={{
-          display: 'flex', borderRadius: '4px', overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,.1)', flexShrink: 0,
-        }}>
-          {['heute', 'woche'].map(z => (
+  const popup = (
+    <div
+      ref={overlayRef}
+      onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(0,0,0,.55)', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', padding: '16px',
+      }}
+    >
+      <div style={{
+        background: 'var(--bg-card, #1a1a2e)',
+        border: '1px solid rgba(34,197,94,.2)',
+        borderRadius: '12px', padding: '20px 24px',
+        minWidth: '360px', maxWidth: '560px', width: '100%',
+        maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 8px 32px rgba(0,0,0,.5)',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: '.9rem', color: 'var(--text-primary, #fff)' }}>
+            📝 Neue Verträge
+          </span>
+          <button onClick={onClose} style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-muted, #888)', fontSize: '1.1rem', lineHeight: 1, padding: '2px 6px', borderRadius: '4px',
+          }}>×</button>
+        </div>
+
+        {/* Liste */}
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>Wird geladen…</div>
+          ) : !list || list.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted, #888)', fontSize: '.85rem' }}>
+              Alle Verträge wurden zur Kenntnis genommen.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {list.map((v, i) => {
+                const angelegtVon = v.angelegt_von_name?.trim() || v.angelegt_von_username || '—';
+                const laufzeit = v.mindestlaufzeit_monate
+                  ? `${v.mindestlaufzeit_monate} Monate`
+                  : (v.vertragsbeginn && v.vertragsende ? `${fmtDate(v.vertragsbeginn)} – ${fmtDate(v.vertragsende)}` : 'unbefristet');
+                return (
+                  <div key={i} style={{
+                    background: 'var(--bg-secondary, rgba(255,255,255,.04))',
+                    border: '1px solid rgba(34,197,94,.15)',
+                    borderRadius: '8px', padding: '12px 14px',
+                  }}>
+                    {/* Name + Datum */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '.9rem', color: 'var(--text-primary, #fff)' }}>
+                        {v.vorname} {v.nachname}
+                      </span>
+                      <span style={{ fontSize: '.68rem', color: 'var(--text-muted, #888)', flexShrink: 0, marginLeft: '8px' }}>
+                        {v.created_at ? new Date(v.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </span>
+                    </div>
+                    {/* Details */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 12px' }}>
+                      <div style={{ fontSize: '.73rem', color: 'var(--text-muted, #888)' }}>
+                        <span style={{ color: 'var(--text-secondary, #aaa)' }}>Beginn: </span>
+                        {fmtDate(v.vertragsbeginn)}
+                      </div>
+                      <div style={{ fontSize: '.73rem', color: 'var(--text-muted, #888)' }}>
+                        <span style={{ color: 'var(--text-secondary, #aaa)' }}>Ende: </span>
+                        {v.vertragsende ? fmtDate(v.vertragsende) : 'unbefristet'}
+                      </div>
+                      <div style={{ fontSize: '.73rem', color: 'var(--text-muted, #888)' }}>
+                        <span style={{ color: 'var(--text-secondary, #aaa)' }}>Laufzeit: </span>
+                        {laufzeit}
+                      </div>
+                      <div style={{ fontSize: '.73rem', color: 'var(--text-muted, #888)' }}>
+                        <span style={{ color: 'var(--text-secondary, #aaa)' }}>Beitrag: </span>
+                        {fmtBetrag(v.beitrag_monatlich)}
+                      </div>
+                      <div style={{ fontSize: '.73rem', color: 'var(--text-muted, #888)', gridColumn: '1/-1' }}>
+                        <span style={{ color: 'var(--text-secondary, #aaa)' }}>Angelegt von: </span>
+                        {angelegtVon}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer: Zur Kenntnis nehmen */}
+        {list && list.length > 0 && (
+          <div style={{ marginTop: '16px', flexShrink: 0, borderTop: '1px solid rgba(255,255,255,.07)', paddingTop: '14px' }}>
             <button
-              key={z}
-              onClick={(e) => { e.stopPropagation(); setZeitraum(z); }}
+              onClick={handleAcknowledge}
+              disabled={confirming}
               style={{
-                background: zeitraum === z ? 'rgba(34,197,94,.25)' : 'transparent',
-                border: 'none', cursor: 'pointer',
-                color: zeitraum === z ? '#22c55e' : 'var(--text-muted, #888)',
-                fontSize: '.6rem', fontWeight: zeitraum === z ? 700 : 400,
-                padding: '2px 7px', lineHeight: '1.4',
+                width: '100%', background: 'rgba(34,197,94,.15)',
+                border: '1px solid rgba(34,197,94,.4)',
+                borderRadius: '8px', padding: '9px 16px',
+                color: '#22c55e', fontWeight: 700, fontSize: '.82rem',
+                cursor: confirming ? 'not-allowed' : 'pointer',
                 transition: 'all .15s',
-                textTransform: 'capitalize',
+                opacity: confirming ? .6 : 1,
               }}
             >
-              {z === 'heute' ? 'Heute' : '7 Tage'}
+              {confirming ? '⏳ Wird gespeichert…' : `✓ Alle ${list.length} Vertrag${list.length === 1 ? '' : 'verträge'} zur Kenntnis nehmen`}
             </button>
-          ))}
-        </div>
-
-        {/* E-Mail-Button */}
-        <button
-          onClick={sendEmail}
-          disabled={sending || count === 0}
-          title={count === 0 ? 'Keine neuen Verträge' : `E-Mail-Übersicht (${zeitraum === 'heute' ? 'heute' : '7 Tage'}) senden`}
-          style={{
-            marginLeft: 'auto',
-            background: sent === 'ok' ? 'rgba(34,197,94,.15)' : sent === 'err' ? 'rgba(239,68,68,.15)' : 'rgba(255,255,255,.06)',
-            border: `1px solid ${sent === 'ok' ? 'rgba(34,197,94,.4)' : sent === 'err' ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.1)'}`,
-            borderRadius: '4px', cursor: count === 0 ? 'not-allowed' : 'pointer',
-            color: sent === 'ok' ? '#22c55e' : sent === 'err' ? '#ef4444' : 'var(--text-muted, #888)',
-            fontSize: '.62rem', padding: '2px 7px', lineHeight: '1.4',
-            opacity: count === 0 ? .4 : 1,
-            transition: 'all .15s',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {sending ? '⏳' : sent === 'ok' ? '✓ Gesendet' : sent === 'err' ? '✗ Fehler' : '✉ E-Mail'}
-        </button>
+          </div>
+        )}
       </div>
-
-      {/* Fehlermeldung */}
-      {sent === 'err' && errMsg && (
-        <div style={{ fontSize: '.6rem', color: '#ef4444', marginTop: '2px' }}>
-          {errMsg}
-        </div>
-      )}
     </div>
   );
+
+  return createPortal(popup, document.body);
 }
 
 // ─── Haupt-Komponente ────────────────────────────────────────────────────────
@@ -247,46 +278,55 @@ const CARDS = [
     key: 'geburtstage_heute',
     icon: '🎂',
     label: 'Geburtstage heute',
-    path: '/dashboard/mitglieder?geburtstag=heute',
+    path: null,
+    popup: 'geburtstage_heute',
     urgent: false,
     color: '#ffd700',
-    popup: null,
   },
   {
     key: 'geburtstage_woche',
     icon: '🎁',
     label: 'Geburtstage diese Woche',
-    path: null, // Popup statt Navigation
+    path: null,
+    popup: 'geburtstage_woche',
     urgent: false,
     color: '#fbbf24',
-    popup: 'geburtstage',
   },
   {
     key: 'ablaufende_vertraege',
     icon: '📋',
     label: 'Verträge laufen ab (30 Tage)',
     path: '/dashboard/beitraege',
+    popup: null,
     urgent: true,
     color: '#f97316',
-    popup: null,
   },
   {
     key: 'offene_mahnungen',
     icon: '⚠️',
     label: 'Offene Mahnungen',
     path: '/dashboard/rechnungen',
+    popup: null,
     urgent: true,
     color: '#ef4444',
-    popup: null,
   },
   {
     key: 'anstehende_lastschriften',
     icon: '💳',
     label: 'Lastschriften (7 Tage)',
     path: '/dashboard/beitraege',
+    popup: null,
     urgent: false,
     color: '#3b82f6',
-    popup: null,
+  },
+  {
+    key: 'neue_vertraege_unbestaetigt',
+    icon: '📝',
+    label: 'Neue Verträge',
+    path: null,
+    popup: 'neue_vertraege',
+    urgent: false,
+    color: '#22c55e',
   },
 ];
 
@@ -296,7 +336,7 @@ const CockpitUebersicht = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [activePopup, setActivePopup] = useState(null); // 'geburtstage' | null
+  const [activePopup, setActivePopup] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -313,8 +353,7 @@ const CockpitUebersicht = () => {
       setData({
         geburtstage_heute: 0, geburtstage_woche: 0,
         ablaufende_vertraege: 0, offene_mahnungen: 0,
-        anstehende_lastschriften: 0,
-        neue_vertraege_heute: 0, neue_vertraege_woche: 0,
+        anstehende_lastschriften: 0, neue_vertraege_unbestaetigt: 0,
       });
     } finally {
       setLoading(false);
@@ -331,7 +370,11 @@ const CockpitUebersicht = () => {
     }
   };
 
-  const fmt = (n) => (loading ? '…' : (n ?? 0));
+  // Nach Kenntnisnahme: Zähler sofort auf 0 setzen + neu laden
+  const handleAcknowledged = () => {
+    setData(prev => prev ? { ...prev, neue_vertraege_unbestaetigt: 0 } : prev);
+    load();
+  };
 
   return (
     <>
@@ -397,7 +440,6 @@ const CockpitUebersicht = () => {
         .cu-card:hover { background: var(--bg-hover); border-color: rgba(255,255,255,.13); }
         .cu-card.cu-active { border-color: var(--cu-color); }
         .cu-card.cu-urgent.cu-active { background: rgba(239,68,68,.05); }
-        .cu-card.cu-vertraege { cursor: default; }
         .cu-card-icon { font-size: .85rem; flex-shrink: 0; line-height: 1; }
         .cu-card-label {
           font-size: .72rem;
@@ -446,43 +488,44 @@ const CockpitUebersicht = () => {
                   <div className="cu-skeleton" style={{ width: 24, height: 20, borderRadius: 4 }} />
                 </div>
               ))
-            : <>
-                {CARDS.map((card) => {
-                  const count = data ? (data[card.key] ?? 0) : 0;
-                  const isActive = count > 0;
-                  const isPopup = !!card.popup;
-                  return (
-                    <div
-                      key={card.key}
-                      className={`cu-card${isActive ? ' cu-active' : ''}${card.urgent && isActive ? ' cu-urgent' : ''}`}
-                      style={{ '--cu-color': card.color }}
-                      onClick={() => handleCardClick(card)}
-                      title={isPopup
-                        ? `${card.label}: ${count} — Klicken für Details`
-                        : `${card.label}: ${count} — Details ansehen`}
-                    >
-                      <span className="cu-card-icon">{card.icon}</span>
-                      <span className="cu-card-label">{card.label}</span>
-                      <span className="cu-card-count">{count}</span>
-                      {isPopup && isActive && (
-                        <span style={{ fontSize: '.55rem', color: 'var(--text-muted,#888)', flexShrink: 0 }}>▼</span>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Neue Verträge Karte */}
-                <NeueVertraegeCard data={data} loading={loading} activeDojo={activeDojo} />
-              </>
+            : CARDS.map((card) => {
+                const count = data ? (data[card.key] ?? 0) : 0;
+                const isActive = count > 0;
+                return (
+                  <div
+                    key={card.key}
+                    className={`cu-card${isActive ? ' cu-active' : ''}${card.urgent && isActive ? ' cu-urgent' : ''}`}
+                    style={{ '--cu-color': card.color }}
+                    onClick={() => handleCardClick(card)}
+                    title={card.popup
+                      ? `${card.label}: ${count} — Klicken für Details`
+                      : `${card.label}: ${count} — Details ansehen`}
+                  >
+                    <span className="cu-card-icon">{card.icon}</span>
+                    <span className="cu-card-label">{card.label}</span>
+                    <span className="cu-card-count">{loading ? '…' : count}</span>
+                    {card.popup && isActive && (
+                      <span style={{ fontSize: '.55rem', color: 'var(--text-muted,#888)', flexShrink: 0 }}>▼</span>
+                    )}
+                  </div>
+                );
+              })
           }
         </div>
       </div>
 
       {/* Popups */}
-      {activePopup === 'geburtstage' && (
-        <GeburtstagePopup
+      {activePopup === 'geburtstage_heute' && (
+        <GeburtstagePopup typ="heute" activeDojo={activeDojo} onClose={() => setActivePopup(null)} />
+      )}
+      {activePopup === 'geburtstage_woche' && (
+        <GeburtstagePopup typ="woche" activeDojo={activeDojo} onClose={() => setActivePopup(null)} />
+      )}
+      {activePopup === 'neue_vertraege' && (
+        <NeueVertraegePopup
           activeDojo={activeDojo}
           onClose={() => setActivePopup(null)}
+          onAcknowledged={handleAcknowledged}
         />
       )}
     </>
