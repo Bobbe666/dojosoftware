@@ -46,7 +46,7 @@ function GeburtstagePopup({ typ, onClose, activeDojo }) {
       }}
     >
       <div style={{
-        background: 'var(--bg-card, #1a1a2e)',
+        background: '#1a1a2e',
         border: '1px solid rgba(255,215,0,.2)',
         borderRadius: '12px', padding: '20px 24px',
         minWidth: '320px', maxWidth: '480px', width: '100%',
@@ -166,7 +166,7 @@ function NeueVertraegePopup({ onClose, onAcknowledged, activeDojo }) {
       }}
     >
       <div style={{
-        background: 'var(--bg-card, #1a1a2e)',
+        background: '#1a1a2e',
         border: '1px solid rgba(34,197,94,.2)',
         borderRadius: '12px', padding: '20px 24px',
         minWidth: '360px', maxWidth: '560px', width: '100%',
