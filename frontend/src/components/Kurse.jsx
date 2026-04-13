@@ -65,6 +65,14 @@ const Kurse = () => {
     loadSchedule();
   }, [activeDojo]);
 
+  // Nur die erste Stil-Sektion automatisch öffnen sobald Kurse geladen sind
+  useEffect(() => {
+    if (kurse.length > 0) {
+      const firstStil = [...new Set(kurse.map(k => k.stil).filter(Boolean))].sort()[0];
+      if (firstStil) setOpenStile({ [firstStil]: true });
+    }
+  }, [kurse.length > 0]);
+
   const loadSchedule = async () => {
     try {
       const dojoParam = getDojoFilterParam();
@@ -641,63 +649,58 @@ const Kurse = () => {
         </div>
       )}
 
-      {/* Header: Titel + kompakte Stat-Pills */}
-      <div className="kurse-header ku-header">
-        <h2 className="ku-header-title">🥋 {t('management.title')}</h2>
-        {activeTab === "kurse" && (
-          <div className="ku-header-stats">
-            <div className="ku-hstat-card">
-              <span className="ku-hstat-num">{kurse.length}</span>
-              <span className="ku-hstat-label">Kurse</span>
-            </div>
-            <div className="ku-hstat-card">
-              <span className="ku-hstat-num">{Object.keys(kurseByStil).length}</span>
-              <span className="ku-hstat-label">Stile</span>
-            </div>
-            <div className="ku-hstat-card">
-              <span className="ku-hstat-num">{new Set(kurse.map(k => k.trainer_id)).size}</span>
-              <span className="ku-hstat-label">Trainer</span>
-            </div>
-            <div className="ku-hstat-card">
-              <span className="ku-hstat-num">{new Set(kurse.map(k => k.raum_id).filter(Boolean)).size}</span>
-              <span className="ku-hstat-label">Räume</span>
-            </div>
+      {/* Header: kompakt mit Tabs + Stats + primäre Aktion */}
+      <div className="ku-topbar">
+        <div className="ku-topbar-left">
+          <div className="ku-tab-nav-v2">
+            <button className={`ku-tab-v2 ${activeTab === "kurse" ? "ku-tab-v2--active" : ""}`} onClick={() => setActiveTab("kurse")}>
+              🥋 Kurse
+              {activeTab === "kurse" && <span className="ku-tab-v2-badge">{kurse.length}</span>}
+            </button>
+            <button className={`ku-tab-v2 ${activeTab === "stundenplan" ? "ku-tab-v2--active" : ""}`} onClick={() => setActiveTab("stundenplan")}>
+              📅 Stundenplan
+            </button>
+            <button className={`ku-tab-v2 ${activeTab === "stammdaten" ? "ku-tab-v2--active" : ""}`} onClick={() => setActiveTab("stammdaten")}>
+              ⚙️ Stammdaten
+            </button>
           </div>
-        )}
+        </div>
+        <div className="ku-topbar-right">
+          {activeTab === "kurse" && (
+            <>
+              <button className="ku-btn-primary" onClick={() => setShowNeuerKursModal(true)}>➕ Neuer Kurs</button>
+              <button className="ku-btn-secondary" onClick={handleCSVExport} title="CSV Export">📊</button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Einheitliche Kontrollleiste */}
-      <div className="ku-controls-bar">
-        <div className="tab-navigation ku-tab-nav">
-          <button className={`tab-button ${activeTab === "kurse" ? "active" : ""}`} onClick={() => setActiveTab("kurse")}>🥋 Kurse</button>
-          <button className={`tab-button ${activeTab === "stundenplan" ? "active" : ""}`} onClick={() => setActiveTab("stundenplan")}>📅 Stundenplan</button>
-          <button className={`tab-button ${activeTab === "stammdaten" ? "active" : ""}`} onClick={() => setActiveTab("stammdaten")}>⚙️ Trainer & Gruppen</button>
-        </div>
-        {activeTab === "kurse" && (
-          <>
-            <span className="ku-controls-divider" />
-            <button onClick={() => handleSort('gruppenname')} className={`ku-ctrl ${sortConfig.key === 'gruppenname' ? 'ku-ctrl--active' : ''}`}>
-              🏷️ {t('management.sortGroup')} {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
+      {/* Sekundäre Filter-Leiste (nur im Kurse-Tab) */}
+      {activeTab === "kurse" && (
+        <div className="ku-filter-bar">
+          <div className="ku-filter-group">
+            <span className="ku-filter-label">Sortierung</span>
+            <button onClick={() => handleSort('gruppenname')} className={`ku-filter-btn ${sortConfig.key === 'gruppenname' ? 'ku-filter-btn--active' : ''}`}>
+              Gruppe {sortConfig.key === 'gruppenname' && getSortIcon('gruppenname')}
             </button>
-            <button onClick={() => handleSort('raum')} className={`ku-ctrl ${sortConfig.key === 'raum' ? 'ku-ctrl--active' : ''}`}>
-              🏛️ {t('management.sortRoom')} {sortConfig.key === 'raum' && getSortIcon('raum')}
+            <button onClick={() => handleSort('trainer')} className={`ku-filter-btn ${sortConfig.key === 'trainer' ? 'ku-filter-btn--active' : ''}`}>
+              Trainer {sortConfig.key === 'trainer' && getSortIcon('trainer')}
             </button>
-            <button onClick={() => handleSort('trainer')} className={`ku-ctrl ${sortConfig.key === 'trainer' ? 'ku-ctrl--active' : ''}`}>
-              👨‍🏫 {t('management.sortTrainer')} {sortConfig.key === 'trainer' && getSortIcon('trainer')}
-            </button>
-            <span className="ku-controls-divider" />
-            <select className="ku-ctrl ku-ctrl-select" onChange={e => setFilterTrainer(e.target.value)} value={filterTrainer}>
-              <option value="">{t('management.allTrainers')}</option>
+          </div>
+          <div className="ku-filter-group">
+            <span className="ku-filter-label">Trainer</span>
+            <select className="ku-filter-select" onChange={e => setFilterTrainer(e.target.value)} value={filterTrainer}>
+              <option value="">Alle</option>
               {trainer.map(tr => (
                 <option key={tr.trainer_id} value={tr.trainer_id}>{tr.vorname} {tr.nachname}</option>
               ))}
             </select>
-            <span className="ku-controls-spacer" />
-            <button className="ku-ctrl ku-ctrl--gold" onClick={() => setShowNeuerKursModal(true)}>➕ Neuer Kurs</button>
-            <button className="ku-ctrl" onClick={handleCSVExport}>📊 {t('management.csvExport')}</button>
-          </>
-        )}
-      </div>
+          </div>
+          {filterTrainer && (
+            <button className="ku-filter-clear" onClick={() => setFilterTrainer('')}>✕ Filter</button>
+          )}
+        </div>
+      )}
 
       {/* Tab Content */}
       {activeTab === "kurse" && renderKurseTab()}
@@ -830,7 +833,19 @@ const Kurse = () => {
                               </span>
                             ))}
                           </div>
-                          <div className="ku-card-trainer">👨‍🏫 {trainerName}</div>
+                          <div className="ku-card-footer">
+                            <span className="ku-card-trainer">👨‍🏫 {trainerName}</span>
+                            <button
+                              className="ku-card-edit-btn"
+                              title="Bearbeiten"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedKursId(kurs.kurs_id);
+                                setCockpitTab(prev => ({ ...prev, [kurs.kurs_id]: 'details' }));
+                                handleBearbeiten(kurs);
+                              }}
+                            >✏️</button>
+                          </div>
                         </div>
                       );
                     })}
@@ -952,7 +967,7 @@ const Kurse = () => {
                           </div>
                         )}
 
-                        {/* Tab: Stundenplan (read-only — bearbeiten im Stundenplan-Tab) */}
+                        {/* Tab: Stundenplan */}
                         {activeTab === 'stundenplan' && (
                           <div className="ku-cockpit-body">
                             <div className="ku-cockpit-sp-list">
@@ -968,15 +983,31 @@ const Kurse = () => {
                                       {entry.uhrzeit_start?.substring(0,5)} – {entry.uhrzeit_ende?.substring(0,5)}
                                     </span>
                                     {entry.raumname && <span className="ku-sp-raum">🏛️ {entry.raumname}</span>}
+                                    <button className="ku-sp-del" onClick={() => handleDeleteScheduleEntry(entry.id, kurs.kurs_id)} title="Löschen">✕</button>
                                   </div>
                                 ))
                               )}
                             </div>
-                            <button
-                              className="ku-cockpit-add-btn"
-                              style={{ marginTop: '0.75rem' }}
-                              onClick={() => setActiveTab('stundenplan')}
-                            >📅 Im Stundenplan verwalten →</button>
+                            {showScheduleForm ? (
+                              <div className="ku-sp-form">
+                                <select className="sd-input ku-sp-input" value={scheduleForm.tag} onChange={e => setScheduleForm(p => ({...p, tag: e.target.value}))}>
+                                  <option value="">Tag wählen…</option>
+                                  {['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'].map(d => <option key={d}>{d}</option>)}
+                                </select>
+                                <input type="time" className="sd-input ku-sp-input" value={scheduleForm.uhrzeit_start} onChange={e => setScheduleForm(p => ({...p, uhrzeit_start: e.target.value}))} />
+                                <input type="time" className="sd-input ku-sp-input" value={scheduleForm.uhrzeit_ende} onChange={e => setScheduleForm(p => ({...p, uhrzeit_ende: e.target.value}))} />
+                                <select className="sd-input ku-sp-input" value={scheduleForm.raum_id} onChange={e => setScheduleForm(p => ({...p, raum_id: e.target.value}))}>
+                                  <option value="">Kein Raum</option>
+                                  {raeume.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                </select>
+                                <div className="ku-sp-form-actions">
+                                  <button className="sd-btn sd-btn--save" onClick={() => handleAddScheduleEntry(kurs.kurs_id)}>✅ Speichern</button>
+                                  <button className="sd-btn sd-btn--cancel" onClick={() => { setShowScheduleForm(false); setScheduleForm({ tag:'', uhrzeit_start:'', uhrzeit_ende:'', raum_id:'' }); }}>Abbrechen</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button className="ku-cockpit-add-btn" onClick={() => setShowScheduleForm(true)}>➕ Zeit hinzufügen</button>
+                            )}
                           </div>
                         )}
 

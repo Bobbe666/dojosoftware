@@ -30,7 +30,7 @@ const isSuperAdmin = (user) => {
          user.role === 'super_admin' ||
          user.username === 'admin' ||
          user.id === 1 || user.id === '1' ||
-         (user.dojo_id === 2 || user.dojo_id === '2');
+         user.dojo_id === null;
 };
 
 /**

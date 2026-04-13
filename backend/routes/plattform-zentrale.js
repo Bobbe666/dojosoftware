@@ -61,7 +61,7 @@ router.get('/kalender.ics', async (req, res) => {
        LEFT JOIN dojo d ON d.id = p.dojo_id
        WHERE p.pruefungsdatum BETWEEN ? AND ?
          AND p.status IN ('geplant','durchgefuehrt','bestanden','nicht_bestanden') AND d.dojoname != 'demo'
-       GROUP BY p.pruefungsdatum, p.dojo_id, p.pruefungsort
+       GROUP BY p.pruefungsdatum, p.dojo_id
        ORDER BY p.pruefungsdatum`,
       [von, bis]
     ),
@@ -211,7 +211,7 @@ router.get('/kalender', async (req, res) => {
       LEFT JOIN dojo d ON d.id = p.dojo_id
       WHERE p.pruefungsdatum BETWEEN ? AND ?
         AND p.status IN ('geplant','durchgefuehrt','bestanden','nicht_bestanden') AND d.dojoname != 'demo'
-      GROUP BY p.pruefungsdatum, p.dojo_id, p.pruefungsort
+      GROUP BY p.pruefungsdatum, p.dojo_id
       ORDER BY p.pruefungsdatum
     `, [von, bis]),
     // 5. Demo-Termine (gebuchte Slots)

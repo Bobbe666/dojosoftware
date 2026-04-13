@@ -49,11 +49,13 @@ router.get('/', async (req, res) => {
         beschreibung,
         beleg_nummer,
         kategorie,
+        mwst_satz,
+        mwst_betrag_cent / 100 as mwst_betrag,
         erfasst_von_name,
         eintrag_timestamp as erstellt_am
       FROM kassenbuch
       WHERE dojo_id = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
         AND YEAR(geschaeft_datum) = ?
     `;
     const params = [secureDojoId, jahr];
@@ -79,7 +81,7 @@ router.get('/', async (req, res) => {
         SUM(betrag_cent) / 100 as gesamt
       FROM kassenbuch
       WHERE dojo_id = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
         AND YEAR(geschaeft_datum) = ?
         ${monat ? 'AND MONTH(geschaeft_datum) = ?' : ''}
     `;
@@ -136,7 +138,9 @@ router.post('/', async (req, res) => {
     betrag,
     beschreibung,
     beleg_nummer,
-    kategorie
+    kategorie,
+    mwst_satz,
+    mwst_betrag
   } = req.body;
 
   // 🔒 SICHER: Verwende getSecureDojoId statt req.body.dojo_id
@@ -162,6 +166,9 @@ router.post('/', async (req, res) => {
     const betragCent = Math.round(parseFloat(betrag) * 100);
     const kassenstandNachher = kassenstandVorher - betragCent;
 
+    const mwstSatz = mwst_satz ? parseFloat(mwst_satz) : null;
+    const mwstBetragCent = mwst_betrag ? Math.round(parseFloat(mwst_betrag) * 100) : 0;
+
     // Ausgabe einfügen
     const insertQuery = `
       INSERT INTO kassenbuch (
@@ -172,11 +179,13 @@ router.post('/', async (req, res) => {
         beschreibung,
         beleg_nummer,
         kategorie,
+        mwst_satz,
+        mwst_betrag_cent,
         kassenstand_vorher_cent,
         kassenstand_nachher_cent,
         erfasst_von,
         erfasst_von_name
-      ) VALUES (?, ?, 'Ausgabe', ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, 'ausgabe', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const result = await queryAsync(insertQuery, [
@@ -186,6 +195,8 @@ router.post('/', async (req, res) => {
       beschreibung,
       beleg_nummer || null,
       kategorie || 'sonstiges',
+      mwstSatz,
+      mwstBetragCent,
       kassenstandVorher,
       kassenstandNachher,
       req.user?.id || null,
@@ -215,7 +226,9 @@ router.put('/:id', async (req, res) => {
     betrag,
     beschreibung,
     beleg_nummer,
-    kategorie
+    kategorie,
+    mwst_satz,
+    mwst_betrag
   } = req.body;
 
   try {
@@ -244,6 +257,14 @@ router.put('/:id', async (req, res) => {
       updateFields.push('kategorie = ?');
       params.push(kategorie);
     }
+    if (mwst_satz !== undefined) {
+      updateFields.push('mwst_satz = ?');
+      params.push(mwst_satz ? parseFloat(mwst_satz) : null);
+    }
+    if (mwst_betrag !== undefined) {
+      updateFields.push('mwst_betrag_cent = ?');
+      params.push(mwst_betrag ? Math.round(parseFloat(mwst_betrag) * 100) : 0);
+    }
 
     if (updateFields.length === 0) {
       return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
@@ -254,7 +275,7 @@ router.put('/:id', async (req, res) => {
     const query = `
       UPDATE kassenbuch
       SET ${updateFields.join(', ')}
-      WHERE eintrag_id = ? AND bewegungsart = 'Ausgabe'
+      WHERE eintrag_id = ? AND bewegungsart = 'ausgabe'
     `;
 
     await queryAsync(query, params);
@@ -280,7 +301,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const query = `
       DELETE FROM kassenbuch
-      WHERE eintrag_id = ? AND bewegungsart = 'Ausgabe'
+      WHERE eintrag_id = ? AND bewegungsart = 'ausgabe'
     `;
 
     const result = await queryAsync(query, [id]);
@@ -321,7 +342,7 @@ router.get('/summen', async (req, res) => {
         SUM(betrag_cent) / 100 as summe
       FROM kassenbuch
       WHERE dojo_id = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
         AND YEAR(geschaeft_datum) = ?
       GROUP BY kategorie
       ORDER BY summe DESC
@@ -336,7 +357,7 @@ router.get('/summen', async (req, res) => {
         SUM(betrag_cent) / 100 as summe
       FROM kassenbuch
       WHERE dojo_id = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
         AND YEAR(geschaeft_datum) = ?
       GROUP BY MONTH(geschaeft_datum)
       ORDER BY monat
@@ -352,7 +373,7 @@ router.get('/summen', async (req, res) => {
         SUM(betrag_cent) / 100 as summe
       FROM kassenbuch
       WHERE dojo_id = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
         AND YEAR(geschaeft_datum) = ?
       GROUP BY MONTH(geschaeft_datum), kategorie
       ORDER BY monat
@@ -364,7 +385,7 @@ router.get('/summen', async (req, res) => {
       SELECT SUM(betrag_cent) / 100 as gesamt
       FROM kassenbuch
       WHERE dojo_id = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
         AND YEAR(geschaeft_datum) = ?
     `;
     const [vorjahr] = await queryAsync(vorjahrQuery, [secureDojoId, jahr - 1]);

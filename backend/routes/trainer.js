@@ -2,7 +2,13 @@ const express = require("express");
 const logger = require('../utils/logger');
 const db = require("../db");
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { generateVereinbarungPdf, generateInfoblattPdf } = require('../utils/trainerPdfGenerator');
+
+const DOKUMENTE_DIR = path.join(__dirname, '../../generated_documents/trainer');
+if (!fs.existsSync(DOKUMENTE_DIR)) fs.mkdirSync(DOKUMENTE_DIR, { recursive: true });
 
 // Alle Trainer abrufen (inkl. Mehrfachzuordnung der Stile)
 router.get("/", (req, res) => {
@@ -373,6 +379,286 @@ router.get('/notification-recipients', async (req, res) => {
   } catch (error) {
     logger.error('Notification recipients error:', { error: error });
     res.status(500).json({ success: false, message: 'Fehler beim Laden der Empfänger' });
+  }
+});
+
+// ===================================================================
+// TRAINER PERSONAL — EINZELABRUF, DETAILS, DOKUMENTE
+// ===================================================================
+
+// GET /:id — Trainer mit erweiterten Details, Kursen und Dokumenten
+router.get("/:id", async (req, res) => {
+  const trainerId = parseInt(req.params.id);
+  if (!trainerId) return res.status(400).json({ error: 'Ungültige Trainer-ID' });
+
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+  const pool = db.promise();
+
+  try {
+    const dojoWhere = dojoId ? 'AND t.dojo_id = ?' : '';
+    const [rows] = await pool.query(`
+      SELECT t.*,
+        COALESCE(GROUP_CONCAT(DISTINCT ts.stil ORDER BY ts.stil SEPARATOR '||'), '') AS stile_raw
+      FROM trainer t
+      LEFT JOIN trainer_stile ts ON t.trainer_id = ts.trainer_id
+      WHERE t.trainer_id = ? ${dojoWhere}
+      GROUP BY t.trainer_id
+    `, dojoId ? [trainerId, dojoId] : [trainerId]);
+
+    if (rows.length === 0) return res.status(404).json({ error: 'Trainer nicht gefunden' });
+
+    const trainer = { ...rows[0] };
+    trainer.stile = trainer.stile_raw ? trainer.stile_raw.split('||') : [];
+    delete trainer.stile_raw;
+
+    // Kurse dieses Trainers (trainer_ids ist JSON-Array in kurse-Tabelle)
+    try {
+      const kursWhere = dojoId ? 'WHERE k.dojo_id = ?' : '';
+      const [kurse] = await pool.query(`
+        SELECT k.kurs_id, k.gruppenname, k.stil, k.trainer_ids
+        FROM kurse k
+        ${kursWhere}
+      `, dojoId ? [dojoId] : []);
+
+      trainer.kurse = kurse.filter(k => {
+        try {
+          const ids = typeof k.trainer_ids === 'string'
+            ? JSON.parse(k.trainer_ids)
+            : (k.trainer_ids || []);
+          return ids.map(Number).includes(trainerId);
+        } catch { return false; }
+      }).map(k => ({ kurs_id: k.kurs_id, gruppenname: k.gruppenname, stil: k.stil }));
+    } catch {
+      trainer.kurse = [];
+    }
+
+    // Dokumente
+    const [dokumente] = await pool.query(`
+      SELECT * FROM trainer_dokumente
+      WHERE trainer_id = ? ${dojoId ? 'AND dojo_id = ?' : ''}
+      ORDER BY erstellt_am DESC
+    `, dojoId ? [trainerId, dojoId] : [trainerId]);
+    trainer.dokumente = dokumente;
+
+    res.json(trainer);
+  } catch (err) {
+    logger.error('Trainer GET /:id Fehler:', { error: err });
+    res.status(500).json({ error: 'Fehler beim Laden des Trainers' });
+  }
+});
+
+// PUT /:id/details — Erweiterte Felder aktualisieren
+router.put("/:id/details", async (req, res) => {
+  const trainerId = parseInt(req.params.id);
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+  const {
+    vorname, nachname, email, telefon,
+    anschrift, geburtsdatum, graduierung, steuer_id,
+    einstellungsdatum, status, notizen, stile
+  } = req.body;
+
+  const pool = db.promise();
+  try {
+    const dojoWhere = dojoId ? 'AND dojo_id = ?' : '';
+    const [check] = await pool.query(
+      `SELECT trainer_id FROM trainer WHERE trainer_id = ? ${dojoWhere}`,
+      dojoId ? [trainerId, dojoId] : [trainerId]
+    );
+    if (check.length === 0) return res.status(404).json({ error: 'Trainer nicht gefunden' });
+
+    await pool.query(`
+      UPDATE trainer SET
+        vorname = COALESCE(?, vorname),
+        nachname = COALESCE(?, nachname),
+        email = COALESCE(?, email),
+        telefon = COALESCE(?, telefon),
+        anschrift = ?,
+        geburtsdatum = ?,
+        graduierung = ?,
+        steuer_id = ?,
+        einstellungsdatum = ?,
+        status = COALESCE(?, status),
+        notizen = ?
+      WHERE trainer_id = ?
+    `, [
+      vorname || null, nachname || null, email !== undefined ? email : null, telefon !== undefined ? telefon : null,
+      anschrift || null, geburtsdatum || null, graduierung || null, steuer_id || null,
+      einstellungsdatum || null, status || null, notizen !== undefined ? notizen : null,
+      trainerId
+    ]);
+
+    // Stile aktualisieren wenn angegeben
+    if (Array.isArray(stile)) {
+      await pool.query('DELETE FROM trainer_stile WHERE trainer_id = ?', [trainerId]);
+      if (stile.length > 0) {
+        await pool.query(
+          'INSERT INTO trainer_stile (trainer_id, stil) VALUES ?',
+          [stile.map(s => [trainerId, s])]
+        );
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Trainer PUT /details Fehler:', { error: err });
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+  }
+});
+
+// GET /:id/dokumente — Dokumente eines Trainers
+router.get("/:id/dokumente", async (req, res) => {
+  const trainerId = parseInt(req.params.id);
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+  const pool = db.promise();
+  try {
+    const [rows] = await pool.query(`
+      SELECT * FROM trainer_dokumente
+      WHERE trainer_id = ? ${dojoId ? 'AND dojo_id = ?' : ''}
+      ORDER BY erstellt_am DESC
+    `, dojoId ? [trainerId, dojoId] : [trainerId]);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Fehler beim Laden der Dokumente' });
+  }
+});
+
+// POST /:id/dokument — PDF generieren und speichern
+router.post("/:id/dokument", async (req, res) => {
+  const trainerId = parseInt(req.params.id);
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+  const { typ, mitgliedsbeitrag_monatlich, sachleistungen_jahreswert, vertragsbeginn, wettbewerb_radius } = req.body;
+
+  if (!['vereinbarung', 'infoblatt'].includes(typ)) {
+    return res.status(400).json({ error: 'Ungültiger Dokumenttyp. Erlaubt: vereinbarung, infoblatt' });
+  }
+
+  const pool = db.promise();
+  try {
+    // Trainer laden
+    const dojoWhere = dojoId ? 'AND t.dojo_id = ?' : '';
+    const [rows] = await pool.query(`
+      SELECT t.*,
+        COALESCE(GROUP_CONCAT(DISTINCT ts.stil SEPARATOR '||'), '') AS stile_raw
+      FROM trainer t
+      LEFT JOIN trainer_stile ts ON t.trainer_id = ts.trainer_id
+      WHERE t.trainer_id = ? ${dojoWhere}
+      GROUP BY t.trainer_id
+    `, dojoId ? [trainerId, dojoId] : [trainerId]);
+
+    if (rows.length === 0) return res.status(404).json({ error: 'Trainer nicht gefunden' });
+
+    const trainer = { ...rows[0] };
+    trainer.stile = trainer.stile_raw ? trainer.stile_raw.split('||') : [];
+    delete trainer.stile_raw;
+
+    // Kurse
+    try {
+      const [kurse] = await pool.query(
+        `SELECT kurs_id, gruppenname, stil, trainer_ids FROM kurse ${dojoId ? 'WHERE dojo_id = ?' : ''}`,
+        dojoId ? [dojoId] : []
+      );
+      trainer.kurse = kurse.filter(k => {
+        try {
+          const ids = typeof k.trainer_ids === 'string' ? JSON.parse(k.trainer_ids) : (k.trainer_ids || []);
+          return ids.map(Number).includes(trainerId);
+        } catch { return false; }
+      });
+    } catch { trainer.kurse = []; }
+
+    // Dojo-Daten
+    let dojo = null;
+    if (dojoId) {
+      try {
+        const [dojos] = await pool.query('SELECT * FROM dojos WHERE dojo_id = ?', [dojoId]);
+        dojo = dojos[0] || null;
+      } catch {}
+    }
+
+    // PDF generieren
+    const params = { mitgliedsbeitrag_monatlich, sachleistungen_jahreswert, vertragsbeginn, wettbewerb_radius };
+    const pdfBuffer = typ === 'vereinbarung'
+      ? await generateVereinbarungPdf(trainer, dojo, params)
+      : await generateInfoblattPdf(trainer, dojo);
+
+    // Datei speichern
+    const timestamp = Date.now();
+    const filename = `trainer_${trainerId}_${typ}_${timestamp}.pdf`;
+    const filepath = path.join(DOKUMENTE_DIR, filename);
+    fs.writeFileSync(filepath, pdfBuffer);
+
+    // DB-Eintrag
+    const [result] = await pool.query(`
+      INSERT INTO trainer_dokumente
+        (trainer_id, dojo_id, dokument_typ, pdf_dateiname,
+         mitgliedsbeitrag_monatlich, sachleistungen_jahreswert, vertragsbeginn, wettbewerb_radius)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      trainerId, dojoId || 0, typ, filename,
+      mitgliedsbeitrag_monatlich || null, sachleistungen_jahreswert || null,
+      vertragsbeginn || null, wettbewerb_radius || 10
+    ]);
+
+    res.json({ success: true, dokument_id: result.insertId, filename });
+  } catch (err) {
+    logger.error('Trainer PDF-Generierung Fehler:', { error: err });
+    res.status(500).json({ error: 'Fehler bei der PDF-Generierung: ' + err.message });
+  }
+});
+
+// GET /:id/dokument/:filename — PDF herunterladen
+router.get("/:id/dokument/:filename", (req, res) => {
+  const { filename } = req.params;
+  // Sicherheit: nur alphanumerisch + underscore + punkt
+  if (!/^[\w.-]+\.pdf$/.test(filename)) return res.status(400).json({ error: 'Ungültiger Dateiname' });
+  const filepath = path.join(DOKUMENTE_DIR, filename);
+  if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Datei nicht gefunden' });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.sendFile(filepath);
+});
+
+// PUT /dokument/:dokId/status — Status ändern
+router.put("/dokument/:dokId/status", async (req, res) => {
+  const { dokId } = req.params;
+  const { status } = req.body;
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+
+  if (!['erstellt', 'versendet', 'unterschrieben'].includes(status)) {
+    return res.status(400).json({ error: 'Ungültiger Status' });
+  }
+  const pool = db.promise();
+  try {
+    const [result] = await pool.query(
+      `UPDATE trainer_dokumente SET status = ? WHERE id = ? ${dojoId ? 'AND dojo_id = ?' : ''}`,
+      dojoId ? [status, dokId, dojoId] : [status, dokId]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Dokument nicht gefunden' });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
+  }
+});
+
+// DELETE /dokument/:dokId — Dokument löschen
+router.delete("/dokument/:dokId", async (req, res) => {
+  const { dokId } = req.params;
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+  const pool = db.promise();
+  try {
+    const [rows] = await pool.query(
+      `SELECT pdf_dateiname FROM trainer_dokumente WHERE id = ? ${dojoId ? 'AND dojo_id = ?' : ''}`,
+      dojoId ? [dokId, dojoId] : [dokId]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: 'Dokument nicht gefunden' });
+
+    if (rows[0].pdf_dateiname) {
+      const fp = path.join(DOKUMENTE_DIR, rows[0].pdf_dateiname);
+      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+    }
+    await pool.query('DELETE FROM trainer_dokumente WHERE id = ?', [dokId]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Fehler beim Löschen' });
   }
 });
 

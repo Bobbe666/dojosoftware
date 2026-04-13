@@ -176,7 +176,6 @@ const Anwesenheit = () => {
       // 🔒 Dojo-Filter für Multi-Tenant Unterstützung
       const dojoParam = getDojoFilterParam();
       const url = dojoParam ? `${config.apiBaseUrl}/anwesenheit/kurse/${datum}?${dojoParam}` : `${config.apiBaseUrl}/anwesenheit/kurse/${datum}`;
-      console.log('📅 Lade Kurse:', url, 'activeDojo:', activeDojo);
 
       const response = await fetchWithAuth(url);
       const data = await response.json();

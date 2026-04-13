@@ -68,40 +68,55 @@ function DropZone({ onFile, disabled }) {
   const handleDrop = useCallback((e) => {
     e.preventDefault();
     setDragging(false);
-    const file = e.dataTransfer.files[0];
+    const file = e.dataTransfer?.files?.[0];
     if (file) onFile(file);
   }, [onFile]);
 
   const handleChange = (e) => {
     const file = e.target.files[0];
     if (file) onFile(file);
+    e.target.value = '';
+  };
+
+  const handleClick = async () => {
+    if (disabled) return;
+    // Moderne File System Access API (Safari 15.2+, Chrome, Firefox 111+)
+    if (typeof window.showOpenFilePicker === 'function') {
+      try {
+        const [fh] = await window.showOpenFilePicker({ multiple: false });
+        const file = await fh.getFile();
+        onFile(file);
+        return;
+      } catch (e) {
+        // Nutzer hat Abgebrochen → kein Fehler
+        if (e.name === 'AbortError') return;
+        // API-Fehler → Fallback zum klassischen Input
+      }
+    }
+    inputRef.current?.click();
   };
 
   return (
     <div
-      onClick={() => !disabled && inputRef.current?.click()}
+      onClick={handleClick}
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={() => setDragging(false)}
       onDrop={handleDrop}
       className={`ki-dropzone${dragging ? ' ki-dropzone--dragging' : ''}${disabled ? ' ki-dropzone--disabled' : ''}`}
+      style={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
     >
       <input
         ref={inputRef}
         type="file"
-        accept=".csv"
-        className="u-hidden"
+        style={{ display: 'none' }}
         onChange={handleChange}
         disabled={disabled}
       />
       <Upload size={40} className="ki-upload-icon" />
-      <div className="ki-dropzone-title">
-        CSV-Datei hier ablegen
-      </div>
-      <div className="ki-dropzone-sub">
-        oder klicken zum Auswählen
-      </div>
+      <div className="ki-dropzone-title">Kontoauszug hochladen</div>
+      <div className="ki-dropzone-sub">Klicken zum Auswählen — CSV oder PDF</div>
       <div className="ki-dropzone-hint">
-        Unterstützt: ING, DKB, Comdirect, Sparkasse, Volksbank, Deutsche Bank, N26
+        ING, DKB, Comdirect, Sparkasse, Volksbank, Deutsche Bank, N26
       </div>
     </div>
   );
@@ -129,11 +144,13 @@ export default function KontoauszugImport() {
   const [step, setStep] = useState('upload'); // upload | preview | done
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pageDragging, setPageDragging] = useState(false);
 
   // Upload-Ergebnis
   const [bank, setBank] = useState(null);
   const [bankLabel, setBankLabel] = useState(null);
   const [transaktionen, setTransaktionen] = useState([]);
+  const [dateiTyp, setDateiTyp] = useState(null);
 
   // Auswahl & Kategorien
   const [selected, setSelected] = useState({});     // idx → bool
@@ -146,10 +163,41 @@ export default function KontoauszugImport() {
   // Import-Ergebnis
   const [importResult, setImportResult] = useState(null);
 
+  // ── Seitenweiter Drag & Drop (Safari-Fix) ────────────────────────────────
+  // Verhindert dass Safari beim Droppen zur Datei navigiert,
+  // und fängt Drops auf der ganzen Seite ab (nicht nur auf der Dropzone)
+  useEffect(() => {
+    if (step !== 'upload') return;
+
+    const onDragOver = (e) => { e.preventDefault(); setPageDragging(true); };
+    const onDragLeave = (e) => { if (!e.relatedTarget) setPageDragging(false); };
+    const onDrop = (e) => {
+      e.preventDefault();
+      setPageDragging(false);
+      const file = e.dataTransfer?.files?.[0];
+      if (file && !loading) handleFile(file);
+    };
+
+    document.addEventListener('dragover', onDragOver);
+    document.addEventListener('dragleave', onDragLeave);
+    document.addEventListener('drop', onDrop);
+    return () => {
+      document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('dragleave', onDragLeave);
+      document.removeEventListener('drop', onDrop);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, loading]);
+
   // ── Datei verarbeiten ─────────────────────────────────────────────────────
 
   const handleFile = async (file) => {
     setError(null);
+    const name = file.name.toLowerCase();
+    if (!name.endsWith('.csv') && !name.endsWith('.pdf')) {
+      setError('Bitte eine CSV- oder PDF-Datei auswählen.');
+      return;
+    }
     setLoading(true);
     try {
       const formData = new FormData();
@@ -167,6 +215,7 @@ export default function KontoauszugImport() {
 
       setBank(data.bank);
       setBankLabel(data.bankLabel);
+      setDateiTyp(data.dateiTyp || 'csv');
 
       const txs = data.transaktionen;
       setTransaktionen(txs);
@@ -274,6 +323,25 @@ export default function KontoauszugImport() {
   return (
     <div className="ki-page">
 
+      {/* Seitenweiter Drop-Indikator für Safari */}
+      {pageDragging && step === 'upload' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(37,99,235,0.15)',
+          border: '3px dashed var(--primary, #2563eb)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none'
+        }}>
+          <div style={{
+            background: 'var(--card-bg, #fff)', borderRadius: '12px',
+            padding: '24px 40px', fontSize: '1.2rem', fontWeight: 600,
+            color: 'var(--primary, #2563eb)', boxShadow: '0 4px 24px rgba(0,0,0,0.15)'
+          }}>
+            Datei hier loslassen
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="ki-page-header">
         <h1 className="ki-page-title">
@@ -311,6 +379,11 @@ export default function KontoauszugImport() {
       {/* ── STEP: Vorschau ── */}
       {step === 'preview' && (
         <div>
+          {dateiTyp === 'pdf' && (
+            <div className="ki-pdf-notice">
+              ℹ️ PDF-Import (automatisch erkannt) — bitte Buchungen vor dem Import prüfen. Bei Fehlern: Kontoauszug als CSV aus dem Online-Banking exportieren.
+            </div>
+          )}
           {/* Bank-Info & Zusammenfassung */}
           <div className="ki-info-bar">
             <div>

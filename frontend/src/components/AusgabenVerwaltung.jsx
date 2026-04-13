@@ -88,7 +88,8 @@ const AusgabenVerwaltung = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
     datum: new Date().toISOString().split('T')[0],
-    betrag: '', beschreibung: '', beleg_nummer: '', kategorie: 'sonstiges'
+    betrag: '', beschreibung: '', beleg_nummer: '', kategorie: 'sonstiges',
+    mwst_satz: '', mwst_betrag: ''
   });
 
   // ── Daten laden ──────────────────────────────────────────────────────────
@@ -133,7 +134,7 @@ const AusgabenVerwaltung = () => {
   // ── Form-Handler ─────────────────────────────────────────────────────────
 
   const resetForm = () => {
-    setFormData({ datum: new Date().toISOString().split('T')[0], betrag: '', beschreibung: '', beleg_nummer: '', kategorie: 'sonstiges' });
+    setFormData({ datum: new Date().toISOString().split('T')[0], betrag: '', beschreibung: '', beleg_nummer: '', kategorie: 'sonstiges', mwst_satz: '', mwst_betrag: '' });
     setEditingId(null);
     setShowForm(false);
   };
@@ -155,7 +156,7 @@ const AusgabenVerwaltung = () => {
   };
 
   const handleEdit = (a) => {
-    setFormData({ datum: a.datum?.split('T')[0] || '', betrag: a.betrag?.toString() || '', beschreibung: a.beschreibung || '', beleg_nummer: a.beleg_nummer || '', kategorie: a.kategorie || 'sonstiges' });
+    setFormData({ datum: a.datum?.split('T')[0] || '', betrag: a.betrag?.toString() || '', beschreibung: a.beschreibung || '', beleg_nummer: a.beleg_nummer || '', kategorie: a.kategorie || 'sonstiges', mwst_satz: a.mwst_satz?.toString() || '', mwst_betrag: a.mwst_betrag?.toString() || '' });
     setEditingId(a.id);
     setShowForm(true);
   };
@@ -572,8 +573,8 @@ className="btn btn-secondary av-filter-reset-btn">
             <table className="av-table">
               <thead>
                 <tr className="av-thead-row">
-                  {['Datum', 'Kategorie', 'Beschreibung', 'Beleg', 'Betrag', ''].map(h => (
-                    <th key={h} className={`av-th${h === 'Betrag' ? ' av-th--right' : ''}`}>
+                  {['Datum', 'Kategorie', 'Beschreibung', 'Beleg', 'Netto', 'MwSt', 'Brutto', ''].map(h => (
+                    <th key={h} className={`av-th${['Netto','MwSt','Brutto'].includes(h) ? ' av-th--right' : ''}`}>
                       {h}
                     </th>
                   ))}
@@ -594,6 +595,12 @@ className="btn btn-secondary av-filter-reset-btn">
                     <td className="av-td-desc">{a.beschreibung}</td>
                     <td className="av-td-beleg">
                       {a.beleg_nummer || '—'}
+                    </td>
+                    <td className="av-td-betrag">
+                      {a.mwst_satz > 0 ? fmt(a.betrag - (a.mwst_betrag || 0)) : fmt(a.betrag)}
+                    </td>
+                    <td className="av-td-betrag">
+                      {a.mwst_satz > 0 ? `${fmt(a.mwst_betrag || 0)} (${a.mwst_satz}%)` : '—'}
                     </td>
                     <td className="av-td-betrag">
                       {fmt(a.betrag)}
@@ -638,8 +645,33 @@ const FormModal = ({ formData, setFormData, editingId, onSubmit, onClose }) => (
               <input type="date" value={formData.datum} onChange={e => setFormData({ ...formData, datum: e.target.value })} className="form-input av-full-width" required />
             </div>
             <div>
-              <label className="av-form-label">Betrag (EUR) *</label>
-              <input type="number" step="0.01" min="0" value={formData.betrag} onChange={e => setFormData({ ...formData, betrag: e.target.value })} className="form-input av-full-width" placeholder="0,00" required />
+              <label className="av-form-label">Betrag Brutto (EUR) *</label>
+              <input type="number" step="0.01" min="0" value={formData.betrag} onChange={e => {
+                const brutto = parseFloat(e.target.value) || 0;
+                const satz = parseFloat(formData.mwst_satz) || 0;
+                const mwst = satz > 0 ? Math.round(brutto / (1 + satz / 100) * satz / 100 * 100) / 100 : 0;
+                setFormData({ ...formData, betrag: e.target.value, mwst_betrag: mwst > 0 ? mwst.toFixed(2) : '' });
+              }} className="form-input av-full-width" placeholder="0,00" required />
+            </div>
+          </div>
+
+          <div className="u-grid-2col">
+            <div>
+              <label className="av-form-label">MwSt-Satz (%)</label>
+              <select value={formData.mwst_satz} onChange={e => {
+                const satz = parseFloat(e.target.value) || 0;
+                const brutto = parseFloat(formData.betrag) || 0;
+                const mwst = satz > 0 ? Math.round(brutto / (1 + satz / 100) * satz / 100 * 100) / 100 : 0;
+                setFormData({ ...formData, mwst_satz: e.target.value, mwst_betrag: mwst > 0 ? mwst.toFixed(2) : '' });
+              }} className="form-select av-full-width">
+                <option value="">Kein / Steuerfreie</option>
+                <option value="19">19%</option>
+                <option value="7">7%</option>
+              </select>
+            </div>
+            <div>
+              <label className="av-form-label">MwSt-Betrag (EUR)</label>
+              <input type="number" step="0.01" min="0" value={formData.mwst_betrag} onChange={e => setFormData({ ...formData, mwst_betrag: e.target.value })} className="form-input av-full-width" placeholder="wird berechnet" />
             </div>
           </div>
 

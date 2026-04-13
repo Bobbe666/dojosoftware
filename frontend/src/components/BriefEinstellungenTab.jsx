@@ -15,7 +15,7 @@ import {
   Settings, Layout, PanelBottom, UserCircle, Star,
   Bold, Italic, Link as LinkIcon, Plus, Edit, Trash2,
   Check, AlertCircle, Settings2, Eye, X,
-  Camera, Upload, Building2, CreditCard, Phone, Globe
+  Camera, Upload, Building2, CreditCard, Phone, Globe, ChevronDown
 } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import AbsenderProfileModal from './AbsenderProfileModal';
@@ -104,6 +104,30 @@ function StatusBadge({ msg, err }) {
   );
 }
 
+// ── Auf-/Einklappbare Section ─────────────────────────────────────────────────
+function CollapsibleSection({ icon, title, open, onToggle, children }) {
+  return (
+    <div className="be-section">
+      <button
+        type="button"
+        className="be-section-header be-section-header--toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        <span className="be-section-header-left">
+          {icon}
+          {title}
+        </span>
+        <ChevronDown
+          size={16}
+          className={`be-section-chevron${open ? ' be-section-chevron--open' : ''}`}
+        />
+      </button>
+      {open && <div className="be-section-body">{children}</div>}
+    </div>
+  );
+}
+
 // ── Haupt-Komponente ───────────────────────────────────────────────────────────
 export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
   const { activeDojo } = useDojoContext();
@@ -155,6 +179,17 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
   // ── Absender-Profile Modal ────────────────────────────────────────────────────
   const [profileModalOffen, setProfileModalOffen] = useState(false);
   const [editProfil, setEditProfil] = useState(null);
+
+  // ── Auf-/Eingeklappt-State (alle Sections standardmäßig offen) ───────────────
+  const [open, setOpen] = useState({
+    stammdaten: true,
+    logo: true,
+    layout: false,
+    fusszeile: false,
+    profile: false,
+    standard: false,
+  });
+  const toggle = (key) => setOpen(o => ({ ...o, [key]: !o[key] }));
 
   // ── TipTap für freien Footer-Text ─────────────────────────────────────────────
   const footerEditor = useEditor({
@@ -429,17 +464,25 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
   return (
     <div className="be-root">
 
+      {/* ── Dojo-Indikator: zeigt welches Dojo gerade konfiguriert wird ── */}
+      {activeDojo && activeDojo.id !== 'all' && (
+        <div className="be-dojo-indicator">
+          <Building2 size={14} />
+          Einstellungen für: <strong>{activeDojo.dojoname || activeDojo.name || `Dojo ${activeDojo.id}`}</strong>
+        </div>
+      )}
+
       {/* ── Zweispaltige Oberfläche: Links Stammdaten, Rechts Logo + Layout ── */}
       <div className="be-cols-top">
       <div className="be-col-left">
 
       {/* ── Section 0: Dojo-Stammdaten ───────────────────────────────────────── */}
-      <div className="be-section">
-        <div className="be-section-header">
-          <Building2 size={16} className="be-section-icon" />
-          Dojo-Stammdaten
-        </div>
-        <div className="be-section-body">
+      <CollapsibleSection
+        icon={<Building2 size={16} className="be-section-icon" />}
+        title="Dojo-Stammdaten"
+        open={open.stammdaten}
+        onToggle={() => toggle('stammdaten')}
+      >
 
           {/* Allgemein */}
           <div className="be-subsection-title">Allgemein</div>
@@ -591,19 +634,18 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
             </button>
           </div>
 
-        </div>
-      </div>
+      </CollapsibleSection>
 
       </div>{/* end be-col-left */}
       <div className="be-col-right">
 
       {/* ── Section 1: Logo ──────────────────────────────────────────────────── */}
-      <div className="be-section">
-        <div className="be-section-header">
-          <Camera size={16} className="be-section-icon" />
-          Dojo-Logo
-        </div>
-        <div className="be-section-body">
+      <CollapsibleSection
+        icon={<Camera size={16} className="be-section-icon" />}
+        title="Dojo-Logo"
+        open={open.logo}
+        onToggle={() => toggle('logo')}
+      >
           <input
             ref={logoInputRef}
             type="file"
@@ -661,16 +703,15 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
               ))}
             </div>
           </div>
-        </div>
-      </div>
+      </CollapsibleSection>
 
       {/* ── Section 2: Briefbogen-Layout ─────────────────────────────────────── */}
-      <div className="be-section">
-        <div className="be-section-header">
-          <Layout size={16} className="be-section-icon" />
-          Briefbogen-Layout (DIN 5008)
-        </div>
-        <div className="be-section-body">
+      <CollapsibleSection
+        icon={<Layout size={16} className="be-section-icon" />}
+        title="Briefbogen-Layout (DIN 5008)"
+        open={open.layout}
+        onToggle={() => toggle('layout')}
+      >
 
           <div className="be-din-cards">
             {[
@@ -782,19 +823,18 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
             </p>
           </div>
 
-        </div>
-      </div>
+      </CollapsibleSection>
 
       </div>{/* end be-col-right */}
       </div>{/* end be-cols-top */}
 
       {/* ── Section 3: Fußzeile ──────────────────────────────────────────────── */}
-      <div className="be-section">
-        <div className="be-section-header">
-          <PanelBottom size={16} className="be-section-icon" />
-          Fußzeile konfigurieren
-        </div>
-        <div className="be-section-body">
+      <CollapsibleSection
+        icon={<PanelBottom size={16} className="be-section-icon" />}
+        title="Fußzeile konfigurieren"
+        open={open.fusszeile}
+        onToggle={() => toggle('fusszeile')}
+      >
 
           {/* Bankverbindungen — Dropdown + Tags */}
           <div>
@@ -887,16 +927,15 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
             <p className="be-field-hint">Erscheint auf jeder PDF-Seite — z.B. Haftungsausschluss, Vereinsregisternummer.</p>
           </div>
 
-        </div>
-      </div>
+      </CollapsibleSection>
 
       {/* ── Section 4: Absender-Profile ──────────────────────────────────────── */}
-      <div className="be-section">
-        <div className="be-section-header">
-          <UserCircle size={16} className="be-section-icon" />
-          Absender-Profile
-        </div>
-        <div className="be-section-body">
+      <CollapsibleSection
+        icon={<UserCircle size={16} className="be-section-icon" />}
+        title="Absender-Profile"
+        open={open.profile}
+        onToggle={() => toggle('profile')}
+      >
           <div className="be-profile-header">
             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary, #aaa)' }}>
               Briefköpfe und Absender-Daten für Ihre Korrespondenz
@@ -937,16 +976,15 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
               ))}
             </div>
           )}
-        </div>
-      </div>
+      </CollapsibleSection>
 
       {/* ── Section 5: Standard-Einstellungen ────────────────────────────────── */}
-      <div className="be-section">
-        <div className="be-section-header">
-          <Star size={16} className="be-section-icon" />
-          Standard-Einstellungen
-        </div>
-        <div className="be-section-body">
+      <CollapsibleSection
+        icon={<Star size={16} className="be-section-icon" />}
+        title="Standard-Einstellungen"
+        open={open.standard}
+        onToggle={() => toggle('standard')}
+      >
           <div>
             <label className="be-field-label">Standard-Absender-Profil</label>
             <div className="be-default-row">
@@ -957,8 +995,7 @@ export default function BriefEinstellungenTab({ profile, onProfileChanged }) {
             </div>
             <p className="be-field-hint">Wird bei neuen Vorlagen und neuen Dokumenten automatisch vorbelegt.</p>
           </div>
-        </div>
-      </div>
+      </CollapsibleSection>
 
       {/* ── Globale Speichern-Leiste (Brief-Einstellungen) ────────────────────── */}
       <div className="be-save-bar">

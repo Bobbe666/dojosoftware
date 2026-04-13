@@ -1,13 +1,13 @@
 /* TextbausteinSidebar.css — Prefix: tb- */
 
 .tb-sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 340px;
+  min-width: 340px;
   display: flex;
   flex-direction: column;
   background: var(--surface-1, #1e1e2e);
   border-left: 1px solid var(--border, #444);
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -15,16 +15,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px 8px;
+  padding: 14px 16px 12px;
   border-bottom: 1px solid var(--border, #444);
   background: var(--surface-2, #2a2a3a);
   flex-shrink: 0;
 }
 
 .tb-sidebar-title {
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   color: var(--text-primary, #eee);
+  letter-spacing: 0.01em;
 }
 
 .tb-close-btn {
@@ -32,10 +33,10 @@
   border: none;
   color: var(--text-secondary, #aaa);
   cursor: pointer;
-  padding: 2px;
+  padding: 4px;
   display: flex;
   align-items: center;
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
 .tb-close-btn:hover {
@@ -46,33 +47,34 @@
 /* ── Steuerleiste ──────────────────────────────────────────────────────── */
 .tb-controls {
   display: flex;
-  gap: 6px;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border, #444);
+  background: var(--surface-2, #2a2a3a);
   flex-shrink: 0;
 }
 
 .tb-filter-select {
   flex: 1;
-  background: var(--surface-2, #2a2a3a);
+  background: var(--surface-1, #1e1e2e);
   color: var(--text-primary, #eee);
   border: 1px solid var(--border, #555);
-  border-radius: 5px;
-  padding: 4px 6px;
-  font-size: 0.82rem;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.88rem;
 }
 
 .tb-add-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   background: var(--primary, #c9a227);
   color: #000;
   border: none;
-  border-radius: 5px;
-  padding: 4px 10px;
-  font-size: 0.82rem;
-  font-weight: 600;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -81,18 +83,18 @@
 
 /* ── Inline-Formular ───────────────────────────────────────────────────── */
 .tb-edit-form {
-  padding: 10px 12px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--border, #444);
   background: var(--surface-2, #2a2a3a);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .tb-form-title {
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
   color: var(--primary, #c9a227);
 }
 
@@ -100,16 +102,16 @@
   background: var(--surface-1, #1e1e2e);
   color: var(--text-primary, #eee);
   border: 1px solid var(--border, #555);
-  border-radius: 5px;
-  padding: 5px 8px;
-  font-size: 0.83rem;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 0.9rem;
   width: 100%;
   box-sizing: border-box;
 }
 
 .tb-tiptap-wrap {
   border: 1px solid var(--border, #555);
-  border-radius: 5px;
+  border-radius: 6px;
   overflow: hidden;
   background: var(--surface-1, #1e1e2e);
 }
@@ -117,7 +119,7 @@
 .tb-toolbar {
   display: flex;
   gap: 2px;
-  padding: 4px 6px;
+  padding: 5px 8px;
   border-bottom: 1px solid var(--border, #444);
   background: var(--surface-2, #2a2a3a);
   align-items: center;
@@ -127,11 +129,11 @@
   background: none;
   border: 1px solid transparent;
   color: var(--text-secondary, #aaa);
-  border-radius: 3px;
-  padding: 2px 6px;
-  font-size: 0.82rem;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.88rem;
   cursor: pointer;
-  min-width: 24px;
+  min-width: 28px;
   text-align: center;
 }
 
@@ -148,26 +150,39 @@
 
 .tb-tool-sep {
   width: 1px;
-  height: 14px;
+  height: 16px;
   background: var(--border, #555);
-  margin: 0 2px;
+  margin: 0 3px;
+}
+
+.tb-tiptap-content {
+  min-height: 100px;
+}
+
+.tb-system-hint {
+  font-size: 0.8rem;
+  color: var(--primary, #c9a227);
+  background: var(--primary-alpha-10, rgba(201,162,39,0.1));
+  border: 1px solid var(--primary-alpha-25, rgba(201,162,39,0.25));
+  border-radius: 5px;
+  padding: 5px 10px;
 }
 
 .tb-form-error {
-  font-size: 0.8rem;
+  font-size: 0.86rem;
   color: #f87171;
 }
 
 .tb-form-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
 }
 
 .tb-btn {
-  border-radius: 5px;
-  padding: 4px 12px;
-  font-size: 0.82rem;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 0.88rem;
   cursor: pointer;
   border: 1px solid var(--border, #555);
 }
@@ -183,11 +198,10 @@
   background: var(--primary, #c9a227);
   color: #000;
   border-color: var(--primary, #c9a227);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .tb-btn--primary:hover { opacity: 0.88; }
-
 .tb-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Liste ─────────────────────────────────────────────────────────────── */
@@ -196,101 +210,141 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  gap: 0;
+  padding: 8px;
 }
 
 .tb-empty {
-  padding: 20px 12px;
-  font-size: 0.82rem;
+  padding: 28px 16px;
+  font-size: 0.9rem;
   color: var(--text-secondary, #aaa);
   text-align: center;
+  line-height: 1.6;
 }
 
+/* ── Karten-Layout für jeden Textbaustein ──────────────────────────────── */
 .tb-item {
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border, #3a3a4a);
-  transition: background 0.1s;
+  background: var(--surface-2, #2a2a3a);
+  border: 1px solid var(--border, #3a3a4a);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 6px;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.tb-item:hover { background: var(--surface-hover, #25253a); }
+.tb-item:hover {
+  border-color: var(--primary-alpha-40, rgba(201,162,39,0.4));
+  background: var(--surface-hover, #2e2e40);
+}
 
-.tb-item--editing { background: var(--surface-2, #2a2a3a); }
+.tb-item--editing {
+  border-color: var(--primary, #c9a227);
+  background: var(--surface-2, #2a2a3a);
+}
 
+/* Name + Aktionen oben */
 .tb-item-top {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 3px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .tb-item-name {
   flex: 1;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-primary, #eee);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.35;
+  /* Kein Truncate mehr — volle Anzeige */
+  word-break: break-word;
 }
 
 .tb-item-icon-actions {
   display: flex;
   gap: 4px;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .tb-icon-btn {
   background: none;
-  border: none;
+  border: 1px solid transparent;
   color: var(--text-secondary, #aaa);
   cursor: pointer;
-  padding: 2px;
+  padding: 3px 5px;
   display: flex;
   align-items: center;
-  border-radius: 3px;
+  border-radius: 4px;
+  transition: all 0.12s;
 }
 
 .tb-icon-btn:hover {
   color: var(--text-primary, #eee);
   background: var(--surface-hover, #33334a);
+  border-color: var(--border, #555);
 }
 
-.tb-icon-btn--danger:hover { color: #f87171; }
+.tb-icon-btn--danger:hover {
+  color: #f87171;
+  background: rgba(248,113,113,0.1);
+  border-color: rgba(248,113,113,0.3);
+}
 
+/* Kategorie-Badge */
 .tb-kat-badge {
   display: inline-block;
-  font-size: 0.72rem;
-  background: var(--surface-2, #2a2a3a);
-  color: var(--text-secondary, #aaa);
-  border: 1px solid var(--border, #444);
-  border-radius: 3px;
-  padding: 1px 5px;
-  margin-bottom: 4px;
+  font-size: 0.75rem;
+  background: var(--primary-alpha-10, rgba(201,162,39,0.1));
+  color: var(--primary, #c9a227);
+  border: 1px solid var(--primary-alpha-25, rgba(201,162,39,0.25));
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-bottom: 8px;
 }
 
+/* Einfügen-Buttons — groß und klickbar */
 .tb-item-actions {
   display: flex;
-  gap: 5px;
-  margin-top: 5px;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .tb-insert-btn {
   flex: 1;
-  padding: 4px 6px;
-  background: var(--surface-2, #2a2a3a);
+  padding: 7px 10px;
+  background: var(--surface-1, #1e1e2e);
   border: 1px solid var(--border, #555);
-  color: var(--text-secondary, #aaa);
-  border-radius: 4px;
-  font-size: 0.78rem;
+  color: var(--text-secondary, #ccc);
+  border-radius: 6px;
+  font-size: 0.86rem;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  transition: all 0.15s;
 }
 
 .tb-insert-btn:hover {
   background: var(--primary, #c9a227);
   color: #000;
   border-color: var(--primary, #c9a227);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+/* ── System-Bausteine ─────────────────────────────────────────────────── */
+.tb-system-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  background: rgba(255,255,255,0.07);
+  color: var(--text-secondary, #888);
+  border: 1px solid var(--border, #444);
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.tb-item--system {
+  opacity: 0.9;
 }
 
 /* ── Layout-Integration im VorlagenEditor ──────────────────────────────── */
@@ -304,26 +358,4 @@
   flex: 1;
   min-width: 0;
   overflow: hidden;
-}
-
-/* ── System-Bausteine ─────────────────────────────────────────────────── */
-.tb-system-badge {
-  display: inline-block;
-  font-size: 0.68rem;
-  background: var(--surface-2, #2a2a3a);
-  color: var(--text-secondary, #888);
-  border: 1px solid var(--border, #444);
-  border-radius: 3px;
-  padding: 1px 4px;
-  margin-left: 4px;
-  vertical-align: middle;
-  flex-shrink: 0;
-}
-
-.tb-item--system {
-  opacity: 0.85;
-}
-
-.tb-item--system:hover {
-  background: var(--surface-hover, #22223a);
 }

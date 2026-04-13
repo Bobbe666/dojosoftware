@@ -20,6 +20,9 @@ import AgbConfirmationWrapper from "./components/AgbConfirmationWrapper";
 // API Health Check - Zeigt Wartungsmeldung wenn Backend nicht erreichbar
 import ApiHealthCheck from "./components/ApiHealthCheck";
 
+// Update-Banner — zeigt "Neue Version verfügbar" wenn ein Deploy gelaufen ist
+import UpdateBanner from "./components/UpdateBanner";
+
 // Auto-reload on stale chunk 404 (happens after deployments with cached index.html)
 const lazyWithReload = (importFn) => {
   return lazy(() =>
@@ -152,7 +155,7 @@ const CourseRatingAdmin = lazyWithReload(() => import(/* webpackChunkName: "trai
 // ============================================================================
 // LAZY LOADED - Admin-Verwaltung
 // ============================================================================
-const Personal = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/Personal"));
+const Personal = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/TrainerPersonal"));
 const EinstellungenDojo = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/EinstellungenDojo"));
 const AuditLog = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/AuditLog"));
 const SecurityDashboard = lazyWithReload(() => import(/* webpackChunkName: "admin" */ "./components/SecurityDashboard"));
@@ -191,6 +194,7 @@ const VerbandDashboard = lazyWithReload(() => import(/* webpackChunkName: "verba
 const WebhookVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/WebhookVerwaltung"));
 const IntegrationsEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/IntegrationsEinstellungen"));
 const DatevExport = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/DatevExport"));
+const SteuerAssistent = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/SteuerAssistent"));
 const KalenderAbo = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/KalenderAbo"));
 
 // ============================================================================
@@ -468,6 +472,7 @@ const App = () => {
   useSafariDateFix();
   return (
     <ThemeProvider>
+      <UpdateBanner />
       <ApiHealthCheck>
         <AuthProvider>
           <ChatProvider>
@@ -922,6 +927,7 @@ const App = () => {
               <Route path="webhooks" element={<Suspense fallback={<LazyLoadFallback />}><WebhookVerwaltung /></Suspense>} />
               <Route path="integrationen" element={<Suspense fallback={<LazyLoadFallback />}><IntegrationsEinstellungen /></Suspense>} />
               <Route path="datev-export" element={<Suspense fallback={<LazyLoadFallback />}><DatevExport /></Suspense>} />
+              <Route path="steuer" element={<Suspense fallback={<LazyLoadFallback />}><SteuerAssistent /></Suspense>} />
               <Route path="kalender-sync" element={<Suspense fallback={<LazyLoadFallback />}><KalenderAbo /></Suspense>} />
 
               {/* ======== SUPER ADMIN ======== */}

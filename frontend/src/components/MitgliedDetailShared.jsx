@@ -657,7 +657,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
         return; // Request was cancelled, don't show error
       }
-      console.error('🔍 Fetch-Error:', err); // DEBUG
       setError("Fehler beim Abrufen der Mitgliedsdaten.");
     } finally {
       setLoading(false);

@@ -93,41 +93,49 @@ router.get('/kategorien', (req, res) => {
 
   const dojoId = req.tenant?.dojo_id;
 
-  // Datenbank verwenden - Super-Admin sieht alle
+  // Datenbank verwenden - Artikel referenzieren artikelgruppen (nicht artikel_kategorien!)
+  // Kategorien gehören entweder direkt dem Dojo, oder haben Artikel in diesem Dojo
   let query, params;
   if (isSuperAdmin && !dojoId) {
+    // Super-Admin ohne aktives Dojo: alle Top-Level-Kategorien
     query = `
       SELECT
-        kategorie_id,
-        name,
-        beschreibung,
-        farbe_hex,
-        icon,
-        aktiv,
-        reihenfolge,
-        dojo_id,
-        (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE) as anzahl_artikel
-      FROM artikel_kategorien ak
-      WHERE aktiv = TRUE
-      ORDER BY reihenfolge ASC, name ASC
+        ag.id AS kategorie_id,
+        ag.name,
+        ag.beschreibung,
+        ag.farbe AS farbe_hex,
+        ag.icon,
+        ag.aktiv,
+        ag.sortierung AS reihenfolge,
+        ag.dojo_id,
+        (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ag.id AND aktiv = TRUE) as anzahl_artikel
+      FROM artikelgruppen ag
+      WHERE ag.aktiv = TRUE AND ag.parent_id IS NULL
+      GROUP BY ag.id
+      ORDER BY ag.dojo_id ASC, ag.sortierung ASC, ag.name ASC
     `;
     params = [];
   } else {
+    // Kategorien für dieses Dojo: eigene ODER Kategorien mit Artikeln in diesem Dojo
     query = `
       SELECT
-        kategorie_id,
-        name,
-        beschreibung,
-        farbe_hex,
-        icon,
-        aktiv,
-        reihenfolge,
-        (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ak.kategorie_id AND aktiv = TRUE AND dojo_id = ?) as anzahl_artikel
-      FROM artikel_kategorien ak
-      WHERE aktiv = TRUE AND dojo_id = ?
-      ORDER BY reihenfolge ASC, name ASC
+        ag.id AS kategorie_id,
+        ag.name,
+        ag.beschreibung,
+        ag.farbe AS farbe_hex,
+        ag.icon,
+        ag.aktiv,
+        ag.sortierung AS reihenfolge,
+        (SELECT COUNT(*) FROM artikel WHERE kategorie_id = ag.id AND aktiv = TRUE AND dojo_id = ?) as anzahl_artikel
+      FROM artikelgruppen ag
+      WHERE ag.aktiv = TRUE AND ag.parent_id IS NULL
+        AND (
+          ag.dojo_id = ?
+          OR EXISTS (SELECT 1 FROM artikel WHERE kategorie_id = ag.id AND dojo_id = ?)
+        )
+      ORDER BY ag.sortierung ASC, ag.name ASC
     `;
-    params = [dojoId, dojoId];
+    params = [dojoId, dojoId, dojoId];
   }
 
   db.query(query, params, (error, results) => {

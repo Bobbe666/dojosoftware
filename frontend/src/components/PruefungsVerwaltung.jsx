@@ -184,6 +184,9 @@ const PruefungsVerwaltung = () => {
   // Doppelprüfung: Zwischengurt-Dropdown
   const [openZwischenPruefId, setOpenZwischenPruefId] = useState(null);
 
+  // Zugelassen: welche Gruppen sind aufgeklappt (Standard: alle zu)
+  const [openZugGroups, setOpenZugGroups] = useState({});
+
   // Prüfungs-Einstellungen (global, localStorage-backed)
   const PRUEF_SETTINGS_KEY = 'pruefungs_einstellungen';
   const DEFAULT_PRUEF_SETTINGS = {
@@ -1166,8 +1169,8 @@ const PruefungsVerwaltung = () => {
           pruefungsErgebnis.graduierung_nachher_id
         );
 
-        // Automatisch Urkunde generieren (TODO: Backend-Endpunkt implementieren)
-        await generateUrkunde(selectedPruefung.pruefung_id);
+        // Automatisch Urkunde generieren — deaktiviert, Backend-Endpunkt noch nicht implementiert
+        // await generateUrkunde(selectedPruefung.pruefung_id);
       }
 
       setShowErgebnisModal(false);
@@ -3315,70 +3318,84 @@ ${pages}
                 Passen Sie die Filter an, um andere Kandidaten anzuzeigen.
               </p>
             </div>
-          ) : (
-            <div className="table-container">
-              <table className="data-table pv3-table-sm">
-                <thead>
-                  <tr>
-                    <th className="pv3-th-plain-40-center">
-                      <input
-                        type="checkbox"
-                        className="pv3-checkbox-gold"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedKandidaten(filteredKandidaten.filter(k => !k.bereits_zugelassen));
-                          } else {
-                            setSelectedKandidaten([]);
-                          }
-                        }}
-                        checked={
-                          filteredKandidaten.filter(k => !k.bereits_zugelassen).length > 0 &&
-                          selectedKandidaten.length === filteredKandidaten.filter(k => !k.bereits_zugelassen).length
-                        }
-                      />
-                    </th>
-                    <th
-                      className="pv3-th-sortable"
-                      onClick={() => handleSort('name')}
-                    >
-                      Name <SortIcon columnKey="name" />
-                    </th>
-                    <th
-                      className="pv3-th-sortable-sm"
-                      onClick={() => handleSort('geburtsdatum')}
-                    >
-                      Geb.datum <SortIcon columnKey="geburtsdatum" />
-                    </th>
-                    <th
-                      className="pv3-th-sortable-xs"
-                      onClick={() => handleSort('stil_name')}
-                    >
-                      Stil <SortIcon columnKey="stil_name" />
-                    </th>
-                    <th
-                      className="pv3-th-sortable-md"
-                      onClick={() => handleSort('graduierung_vorher_name')}
-                    >
-                      Aktuell <SortIcon columnKey="graduierung_vorher_name" />
-                    </th>
-                    <th
-                      className="pv3-th-sortable-md"
-                      onClick={() => handleSort('graduierung_nachher_name')}
-                    >
-                      Ziel <SortIcon columnKey="graduierung_nachher_name" />
-                    </th>
-                    <th className="pv3-th-plain-110">Stunden</th>
-                    <th className="pv3-th-plain-80">Monate</th>
-                    <th className="pv3-th-plain-100">Status</th>
-                    <th className="pv3-th-plain-100-center">Aktion</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredKandidaten.map((kandidat, index) => (
-                    <tr
-                      key={`${kandidat.mitglied_id}-${kandidat.stil_id}-${index}`}
-                      className={`hover-row ${kandidat.bereits_zugelassen ? 'pv3-kandidat-row--zugelassen' : kandidat.berechtigt ? 'pv3-kandidat-row--berechtigt' : ''}`}
-                    >
+          ) : (() => {
+            // Gruppieren nach Stil
+            const stilGroups = {};
+            filteredKandidaten.forEach(k => {
+              const key = `${k.stil_id}`;
+              if (!stilGroups[key]) stilGroups[key] = { stil_id: k.stil_id, stil_name: k.stil_name, candidates: [] };
+              stilGroups[key].candidates.push(k);
+            });
+            const sortedStilGroups = Object.values(stilGroups).sort((a, b) => a.stil_name.localeCompare(b.stil_name));
+
+            return (
+              <div className="pv3-grouped-list">
+                {sortedStilGroups.map(group => {
+                  const groupKey = `kand_${group.stil_id}`;
+                  const isOpen = !!openZugGroups[groupKey];
+                  const berechtigtCount = group.candidates.filter(k => k.berechtigt && !k.bereits_zugelassen).length;
+                  const zugelassenCount = group.candidates.filter(k => k.bereits_zugelassen).length;
+                  const groupCandidates = group.candidates;
+
+                  return (
+                    <div key={groupKey} className="pv3-group-section">
+                      <div
+                        className="pv3-group-header past clickable"
+                        onClick={() => setOpenZugGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                      >
+                        <div className="pv3-group-header-left">
+                          <span className={`pv3-group-chevron ${isOpen ? 'open' : ''}`}>▶</span>
+                          <span className="pv3-stil-badge-sm">{group.stil_name}</span>
+                          {berechtigtCount > 0 && (
+                            <span className="pv3-abg-summary-badge bestanden">{berechtigtCount} berechtigt</span>
+                          )}
+                          {zugelassenCount > 0 && (
+                            <span className="pv3-abg-summary-badge" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.25)',color:'#f59e0b'}}>{zugelassenCount} zugelassen</span>
+                          )}
+                        </div>
+                        <span className="pv3-group-count">{group.candidates.length} Kandid.</span>
+                      </div>
+
+                      {isOpen && (
+                        <div className="table-container" style={{borderRadius:0}}>
+                          <table className="data-table pv3-table-sm">
+                            <thead>
+                              <tr>
+                                <th className="pv3-th-plain-40-center">
+                                  <input
+                                    type="checkbox"
+                                    className="pv3-checkbox-gold"
+                                    onChange={(e) => {
+                                      const eligibles = groupCandidates.filter(k => !k.bereits_zugelassen);
+                                      if (e.target.checked) {
+                                        const toAdd = eligibles.filter(k => !selectedKandidaten.some(s => s.mitglied_id === k.mitglied_id && s.stil_id === k.stil_id));
+                                        setSelectedKandidaten([...selectedKandidaten, ...toAdd]);
+                                      } else {
+                                        setSelectedKandidaten(selectedKandidaten.filter(s => !eligibles.some(k => k.mitglied_id === s.mitglied_id && k.stil_id === s.stil_id)));
+                                      }
+                                    }}
+                                    checked={
+                                      groupCandidates.filter(k => !k.bereits_zugelassen).length > 0 &&
+                                      groupCandidates.filter(k => !k.bereits_zugelassen).every(k => selectedKandidaten.some(s => s.mitglied_id === k.mitglied_id && s.stil_id === k.stil_id))
+                                    }
+                                  />
+                                </th>
+                                <th className="pv3-th-sortable" onClick={() => handleSort('name')}>Name <SortIcon columnKey="name" /></th>
+                                <th className="pv3-th-sortable-sm" onClick={() => handleSort('geburtsdatum')}>Geb. <SortIcon columnKey="geburtsdatum" /></th>
+                                <th className="pv3-th-sortable-md" onClick={() => handleSort('graduierung_vorher_name')}>Aktuell <SortIcon columnKey="graduierung_vorher_name" /></th>
+                                <th className="pv3-th-sortable-md" onClick={() => handleSort('graduierung_nachher_name')}>Ziel <SortIcon columnKey="graduierung_nachher_name" /></th>
+                                <th className="pv3-th-plain-110">Stunden</th>
+                                <th className="pv3-th-plain-80">Monate</th>
+                                <th className="pv3-th-plain-100">Status</th>
+                                <th className="pv3-th-plain-100-center">Aktion</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {groupCandidates.map((kandidat, index) => (
+                                <tr
+                                  key={`${kandidat.mitglied_id}-${kandidat.stil_id}-${index}`}
+                                  className={`hover-row ${kandidat.bereits_zugelassen ? 'pv3-kandidat-row--zugelassen' : kandidat.berechtigt ? 'pv3-kandidat-row--berechtigt' : ''}`}
+                                >
                       <td className="pv2-text-center">
                         {!kandidat.bereits_zugelassen ? (
                           <input
@@ -3619,12 +3636,18 @@ ${pages}
                           </button>
                         )}
                       </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* Legende */}
           {kandidaten.length > 0 && (
@@ -3707,260 +3730,214 @@ ${pages}
 
           {loading ? (
             <div className="pv2-center-3rem">Lädt...</div>
-          ) : (
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th
-                      className="pv3-zug-th-sort"
-                      onClick={() => handleSort('name')}
-                    >
-                      Name <SortIcon columnKey="name" />
-                    </th>
-                    <th
-                      className="pv3-zug-th-sort"
-                      onClick={() => handleSort('stil_name')}
-                    >
-                      Stil <SortIcon columnKey="stil_name" />
-                    </th>
-                    <th
-                      className="pv3-zug-th-sort"
-                      onClick={() => handleSort('graduierung_nachher_name')}
-                    >
-                      Angestrebt <SortIcon columnKey="graduierung_nachher_name" />
-                    </th>
-                    <th
-                      className="pv3-zug-th-sort"
-                      onClick={() => handleSort('pruefungsdatum')}
-                    >
-                      Prüfungsdatum <SortIcon columnKey="pruefungsdatum" />
-                    </th>
-                    <th className="pv3-zug-th">Bestätigung</th>
-                    <th className="pv3-zug-th">Aktionen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    // Sortierung und Filterung
-                    const heute = new Date();
-                    heute.setHours(0, 0, 0, 0);
+          ) : (() => {
+            const heute = new Date();
+            heute.setHours(0, 0, 0, 0);
 
-                    let gefiltert = zugelassenePruefungen.filter(pruefung => {
-                      // Stilfilter anwenden
-                      if (zugelasseneStilFilter !== 'all' && pruefung.stil_id !== parseInt(zugelasseneStilFilter)) {
-                        return false;
-                      }
+            let gefiltert = zugelassenePruefungen.filter(pruefung => {
+              if (zugelasseneStilFilter !== 'all' && pruefung.stil_id !== parseInt(zugelasseneStilFilter)) return false;
+              const istAbgeschlossen = pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden';
+              if (datumFilter === 'zukuenftig') {
+                if (istAbgeschlossen) return false;
+                if (!pruefung.pruefungsdatum) return true;
+                const d = new Date(pruefung.pruefungsdatum); d.setHours(0,0,0,0);
+                return d >= heute;
+              } else if (datumFilter === 'vergangen') {
+                if (istAbgeschlossen) return true;
+                if (!pruefung.pruefungsdatum) return false;
+                const d = new Date(pruefung.pruefungsdatum); d.setHours(0,0,0,0);
+                return d < heute;
+              }
+              return true;
+            });
 
-                      const istAbgeschlossen = pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden';
+            if (gefiltert.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  {zugelassenePruefungen.length === 0
+                    ? '🥋 Noch keine Kandidaten zur Prüfung zugelassen.'
+                    : datumFilter === 'vergangen'
+                      ? '📅 Keine vergangenen zugelassenen Prüfungen gefunden.'
+                      : '📅 Keine zukünftigen zugelassenen Prüfungen gefunden.'}
+                </div>
+              );
+            }
 
-                      if (datumFilter === 'zukuenftig') {
-                        // Nur geplante Prüfungen mit Zukunftsdatum
-                        if (istAbgeschlossen) return false;
-                        if (!pruefung.pruefungsdatum) return true;
-                        const d = new Date(pruefung.pruefungsdatum); d.setHours(0,0,0,0);
-                        return d >= heute;
-                      } else if (datumFilter === 'vergangen') {
-                        // Abgeschlossene ODER geplante mit vergangenem Datum
-                        if (istAbgeschlossen) return true;
-                        if (!pruefung.pruefungsdatum) return false;
-                        const d = new Date(pruefung.pruefungsdatum); d.setHours(0,0,0,0);
-                        return d < heute;
-                      }
-                      return true; // 'alle'
-                    });
+            // Gruppieren nach Datum + Stil
+            const groupMap = {};
+            gefiltert.forEach(p => {
+              const key = `${p.pruefungsdatum || '__kein__'}___${p.stil_id}`;
+              if (!groupMap[key]) {
+                groupMap[key] = { datum: p.pruefungsdatum, stil_name: p.stil_name, stil_id: p.stil_id, candidates: [] };
+              }
+              groupMap[key].candidates.push(p);
+            });
 
-                    // Sortierung anwenden
-                    if (sortConfig.key) {
-                      gefiltert = applySorting(gefiltert, sortConfig.key, sortConfig.direction);
-                    } else {
-                      // Standard-Sortierung: Zukünftige zuerst (aufsteigend), dann vergangene (absteigend)
-                      gefiltert.sort((a, b) => {
-                        if (!a.pruefungsdatum && !b.pruefungsdatum) return 0;
-                        if (!a.pruefungsdatum) return 1;
-                        if (!b.pruefungsdatum) return -1;
+            const sortedGroups = Object.values(groupMap).sort((a, b) => {
+              if (!a.datum && !b.datum) return 0;
+              if (!a.datum) return 1;
+              if (!b.datum) return -1;
+              const da = new Date(a.datum); da.setHours(0,0,0,0);
+              const db = new Date(b.datum); db.setHours(0,0,0,0);
+              const aF = da >= heute, bF = db >= heute;
+              if (aF && bF) return da - db;
+              if (!aF && !bF) return db - da;
+              return aF ? -1 : 1;
+            });
 
-                        const dateA = new Date(a.pruefungsdatum);
-                        const dateB = new Date(b.pruefungsdatum);
-                        dateA.setHours(0, 0, 0, 0);
-                        dateB.setHours(0, 0, 0, 0);
+            return (
+              <div className="pv3-grouped-list">
+                {sortedGroups.map(group => {
+                  const groupDate = group.datum ? new Date(group.datum) : null;
+                  if (groupDate) groupDate.setHours(0,0,0,0);
+                  const isFuture = groupDate ? groupDate >= heute : false;
+                  const dateStr = group.datum
+                    ? new Date(group.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+                    : 'Datum nicht festgelegt';
+                  const sortedCandidates = [...group.candidates].sort((a, b) =>
+                    `${a.nachname} ${a.vorname}`.localeCompare(`${b.nachname} ${b.vorname}`)
+                  );
 
-                        const isAFuture = dateA >= heute;
-                        const isBFuture = dateB >= heute;
+                  const groupKey = `${group.datum}___${group.stil_id}`;
+                  const isOpen = !!openZugGroups[groupKey];
 
-                        // Wenn beide zukünftig: aufsteigend (nächste zuerst)
-                        if (isAFuture && isBFuture) {
-                          return dateA - dateB;
-                        }
-                        // Wenn beide vergangen: absteigend (neueste zuerst)
-                        if (!isAFuture && !isBFuture) {
-                          return dateB - dateA;
-                        }
-                        // Zukünftige vor vergangenen
-                        return isAFuture ? -1 : 1;
-                      });
-                    }
-
-                    if (gefiltert.length === 0) {
-                      return (
-                        <tr>
-                          <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
-                            {zugelassenePruefungen.length === 0
-                              ? '🥋 Noch keine Kandidaten zur Prüfung zugelassen. Wechsle zu „Kandidaten" und lass Mitglieder zur Prüfung zu.'
-                              : datumFilter === 'vergangen'
-                                ? '📅 Keine vergangenen zugelassenen Prüfungen gefunden.'
-                                : '📅 Keine zukünftigen zugelassenen Prüfungen gefunden.'
-                            }
-                          </td>
-                        </tr>
-                      );
-                    }
-
-                    return gefiltert.map(pruefung => (
-                    <tr key={pruefung.pruefung_id}>
-                      <td><strong>{pruefung.vorname} {pruefung.nachname}</strong></td>
-                      <td>
-                        <span className="pv3-stil-badge-sm">
-                          {pruefung.stil_name}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="pv3-grad-row">
-                          <div
-                            className="pv3-gurt-dot-sm"
-                            style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255, 255, 255, 0.1)' }}
-                            title={pruefung.graduierung_nachher}
-                          />
-                          <span className="pv3-grad-name-primary">
-                            {pruefung.graduierung_nachher}
+                  return (
+                    <div key={groupKey} className="pv3-group-section">
+                      <div
+                        className={`pv3-group-header ${isFuture ? 'future' : 'past'} clickable`}
+                        onClick={() => setOpenZugGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                      >
+                        <div className="pv3-group-header-left">
+                          <span className={`pv3-group-chevron ${isOpen ? 'open' : ''}`}>▶</span>
+                          <span className={`pv3-group-date-label ${isFuture ? 'future' : 'past'}`}>
+                            {isFuture ? '📅' : '🗓'} {dateStr}
                           </span>
+                          <span className="pv3-stil-badge-sm">{group.stil_name}</span>
                         </div>
-                      </td>
-                      <td>
-                        {pruefung.pruefungsdatum
-                          ? new Date(pruefung.pruefungsdatum).toLocaleDateString('de-DE')
-                          : 'Nicht festgelegt'}
-                      </td>
-                      <td>
-                        {pruefung.teilnahme_bestaetigt
-                          ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '6px', padding: '3px 8px', fontSize: '12px', color: '#10B981', fontWeight: 600, whiteSpace: 'nowrap' }}>✓ Angemeldet</span>
-                          : <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', padding: '3px 8px', fontSize: '12px', color: 'var(--text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>⏳ Ausstehend</span>
-                        }
-                      </td>
-                      <td>
-                        <div className="u-flex-wrap-gap">
-                          {(pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden') ? (
-                            // Abgeschlossene Prüfung: Urkunde + Protokoll
-                            <>
-                              <button
-                                onClick={() => setDruckAuswahlModal({ open: true, termin: { datum: pruefung.pruefungsdatum, stil_id: pruefung.stil_id, stil_name: pruefung.stil_name, ort: pruefung.pruefungsort || '', zeit: pruefung.pruefungszeit || '', pruefer_name: pruefung.pruefer_name || '', pruefungen: [pruefung] }, selected: [pruefung.pruefung_id], vorlage: 'pruefungsurkunde' })}
-                                className="pv3-zug-btn-neutral"
-                                title="Urkunde drucken"
-                              >
-                                <Scroll size={13} /> Urkunde
-                              </button>
-                              <button
-                                onClick={() => druckeErgebnis(pruefung, {
-                                  datum: pruefung.pruefungsdatum,
-                                  stil_name: pruefung.stil_name,
-                                  ort: pruefung.pruefungsort || '',
-                                  zeit: pruefung.pruefungszeit || '',
-                                  pruefer_name: pruefung.pruefer_name || ''
-                                })}
-                                className="pv3-zug-btn-neutral"
-                                title="Protokoll drucken"
-                              >
-                                <Printer size={13} /> Protokoll
-                              </button>
-                              {/* Doppelprüfung / Zwischengurt */}
-                              {pruefung.graduierung_zwischen ? (
-                                <span style={{display:'flex',alignItems:'center',gap:'3px',background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:'5px',padding:'3px 7px',fontSize:'11px',color:'#22c55e',whiteSpace:'nowrap'}}>
-                                  2× {pruefung.graduierung_zwischen}
-                                  <button onClick={() => saveZwischengurt(pruefung, null)} title="Doppelprüfung entfernen" style={{background:'none',border:'none',color:'#22c55e',cursor:'pointer',fontSize:'13px',lineHeight:1,padding:'0 0 0 2px'}}>×</button>
-                                </span>
-                              ) : (
-                                <div style={{position:'relative'}}>
-                                  <button
-                                    onClick={() => setOpenZwischenPruefId(openZwischenPruefId === pruefung.pruefung_id ? null : pruefung.pruefung_id)}
-                                    title="Doppelprüfung: Zwischengurt setzen (2 Urkunden)"
-                                    style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'5px',color:'var(--text-muted,#aaa)',cursor:'pointer',padding:'4px 7px',fontSize:'11px',lineHeight:1,whiteSpace:'nowrap'}}
-                                  >2×</button>
-                                  {openZwischenPruefId === pruefung.pruefung_id && graduierungenProStil[pruefung.stil_id] && (
-                                    <div style={{position:'absolute',right:0,top:'110%',background:'var(--surface,#1e252c)',border:'1px solid var(--border,#2a3038)',borderRadius:'8px',padding:'6px',zIndex:50,minWidth:'160px',boxShadow:'0 4px 16px rgba(0,0,0,0.5)'}}>
-                                      <p style={{fontSize:'10px',color:'var(--text-muted,#aaa)',marginBottom:'5px',paddingLeft:'2px'}}>Zwischengurt wählen:</p>
-                                      {(() => {
-                                        const grads = graduierungenProStil[pruefung.stil_id] || [];
-                                        const vorherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_vorher_id);
-                                        const nachherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_nachher_id);
-                                        const filtered = grads.filter(g =>
-                                          g.aktiv === 1 &&
-                                          (!vorherGrad || g.reihenfolge > vorherGrad.reihenfolge) &&
-                                          (!nachherGrad || g.reihenfolge < nachherGrad.reihenfolge)
-                                        );
-                                        if (filtered.length === 0) return <p style={{fontSize:'11px',color:'var(--text-muted,#aaa)',padding:'2px'}}>Kein Zwischengurt möglich</p>;
-                                        return filtered.map(g => (
-                                          <button key={g.graduierung_id}
-                                            onClick={() => saveZwischengurt(pruefung, g.graduierung_id)}
-                                            style={{display:'flex',alignItems:'center',gap:'7px',width:'100%',background:'none',border:'none',color:'var(--text,#e8eaed)',cursor:'pointer',padding:'5px 6px',borderRadius:'5px',fontSize:'12px',textAlign:'left'}}
-                                            onMouseEnter={e => e.currentTarget.style.background='var(--surface2,#2a3038)'}
-                                            onMouseLeave={e => e.currentTarget.style.background='none'}
-                                          >
-                                            <span style={{width:'10px',height:'10px',borderRadius:'50%',background:g.farbe_hex||'#555',flexShrink:0,display:'inline-block'}}/>
-                                            {g.name}
-                                          </button>
-                                        ));
-                                      })()}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            // Geplante Prüfung: Ergebnis eintragen + Entfernen
-                            <>
-                              <button
-                                onClick={async () => {
-                                  if (!pruefung.stil_id) {
-                                    setError('Stil-ID fehlt für diese Prüfung');
-                                    return;
-                                  }
-                                  setSelectedPruefung(pruefung);
-                                  const grads = await loadGraduierungenFuerModal(pruefung.stil_id);
-                                  const currentIndex = grads.findIndex(g => g.graduierung_id === pruefung.graduierung_nachher_id);
-                                  const targetGrad = grads[currentIndex] || grads[0];
-                                  setPruefungsErgebnis({
-                                    bestanden: false,
-                                    punktzahl: '',
-                                    max_punktzahl: '100',
-                                    prueferkommentar: '',
-                                    graduierung_nachher_index: currentIndex >= 0 ? currentIndex : 0,
-                                    graduierung_nachher_id: targetGrad?.graduierung_id || null,
-                                    graduierung_nachher_name: targetGrad?.name || '',
-                                    graduierung_nachher_farbe: targetGrad?.farbe_hex || ''
-                                  });
-                                  setShowErgebnisModal(true);
-                                }}
-                                className="pv3-zug-btn-primary"
-                              >
-                                <Check size={13} /> Ergebnis eintragen
-                              </button>
-                              <button
-                                onClick={() => handleZulassungEntfernen(pruefung)}
-                                className="pv3-zug-btn-danger"
-                              >
-                                <X size={13} /> Entfernen
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ));
-                })()}
-                </tbody>
-              </table>
-            </div>
-          )}
+                        <span className="pv3-group-count">
+                          {group.candidates.length} Kandidat{group.candidates.length !== 1 ? 'en' : ''}
+                        </span>
+                      </div>
+
+                      {isOpen && <div className="pv3-candidate-list">
+                        {sortedCandidates.map(pruefung => (
+                          <div key={pruefung.pruefung_id} className="pv3-candidate-row">
+                            <div className="pv3-cand-name">
+                              {pruefung.vorname} {pruefung.nachname}
+                            </div>
+                            <div className="pv3-cand-grad">
+                              <div
+                                className="pv3-gurt-dot-sm"
+                                style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255,255,255,0.1)' }}
+                                title={pruefung.graduierung_nachher}
+                              />
+                              <span>{pruefung.graduierung_nachher}</span>
+                            </div>
+                            <div className="pv3-cand-status">
+                              {pruefung.teilnahme_bestaetigt
+                                ? <span className="pv3-badge-confirmed">✓ Angemeldet</span>
+                                : <span className="pv3-badge-pending">Ausstehend</span>
+                              }
+                            </div>
+                            <div className="pv3-cand-actions u-flex-wrap-gap">
+                                {(pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden') ? (
+                                  <>
+                                    <button
+                                      onClick={() => setDruckAuswahlModal({ open: true, termin: { datum: pruefung.pruefungsdatum, stil_id: pruefung.stil_id, stil_name: pruefung.stil_name, ort: pruefung.pruefungsort || '', zeit: pruefung.pruefungszeit || '', pruefer_name: pruefung.pruefer_name || '', pruefungen: [pruefung] }, selected: [pruefung.pruefung_id], vorlage: 'pruefungsurkunde' })}
+                                      className="pv3-zug-btn-neutral"
+                                      title="Urkunde drucken"
+                                    >
+                                      <Scroll size={13} /> Urkunde
+                                    </button>
+                                    <button
+                                      onClick={() => druckeErgebnis(pruefung, { datum: pruefung.pruefungsdatum, stil_name: pruefung.stil_name, ort: pruefung.pruefungsort || '', zeit: pruefung.pruefungszeit || '', pruefer_name: pruefung.pruefer_name || '' })}
+                                      className="pv3-zug-btn-neutral"
+                                      title="Protokoll drucken"
+                                    >
+                                      <Printer size={13} /> Protokoll
+                                    </button>
+                                    {pruefung.graduierung_zwischen ? (
+                                      <span style={{display:'flex',alignItems:'center',gap:'3px',background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:'5px',padding:'3px 7px',fontSize:'11px',color:'#22c55e',whiteSpace:'nowrap'}}>
+                                        2× {pruefung.graduierung_zwischen}
+                                        <button onClick={() => saveZwischengurt(pruefung, null)} title="Doppelprüfung entfernen" style={{background:'none',border:'none',color:'#22c55e',cursor:'pointer',fontSize:'13px',lineHeight:1,padding:'0 0 0 2px'}}>×</button>
+                                      </span>
+                                    ) : (
+                                      <div style={{position:'relative'}}>
+                                        <button
+                                          onClick={() => setOpenZwischenPruefId(openZwischenPruefId === pruefung.pruefung_id ? null : pruefung.pruefung_id)}
+                                          title="Doppelprüfung: Zwischengurt setzen (2 Urkunden)"
+                                          style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'5px',color:'var(--text-muted,#aaa)',cursor:'pointer',padding:'4px 7px',fontSize:'11px',lineHeight:1,whiteSpace:'nowrap'}}
+                                        >2×</button>
+                                        {openZwischenPruefId === pruefung.pruefung_id && graduierungenProStil[pruefung.stil_id] && (
+                                          <div style={{position:'absolute',right:0,top:'110%',background:'var(--surface,#1e252c)',border:'1px solid var(--border,#2a3038)',borderRadius:'8px',padding:'6px',zIndex:50,minWidth:'160px',boxShadow:'0 4px 16px rgba(0,0,0,0.5)'}}>
+                                            <p style={{fontSize:'10px',color:'var(--text-muted,#aaa)',marginBottom:'5px',paddingLeft:'2px'}}>Zwischengurt wählen:</p>
+                                            {(() => {
+                                              const grads = graduierungenProStil[pruefung.stil_id] || [];
+                                              const vorherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_vorher_id);
+                                              const nachherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_nachher_id);
+                                              const filtered = grads.filter(g =>
+                                                g.aktiv === 1 &&
+                                                (!vorherGrad || g.reihenfolge > vorherGrad.reihenfolge) &&
+                                                (!nachherGrad || g.reihenfolge < nachherGrad.reihenfolge)
+                                              );
+                                              if (filtered.length === 0) return <p style={{fontSize:'11px',color:'var(--text-muted,#aaa)',padding:'2px'}}>Kein Zwischengurt möglich</p>;
+                                              return filtered.map(g => (
+                                                <button key={g.graduierung_id}
+                                                  onClick={() => saveZwischengurt(pruefung, g.graduierung_id)}
+                                                  style={{display:'flex',alignItems:'center',gap:'7px',width:'100%',background:'none',border:'none',color:'var(--text,#e8eaed)',cursor:'pointer',padding:'5px 6px',borderRadius:'5px',fontSize:'12px',textAlign:'left'}}
+                                                  onMouseEnter={e => e.currentTarget.style.background='var(--surface2,#2a3038)'}
+                                                  onMouseLeave={e => e.currentTarget.style.background='none'}
+                                                >
+                                                  <span style={{width:'10px',height:'10px',borderRadius:'50%',background:g.farbe_hex||'#555',flexShrink:0,display:'inline-block'}}/>
+                                                  {g.name}
+                                                </button>
+                                              ));
+                                            })()}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={async () => {
+                                        if (!pruefung.stil_id) { setError('Stil-ID fehlt für diese Prüfung'); return; }
+                                        setSelectedPruefung(pruefung);
+                                        const grads = await loadGraduierungenFuerModal(pruefung.stil_id);
+                                        const currentIndex = grads.findIndex(g => g.graduierung_id === pruefung.graduierung_nachher_id);
+                                        const targetGrad = grads[currentIndex] || grads[0];
+                                        setPruefungsErgebnis({
+                                          bestanden: false, punktzahl: '', max_punktzahl: '100', prueferkommentar: '',
+                                          graduierung_nachher_index: currentIndex >= 0 ? currentIndex : 0,
+                                          graduierung_nachher_id: targetGrad?.graduierung_id || null,
+                                          graduierung_nachher_name: targetGrad?.name || '',
+                                          graduierung_nachher_farbe: targetGrad?.farbe_hex || ''
+                                        });
+                                        setShowErgebnisModal(true);
+                                      }}
+                                      className="pv3-zug-btn-primary"
+                                    >
+                                      <Check size={13} /> Ergebnis
+                                    </button>
+                                    <button
+                                      onClick={() => handleZulassungEntfernen(pruefung)}
+                                      className="pv3-zug-btn-danger"
+                                    >
+                                      <X size={13} /> Entfernen
+                                    </button>
+                                  </>
+                                )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -3968,192 +3945,188 @@ ${pages}
       {activeTab === 'abgeschlossen' && (
         <div className="pv3-zugelassen-section">
           <div className="pv2-mb-15">
-            <h2 className="pv3-zug-h2">Abgeschlossene Prüfungen ({abgeschlossenePruefungen.length})</h2>
-
-            {/* Stilfilter */}
-            <div className="pv-flex-row">
-              <span className="pv-secondary-bold">
-                Stil:
-              </span>
-              <select
-                value={abgeschlosseneStilFilter}
-                onChange={(e) => setAbgeschlosseneStilFilter(e.target.value)}
-                className="pv3-dark-select"
-              >
-                <option value="all" className="pv2-dark-input">
-                  Alle Stile
-                </option>
-                {stile.map(stil => (
-                  <option
-                    key={stil.stil_id}
-                    value={stil.stil_id}
-                    className="pv2-dark-input"
-                  >
-                    {stil.name}
-                  </option>
-                ))}
-              </select>
+            <div className="pv3-tab-section-header">
+              <h2 className="pv3-zug-h2">Abgeschlossene Prüfungen ({abgeschlossenePruefungen.length})</h2>
+              <div className="pv-flex-row">
+                <span className="pv-secondary-bold">Stil:</span>
+                <select
+                  value={abgeschlosseneStilFilter}
+                  onChange={(e) => setAbgeschlosseneStilFilter(e.target.value)}
+                  className="pv3-dark-select"
+                >
+                  <option value="all">Alle Stile</option>
+                  {stile.map(stil => (
+                    <option key={stil.stil_id} value={stil.stil_id}>{stil.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
           {loading ? (
             <div className="pv2-center-3rem">Lädt...</div>
-          ) : (
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th className="pv3-zug-th-sort" onClick={() => handleSort('name')}>
-                      Name <SortIcon columnKey="name" />
-                    </th>
-                    <th className="pv3-zug-th-sort" onClick={() => handleSort('stil_name')}>
-                      Stil <SortIcon columnKey="stil_name" />
-                    </th>
-                    <th className="pv3-zug-th-sort" onClick={() => handleSort('graduierung_nachher')}>
-                      Graduierung <SortIcon columnKey="graduierung_nachher" />
-                    </th>
-                    <th className="pv3-zug-th-sort" onClick={() => handleSort('pruefungsdatum')}>
-                      Datum <SortIcon columnKey="pruefungsdatum" />
-                    </th>
-                    <th className="pv3-zug-th-sort" onClick={() => handleSort('bestanden')}>
-                      Ergebnis <SortIcon columnKey="bestanden" />
-                    </th>
-                    <th className="pv3-zug-th">Aktionen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(() => {
-                    // Stilfilter anwenden
-                    let gefiltert = abgeschlossenePruefungen;
+          ) : (() => {
+            let gefiltert = abgeschlossenePruefungen;
+            if (abgeschlosseneStilFilter !== 'all') {
+              gefiltert = gefiltert.filter(p => p.stil_id === parseInt(abgeschlosseneStilFilter));
+            }
 
-                    if (abgeschlosseneStilFilter !== 'all') {
-                      gefiltert = gefiltert.filter(p => p.stil_id === parseInt(abgeschlosseneStilFilter));
-                    }
+            if (gefiltert.length === 0) {
+              return (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                  📋 Keine abgeschlossenen Prüfungen gefunden.
+                </div>
+              );
+            }
 
-                    // Sortierung anwenden
-                    if (sortConfig.key) {
-                      gefiltert = applySorting(gefiltert, sortConfig.key, sortConfig.direction);
-                    }
+            // Gruppieren nach Datum + Stil
+            const groupMap = {};
+            gefiltert.forEach(p => {
+              const key = `${p.pruefungsdatum || '__kein__'}___${p.stil_id}`;
+              if (!groupMap[key]) {
+                groupMap[key] = { datum: p.pruefungsdatum, stil_name: p.stil_name, stil_id: p.stil_id, candidates: [] };
+              }
+              groupMap[key].candidates.push(p);
+            });
 
-                    return gefiltert.map(pruefung => (
-                    <tr key={pruefung.pruefung_id}>
-                      <td><strong>{pruefung.vorname} {pruefung.nachname}</strong></td>
-                      <td>
-                        <span className="pv3-stil-badge-sm">
-                          {pruefung.stil_name}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="pv3-grad-row">
-                          <div
-                            className="pv3-gurt-dot-sm"
-                            style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255, 255, 255, 0.1)' }}
-                            title={pruefung.graduierung_nachher}
-                          />
-                          <span className="pv3-grad-name">
-                            {pruefung.graduierung_nachher}
-                          </span>
+            // Neueste zuerst
+            const sortedGroups = Object.values(groupMap).sort((a, b) => {
+              if (!a.datum && !b.datum) return 0;
+              if (!a.datum) return 1;
+              if (!b.datum) return -1;
+              return new Date(b.datum) - new Date(a.datum);
+            });
+
+            return (
+              <div className="pv3-grouped-list">
+                {sortedGroups.map(group => {
+                  const groupKey = `abg_${group.datum}___${group.stil_id}`;
+                  const isOpen = !!openZugGroups[groupKey];
+                  const dateStr = group.datum
+                    ? new Date(group.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+                    : 'Datum nicht festgelegt';
+                  const bestandenCount = group.candidates.filter(c => c.bestanden).length;
+                  const sortedCandidates = [...group.candidates].sort((a, b) =>
+                    `${a.nachname} ${a.vorname}`.localeCompare(`${b.nachname} ${b.vorname}`)
+                  );
+
+                  return (
+                    <div key={groupKey} className="pv3-group-section">
+                      <div
+                        className="pv3-group-header past clickable"
+                        onClick={() => setOpenZugGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                      >
+                        <div className="pv3-group-header-left">
+                          <span className={`pv3-group-chevron ${isOpen ? 'open' : ''}`}>▶</span>
+                          <span className="pv3-group-date-label past">🗓 {dateStr}</span>
+                          <span className="pv3-stil-badge-sm">{group.stil_name}</span>
                         </div>
-                      </td>
-                      <td>{new Date(pruefung.pruefungsdatum).toLocaleDateString('de-DE')}</td>
-                      <td>
-                        <div>
-                          {pruefung.bestanden ? (
-                            <span className="pv3-abg-badge-success">
-                              Bestanden
-                            </span>
-                          ) : (
-                            <span className="pv3-abg-badge-danger">
-                              Nicht bestanden
-                            </span>
+                        <div className="pv3-group-header-right">
+                          <span className="pv3-abg-summary-badge bestanden">{bestandenCount} ✓</span>
+                          {group.candidates.length - bestandenCount > 0 && (
+                            <span className="pv3-abg-summary-badge nicht-bestanden">{group.candidates.length - bestandenCount} ✗</span>
                           )}
-                          {pruefung.punktzahl && (
-                            <div className="pv3-punktzahl-note">
-                              {pruefung.punktzahl} / {pruefung.max_punktzahl} Pkt.
+                          <span className="pv3-group-count">{group.candidates.length} Kandid.</span>
+                        </div>
+                      </div>
+
+                      {isOpen && (
+                        <div className="pv3-candidate-list">
+                          {sortedCandidates.map(pruefung => (
+                            <div key={pruefung.pruefung_id} className="pv3-candidate-row abg">
+                              <div className="pv3-cand-name">
+                                {pruefung.vorname} {pruefung.nachname}
+                              </div>
+                              <div className="pv3-cand-grad">
+                                <div
+                                  className="pv3-gurt-dot-sm"
+                                  style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255,255,255,0.1)' }}
+                                  title={pruefung.graduierung_nachher}
+                                />
+                                <span>{pruefung.graduierung_nachher}</span>
+                              </div>
+                              <div className="pv3-cand-status">
+                                {pruefung.bestanden
+                                  ? <span className="pv3-badge-confirmed">✓ Bestanden</span>
+                                  : <span className="pv3-badge-failed">✗ Nicht bestanden</span>
+                                }
+                                {pruefung.punktzahl && (
+                                  <span className="pv3-cand-punkte">{pruefung.punktzahl}/{pruefung.max_punktzahl}</span>
+                                )}
+                              </div>
+                              <div className="pv3-cand-actions u-flex-wrap-gap">
+                                <button
+                                  onClick={() => setDruckAuswahlModal({ open: true, termin: { datum: pruefung.pruefungsdatum, stil_id: pruefung.stil_id, stil_name: pruefung.stil_name, ort: pruefung.pruefungsort || '', zeit: pruefung.pruefungszeit || '', pruefer_name: pruefung.pruefer_name || '', pruefungen: [pruefung] }, selected: [pruefung.pruefung_id], vorlage: 'pruefungsurkunde' })}
+                                  className="pv3-zug-btn-neutral"
+                                  title="Urkunde drucken"
+                                >
+                                  <Download size={13} /> Urkunde
+                                </button>
+                                <button
+                                  onClick={() => druckeErgebnis(pruefung, { datum: pruefung.pruefungsdatum, stil_name: pruefung.stil_name, ort: pruefung.pruefungsort || '', zeit: pruefung.pruefungszeit || '', pruefer_name: pruefung.pruefer_name || '' })}
+                                  className="pv3-zug-btn-neutral"
+                                  title="Protokoll drucken"
+                                >
+                                  <TrendingUp size={13} /> Protokoll
+                                </button>
+                                {pruefung.graduierung_zwischen ? (
+                                  <span style={{display:'flex',alignItems:'center',gap:'3px',background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:'5px',padding:'3px 7px',fontSize:'11px',color:'#22c55e',whiteSpace:'nowrap'}}>
+                                    2× {pruefung.graduierung_zwischen}
+                                    <button onClick={() => saveZwischengurt(pruefung, null)} title="Doppelprüfung entfernen" style={{background:'none',border:'none',color:'#22c55e',cursor:'pointer',fontSize:'13px',lineHeight:1,padding:'0 0 0 2px'}}>×</button>
+                                  </span>
+                                ) : (
+                                  <div style={{position:'relative'}}>
+                                    <button
+                                      onClick={() => setOpenZwischenPruefId(openZwischenPruefId === pruefung.pruefung_id ? null : pruefung.pruefung_id)}
+                                      title="Doppelprüfung: Zwischengurt setzen (2 Urkunden)"
+                                      style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'5px',color:'var(--text-muted,#aaa)',cursor:'pointer',padding:'4px 7px',fontSize:'11px',lineHeight:1,whiteSpace:'nowrap'}}
+                                    >2×</button>
+                                    {openZwischenPruefId === pruefung.pruefung_id && graduierungenProStil[pruefung.stil_id] && (
+                                      <div style={{position:'absolute',right:0,top:'110%',background:'var(--surface,#1e252c)',border:'1px solid var(--border,#2a3038)',borderRadius:'8px',padding:'6px',zIndex:50,minWidth:'160px',boxShadow:'0 4px 16px rgba(0,0,0,0.5)'}}>
+                                        <p style={{fontSize:'10px',color:'var(--text-muted,#aaa)',marginBottom:'5px',paddingLeft:'2px'}}>Zwischengurt wählen:</p>
+                                        {(() => {
+                                          const grads = graduierungenProStil[pruefung.stil_id] || [];
+                                          const vorherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_vorher_id);
+                                          const nachherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_nachher_id);
+                                          const filtered = grads.filter(g =>
+                                            g.aktiv === 1 &&
+                                            (!vorherGrad || g.reihenfolge > vorherGrad.reihenfolge) &&
+                                            (!nachherGrad || g.reihenfolge < nachherGrad.reihenfolge)
+                                          );
+                                          if (filtered.length === 0) return <p style={{fontSize:'11px',color:'var(--text-muted,#aaa)',padding:'2px'}}>Kein Zwischengurt möglich</p>;
+                                          return filtered.map(g => (
+                                            <button key={g.graduierung_id}
+                                              onClick={() => saveZwischengurt(pruefung, g.graduierung_id)}
+                                              style={{display:'flex',alignItems:'center',gap:'7px',width:'100%',background:'none',border:'none',color:'var(--text,#e8eaed)',cursor:'pointer',padding:'5px 6px',borderRadius:'5px',fontSize:'12px',textAlign:'left'}}
+                                              onMouseEnter={e => e.currentTarget.style.background='var(--surface2,#2a3038)'}
+                                              onMouseLeave={e => e.currentTarget.style.background='none'}
+                                            >
+                                              <span style={{width:'10px',height:'10px',borderRadius:'50%',background:g.farbe_hex||'#555',flexShrink:0,display:'inline-block'}}/>
+                                              {g.name}
+                                            </button>
+                                          ));
+                                        })()}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => handleStatusAendern(pruefung)}
+                                  className="pv3-zug-btn-warning"
+                                >
+                                  <Edit size={13} /> Status
+                                </button>
+                              </div>
                             </div>
-                          )}
+                          ))}
                         </div>
-                      </td>
-                      <td>
-                        <div className="u-flex-wrap-gap">
-                          <button
-                            onClick={() => setDruckAuswahlModal({ open: true, termin: { datum: pruefung.pruefungsdatum, stil_id: pruefung.stil_id, stil_name: pruefung.stil_name, ort: pruefung.pruefungsort || '', zeit: pruefung.pruefungszeit || '', pruefer_name: pruefung.pruefer_name || '', pruefungen: [pruefung] }, selected: [pruefung.pruefung_id], vorlage: 'pruefungsurkunde' })}
-                            className="pv3-zug-btn-neutral"
-                            title="Urkunde drucken"
-                          >
-                            <Download size={13} /> Urkunde
-                          </button>
-                          <button
-                            onClick={() => druckeErgebnis(pruefung, {
-                              datum: pruefung.pruefungsdatum,
-                              stil_name: pruefung.stil_name,
-                              ort: pruefung.pruefungsort || '',
-                              zeit: pruefung.pruefungszeit || '',
-                              pruefer_name: pruefung.pruefer_name || ''
-                            })}
-                            className="pv3-zug-btn-neutral"
-                            title="Prüfungsprotokoll drucken"
-                          >
-                            <TrendingUp size={13} /> Protokoll
-                          </button>
-                          {/* Doppelprüfung / Zwischengurt */}
-                          {pruefung.graduierung_zwischen ? (
-                            <span style={{display:'flex',alignItems:'center',gap:'3px',background:'rgba(34,197,94,0.12)',border:'1px solid rgba(34,197,94,0.4)',borderRadius:'5px',padding:'3px 7px',fontSize:'11px',color:'#22c55e',whiteSpace:'nowrap'}}>
-                              2× {pruefung.graduierung_zwischen}
-                              <button onClick={() => saveZwischengurt(pruefung, null)} title="Doppelprüfung entfernen" style={{background:'none',border:'none',color:'#22c55e',cursor:'pointer',fontSize:'13px',lineHeight:1,padding:'0 0 0 2px'}}>×</button>
-                            </span>
-                          ) : (
-                            <div style={{position:'relative'}}>
-                              <button
-                                onClick={() => setOpenZwischenPruefId(openZwischenPruefId === pruefung.pruefung_id ? null : pruefung.pruefung_id)}
-                                title="Doppelprüfung: Zwischengurt setzen (2 Urkunden)"
-                                style={{background:'none',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'5px',color:'var(--text-muted,#aaa)',cursor:'pointer',padding:'4px 7px',fontSize:'11px',lineHeight:1,whiteSpace:'nowrap'}}
-                              >2×</button>
-                              {openZwischenPruefId === pruefung.pruefung_id && graduierungenProStil[pruefung.stil_id] && (
-                                <div style={{position:'absolute',right:0,top:'110%',background:'var(--surface,#1e252c)',border:'1px solid var(--border,#2a3038)',borderRadius:'8px',padding:'6px',zIndex:50,minWidth:'160px',boxShadow:'0 4px 16px rgba(0,0,0,0.5)'}}>
-                                  <p style={{fontSize:'10px',color:'var(--text-muted,#aaa)',marginBottom:'5px',paddingLeft:'2px'}}>Zwischengurt wählen:</p>
-                                  {(() => {
-                                    const grads = graduierungenProStil[pruefung.stil_id] || [];
-                                    const vorherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_vorher_id);
-                                    const nachherGrad = grads.find(g => g.graduierung_id === pruefung.graduierung_nachher_id);
-                                    const filtered = grads.filter(g =>
-                                      g.aktiv === 1 &&
-                                      (!vorherGrad || g.reihenfolge > vorherGrad.reihenfolge) &&
-                                      (!nachherGrad || g.reihenfolge < nachherGrad.reihenfolge)
-                                    );
-                                    if (filtered.length === 0) return <p style={{fontSize:'11px',color:'var(--text-muted,#aaa)',padding:'2px'}}>Kein Zwischengurt möglich</p>;
-                                    return filtered.map(g => (
-                                      <button key={g.graduierung_id}
-                                        onClick={() => saveZwischengurt(pruefung, g.graduierung_id)}
-                                        style={{display:'flex',alignItems:'center',gap:'7px',width:'100%',background:'none',border:'none',color:'var(--text,#e8eaed)',cursor:'pointer',padding:'5px 6px',borderRadius:'5px',fontSize:'12px',textAlign:'left'}}
-                                        onMouseEnter={e => e.currentTarget.style.background='var(--surface2,#2a3038)'}
-                                        onMouseLeave={e => e.currentTarget.style.background='none'}
-                                      >
-                                        <span style={{width:'10px',height:'10px',borderRadius:'50%',background:g.farbe_hex||'#555',flexShrink:0,display:'inline-block'}}/>
-                                        {g.name}
-                                      </button>
-                                    ));
-                                  })()}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => handleStatusAendern(pruefung)}
-                            className="pv3-zug-btn-warning"
-                          >
-                            <Edit size={13} />
-                            Status ändern
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    ));
-                  })()}
-                </tbody>
-              </table>
-            </div>
-          )}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 

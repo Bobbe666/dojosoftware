@@ -49,6 +49,7 @@ const ArtikelVerwaltung = () => {
   const [showOnlyActive, setShowOnlyActive] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [selectedGruppe, setSelectedGruppe] = useState(null); // null = Alle, id = Gruppe, 'none' = ohne Gruppe
+  const [expandedGruppen, setExpandedGruppen] = useState({}); // { [hauptId]: true/false }
 
   // Tab Navigation States (ersetzt Steps)
   const [activeTab, setActiveTab] = useState('basis'); // 'basis', 'preise', 'lager', 'einstellungen'
@@ -295,14 +296,14 @@ const ArtikelVerwaltung = () => {
       ? true
       : selectedGruppe === 'none'
         ? !a.artikelgruppe_id
-        : a.artikelgruppe_id == selectedGruppe;
+        : a.artikelgruppe_id == selectedGruppe || a.kategorie_id == selectedGruppe;
 
     return matchesSearch && matchesKategorie && matchesGruppe;
   });
 
   const gruppenMitAnzahl = artikelgruppen.map(g => ({
     ...g,
-    count: artikel.filter(a => a.artikelgruppe_id == g.id).length
+    count: artikel.filter(a => a.artikelgruppe_id == g.id || a.kategorie_id == g.id).length
   }));
   const ohneGruppeCount = artikel.filter(a => !a.artikelgruppe_id).length;
 
@@ -1232,16 +1233,40 @@ const ArtikelVerwaltung = () => {
               <span className="av-sidebar-count">{artikel.length}</span>
             </button>
 
-            {gruppenMitAnzahl.map(g => (
-              <button
-                key={g.id}
-                className={`av-sidebar-item ${selectedGruppe == g.id ? 'active' : ''}`}
-                onClick={() => setSelectedGruppe(g.id)}
-              >
-                <span>{g.vollstaendiger_name || g.name}</span>
-                <span className="av-sidebar-count">{g.count}</span>
-              </button>
-            ))}
+            {gruppenMitAnzahl.map(g => {
+              const hasSubs = g.unterkategorien && g.unterkategorien.length > 0;
+              const isExpanded = expandedGruppen[g.id];
+              return (
+                <React.Fragment key={g.id}>
+                  <button
+                    className={`av-sidebar-item ${selectedGruppe == g.id ? 'active' : ''}`}
+                    onClick={() => {
+                      setSelectedGruppe(g.id);
+                      if (hasSubs) setExpandedGruppen(prev => ({ ...prev, [g.id]: !prev[g.id] }));
+                    }}
+                  >
+                    <span>{g.name}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <span className="av-sidebar-count">{g.count}</span>
+                      {hasSubs && <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{isExpanded ? '▲' : '▼'}</span>}
+                    </span>
+                  </button>
+                  {hasSubs && isExpanded && g.unterkategorien.map(sub => {
+                    const subCount = artikel.filter(a => a.artikelgruppe_id == sub.id).length;
+                    return (
+                      <button
+                        key={sub.id}
+                        className={`av-sidebar-item av-sidebar-sub ${selectedGruppe == sub.id ? 'active' : ''}`}
+                        onClick={() => setSelectedGruppe(sub.id)}
+                      >
+                        <span>↳ {sub.name}</span>
+                        <span className="av-sidebar-count">{subCount}</span>
+                      </button>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            })}
 
             {ohneGruppeCount > 0 && (
               <button

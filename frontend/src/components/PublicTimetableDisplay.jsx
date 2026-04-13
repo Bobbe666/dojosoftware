@@ -246,8 +246,8 @@ const PublicTimetableDisplay = () => {
                   <span className="end-time">{formatTime(item.uhrzeit_ende)}</span>
                 </div>
                 <div className="class-info">
-                  <div className="class-name">{item.kursname}</div>
-                  <div className="class-style">🥋 {item.stil}</div>
+                  <div className="class-name">{item.stil || item.kursname}</div>
+                  {item.gruppenname && <div className="class-group">{item.gruppenname}</div>}
                   {item.trainer && (
                     <div className="class-trainer">
                       👨‍🏫 {item.trainer}
@@ -292,8 +292,8 @@ const PublicTimetableDisplay = () => {
                       <div className="mini-time">
                         {formatTime(item.uhrzeit_start)} - {formatTime(item.uhrzeit_ende)}
                       </div>
-                      <div className="mini-name">{item.kursname}</div>
-                      <div className="mini-style">{item.stil}</div>
+                      <div className="mini-name">{item.stil || item.kursname}</div>
+                      {item.gruppenname && <div className="mini-group">{item.gruppenname}</div>}
                     </div>
                   ))
                 )}
@@ -331,8 +331,8 @@ const PublicTimetableDisplay = () => {
             </div>
             
             <div className="next-class-details">
-              <div className="next-class-name">{nextClass.kursname}</div>
-              <div className="next-class-style">🥋 {nextClass.stil}</div>
+              <div className="next-class-name">{nextClass.stil || nextClass.kursname}</div>
+              {nextClass.gruppenname && <div className="next-class-group">{nextClass.gruppenname}</div>}
               {nextClass.trainer && (
                 <div className="next-class-trainer">
                   👨‍🏫 {nextClass.trainer}

@@ -65,10 +65,10 @@ const EventPaymentCheckout = () => {
     try {
       // Lade Event-Daten
       const [eventRes, configRes] = await Promise.all([
-        axios.get(`${config.apiBaseUrl}/events/${eventId}`, {
+        axios.get(`/events/${eventId}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`${config.apiBaseUrl}/integrations/status`, {
+        axios.get('/integrations/status', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -85,7 +85,7 @@ const EventPaymentCheckout = () => {
         setMitgliedId(user.mitglied_id);
       } else if (user?.email) {
         // Mitglied per Email suchen
-        const memberRes = await axios.get(`${config.apiBaseUrl}/mitglieder/by-email/${user.email}`, {
+        const memberRes = await axios.get(`/mitglieder/by-email/${user.email}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (memberRes.data?.mitglied_id) {
@@ -129,7 +129,7 @@ const EventPaymentCheckout = () => {
 
     try {
       const response = await axios.post(
-        `${config.apiBaseUrl}/events/${eventId}/create-payment-intent`,
+        `/events/${eventId}/create-payment-intent`,
         {
           mitglied_id: mitgliedId,
           anmeldung_id: anmeldungId
@@ -160,7 +160,7 @@ const EventPaymentCheckout = () => {
     setPaymentStatus('success');
 
     try {
-      await axios.post(`${config.apiBaseUrl}/events/${eventId}/payment-success`, {
+      await axios.post(`/events/${eventId}/payment-success`, {
         mitglied_id: mitgliedId,
         anmeldung_id: anmeldungId,
         payment_intent_id: paymentData?.id || paymentData?.paymentIntent?.id

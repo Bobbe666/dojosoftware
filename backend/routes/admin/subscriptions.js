@@ -136,24 +136,82 @@ router.get('/features', requireSuperAdmin, async (req, res) => {
     await db.promise().query('SET NAMES utf8mb4');
     const [features] = await db.promise().query(
       `SELECT feature_id as id, feature_key, feature_name as label,
-              feature_icon as emoji, feature_description as description
+              feature_icon as emoji, feature_description as description,
+              COALESCE(is_public, 1) as is_public
        FROM plan_features
        WHERE is_active = 1
        ORDER BY sort_order`
     );
 
-    // Feature-Key als ID verwenden für Kompatibilität mit Frontend
     const formattedFeatures = features.map(f => ({
       id: f.feature_key,
       label: f.label,
       emoji: f.emoji || '⭐',
-      description: f.description || ''
+      description: f.description || '',
+      is_public: !!f.is_public
     }));
 
     res.json({ success: true, features: formattedFeatures });
   } catch (error) {
     logger.error('Fehler beim Laden der Features:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Features' });
+  }
+});
+
+// POST /features - Neues Feature anlegen
+router.post('/features', requireSuperAdmin, async (req, res) => {
+  try {
+    const { id, label, emoji, description } = req.body;
+    if (!id || !label) return res.status(400).json({ error: 'id und label erforderlich' });
+
+    await db.promise().query(
+      `INSERT INTO plan_features (feature_key, feature_name, feature_icon, feature_description, is_public)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE feature_name=VALUES(feature_name), feature_icon=VALUES(feature_icon), feature_description=VALUES(feature_description)`,
+      [id, label, emoji || '⭐', description || '']
+    );
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Fehler beim Anlegen des Features:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
+// PUT /features/:featureId - Feature aktualisieren (label, emoji, description, is_public)
+router.put('/features/:featureId', requireSuperAdmin, async (req, res) => {
+  try {
+    const { featureId } = req.params;
+    const { label, emoji, description, is_public } = req.body;
+
+    await db.promise().query(
+      `UPDATE plan_features
+       SET feature_name = COALESCE(?, feature_name),
+           feature_icon = COALESCE(?, feature_icon),
+           feature_description = COALESCE(?, feature_description),
+           is_public = COALESCE(?, is_public)
+       WHERE feature_key = ?`,
+      [label || null, emoji || null, description !== undefined ? description : null,
+       is_public !== undefined ? (is_public ? 1 : 0) : null, featureId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Fehler beim Aktualisieren des Features:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
+// DELETE /features/:featureId - Feature deaktivieren
+router.delete('/features/:featureId', requireSuperAdmin, async (req, res) => {
+  try {
+    const { featureId } = req.params;
+    await db.promise().query(
+      `UPDATE plan_features SET is_active = 0 WHERE feature_key = ?`,
+      [featureId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Fehler beim Löschen des Features:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 

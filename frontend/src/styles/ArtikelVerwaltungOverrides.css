@@ -758,6 +758,26 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+.av-sidebar-item.av-sidebar-sub {
+  padding-left: 1.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.av-sidebar-item.av-sidebar-sub:hover {
+  color: var(--text-secondary);
+}
+
+.av-sidebar-item.av-sidebar-sub.active {
+  background: rgba(218, 165, 32, 0.18);
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.av-sidebar-item.av-sidebar-sub.active .av-sidebar-count {
+  background: rgba(0, 0, 0, 0.15);
+}
+
 .av-content {
   flex: 1;
   min-width: 0;

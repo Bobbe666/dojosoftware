@@ -186,8 +186,8 @@ router.post('/generate', async (req, res) => {
     );
 
   } catch (error) {
-    logger.error('Fehler bei der PDF-Generierung:', { error: error });
-    res.status(500).json({ error: 'Fehler bei der PDF-Generierung: ' + error.message });
+    logger.error('Fehler bei der PDF-Generierung:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -298,8 +298,8 @@ router.post('/generate-all-dojos', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Fehler bei Massen-PDF-Generierung:', { error: error });
-    res.status(500).json({ error: 'Fehler bei der Massen-PDF-Generierung: ' + error.message });
+    logger.error('Fehler bei Massen-PDF-Generierung:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 

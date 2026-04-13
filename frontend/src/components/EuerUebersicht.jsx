@@ -315,10 +315,10 @@ const EuerUebersicht = ({ isTDA = false }) => {
               <span className="eu-sub-label">Verbandsmitglieder</span>
             </div>
             <div className="eu-stat-neutral">
-              {euerData.statistiken.aktive_verbandsmitglieder.gesamt}
+              {euerData.statistiken.aktive_verbandsmitglieder?.gesamt ?? '—'}
             </div>
             <div className="eu-stat-note">
-              {euerData.statistiken.aktive_verbandsmitglieder.dojos} Dojos, {euerData.statistiken.aktive_verbandsmitglieder.einzelpersonen} Einzelpersonen
+              {euerData.statistiken.aktive_verbandsmitglieder?.dojos ?? 0} Dojos, {euerData.statistiken.aktive_verbandsmitglieder?.einzelpersonen ?? 0} Einzelpersonen
             </div>
           </div>
         )}

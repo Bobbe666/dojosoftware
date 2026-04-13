@@ -10,6 +10,8 @@ import {
 } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
+import LizenzDokumente from './LizenzDokumente';
+import DemoTermine from './DemoTermine';
 import '../styles/DojoLizenzverwaltung.css';
 
 const PLAN_HIERARCHY = {
@@ -469,6 +471,11 @@ const DojoLizenzverwaltung = () => {
   const [selectedTrialDojo, setSelectedTrialDojo] = useState(null);
   const [showStartTrialModal, setShowStartTrialModal] = useState(false);
 
+  // Lizenzverträge pro Dojo
+  const [dojoVertraege, setDojoVertraege] = useState([]);
+  const [dojoVertraegeLoading, setDojoVertraegeLoading] = useState(false);
+  const [showPlanVergleich, setShowPlanVergleich] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -745,9 +752,20 @@ const DojoLizenzverwaltung = () => {
     }
   };
 
+  const loadDojoVertraege = async (dojoId) => {
+    setDojoVertraegeLoading(true);
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/admin/lizenzvertrag/dojo/${dojoId}`);
+      const data = await r.json();
+      if (data.success) setDojoVertraege(data.vertraege);
+    } catch {}
+    finally { setDojoVertraegeLoading(false); }
+  };
+
   const handleSelectDojo = (dojo) => {
     setSelectedDojo(dojo);
     setActiveTab('details');
+    loadDojoVertraege(dojo.id);
 
     // Initialize feature overrides
     const plan = dojo.subscription_plan || dojo.plan_type || 'trial';
@@ -1698,14 +1716,34 @@ const DojoLizenzverwaltung = () => {
 
   return (
     <div className="dojo-lizenzverwaltung">
-      {/* Header */}
-      <div className="lizenz-header">
-        <div className="header-content">
-          <h1><Shield size={28} /> Software-Lizenzverwaltung</h1>
-          <p>Verwalte DojoSoftware-Lizenzen, Pläne und Features</p>
+      {/* Topbar: single row — title · pills · refresh */}
+      <div className="lizenz-topbar">
+        <div className="lizenz-topbar-title">
+          <Shield size={16} />
+          <span>Lizenzverwaltung</span>
+        </div>
+        <span className="lizenz-topbar-divider" />
+        <div className="lizenz-kpi-row">
+          <span className="lizenz-kpi-pill kpi-total" title="Dojos gesamt">
+            <Building2 size={11} /> {stats.total} Dojos
+          </span>
+          <span className="lizenz-kpi-pill kpi-active" title="Aktive Lizenzen">
+            <CheckCircle size={11} /> {stats.active} Aktiv
+          </span>
+          <span className="lizenz-kpi-pill kpi-trial" title="Trial-Accounts">
+            <Clock size={11} /> {stats.trials} Trial
+          </span>
+          <span className="lizenz-kpi-pill kpi-revenue" title="Potenzielle MRR">
+            <DollarSign size={11} /> €{stats.potentialMrr.toLocaleString('de-DE')} MRR
+          </span>
+          {stats.expiringTrials > 0 && (
+            <span className="lizenz-kpi-pill kpi-warning" title={`${stats.expiringTrials} Trials laufen bald ab`}>
+              <AlertTriangle size={11} /> {stats.expiringTrials} läuft ab
+            </span>
+          )}
         </div>
         <button className="btn-refresh" onClick={loadDojos} disabled={loading} title="Daten neu laden">
-          <RefreshCw size={18} className={loading ? 'spinning' : ''} />
+          <RefreshCw size={14} className={loading ? 'spinning' : ''} />
         </button>
       </div>
 
@@ -1716,70 +1754,49 @@ const DojoLizenzverwaltung = () => {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="sub-tabs">
-        <button
-          className={`sub-tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
-        >
-          Übersicht
+      {/* Tabs — single scrollable row */}
+      <div className="lizenz-nav-tabs">
+        <button className={`lnav-btn ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
+          <BarChart3 size={13} /> Übersicht
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'list' ? 'active' : ''}`}
-          onClick={() => setActiveTab('list')}
-        >
-          Alle Dojos ({dojos.length})
+        <button className={`lnav-btn ${activeTab === 'list' ? 'active' : ''}`} onClick={() => setActiveTab('list')}>
+          <Building2 size={13} /> Dojos <span className="lnav-count">{dojos.length}</span>
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'plans' ? 'active' : ''}`}
-          onClick={() => setActiveTab('plans')}
-        >
-          Pläne
+        <button className={`lnav-btn ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
+          <TrendingUp size={13} /> Statistiken
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'statistics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('statistics')}
-        >
-          Statistiken
+        <button className={`lnav-btn ${activeTab === 'plans' ? 'active' : ''}`} onClick={() => setActiveTab('plans')}>
+          <CreditCard size={13} /> Pläne
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'features' ? 'active' : ''}`}
-          onClick={() => setActiveTab('features')}
-        >
-          Features ({allFeatures.length})
+        <button className={`lnav-btn ${activeTab === 'features' ? 'active' : ''}`} onClick={() => setActiveTab('features')}>
+          <Zap size={13} /> Features <span className="lnav-count">{allFeatures.length}</span>
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'vergleich' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('vergleich'); loadComparisonData(); }}
-        >
+        <button className={`lnav-btn ${activeTab === 'buchungen' ? 'active' : ''}`} onClick={() => setActiveTab('buchungen')}>
+          <Calendar size={13} /> Demo-Buchungen
+        </button>
+        <button className={`lnav-btn ${activeTab === 'dokumente' ? 'active' : ''}`} onClick={() => setActiveTab('dokumente')}>
+          <FileText size={13} /> Dokumente
+        </button>
+        <span className="lnav-sep" />
+        <button className={`lnav-btn lnav-btn--dim ${activeTab === 'vergleich' ? 'active' : ''}`} onClick={() => { setActiveTab('vergleich'); loadComparisonData(); }}>
           Vergleich
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'trials' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('trials'); loadFeatureTrials(); }}
-        >
+        <button className={`lnav-btn lnav-btn--dim ${activeTab === 'trials' ? 'active' : ''}`} onClick={() => { setActiveTab('trials'); loadFeatureTrials(); }}>
           Feature-Trials
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('audit'); loadAuditLogs(); }}
-        >
+        <button className={`lnav-btn lnav-btn--dim ${activeTab === 'audit' ? 'active' : ''}`} onClick={() => { setActiveTab('audit'); loadAuditLogs(); }}>
           Audit-Log
         </button>
-        <button
-          className={`sub-tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('settings'); loadSaasSettings(); }}
-        >
-          <Settings size={16} />
-          Einstellungen
+        <button className={`lnav-btn lnav-btn--dim ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => { setActiveTab('settings'); loadSaasSettings(); }}>
+          <Settings size={13} /> Einstellungen
         </button>
         {selectedDojo && (
-          <button
-            className={`sub-tab-btn ${activeTab === 'details' ? 'active' : ''}`}
-            onClick={() => setActiveTab('details')}
-          >
-            {selectedDojo.dojoname}
-          </button>
+          <>
+            <span className="lnav-sep" />
+            <button className={`lnav-btn lnav-btn--dojo ${activeTab === 'details' ? 'active' : ''}`} onClick={() => setActiveTab('details')}>
+              <ChevronRight size={13} /> {selectedDojo.dojoname}
+            </button>
+          </>
         )}
       </div>
 
@@ -1788,66 +1805,54 @@ const DojoLizenzverwaltung = () => {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="overview-tab">
-            {/* Haupt-KPIs */}
-            <div className="stats-grid stats-grid-6">
-              <div className="stat-card">
-                <div className="stat-icon"><Building2 size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">{stats.total}</div>
-                  <div className="stat-label">Dojos gesamt</div>
-                </div>
+            {/* Compact metrics bar */}
+            <div className="lm-bar">
+              <div className="lm-item">
+                <span className="lm-val">{stats.total}</span>
+                <span className="lm-lbl"><Building2 size={11} /> Dojos gesamt</span>
               </div>
-              <div className="stat-card active">
-                <div className="stat-icon"><CheckCircle size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">{stats.active}</div>
-                  <div className="stat-label">Aktive Lizenzen</div>
-                </div>
+              <div className="lm-sep" />
+              <div className="lm-item lm-item--green">
+                <span className="lm-val">{stats.active}</span>
+                <span className="lm-lbl"><CheckCircle size={11} /> Aktiv</span>
               </div>
-              <div className="stat-card trial">
-                <div className="stat-icon"><Clock size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">{stats.trials}</div>
-                  <div className="stat-label">Trial-Accounts</div>
-                </div>
+              <div className="lm-sep" />
+              <div className="lm-item lm-item--yellow">
+                <span className="lm-val">{stats.trials}</span>
+                <span className="lm-lbl"><Clock size={11} /> Trial</span>
               </div>
-              <div className="stat-card free">
-                <div className="stat-icon"><Users size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">{stats.free}</div>
-                  <div className="stat-label">Free-Accounts</div>
-                </div>
+              <div className="lm-sep" />
+              <div className="lm-item">
+                <span className="lm-val">{stats.free}</span>
+                <span className="lm-lbl">Free</span>
               </div>
-              <div className="stat-card paid">
-                <div className="stat-icon"><CreditCard size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">{stats.paid}</div>
-                  <div className="stat-label">Zahlende Kunden</div>
-                </div>
+              <div className="lm-sep" />
+              <div className="lm-item lm-item--blue">
+                <span className="lm-val">{stats.paid}</span>
+                <span className="lm-lbl"><CreditCard size={11} /> Zahlend</span>
               </div>
-              <div className="stat-card members">
-                <div className="stat-icon"><Users size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">{stats.totalMembers.toLocaleString('de-DE')}</div>
-                  <div className="stat-label">Mitglieder gesamt</div>
-                </div>
+              <div className="lm-sep" />
+              <div className="lm-item">
+                <span className="lm-val">{stats.totalMembers.toLocaleString('de-DE')}</span>
+                <span className="lm-lbl"><Users size={11} /> Mitglieder</span>
               </div>
+              <div className="lm-sep" />
               <div
-                className="stat-card revenue stat-card--tooltip"
-                data-tooltip={`Potenzielle MRR = was alle Dojos zahlen würden, wenn sie ihren Plan vollständig nutzen (inkl. Trial-Konvertierung). Tatsächliche MRR aktuell: €${stats.mrr.toLocaleString('de-DE')}`}
+                className="lm-item lm-item--gold lm-item--tooltip"
+                title={`Potenzielle MRR = Ziel bei 100% Konvertierung. Aktuell: €${stats.mrr.toLocaleString('de-DE')}`}
               >
-                <div className="stat-icon"><DollarSign size={24} /></div>
-                <div className="stat-info">
-                  <div className="stat-value">€{stats.potentialMrr.toLocaleString('de-DE')}</div>
-                  <div className="stat-label stat-label--info">
-                    Potenzielle MRR
-                    <Info size={11} className="stat-info-icon" />
-                  </div>
-                  {stats.mrr !== stats.potentialMrr && (
-                    <div className="stat-sublabel">(Aktuell: €{stats.mrr.toLocaleString('de-DE')})</div>
-                  )}
-                </div>
+                <span className="lm-val">€{stats.potentialMrr.toLocaleString('de-DE')}</span>
+                <span className="lm-lbl"><DollarSign size={11} /> pot. MRR <Info size={10} /></span>
               </div>
+              {stats.mrr > 0 && stats.mrr !== stats.potentialMrr && (
+                <>
+                  <div className="lm-sep" />
+                  <div className="lm-item lm-item--gold">
+                    <span className="lm-val">€{stats.mrr.toLocaleString('de-DE')}</span>
+                    <span className="lm-lbl">Akt. MRR</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Wachstum & Trends */}
@@ -1940,510 +1945,444 @@ const DojoLizenzverwaltung = () => {
 
         {/* Statistics Tab */}
         {activeTab === 'statistics' && (
-          <div className="statistics-tab">
-            {/* KPI Overview */}
-            <div className="stats-section">
-              <h3><BarChart3 size={20} /> Kennzahlen-Übersicht</h3>
-              <div className="kpi-grid">
-                <div className="kpi-card large">
-                  <div className="kpi-header">
-                    <span className="kpi-title">Dojos gesamt</span>
-                    <Building2 size={24} className="kpi-icon" />
-                  </div>
-                  <div className="kpi-value">{stats.total}</div>
-                  <div className="kpi-change positive">
-                    <ArrowUpRight size={14} />
-                    +{stats.newThisMonth} diesen Monat
-                  </div>
-                </div>
+          <div className="st-dashboard">
 
-                <div className="kpi-card">
-                  <div className="kpi-header">
-                    <span className="kpi-title">Mitglieder</span>
-                    <Users size={20} className="kpi-icon" />
-                  </div>
-                  <div className="kpi-value">{stats.totalMembers.toLocaleString('de-DE')}</div>
-                  <div className="kpi-subtitle">über alle Dojos</div>
+            {/* ── Row 1: KPI strip ─────────────────────────────────────────── */}
+            <div className="st-full">
+              <div className="st-kpi-row">
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val">{stats.total}</span>
+                  <span className="st-kpi-lbl">Dojos</span>
                 </div>
-
-                <div className="kpi-card">
-                  <div className="kpi-header">
-                    <span className="kpi-title">Ø Mitglieder/Dojo</span>
-                    <Users size={20} className="kpi-icon" />
-                  </div>
-                  <div className="kpi-value">
-                    {stats.total > 0 ? Math.round(stats.totalMembers / stats.total) : 0}
-                  </div>
-                  <div className="kpi-subtitle">Durchschnitt</div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val st-kpi-val--green">{stats.active}</span>
+                  <span className="st-kpi-lbl">Aktiv</span>
                 </div>
-
-                <div className="kpi-card revenue">
-                  <div className="kpi-header">
-                    <span className="kpi-title">Potenzielle MRR</span>
-                    <DollarSign size={20} className="kpi-icon" />
-                  </div>
-                  <div className="kpi-value">€{stats.potentialMrr.toLocaleString('de-DE')}</div>
-                  <div className="kpi-subtitle">
-                    {stats.mrr > 0 ? `Aktuell: €${stats.mrr}` : 'Nach Trial-Konvertierung'}
-                  </div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val st-kpi-val--yellow">{stats.trials}</span>
+                  <span className="st-kpi-lbl">Trial</span>
                 </div>
-
-                <div className="kpi-card">
-                  <div className="kpi-header">
-                    <span className="kpi-title">ARR (Prognose)</span>
-                    <TrendingUp size={20} className="kpi-icon" />
-                  </div>
-                  <div className="kpi-value">€{(stats.potentialMrr * 12).toLocaleString('de-DE')}</div>
-                  <div className="kpi-subtitle">Annual Recurring Revenue</div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val st-kpi-val--blue">{stats.paid}</span>
+                  <span className="st-kpi-lbl">Zahlend</span>
                 </div>
-
-                <div className="kpi-card">
-                  <div className="kpi-header">
-                    <span className="kpi-title">Conversion Rate</span>
-                    <Target size={20} className="kpi-icon" />
-                  </div>
-                  <div className="kpi-value">{stats.conversionRate}%</div>
-                  <div className="kpi-subtitle">Trial → Paid</div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val">{stats.free}</span>
+                  <span className="st-kpi-lbl">Free</span>
+                </div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val">{stats.totalMembers.toLocaleString('de-DE')}</span>
+                  <span className="st-kpi-lbl">Mitglieder</span>
+                </div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val st-kpi-val--gold">€{stats.potentialMrr.toLocaleString('de-DE')}</span>
+                  <span className="st-kpi-lbl">pot. MRR</span>
+                </div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className="st-kpi-val st-kpi-val--gold">€{(stats.potentialMrr * 12).toLocaleString('de-DE')}</span>
+                  <span className="st-kpi-lbl">ARR</span>
+                </div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className={`st-kpi-val ${Number(stats.conversionRate) > 0 ? 'st-kpi-val--green' : ''}`} style={Number(stats.conversionRate) === 0 ? { color: 'rgba(255,255,255,0.3)' } : {}}>
+                    {stats.conversionRate}%
+                  </span>
+                  <span className="st-kpi-lbl">Conversion</span>
+                </div>
+                <div className="st-kpi-sep" />
+                <div className="st-kpi-item">
+                  <span className={`st-kpi-val ${Number(stats.growthRate) >= 0 ? 'st-kpi-val--pos' : 'st-kpi-val--neg'}`}>
+                    {Number(stats.growthRate) >= 0 ? '+' : ''}{stats.growthRate}%
+                  </span>
+                  <span className="st-kpi-lbl">MoM</span>
                 </div>
               </div>
             </div>
 
-            {/* Entwicklung - Wachstumskurve */}
-            <div className="stats-section">
-              <h3><Activity size={20} /> Entwicklung (letzte 12 Monate)</h3>
-              <div className="chart-container">
-                <div className="bar-chart">
-                  {stats.monthlyGrowth.map((month, idx) => {
-                    const maxCount = Math.max(...stats.monthlyGrowth.map(m => m.count), 1);
-                    const heightPercent = (month.count / maxCount) * 100;
+            {/* ── Row 2: Growth chart + Plan distribution ───────────────────── */}
+            <div className="st-card">
+              <div className="st-card-title">
+                <Activity size={13} />
+                Wachstum – letzte 12 Monate
+              </div>
+              <div className="st-barchart">
+                {(() => {
+                  const maxCount = Math.max(...stats.monthlyGrowth.map(m => m.count), 1);
+                  return stats.monthlyGrowth.map((month, idx) => {
+                    const heightPct = Math.max((month.count / maxCount) * 72, month.count > 0 ? 3 : 0);
                     return (
-                      <div key={idx} className="bar-item">
-                        <div className="bar-wrapper">
-                          <div
-                            className="bar"
-                            style={{ height: `${heightPercent}%` }}
-                          >
-                            <span className="bar-value">{month.count}</span>
-                          </div>
-                          {month.new > 0 && (
-                            <span className="bar-new">+{month.new}</span>
-                          )}
-                        </div>
-                        <span className="bar-label">{month.month}</span>
+                      <div key={idx} className="st-bar-wrap">
+                        {month.new > 0 && <span className="st-bar-new">+{month.new}</span>}
+                        <div
+                          className="st-bar"
+                          style={{ height: `${heightPct}px` }}
+                          title={`${month.month}: ${month.count} Dojos${month.new > 0 ? ` (+${month.new} neu)` : ''}`}
+                        />
+                        <span className="st-bar-lbl">{month.month}</span>
                       </div>
                     );
-                  })}
-                </div>
+                  });
+                })()}
               </div>
             </div>
 
-            {/* Plan-Verteilung */}
-            <div className="stats-row">
-              <div className="stats-section half">
-                <h3><PieChart size={20} /> Plan-Verteilung</h3>
-                <div className="plan-distribution">
-                  {Object.entries(stats.planDistribution).map(([plan, count]) => {
-                    const percent = stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : 0;
-                    return (
-                      <div key={plan} className="distribution-item">
-                        <div className="distribution-header">
-                          <span className={`distribution-label distribution-label--${plan}`}>
-                            {PLAN_NAMES[plan]}
-                          </span>
-                          <span className="distribution-count">{count} ({percent}%)</span>
+            <div className="st-card">
+              <div className="st-card-title">
+                <PieChart size={13} />
+                Plan-Verteilung
+              </div>
+              {Object.entries(PLAN_NAMES).map(([plan, label]) => {
+                const count = stats.planDistribution?.[plan] || 0;
+                if (count === 0 && (plan === 'trial' || plan === 'basic' || plan === 'free')) return null;
+                const percent = stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : 0;
+                return (
+                  <div key={plan} className="st-plan-row">
+                    <span className={`plan-badge-mini plan-badge-mini--${plan}`} style={{ minWidth: 72, fontSize: '0.68rem' }}>{label}</span>
+                    <span className="st-plan-count">{count}</span>
+                    <div className="st-plan-bar-track">
+                      <div className="st-plan-bar-fill" style={{ width: `${percent}%`, background: PLAN_COLORS?.[plan] || 'rgba(255,255,255,0.3)' }} />
+                    </div>
+                    <span className="st-plan-pct">{percent}%</span>
+                  </div>
+                );
+              })}
+              <div className="st-subsection-title">Einnahmen pro Plan</div>
+              {Object.entries(PLAN_NAMES).map(([plan]) => {
+                const count = stats.planDistribution?.[plan] || 0;
+                const price = PLAN_PRICE_VALUES?.[plan] || 0;
+                if (count === 0 || price === 0) return null;
+                return (
+                  <div key={plan} className="st-revenue-row">
+                    <span className="st-revenue-plan">{PLAN_NAMES[plan]}</span>
+                    <span className="st-revenue-calc">{count} × €{price}</span>
+                    <span className="st-revenue-total">€{(count * price).toLocaleString('de-DE')}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Row 3: Trial status + Registration cohort ─────────────────── */}
+            <div className="st-card">
+              <div className="st-card-title">
+                <Clock size={13} />
+                Trial-Status
+              </div>
+              <div className="st-trial-row">
+                <span className="st-dot st-dot--green" />
+                <span className="st-trial-label">Aktiv (&gt;7 Tage)</span>
+                <span className="st-trial-val">{stats.activeTrials}</span>
+              </div>
+              <div className="st-trial-row">
+                <span className="st-dot" style={{ background: '#fb923c' }} />
+                <span className="st-trial-label">Bald ablaufend (≤7 Tage)</span>
+                <span className="st-trial-val">{stats.expiringTrials}</span>
+              </div>
+              <div className="st-trial-row">
+                <span className="st-dot st-dot--red" />
+                <span className="st-trial-label">Abgelaufen</span>
+                <span className="st-trial-val">{stats.expiredTrials}</span>
+              </div>
+              <div className="st-trial-row">
+                <span className="st-dot st-dot--blue" />
+                <span className="st-trial-label">Zahlend</span>
+                <span className="st-trial-val">{stats.paid}</span>
+              </div>
+              <div className="st-trial-row" style={{ marginTop: '0.4rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.4rem' }}>
+                <span className="st-trial-label" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.72rem' }}>Ø Trial-Dauer</span>
+                <span className="st-trial-val" style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)' }}>–</span>
+              </div>
+            </div>
+
+            <div className="st-card">
+              <div className="st-card-title">
+                <CreditCard size={13} />
+                Neue Registrierungen
+              </div>
+              {(() => {
+                const now = Date.now();
+                const days = [7, 30, 60, 90, 180, 365];
+                const labels = ['Letzte 7 Tage', '30 Tage', '60 Tage', '90 Tage', '180 Tage', '365 Tage'];
+                const counts = days.map(d => dojos.filter(dj => dj.created_at && (now - new Date(dj.created_at).getTime()) <= d * 86400000).length);
+                const maxC = Math.max(...counts, 1);
+                const avgPerMonth = ((stats.newThisMonth || 0) + (stats.newLastMonth || 0)) / 2;
+                return (
+                  <>
+                    {days.map((d, i) => (
+                      <div key={d} className="st-cohort-row">
+                        <span className="st-cohort-lbl">{labels[i]}</span>
+                        <div className="st-cohort-bar">
+                          <div className="st-cohort-bar-fill" style={{ width: `${(counts[i] / maxC) * 100}%` }} />
                         </div>
-                        <div className="distribution-bar-bg">
-                          <div
-                            className={`distribution-bar distribution-bar--${plan}`}
-                            style={{ width: `${percent}%` }}
-                          />
-                        </div>
+                        <span className="st-cohort-val">{counts[i]}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="stats-section half">
-                <h3><Target size={20} /> Trial-Status</h3>
-                <div className="trial-stats">
-                  <div className="trial-stat-item active">
-                    <div className="trial-stat-icon"><Clock size={20} /></div>
-                    <div className="trial-stat-info">
-                      <span className="trial-stat-value">{stats.activeTrials}</span>
-                      <span className="trial-stat-label">Aktive Trials (&gt;7 Tage)</span>
+                    ))}
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
+                      Ø pro Monat: <span style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 700 }}>{avgPerMonth.toFixed(1)}</span>
                     </div>
-                  </div>
-                  <div className="trial-stat-item warning">
-                    <div className="trial-stat-icon"><AlertTriangle size={20} /></div>
-                    <div className="trial-stat-info">
-                      <span className="trial-stat-value">{stats.expiringTrials}</span>
-                      <span className="trial-stat-label">Laufen bald ab (≤7 Tage)</span>
-                    </div>
-                  </div>
-                  <div className="trial-stat-item danger">
-                    <div className="trial-stat-icon"><XCircle size={20} /></div>
-                    <div className="trial-stat-info">
-                      <span className="trial-stat-value">{stats.expiredTrials}</span>
-                      <span className="trial-stat-label">Abgelaufen</span>
-                    </div>
-                  </div>
-                  <div className="trial-stat-item success">
-                    <div className="trial-stat-icon"><CheckCircle size={20} /></div>
-                    <div className="trial-stat-info">
-                      <span className="trial-stat-value">{stats.paid}</span>
-                      <span className="trial-stat-label">Zahlende Kunden</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  </>
+                );
+              })()}
             </div>
 
-            {/* Geografie - Länder & Regionen */}
-            <div className="stats-section">
-              <h3><MapPin size={20} /> Geografische Verteilung</h3>
-              <div className="geo-grid">
-                {/* Länder */}
-                <div className="geo-card">
-                  <h4><Globe size={16} /> Nach Land</h4>
-                  <div className="geo-list">
-                    {Object.entries(stats.countryDistribution)
-                      .sort((a, b) => b[1] - a[1])
-                      .map(([country, count]) => {
-                        const percent = stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : 0;
-                        const flagEmoji = country === 'Deutschland' ? '🇩🇪' :
-                                         country === 'Österreich' ? '🇦🇹' :
-                                         country === 'Schweiz' ? '🇨🇭' :
-                                         country === 'Italien' ? '🇮🇹' :
-                                         country === 'USA' ? '🇺🇸' :
-                                         country === 'Frankreich' ? '🇫🇷' :
-                                         country === 'Spanien' ? '🇪🇸' :
-                                         country === 'Niederlande' ? '🇳🇱' :
-                                         country === 'Belgien' ? '🇧🇪' :
-                                         country === 'Polen' ? '🇵🇱' : '🌍';
-                        return (
-                          <div key={country} className="geo-item">
-                            <div className="geo-item-left">
-                              <span className="geo-flag">{flagEmoji}</span>
-                              <span className="geo-name">{country}</span>
-                            </div>
-                            <div className="geo-item-right">
-                              <span className="geo-count">{count}</span>
-                              <span className="geo-percent">{percent}%</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
+            {/* ── Row 4: MRR Aufschlüsselung (full width) ──────────────────── */}
+            <div className="st-card st-full">
+              <div className="st-card-title">
+                <DollarSign size={13} />
+                MRR &amp; Revenue
+              </div>
+              <div className="st-mini-metrics">
+                <div className="st-mini-metric">
+                  <span className="st-mini-val" style={{ color: '#ffd700' }}>€{stats.potentialMrr.toLocaleString('de-DE')}</span>
+                  <span className="st-mini-lbl">pot. MRR</span>
                 </div>
-
-                {/* Regionen/Bundesländer */}
-                <div className="geo-card">
-                  <h4><MapPin size={16} /> Nach Region / Bundesland</h4>
-                  <div className="geo-list scrollable">
-                    {Object.entries(stats.regionDistribution)
-                      .sort((a, b) => b[1] - a[1])
-                      .slice(0, 15)
-                      .map(([region, count]) => {
-                        const percent = stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : 0;
-                        return (
-                          <div key={region} className="geo-item">
-                            <div className="geo-item-left">
-                              <span className="geo-name">{region}</span>
-                            </div>
-                            <div className="geo-item-right">
-                              <div className="geo-bar-mini" style={{ width: `${Math.min(percent * 2, 100)}%` }} />
-                              <span className="geo-count">{count}</span>
-                              <span className="geo-percent">{percent}%</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
+                <div className="st-mini-metric">
+                  <span className="st-mini-val" style={{ color: '#86efac' }}>€{(stats.mrr || 0).toLocaleString('de-DE')}</span>
+                  <span className="st-mini-lbl">akt. MRR</span>
+                </div>
+                <div className="st-mini-metric">
+                  <span className="st-mini-val" style={{ color: '#ffd700' }}>€{(stats.potentialMrr * 12).toLocaleString('de-DE')}</span>
+                  <span className="st-mini-lbl">ARR</span>
+                </div>
+                <div className="st-mini-metric">
+                  <span className="st-mini-val">€{(stats.total - 1) > 0 ? (stats.potentialMrr / (stats.total - 1)).toFixed(0) : '0'}</span>
+                  <span className="st-mini-lbl">Ø pro Dojo</span>
                 </div>
               </div>
-            </div>
-
-            {/* Ziel-Tracking: 100 Dojos */}
-            <div className="stats-section goal-section">
-              <h3><Flag size={20} /> Ziel: {stats.goalDojos} Dojos</h3>
-              <div className="goal-card">
-                <div className="goal-progress-container">
-                  <div className="goal-numbers">
-                    <span className="goal-current">{stats.total}</span>
-                    <span className="goal-separator">/</span>
-                    <span className="goal-target">{stats.goalDojos}</span>
-                  </div>
-                  <div className="goal-progress-bar">
-                    <div
-                      className="goal-progress-fill"
-                      style={{ width: `${Math.min(stats.goalProgress, 100)}%` }}
-                    />
-                  </div>
-                  <div className="goal-progress-info">
-                    <span className="goal-percent">{stats.goalProgress}%</span>
-                    <span className="goal-remaining">Noch {stats.dojosToGoal} Dojos</span>
-                  </div>
-                </div>
-                <div className="goal-eta">
-                  {stats.monthsToGoal ? (
-                    <>
-                      <div className="eta-label">Geschätzte Erreichung:</div>
-                      <div className="eta-value">
-                        {stats.estimatedGoalDate?.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
-                      </div>
-                      <div className="eta-detail">
-                        (~{stats.monthsToGoal} Monate bei Ø {stats.avgMonthlyGrowth.toFixed(1)} Dojos/Monat)
-                      </div>
-                    </>
-                  ) : (
-                    <div className="eta-warning">
-                      <AlertTriangle size={16} />
-                      <span>Kein Wachstum erkennbar - ETA kann nicht berechnet werden</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* MRR Details */}
-            <div className="stats-section">
-              <h3><DollarSign size={20} /> MRR Aufschlüsselung</h3>
               {stats.mrrDetails.length > 0 ? (
-                <div className="mrr-details">
-                  <div className="mrr-summary">
-                    <div className="mrr-total-card highlight">
-                      <span className="mrr-total-value">€{stats.potentialMrr.toLocaleString('de-DE')}</span>
-                      <span className="mrr-total-label">Potenzielle MRR</span>
-                    </div>
-                    <div className="mrr-total-card">
-                      <span className="mrr-total-value">€{stats.mrr.toLocaleString('de-DE')}</span>
-                      <span className="mrr-total-label">Aktuell zahlend</span>
-                    </div>
-                    <div className="mrr-count-card">
-                      <span className="mrr-count-value">{stats.total - 1}</span>
-                      <span className="mrr-count-label">Zahlungspfl. Dojos</span>
-                    </div>
-                    <div className="mrr-avg-card">
-                      <span className="mrr-avg-value">
-                        €{(stats.total - 1) > 0
-                          ? (stats.potentialMrr / (stats.total - 1)).toFixed(0)
-                          : '0'}
-                      </span>
-                      <span className="mrr-avg-label">Ø pro Dojo</span>
-                    </div>
-                  </div>
-                  <div className="mrr-list">
-                    <table className="mrr-table">
-                      <thead>
-                        <tr>
-                          <th>Dojo</th>
-                          <th>Plan</th>
-                          <th>Beitrag</th>
-                          <th>Quelle</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stats.mrrDetails.map(d => (
-                          <tr key={d.id}>
-                            <td>{d.name}</td>
-                            <td>
-                              <span className={`plan-badge-mini plan-badge-mini--${d.plan}`}>
-                                {d.plan.toUpperCase()}
-                              </span>
-                            </td>
-                            <td className="mrr-amount">€{d.contribution.toLocaleString('de-DE')}</td>
-                            <td className="mrr-reason">{d.reason}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <table className="st-mrr-table">
+                  <thead>
+                    <tr>
+                      <th>Dojo</th>
+                      <th>Plan</th>
+                      <th style={{ textAlign: 'right' }}>MRR</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stats.mrrDetails.map(d => (
+                      <tr key={d.id}>
+                        <td>{d.name}</td>
+                        <td><span className={`plan-badge-mini plan-badge-mini--${d.plan}`}>{d.plan.toUpperCase()}</span></td>
+                        <td>€{d.contribution.toLocaleString('de-DE')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               ) : (
-                <div className="mrr-empty">
-                  <Info size={24} />
-                  <p>Aktuell keine zahlenden Dojos.</p>
-                  <p className="mrr-empty-hint">Alle Dojos sind auf kostenlosen Plänen (Trial, Basic, Free).</p>
-                </div>
+                <div className="st-mrr-empty">Aktuell keine zahlenden Dojos.</div>
               )}
             </div>
 
-            {/* Speicherplatz */}
-            <div className="stats-section">
-              <h3><HardDrive size={20} /> Speicherplatz-Nutzung</h3>
-              <div className="storage-grid">
-                <div className="storage-card total">
-                  <Server size={24} />
-                  <div className="storage-info">
-                    <span className="storage-value">{stats.totalStorageMB.toFixed(2)} MB</span>
-                    <span className="storage-label">Gesamt auf Server</span>
-                  </div>
-                </div>
-                <div className="storage-card average">
-                  <BarChart3 size={24} />
-                  <div className="storage-info">
-                    <span className="storage-value">{stats.avgStorageMB.toFixed(2)} MB</span>
-                    <span className="storage-label">Durchschnitt pro Dojo</span>
-                  </div>
-                </div>
-                <div className="storage-card max">
-                  <TrendingUp size={24} />
-                  <div className="storage-info">
-                    <span className="storage-value">{parseFloat(stats.maxStorageDojo?.storage_mb || 0).toFixed(2)} MB</span>
-                    <span className="storage-label">Größter Nutzer: {stats.maxStorageDojo?.dojoname || '-'}</span>
-                  </div>
-                </div>
+            {/* ── Row 5: Top Dojos + Geographic ────────────────────────────── */}
+            <div className="st-card">
+              <div className="st-card-title">
+                <Users size={13} />
+                Top Dojos nach Mitglieder
               </div>
-              <div className="storage-list">
-                <h4>Speicherverbrauch pro Dojo (geschätzt basierend auf Datensätzen)</h4>
-                <div className="storage-bars">
-                  {[...dojos]
-                    .sort((a, b) => (parseFloat(b.storage_mb) || 0) - (parseFloat(a.storage_mb) || 0))
-                    .slice(0, 10)
-                    .map(d => {
-                      const storageMB = parseFloat(d.storage_mb) || 0;
-                      const storageKB = d.storage_kb || 0;
-                      const maxStorage = parseFloat(stats.maxStorageDojo?.storage_mb) || 1;
-                      const percent = (storageMB / Math.max(maxStorage, 1)) * 100;
-                      const details = d.storage_details || {};
-
-                      // Tooltip-Inhalt für Aufschlüsselung
-                      const tooltipLines = Object.entries(details)
-                        .filter(([, v]) => v.count > 0)
-                        .map(([key, v]) => `${key}: ${v.count} (${v.size_kb.toFixed(1)} KB)`)
-                        .join('\n');
-
-                      return (
-                        <div key={d.id} className="storage-bar-item" title={tooltipLines || 'Keine Daten'}>
-                          <span className="storage-bar-name">{d.dojoname}</span>
-                          <div className="storage-bar-track">
-                            <div
-                              className={`storage-bar-fill ${storageMB > 500 ? 'warning' : storageMB > 100 ? 'medium' : ''}`}
-                              style={{ width: `${percent}%` }}
-                            />
-                          </div>
-                          <span className="storage-bar-value">
-                            {storageKB >= 1024 ? `${storageMB.toFixed(1)} MB` : `${storageKB} KB`}
-                          </span>
-                          {details.mitglieder && (
-                            <span className="storage-bar-details">
-                              ({details.mitglieder?.count || 0} Mitgl.)
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
-              </div>
+              {(() => {
+                const sorted = [...dojos].sort((a, b) => (b.mitglieder_count || 0) - (a.mitglieder_count || 0)).slice(0, 5);
+                const maxCount = sorted[0]?.mitglieder_count || 1;
+                return sorted.map((d, i) => (
+                  <div key={d.id} className="st-top-row">
+                    <span className="st-top-rank">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="st-top-name">{d.dojoname}</span>
+                    <span className={`plan-badge-mini plan-badge-mini--${d.plan || 'free'}`} style={{ fontSize: '0.62rem' }}>{(d.plan || 'free').toUpperCase()}</span>
+                    <div className="st-top-bar">
+                      <div className="st-top-bar-fill" style={{ width: `${((d.mitglieder_count || 0) / maxCount) * 100}%` }} />
+                    </div>
+                    <span className="st-top-val">{d.mitglieder_count || 0}</span>
+                  </div>
+                ));
+              })()}
             </div>
 
-            {/* Health / Fehleranalyse */}
-            <div className="stats-section">
-              <h3><Heart size={20} /> System-Gesundheit</h3>
-              <div className="health-overview">
-                <div className="health-card healthy">
-                  <CheckCircle2 size={24} />
-                  <div className="health-info">
-                    <span className="health-value">{healthOverview.healthy}</span>
-                    <span className="health-label">Gesund</span>
-                  </div>
-                </div>
-                <div className="health-card warning">
-                  <AlertTriangle size={24} />
-                  <div className="health-info">
-                    <span className="health-value">{healthOverview.warning}</span>
-                    <span className="health-label">Warnungen</span>
-                  </div>
-                </div>
-                <div className="health-card critical">
-                  <AlertCircle size={24} />
-                  <div className="health-info">
-                    <span className="health-value">{healthOverview.critical}</span>
-                    <span className="health-label">Kritisch</span>
-                  </div>
-                </div>
-                <div className="health-card score">
-                  <Activity size={24} />
-                  <div className="health-info">
-                    <span className="health-value">{healthOverview.avgScore.toFixed(0)}%</span>
-                    <span className="health-label">Ø Score</span>
-                  </div>
-                </div>
+            <div className="st-card">
+              <div className="st-card-title">
+                <MapPin size={13} />
+                Geografisch
               </div>
-
-              {/* Problematische Dojos */}
-              {(healthOverview.critical > 0 || healthOverview.warning > 0) && (
-                <div className="health-issues">
-                  <h4>Dojos mit Problemen</h4>
-                  <div className="health-issues-list">
-                    {dojosWithHealth
-                      .filter(d => d.health.status !== 'healthy')
-                      .sort((a, b) => a.health.score - b.health.score)
-                      .slice(0, 10)
-                      .map(d => (
-                        <div key={d.id} className={`health-issue-item ${d.health.status}`}>
-                          <div className="health-issue-header">
-                            <span className="health-issue-name">{d.dojoname}</span>
-                            <span className={`health-score-badge ${d.health.status}`}>
-                              {d.health.score}%
-                            </span>
-                          </div>
-                          <div className="health-issue-problems">
-                            {d.health.allProblems.slice(0, 3).map((p, idx) => (
-                              <span key={idx} className={`health-problem ${p.type}`}>
-                                {p.type === 'error' && <XCircle size={12} />}
-                                {p.type === 'warning' && <AlertTriangle size={12} />}
-                                {p.type === 'info' && <Info size={12} />}
-                                {p.message}
-                              </span>
-                            ))}
-                            {d.health.allProblems.length > 3 && (
-                              <span className="health-more">+{d.health.allProblems.length - 3} weitere</span>
-                            )}
-                          </div>
-                          <button
-                            className="btn btn-sm btn-ghost"
-                            onClick={() => handleSelectDojo(d)}
-                          >
-                            Details
-                          </button>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Prognose */}
-            <div className="stats-section">
-              <h3><TrendingUp size={20} /> Prognose (nächste 6 Monate)</h3>
-              <div className="forecast-grid">
-                {[1, 2, 3, 4, 5, 6].map(month => {
-                  // Wachstum: mindestens 0.5 Dojos/Monat wenn es Dojos gibt
-                  const avgGrowth = stats.avgMonthlyGrowth || stats.newThisMonth || (stats.total > 0 ? 0.5 : 0);
-                  const projected = Math.round(stats.total + (avgGrowth * month));
-                  // MRR Prognose: Potenzielle MRR + neue Dojos * Durchschnittspreis
-                  const avgMrrPerDojo = (stats.total - 1) > 0 ? stats.potentialMrr / (stats.total - 1) : 49;
-                  const projectedNewPaid = Math.round(avgGrowth * month);
-                  const projectedMrr = Math.round(stats.potentialMrr + (projectedNewPaid * avgMrrPerDojo));
-                  const monthName = new Date(new Date().setMonth(new Date().getMonth() + month))
-                    .toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
-
+              {(() => {
+                const flagMap = { 'Deutschland': '🇩🇪', 'Österreich': '🇦🇹', 'Schweiz': '🇨🇭', 'Italien': '🇮🇹', 'USA': '🇺🇸', 'Frankreich': '🇫🇷', 'Spanien': '🇪🇸', 'Niederlande': '🇳🇱', 'Belgien': '🇧🇪', 'Polen': '🇵🇱' };
+                const countries = Object.entries(stats.countryDistribution || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
+                const maxC = countries[0]?.[1] || 1;
+                return countries.map(([country, count]) => {
+                  const pct = stats.total > 0 ? ((count / stats.total) * 100).toFixed(1) : 0;
                   return (
-                    <div key={month} className="forecast-item">
-                      <div className="forecast-month">{monthName}</div>
-                      <div className="forecast-value">{projected} Dojos</div>
-                      <div className="forecast-mrr">€{projectedMrr.toLocaleString('de-DE')} MRR</div>
+                    <div key={country} className="st-geo-row">
+                      <span className="st-geo-flag">{flagMap[country] || '🌍'}</span>
+                      <span className="st-geo-name">{country}</span>
+                      <div className="st-geo-bar"><div className="st-geo-fill" style={{ width: `${(count / maxC) * 100}%` }} /></div>
+                      <span className="st-geo-cnt">{count}</span>
+                      <span className="st-geo-pct">{pct}%</span>
+                    </div>
+                  );
+                });
+              })()}
+              {(() => {
+                const regions = Object.entries(stats.regionDistribution || {}).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                if (!regions.length) return null;
+                return (
+                  <>
+                    <div className="st-subsection-title">Top Regionen</div>
+                    {regions.map(([region, count]) => (
+                      <div key={region} className="st-geo-row" style={{ fontSize: '0.72rem' }}>
+                        <span className="st-geo-flag" style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)' }}>•</span>
+                        <span className="st-geo-name">{region}</span>
+                        <span className="st-geo-cnt">{count}</span>
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* ── Row 6: Health + Forecast ──────────────────────────────────── */}
+            <div className="st-card">
+              <div className="st-card-title">
+                <Heart size={13} />
+                System-Gesundheit
+              </div>
+              <div className="st-health-grid">
+                <div className="st-health-tile healthy">
+                  <div>
+                    <div className="st-health-tile-val">{healthOverview.healthy}</div>
+                    <div className="st-health-tile-lbl">Gesund</div>
+                  </div>
+                </div>
+                <div className="st-health-tile warning">
+                  <div>
+                    <div className="st-health-tile-val">{healthOverview.warning}</div>
+                    <div className="st-health-tile-lbl">Warnungen</div>
+                  </div>
+                </div>
+                <div className="st-health-tile critical">
+                  <div>
+                    <div className="st-health-tile-val">{healthOverview.critical}</div>
+                    <div className="st-health-tile-lbl">Kritisch</div>
+                  </div>
+                </div>
+                <div className="st-health-tile score">
+                  <div>
+                    <div className="st-health-tile-val">{healthOverview.avgScore.toFixed(0)}%</div>
+                    <div className="st-health-tile-lbl">Ø Score</div>
+                  </div>
+                </div>
+              </div>
+              {(healthOverview.critical > 0 || healthOverview.warning > 0) && (
+                <>
+                  <div className="st-subsection-title">Problematische Dojos</div>
+                  {dojosWithHealth
+                    .filter(d => d.health.status !== 'healthy')
+                    .sort((a, b) => a.health.score - b.health.score)
+                    .slice(0, 5)
+                    .map(d => (
+                      <div key={d.id} className="st-health-issue">
+                        <span className="st-health-issue-name">{d.dojoname}</span>
+                        <span className={`st-score-badge ${d.health.status}`}>{d.health.score}%</span>
+                        <span className="st-health-msg">{d.health.allProblems?.[0]?.message || ''}</span>
+                      </div>
+                    ))}
+                </>
+              )}
+            </div>
+
+            <div className="st-card">
+              <div className="st-card-title">
+                <TrendingUp size={13} />
+                Prognose 6 Monate
+              </div>
+              {[1, 2, 3, 4, 5, 6].map(month => {
+                const avgGrowth = stats.avgMonthlyGrowth || stats.newThisMonth || 0.5;
+                const projected = Math.round(stats.total + avgGrowth * month);
+                const avgMrrPerDojo = (stats.total - 1) > 0 ? stats.potentialMrr / (stats.total - 1) : 49;
+                const projectedMrr = Math.round(stats.potentialMrr + Math.round(avgGrowth * month) * avgMrrPerDojo);
+                const monthName = new Date(new Date().setMonth(new Date().getMonth() + month)).toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
+                return (
+                  <div key={month} className="st-forecast-row">
+                    <span className="st-forecast-month">{monthName}</span>
+                    <span className="st-forecast-dojos">{projected} Dojos</span>
+                    <span className="st-forecast-mrr">€{projectedMrr.toLocaleString('de-DE')}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Row 7: Goal + Storage ─────────────────────────────────────── */}
+            <div className="st-card">
+              <div className="st-card-title">
+                <Flag size={13} />
+                Ziel: {stats.goalDojos} Dojos
+              </div>
+              <div className="st-goal-nums">
+                <span className="st-goal-cur">{stats.total}</span>
+                <span className="st-goal-sep">/</span>
+                <span className="st-goal-target">{stats.goalDojos}</span>
+              </div>
+              <div className="st-goal-bar">
+                <div className="st-goal-fill" style={{ width: `${Math.min(stats.goalProgress, 100)}%` }} />
+              </div>
+              <div className="st-goal-meta">
+                <span>{stats.goalProgress}% erreicht</span>
+                <span>Noch {stats.dojosToGoal} Dojos</span>
+              </div>
+              <div className="st-goal-eta">
+                {stats.monthsToGoal ? (
+                  <>
+                    ETA: <strong>{stats.estimatedGoalDate?.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</strong>
+                    {' '}(~{stats.monthsToGoal} Mo. bei Ø {stats.avgMonthlyGrowth?.toFixed(1)}/Mo.)
+                  </>
+                ) : (
+                  <span style={{ color: 'rgba(255,255,255,0.3)' }}>Kein Wachstum – ETA nicht berechenbar</span>
+                )}
+              </div>
+            </div>
+
+            <div className="st-card">
+              <div className="st-card-title">
+                <HardDrive size={13} />
+                Speicherplatz
+              </div>
+              <div className="st-storage-summary">
+                <div className="st-storage-tile">
+                  <div className="st-storage-val">{stats.totalStorageMB.toFixed(1)} MB</div>
+                  <div className="st-storage-lbl">Gesamt</div>
+                </div>
+                <div className="st-storage-tile">
+                  <div className="st-storage-val">{stats.avgStorageMB.toFixed(1)} MB</div>
+                  <div className="st-storage-lbl">Ø pro Dojo</div>
+                </div>
+                <div className="st-storage-tile">
+                  <div className="st-storage-val">{parseFloat(stats.maxStorageDojo?.storage_mb || 0).toFixed(1)} MB</div>
+                  <div className="st-storage-lbl">{stats.maxStorageDojo?.dojoname || '–'}</div>
+                </div>
+              </div>
+              {[...dojos]
+                .sort((a, b) => (parseFloat(b.storage_mb) || 0) - (parseFloat(a.storage_mb) || 0))
+                .slice(0, 8)
+                .map(d => {
+                  const mb = parseFloat(d.storage_mb) || 0;
+                  const kb = d.storage_kb || 0;
+                  const maxMb = parseFloat(stats.maxStorageDojo?.storage_mb) || 1;
+                  const pct = (mb / Math.max(maxMb, 1)) * 100;
+                  const fillClass = mb > 500 ? 'warn' : mb > 100 ? 'med' : '';
+                  return (
+                    <div key={d.id} className="st-storage-row">
+                      <span className="st-storage-name">{d.dojoname}</span>
+                      <div className="st-storage-track">
+                        <div className={`st-storage-fill ${fillClass}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="st-storage-size">{kb >= 1024 ? `${mb.toFixed(1)} MB` : `${kb} KB`}</span>
                     </div>
                   );
                 })}
-              </div>
-              <p className="forecast-note">
-                * Basierend auf {stats.total} Dojos × Ø €{((stats.total - 1) > 0 ? stats.potentialMrr / (stats.total - 1) : 49).toFixed(0)}/Dojo
-                {stats.avgMonthlyGrowth > 0 && ` + Wachstum ${stats.avgMonthlyGrowth.toFixed(1)} Dojos/Monat`}
-              </p>
             </div>
+
           </div>
         )}
 
@@ -2932,7 +2871,15 @@ const DojoLizenzverwaltung = () => {
                           setAllFeatures(prev => prev.map(f =>
                             f.id === feature.id ? { ...f, is_public: newIsPublic } : f
                           ));
-                          // TODO: API-Call zum Speichern
+                          try {
+                            await fetchWithAuth(`${config.apiBaseUrl}/admin/features/${feature.id}`, {
+                              method: 'PUT',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ is_public: newIsPublic })
+                            });
+                          } catch (e) {
+                            console.error('is_public speichern fehlgeschlagen:', e);
+                          }
                         }}
                         title={isPublic ? 'Öffentlich auf Landing Page' : 'Versteckt auf Landing Page'}
                       >
@@ -2951,7 +2898,8 @@ const DojoLizenzverwaltung = () => {
                         onClick={() => {
                           if (window.confirm(`Feature "${feature.label}" wirklich löschen?`)) {
                             setAllFeatures(prev => prev.filter(f => f.id !== feature.id));
-                            // TODO: API-Call zum Löschen
+                            fetchWithAuth(`${config.apiBaseUrl}/admin/features/${feature.id}`, { method: 'DELETE' })
+                              .catch(e => console.error('Feature löschen fehlgeschlagen:', e));
                           }
                         }}
                         title="Löschen"
@@ -3433,111 +3381,137 @@ const DojoLizenzverwaltung = () => {
               </div>
             </div>
 
-            {/* Plan Comparison Matrix */}
-            <div className="plan-comparison-section">
-              <h4><TrendingUp size={18} /> Plan-Vergleich & Upgrade-Optionen</h4>
-              <p className="hint">
-                Vergleiche die verfügbaren Pläne. Der aktuelle Plan ist hervorgehoben. Klicke auf einen Plan um zu wechseln.
-              </p>
+            {/* Plan Comparison */}
+            {(() => {
+              const PAID_PLANS = ['starter', 'professional', 'premium', 'enterprise'];
+              const currentPlan = selectedDojo.subscription_plan || selectedDojo.plan_type || 'trial';
+              return (
+                <div className="pct-wrap">
+                  <h4
+                    style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom: showPlanVergleich ? '0.75rem' : 0, cursor:'pointer', userSelect:'none' }}
+                    onClick={() => setShowPlanVergleich(v => !v)}
+                  >
+                    <TrendingUp size={16} /> Plan-Vergleich & Upgrade
+                    <span style={{ marginLeft:'auto', fontSize:'0.75rem', color:'var(--text-secondary,#9ca3af)', fontWeight:400 }}>
+                      {showPlanVergleich ? '▲ Einklappen' : '▼ Ausklappen'}
+                    </span>
+                  </h4>
 
-              <div className="plan-comparison-matrix">
-                {/* Plan Headers */}
-                <div className="plan-headers">
-                  <div className="matrix-feature-header">Feature</div>
-                  {Object.keys(PLAN_HIERARCHY).map(plan => {
-                    const currentPlan = selectedDojo.subscription_plan || selectedDojo.plan_type || 'trial';
-                    const isCurrentPlan = plan === currentPlan;
-                    const isUpgrade = PLAN_HIERARCHY[plan] > PLAN_HIERARCHY[currentPlan];
-
-                    const dbPlan = subscriptionPlans.find(p => p.plan_name === plan);
-                    const priceDisplay = dbPlan?.price_monthly
-                      ? `${dbPlan.price_monthly}€/Monat`
-                      : PLAN_PRICES[plan];
-
-                    return (
-                      <div
-                        key={plan}
-                        className={`plan-column-header plan-column-header--${plan} ${isCurrentPlan ? 'current' : ''} ${isUpgrade ? 'upgrade' : ''}`}
-                      >
-                        <span className={`plan-name plan-name--${plan}`}>
-                          {PLAN_NAMES[plan]}
-                        </span>
-                        <span className="plan-price-small">{priceDisplay}</span>
-                        {isCurrentPlan && <span className="current-badge">Aktuell</span>}
-                        {isUpgrade && (
-                          <button
-                            className={`btn-upgrade-small btn-upgrade-small--${plan}`}
-                            onClick={() => handleActivatePlan(selectedDojo.id, plan)}
-                          >
-                            Upgrade
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Feature Rows */}
-                <div className="plan-feature-rows">
-                  {allFeatures.map(feature => {
-                    const currentPlan = selectedDojo.subscription_plan || selectedDojo.plan_type || 'trial';
-                    const isEnabledForDojo = featureOverrides[feature.id];
-
-                    return (
-                      <div key={feature.id} className="plan-feature-row">
-                        <div className="feature-info-cell">
-                          <span className="feature-emoji">{feature.emoji}</span>
-                          <div className="feature-text">
-                            <span className="feature-name">{feature.label}</span>
-                            <span className="feature-desc">{feature.description}</span>
-                          </div>
-                          {isEnabledForDojo && (
-                            <span className="feature-active-badge">Aktiv</span>
-                          )}
-                        </div>
-                        {Object.keys(PLAN_HIERARCHY).map(plan => {
-                          const isIncluded = (planFeatures[plan] || []).includes(feature.id);
-                          const isCurrentPlan = plan === currentPlan;
-
+                  {showPlanVergleich && (
+                    <>
+                      {/* Plan-Header-Karten */}
+                      <div className="pct-header-row">
+                        <div className="pct-feature-col" />
+                        {PAID_PLANS.map(plan => {
+                          const isCurrent = plan === currentPlan;
+                          const dbPlan = subscriptionPlans.find(p => p.plan_name === plan);
+                          const price = dbPlan?.price_monthly ? `${dbPlan.price_monthly}€` : PLAN_PRICES[plan]?.replace('/Monat','') || '–';
                           return (
-                            <div
-                              key={plan}
-                              className={`plan-cell plan-cell--${plan} ${isIncluded ? 'included' : 'not-included'} ${isCurrentPlan ? 'current-plan' : ''}`}
-                            >
-                              {isIncluded ? (
-                                <CheckCircle size={20} className="plan-check-icon" />
-                              ) : (
-                                <XCircle size={20} className="not-included-icon" />
-                              )}
+                            <div key={plan} className={`pct-plan-col ${isCurrent ? 'pct-current' : ''}`}>
+                              <div className="pct-plan-name" style={{ color: PLAN_COLORS[plan] }}>{PLAN_NAMES[plan]}</div>
+                              <div className="pct-plan-price">{price}<span>/Mo</span></div>
+                              {isCurrent
+                                ? <span className="pct-badge-current">Aktiv</span>
+                                : <button className="pct-btn-upgrade" style={{ borderColor: PLAN_COLORS[plan], color: PLAN_COLORS[plan] }} onClick={() => handleActivatePlan(selectedDojo.id, plan)}>Wechseln</button>
+                              }
                             </div>
                           );
                         })}
                       </div>
-                    );
-                  })}
-                </div>
 
-                {/* Plan Selection Footer */}
-                <div className="plan-selection-footer">
-                  <div className="footer-label">Plan aktivieren:</div>
-                  {Object.keys(PLAN_HIERARCHY).map(plan => {
-                    const currentPlan = selectedDojo.subscription_plan || selectedDojo.plan_type || 'trial';
-                    const isCurrentPlan = plan === currentPlan;
-
-                    return (
-                      <div key={plan} className="footer-cell">
-                        <button
-                          className={`btn-select-plan btn-select-plan--${plan} ${isCurrentPlan ? 'current' : ''}`}
-                          onClick={() => !isCurrentPlan && handleActivatePlan(selectedDojo.id, plan)}
-                          disabled={isCurrentPlan}
-                        >
-                          {isCurrentPlan ? 'Aktiv' : 'Auswählen'}
-                        </button>
+                      {/* Feature-Zeilen */}
+                      <div className="pct-body">
+                        {allFeatures.map((feature, idx) => (
+                          <div key={feature.id} className={`pct-row ${idx % 2 === 0 ? 'pct-row-even' : ''}`}>
+                            <div className="pct-feature-col">
+                              <span className="pct-feature-icon">{feature.emoji}</span>
+                              <span className="pct-feature-name">{feature.label}</span>
+                              {featureOverrides[feature.id] && <span className="pct-active-dot" title="Für dieses Dojo aktiv" />}
+                            </div>
+                            {PAID_PLANS.map(plan => {
+                              const ok = (planFeatures[plan] || []).includes(feature.id);
+                              const isCurrent = plan === currentPlan;
+                              return (
+                                <div key={plan} className={`pct-cell ${isCurrent ? 'pct-cell-current' : ''}`}>
+                                  {ok
+                                    ? <CheckCircle size={15} style={{ color:'#4ade80' }} />
+                                    : <XCircle size={15} style={{ color:'rgba(255,255,255,0.15)' }} />
+                                  }
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
                       </div>
-                    );
-                  })}
+                    </>
+                  )}
                 </div>
-              </div>
+              );
+            })()}
+
+            {/* Lizenzverträge */}
+            <div className="pct-wrap" style={{ marginTop:'1rem' }}>
+              <h4 style={{ display:'flex', alignItems:'center', gap:'0.4rem', marginBottom:'0.75rem', justifyContent:'space-between' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>📄 Unterzeichnete Lizenzverträge</span>
+                <button
+                  className="pct-btn-upgrade"
+                  onClick={() => loadDojoVertraege(selectedDojo.id)}
+                  style={{ fontSize:'0.72rem', padding:'0.15rem 0.5rem' }}
+                >Aktualisieren</button>
+              </h4>
+              {dojoVertraegeLoading ? (
+                <div style={{ padding:'1rem 0', fontSize:'0.85rem', color:'var(--text-secondary,#9ca3af)', textAlign:'center' }}>Lädt...</div>
+              ) : dojoVertraege.length === 0 ? (
+                <p style={{ fontSize:'0.85rem', margin:'0.5rem 0', color:'var(--text-secondary,#9ca3af)', fontStyle:'italic' }}>Noch keine signierten Verträge für dieses Dojo.</p>
+              ) : (
+                <table className="lv-sig-table" style={{ width:'100%' }}>
+                  <thead>
+                    <tr>
+                      <th>Datum</th>
+                      <th>Unterzeichner</th>
+                      <th>Plan</th>
+                      <th>Abrechnung</th>
+                      <th>IP-Adresse</th>
+                      <th>Download</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dojoVertraege.map(v => (
+                      <tr key={v.id}>
+                        <td style={{ fontSize:'0.8rem' }}>{new Date(v.signed_at).toLocaleString('de-DE')}</td>
+                        <td style={{ fontSize:'0.8rem' }}>{v.signed_by || '–'}</td>
+                        <td><span className={`plan-badge plan-badge--${v.plan}`}>{v.plan}</span></td>
+                        <td style={{ fontSize:'0.8rem' }}>{v.interval_type}</td>
+                        <td className="lv-sig-ip">{v.ip_address}</td>
+                        <td>
+                          {v.has_file ? (
+                            <button
+                              className="pct-btn-upgrade"
+                              style={{ fontSize:'0.72rem', padding:'0.15rem 0.5rem', display:'inline-flex', alignItems:'center', gap:'0.25rem' }}
+                              onClick={async () => {
+                                try {
+                                  const r = await fetchWithAuth(`${config.apiBaseUrl}/admin/lizenzvertrag/download/${v.id}`);
+                                  const blob = await r.blob();
+                                  const url = URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = v.pdf_filename || `Lizenzvertrag_${v.id}.pdf`;
+                                  a.click();
+                                  URL.revokeObjectURL(url);
+                                } catch (e) {
+                                  alert('Download fehlgeschlagen: ' + e.message);
+                                }
+                              }}
+                            >⬇ PDF</button>
+                          ) : (
+                            <span style={{ fontSize:'0.75rem', color:'#555' }}>–</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         )}
@@ -3748,6 +3722,7 @@ const DojoLizenzverwaltung = () => {
                     </tbody>
                   </table>
                 </div>
+
               </>
             )}
           </div>
@@ -3992,6 +3967,20 @@ const DojoLizenzverwaltung = () => {
             )}
           </div>
         )}
+        {/* Demo-Buchungen Tab */}
+        {activeTab === 'buchungen' && (
+          <div className="tab-content">
+            <DemoTermine />
+          </div>
+        )}
+
+        {/* Dokumente Tab */}
+        {activeTab === 'dokumente' && (
+          <div className="tab-content">
+            <LizenzDokumente dojos={dojos} />
+          </div>
+        )}
+
       </div>
     </div>
   );

@@ -46,6 +46,7 @@ router.get('/stats', authenticateToken, requireTDAAdmin, async (req, res) => {
         SUM(art = 'dan_urkunde')           AS dan_urkunden,
         SUM(art = 'ehren_dan')             AS ehren_dan,
         SUM(art = 'board_of_black_belts')  AS board_of_black_belts,
+        SUM(art = 'hof_nominierung')       AS hof_nominierungen,
         SUM(art = 'trainer_lizenz')        AS trainer_lizenzen,
         SUM(art = 'kampfrichter_lizenz')   AS kampfrichter_lizenzen,
         SUM(art = 'meister_urkunde')       AS meister_urkunden,
@@ -66,21 +67,39 @@ router.get('/stats', authenticateToken, requireTDAAdmin, async (req, res) => {
 // ============================================================================
 router.get('/naechste-nummer', authenticateToken, async (req, res) => {
   try {
-    // 1) Startwert aus Sequenz-Tabelle
+    const art = req.query.art || '';
+
+    // ── HoF-Nominierung: eigenes Format HoFTDA{YYYY}-{NNN} ──────────────────
+    if (art === 'hof_nominierung') {
+      const jahr = new Date().getFullYear();
+      const seqRows = await queryAsync(
+        `SELECT aktuelle_nummer FROM verband_nummern_sequenz WHERE typ = 'hof_nominierung'`
+      );
+      const seqNr = seqRows[0]?.aktuelle_nummer || 405;
+      const dbRows = await queryAsync(
+        `SELECT MAX(CAST(SUBSTRING_INDEX(urkundennummer, '-', -1) AS UNSIGNED)) AS maxNr
+         FROM verband_urkunden
+         WHERE art = 'hof_nominierung' AND urkundennummer IS NOT NULL AND urkundennummer != ''`
+      );
+      const dbNr = dbRows[0]?.maxNr || 0;
+      const nextNr = Math.max(seqNr, dbNr) + 1;
+      const nummer = `HoFTDA${jahr}-${nextNr}`;
+      return res.json({ success: true, nummer });
+    }
+
+    // ── Standard: YYYYMMDD-XXXXX ─────────────────────────────────────────────
     const seqRows = await queryAsync(
       `SELECT aktuelle_nummer FROM verband_nummern_sequenz WHERE typ = 'urkunden'`
     );
     const seqNr = seqRows[0]?.aktuelle_nummer || 0;
 
-    // 2) Höchste Nummer aus vorhandenen Einträgen
     const dbRows = await queryAsync(
       `SELECT MAX(CAST(SUBSTRING_INDEX(urkundennummer, '-', -1) AS UNSIGNED)) AS maxNr
        FROM verband_urkunden
-       WHERE urkundennummer IS NOT NULL AND urkundennummer != ''`
+       WHERE art != 'hof_nominierung' AND urkundennummer IS NOT NULL AND urkundennummer != ''`
     );
     const dbNr = dbRows[0]?.maxNr || 0;
 
-    // Nächste Nummer = Maximum aus beiden + 1
     const nextNr = Math.max(seqNr, dbNr) + 1;
     const heute = new Date();
     const datePart = `${heute.getFullYear()}${String(heute.getMonth() + 1).padStart(2, '0')}${String(heute.getDate()).padStart(2, '0')}`;
@@ -199,14 +218,15 @@ router.post('/', authenticateToken, async (req, res) => {
       ]
     );
 
-    // Sequenz-Tabelle aktualisieren falls Nummer im neuen Format
-    if (urkundennummer && /^[0-9]+-[0-9]+$/.test(urkundennummer)) {
+    // Sequenz-Tabelle aktualisieren
+    if (urkundennummer) {
       const seqNr = parseInt(urkundennummer.split('-').pop(), 10);
       if (!isNaN(seqNr)) {
+        const seqTyp = art === 'hof_nominierung' ? 'hof_nominierung' : 'urkunden';
         await queryAsync(
-          `INSERT INTO verband_nummern_sequenz (typ, aktuelle_nummer) VALUES ('urkunden', ?)
+          `INSERT INTO verband_nummern_sequenz (typ, aktuelle_nummer) VALUES (?, ?)
            ON DUPLICATE KEY UPDATE aktuelle_nummer = GREATEST(aktuelle_nummer, ?)`,
-          [seqNr, seqNr]
+          [seqTyp, seqNr, seqNr]
         );
       }
     }

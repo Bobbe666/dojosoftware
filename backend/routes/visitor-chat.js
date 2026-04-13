@@ -14,6 +14,7 @@ const logger = require('../utils/logger');
 const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const webpush = require('web-push');
+const { sendEmailForDojo } = require('../services/emailService');
 
 const pool = db.promise();
 
@@ -24,6 +25,55 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
+}
+
+// ─── E-Mail-Benachrichtigung an Besucher ──────────────────────────────────────
+async function sendVisitorReplyEmail(session, staffName, replyText) {
+  const visitorName = session.visitor_name || 'Besucher';
+  const dojoId = session.dojo_id || null;
+
+  // Dojo-Name laden für Absender
+  let dojoName = 'TDA';
+  if (dojoId) {
+    try {
+      const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+      if (dojo?.dojoname) dojoName = dojo.dojoname;
+    } catch (_) { /* ignore */ }
+  }
+
+  const subject = `Antwort auf deine Chat-Nachricht – ${dojoName}`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+    <div style="background:#1a1a2e;padding:24px 28px">
+      <h2 style="color:#fff;margin:0;font-size:1.1rem">${dojoName}</h2>
+      <p style="color:#aaa;margin:4px 0 0;font-size:0.85rem">Chat-Benachrichtigung</p>
+    </div>
+    <div style="padding:28px">
+      <p style="color:#333;margin:0 0 16px">Hallo ${visitorName},</p>
+      <p style="color:#333;margin:0 0 16px">${staffName} hat auf deine Chat-Nachricht geantwortet:</p>
+      <div style="background:#f0f4ff;border-left:4px solid #3b6ff0;border-radius:4px;padding:14px 18px;margin:0 0 20px">
+        <p style="color:#1a1a2e;margin:0;white-space:pre-wrap">${replyText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+      </div>
+      <p style="color:#666;font-size:0.85rem;margin:0">
+        Du kannst direkt auf diese E-Mail antworten oder die Website erneut besuchen, um den Chat fortzuführen.
+      </p>
+    </div>
+    <div style="background:#f9fafb;padding:14px 28px;border-top:1px solid #eee">
+      <p style="color:#999;font-size:0.75rem;margin:0">${dojoName} · Diese E-Mail wurde automatisch versandt, bitte antworte nicht direkt darauf.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const text = `Hallo ${visitorName},\n\n${staffName} hat auf deine Chat-Nachricht geantwortet:\n\n${replyText}\n\n-- ${dojoName}`;
+
+  await sendEmailForDojo({ to: session.visitor_email, subject, html, text }, dojoId);
+  logger.info('✅ Visitor-Chat E-Mail gesendet', { to: session.visitor_email, sessionId: session.id });
 }
 
 // ─── CORS-Helper (für eingebettetes Widget auf externen Sites) ─────────────────
@@ -863,7 +913,7 @@ router.post('/sessions/:id/reply', authenticateToken, async (req, res) => {
 
   try {
     const [[session]] = await pool.query(
-      `SELECT id, dojo_id, visitor_token FROM visitor_chat_sessions WHERE id = ?`,
+      `SELECT id, dojo_id, visitor_token, visitor_name, visitor_email FROM visitor_chat_sessions WHERE id = ?`,
       [sessionId]
     );
     if (!session) return res.status(404).json({ success: false, error: 'Session nicht gefunden' });
@@ -900,6 +950,13 @@ router.post('/sessions/:id/reply', authenticateToken, async (req, res) => {
     if (io) {
       io.to(`visitor-session:${session.visitor_token}`)
         .emit('visitor-chat:message', newMsg);
+    }
+
+    // E-Mail-Benachrichtigung an Besucher (asynchron, kein await — blockiert nicht)
+    if (session.visitor_email) {
+      sendVisitorReplyEmail(session, staffName, message.trim()).catch(err =>
+        logger.warn('Visitor-Chat E-Mail konnte nicht gesendet werden', { error: err.message, sessionId })
+      );
     }
 
     res.json({ success: true, message: newMsg });

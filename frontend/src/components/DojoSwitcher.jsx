@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, ChevronDown, Search, Settings, X } from 'lucide-react';
 import { useDojoContext } from '../context/DojoContext';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,7 @@ const DojoSwitcher = () => {
   const { dojos, activeDojo, switchDojo, loading, filter, setFilter } = useDojoContext();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const triggerRef = useRef(null);
@@ -75,7 +76,10 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
+    if (!location.pathname.startsWith('/dashboard')) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   const handleSwitchToSuperAdmin = () => {
@@ -83,7 +87,10 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
+    if (!location.pathname.startsWith('/dashboard')) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   const handleSwitchToVerband = () => {
@@ -91,7 +98,10 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
+    if (!location.pathname.startsWith('/dashboard')) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   const handleSwitchToSupport = () => {
@@ -99,7 +109,10 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
+    if (!location.pathname.startsWith('/dashboard')) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   const handleSwitchToShop = () => {
@@ -107,7 +120,10 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
+    if (!location.pathname.startsWith('/dashboard')) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   const handleShowAll = () => {
@@ -118,7 +134,10 @@ const DojoSwitcher = () => {
     setFilter('all');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
+    if (!location.pathname.startsWith('/dashboard')) {
+      navigate('/dashboard', { replace: true });
+    }
   };
 
   const isInSuperAdminMode = activeDojo === 'super-admin';

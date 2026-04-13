@@ -14,11 +14,8 @@ router.get('/status', authenticateToken, async (req, res) => {
         res.json(status);
 
     } catch (error) {
-        logger.error('API: Error getting provider status:', { error: error });
-        res.status(500).json({
-            error: 'Fehler beim Abrufen des Provider-Status',
-            details: error.message
-        });
+        logger.error('API: Error getting provider status:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -63,11 +60,8 @@ router.post('/configure', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('API: Error configuring provider:', { error: error });
-        res.status(500).json({
-            error: 'Fehler beim Konfigurieren des Payment Providers',
-            details: error.message
-        });
+        logger.error('API: Error configuring provider:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -97,11 +91,8 @@ router.post('/test', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('API: Error testing provider:', { error: error });
-        res.status(500).json({
-            error: 'Fehler beim Testen des Payment Providers',
-            details: error.message
-        });
+        logger.error('API: Error testing provider:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -119,11 +110,8 @@ router.get('/logs', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('API: Error getting logs:', { error: error });
-        res.status(500).json({
-            error: 'Fehler beim Abrufen der Logs',
-            details: error.message
-        });
+        logger.error('API: Error getting logs:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -169,11 +157,8 @@ router.post('/payment-intent', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('API: Error creating payment intent:', { error: error });
-        res.status(500).json({
-            error: 'Fehler beim Erstellen des Payment Intent',
-            details: error.message
-        });
+        logger.error('API: Error creating payment intent:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -202,11 +187,8 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
         res.json({received: true});
 
     } catch (error) {
-        logger.error('API: Error processing webhook:', { error: error });
-        res.status(400).json({
-            error: 'Webhook processing failed',
-            details: error.message
-        });
+        logger.error('API: Error processing webhook:', { error: error.message, stack: error.stack });
+        res.status(400).json({ error: 'Webhook processing failed' });
     }
 });
 
@@ -293,8 +275,8 @@ router.post('/stripe/sync-lastschriften', authenticateToken, async (req, res) =>
         res.json({ success: true, synced: transaktionen.length, ...ergebnisse });
 
     } catch (error) {
-        logger.error('Fehler beim Lastschrift-Sync:', error);
-        res.status(500).json({ error: 'Sync fehlgeschlagen', details: error.message });
+        logger.error('Fehler beim Lastschrift-Sync:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -462,8 +444,8 @@ router.post('/member/payment-intent', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('Member PaymentIntent Fehler:', { error: error.message });
-        res.status(500).json({ error: 'Fehler beim Erstellen der Zahlung', details: error.message });
+        logger.error('Member PaymentIntent Fehler:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -552,8 +534,8 @@ router.post('/member/setup-intent', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('SetupIntent Fehler:', { error: error.message });
-        res.status(500).json({ error: 'Fehler beim Einrichten der Zahlungsmethode', details: error.message });
+        logger.error('SetupIntent Fehler:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -604,8 +586,8 @@ router.get('/member/payment-methods', authenticateToken, async (req, res) => {
         res.json({ payment_methods: formatted });
 
     } catch (error) {
-        logger.error('PaymentMethods abrufen Fehler:', { error: error.message });
-        res.status(500).json({ error: 'Fehler beim Abrufen der Zahlungsmethoden', details: error.message });
+        logger.error('PaymentMethods abrufen Fehler:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -649,8 +631,8 @@ router.delete('/member/payment-methods/:pmId', authenticateToken, async (req, re
         res.json({ success: true, message: 'Zahlungsmethode erfolgreich entfernt' });
 
     } catch (error) {
-        logger.error('PaymentMethod löschen Fehler:', { error: error.message });
-        res.status(500).json({ error: 'Fehler beim Entfernen der Zahlungsmethode', details: error.message });
+        logger.error('PaymentMethod löschen Fehler:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 
@@ -712,8 +694,8 @@ router.post('/refund', authenticateToken, async (req, res) => {
         });
 
     } catch (error) {
-        logger.error('Refund Fehler:', { error: error.message });
-        res.status(500).json({ error: 'Fehler bei der Rückerstattung', details: error.message });
+        logger.error('Refund Fehler:', { error: error.message, stack: error.stack });
+        res.status(500).json({ error: 'Interner Serverfehler' });
     }
 });
 

@@ -23,7 +23,7 @@ const getStripePromise = async (token) => {
   if (!stripePromise) {
     try {
       // Hole den Stripe Public Key vom Backend
-      const res = await axios.get(`${config.apiBaseUrl}/payment-provider/status`, {
+      const res = await axios.get('/payment-provider/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -169,7 +169,7 @@ const StripeCheckout = ({ amount, currency = 'eur', rechnungId, onSuccess, onErr
       setStripe(stripeInstance);
 
       // 2. Erstelle Payment Intent
-      const res = await axios.post(`${config.apiBaseUrl}/payment-provider/payment-intent`, {
+      const res = await axios.post('/payment-provider/payment-intent', {
         amount: Math.round(amount * 100), // Stripe erwartet Cents
         currency: currency,
         rechnung_id: rechnungId,

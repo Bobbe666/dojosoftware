@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import ReactDOM from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { useTranslation } from 'react-i18next';
 import config from '../config/config.js';
@@ -377,6 +377,7 @@ const MitgliederListe = () => {
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuButtonRef = React.useRef(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Neue Filter-States
   const [filterStil, setFilterStil] = useState("");
@@ -406,6 +407,19 @@ const MitgliederListe = () => {
 
   // Ansichts-Modus: 'list' (Standard) oder 'grid'
   const [viewMode, setViewMode] = useState(() => localStorage.getItem('ml-view-mode') || 'list');
+
+  // URL-Parameter: ?geburtstag=heute|7tage → Filter vorbelegen (z.B. vom Dashboard-Widget)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const gb = params.get('geburtstag');
+    if (gb === 'heute') {
+      setFilterGeburtstag('heute');
+      setShowMehrFilter(true);
+    } else if (gb === '7tage') {
+      setFilterGeburtstag('naechste_7');
+      setShowMehrFilter(true);
+    }
+  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleViewMode = useCallback(() => {
     setViewMode(prev => {
@@ -567,9 +581,13 @@ const MitgliederListe = () => {
     // Geburtstag-Filter
     if (filterGeburtstag) {
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       filtered = filtered.filter(m => {
         if (!m.geburtsdatum) return false;
         const geb = new Date(m.geburtsdatum);
+        if (filterGeburtstag === 'heute') {
+          return geb.getDate() === today.getDate() && geb.getMonth() === today.getMonth();
+        }
         if (filterGeburtstag === 'diesen_monat') {
           return geb.getMonth() === today.getMonth();
         }
@@ -1146,8 +1164,9 @@ const MitgliederListe = () => {
                   className={`filter-select ml-filter-select ${filterGeburtstag ? 'active' : ''}`}
                 >
                   <option value="">Alle</option>
-                  <option value="diesen_monat">Diesen Monat</option>
+                  <option value="heute">Heute</option>
                   <option value="naechste_7">Nächste 7 Tage</option>
+                  <option value="diesen_monat">Diesen Monat</option>
                   <option value="naechste_30">Nächste 30 Tage</option>
                 </select>
               </div>

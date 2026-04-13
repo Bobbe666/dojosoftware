@@ -562,4 +562,111 @@ router.post('/checkout', (req, res) => {
   });
 });
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET /api/dashboard/cockpit-uebersicht
+// Liefert kompakte Kennzahlen für das "Heute & diese Woche" Widget:
+//   - Geburtstage heute / diese Woche
+//   - Ablaufende Verträge (nächste 30 Tage)
+//   - Offene Mahnungen (überfällige Rechnungen)
+//   - Anstehende Lastschrift-Zeitpläne (nächste 7 Tage)
+// ──────────────────────────────────────────────────────────────────────────────
+router.get('/cockpit-uebersicht', async (req, res) => {
+  try {
+    const secureDojoId = getSecureDojoId(req);
+    const pool = db.promise();
+
+    // Dojo-Filter für Tabellen mit direkter dojo_id-Spalte
+    const dojoFilter     = secureDojoId ? ' AND dojo_id = ?' : '';
+    const dojoFilterM    = secureDojoId ? ' AND m.dojo_id = ?' : '';
+    const dojoParams     = secureDojoId ? [secureDojoId] : [];
+
+    // ── 1. Geburtstage heute ────────────────────────────────────────────────
+    const [[{ geburtstage_heute }]] = await pool.query(
+      `SELECT COUNT(*) AS geburtstage_heute
+       FROM mitglieder
+       WHERE aktiv = 1
+         AND geburtsdatum IS NOT NULL
+         AND DAY(geburtsdatum)   = DAY(CURDATE())
+         AND MONTH(geburtsdatum) = MONTH(CURDATE())
+         ${dojoFilter}`,
+      dojoParams
+    );
+
+    // ── 2. Geburtstage diese Woche (nächste 7 Tage inkl. heute) ────────────
+    // Verwendet DAYOFYEAR mit Jahreswechsel-Handling via MOD
+    const [[{ geburtstage_woche }]] = await pool.query(
+      `SELECT COUNT(*) AS geburtstage_woche
+       FROM mitglieder
+       WHERE aktiv = 1
+         AND geburtsdatum IS NOT NULL
+         AND (
+           MOD(DAYOFYEAR(DATE(CONCAT(YEAR(CURDATE()), '-', MONTH(geburtsdatum), '-', DAY(geburtsdatum)))) - DAYOFYEAR(CURDATE()) + 366, 366) < 7
+         )
+         ${dojoFilter}`,
+      dojoParams
+    );
+
+    // ── 3. Ablaufende Verträge (nächste 30 Tage) ────────────────────────────
+    const [[{ ablaufende_vertraege }]] = await pool.query(
+      `SELECT COUNT(*) AS ablaufende_vertraege
+       FROM vertraege v
+       JOIN mitglieder m ON m.mitglied_id = v.mitglied_id
+       WHERE v.status = 'aktiv'
+         AND v.vertragsende IS NOT NULL
+         AND v.vertragsende BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+         ${dojoFilterM}`,
+      dojoParams
+    );
+
+    // ── 4. Offene Mahnungen (überfällige Rechnungen) ────────────────────────
+    // Rechnungen ohne eigene dojo_id → JOIN über mitglieder
+    const [[{ offene_mahnungen }]] = await pool.query(
+      `SELECT COUNT(*) AS offene_mahnungen
+       FROM rechnungen r
+       JOIN mitglieder m ON m.mitglied_id = r.mitglied_id
+       WHERE (r.status = 'ueberfaellig'
+              OR (r.status = 'offen' AND r.faelligkeitsdatum < CURDATE()))
+         ${dojoFilterM}`,
+      dojoParams
+    );
+
+    // ── 5. Anstehende Lastschriften (Zeitpläne, deren Ausführungstag in den ──
+    //       nächsten 7 Tagen liegt und die aktiv sind)
+    let anstehende_lastschriften = 0;
+    try {
+      const [[{ ls_count }]] = await pool.query(
+        `SELECT COUNT(*) AS ls_count
+         FROM lastschrift_zeitplaene
+         WHERE aktiv = 1
+           AND ausfuehrungstag BETWEEN DAY(CURDATE()) AND DAY(DATE_ADD(CURDATE(), INTERVAL 7 DAY))
+           ${dojoFilter}`,
+        dojoParams
+      );
+      anstehende_lastschriften = ls_count;
+    } catch (_) {
+      // Tabelle existiert evtl. noch nicht in allen Dojos — ignorieren
+    }
+
+    logger.debug('CockpitUebersicht geladen', {
+      dojo_id: secureDojoId,
+      geburtstage_heute,
+      geburtstage_woche,
+      ablaufende_vertraege,
+      offene_mahnungen,
+      anstehende_lastschriften,
+    });
+
+    res.json({
+      geburtstage_heute:        Number(geburtstage_heute)        || 0,
+      geburtstage_woche:        Number(geburtstage_woche)        || 0,
+      ablaufende_vertraege:     Number(ablaufende_vertraege)     || 0,
+      offene_mahnungen:         Number(offene_mahnungen)         || 0,
+      anstehende_lastschriften: Number(anstehende_lastschriften) || 0,
+    });
+  } catch (error) {
+    logger.error('CockpitUebersicht Fehler:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

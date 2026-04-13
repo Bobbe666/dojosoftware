@@ -1,0 +1,67 @@
+/* UpdateBanner.css */
+
+.update-banner-wrap {
+  position: fixed;
+  bottom: 1.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+@keyframes slide-up-banner {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 30px;
+  background: rgba(18, 16, 30, 0.96);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f0ece4;
+  white-space: nowrap;
+  animation: slide-up-banner 0.3s ease;
+  pointer-events: all;
+  backdrop-filter: blur(8px);
+}
+
+.update-banner-icon {
+  font-size: 1rem;
+}
+
+.update-banner-text {
+  color: rgba(255,255,255,0.9);
+}
+
+.update-banner-btn {
+  background: #d4af37;
+  color: #1a1208;
+  border: none;
+  border-radius: 20px;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.update-banner-btn:hover { opacity: 0.85; }
+
+.update-banner-close {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.1rem 0.2rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.update-banner-close:hover { color: rgba(255,255,255,0.85); }

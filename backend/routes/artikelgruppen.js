@@ -47,7 +47,10 @@ router.get('/', async (req, res) => {
                 ag.aktualisiert_am
             FROM artikelgruppen ag
             LEFT JOIN artikelgruppen pag ON ag.parent_id = pag.id
-            WHERE ag.aktiv = TRUE AND ag.dojo_id = ?
+            WHERE ag.aktiv = TRUE AND (
+                ag.dojo_id = ?
+                OR EXISTS (SELECT 1 FROM artikel WHERE (kategorie_id = ag.id OR artikelgruppe_id = ag.id) AND dojo_id = ?)
+            )
             ORDER BY
                 COALESCE(ag.parent_id, ag.id),
                 ag.sortierung,
@@ -55,7 +58,7 @@ router.get('/', async (req, res) => {
         `;
 
         const gruppen = await new Promise((resolve, reject) => {
-            db.query(query, [dojoId], (error, results) => {
+            db.query(query, [dojoId, dojoId], (error, results) => {
                 if (error) reject(error);
                 else resolve(results);
             });

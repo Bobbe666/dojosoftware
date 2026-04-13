@@ -11,7 +11,7 @@ import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import {
   ArrowLeft, FileText, Mail, Shield, BarChart3,
-  LayoutGrid, Loader2, History, Zap, Paperclip
+  LayoutGrid, Loader2, History, Zap, Paperclip, Settings, Plus
 } from 'lucide-react';
 import '../styles/DokumentenZentrale.css';
 
@@ -23,15 +23,26 @@ const VersandhistorieTab = lazy(() => import('./VersandhistorieTab'));
 const AutomatisierungTab = lazy(() => import('./AutomatisierungTab'));
 const AnhangBibliothek = lazy(() => import('./AnhangBibliothek'));
 
+// Alle Tabs in einer einzigen Zeile — immer sichtbar
+// vorlagen_* Tabs zeigen VorlagenVerwaltung mit der jeweiligen Ansicht
 const TABS = [
-  { id: 'uebersicht', label: 'Übersicht', icon: LayoutGrid },
-  { id: 'vorlagen', label: 'Vorlagen', icon: Mail },
-  { id: 'vertraege', label: 'Verträge & Recht', icon: Shield },
-  { id: 'berichte', label: 'Berichte & PDFs', icon: BarChart3 },
-  { id: 'archiv', label: 'Versandarchiv', icon: History },
-  { id: 'automatisierungen', label: 'Automatisierungen', icon: Zap },
-  { id: 'anhaenge', label: 'Anhang-Bibliothek', icon: Paperclip },
+  { id: 'uebersicht',            label: 'Übersicht',       icon: LayoutGrid },
+  { id: 'vorlagen',              label: 'Vorlagen',         icon: Mail },
+  { id: 'vorlagen_einstellungen',label: 'Einstellungen',    icon: Settings },
+  { id: 'vorlagen_verlauf',      label: 'Verlauf',          icon: History },
+  { id: 'vertraege',             label: 'Verträge & Recht', icon: Shield },
+  { id: 'berichte',              label: 'Berichte & PDFs',  icon: BarChart3 },
+  { id: 'archiv',                label: 'Versandarchiv',    icon: History },
+  { id: 'automatisierungen',     label: 'Automatisierungen',icon: Zap },
+  { id: 'anhaenge',              label: 'Anhang-Bibliothek',icon: Paperclip },
 ];
+
+// Mapping Tab-ID → VorlagenVerwaltung-Ansicht
+const VORLAGEN_ANSICHT = {
+  vorlagen:               'vorlagen',
+  vorlagen_einstellungen: 'einstellungen',
+  vorlagen_verlauf:       'verlauf',
+};
 
 const LazyFallback = () => (
   <div className="dz-lazy-fallback">
@@ -44,6 +55,8 @@ export default function DokumentenZentrale({ embedded = false }) {
   const navigate = useNavigate();
   const { activeDojo } = useDojoContext();
   const [activeTab, setActiveTab] = useState('uebersicht');
+  // 'neu' ist ein einmaliger Trigger für "Neue Vorlage" — wird nach Auslösung zurückgesetzt
+  const [vorlagenNeuTrigger, setVorlagenNeuTrigger] = useState(0);
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -70,35 +83,23 @@ export default function DokumentenZentrale({ embedded = false }) {
   };
 
   const statCards = [
-    {
-      label: 'E-Mail & Brief-Vorlagen',
-      value: stats?.vorlagen ?? '-',
-      icon: Mail,
-      color: 'var(--info)',
-      tab: 'vorlagen'
-    },
-    {
-      label: 'Vertragsvorlagen',
-      value: stats?.vertragsvorlagen ?? '-',
-      icon: Shield,
-      color: 'var(--success)',
-      tab: 'vertraege'
-    },
-    {
-      label: 'Absender-Profile',
-      value: stats?.absenderProfile ?? '-',
-      icon: FileText,
-      color: 'var(--warning)',
-      tab: 'vorlagen'
-    },
-    {
-      label: 'PDF-Berichte',
-      value: '-',
-      icon: BarChart3,
-      color: '#8b5cf6',
-      tab: 'berichte'
-    }
+    { label: 'E-Mail & Brief-Vorlagen', value: stats?.vorlagen ?? '-',       icon: Mail,     color: 'var(--info)',    tab: 'vorlagen'  },
+    { label: 'Vertragsvorlagen',        value: stats?.vertragsvorlagen ?? '-',icon: Shield,   color: 'var(--success)', tab: 'vertraege' },
+    { label: 'Absender-Profile',        value: stats?.absenderProfile ?? '-', icon: FileText, color: 'var(--warning)', tab: 'vorlagen'  },
+    { label: 'PDF-Berichte',            value: '-',                           icon: BarChart3,color: '#8b5cf6',        tab: 'berichte'  },
   ];
+
+  // Wird VorlagenVerwaltung gerade angezeigt?
+  const isVorlagenTab = activeTab in VORLAGEN_ANSICHT;
+
+  // Aktuelle Ansicht für VorlagenVerwaltung
+  const vorlagenAnsicht = VORLAGEN_ANSICHT[activeTab] || 'vorlagen';
+
+  // "Neue Vorlage" Button: wechselt zu Vorlagen-Tab und triggert Editor
+  const handleNeueVorlage = () => {
+    setActiveTab('vorlagen');
+    setVorlagenNeuTrigger(t => t + 1);
+  };
 
   return (
     <div className="dz-container">
@@ -118,7 +119,7 @@ export default function DokumentenZentrale({ embedded = false }) {
       </div>
       )}
 
-      {/* Tab Navigation */}
+      {/* Einzige Tab-Zeile — alle Einträge immer sichtbar */}
       <div className="dz-tabs">
         {TABS.map(tab => {
           const Icon = tab.icon;
@@ -133,10 +134,19 @@ export default function DokumentenZentrale({ embedded = false }) {
             </button>
           );
         })}
+        {/* "+ Neue Vorlage" als Action-Button am Ende — kein eigener Tab-State */}
+        <button
+          className="dz-tab dz-tab--action"
+          onClick={handleNeueVorlage}
+        >
+          <Plus size={16} />
+          <span>Neue Vorlage</span>
+        </button>
       </div>
 
       {/* Content */}
       <div className="dz-content">
+
         {/* Übersicht */}
         {activeTab === 'uebersicht' && (
           <div className="dz-uebersicht">
@@ -167,30 +177,21 @@ export default function DokumentenZentrale({ embedded = false }) {
             <div className="dz-quick-nav">
               <h3>Schnellzugriff</h3>
               <div className="dz-quick-cards">
-                <div
-                  className="dz-quick-card"
-                  onClick={() => setActiveTab('vorlagen')}
-                >
+                <div className="dz-quick-card" onClick={() => setActiveTab('vorlagen')}>
                   <Mail size={28} />
                   <div>
                     <h4>E-Mail & Brief-Vorlagen</h4>
                     <p>Erstellen, bearbeiten und versenden Sie professionelle Vorlagen</p>
                   </div>
                 </div>
-                <div
-                  className="dz-quick-card"
-                  onClick={() => setActiveTab('vertraege')}
-                >
+                <div className="dz-quick-card" onClick={() => setActiveTab('vertraege')}>
                   <Shield size={28} />
                   <div>
                     <h4>Verträge & Rechtliches</h4>
                     <p>AGB, Datenschutz, Hausordnung und Vertragsvorlagen verwalten</p>
                   </div>
                 </div>
-                <div
-                  className="dz-quick-card"
-                  onClick={() => setActiveTab('berichte')}
-                >
+                <div className="dz-quick-card" onClick={() => setActiveTab('berichte')}>
                   <BarChart3 size={28} />
                   <div>
                     <h4>Berichte & PDFs</h4>
@@ -202,10 +203,19 @@ export default function DokumentenZentrale({ embedded = false }) {
           </div>
         )}
 
-        {/* Vorlagen */}
-        {activeTab === 'vorlagen' && (
+        {/* Vorlagen, Einstellungen, Verlauf — alle zeigen VorlagenVerwaltung */}
+        {isVorlagenTab && (
           <Suspense fallback={<LazyFallback />}>
-            <VorlagenVerwaltung embedded />
+            <VorlagenVerwaltung
+              embedded
+              controlledAnsicht={vorlagenAnsicht}
+              onAnsichtChange={(val) => {
+                // Wenn VorlagenVerwaltung intern die Ansicht ändert, Tab syncen
+                const tabId = Object.keys(VORLAGEN_ANSICHT).find(k => VORLAGEN_ANSICHT[k] === val);
+                if (tabId) setActiveTab(tabId);
+              }}
+              neuVorlageTrigger={vorlagenNeuTrigger}
+            />
           </Suspense>
         )}
 
@@ -243,6 +253,7 @@ export default function DokumentenZentrale({ embedded = false }) {
             <AnhangBibliothek />
           </Suspense>
         )}
+
       </div>
     </div>
   );

@@ -80,6 +80,7 @@ export default function DemoTermine() {
   const authHeader = { Authorization: `Bearer ${token}` };
 
   const [view, setView] = useState('slots');
+  const [collapsedDays, setCollapsedDays] = useState(new Set([0, 1, 2, 3, 4, 5, 6]));
   const [slots, setSlots] = useState([]);
   const [buchungen, setBuchungen] = useState([]);
   const [stats, setStats] = useState(null);
@@ -136,7 +137,11 @@ export default function DemoTermine() {
   // ── Buchungs-Detail ───────────────────────────────────────────────────────
   const [selectedBuchung, setSelectedBuchung] = useState(null);
   const [buchungNotiz, setBuchungNotiz] = useState('');
+  const [emailNotiz, setEmailNotiz] = useState('');
   const [buchungSaving, setBuchungSaving] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
+  const [teamsLinkInput, setTeamsLinkInput] = useState('');
+  const [teamsLinkSaving, setTeamsLinkSaving] = useState(false);
 
   const bookingUrl = `${window.location.origin}/demo-buchen`;
 
@@ -333,7 +338,7 @@ export default function DemoTermine() {
       setSelectedDays({});
       loadSlots(); loadStats();
     } catch (e) {
-      showMsg('error', e.response?.data?.error || 'Fehler');
+      const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'Fehler');
     } finally {
       setWochenplanSaving(false);
     }
@@ -354,7 +359,7 @@ export default function DemoTermine() {
       setSlotForm({ slot_start: '', duration_minutes: '60', notes: '' });
       loadSlots(); loadStats();
     } catch (e) {
-      showMsg('error', e.response?.data?.error || 'Fehler');
+      const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'Fehler');
     } finally {
       setSlotSaving(false);
     }
@@ -368,7 +373,7 @@ export default function DemoTermine() {
         { headers: authHeader }
       );
       loadSlots(); loadStats();
-    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
+    } catch (e) { { const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'Fehler'); } }
   };
 
   // ── Slot löschen ──────────────────────────────────────────────────────────
@@ -378,7 +383,7 @@ export default function DemoTermine() {
       await axios.delete(`/demo-termine/admin/slots/${id}`, { headers: authHeader });
       showMsg('success', 'Slot gelöscht');
       loadSlots(); loadStats();
-    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
+    } catch (e) { { const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'Fehler'); } }
   };
 
   // ── Kalender-Hilfsfunktionen ──────────────────────────────────────────────
@@ -412,7 +417,7 @@ export default function DemoTermine() {
         showMsg('success', 'Tag wieder freigegeben');
       }
       loadStats();
-    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
+    } catch (e) { { const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'Fehler'); } }
   };
 
   // Slot-Map: 'YYYY-MM-DD' → { free, booked, locked }
@@ -453,6 +458,41 @@ export default function DemoTermine() {
   };
 
   // ── Buchung aktualisieren ─────────────────────────────────────────────────
+  const sendConfirmationEmail = async (buchungId) => {
+    setEmailSending(true);
+    try {
+      await axios.post(`/demo-termine/admin/buchungen/${buchungId}/email`, {}, { headers: authHeader });
+      showMsg('success', 'E-Mail erfolgreich gesendet');
+    } catch (e) {
+      const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'E-Mail-Versand fehlgeschlagen');
+    } finally {
+      setEmailSending(false);
+    }
+  };
+
+  const openTeamsDeeplink = (buchung) => {
+    const subject = encodeURIComponent(`Demo-Termin: ${buchung.vorname} ${buchung.nachname}`);
+    const start   = encodeURIComponent(new Date(buchung.slot_start).toISOString());
+    const end     = encodeURIComponent(new Date(new Date(buchung.slot_start).getTime() + (buchung.duration_minutes || 60) * 60000).toISOString());
+    const url = `https://teams.microsoft.com/l/meeting/new?subject=${subject}&startTime=${start}&endTime=${end}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const saveTeamsLink = async (buchungId, link) => {
+    if (!link.trim()) return;
+    setTeamsLinkSaving(true);
+    try {
+      await updateBuchung(buchungId, { teams_link: link.trim() });
+      setTeamsLinkInput('');
+    } finally {
+      setTeamsLinkSaving(false);
+    }
+  };
+
+  const removeTeamsLink = async (buchungId) => {
+    await updateBuchung(buchungId, { teams_link: '' });
+  };
+
   const updateBuchung = async (id, updates) => {
     setBuchungSaving(true);
     try {
@@ -461,7 +501,7 @@ export default function DemoTermine() {
       setBuchungen(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
       if (selectedBuchung?.id === id) setSelectedBuchung(prev => ({ ...prev, ...updates }));
       loadStats();
-    } catch (e) { showMsg('error', e.response?.data?.error || 'Fehler'); }
+    } catch (e) { { const em = e.response?.data?.error; showMsg('error', typeof em === 'string' ? em : 'Fehler'); } }
     finally { setBuchungSaving(false); }
   };
 
@@ -543,17 +583,33 @@ export default function DemoTermine() {
           const hm = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
           if (!byDow[dow].includes(hm)) byDow[dow].push(hm);
         });
+        const toggleCollapse = (dayId) => {
+          setCollapsedDays(prev => {
+            const next = new Set(prev);
+            if (next.has(dayId)) next.delete(dayId); else next.add(dayId);
+            return next;
+          });
+        };
         return (
           <div className="dt-week-strip">
             {WOCHENTAGE.map(tag => {
               const zeiten = (byDow[tag.id] || []).sort();
+              const isCollapsed = collapsedDays.has(tag.id);
+              const hasZeiten = zeiten.length > 0;
               return (
-                <div key={tag.id} className={`dt-week-day ${zeiten.length > 0 ? 'dt-week-day--active' : 'dt-week-day--empty'}`}>
-                  <span className="dt-week-day-name">{tag.kurz}</span>
-                  {zeiten.length > 0
-                    ? <div className="dt-week-times">{zeiten.map(z => <span key={z} className="dt-week-time">{z}</span>)}</div>
-                    : <span className="dt-week-none">—</span>
-                  }
+                <div key={tag.id} className={`dt-week-day ${hasZeiten ? 'dt-week-day--active' : 'dt-week-day--empty'}${isCollapsed ? ' dt-week-day--collapsed' : ''}`}>
+                  <span
+                    className={`dt-week-day-name${hasZeiten ? ' dt-week-day-name--clickable' : ''}`}
+                    onClick={() => hasZeiten && toggleCollapse(tag.id)}
+                    title={hasZeiten ? (isCollapsed ? 'Uhrzeiten einblenden' : 'Uhrzeiten ausblenden') : undefined}
+                  >
+                    {tag.kurz}
+                    {hasZeiten && <span className="dt-week-day-chevron">{isCollapsed ? '›' : '‹'}</span>}
+                  </span>
+                  {hasZeiten && !isCollapsed && (
+                    <div className="dt-week-times">{zeiten.map(z => <span key={z} className="dt-week-time">{z}</span>)}</div>
+                  )}
+                  {!hasZeiten && <span className="dt-week-none">—</span>}
                 </div>
               );
             })}
@@ -1135,7 +1191,7 @@ export default function DemoTermine() {
                   <div
                     key={b.id}
                     className={`dt-buchung-item ${selectedBuchung?.id === b.id ? 'active' : ''}`}
-                    onClick={() => { setSelectedBuchung(b); setBuchungNotiz(b.admin_notiz || ''); }}
+                    onClick={() => { setSelectedBuchung(b); setBuchungNotiz(b.admin_notiz || ''); setEmailNotiz(b.email_notiz || ''); }}
                   >
                     <div className="dt-buchung-name">{b.vorname} {b.nachname}</div>
                     <div className="dt-buchung-verein">{b.vereinsname || b.email}</div>
@@ -1182,20 +1238,108 @@ export default function DemoTermine() {
                     </div>
                   </div>
                   <div className="dt-detail-notiz">
-                    <label>Interne Notiz</label>
+                    <label>Interne Notiz <span className="dt-notiz-hint">(nur für Admins)</span></label>
                     <textarea
                       value={buchungNotiz}
                       onChange={e => setBuchungNotiz(e.target.value)}
-                      rows={3}
+                      rows={2}
                       placeholder="Nur für Admins sichtbar..."
                     />
                     <button
-                      className="dt-btn dt-btn-sm dt-btn-primary"
+                      className="dt-btn dt-btn-sm"
                       onClick={() => updateBuchung(selectedBuchung.id, { admin_notiz: buchungNotiz })}
                       disabled={buchungSaving}
                     >
-                      {buchungSaving ? 'Speichere...' : 'Notiz speichern'}
+                      {buchungSaving ? 'Speichere...' : 'Speichern'}
                     </button>
+                  </div>
+                  <div className="dt-detail-notiz dt-detail-notiz-email">
+                    <label>Notiz in E-Mail <span className="dt-notiz-hint">(wird dem Kunden mitgeschickt)</span></label>
+                    <textarea
+                      value={emailNotiz}
+                      onChange={e => setEmailNotiz(e.target.value)}
+                      rows={3}
+                      placeholder="z.B. Bitte bringe Sportkleidung mit. Parken ist direkt vor dem Gebäude möglich."
+                    />
+                    <button
+                      className="dt-btn dt-btn-sm dt-btn-primary"
+                      onClick={() => updateBuchung(selectedBuchung.id, { email_notiz: emailNotiz })}
+                      disabled={buchungSaving}
+                    >
+                      {buchungSaving ? 'Speichere...' : 'Speichern'}
+                    </button>
+                  </div>
+                  <div className="dt-detail-email-action">
+                    <button
+                      className="dt-btn dt-btn-sm"
+                      onClick={() => sendConfirmationEmail(selectedBuchung.id)}
+                      disabled={emailSending}
+                      title="Bestätigungsmail an Buchenden senden"
+                    >
+                      {emailSending ? 'Sende...' : '✉️ Bestätigung senden'}
+                    </button>
+                  </div>
+                  <div className="dt-detail-teams-action">
+                    {selectedBuchung.teams_link ? (
+                      <div className="dt-teams-saved">
+                        <div className="dt-teams-link-row">
+                          <a
+                            href={selectedBuchung.teams_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="dt-btn dt-btn-sm dt-btn-teams"
+                          >
+                            🎥 Teams beitreten
+                          </a>
+                          <button
+                            className="dt-btn dt-btn-xs"
+                            onClick={() => { navigator.clipboard.writeText(selectedBuchung.teams_link); showMsg('success', 'Link kopiert!'); }}
+                          >
+                            Kopieren
+                          </button>
+                          <button
+                            className="dt-btn dt-btn-xs"
+                            onClick={() => openTeamsDeeplink(selectedBuchung)}
+                            title="Neues Meeting in Teams öffnen"
+                          >
+                            ↻ Neues Meeting
+                          </button>
+                          <button
+                            className="dt-btn dt-btn-xs dt-btn-danger-xs"
+                            onClick={() => removeTeamsLink(selectedBuchung.id)}
+                            title="Link entfernen"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="dt-teams-setup">
+                        <button
+                          className="dt-btn dt-btn-sm dt-btn-teams"
+                          onClick={() => openTeamsDeeplink(selectedBuchung)}
+                        >
+                          🎥 Meeting in Teams erstellen
+                        </button>
+                        <span className="dt-teams-hint">→ Join-Link aus Teams hier einfügen:</span>
+                        <div className="dt-teams-input-row">
+                          <input
+                            type="url"
+                            className="dt-teams-input"
+                            placeholder="https://teams.microsoft.com/l/meetup-join/..."
+                            value={teamsLinkInput}
+                            onChange={e => setTeamsLinkInput(e.target.value)}
+                          />
+                          <button
+                            className="dt-btn dt-btn-sm dt-btn-primary"
+                            onClick={() => saveTeamsLink(selectedBuchung.id, teamsLinkInput)}
+                            disabled={teamsLinkSaving || !teamsLinkInput.trim()}
+                          >
+                            {teamsLinkSaving ? '...' : 'Speichern'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="dt-detail-buchdat">
                     Buchung eingegangen: {fmt(selectedBuchung.buchung_created_at || selectedBuchung.created_at)}

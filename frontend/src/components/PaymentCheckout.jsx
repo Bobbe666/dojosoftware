@@ -60,10 +60,10 @@ const PaymentCheckout = () => {
     try {
       // Lade Rechnung und Payment-Konfiguration parallel
       const [rechnungRes, configRes] = await Promise.all([
-        axios.get(`${config.apiBaseUrl}/rechnungen/${rechnungId}`, {
+        axios.get(`/rechnungen/${rechnungId}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`${config.apiBaseUrl}/integrations/status`, {
+        axios.get('/integrations/status', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -110,7 +110,7 @@ const PaymentCheckout = () => {
     // Optional: Rechnung als bezahlt markieren
     try {
       const zahlungsart = paymentMethod === 'stripe' ? 'kreditkarte' : paymentMethod === 'sumup' ? 'sumup' : 'paypal';
-      await axios.post(`${config.apiBaseUrl}/rechnungen/${rechnungId}/zahlung`, {
+      await axios.post(`/rechnungen/${rechnungId}/zahlung`, {
         betrag: rechnung.gesamtbetrag,
         zahlungsart: zahlungsart,
         referenz: paymentData.id || paymentData.orderId || paymentData.transactionId

@@ -112,6 +112,17 @@
   margin-top: 0.75rem;
 }
 
+/* ── PDF-Import Hinweis ── */
+.ki-pdf-notice {
+  background: rgba(212, 175, 55, 0.1);
+  border-left: 3px solid #c8a827;
+  color: var(--text-primary, #333);
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  font-size: 0.83rem;
+  margin-bottom: 0.75rem;
+}
+
 /* ── Preview info bar (Bank + Zusammenfassung) ── */
 .ki-info-bar {
   background: var(--bg-secondary, #1a1a1a);

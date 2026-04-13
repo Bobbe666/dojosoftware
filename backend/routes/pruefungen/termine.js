@@ -90,8 +90,8 @@ router.post('/', (req, res) => {
 
   db.query(checkOverlapQuery, [datum, zeitValue, dojo_id], (err, overlaps) => {
     if (err) {
-      logger.error('Fehler beim Prüfen auf Überschneidungen:', { error: err });
-      return res.status(500).json({ error: 'Fehler beim Prüfen auf Überschneidungen', details: err.message });
+      logger.error('Fehler beim Prüfen auf Überschneidungen:', { error: err.message, stack: err.stack });
+      return res.status(500).json({ error: 'Interner Serverfehler' });
     }
 
     if (overlaps && overlaps.length > 0) {
@@ -115,8 +115,8 @@ router.post('/', (req, res) => {
 
     db.query(insertQuery, [datum, zeitValue, ort || null, pruefer_name || null, stil_id, pruefungsgebuehr || null, anmeldefrist || null, bemerkungen || null, teilnahmebedingungen || null, oeffentlich ? 1 : 0, oeffentlich_vib ? 1 : 0, dojo_id], (err, result) => {
       if (err) {
-        logger.error('Fehler beim Erstellen des Prüfungstermins:', { error: err });
-        return res.status(500).json({ error: 'Fehler beim Erstellen des Termins', details: err.message });
+        logger.error('Fehler beim Erstellen des Prüfungstermins:', { error: err.message, stack: err.stack });
+        return res.status(500).json({ error: 'Interner Serverfehler' });
       }
 
       const terminId = result.insertId;
@@ -208,8 +208,8 @@ router.get('/', (req, res) => {
 
   db.query(query, queryParams, (err, results) => {
     if (err) {
-      logger.error('Fehler beim Laden der Prüfungstermine:', { error: err });
-      return res.status(500).json({ error: 'Fehler beim Laden der Termine', details: err.message });
+      logger.error('Fehler beim Laden der Prüfungstermine:', { error: err.message, stack: err.stack });
+      return res.status(500).json({ error: 'Interner Serverfehler' });
     }
 
     const formattedResults = results.map(termin => ({
@@ -249,8 +249,8 @@ router.put('/:id', (req, res) => {
 
     db.query(updateQuery, [datum, zeit || '10:00', ort || null, pruefer_name || null, stil_id, pruefungsgebuehr || null, anmeldefrist || null, bemerkungen || null, teilnahmebedingungen || null, oeffentlich ? 1 : 0, oeffentlich_vib ? 1 : 0, termin_id], (err, result) => {
       if (err) {
-        logger.error('Fehler beim Aktualisieren des Termins:', { error: err });
-        return res.status(500).json({ error: 'Fehler beim Aktualisieren', details: err.message });
+        logger.error('Fehler beim Aktualisieren des Termins:', { error: err.message, stack: err.stack });
+        return res.status(500).json({ error: 'Interner Serverfehler' });
       }
       if (result.affectedRows === 0) return res.status(404).json({ error: 'Termin nicht gefunden' });
       res.json({ success: true, message: 'Termin erfolgreich aktualisiert' });
@@ -308,8 +308,8 @@ router.delete('/:id', (req, res) => {
 
       db.query('DELETE FROM pruefungstermin_vorlagen WHERE termin_id = ?', [termin_id], (err, result) => {
         if (err) {
-          logger.error('Fehler beim Löschen des Termins:', { error: err });
-          return res.status(500).json({ error: 'Fehler beim Löschen', details: err.message });
+          logger.error('Fehler beim Löschen des Termins:', { error: err.message, stack: err.stack });
+          return res.status(500).json({ error: 'Interner Serverfehler' });
         }
         res.json({ success: true, message: 'Termin erfolgreich gelöscht' });
         sendToTdaEvents('pruefung', 'delete', { id: termin_id });
@@ -361,8 +361,8 @@ router.get('/:id/anmeldungen', async (req, res) => {
 
     res.json({ success: true, count: anmeldungen.length, anmeldungen });
   } catch (error) {
-    logger.error('Fehler beim Laden der externen Anmeldungen', { error: error.message });
-    res.status(500).json({ error: 'Fehler beim Laden der Anmeldungen', details: error.message });
+    logger.error('Fehler beim Laden der externen Anmeldungen', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -424,8 +424,8 @@ router.put('/:terminId/anmeldungen/:id', async (req, res) => {
 
     res.json({ success: true, message: 'Anmeldung aktualisiert' });
   } catch (error) {
-    logger.error('Fehler beim Aktualisieren der Anmeldung', { error: error.message });
-    res.status(500).json({ error: 'Fehler beim Aktualisieren', details: error.message });
+    logger.error('Fehler beim Aktualisieren der Anmeldung', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -455,8 +455,8 @@ router.get('/stundenplan-konflikt', async (req, res) => {
     );
     res.json({ konflikte: rows });
   } catch (err) {
-    logger.error('Stundenplan-Konflikt-Check Fehler', { error: err.message });
-    res.status(500).json({ error: err.message });
+    logger.error('Stundenplan-Konflikt-Check Fehler', { error: err.message, stack: err.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 

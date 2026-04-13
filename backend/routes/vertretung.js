@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
       `SELECT va.*,
         ot.vorname AS orig_vorname, ot.nachname AS orig_nachname,
         vt.vorname AS vert_vorname, vt.nachname AS vert_nachname,
-        k.gruppenname AS kursname
+        CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname
        FROM vertretung_anfragen va
        LEFT JOIN trainer ot ON va.original_trainer_id = ot.trainer_id
        LEFT JOIN trainer vt ON va.vertretung_trainer_id = vt.trainer_id

@@ -18,8 +18,9 @@ const AnwesenheitDashboard = () => {
       <div className="dashboard-nav">
         <button onClick={() => setView("grid")} className={view === "grid" ? "active" : ""}>🧱 Übersicht</button>
         <button onClick={() => setView("kalender")} className={view === "kalender" ? "active" : ""}>📆 Kalender</button>
-        <button onClick={() => setView("statistik")} className={view === "statistik" ? "active" : ""}>📊 Statistik</button>
-        <button onClick={() => setView("export")} className={view === "export" ? "active" : ""}>📤 Export</button>
+        {/* Statistik und Export folgen — noch in Entwicklung */}
+        {/* <button onClick={() => setView("statistik")} className={view === "statistik" ? "active" : ""}>📊 Statistik</button> */}
+        {/* <button onClick={() => setView("export")} className={view === "export" ? "active" : ""}>📤 Export</button> */}
       </div>
 
       <div className="dashboard-content">

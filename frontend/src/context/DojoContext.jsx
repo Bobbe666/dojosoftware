@@ -200,8 +200,7 @@ export const DojoProvider = ({ children }) => {
         return `dojo_ids=${dojoIds}`;
       }
       // WICHTIG: Niemals 'dojo_id=all' zurückgeben, da dies ALLE Dojos (inkl. Demo-Dojos) zurückgibt!
-      // Stattdessen leeren String zurückgeben - verhindert Datenladen bis Dojos geladen sind
-      console.warn('⚠️ getDojoFilterParam: Dojos noch nicht geladen, gebe leeren String zurück');
+      // Leeren String zurückgeben - verhindert Datenladen bis Dojos geladen sind
       return '';
     }
 

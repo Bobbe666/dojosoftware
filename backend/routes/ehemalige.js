@@ -93,14 +93,21 @@ router.get('/count', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
+    let query = `
       SELECT e.*
       FROM ehemalige e
       WHERE e.id = ?
     `;
+    const params = [id];
 
-    const result = await queryAsync(query, [id]);
+    if (secureDojoId) {
+      query += ` AND e.dojo_id = ?`;
+      params.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, params);
 
     if (result.length === 0) {
       return res.status(404).json({ error: 'Ehemaliges Mitglied nicht gefunden' });
@@ -165,8 +172,9 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
+    let query = `
       UPDATE ehemalige SET
         vorname = ?, nachname = ?, geburtsdatum = ?, geschlecht = ?,
         email = ?, telefon = ?, telefon_mobil = ?, strasse = ?, hausnummer = ?, plz = ?, ort = ?,
@@ -199,7 +207,15 @@ router.put('/:id', async (req, res) => {
       id
     ];
 
-    await queryAsync(query, values);
+    if (secureDojoId) {
+      query = query.replace('WHERE id = ?', 'WHERE id = ? AND dojo_id = ?');
+      values.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, values);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Ehemaliges Mitglied nicht gefunden' });
+    }
     res.json({ message: 'Ehemaliges Mitglied erfolgreich aktualisiert' });
   } catch (error) {
     logger.error('Fehler beim Aktualisieren des ehemaligen Mitglieds:', { error: error });
@@ -211,10 +227,20 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `UPDATE ehemalige SET archiviert = TRUE WHERE id = ?`;
-    await queryAsync(query, [id]);
+    let query = `UPDATE ehemalige SET archiviert = TRUE WHERE id = ?`;
+    const params = [id];
 
+    if (secureDojoId) {
+      query += ` AND dojo_id = ?`;
+      params.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, params);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Ehemaliges Mitglied nicht gefunden' });
+    }
     res.json({ message: 'Ehemaliges Mitglied erfolgreich archiviert' });
   } catch (error) {
     logger.error('Fehler beim Archivieren des ehemaligen Mitglieds:', { error: error });

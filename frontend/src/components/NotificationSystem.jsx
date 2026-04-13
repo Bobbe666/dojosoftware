@@ -838,8 +838,8 @@ const NotificationSystem = () => {
 
         {/* Charts Section */}
         <div className="ns-charts-grid">
-          {/* Zeitverlauf Chart */}
-          <div className="ns-chart-card">
+          {/* Zeitverlauf Chart — TODO: Backend-Endpunkt noch nicht implementiert */}
+          {/* <div className="ns-chart-card">
             <h4 className="ns-chart-title">📈 Wochenverlauf</h4>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={timelineData}>
@@ -859,7 +859,7 @@ const NotificationSystem = () => {
                 <Line type="monotone" dataKey="push" stroke="#22c55e" strokeWidth={2} name="Push" />
               </LineChart>
             </ResponsiveContainer>
-          </div>
+          </div> */}
 
           {/* Verteilung Email vs Push */}
           <div className="ns-chart-card">

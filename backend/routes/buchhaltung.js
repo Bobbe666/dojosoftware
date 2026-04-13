@@ -70,8 +70,9 @@ const bankUpload = multer({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB für große Kontoauszüge
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['text/csv', 'text/plain', 'application/octet-stream',
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
-    const allowedExts = ['.csv', '.sta', '.mt940', '.txt', '.xls', '.xlsx'];
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/pdf'];
+    const allowedExts = ['.csv', '.sta', '.mt940', '.txt', '.xls', '.xlsx', '.pdf'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(file.mimetype) || allowedExts.includes(ext)) {
       cb(null, true);
@@ -623,6 +624,61 @@ const parseExcelRow = (row, headers) => {
 // 🏦 MT940 PARSER (SWIFT-Standard)
 // ===================================================================
 
+const parsePDFContent = async (filePath) => {
+  try {
+    const { execSync } = require('child_process');
+    const rawText = execSync(`pdftotext -layout "${filePath}" -`, { encoding: 'utf-8', timeout: 30000 });
+    const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+
+    const transaktionen = [];
+    const dateRegex = /\b(\d{2})\.(\d{2})\.(\d{2,4})\b/;
+    const amountRegex = /([+-]?\s*\d{1,3}(?:\.\d{3})*,\d{2}\s*[+-]?)/;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const dateMatch = line.match(dateRegex);
+      const amountMatch = line.match(amountRegex);
+      if (!dateMatch || !amountMatch) continue;
+
+      let [, day, month, year] = dateMatch;
+      if (year.length === 2) year = '20' + year;
+      const buchungsdatum = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+      let amtStr = amountMatch[1].replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+      if (amtStr.endsWith('-')) amtStr = '-' + amtStr.slice(0, -1);
+      const betrag = parseFloat(amtStr);
+      if (isNaN(betrag) || betrag === 0) continue;
+
+      const descParts = [];
+      for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+        if (!lines[j] || dateRegex.test(lines[j])) break;
+        descParts.push(lines[j]);
+      }
+      const verwendungszweck = descParts.join(' ').trim() || line;
+
+      transaktionen.push({
+        buchungsdatum,
+        valutadatum: buchungsdatum,
+        betrag: Math.abs(betrag),
+        waehrung: 'EUR',
+        verwendungszweck: verwendungszweck.slice(0, 500),
+        auftraggeber_empfaenger: '',
+        buchungsart: betrag >= 0 ? 'Einnahme' : 'Ausgabe',
+        iban: '',
+        bic: ''
+      });
+    }
+
+    if (transaktionen.length === 0) {
+      return { error: 'Keine Buchungen im PDF erkannt. Bitte laden Sie den Kontoauszug als CSV aus dem Online-Banking herunter.' };
+    }
+
+    return { transaktionen, bank: 'PDF-Import', format: 'pdf' };
+  } catch (e) {
+    return { error: 'PDF konnte nicht verarbeitet werden: ' + e.message };
+  }
+};
+
 const parseMT940Content = (content) => {
   const transaktionen = [];
 
@@ -743,7 +799,7 @@ const parseMT940Transaction = (line) => {
 // ===================================================================
 
 // Generiere fortlaufende Belegnummer
-const generateBelegNummer = async (dojoId, jahr) => {
+const generateBelegNummer = async (dojoId, jahr, offset = 0) => {
   return new Promise((resolve, reject) => {
     const sql = `
       SELECT MAX(CAST(SUBSTRING_INDEX(beleg_nummer, '-', -1) AS UNSIGNED)) as max_nr
@@ -752,7 +808,7 @@ const generateBelegNummer = async (dojoId, jahr) => {
     `;
     db.query(sql, [dojoId, jahr], (err, results) => {
       if (err) return reject(err);
-      const nextNr = (results[0]?.max_nr || 0) + 1;
+      const nextNr = (results[0]?.max_nr || 0) + 1 + offset;
       const belegNummer = `${jahr}-${String(nextNr).padStart(5, '0')}`;
       resolve(belegNummer);
     });
@@ -919,7 +975,7 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
   }
 
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
   // Einnahmen - Gruppiert nach Kategorie und Quelle
   const einnahmenGroupedSql = `
@@ -941,7 +997,8 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
       quelle,
       datum,
       betrag_brutto,
-      beschreibung
+      beschreibung,
+      referenz_id
     FROM v_euer_einnahmen
     WHERE ${dateFilter} ${orgFilter}
     ORDER BY kategorie, quelle, datum DESC
@@ -1010,13 +1067,43 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
       einnahmenNachKategorie[row.kategorie].summe += parseFloat(row.summe);
 
       // Finde die Einzelbuchungen für diese Kategorie + Quelle
-      const einzelbuchungen = einnahmenDetails
-        .filter(d => d.kategorie === row.kategorie && d.quelle === row.quelle)
-        .map(d => ({
+      const rawBuchungen = einnahmenDetails
+        .filter(d => d.kategorie === row.kategorie && d.quelle === row.quelle);
+
+      // Beiträge: nach Monat aggregieren statt 248 Einzelzeilen
+      let einzelbuchungen;
+      if (row.quelle === 'Beitrag') {
+        const monatsnamen = ['Januar','Februar','März','April','Mai','Juni',
+          'Juli','August','September','Oktober','November','Dezember'];
+        const byMonth = {};
+        rawBuchungen.forEach(d => {
+          const dt = new Date(d.datum);
+          const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+          if (!byMonth[key]) byMonth[key] = { datum: d.datum, summe: 0, monat: dt.getMonth(), jahr: dt.getFullYear() };
+          byMonth[key].summe += parseFloat(d.betrag_brutto);
+        });
+        einzelbuchungen = Object.values(byMonth)
+          .sort((a, b) => a.datum < b.datum ? -1 : 1)
+          .map(m => ({
+            datum: m.datum,
+            betrag: Math.round(m.summe * 100) / 100,
+            beschreibung: `Mitgliedsbeiträge ${monatsnamen[m.monat]} ${m.jahr}`,
+            drilldown: { typ: 'beitraege', monat: m.monat + 1, jahr: m.jahr, organisation: organisation || 'alle' }
+          }));
+      } else if (row.quelle === 'Verkauf') {
+        einzelbuchungen = rawBuchungen.map(d => ({
+          datum: d.datum,
+          betrag: parseFloat(d.betrag_brutto),
+          beschreibung: d.beschreibung,
+          drilldown: { typ: 'verkauf', verkauf_id: d.referenz_id }
+        }));
+      } else {
+        einzelbuchungen = rawBuchungen.map(d => ({
           datum: d.datum,
           betrag: parseFloat(d.betrag_brutto),
           beschreibung: d.beschreibung
         }));
+      }
 
       einnahmenNachKategorie[row.kategorie].details.push({
         quelle: row.quelle,
@@ -1071,6 +1158,81 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
   .catch(err => {
     console.error('EÜR-Fehler:', err);
     res.status(500).json({ message: 'Fehler beim Laden der EÜR', error: err.message });
+  });
+});
+
+// ===================================================================
+// 🔍 GET /api/buchhaltung/euer/beitraege-detail - Einzelne Beiträge eines Monats
+// ===================================================================
+router.get('/euer/beitraege-detail', requireBuchhaltungAccess, (req, res) => {
+  const { jahr, monat, organisation } = req.query;
+  if (!jahr || !monat) return res.status(400).json({ message: 'jahr und monat erforderlich' });
+
+  const params = [];
+  let dojoFilter = '';
+
+  if (req.buchhaltungDojoId) {
+    dojoFilter = 'AND b.dojo_id = ?';
+    params.push(req.buchhaltungDojoId);
+  } else if (organisation && organisation !== 'alle') {
+    const dojoId = organisation === 'TDA International' ? 2 : organisation === 'Kampfkunstschule Schreiner' ? 3 : null;
+    if (dojoId) { dojoFilter = 'AND b.dojo_id = ?'; params.push(dojoId); }
+  }
+
+  params.push(parseInt(jahr), parseInt(monat));
+
+  db.query(`
+    SELECT b.beitrag_id, b.betrag, b.zahlungsdatum, b.zahlungsart,
+           COALESCE(m.vorname, 'unbekannt') as vorname,
+           COALESCE(m.nachname, '(gelöscht)') as nachname,
+           b.mitglied_id
+    FROM beitraege b
+    LEFT JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+    WHERE b.bezahlt = 1 ${dojoFilter}
+      AND YEAR(b.zahlungsdatum) = ? AND MONTH(b.zahlungsdatum) = ?
+    ORDER BY nachname, vorname, b.zahlungsdatum
+  `, params, (err, rows) => {
+    if (err) {
+      logger.error('beitraege-detail Fehler:', { error: err.message, sql: err.sql, params });
+      return res.status(500).json({ message: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// 🔍 GET /api/buchhaltung/euer/verkauf-detail/:id - Positionen eines Verkaufs
+router.get('/euer/verkauf-detail/:id', requireBuchhaltungAccess, (req, res) => {
+  const verkaufId = parseInt(req.params.id);
+  if (!verkaufId) return res.status(400).json({ message: 'Ungültige Verkauf-ID' });
+
+  db.query(`
+    SELECT v.bon_nummer, v.verkauf_datum, v.zahlungsart,
+           COALESCE(v.kunde_name, m.vorname, '') as kunde_vorname,
+           COALESCE(m.nachname, '') as kunde_nachname,
+           v.brutto_gesamt_cent / 100 as gesamt,
+           vp.artikel_name, vp.menge, vp.einzelpreis_cent / 100 as einzelpreis,
+           vp.brutto_cent / 100 as brutto
+    FROM verkaeufe v
+    LEFT JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
+    JOIN verkauf_positionen vp ON v.verkauf_id = vp.verkauf_id
+    WHERE v.verkauf_id = ?
+    ORDER BY vp.position_nummer
+  `, [verkaufId], (err, rows) => {
+    if (err) return res.status(500).json({ message: err.message });
+    if (!rows.length) return res.status(404).json({ message: 'Verkauf nicht gefunden' });
+    res.json({
+      bon_nummer: rows[0].bon_nummer,
+      datum: rows[0].verkauf_datum,
+      zahlungsart: rows[0].zahlungsart,
+      kunde: [rows[0].kunde_vorname, rows[0].kunde_nachname].filter(Boolean).join(' ') || 'Laufkunde',
+      gesamt: rows[0].gesamt,
+      positionen: rows.map(r => ({
+        artikel_name: r.artikel_name,
+        menge: r.menge,
+        einzelpreis: r.einzelpreis,
+        brutto: r.brutto
+      }))
+    });
   });
 });
 
@@ -1496,7 +1658,7 @@ router.get('/einnahmen-auto', requireBuchhaltungAccess, (req, res) => {
   let whereClause = `jahr = ${db.escape(currentYear)}`;
   const _wof = buildOrgFilter(req, organisation);
   if (_wof.sql) {
-    if (_wof.params.length) whereClause += ` AND ${_wof.sql.replace('?', db.escape(_wof.params[0]))}`;
+    if (_wof.params.length) whereClause += ` ${_wof.sql.replace('?', db.escape(_wof.params[0]))}`;
     else whereClause += ` ${_wof.sql}`;
   }
   if (monat) {
@@ -1542,7 +1704,7 @@ router.get('/abschluss/:jahr', requireBuchhaltungAccess, (req, res) => {
   const { organisation } = req.query;
 
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
   // Prüfe ob Abschluss existiert
   const abschlussSql = `
@@ -1689,7 +1851,7 @@ router.get('/abschluss/:jahr/export', requireBuchhaltungAccess, (req, res) => {
   const { organisation, format = 'csv' } = req.query;
 
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
   // Hole alle Buchungen des Jahres
   const einnahmenSql = `
@@ -1777,6 +1939,7 @@ router.get('/kategorien', requireBuchhaltungAccess, (req, res) => {
     { id: 'werbekosten', name: 'Werbekosten', typ: 'ausgabe', beschreibung: 'Marketing, Flyer, Online-Werbung' },
     { id: 'reisekosten', name: 'Reisekosten', typ: 'ausgabe', beschreibung: 'Fahrten, Übernachtungen' },
     { id: 'telefon_internet', name: 'Telefon/Internet', typ: 'ausgabe', beschreibung: 'Kommunikationskosten' },
+    { id: 'software', name: 'Software / IT', typ: 'ausgabe', beschreibung: 'Software, Lizenzen, Hosting' },
     { id: 'buerokosten', name: 'Bürokosten', typ: 'ausgabe', beschreibung: 'Büromaterial, Porto' },
     { id: 'fortbildung', name: 'Fortbildung', typ: 'ausgabe', beschreibung: 'Seminare, Weiterbildung' },
     { id: 'abschreibungen', name: 'Abschreibungen', typ: 'ausgabe', beschreibung: 'AfA auf Anlagegüter' },
@@ -1836,13 +1999,16 @@ router.post('/bank-import/upload', requireFeature('kontoauszug'), requireBuchhal
       return res.status(400).json({ message: 'Datei konnte nicht gelesen werden' });
     }
 
-    // Bestimme Format (Excel, MT940 oder CSV)
+    // Bestimme Format (PDF, Excel, MT940 oder CSV)
     let parseResult;
     const ext = path.extname(req.file.originalname).toLowerCase();
+    const isPDF = ext === '.pdf' || req.file.mimetype === 'application/pdf';
     const isExcel = ext === '.xls' || ext === '.xlsx';
     const isMT940 = ext === '.sta' || ext === '.mt940' || (content && content.includes(':20:') && content.includes(':61:'));
 
-    if (isExcel) {
+    if (isPDF) {
+      parseResult = await parsePDFContent(req.file.path);
+    } else if (isExcel) {
       parseResult = await parseExcelContent(req.file.path);
     } else if (isMT940 || requestedFormat === 'mt940') {
       parseResult = parseMT940Content(content);
@@ -2368,6 +2534,39 @@ router.get('/bank-import/statistik', requireFeature('kontoauszug'), requireBuchh
 });
 
 // ===================================================================
+// 🔍 GET /api/buchhaltung/bank-import/aehnliche/:id
+// Liefert Anzahl ähnlicher unzugeordneter Transaktionen (für Modal-Vorschau)
+// ===================================================================
+router.get('/bank-import/aehnliche/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const txRows = await new Promise((resolve, reject) => {
+      db.query('SELECT dojo_id, auftraggeber_empfaenger, betrag FROM bank_transaktionen WHERE transaktion_id = ?',
+        [id], (err, r) => { if (err) reject(err); else resolve(r); });
+    });
+    if (!txRows.length) return res.status(404).json({ anzahl: 0 });
+    const tx = txRows[0];
+    if (!tx.auftraggeber_empfaenger) return res.json({ anzahl: 0, auftraggeber: '' });
+
+    const pattern = tx.auftraggeber_empfaenger.substring(0, 50).replace(/[%_\\]/g, '\\$&');
+    const rows = await new Promise((resolve, reject) => {
+      db.query(
+        `SELECT COUNT(*) AS anzahl FROM bank_transaktionen
+         WHERE dojo_id = ? AND transaktion_id != ?
+           AND status IN ('unzugeordnet','vorgeschlagen')
+           AND (match_typ IS NULL OR match_typ NOT IN ('rechnung','beitrag','verkauf'))
+           AND LOWER(auftraggeber_empfaenger) LIKE LOWER(?)`,
+        [tx.dojo_id, id, `%${pattern}%`],
+        (err, r) => { if (err) reject(err); else resolve(r); }
+      );
+    });
+    res.json({ anzahl: rows[0]?.anzahl || 0, auftraggeber: tx.auftraggeber_empfaenger });
+  } catch (err) {
+    res.status(500).json({ anzahl: 0 });
+  }
+});
+
+// ===================================================================
 // ✅ POST /api/buchhaltung/bank-import/zuordnen/:id - Transaktion zuordnen
 // ===================================================================
 router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
@@ -2443,15 +2642,84 @@ router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireB
       });
     });
 
-    // Optional: Lerne Regel
-    if (lerne_regel && tx.auftraggeber_empfaenger) {
+    // Regel immer speichern (für künftige Importe)
+    if (tx.auftraggeber_empfaenger) {
       await new Promise((resolve) => {
         db.query(`
-          INSERT IGNORE INTO bank_zuordnung_regeln (
-            dojo_id, match_feld, match_wert, match_typ, kategorie, erstellt_von
-          ) VALUES (?, 'auftraggeber', ?, 'enthält', ?, ?)
-        `, [tx.dojo_id, tx.auftraggeber_empfaenger.substring(0, 100), kategorie, req.user?.id || 1], () => resolve());
+          INSERT INTO bank_zuordnung_regeln
+            (dojo_id, match_feld, match_wert, match_typ, kategorie, erstellt_von)
+          VALUES (?, 'auftraggeber', ?, 'enthält', ?, ?)
+          ON DUPLICATE KEY UPDATE kategorie = VALUES(kategorie), erstellt_von = VALUES(erstellt_von)
+        `, [tx.dojo_id, tx.auftraggeber_empfaenger.substring(0, 100), kategorie, req.user?.id || 1],
+        () => resolve()); // immer resolve, Fehler ignorieren
       });
+    }
+
+    // Alle anderen unzugeordneten Transaktionen vom gleichen Auftraggeber automatisch zuordnen
+    let autoZugeordnet = 0;
+    if (tx.auftraggeber_empfaenger) {
+      const auftraggerberPattern = tx.auftraggeber_empfaenger.substring(0, 50).replace(/[%_\\]/g, '\\$&');
+      const aehnliche = await new Promise((resolve, reject) => {
+        db.query(
+          `SELECT * FROM bank_transaktionen
+           WHERE dojo_id = ? AND transaktion_id != ?
+             AND status IN ('unzugeordnet','vorgeschlagen')
+             AND (match_typ IS NULL OR match_typ NOT IN ('rechnung','beitrag','verkauf'))
+             AND LOWER(auftraggeber_empfaenger) LIKE LOWER(?)`,
+          [tx.dojo_id, transaktionId, `%${auftraggerberPattern}%`],
+          (err, rows) => { if (err) reject(err); else resolve(rows); }
+        );
+      });
+
+      logger.info(`Auto-Zuordnung: ${aehnliche.length} ähnliche TX für Auftraggeber "${tx.auftraggeber_empfaenger}"`);
+
+      for (const aTx of aehnliche) {
+        try {
+          const aBuchungsart = parseFloat(aTx.betrag) > 0 ? 'einnahme' : 'ausgabe';
+          const aJahr = new Date(aTx.buchungsdatum).getFullYear();
+          // offset +1 weil primary bereits +0 verwendet hat; autoZugeordnet zählt erfolgreiche
+          const aBelegNr = await generateBelegNummer(aTx.dojo_id, aJahr, autoZugeordnet + 1);
+
+          const aBelegResult = await new Promise((resolve, reject) => {
+            db.query(
+              `INSERT INTO buchhaltung_belege
+                (beleg_nummer, dojo_id, organisation_name, buchungsart,
+                 beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+                 kategorie, beschreibung, lieferant_kunde, erstellt_von)
+               VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)`,
+              [
+                aBelegNr,
+                aTx.dojo_id,
+                aTx.organisation_name || null,
+                aBuchungsart,
+                aTx.buchungsdatum,
+                aTx.buchungsdatum,
+                Math.abs(parseFloat(aTx.betrag)),
+                Math.abs(parseFloat(aTx.betrag)),
+                kategorie,
+                aTx.verwendungszweck || 'Bank-Import (Auto)',
+                aTx.auftraggeber_empfaenger || null,
+                req.user?.id || 1
+              ],
+              (err, r) => { if (err) reject(err); else resolve(r); }
+            );
+          });
+
+          await new Promise((resolve, reject) => {
+            db.query(
+              `UPDATE bank_transaktionen SET
+                 status = 'zugeordnet', kategorie = ?, match_typ = 'manuell',
+                 beleg_id = ?, zugeordnet_von = ?, zugeordnet_am = NOW()
+               WHERE transaktion_id = ?`,
+              [kategorie, aBelegResult.insertId, req.user?.id || 1, aTx.transaktion_id],
+              (err) => { if (err) reject(err); else resolve(); }
+            );
+          });
+          autoZugeordnet++;
+        } catch (autoErr) {
+          logger.error(`Auto-Zuordnung Fehler TX ${aTx.transaktion_id}: ${autoErr.message}`);
+        }
+      }
     }
 
     // Audit Log
@@ -2466,7 +2734,8 @@ router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireB
     res.json({
       message: 'Transaktion erfolgreich zugeordnet',
       beleg_id: belegResult.insertId,
-      beleg_nummer: belegNummer
+      beleg_nummer: belegNummer,
+      auto_zugeordnet: autoZugeordnet
     });
 
   } catch (err) {
@@ -3427,7 +3696,7 @@ router.get('/guv', requireBuchhaltungAccess, (req, res) => {
   }
 
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
   // Fetch GuV structured data
   const guvSql = `
@@ -3490,7 +3759,7 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
   }
 
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
   // Detailed revenue breakdown
   const einnahmenDetailsSql = `
@@ -3498,6 +3767,14 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
     FROM v_euer_einnahmen
     WHERE ${dateFilter} ${orgFilter}
     GROUP BY kategorie, quelle
+  `;
+
+  // Individual revenue entries for drill-down
+  const einnahmenEinzelSql = `
+    SELECT quelle, datum, betrag_brutto, beschreibung, referenz_id
+    FROM v_euer_einnahmen
+    WHERE ${dateFilter} ${orgFilter}
+    ORDER BY quelle, datum
   `;
 
   // Detailed expense breakdown by category
@@ -3508,21 +3785,37 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
     GROUP BY kategorie, quelle
   `;
 
+  // Individual expense entries for drill-down
+  const ausgabenEinzelSql = `
+    SELECT kategorie, quelle, datum, betrag_brutto, beschreibung
+    FROM v_euer_ausgaben
+    WHERE ${dateFilter} ${orgFilter}
+    ORDER BY kategorie, quelle, datum
+  `;
+
   Promise.all([
     new Promise((resolve, reject) => {
       db.query(einnahmenDetailsSql, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
+        if (err) reject(err); else resolve(results);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(einnahmenEinzelSql, (err, results) => {
+        if (err) reject(err); else resolve(results);
       });
     }),
     new Promise((resolve, reject) => {
       db.query(ausgabenDetailsSql, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
+        if (err) reject(err); else resolve(results);
+      });
+    }),
+    new Promise((resolve, reject) => {
+      db.query(ausgabenEinzelSql, (err, results) => {
+        if (err) reject(err); else resolve(results);
       });
     })
   ])
-  .then(([einnahmenDetails, ausgabenDetails]) => {
+  .then(([einnahmenDetails, einnahmenEinzel, ausgabenDetails, ausgabenEinzel]) => {
     // Structure according to GuV format
     const guvDetails = {
       umsatzerloese: {
@@ -3547,35 +3840,78 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
       }
     };
 
-    // Process revenues
+    // Monatsnamen
+    const monatsnamen = ['Januar','Februar','März','April','Mai','Juni',
+      'Juli','August','September','Oktober','November','Dezember'];
+
+    // Process revenues with drill-down
     einnahmenDetails.forEach(row => {
       const betrag = parseFloat(row.summe || 0);
       guvDetails.umsatzerloese.gesamt += betrag;
-      guvDetails.umsatzerloese.details.push({
-        quelle: row.quelle,
-        betrag
-      });
+
+      const rawEinzel = einnahmenEinzel.filter(e => e.quelle === row.quelle);
+      let einzelbuchungen;
+
+      if (row.quelle === 'Beitrag') {
+        // Beiträge: nach Monat aggregieren
+        const byMonth = {};
+        rawEinzel.forEach(e => {
+          const dt = new Date(e.datum);
+          const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+          if (!byMonth[key]) byMonth[key] = { datum: e.datum, summe: 0, monat: dt.getMonth(), jahr: dt.getFullYear() };
+          byMonth[key].summe += parseFloat(e.betrag_brutto);
+        });
+        einzelbuchungen = Object.values(byMonth)
+          .sort((a, b) => a.datum < b.datum ? -1 : 1)
+          .map(m => ({
+            datum: m.datum,
+            betrag: Math.round(m.summe * 100) / 100,
+            beschreibung: `${monatsnamen[m.monat]} ${m.jahr}`
+          }));
+      } else if (row.quelle === 'Verkauf') {
+        einzelbuchungen = rawEinzel.map(e => ({
+          datum: e.datum,
+          betrag: parseFloat(e.betrag_brutto),
+          beschreibung: e.beschreibung,
+          referenz_id: e.referenz_id
+        }));
+      } else {
+        einzelbuchungen = rawEinzel.map(e => ({
+          datum: e.datum,
+          betrag: parseFloat(e.betrag_brutto),
+          beschreibung: e.beschreibung
+        }));
+      }
+
+      guvDetails.umsatzerloese.details.push({ quelle: row.quelle, betrag, einzelbuchungen });
     });
 
-    // Process expenses by category
+    // Process expenses by category with drill-down
     ausgabenDetails.forEach(row => {
       const betrag = parseFloat(row.summe || 0);
+      const rawEinzel = ausgabenEinzel.filter(e => e.kategorie === row.kategorie && e.quelle === row.quelle);
+      const einzelbuchungen = rawEinzel.map(e => ({
+        datum: e.datum,
+        betrag: parseFloat(e.betrag_brutto),
+        beschreibung: e.beschreibung
+      }));
 
       if (row.kategorie === 'wareneingang') {
         guvDetails.materialaufwand.gesamt += betrag;
-        guvDetails.materialaufwand.details.push({ quelle: row.quelle, betrag });
+        guvDetails.materialaufwand.details.push({ quelle: row.quelle, betrag, einzelbuchungen });
       } else if (row.kategorie === 'personalkosten') {
         guvDetails.personalaufwand.gesamt += betrag;
-        guvDetails.personalaufwand.details.push({ quelle: row.quelle, betrag });
+        guvDetails.personalaufwand.details.push({ quelle: row.quelle, betrag, einzelbuchungen });
       } else if (row.kategorie === 'abschreibungen') {
         guvDetails.abschreibungen.gesamt += betrag;
-        guvDetails.abschreibungen.details.push({ quelle: row.quelle, betrag });
+        guvDetails.abschreibungen.details.push({ quelle: row.quelle, betrag, einzelbuchungen });
       } else {
         guvDetails.sonstige_aufwendungen.gesamt += betrag;
         guvDetails.sonstige_aufwendungen.details.push({
           kategorie: row.kategorie,
           quelle: row.quelle,
-          betrag
+          betrag,
+          einzelbuchungen
         });
       }
     });
@@ -3601,120 +3937,146 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
 });
 
 // ===================================================================
-// 📊 GET /api/buchhaltung/bilanz - Balance Sheet
+// 📊 GET /api/buchhaltung/bilanz - Balance Sheet (HGB §266)
 // ===================================================================
 router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
   const { organisation, jahr } = req.query;
-  const currentYear = jahr || new Date().getFullYear();
+  const currentYear = parseInt(jahr) || new Date().getFullYear();
 
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
-  const dojoFilter = _of.params.length ? `AND dojo_id = ${db.escape(_of.params[0])}` : '';
+  // dojoFilter always uses numeric dojo_id (map org name for super-admin)
+  let dojoIdValue = req.buchhaltungDojoId;
+  if (dojoIdValue === null || dojoIdValue === undefined) {
+    if (organisation === 'TDA International') dojoIdValue = 2;
+    else if (organisation === 'Kampfkunstschule Schreiner') dojoIdValue = 3;
+    else dojoIdValue = null; // alle
+  }
+  const dojoFilter = dojoIdValue ? `AND dojo_id = ${db.escape(dojoIdValue)}` : '';
 
-  // Fetch initial balance data
-  const stammdatenSql = `
-    SELECT * FROM bilanz_stammdaten
-    WHERE jahr = ? ${dojoFilter}
-    LIMIT 1
-  `;
-
-  // Fetch bank balance
-  const bankBestandSql = `
-    SELECT COALESCE(SUM(bank_saldo), 0) as bank_saldo
-    FROM v_bilanz_bank_bestand
-    WHERE jahr <= ? ${orgFilter}
-  `;
-
-  // Fetch receivables
-  const forderungenSql = `
-    SELECT COALESCE(SUM(forderungen), 0) as forderungen
-    FROM v_bilanz_forderungen
-    WHERE jahr = ? ${dojoFilter}
-  `;
-
-  // Fetch cumulative profit/equity
-  const eigenkapitalSql = `
-    SELECT COALESCE(SUM(jahresueberschuss), 0) as kumulierter_gewinn
-    FROM v_bilanz_eigenkapital
-    WHERE jahr <= ? ${orgFilter}
-  `;
+  const stammdatenSql = `SELECT * FROM bilanz_stammdaten WHERE jahr = ? ${dojoFilter} LIMIT 1`;
+  const bankBestandSql = `SELECT COALESCE(SUM(bank_saldo), 0) as bank_saldo FROM v_bilanz_bank_bestand WHERE jahr <= ? ${orgFilter}`;
+  const forderungenSql = `SELECT COALESCE(SUM(forderungen), 0) as forderungen FROM v_bilanz_forderungen WHERE jahr = ? ${dojoFilter}`;
+  // Jahresüberschuss: auto-berechnet aus EÜR für das aktuelle Jahr
+  const jahresueberschussSql = `SELECT COALESCE(SUM(jahresueberschuss), 0) as jahresueberschuss FROM v_bilanz_eigenkapital WHERE jahr = ? ${dojoFilter}`;
+  // Kassenbestand: letzter Eintrag im Kassenbuch bis Jahresende
+  const kassenbuchSql = `SELECT kassenstand_nachher_cent / 100 as kasse_aktuell FROM kassenbuch WHERE dojo_id = ? AND geschaeft_datum <= ? ORDER BY geschaeft_datum DESC, eintrag_timestamp DESC LIMIT 1`;
 
   Promise.all([
+    new Promise((resolve, reject) => db.query(stammdatenSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
+    new Promise((resolve, reject) => db.query(bankBestandSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
+    new Promise((resolve, reject) => db.query(forderungenSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
+    new Promise((resolve, reject) => db.query(jahresueberschussSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
     new Promise((resolve, reject) => {
-      db.query(stammdatenSql, [currentYear], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0] || {});
-      });
-    }),
-    new Promise((resolve, reject) => {
-      db.query(bankBestandSql, [currentYear], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0] || {});
-      });
-    }),
-    new Promise((resolve, reject) => {
-      db.query(forderungenSql, [currentYear], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0] || {});
-      });
-    }),
-    new Promise((resolve, reject) => {
-      db.query(eigenkapitalSql, [currentYear], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0] || {});
-      });
+      if (!dojoIdValue) return resolve({ kasse_aktuell: 0 });
+      db.query(kassenbuchSql, [dojoIdValue, `${currentYear}-12-31`], (err, r) => err ? reject(err) : resolve(r[0] || {}));
     })
   ])
-  .then(([stammdaten, bankBestand, forderungen, eigenkapital]) => {
-    // Calculate Assets (Aktiva)
-    const bankGuthaben = parseFloat(stammdaten.bank_anfangsbestand || 0) + parseFloat(bankBestand.bank_saldo || 0);
-    const kassenbestand = parseFloat(stammdaten.kasse_anfangsbestand || 0);
-    const forderungenBetrag = parseFloat(forderungen.forderungen || 0);
+  .then(([stammdaten, bankBestand, forderungen, jahresueberschussRow, kassenbuch]) => {
+    // --- AKTIVA ---
+    const immatVG = parseFloat(stammdaten.immat_vermoegensgegenstaende || 0);
     const sachanlagen = parseFloat(stammdaten.sachanlagen || 0);
+    const finanzanlagen = parseFloat(stammdaten.finanzanlagen || 0);
+    const gesamtAnlage = immatVG + sachanlagen + finanzanlagen;
 
-    const umlaufvermoegen = bankGuthaben + kassenbestand + forderungenBetrag;
-    const anlagevermoegen = sachanlagen;
-    const gesamtAktiva = umlaufvermoegen + anlagevermoegen;
+    const vorraete = parseFloat(stammdaten.vorraete || 0);
+    const forderungenLL = parseFloat(forderungen.forderungen || 0);
+    const sonstigeForderungen = parseFloat(stammdaten.sonstige_forderungen || 0);
+    const bankGuthaben = parseFloat(stammdaten.bank_anfangsbestand || 0) + parseFloat(bankBestand.bank_saldo || 0);
+    // Kassenbuch-Saldo hat Vorrang vor Stammdaten-Anfangsbestand
+    const kassenbestand = kassenbuch.kasse_aktuell !== undefined
+      ? parseFloat(kassenbuch.kasse_aktuell || 0)
+      : parseFloat(stammdaten.kasse_anfangsbestand || 0);
+    const gesamtUmlauf = vorraete + forderungenLL + sonstigeForderungen + bankGuthaben + kassenbestand;
 
-    // Calculate Liabilities & Equity (Passiva)
+    const rapAktiv = parseFloat(stammdaten.rechnungsabgrenzung_aktiv || 0);
+    const gesamtAktiva = gesamtAnlage + gesamtUmlauf + rapAktiv;
+
+    // --- PASSIVA ---
     const eigenkapitalAnfang = parseFloat(stammdaten.eigenkapital_anfang || 0);
-    const kumulierterGewinn = parseFloat(eigenkapital.kumulierter_gewinn || 0);
-    const eigenkapitalGesamt = eigenkapitalAnfang + kumulierterGewinn;
+    // Gewinnvortrag kommt aus Stammdaten (manuell eingetragen aus geprüftem Vorjahresabschluss)
+    const gewinnvortrag = parseFloat(stammdaten.gewinnvortrag || 0);
+    const jahresueberschuss = parseFloat(jahresueberschussRow.jahresueberschuss || 0);
+    const gesamtEigenkapital = eigenkapitalAnfang + gewinnvortrag + jahresueberschuss;
 
-    const verbindlichkeiten = parseFloat(stammdaten.darlehen || 0);
+    const steuerrueck = parseFloat(stammdaten.steuerrueckstellungen || 0);
+    const sonstigeRueck = parseFloat(stammdaten.sonstige_rueckstellungen || 0);
+    const gesamtRueckstellungen = steuerrueck + sonstigeRueck;
 
-    const gesamtPassiva = eigenkapitalGesamt + verbindlichkeiten;
+    const darlehen = parseFloat(stammdaten.darlehen || 0);
+    const verbLieferanten = parseFloat(stammdaten.verbindlichkeiten_lieferanten || 0);
+    const sonstigeVerb = parseFloat(stammdaten.sonstige_verbindlichkeiten || 0);
+    const gesamtVerbindlichkeiten = darlehen + verbLieferanten + sonstigeVerb;
+
+    const rapPassiv = parseFloat(stammdaten.rechnungsabgrenzung_passiv || 0);
+    const gesamtPassiva = gesamtEigenkapital + gesamtRueckstellungen + gesamtVerbindlichkeiten + rapPassiv;
 
     res.json({
       jahr: currentYear,
       organisation: organisation || 'alle',
+      stammdaten_vorhanden: Object.keys(stammdaten).length > 0,
       aktiva: {
         anlagevermoegen: {
+          immat_vermoegensgegenstaende: immatVG,
           sachanlagen,
-          gesamt: anlagevermoegen
+          finanzanlagen,
+          gesamt: gesamtAnlage
         },
         umlaufvermoegen: {
+          vorraete,
+          forderungen_ll: forderungenLL,
+          sonstige_forderungen: sonstigeForderungen,
           bank_guthaben: bankGuthaben,
           kassenbestand,
-          forderungen: forderungenBetrag,
-          gesamt: umlaufvermoegen
+          gesamt: gesamtUmlauf
         },
+        rechnungsabgrenzung: rapAktiv,
         gesamt: gesamtAktiva
       },
       passiva: {
         eigenkapital: {
           anfangsbestand: eigenkapitalAnfang,
-          kumulierter_gewinn: kumulierterGewinn,
-          gesamt: eigenkapitalGesamt
+          gewinnvortrag,
+          jahresueberschuss,
+          gesamt: gesamtEigenkapital
+        },
+        rueckstellungen: {
+          steuerrueckstellungen: steuerrueck,
+          sonstige_rueckstellungen: sonstigeRueck,
+          gesamt: gesamtRueckstellungen
         },
         verbindlichkeiten: {
-          darlehen: verbindlichkeiten,
-          gesamt: verbindlichkeiten
+          darlehen,
+          verbindlichkeiten_lieferanten: verbLieferanten,
+          sonstige_verbindlichkeiten: sonstigeVerb,
+          gesamt: gesamtVerbindlichkeiten
         },
+        rechnungsabgrenzung: rapPassiv,
         gesamt: gesamtPassiva
       },
-      bilanz_ausgeglichen: Math.abs(gesamtAktiva - gesamtPassiva) < 0.01
+      bilanz_ausgeglichen: Math.abs(gesamtAktiva - gesamtPassiva) < 0.01,
+      // Rohe Stammdaten-Felder für Frontend-Speichervorgänge (z.B. Inline-Edit Gewinnvortrag)
+      raw: {
+        bank_anfangsbestand: parseFloat(stammdaten.bank_anfangsbestand || 0),
+        kasse_anfangsbestand: parseFloat(stammdaten.kasse_anfangsbestand || 0),
+        sachanlagen: parseFloat(stammdaten.sachanlagen || 0),
+        sachanlagen_beschreibung: stammdaten.sachanlagen_beschreibung || '',
+        immat_vermoegensgegenstaende: parseFloat(stammdaten.immat_vermoegensgegenstaende || 0),
+        finanzanlagen: parseFloat(stammdaten.finanzanlagen || 0),
+        vorraete: parseFloat(stammdaten.vorraete || 0),
+        sonstige_forderungen: parseFloat(stammdaten.sonstige_forderungen || 0),
+        rechnungsabgrenzung_aktiv: parseFloat(stammdaten.rechnungsabgrenzung_aktiv || 0),
+        eigenkapital_anfang: parseFloat(stammdaten.eigenkapital_anfang || 0),
+        gewinnvortrag: parseFloat(stammdaten.gewinnvortrag || 0),
+        darlehen: parseFloat(stammdaten.darlehen || 0),
+        darlehen_beschreibung: stammdaten.darlehen_beschreibung || '',
+        steuerrueckstellungen: parseFloat(stammdaten.steuerrueckstellungen || 0),
+        sonstige_rueckstellungen: parseFloat(stammdaten.sonstige_rueckstellungen || 0),
+        verbindlichkeiten_lieferanten: parseFloat(stammdaten.verbindlichkeiten_lieferanten || 0),
+        sonstige_verbindlichkeiten: parseFloat(stammdaten.sonstige_verbindlichkeiten || 0),
+        rechnungsabgrenzung_passiv: parseFloat(stammdaten.rechnungsabgrenzung_passiv || 0)
+      }
     });
   })
   .catch(err => {
@@ -3728,18 +4090,23 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
 // ===================================================================
 router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
   const {
-    organisation,
-    jahr,
-    bank_anfangsbestand,
-    kasse_anfangsbestand,
-    sachanlagen,
-    sachanlagen_beschreibung,
-    eigenkapital_anfang,
-    darlehen,
-    darlehen_beschreibung
+    organisation, jahr,
+    bank_anfangsbestand, kasse_anfangsbestand,
+    sachanlagen, sachanlagen_beschreibung,
+    immat_vermoegensgegenstaende, finanzanlagen,
+    vorraete, sonstige_forderungen, rechnungsabgrenzung_aktiv,
+    eigenkapital_anfang, gewinnvortrag,
+    darlehen, darlehen_beschreibung,
+    steuerrueckstellungen, sonstige_rueckstellungen,
+    verbindlichkeiten_lieferanten, sonstige_verbindlichkeiten,
+    rechnungsabgrenzung_passiv
   } = req.body;
 
-  const dojoId = organisation === 'TDA International' ? 2 : 1;
+  let dojoId = req.buchhaltungDojoId;
+  if (!dojoId) {
+    dojoId = organisation === 'TDA International' ? 2 : organisation === 'Kampfkunstschule Schreiner' ? 3 : 1;
+  }
+  const orgName = organisation || 'Kampfkunstschule Schreiner';
   const userId = req.user?.user_id || req.user?.id || 1;
 
   const sql = `
@@ -3747,39 +4114,56 @@ router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
       dojo_id, organisation_name, jahr,
       bank_anfangsbestand, kasse_anfangsbestand,
       sachanlagen, sachanlagen_beschreibung,
-      eigenkapital_anfang,
+      immat_vermoegensgegenstaende, finanzanlagen,
+      vorraete, sonstige_forderungen, rechnungsabgrenzung_aktiv,
+      eigenkapital_anfang, gewinnvortrag,
       darlehen, darlehen_beschreibung,
+      steuerrueckstellungen, sonstige_rueckstellungen,
+      verbindlichkeiten_lieferanten, sonstige_verbindlichkeiten,
+      rechnungsabgrenzung_passiv,
       erstellt_von
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       bank_anfangsbestand = VALUES(bank_anfangsbestand),
       kasse_anfangsbestand = VALUES(kasse_anfangsbestand),
       sachanlagen = VALUES(sachanlagen),
       sachanlagen_beschreibung = VALUES(sachanlagen_beschreibung),
+      immat_vermoegensgegenstaende = VALUES(immat_vermoegensgegenstaende),
+      finanzanlagen = VALUES(finanzanlagen),
+      vorraete = VALUES(vorraete),
+      sonstige_forderungen = VALUES(sonstige_forderungen),
+      rechnungsabgrenzung_aktiv = VALUES(rechnungsabgrenzung_aktiv),
       eigenkapital_anfang = VALUES(eigenkapital_anfang),
+      gewinnvortrag = VALUES(gewinnvortrag),
       darlehen = VALUES(darlehen),
       darlehen_beschreibung = VALUES(darlehen_beschreibung),
+      steuerrueckstellungen = VALUES(steuerrueckstellungen),
+      sonstige_rueckstellungen = VALUES(sonstige_rueckstellungen),
+      verbindlichkeiten_lieferanten = VALUES(verbindlichkeiten_lieferanten),
+      sonstige_verbindlichkeiten = VALUES(sonstige_verbindlichkeiten),
+      rechnungsabgrenzung_passiv = VALUES(rechnungsabgrenzung_passiv),
       geaendert_von = VALUES(erstellt_von),
       geaendert_am = CURRENT_TIMESTAMP
   `;
 
   db.query(sql, [
-    dojoId, organisation, jahr,
+    dojoId, orgName, parseInt(jahr) || new Date().getFullYear(),
     bank_anfangsbestand || 0, kasse_anfangsbestand || 0,
     sachanlagen || 0, sachanlagen_beschreibung || '',
-    eigenkapital_anfang || 0,
+    immat_vermoegensgegenstaende || 0, finanzanlagen || 0,
+    vorraete || 0, sonstige_forderungen || 0, rechnungsabgrenzung_aktiv || 0,
+    eigenkapital_anfang || 0, gewinnvortrag || 0,
     darlehen || 0, darlehen_beschreibung || '',
+    steuerrueckstellungen || 0, sonstige_rueckstellungen || 0,
+    verbindlichkeiten_lieferanten || 0, sonstige_verbindlichkeiten || 0,
+    rechnungsabgrenzung_passiv || 0,
     userId
   ], (err, result) => {
     if (err) {
       console.error('Stammdaten-Fehler:', err);
       return res.status(500).json({ message: 'Fehler beim Speichern der Stammdaten', error: err.message });
     }
-
-    res.json({
-      message: 'Bilanz-Stammdaten erfolgreich gespeichert',
-      stammdaten_id: result.insertId || result.affectedRows
-    });
+    res.json({ message: 'Bilanz-Stammdaten erfolgreich gespeichert', stammdaten_id: result.insertId || result.affectedRows });
   });
 });
 
@@ -3792,7 +4176,7 @@ router.get('/guv/export', requireBuchhaltungAccess, (req, res) => {
 
   let dateFilter = `jahr = ${db.escape(currentYear)}`;
   const _of = buildOrgFilter(req, organisation);
-  const orgFilter = _of.params.length ? `AND ${_of.sql.replace('?', db.escape(_of.params[0]))}` : '';
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
 
   // Fetch GuV data
   const einnahmenSql = `SELECT kategorie, quelle, SUM(betrag_brutto) as summe FROM v_euer_einnahmen WHERE ${dateFilter} ${orgFilter} GROUP BY kategorie, quelle`;
@@ -3851,7 +4235,7 @@ router.get('/bilanz/export', requireBuchhaltungAccess, (req, res) => {
   const currentYear = jahr || new Date().getFullYear();
 
   const _bef = buildOrgFilter(req, organisation);
-  const orgFilter = _bef.params.length ? `AND ${_bef.sql.replace('?', db.escape(_bef.params[0]))}` : '';
+  const orgFilter = _bef.params.length ? _bef.sql.replace('?', db.escape(_bef.params[0])) : '';
   const dojoFilter = _bef.params.length ? `AND dojo_id = ${db.escape(_bef.params[0])}` : '';
 
   const stammdatenSql = `SELECT * FROM bilanz_stammdaten WHERE jahr = ? ${dojoFilter} LIMIT 1`;

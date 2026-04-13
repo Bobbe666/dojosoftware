@@ -35,8 +35,9 @@ router.get('/:dojo_id', async (req, res) => {
       s.uhrzeit_start,
       s.uhrzeit_ende,
       s.kurs_id,
-      k.gruppenname AS kursname,
+      CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
       k.stil,
+      k.gruppenname,
       CONCAT(t.vorname, ' ', t.nachname) AS trainer
     FROM stundenplan s
     LEFT JOIN kurse k ON s.kurs_id = k.kurs_id

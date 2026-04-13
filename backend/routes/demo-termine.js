@@ -8,8 +8,72 @@ const router  = express.Router();
 const crypto  = require('crypto');
 const db      = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { sendEmail } = require('../services/emailService');
+const teamsService = require('../services/teamsService');
 
 const pool = db.promise();
+
+function formatDatum(date) {
+  return new Date(date).toLocaleString('de-DE', {
+    weekday: 'long', day: '2-digit', month: '2-digit',
+    year: 'numeric', hour: '2-digit', minute: '2-digit',
+    timeZone: 'Europe/Berlin'
+  }) + ' Uhr';
+}
+
+async function sendBuchungsBestaetigung(buchung, slot, teamsLink = null, emailNotiz = null) {
+  const termin = formatDatum(slot.slot_start);
+
+  const notizText = emailNotiz
+    ? `\nPersönliche Notiz:\n${emailNotiz}\n`
+    : '';
+  const notizHtml = emailNotiz
+    ? `<div style="margin:16px 0;padding:12px 16px;background:#f8fafc;border-left:3px solid #6366f1;border-radius:4px">` +
+      `<p style="margin:0;color:#374151;white-space:pre-wrap">${emailNotiz.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p></div>`
+    : '';
+
+  const teamsText = teamsLink
+    ? `\nTeams-Link: ${teamsLink}\n`
+    : '';
+  const teamsHtml = teamsLink
+    ? `<tr><td style="padding:4px 12px 4px 0;color:#666">🎥 Teams-Link</td>` +
+      `<td><a href="${teamsLink}" style="color:#6264A7;font-weight:bold">Jetzt beitreten</a></td></tr>`
+    : '';
+
+  const text =
+    `Hallo ${buchung.vorname} ${buchung.nachname},\n\n` +
+    `dein Demo-Termin wurde erfolgreich gebucht.\n\n` +
+    `Termin: ${termin}\n` +
+    `Dauer: ${slot.duration_minutes} Minuten\n` +
+    teamsText +
+    notizText +
+    `\nWir freuen uns auf das Gespräch mit dir!\n\n` +
+    `Bei Fragen erreichst du uns jederzeit per E-Mail.\n\n` +
+    `Viele Grüße\nTDA International`;
+
+  const html =
+    `<p>Hallo <strong>${buchung.vorname} ${buchung.nachname}</strong>,</p>` +
+    `<p>dein Demo-Termin wurde erfolgreich gebucht.</p>` +
+    `<table style="border-collapse:collapse;margin:16px 0">` +
+    `<tr><td style="padding:4px 12px 4px 0;color:#666">📅 Termin</td><td><strong>${termin}</strong></td></tr>` +
+    `<tr><td style="padding:4px 12px 4px 0;color:#666">⏱ Dauer</td><td><strong>${slot.duration_minutes} Minuten</strong></td></tr>` +
+    teamsHtml +
+    `</table>` +
+    notizHtml +
+    (teamsLink ? `<p style="margin:16px 0"><a href="${teamsLink}" style="display:inline-block;padding:10px 20px;background:#6264A7;color:#fff;border-radius:4px;text-decoration:none;font-weight:bold">🎥 Teams-Meeting beitreten</a></p>` : '') +
+    `<p>Wir freuen uns auf das Gespräch mit dir!</p>` +
+    `<p>Bei Fragen erreichst du uns jederzeit per E-Mail.</p>` +
+    `<p>Viele Grüße<br><strong>TDA International</strong></p>`;
+
+  await sendEmail({
+    to: buchung.email,
+    subject: `Demo-Termin bestätigt – ${termin}`,
+    text,
+    html,
+    replyTo: 'info@tda-intl.com',
+    bcc: 'info@tda-intl.com'
+  });
+}
 
 // Super-Admin Guard
 function onlySuperAdmin(req, res, next) {
@@ -101,6 +165,12 @@ router.post('/buchung', async (req, res) => {
     await conn.query('UPDATE demo_termine_slots SET is_booked = 1 WHERE id = ?', [slot_id]);
 
     await conn.commit();
+
+    // Bestätigungsmail asynchron senden (Fehler blockieren die Buchungsantwort nicht)
+    sendBuchungsBestaetigung(
+      { vorname: vorname.trim(), nachname: nachname.trim(), email: email.toLowerCase().trim() },
+      slots[0]
+    ).catch(err => console.error('[Demo-Buchung] E-Mail-Fehler:', err.message));
 
     res.json({ success: true, buchungs_token: token, message: 'Buchung erfolgreich! Wir melden uns in Kürze bei dir.' });
   } catch (err) {
@@ -353,9 +423,9 @@ router.get('/admin/buchungen', authenticateToken, onlySuperAdmin, async (req, re
   }
 });
 
-// PUT /api/admin/demo-termine/buchungen/:id — Status/Notiz einer Buchung ändern
+// PUT /api/admin/demo-termine/buchungen/:id — Status/Notiz/Teams-Link einer Buchung ändern
 router.put('/admin/buchungen/:id', authenticateToken, onlySuperAdmin, async (req, res) => {
-  const { status, admin_notiz } = req.body;
+  const { status, admin_notiz, teams_link, email_notiz } = req.body;
   const id = parseInt(req.params.id);
 
   const allowed = ['ausstehend', 'bestaetigt', 'abgesagt'];
@@ -364,12 +434,21 @@ router.put('/admin/buchungen/:id', authenticateToken, onlySuperAdmin, async (req
   }
 
   try {
-    const [rows] = await pool.query('SELECT slot_id FROM demo_buchungen WHERE id = ?', [id]);
+    const [rows] = await pool.query(`
+      SELECT b.slot_id, b.status AS old_status, b.vorname, b.nachname, b.email, b.teams_link, b.email_notiz,
+             s.slot_start, s.duration_minutes
+      FROM demo_buchungen b
+      JOIN demo_termine_slots s ON b.slot_id = s.id
+      WHERE b.id = ?
+    `, [id]);
     if (rows.length === 0) return res.status(404).json({ success: false, error: 'Buchung nicht gefunden' });
 
+    const buchung = rows[0];
     const updates = {};
     if (status) updates.status = status;
     if (admin_notiz !== undefined) updates.admin_notiz = admin_notiz;
+    if (teams_link !== undefined) updates.teams_link = teams_link || null;
+    if (email_notiz !== undefined) updates.email_notiz = email_notiz || null;
 
     if (Object.keys(updates).length === 0) return res.json({ success: true });
 
@@ -378,10 +457,93 @@ router.put('/admin/buchungen/:id', authenticateToken, onlySuperAdmin, async (req
 
     // Wenn abgesagt → Slot wieder freigeben
     if (status === 'abgesagt') {
-      await pool.query('UPDATE demo_termine_slots SET is_booked = 0 WHERE id = ?', [rows[0].slot_id]);
+      await pool.query('UPDATE demo_termine_slots SET is_booked = 0 WHERE id = ?', [buchung.slot_id]);
+    }
+
+    // Wenn status auf 'bestaetigt' gesetzt → Bestätigungsmail senden
+    if (status === 'bestaetigt' && buchung.old_status !== 'bestaetigt') {
+      const teamsLink   = teams_link   !== undefined ? (teams_link   || null) : (buchung.teams_link   || null);
+      const emailNotiz  = email_notiz  !== undefined ? (email_notiz  || null) : (buchung.email_notiz  || null);
+      sendBuchungsBestaetigung(
+        { vorname: buchung.vorname, nachname: buchung.nachname, email: buchung.email },
+        { slot_start: buchung.slot_start, duration_minutes: buchung.duration_minutes },
+        teamsLink,
+        emailNotiz
+      ).catch(e => console.error('⚠️ Bestätigungsmail fehlgeschlagen:', e.message));
     }
 
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/admin/demo-termine/buchungen/:id/email — Bestätigungsmail (erneut) senden
+router.post('/admin/buchungen/:id/email', authenticateToken, onlySuperAdmin, async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    const [rows] = await pool.query(`
+      SELECT b.vorname, b.nachname, b.email, b.teams_link, b.email_notiz,
+             s.slot_start, s.duration_minutes
+      FROM demo_buchungen b
+      JOIN demo_termine_slots s ON b.slot_id = s.id
+      WHERE b.id = ?
+    `, [id]);
+    if (rows.length === 0) return res.status(404).json({ success: false, error: 'Buchung nicht gefunden' });
+
+    const b = rows[0];
+    await sendBuchungsBestaetigung(
+      { vorname: b.vorname, nachname: b.nachname, email: b.email },
+      { slot_start: b.slot_start, duration_minutes: b.duration_minutes },
+      b.teams_link || null,
+      b.email_notiz || null
+    );
+
+    res.json({ success: true, message: `E-Mail an ${b.email} gesendet` });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/admin/demo-termine/buchungen/:id/teams — Teams-Meeting erstellen
+router.post('/admin/buchungen/:id/teams', authenticateToken, onlySuperAdmin, async (req, res) => {
+  const id = parseInt(req.params.id);
+  try {
+    if (!teamsService.isConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error: 'Teams-Integration nicht konfiguriert. TEAMS_* Variablen in .env eintragen.'
+      });
+    }
+
+    const [rows] = await pool.query(`
+      SELECT b.id, b.vorname, b.nachname, b.email, b.teams_link,
+             s.slot_start, s.slot_end, s.duration_minutes
+      FROM demo_buchungen b
+      JOIN demo_termine_slots s ON b.slot_id = s.id
+      WHERE b.id = ?
+    `, [id]);
+    if (rows.length === 0) return res.status(404).json({ success: false, error: 'Buchung nicht gefunden' });
+
+    const b = rows[0];
+
+    // Start/End für das Meeting berechnen
+    const startTime = new Date(b.slot_start);
+    const endTime   = b.slot_end
+      ? new Date(b.slot_end)
+      : new Date(startTime.getTime() + b.duration_minutes * 60000);
+
+    const subject = `Demo-Termin: ${b.vorname} ${b.nachname}` + (b.email ? ` (${b.email})` : '');
+
+    const { joinUrl, meetingId } = await teamsService.createMeeting({ subject, startTime, endTime });
+
+    // In DB speichern
+    await pool.query(
+      'UPDATE demo_buchungen SET teams_link = ?, teams_meeting_id = ? WHERE id = ?',
+      [joinUrl, meetingId, id]
+    );
+
+    res.json({ success: true, teams_link: joinUrl });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -84,7 +84,7 @@ const VerbandMitgliedWerden = () => {
   // SumUp Verfügbarkeit prüfen (für Verband)
   const checkSumupAvailability = async () => {
     try {
-      const res = await axios.get(`${config.apiBaseUrl}/sumup/status?dojo_id=${VERBAND_DOJO_ID}`);
+      const res = await axios.get(`/sumup/status?dojo_id=${VERBAND_DOJO_ID}`);
       setSumupAvailable(res.data?.active && res.data?.configured);
     } catch (err) {
       setSumupAvailable(false);

@@ -1,7 +1,7 @@
 /**
  * Kontoauszug Import Routes
  * ==========================
- * CSV-Import für Kontoauszüge verschiedener Banken mit automatischer Erkennung
+ * CSV/PDF-Import für Kontoauszüge verschiedener Banken mit automatischer Erkennung
  * Unterstützte Banken: ING, DKB, Comdirect, Sparkasse, Volksbank, Deutsche Bank, N26
  */
 
@@ -17,15 +17,17 @@ const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 router.use(authenticateToken);
 
-// Multer: CSV im Arbeitsspeicher halten
+// Multer: CSV + PDF im Arbeitsspeicher halten
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+    const isCSV = file.mimetype === 'text/csv' || file.mimetype === 'application/vnd.ms-excel' || file.originalname.toLowerCase().endsWith('.csv');
+    const isPDF = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
+    if (isCSV || isPDF) {
       cb(null, true);
     } else {
-      cb(new Error('Nur CSV-Dateien sind erlaubt'));
+      cb(new Error('Nur CSV- oder PDF-Dateien sind erlaubt'));
     }
   }
 });
@@ -346,59 +348,148 @@ function parseTransactions(buffer, detectionResult) {
 }
 
 // ============================================================
-// ROUTE: POST /api/kontoauszug/upload
-// Datei hochladen, Bank erkennen, Transaktionen zurückgeben
+// PDF-PARSING: Text aus Kontoauszug-PDFs extrahieren
 // ============================================================
-router.post('/upload', upload.single('csv'), async (req, res) => {
+async function parsePdfTransactions(buffer) {
+  let pdfParse;
+  try {
+    pdfParse = require('pdf-parse');
+  } catch (e) {
+    throw new Error('PDF-Bibliothek nicht verfügbar');
+  }
+
+  const data = await pdfParse(buffer);
+  const text = data.text;
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  // Bank-Erkennung aus PDF-Text
+  const textUpper = text.toUpperCase();
+  let bankName = 'Unbekannt';
+  let bankLabel = 'Unbekannte Bank';
+
+  if (textUpper.includes('SPARKASSE')) { bankName = 'Sparkasse'; bankLabel = 'Sparkasse'; }
+  else if (textUpper.includes('VOLKSBANK') || textUpper.includes('RAIFFEISEN')) { bankName = 'Volksbank'; bankLabel = 'Volksbank / Raiffeisenbank'; }
+  else if (textUpper.includes('ING-DIBA') || textUpper.includes('ING DIBA') || (textUpper.includes('ING') && textUpper.includes('GIROKONTO'))) { bankName = 'ING'; bankLabel = 'ING-DiBa'; }
+  else if (textUpper.includes('DKB') || textUpper.includes('DEUTSCHE KREDITBANK')) { bankName = 'DKB'; bankLabel = 'DKB Deutsche Kreditbank'; }
+  else if (textUpper.includes('COMMERZBANK')) { bankName = 'Commerzbank'; bankLabel = 'Commerzbank'; }
+  else if (textUpper.includes('DEUTSCHE BANK')) { bankName = 'Deutsche Bank'; bankLabel = 'Deutsche Bank'; }
+  else if (textUpper.includes('POSTBANK')) { bankName = 'Postbank'; bankLabel = 'Postbank'; }
+  else if (textUpper.includes('COMDIRECT')) { bankName = 'Comdirect'; bankLabel = 'Comdirect'; }
+
+  // Datum-Regex für deutsche Datumsformate: TT.MM.JJJJ oder TT.MM.JJ
+  const dateRegex = /\b(\d{2})\.(\d{2})\.(\d{2,4})\b/;
+  // Betrags-Regex: z.B. -1.234,56 oder +49,00 oder 1.234,56-/+
+  const amountRegex = /([+-]?\s*\d{1,3}(?:\.\d{3})*,\d{2}\s*[+-]?)/;
+
+  const transactions = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const dateMatch = line.match(dateRegex);
+    const amountMatch = line.match(amountRegex);
+
+    if (!dateMatch || !amountMatch) continue;
+
+    // Datum parsen
+    let [, day, month, year] = dateMatch;
+    if (year.length === 2) year = '20' + year;
+    const datum = `${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`;
+
+    // Betrag parsen (deutsches Format → float)
+    let amtStr = amountMatch[1].replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+    // Trailing minus (z.B. "49,00-")
+    if (amtStr.endsWith('-')) amtStr = '-' + amtStr.slice(0, -1);
+    const betrag = parseFloat(amtStr);
+    if (isNaN(betrag) || betrag === 0) continue;
+
+    // Beschreibung: nächste nicht-leere Zeilen zusammenfassen (max 3)
+    const descParts = [];
+    for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+      const next = lines[j].trim();
+      if (!next || dateRegex.test(next)) break;
+      descParts.push(next);
+    }
+    const beschreibung = descParts.join(' ').trim() || line;
+
+    const typ = betrag >= 0 ? 'Einnahme' : 'Ausgabe';
+    const hash = crypto.createHash('md5').update(`${datum}|${betrag}|${beschreibung.slice(0,50)}`).digest('hex');
+
+    transactions.push({
+      datum, betrag: Math.abs(betrag), betragOriginal: betrag,
+      beschreibung, empfaenger: '', typ,
+      ruecklastschrift: beschreibung.toLowerCase().includes('rücklast') || beschreibung.toLowerCase().includes('ruecklast'),
+      hash,
+      kategorie_vorschlag: typ === 'Ausgabe' ? suggestKategorie(beschreibung, '') : null
+    });
+  }
+
+  return { bankName, bankLabel, transactions };
+}
+
+// ============================================================
+// GEMEINSAMER HANDLER: Datei verarbeiten (CSV + PDF)
+// ============================================================
+async function processUpload(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'Keine Datei hochgeladen' });
   }
 
   const secureDojoId = getSecureDojoId(req);
+  const isPDF = req.file.originalname.toLowerCase().endsWith('.pdf') || req.file.mimetype === 'application/pdf';
 
   try {
-    const detection = detectBank(req.file.buffer);
+    let bankName, bankLabel, transactions;
 
-    if (!detection) {
-      return res.status(422).json({
-        error: 'Bank nicht erkannt',
-        hint: 'Die CSV-Datei konnte keiner unterstützten Bank zugeordnet werden. Unterstützte Banken: ING, DKB, Comdirect, Sparkasse, Volksbank, Deutsche Bank, N26'
-      });
-    }
+    if (isPDF) {
+      // PDF-Verarbeitung
+      const result = await parsePdfTransactions(req.file.buffer);
+      bankName = result.bankName;
+      bankLabel = result.bankLabel;
+      transactions = result.transactions;
 
-    let transactions = parseTransactions(req.file.buffer, detection);
+      if (transactions.length === 0) {
+        return res.status(422).json({
+          error: 'Keine Buchungen im PDF erkannt',
+          hint: 'Das PDF konnte nicht automatisch verarbeitet werden. Bitte laden Sie den Kontoauszug als CSV-Datei aus dem Online-Banking herunter.'
+        });
+      }
+    } else {
+      // CSV-Verarbeitung (bestehende Logik)
+      const detection = detectBank(req.file.buffer);
+      if (!detection) {
+        return res.status(422).json({
+          error: 'Bank nicht erkannt',
+          hint: 'Die CSV-Datei konnte keiner unterstützten Bank zugeordnet werden. Unterstützte Banken: ING, DKB, Comdirect, Sparkasse, Volksbank, Deutsche Bank, N26'
+        });
+      }
+      bankName = detection.bank.name;
+      bankLabel = detection.bank.label;
+      transactions = parseTransactions(req.file.buffer, detection);
 
-    if (transactions.length === 0) {
-      return res.status(422).json({ error: 'Keine Transaktionen in der Datei gefunden' });
+      if (transactions.length === 0) {
+        return res.status(422).json({ error: 'Keine Transaktionen in der Datei gefunden' });
+      }
     }
 
     // ── Zahllauf-Abgleich & Duplikaterkennung (nur wenn Dojo-ID vorhanden) ─
     if (secureDojoId) {
       const pool = db.promise();
-
-      // Alle Zahlläufe holen (für Amount-Matching ±0.50€, Date ±3 Tage)
       const [zahllaeufe] = await pool.query(
         `SELECT zahllauf_id, buchungsnummer, betrag, geplanter_einzug FROM zahllaeufe WHERE status = 'abgeschlossen' ORDER BY geplanter_einzug DESC LIMIT 50`
       );
-
-      // Bestehende Kassenbuch-Hashes für Duplikaterkennung
-      // Nutze die letzten 6 Monate, um die Menge zu begrenzen
       const [kassenbuchEintraege] = await pool.query(
         `SELECT geschaeft_datum, betrag_cent, beschreibung FROM kassenbuch WHERE dojo_id = ? AND geschaeft_datum >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)`,
         [secureDojoId]
       );
       const kassenbuchHashes = new Set(
-        kassenbuchEintraege.map(e =>
-          hashTransaction(
-            e.geschaeft_datum.toISOString().slice(0, 10),
-            e.betrag_cent / 100,
-            e.beschreibung
-          )
-        )
+        kassenbuchEintraege.map(e => hashTransaction(
+          e.geschaeft_datum.toISOString().slice(0, 10),
+          e.betrag_cent / 100,
+          e.beschreibung
+        ))
       );
 
       transactions = transactions.map(tx => {
-        // Zahllauf-Abgleich: Einnahmen die dem Betrag eines Zahllaufs entsprechen
         if (!tx.ruecklastschrift && tx.betragOriginal > 0) {
           const txDate = new Date(tx.datum);
           const match = zahllaeufe.find(zl => {
@@ -410,36 +501,36 @@ router.post('/upload', upload.single('csv'), async (req, res) => {
             return daysDiff <= 3;
           });
           if (match) {
-            tx.zahllauf_match = {
-              id: match.zahllauf_id,
-              buchungsnummer: match.buchungsnummer,
-              betrag: parseFloat(match.betrag)
-            };
+            tx.zahllauf_match = { id: match.zahllauf_id, buchungsnummer: match.buchungsnummer, betrag: parseFloat(match.betrag) };
           }
         }
-
-        // Duplikat-Erkennung
-        if (kassenbuchHashes.has(tx.hash)) {
-          tx.duplikat = true;
-        }
-
+        if (kassenbuchHashes.has(tx.hash)) tx.duplikat = true;
         return tx;
       });
     }
 
     res.json({
       success: true,
-      bank: detection.bank.name,
-      bankLabel: detection.bank.label,
+      bank: bankName,
+      bankLabel: bankLabel,
       anzahl: transactions.length,
-      transaktionen: transactions
+      transaktionen: transactions,
+      dateiTyp: isPDF ? 'pdf' : 'csv'
     });
 
   } catch (err) {
     logger.error('Kontoauszug Upload Fehler:', { error: err.message });
-    res.status(500).json({ error: 'Fehler beim Verarbeiten der Datei' });
+    res.status(500).json({ error: 'Fehler beim Verarbeiten der Datei', detail: err.message });
   }
-});
+}
+
+// ============================================================
+// ROUTE: POST /api/kontoauszug/upload  (Legacy-Alias)
+// ROUTE: POST /api/kontoauszug/analyse (Frontend-Hauptendpunkt)
+// Beide akzeptieren CSV und PDF
+// ============================================================
+router.post('/upload', upload.single('file'), processUpload);
+router.post('/analyse', upload.single('file'), processUpload);
 
 // ============================================================
 // ROUTE: POST /api/kontoauszug/import

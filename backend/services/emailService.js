@@ -379,6 +379,9 @@ const sendEmail = async (options) => {
       attachments: options.attachments || []
     };
 
+    if (options.replyTo) mailOptions.replyTo = options.replyTo;
+    if (options.bcc)     mailOptions.bcc     = options.bcc;
+
     const info = await transporter.sendMail(mailOptions);
     logger.info('✅ E-Mail erfolgreich versendet:', { data: info.messageId });
 

@@ -4,6 +4,106 @@
  * Kein Popup, keine Blob-URL — funktioniert in allen Browsern.
  */
 
+export function druckeHofNominierung(u) {
+  const name         = `${u.vorname} ${u.nachname}`;
+  const award        = u.grad         || 'Dragon Award';
+  const nominatedBy  = u.ausgestellt_von || 'TDA Committee';
+  const clearedBy    = u.dojo_schule  || 'TDA Intl';
+  const certNr       = u.urkundennummer || '';
+
+  // Great-Vibes-Font laden (für den Namen)
+  if (!document.getElementById('gv-font-style')) {
+    const fs = document.createElement('style');
+    fs.id = 'gv-font-style';
+    fs.textContent = `@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');`;
+    document.head.appendChild(fs);
+  }
+
+  const printStyle = document.createElement('style');
+  printStyle.id = 'hof-print-style';
+  printStyle.textContent = `
+    @media print {
+      @page { size: A3 landscape; margin: 0; }
+      #root { display: none !important; }
+      #hof-overlay { display: block !important; }
+    }
+    #hof-overlay { display: none; }
+  `;
+  document.head.appendChild(printStyle);
+
+  const overlay = document.createElement('div');
+  overlay.id = 'hof-overlay';
+  overlay.innerHTML = `
+    <div style="position:relative;width:420mm;height:297mm;overflow:hidden;">
+      <img src="/assets/urkunde_hof_nominierung.png"
+           style="position:absolute;top:0;left:0;width:420mm;height:297mm;object-fit:cover;" />
+
+      <!-- Dear + Name -->
+      <div style="position:absolute;top:99mm;left:155mm;width:250mm;text-align:center;
+                  font-family:Georgia,serif;font-size:12pt;color:#2c1a08;letter-spacing:1px;">
+        Dear
+      </div>
+      <div style="position:absolute;top:106mm;left:155mm;width:250mm;text-align:center;
+                  font-family:'Great Vibes',cursive;font-size:28pt;color:#1a0c05;line-height:1;">
+        ${name}
+      </div>
+
+      <!-- Intro-Text -->
+      <div style="position:absolute;top:125mm;left:158mm;width:244mm;text-align:center;
+                  font-family:Georgia,serif;font-size:8.5pt;color:#2c1a08;line-height:1.5;">
+        In great honor, we are proud to inform you of your nomination<br>
+        to be inducted into the Hall of Fame of the Tiger &amp; Dragon Association &ndash; International.
+      </div>
+
+      <!-- Nominated For -->
+      <div style="position:absolute;top:142mm;left:155mm;width:250mm;text-align:center;
+                  font-family:Georgia,serif;font-size:9pt;color:#5a3e1b;letter-spacing:2px;text-transform:uppercase;">
+        &mdash;&nbsp; Nominated For &nbsp;&mdash;
+      </div>
+      <div style="position:absolute;top:150mm;left:155mm;width:250mm;text-align:center;
+                  font-family:Georgia,serif;font-size:20pt;font-weight:bold;color:#1a0c05;
+                  letter-spacing:2px;text-transform:uppercase;">
+        ${award}
+      </div>
+
+      <!-- Recognition text -->
+      <div style="position:absolute;top:170mm;left:158mm;width:244mm;text-align:center;
+                  font-family:Georgia,serif;font-size:8pt;color:#2c1a08;line-height:1.5;font-style:italic;">
+        In recognition of exceptional achievements<br>
+        and outstanding contributions to the martial arts.
+      </div>
+
+      <!-- Nominated By / Cleared By -->
+      <div style="position:absolute;top:186mm;left:160mm;width:110mm;
+                  font-family:Georgia,serif;font-size:8.5pt;color:#2c1a08;">
+        <span style="color:#5a3e1b;font-weight:bold;">Nominated By:</span>&nbsp;&nbsp;${nominatedBy}
+      </div>
+      <div style="position:absolute;top:193mm;left:160mm;width:244mm;
+                  font-family:Georgia,serif;font-size:8.5pt;color:#2c1a08;">
+        <span style="color:#5a3e1b;font-weight:bold;">Submitted &amp; Cleared By:</span>&nbsp;&nbsp;${clearedBy}
+      </div>
+
+      <!-- Certificate Number -->
+      ${certNr ? `
+      <div style="position:absolute;top:207mm;left:160mm;width:244mm;
+                  font-family:Georgia,serif;font-size:8.5pt;color:#5a3e1b;letter-spacing:1px;">
+        ${certNr}
+      </div>
+      <div style="position:absolute;top:214mm;left:160mm;width:244mm;
+                  font-family:Georgia,serif;font-size:8.5pt;color:#2c1a08;">
+        <span style="color:#5a3e1b;font-weight:bold;">Nomination No.:</span>&nbsp;&nbsp;${certNr.split('-').pop()}
+      </div>` : ''}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  document.fonts.ready.then(() => {
+    window.print();
+    document.body.removeChild(overlay);
+    document.head.removeChild(printStyle);
+  });
+}
+
 const toBonzai = (str) => (str || '').replace(/ß/g, 'ss');
 
 const formatDatum = (raw) => {

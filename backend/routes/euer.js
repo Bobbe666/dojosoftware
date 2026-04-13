@@ -89,7 +89,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       FROM kassenbuch
       WHERE dojo_id = ?
         AND YEAR(geschaeft_datum) = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
       GROUP BY MONTH(geschaeft_datum)
     `;
     const ausgaben = await queryAsync(ausgabenQuery, [dojo_id, jahr]);
@@ -103,7 +103,7 @@ router.get('/dojo/:dojo_id', async (req, res) => {
       FROM kassenbuch
       WHERE dojo_id = ?
         AND YEAR(geschaeft_datum) = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
       GROUP BY MONTH(geschaeft_datum), kategorie
     `;
     const ausgabenKategorien = await queryAsync(ausgabenKategorienQuery, [dojo_id, jahr]);
@@ -301,7 +301,7 @@ router.get('/tda', async (req, res) => {
       FROM kassenbuch
       WHERE dojo_id = ?
         AND YEAR(geschaeft_datum) = ?
-        AND bewegungsart = 'Ausgabe'
+        AND bewegungsart = 'ausgabe'
       GROUP BY MONTH(geschaeft_datum)
     `;
     const ausgaben = await queryAsync(ausgabenQuery, [TDA_DOJO_ID, jahr]);
@@ -454,7 +454,7 @@ router.get('/export/:dojo_id', async (req, res) => {
 
       const ausgaben = await queryAsync(`
         SELECT MONTH(geschaeft_datum) as monat, SUM(betrag_cent) as summe_cent
-        FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+        FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'ausgabe'
         GROUP BY MONTH(geschaeft_datum)
       `, [TDA_DOJO_ID, jahr]);
 
@@ -481,7 +481,7 @@ router.get('/export/:dojo_id', async (req, res) => {
 
       const ausgaben = await queryAsync(`
         SELECT MONTH(geschaeft_datum) as monat, SUM(betrag_cent) as summe_cent
-        FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+        FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'ausgabe'
         GROUP BY MONTH(geschaeft_datum)
       `, [dojo_id, jahr]);
 
@@ -549,7 +549,7 @@ router.get('/export/:dojo_id', async (req, res) => {
  * Helper: Formatiert Zahl für CSV (mit Komma als Dezimaltrennzeichen)
  */
 const formatCSVNumber = (num) => {
-  return num.toFixed(2).replace('.', ',');
+  return (Number(num) || 0).toFixed(2).replace('.', ',');
 };
 
 /**
@@ -589,14 +589,14 @@ router.get('/pdf/dojo/:dojo_id', async (req, res) => {
 
     const ausgaben = await queryAsync(`
       SELECT MONTH(geschaeft_datum) as monat, SUM(betrag_cent) as summe_cent
-      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'ausgabe'
       GROUP BY MONTH(geschaeft_datum)
     `, [dojo_id, jahr]);
 
     // Ausgaben nach Kategorien
     const ausgabenKategorien = await queryAsync(`
       SELECT MONTH(geschaeft_datum) as monat, COALESCE(kategorie, 'sonstiges') as kategorie, SUM(betrag_cent) as summe_cent
-      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'ausgabe'
       GROUP BY MONTH(geschaeft_datum), kategorie
     `, [dojo_id, jahr]);
 
@@ -761,7 +761,7 @@ router.get('/pdf/tda', async (req, res) => {
 
     const ausgaben = await queryAsync(`
       SELECT MONTH(geschaeft_datum) as monat, SUM(betrag_cent) as summe_cent
-      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'Ausgabe'
+      FROM kassenbuch WHERE dojo_id = ? AND YEAR(geschaeft_datum) = ? AND bewegungsart = 'ausgabe'
       GROUP BY MONTH(geschaeft_datum)
     `, [TDA_DOJO_ID, jahr]);
 

@@ -119,7 +119,7 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
     setSelectedTemplate(id);
     setSelectedEditorVersion(editorVersion || 'tiptap');
     setShowTemplateEditor(true);
-    setActiveTab('vorlagen');
+    // Kein Tab-Wechsel — Editor öffnet als Modal-Overlay über der aktuellen Ansicht
   };
 
   const handleEditDokument = (dokument) => {
@@ -550,7 +550,7 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
                               onClick={() => handleDeleteVorlage(vorlage.id)}
                               className="dv-btn-danger-xs"
                             >
-                              L&ouml;schen
+                              Löschen
                             </button>
                           </div>
                         </div>
@@ -813,10 +813,10 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
           </>
         )}
 
-        {/* Vorlagen-Tab (Template Editor) */}
-        {activeTab === 'vorlagen' && (
-          <div>
-            {showTemplateEditor ? (
+        {/* Vorlagen-Editor als Modal-Overlay (unabhängig vom aktiven Tab) */}
+        {showTemplateEditor && (
+          <div className="dv-modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="dv-modal-panel" style={{ maxWidth: '95vw', width: '1100px', maxHeight: '92vh', overflowY: 'auto' }}>
               <Suspense fallback={
                 <div className="dv-loading-center">
                   <div className="loading-spinner"></div>
@@ -837,7 +837,14 @@ const DokumenteVerwaltung = ({ embedded = false }) => {
                   }}
                 />
               </Suspense>
-            ) : (
+            </div>
+          </div>
+        )}
+
+        {/* Vorlagen-Tab (Template Editor) */}
+        {activeTab === 'vorlagen' && (
+          <div>
+            {false ? null : (
               <div>
                 {/* Header mit Button */}
                 <div className="dv-vorlagen-header">

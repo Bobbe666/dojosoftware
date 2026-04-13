@@ -6,7 +6,7 @@ const express = require('express');
 const logger = require('../../utils/logger');
 const db = require('../../db');
 const router = express.Router();
-const { requireSuperAdmin, calculateDojoStorageUsage } = require('./shared');
+const { requireSuperAdmin, calculateAllDojosStorageUsage } = require('./shared');
 
 // GET /features - Verfügbare Features auflisten
 router.get('/features', requireSuperAdmin, async (req, res) => {
@@ -25,7 +25,7 @@ router.get('/features', requireSuperAdmin, async (req, res) => {
     res.json({ success: true, features });
   } catch (error) {
     logger.error('Fehler beim Abrufen der Features:', error);
-    res.status(500).json({ error: 'Fehler beim Abrufen der Features', details: error.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -83,8 +83,8 @@ router.get('/dojos/statistics', requireSuperAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Fehler beim Abrufen der Statistiken:', error);
-    res.status(500).json({ error: 'Fehler beim Abrufen der Statistiken', details: error.message });
+    logger.error('Fehler beim Abrufen der Statistiken:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -130,25 +130,18 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
 
     logger.info(`[DOJOS-DEBUG] SQL returned ${dojos.length} dojos: ${dojos.map(d => `${d.id}:${d.dojoname}`).join(', ')}`);
 
-    const dojosWithStorage = await Promise.all(
-      dojos.map(async (dojo) => {
-        const storageData = await calculateDojoStorageUsage(dojo.id);
-        logger.debug(`[DOJOS] Dojo ${dojo.id} (${dojo.dojoname}): storage_mb=${storageData.total_mb}, storage_kb=${storageData.total_kb}`);
-        return {
-          ...dojo,
-          storage_mb: storageData.total_mb,
-          storage_kb: storageData.total_kb,
-          storage_details: storageData.details
-        };
-      })
-    );
+    const storageMap = await calculateAllDojosStorageUsage(dojos.map(d => d.id));
+    const dojosWithStorage = dojos.map(dojo => {
+      const storageData = storageMap[dojo.id] || { total_mb: 0, total_kb: 0, details: {} };
+      return { ...dojo, storage_mb: storageData.total_mb, storage_kb: storageData.total_kb, storage_details: storageData.details };
+    });
 
     logger.info(`[DOJOS-DEBUG] Returning ${dojosWithStorage.length} dojos with storage`);
 
     res.json({ success: true, count: dojosWithStorage.length, dojos: dojosWithStorage });
   } catch (error) {
-    logger.error('Fehler beim Abrufen der Dojos:', error);
-    res.status(500).json({ error: 'Fehler beim Abrufen der Dojos', details: error.message });
+    logger.error('Fehler beim Abrufen der Dojos:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -173,8 +166,8 @@ router.get('/dojos/:id', requireSuperAdmin, async (req, res) => {
     }
     res.json({ success: true, dojo: dojos[0] });
   } catch (error) {
-    logger.error('Fehler beim Abrufen des Dojos:', error);
-    res.status(500).json({ error: 'Fehler beim Abrufen des Dojos', details: error.message });
+    logger.error('Fehler beim Abrufen des Dojos:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -203,8 +196,8 @@ router.post('/dojos', requireSuperAdmin, async (req, res) => {
     logger.info('Neues Dojo angelegt:', { dojoname, id: result.insertId });
     res.status(201).json({ success: true, message: 'Dojo erfolgreich angelegt', dojo_id: result.insertId, dojoname, subdomain });
   } catch (error) {
-    logger.error('Fehler beim Anlegen des Dojos:', error);
-    res.status(500).json({ error: 'Fehler beim Anlegen des Dojos', details: error.message });
+    logger.error('Fehler beim Anlegen des Dojos:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -244,8 +237,8 @@ router.put('/dojos/:id', requireSuperAdmin, async (req, res) => {
     logger.info('Dojo aktualisiert:', { id });
     res.json({ success: true, message: 'Dojo erfolgreich aktualisiert', dojo_id: id });
   } catch (error) {
-    logger.error('Fehler beim Aktualisieren des Dojos:', error);
-    res.status(500).json({ error: 'Fehler beim Aktualisieren des Dojos', details: error.message });
+    logger.error('Fehler beim Aktualisieren des Dojos:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -268,8 +261,8 @@ router.delete('/dojos/:id', requireSuperAdmin, async (req, res) => {
     logger.info('Dojo deaktiviert:', { dojoname: existing[0].dojoname, id });
     res.json({ success: true, message: 'Dojo erfolgreich deaktiviert', dojo_id: id, dojoname: existing[0].dojoname });
   } catch (error) {
-    logger.error('Fehler beim Löschen des Dojos:', error);
-    res.status(500).json({ error: 'Fehler beim Löschen des Dojos', details: error.message });
+    logger.error('Fehler beim Löschen des Dojos:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -332,8 +325,8 @@ router.put('/dojos/:id/features', requireSuperAdmin, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Fehler beim Aktualisieren der Features:', error);
-    res.status(500).json({ error: 'Fehler beim Aktualisieren der Features', details: error.message });
+    logger.error('Fehler beim Aktualisieren der Features:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -382,8 +375,8 @@ router.put('/dojos/:id/extend-trial', requireSuperAdmin, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Fehler beim Verlängern des Trials:', error);
-    res.status(500).json({ error: 'Fehler beim Verlängern des Trials', details: error.message });
+    logger.error('Fehler beim Verlängern des Trials:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -534,8 +527,8 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
 
   } catch (error) {
     await connection.rollback();
-    logger.error('Fehler beim Aktivieren der Subscription:', error);
-    res.status(500).json({ error: 'Fehler beim Aktivieren der Subscription', details: error.message });
+    logger.error('Fehler beim Aktivieren der Subscription:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   } finally {
     connection.release();
   }
@@ -597,8 +590,8 @@ router.put('/dojos/:id/toggle-active', requireSuperAdmin, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Fehler beim Toggle Dojo-Status:', error);
-    res.status(500).json({ error: 'Fehler beim Ändern des Dojo-Status', details: error.message });
+    logger.error('Fehler beim Toggle Dojo-Status:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -692,8 +685,8 @@ router.delete('/dojos/:id/permanent', requireSuperAdmin, async (req, res) => {
   } catch (error) {
     await connection.rollback();
     connection.release();
-    logger.error('Fehler beim dauerhaften Löschen des Dojos:', error);
-    res.status(500).json({ error: 'Fehler beim dauerhaften Löschen des Dojos', details: error.message });
+    logger.error('Fehler beim dauerhaften Löschen des Dojos:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 
@@ -742,8 +735,8 @@ router.get('/subscription-audit-log', requireSuperAdmin, async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Fehler beim Abrufen des Subscription-Audit-Logs:', error);
-    res.status(500).json({ error: 'Fehler beim Abrufen des Audit-Logs', details: error.message });
+    logger.error('Fehler beim Abrufen des Subscription-Audit-Logs:', { error: error.message, stack: error.stack });
+    res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
 

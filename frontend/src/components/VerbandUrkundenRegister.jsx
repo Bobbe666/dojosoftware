@@ -16,7 +16,7 @@ import {
   UserCheck, BookOpen, CheckCircle, AlertCircle,
   RefreshCw, Download, Calendar, User, MapPin, Printer, Eye
 } from 'lucide-react';
-import { druckeBoB, druckeKickboxSchuelergrad, druckeAikidoSchuelergrad } from './UrkundeDrucken';
+import { druckeBoB, druckeKickboxSchuelergrad, druckeAikidoSchuelergrad, druckeHofNominierung } from './UrkundeDrucken';
 import '../styles/VerbandUrkundenRegister.css';
 
 // ============================================================================
@@ -30,6 +30,7 @@ const ARTEN = {
   board_of_black_belts:      { label: 'Board of Black Belts',    icon: Star,       color: '#c0392b', img: '/assets/urkunde_bobb.jpg' },
   kickboxen_schuelergrad:    { label: 'Kickboxen Schülergrad',  icon: Award,      color: '#e11d48', img: '/assets/urkunde_kickboxen.jpg' },
   aikido_schuelergrad:       { label: 'Aikido Schülergrad',     icon: Award,      color: '#0ea5e9', img: '/assets/urkunde_aikido.jpg' },
+  hof_nominierung:           { label: 'HoF Nominierung',        icon: Star,       color: '#b8860b', img: '/assets/urkunde_hof_nominierung.png' },
   trainer_lizenz:      { label: 'Trainer-Lizenz',          icon: UserCheck,  color: '#10b981', img: null },
   kampfrichter_lizenz: { label: 'Kampfrichter-Lizenz',     icon: Shield,     color: '#f97316', img: null },
   meister_urkunde:     { label: 'Meister-Urkunde',         icon: Award,      color: '#ef4444', img: null },
@@ -318,7 +319,7 @@ export default function VerbandUrkundenRegister() {
     }
   };
 
-  const handleArtChange = (art) => {
+  const handleArtChange = async (art) => {
     const update = { art };
     if (art === 'kickboxen_schuelergrad') {
       update.disziplin = 'Kickboxen';
@@ -335,6 +336,13 @@ export default function VerbandUrkundenRegister() {
         setModalStilId(String(aikidoStil.stil_id));
         loadStilGrads(aikidoStil.stil_id);
       }
+    }
+    if (art === 'hof_nominierung') {
+      update.disziplin = 'Hall of Fame';
+      try {
+        const { data } = await axios.get('/verband-urkunden/naechste-nummer?art=hof_nominierung', { headers });
+        if (data.success) update.urkundennummer = data.nummer;
+      } catch {}
     }
     setForm(f => ({ ...f, ...update }));
   };
@@ -468,6 +476,7 @@ export default function VerbandUrkundenRegister() {
           { key: 'pruefungsurkunden',       label: 'Prüfungsurkunden',   color: '#3b82f6' },
           { key: 'dan_urkunden',            label: 'DAN-Urkunden',       color: '#d4af37' },
           { key: 'board_of_black_belts',    label: 'Board of Black Belts', color: '#c0392b' },
+          { key: 'hof_nominierungen',       label: 'HoF Nominierungen',  color: '#b8860b' },
           { key: 'trainer_lizenzen',        label: 'Trainer',            color: '#10b981' },
           { key: 'kampfrichter_lizenzen',   label: 'Kampfrichter',       color: '#f97316' },
           { key: 'dieses_jahr',             label: 'Dieses Jahr',        color: '#a855f7' },
@@ -633,6 +642,15 @@ export default function VerbandUrkundenRegister() {
                         className="ur-action-btn ur-action-btn--print"
                         onClick={() => druckeAikidoSchuelergrad(u)}
                         title="Aikido Schülergrad drucken"
+                      >
+                        <Printer size={14} />
+                      </button>
+                    )}
+                    {u.art === 'hof_nominierung' && (
+                      <button
+                        className="ur-action-btn ur-action-btn--print"
+                        onClick={() => druckeHofNominierung(u)}
+                        title="HoF Nominierungsurkunde drucken"
                       >
                         <Printer size={14} />
                       </button>

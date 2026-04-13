@@ -26,7 +26,7 @@ const PayPalCheckout = ({ amount, currency = 'EUR', rechnungId, description, onS
     setError(null);
 
     try {
-      const res = await axios.get(`${config.apiBaseUrl}/integrations/status`, {
+      const res = await axios.get('/integrations/status', {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -47,7 +47,7 @@ const PayPalCheckout = ({ amount, currency = 'EUR', rechnungId, description, onS
   // Order erstellen
   const createOrder = async () => {
     try {
-      const res = await axios.post(`${config.apiBaseUrl}/integrations/paypal/create-order`, {
+      const res = await axios.post('/integrations/paypal/create-order', {
         amount: amount,
         currency: currency,
         rechnung_id: rechnungId,
@@ -71,7 +71,7 @@ const PayPalCheckout = ({ amount, currency = 'EUR', rechnungId, description, onS
   // Order abschließen
   const onApprove = async (data) => {
     try {
-      const res = await axios.post(`${config.apiBaseUrl}/integrations/paypal/capture-order/${data.orderID}`, {}, {
+      const res = await axios.post(`/integrations/paypal/capture-order/${data.orderID}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

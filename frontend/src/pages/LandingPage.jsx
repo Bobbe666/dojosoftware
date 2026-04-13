@@ -31,6 +31,7 @@ function LandingPage() {
   const [features, setFeatures] = useState([]);
   const [pricingPlans, setPricingPlans] = useState([]);
   const [comparisonData, setComparisonData] = useState({ competitors: [], categories: [] });
+  const [expandedCards, setExpandedCards] = useState({});
   const [loading, setLoading] = useState(true);
 
   // Fallback-Features falls API nicht erreichbar
@@ -123,10 +124,20 @@ function LandingPage() {
 
         if (comparisonRes.ok) {
           const comparisonDataJson = await comparisonRes.json();
+          const cats = comparisonDataJson.categories || [];
           setComparisonData({
             competitors: comparisonDataJson.competitors || [],
-            categories: comparisonDataJson.categories || []
+            categories: cats
           });
+          const initialExpanded = {};
+          let expandedFirst = false;
+          cats.forEach(cat => {
+            if (cat.is_highlight && !expandedFirst) {
+              initialExpanded[cat.id] = true;
+              expandedFirst = true;
+            }
+          });
+          setExpandedCards(initialExpanded);
         }
       } catch (error) {
         console.error('Fehler beim Laden der dynamischen Daten:', error);
@@ -139,6 +150,10 @@ function LandingPage() {
 
     loadDynamicData();
   }, []);
+
+  const toggleCard = (id) => {
+    setExpandedCards(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Helper function für Rating-Emojis
   const getRatingEmoji = (rating) => {
@@ -235,26 +250,28 @@ function LandingPage() {
       <section className="hero-section">
         <div className="hero-container">
           <div className="hero-content">
+            <div className="hero-eyebrow">Entwickelt von einem 17-fachen Weltmeister</div>
             <h1 className="hero-title">
-              Die professionelle Lösung für<br />
-              <span className="hero-highlight">Kampfsportschulen</span>
+              Mehr Mitglieder.<br />
+              Weniger Chaos.<br />
+              <span className="hero-highlight">Volle Kontrolle.</span>
             </h1>
             <p className="hero-subtitle">
-              Mitgliederverwaltung • Check-In • SEPA • Verkauf • Buchführung • Online-Registrierung für Neumitglieder • Prüfungswesen • uvm.
+              Die Software, die dein Dojo organisiert — während du trainierst.
+              Kein generisches Vereinstool. Gebaut für Kampfsport. Aus der Praxis.
             </p>
             <div className="hero-cta">
               <button className="cta-primary cta-pulse" onClick={() => navigate('/register')}>
-                <span className="cta-icon">🚀</span>
                 Jetzt kostenlos testen (14 Tage)
               </button>
               <button className="cta-demo-book" onClick={() => navigate('/demo-buchen')}>
-                <span className="cta-icon">📅</span>
                 Demo-Termin buchen
               </button>
             </div>
             <div className="hero-benefits">
               <div className="benefit">✓ Keine Kreditkarte nötig</div>
               <div className="benefit">✓ In 5 Minuten startklar</div>
+              <div className="benefit">✓ Kein Vertrag — jederzeit kündbar</div>
             </div>
           </div>
           <div className="hero-image">
@@ -285,6 +302,138 @@ function LandingPage() {
           <div className="trust-badge-item">
             <span className="trust-icon">💳</span>
             <span className="trust-text">Keine Kreditkarte</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Problem Section */}
+      <section className="problem-section">
+        <div className="container">
+          <div className="problem-headline-wrap">
+            <h2 className="problem-headline">Kennst du das?</h2>
+            <p className="problem-subline">Jedes Dojo, das wächst, kennt diese Momente.</p>
+          </div>
+          <div className="problem-grid">
+            <div className="problem-card">
+              <span className="problem-icon">❌</span>
+              <p>Mitgliederlisten verteilt auf Excel, WhatsApp und Papier</p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-icon">❌</span>
+              <p>Beiträge werden vergessen — du verlierst Geld, ohne es zu merken</p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-icon">❌</span>
+              <p>Chaos bei Turnieren: Anmeldungen, Listen, Einteilung — alles manuell</p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-icon">❌</span>
+              <p>Trainer verlieren den Überblick, wenn das Dojo wächst</p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-icon">❌</span>
+              <p>Stunden verloren durch Verwaltung statt Training</p>
+            </div>
+            <div className="problem-card">
+              <span className="problem-icon">❌</span>
+              <p>Dein Dojo wächst — aber dein System nicht</p>
+            </div>
+          </div>
+          <div className="problem-conclusion">
+            <p>Das kostet dich Zeit, Geld — und bremst dein Wachstum.</p>
+            <button className="cta-primary" onClick={() => navigate('/register')}>
+              Ich will das ändern
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Authority Section */}
+      <section className="authority-section">
+        <div className="container">
+          <div className="authority-content">
+            <div className="authority-badge-wrap">
+              <div className="authority-badge">
+                <span className="authority-number">17×</span>
+                <span className="authority-label">Weltmeister</span>
+              </div>
+            </div>
+            <div className="authority-text">
+              <h2>Nicht von Entwicklern gebaut — sondern von jemandem, der selbst auf der Matte steht.</h2>
+              <p>
+                Ich habe als Trainer selbst erlebt, wie schnell ein Dojo im Chaos versinkt, wenn es wächst.
+                Stundenlange Verwaltung statt Training. Mitglieder, die vergessen werden. Turniere ohne System.
+              </p>
+              <p>
+                Genau deshalb habe ich DojoSoftware entwickelt — eine Lösung aus der Praxis,
+                für die Praxis. Nicht für Vereine im Allgemeinen. Speziell für Kampfsport.
+              </p>
+              <div className="authority-quote">
+                „Damit du dich auf das konzentrieren kannst, was wirklich zählt: dein Training und deine Schüler."
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Transformation Section */}
+      <section className="transformation-section">
+        <div className="container">
+          <h2 className="section-title">Von Chaos zu Kontrolle</h2>
+          <p className="section-subtitle">Was sich ändert, wenn dein Dojo ein echtes System hat</p>
+          <div className="transformation-table">
+            <div className="transform-col transform-col--before">
+              <div className="transform-col-header">
+                <span className="transform-icon">❌</span> Ohne DojoSoftware
+              </div>
+              <div className="transform-item">Mitglieder unübersichtlich verteilt</div>
+              <div className="transform-item">Beiträge gehen verloren</div>
+              <div className="transform-item">Stundenlange Zettelwirtschaft</div>
+              <div className="transform-item">Turnierchaos</div>
+              <div className="transform-item">Bauchgefühl statt Zahlen</div>
+              <div className="transform-item">Wachstum bremst sich selbst</div>
+            </div>
+            <div className="transform-arrow-col">→</div>
+            <div className="transform-col transform-col--after">
+              <div className="transform-col-header">
+                <span className="transform-icon">✅</span> Mit DojoSoftware
+              </div>
+              <div className="transform-item">Alles an einem Ort — sofort abrufbar</div>
+              <div className="transform-item">Automatische Lastschriften & Mahnungen</div>
+              <div className="transform-item">Alles läuft — während du trainierst</div>
+              <div className="transform-item">Turniere in Minuten organisiert</div>
+              <div className="transform-item">Klare Zahlen & Auswertungen</div>
+              <div className="transform-item">Skalierbar ohne Stress</div>
+            </div>
+          </div>
+          <div className="transformation-cta">
+            <button className="cta-primary cta-pulse" onClick={() => navigate('/register')}>
+              Starte jetzt — 14 Tage kostenlos
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Story Section */}
+      <section className="story-section">
+        <div className="container">
+          <div className="story-card">
+            <div className="story-quote-mark">"</div>
+            <p className="story-text">
+              Ein Trainer mit über 80 Mitgliedern verlor jede Woche mehrere Stunden —
+              Anwesenheitslisten führen, Beiträge nachverfolgen, Turnieranmeldungen per
+              WhatsApp koordinieren, Dokumente suchen.
+            </p>
+            <p className="story-text">
+              Nach der Umstellung auf DojoSoftware hatte er alles in einem System.
+              Die Mitglieder registrieren sich selbst, Beiträge werden automatisch eingezogen,
+              Turniere laufen strukturiert. <strong>Er konnte sich wieder aufs Training konzentrieren.</strong>
+            </p>
+            <div className="story-result">
+              <span>⏱ Mehrere Stunden pro Woche gespart</span>
+              <span>💶 Keine vergessenen Beiträge mehr</span>
+              <span>🏆 Professionelles Dojo-Management</span>
+            </div>
           </div>
         </div>
       </section>
@@ -472,40 +621,52 @@ function LandingPage() {
 
           {/* Compact Comparison Cards - Dynamisch */}
           <div className="comparison-cards">
-            {comparisonData.categories.map((category) => (
-              <div key={category.id} className={`comparison-card ${category.is_highlight ? 'highlight-card' : ''}`}>
-                <div className="card-header">
-                  <span className="card-icon">{category.icon}</span>
-                  <h3>{category.name}</h3>
-                  {category.is_highlight && category.highlight_note && category.highlight_note !== '0' && category.highlight_note !== 0 && (
-                    <span className="card-badge">{category.highlight_note}</span>
-                  )}
-                </div>
-                <div className="card-content">
-                  <div className={`mini-table ${category.is_highlight ? 'highlight-table' : ''}`}>
-                    <div className="mini-header five-cols">
-                      <span></span>
-                      <span className="highlight-col">Wir</span>
-                      {comparisonData.competitors.map(comp => (
-                        <span key={comp.id}>{comp.short_name || comp.name}</span>
-                      ))}
-                    </div>
-                    {category.items && category.items.map((item, idx) => (
-                      <div key={idx} className="mini-row five-cols">
-                        <span>{item.name}</span>
-                        <span className="highlight-col">{getRatingEmoji(item.ours)}</span>
-                        {comparisonData.competitors.map(comp => (
-                          <span key={comp.id}>{getRatingEmoji(item.competitors[comp.id])}</span>
+            {comparisonData.categories.map((category) => {
+              const isExpanded = !!expandedCards[category.id];
+              const safeIcon = category.icon && category.icon !== 'null' ? category.icon : '';
+              const safeName = category.name && category.name !== 'null' ? category.name : '';
+              return (
+                <div key={category.id} className={`comparison-card ${category.is_highlight ? 'highlight-card' : ''} ${isExpanded ? 'card-expanded' : 'card-collapsed'}`}>
+                  <button
+                    className="card-header card-toggle"
+                    onClick={() => toggleCard(category.id)}
+                    aria-expanded={isExpanded}
+                  >
+                    {safeIcon && <span className="card-icon">{safeIcon}</span>}
+                    <h3>{safeName}</h3>
+                    {!!category.is_highlight && category.highlight_note && category.highlight_note !== '0' && category.highlight_note !== 0 && (
+                      <span className="card-badge">{category.highlight_note}</span>
+                    )}
+                    <span className="card-chevron">{isExpanded ? '▲' : '▼'}</span>
+                  </button>
+                  {isExpanded && (
+                    <div className="card-content">
+                      <div className={`mini-table ${category.is_highlight ? 'highlight-table' : ''}`}>
+                        <div className="mini-header five-cols">
+                          <span></span>
+                          <span className="highlight-col">Wir</span>
+                          {comparisonData.competitors.map(comp => (
+                            <span key={comp.id}>{comp.short_name || comp.name}</span>
+                          ))}
+                        </div>
+                        {category.items && category.items.map((item, idx) => (
+                          <div key={idx} className="mini-row five-cols">
+                            <span>{item.name && item.name !== 'null' ? item.name : ''}</span>
+                            <span className="highlight-col">{getRatingEmoji(item.ours)}</span>
+                            {comparisonData.competitors.map(comp => (
+                              <span key={comp.id}>{getRatingEmoji(item.competitors[comp.id])}</span>
+                            ))}
+                          </div>
                         ))}
                       </div>
-                    ))}
-                  </div>
-                  {category.is_highlight && category.highlight_note && category.highlight_note !== '0' && category.highlight_note !== 0 && (
-                    <p className="card-note">{category.highlight_note}</p>
+                      {!!category.is_highlight && category.highlight_note && category.highlight_note !== '0' && category.highlight_note !== 0 && (
+                        <p className="card-note">{category.highlight_note}</p>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Legende */}

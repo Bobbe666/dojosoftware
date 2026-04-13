@@ -22,6 +22,8 @@ const ALLOWED_FIELDS = [
   'strasse', 'hausnummer', 'plz', 'ort',
   'telefon', 'email', 'internet',
   'steuernummer', 'ust_id', 'sepa_glaeubiger_id',
+  'steuer_status', 'kleinunternehmer', 'umsatzsteuerpflichtig',
+  'finanzamt_name', 'umsatzsteuer_id',
 ];
 
 // ── GET / — Stammdaten laden ───────────────────────────────────────────────────

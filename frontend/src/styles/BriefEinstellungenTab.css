@@ -49,6 +49,55 @@
   color: var(--text-primary, #eee);
 }
 
+/* Toggle-Version des Headers (klickbar) */
+.be-section-header--toggle {
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  justify-content: space-between;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.be-section-header--toggle:hover {
+  background: var(--bg-secondary-hover, #31314a);
+}
+
+.be-section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.be-section-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted, #888);
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg); /* eingeklappt = zeigt rechts */
+}
+
+.be-section-chevron--open {
+  transform: rotate(0deg); /* ausgeklappt = zeigt unten */
+}
+
+/* Dojo-Indikator Banner */
+.be-dojo-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--primary-alpha-10, rgba(201,162,39,0.1));
+  border: 1px solid var(--primary-alpha-30, rgba(201,162,39,0.25));
+  border-radius: 8px;
+  font-size: 0.83rem;
+  color: var(--text-secondary, #aaa);
+  margin-bottom: 1rem;
+}
+
+.be-dojo-indicator strong {
+  color: var(--primary, #c9a227);
+}
+
 .be-section-icon {
   color: var(--primary, #c9a227);
   flex-shrink: 0;

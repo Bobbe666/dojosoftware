@@ -6,8 +6,12 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const logger = require('../utils/logger');
 const { sendVerificationEmail } = require('../services/emailTemplates');
+const { sendEmailForDojo } = require('../services/emailService');
 const rateLimit = require('express-rate-limit');
 const enc = require('../services/encryptionService');
+const puppeteer = require('puppeteer');
+const path = require('path');
+const fs = require('fs');
 
 // Rate-Limiter für Registrierungs-Endpoints (10 Requests / 15 Min pro IP)
 const registerLimiter = rateLimit({
@@ -26,6 +30,85 @@ const step1Limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// ── Mitgliedsvertrag PDF generieren und speichern ────────────────────────────
+async function generateAndStoreContractPdf(mitgliedId, dojoId, vertragId) {
+  try {
+    // Aktive Vorlage für dieses Dojo holen
+    const vorlagen = await new Promise((res, rej) => db.query(
+      `SELECT * FROM vertragsvorlagen WHERE dojo_id = ? AND aktiv = 1 ORDER BY id DESC LIMIT 1`,
+      [dojoId], (e, r) => e ? rej(e) : res(r)
+    ));
+    if (!vorlagen.length) return null;
+    const vorlage = vorlagen[0];
+
+    // Mitglied + Dojo-Daten laden
+    const [mitglieder] = await new Promise((res, rej) => db.query(
+      `SELECT m.*, d.dojoname, d.inhaber, d.strasse AS dojo_strasse, d.hausnummer AS dojo_hausnummer,
+              d.plz AS dojo_plz, d.ort AS dojo_ort, d.telefon AS dojo_telefon, d.email AS dojo_email
+       FROM mitglieder m LEFT JOIN dojo d ON m.dojo_id = d.id
+       WHERE m.mitglied_id = ?`, [mitgliedId], (e, r) => e ? rej(e) : res([r])
+    ));
+    if (!mitglieder.length) return null;
+    const m = mitglieder[0];
+
+    // Vertragsdaten laden
+    const vertrag = vertragId
+      ? await new Promise((res, rej) => db.query('SELECT * FROM vertraege WHERE id = ?', [vertragId], (e, r) => e ? rej(e) : res(r[0] || null)))
+      : null;
+
+    // Platzhalter ersetzen
+    function replacePh(html) {
+      if (!html) return '';
+      let r = html;
+      r = r.replace(/\{\{system\.datum\}\}/g, new Date().toLocaleDateString('de-DE'));
+      r = r.replace(/\{\{system\.uhrzeit\}\}/g, new Date().toLocaleTimeString('de-DE'));
+      Object.entries(m).forEach(([k, v]) => {
+        r = r.replace(new RegExp(`\\{\\{mitglied\\.${k}\\}\\}`, 'g'), v ?? '');
+        r = r.replace(new RegExp(`\\{\\{dojo\\.${k.replace(/^dojo_/,'')}\\}\\}`, 'g'), v ?? '');
+      });
+      if (vertrag) Object.entries(vertrag).forEach(([k, v]) => {
+        r = r.replace(new RegExp(`\\{\\{vertrag\\.${k}\\}\\}`, 'g'), v ?? '');
+      });
+      return r;
+    }
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      ${replacePh(vorlage.grapesjs_css || '')}
+      body{font-family:Arial,sans-serif;padding:20px;}@page{margin:2cm;}
+    </style></head><body>${replacePh(vorlage.grapesjs_html || vorlage.tiptap_html || '')}</body></html>`;
+
+    // PDF mit Puppeteer
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox','--disable-setuid-sandbox'] });
+    let pdfBuffer;
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top:'1cm', right:'1cm', bottom:'1cm', left:'1cm' } });
+    } finally { await browser.close().catch(() => {}); }
+
+    // Auf Disk speichern
+    const docsDir = path.join(__dirname, '..', 'generated_documents');
+    if (!fs.existsSync(docsDir)) fs.mkdirSync(docsDir, { recursive: true });
+    const filename = `Mitgliedsvertrag_${mitgliedId}_${Date.now()}.pdf`;
+    const filepath = path.join(docsDir, filename);
+    fs.writeFileSync(filepath, pdfBuffer);
+    const relativePath = `generated_documents/${filename}`;
+
+    // In mitglied_dokumente eintragen
+    await new Promise((res, rej) => db.query(
+      `INSERT INTO mitglied_dokumente (mitglied_id, dojo_id, vorlage_id, dokumentname, dateipfad, erstellt_am)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+      [mitgliedId, dojoId, vorlage.id, `Mitgliedsvertrag - ${m.vorname} ${m.nachname}`, relativePath],
+      (e, r) => e ? rej(e) : res(r)
+    ));
+
+    return pdfBuffer;
+  } catch (err) {
+    logger.warn('Mitgliedsvertrag PDF Generierung fehlgeschlagen', { error: err.message, mitgliedId });
+    return null;
+  }
+}
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -1226,7 +1309,8 @@ router.get('/stundenplan/:dojo_id', async (req, res) => {
     const stundenplan = await queryAsync(`
       SELECT
         s.stundenplan_id,
-        k.gruppenname as kursname,
+        CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
+        k.gruppenname,
         s.tag,
         s.uhrzeit_start,
         s.uhrzeit_ende,
@@ -1768,6 +1852,42 @@ router.post('/mitglied-anlegen', async (req, res) => {
       dojo_id,
       name: `${vorname} ${nachname}`,
       source: 'public_website'
+    });
+
+    // ── Mitgliedsvertrag PDF + Willkommens-Email (nicht-blockierend) ─────────
+    setImmediate(async () => {
+      try {
+        const pdfBuffer = await generateAndStoreContractPdf(newMitgliedId, dojo_id, vertragId);
+
+        const dojoRows = await new Promise((res, rej) => db.query(
+          'SELECT dojoname FROM dojo WHERE id = ?', [dojo_id], (e, r) => e ? rej(e) : res(r)
+        ));
+        const dojoName = dojoRows[0]?.dojoname || 'Ihr Dojo';
+
+        const emailOpts = {
+          to: email,
+          subject: `Willkommen bei ${dojoName} – Ihre Mitgliedschaft ist bestätigt`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+              <h2 style="color:#1a1a2e;">Willkommen, ${vorname}!</h2>
+              <p>Vielen Dank für Ihre Registrierung bei <strong>${dojoName}</strong>.</p>
+              <p>Ihre Mitgliedsnummer lautet: <strong>${mitgliedsnummer}</strong></p>
+              ${pdfBuffer ? '<p>Im Anhang finden Sie Ihren unterzeichneten Mitgliedsvertrag als PDF.</p>' : ''}
+              <p>Bei Fragen wenden Sie sich gerne an uns.</p>
+              <p style="margin-top:2rem;">Mit freundlichen Grüßen,<br>${dojoName}</p>
+            </div>
+          `,
+          text: `Willkommen ${vorname}! Ihre Mitgliedsnummer: ${mitgliedsnummer}. ${pdfBuffer ? 'Mitgliedsvertrag im Anhang.' : ''}`,
+          attachments: pdfBuffer ? [{
+            filename: 'Mitgliedsvertrag.pdf',
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+          }] : []
+        };
+        await sendEmailForDojo(emailOpts, dojo_id);
+      } catch (emailErr) {
+        logger.warn('Willkommens-Email fehlgeschlagen', { error: emailErr.message, mitglied_id: newMitgliedId });
+      }
     });
 
     res.json({

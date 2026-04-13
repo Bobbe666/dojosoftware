@@ -166,7 +166,69 @@ async function calculateDojoStorageUsage(dojoId) {
   }
 }
 
+// Berechne Speicherplatz für ALLE Dojos auf einmal (1 Query pro Tabelle statt N×10)
+async function calculateAllDojosStorageUsage(dojoIds) {
+  if (!dojoIds || dojoIds.length === 0) return {};
+
+  const SIZES = {
+    mitglieder: 2.5, kurse: 1.0, trainer: 1.5, beitraege: 0.5,
+    vertraege: 1.5, verkaeufe: 0.8, events: 1.5, pruefungen: 1.0,
+    artikel: 0.8, dokumente: 50.0
+  };
+
+  const safeQuery = async (q, params) => {
+    try { const [rows] = await db.promise().query(q, params); return rows; }
+    catch (e) { return []; }
+  };
+
+  const toMap = (rows) => {
+    const m = {};
+    for (const r of rows) m[r.dojo_id] = parseInt(r.cnt) || 0;
+    return m;
+  };
+
+  const [members, courses, trainers, contributions, contracts, sales, events, exams, articles, docs] = await Promise.all([
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM mitglieder WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM kurse WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM trainer WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM beitraege WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT m.dojo_id, COUNT(*) as cnt FROM mitglied_vertraege mv JOIN mitglieder m ON mv.mitglied_id = m.mitglied_id WHERE m.dojo_id IN (?) GROUP BY m.dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM verkaeufe WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM events WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT m.dojo_id, COUNT(*) as cnt FROM mitglied_pruefungen mp JOIN mitglieder m ON mp.mitglied_id = m.mitglied_id WHERE m.dojo_id IN (?) GROUP BY m.dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM artikel WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds]),
+    safeQuery('SELECT dojo_id, COUNT(*) as cnt FROM mitglied_dokumente WHERE dojo_id IN (?) GROUP BY dojo_id', [dojoIds])
+  ]);
+
+  const maps = {
+    mitglieder: toMap(members), kurse: toMap(courses), trainer: toMap(trainers),
+    beitraege: toMap(contributions), vertraege: toMap(contracts), verkaeufe: toMap(sales),
+    events: toMap(events), pruefungen: toMap(exams), artikel: toMap(articles), dokumente: toMap(docs)
+  };
+
+  const result = {};
+  for (const id of dojoIds) {
+    const details = {};
+    let totalSizeKB = 0;
+    for (const [table, size] of Object.entries(SIZES)) {
+      const count = maps[table][id] || 0;
+      const size_kb = count * size;
+      details[table] = { count, size_kb };
+      totalSizeKB += size_kb;
+    }
+    const totalSizeMB = totalSizeKB / 1024;
+    result[id] = {
+      total_mb: parseFloat(totalSizeMB.toFixed(2)),
+      total_kb: Math.round(totalSizeKB),
+      details
+    };
+  }
+
+  return result;
+}
+
 module.exports = {
   requireSuperAdmin,
-  calculateDojoStorageUsage
+  calculateDojoStorageUsage,
+  calculateAllDojosStorageUsage
 };

@@ -18,6 +18,7 @@ import AbsenderProfileModal from './AbsenderProfileModal';
 import VorlagenSendenModal from './VorlagenSendenModal';
 import BriefEinstellungenTab from './BriefEinstellungenTab';
 import SerienBriefModal from './SerienBriefModal';
+import NeueVorlageWizard from './NeueVorlageWizard';
 import '../styles/VorlagenVerwaltung.css';
 
 // ── Kategorie-Filter-Tabs ──────────────────────────────────────────────────────
@@ -47,7 +48,7 @@ const KATEGORIE_LABEL = {
   trainer_infoblatt: 'Trainer-Infoblatt',
 };
 
-export default function VorlagenVerwaltung({ embedded = false }) {
+export default function VorlagenVerwaltung({ embedded = false, controlledAnsicht, onAnsichtChange, neuVorlageTrigger }) {
   const { activeDojo } = useDojoContext();
   const withDojo = (url) => activeDojo?.id ? `${url}${url.includes('?') ? '&' : '?'}dojo_id=${activeDojo.id}` : url;
   const [vorlagen, setVorlagen] = useState([]);
@@ -55,9 +56,16 @@ export default function VorlagenVerwaltung({ embedded = false }) {
   const [ladeVorlagen, setLadeVorlagen] = useState(true);
   const [fehler, setFehler] = useState('');
   const [aktiverTab, setAktiverTab] = useState('alle');
-  const [ansicht, setAnsicht] = useState('vorlagen'); // 'vorlagen' | 'einstellungen' | 'verlauf'
+  const [ansicht, setAnsichtInternal] = useState('vorlagen'); // 'vorlagen' | 'einstellungen' | 'verlauf'
+
+  // Setter der auch den Parent informiert
+  const setAnsicht = (val) => {
+    setAnsichtInternal(val);
+    onAnsichtChange?.(val);
+  };
 
   // Modals
+  const [wizardOffen, setWizardOffen] = useState(false);
   const [editorVorlage, setEditorVorlage] = useState(null);
   const [editorOffen, setEditorOffen] = useState(false);
   const [previewHtml, setPreviewHtml] = useState(null);
@@ -93,6 +101,19 @@ export default function VorlagenVerwaltung({ embedded = false }) {
 
   useEffect(() => { ladeAlles(); }, [ladeAlles]);
 
+  // Externe Steuerung: Ansicht wechseln (von DokumentenZentrale Tab-Klick)
+  useEffect(() => {
+    if (!controlledAnsicht) return;
+    setAnsichtInternal(controlledAnsicht);
+    if (controlledAnsicht === 'verlauf') ladeVerlauf();
+  }, [controlledAnsicht]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Neue Vorlage Trigger (inkrementierende Zahl von DokumentenZentrale) → Wizard öffnen
+  useEffect(() => {
+    if (!neuVorlageTrigger) return;
+    setWizardOffen(true);
+  }, [neuVorlageTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const ladeVerlauf = useCallback(async () => {
     setVerlaufLaden(true);
     try {
@@ -123,6 +144,36 @@ export default function VorlagenVerwaltung({ embedded = false }) {
       ladeAlles();
     } catch (err) {
       zeigeToast(err.response?.data?.error || 'Fehler beim Löschen');
+    }
+  }
+
+  // System-Vorlagen können nicht direkt bearbeitet werden (dojo_id=NULL, shared).
+  // Stattdessen: automatisch als Dojo-Kopie anlegen → Original bleibt als Backup,
+  // Kopie ist sofort vollständig bearbeitbar inkl. Absender-Profil.
+  async function handleBearbeiten(vorlage) {
+    if (vorlage.system_vorlage === 1) {
+      zeigeToast('Vorlage wird für Ihr Dojo eingerichtet…');
+      try {
+        const res = await axios.post(withDojo(`/vorlagen/${vorlage.id}/kopieren`));
+        const neueId = res.data.id;
+        const kopieVorlage = {
+          ...vorlage,
+          id: neueId,
+          name: `${vorlage.name} (Kopie)`,
+          dojo_id: activeDojo?.id,
+          system_vorlage: 0,
+          absender_profil_id: null,
+        };
+        ladeAlles(); // Liste im Hintergrund aktualisieren
+        setEditorVorlage(kopieVorlage);
+        setEditorOffen(true);
+        zeigeToast('Vorlage für Ihr Dojo angelegt – jetzt vollständig anpassbar');
+      } catch (err) {
+        zeigeToast(err.response?.data?.error || 'Fehler beim Anlegen der Kopie');
+      }
+    } else {
+      setEditorVorlage(vorlage);
+      setEditorOffen(true);
     }
   }
 
@@ -192,6 +243,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
           </p>
         </div>
         )}
+        {!embedded && (
         <div className="vv-action-row">
           <button onClick={() => { setAnsicht('verlauf'); ladeVerlauf(); }} className={`vv-btn-profile-nav${ansicht === 'verlauf' ? ' vv-btn-profile-nav--active' : ''}`}>
             <History size={14} /> Verlauf
@@ -199,10 +251,11 @@ export default function VorlagenVerwaltung({ embedded = false }) {
           <button onClick={() => { setAnsicht('einstellungen'); }} className={`vv-btn-profile-nav${ansicht === 'einstellungen' ? ' vv-btn-profile-nav--active' : ''}`}>
             <Settings size={14} /> Einstellungen
           </button>
-          <button onClick={() => { setEditorVorlage(null); setEditorOffen(true); }} className="vv-btn-primary">
+          <button onClick={() => setWizardOffen(true)} className="vv-btn-primary">
             <Plus size={14} /> Neue Vorlage
           </button>
         </div>
+        )}
       </div>
 
       {fehler && (
@@ -238,7 +291,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
             <div className="vv-empty-666">
               <FileText size={40} className="vv-icon-fade" />
               <p>Keine Vorlagen in dieser Kategorie.</p>
-              <button onClick={() => { setEditorVorlage(null); setEditorOffen(true); }} className="vv-btn-primary vv-btn-primary-mt">
+              <button onClick={() => setWizardOffen(true)} className="vv-btn-primary vv-btn-primary-mt">
                 Erste Vorlage erstellen
               </button>
             </div>
@@ -293,7 +346,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
                     {/* Aktionen */}
                     <div className="vv-card-actions">
                       <ActionBtn icon={<Eye size={13} />} label="Vorschau" onClick={() => handleVorschau(v)} />
-                      <ActionBtn icon={<Edit size={13} />} label="Bearbeiten" onClick={() => { setEditorVorlage(v); setEditorOffen(true); }} />
+                      <ActionBtn icon={<Edit size={13} />} label="Bearbeiten" onClick={() => handleBearbeiten(v)} />
                       <ActionBtn icon={<Copy size={13} />} label="Kopieren" onClick={() => handleDuplizieren(v)} />
                       <ActionBtn icon={<Send size={13} />} label="Senden" primary color={profilFarbe} onClick={() => setSendenVorlagenId(v.id)} />
                       {v.email_html && (
@@ -320,7 +373,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
               <p className="vv-profil-subtitle">DIN-Format, Schrift, Fußzeile und Absender-Profile für Ihre Briefvorlagen.</p>
             </div>
             <div className="vv-profil-btns">
-              <button onClick={() => setAnsicht('vorlagen')} className="vv-btn-back">&#8592; Zurück zu Vorlagen</button>
+              <button onClick={() => setAnsicht('vorlagen')} className="vv-btn-back">← Zurück zu Vorlagen</button>
             </div>
           </div>
           <BriefEinstellungenTab
@@ -339,7 +392,7 @@ export default function VorlagenVerwaltung({ embedded = false }) {
               <p className="vv-profil-subtitle">Alle erstellten und versendeten Dokumente des Dojos.</p>
             </div>
             <div className="vv-profil-btns">
-              <button onClick={() => setAnsicht('vorlagen')} className="vv-btn-back">&#8592; Zur&#252;ck zu Vorlagen</button>
+              <button onClick={() => setAnsicht('vorlagen')} className="vv-btn-back">← Zurück zu Vorlagen</button>
               <button onClick={ladeVerlauf} className="vv-btn-back" title="Aktualisieren"><RefreshCw size={13} /></button>
             </div>
           </div>
@@ -397,6 +450,21 @@ export default function VorlagenVerwaltung({ embedded = false }) {
             </div>
           )}
         </>
+      )}
+
+      {/* ── Neue Vorlage Wizard ── */}
+      {wizardOffen && (
+        <NeueVorlageWizard
+          profile={profile}
+          withDojo={withDojo}
+          onClose={() => setWizardOffen(false)}
+          onCreated={neueVorlage => {
+            setWizardOffen(false);
+            ladeAlles();
+            setEditorVorlage(neueVorlage);
+            setEditorOffen(true);
+          }}
+        />
       )}
 
       {/* ── Modals ── */}

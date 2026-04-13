@@ -12,12 +12,20 @@ const router = express.Router();
 const PROMO_CONFIG = {
     name: 'early-bird-2026',
     maxDojos: 50,
-    startCount: 15,  // Beginnt bei 15 (bereits registrierte Dojos simulieren)
+    startCount: 19,  // Basiswert → heute 31 freie Plätze (50-19=31)
+    promoStartDate: new Date('2026-04-11T00:00:00'), // Ab hier täglich abnehmen
     discountPercent: 50,
     discountMonths: 12,
     freeMonths: 2,
     active: true
 };
+
+// Täglich 1-2 Plätze weniger (alternierend: 1, 2, 1, 2 ...)
+// Math.floor(days * 1.5) ergibt Differenzen: 1, 2, 1, 2, ...
+function getDailyDecrement() {
+    const daysPassed = Math.floor((Date.now() - PROMO_CONFIG.promoStartDate.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.floor(daysPassed * 1.5);
+}
 
 /**
  * GET /api/promo/early-bird
@@ -48,7 +56,7 @@ router.get('/early-bird', async (req, res) => {
             WHERE promo_name = ?
         `, [PROMO_CONFIG.name]);
 
-        const registeredCount = countResult[0].count + PROMO_CONFIG.startCount;
+        const registeredCount = countResult[0].count + PROMO_CONFIG.startCount + getDailyDecrement();
         const spotsRemaining = Math.max(0, PROMO_CONFIG.maxDojos - registeredCount);
         const isActive = PROMO_CONFIG.active && spotsRemaining > 0;
 
@@ -99,7 +107,7 @@ router.post('/early-bird/register', async (req, res) => {
             WHERE promo_name = ?
         `, [PROMO_CONFIG.name]);
 
-        const currentCount = countResult[0].count + PROMO_CONFIG.startCount;
+        const currentCount = countResult[0].count + PROMO_CONFIG.startCount + getDailyDecrement();
 
         if (currentCount >= PROMO_CONFIG.maxDojos) {
             return res.json({

@@ -15,16 +15,34 @@ import {
 import '../styles/BuchhaltungTab.css';
 import VerbandRechnungErstellen from './VerbandRechnungErstellen';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useDojoContext } from '../context/DojoContext';
+import { UStVATab } from './SteuerAssistent';
 
 const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const { hasFeature } = useSubscription();
   const hasKontoauszug = hasFeature('kontoauszug');
+  const { activeDojo, filter: dojoFilter } = useDojoContext();
+  const dojoId = activeDojo?.dojo_id || activeDojo?.id;
 
   // Sub-Tab Navigation
   const [activeSubTab, setActiveSubTab] = useState('euer');
 
-  // Filters
+  // Filters — Standard: aktives Dojo, nicht "alle"
+  const DOJO_ID_TO_ORG = { 2: 'TDA International', 3: 'Kampfkunstschule Schreiner' };
   const [selectedOrg, setSelectedOrg] = useState('alle');
+  useEffect(() => {
+    if (dojoFilter === 'all') {
+      // "Alle Dojos" im globalen Switcher → Gesamtansicht
+      setSelectedOrg('alle');
+    } else if (activeDojo && activeDojo !== 'super-admin' && typeof activeDojo === 'object') {
+      // Spezifisches Dojo aktiv → auf dessen Org filtern
+      const id = activeDojo.dojo_id || activeDojo.id;
+      const orgName = DOJO_ID_TO_ORG[id];
+      if (orgName) setSelectedOrg(orgName);
+    } else {
+      setSelectedOrg('alle');
+    }
+  }, [activeDojo, dojoFilter]);
   const [selectedJahr, setSelectedJahr] = useState(new Date().getFullYear());
   const [selectedQuartal, setSelectedQuartal] = useState('');
 
@@ -40,6 +58,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // GuV und Bilanz States
   const [guvDetails, setGuvDetails] = useState(null);
   const [bilanzData, setBilanzData] = useState(null);
+  const [expandedGuvDetails, setExpandedGuvDetails] = useState({});
+  const [editingGewinnvortrag, setEditingGewinnvortrag] = useState(false);
 
   // UI States
   const [loading, setLoading] = useState(false);
@@ -75,11 +95,19 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [bankLimit, setBankLimit] = useState(30);
   const [bankBetragFilter, setBankBetragFilter] = useState(''); // '', 'einnahmen', 'ausgaben'
   const [bankKategorieFilter, setBankKategorieFilter] = useState(''); // Filter für zugeordnete Kategorie
+  const [bankDatumVon, setBankDatumVon] = useState('');
+  const [bankDatumBis, setBankDatumBis] = useState('');
+  const [beitraegeDetail, setBeitraegeDetail] = useState(null); // { monat, jahr, label, eintraege }
+  const [beitraegeDetailLoading, setBeitraegeDetailLoading] = useState(false);
+  const [verkaufDetail, setVerkaufDetail] = useState(null); // { bon_nummer, datum, kunde, positionen, ... }
+  const [verkaufDetailLoading, setVerkaufDetailLoading] = useState(false);
   const [showUmbuchungModal, setShowUmbuchungModal] = useState(false);
   const [umbuchungTx, setUmbuchungTx] = useState(null);
   const [showRechnungModal, setShowRechnungModal] = useState(false);
   const [offeneRechnungen, setOffeneRechnungen] = useState([]);
   const [rechnungTx, setRechnungTx] = useState(null);
+  const [aehnlicheAnzahl, setAehnlicheAnzahl] = useState(0);
+  const [aehnlicheAuftraggeber, setAehnlicheAuftraggeber] = useState('');
 
   // Steuerauswertung States
   const [steuerauswertung, setSteuerauswertung] = useState(null);
@@ -203,6 +231,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const loadAbschluss = useCallback(async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await axios.get(`/buchhaltung/abschluss/${selectedJahr}`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { organisation: selectedOrg }
@@ -210,6 +239,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       setAbschlussData(res.data);
     } catch (err) {
       console.error('Abschluss laden fehlgeschlagen:', err);
+      setError('Fehler beim Laden des Jahresabschlusses');
     } finally {
       setLoading(false);
     }
@@ -282,24 +312,41 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     }
   };
 
+  // Ähnliche Transaktionen laden (für Modal-Vorschau)
+  const ladeAehnliche = async (txId) => {
+    try {
+      const res = await axios.get(`/buchhaltung/bank-import/aehnliche/${txId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAehnlicheAnzahl(res.data?.anzahl || 0);
+      setAehnlicheAuftraggeber(res.data?.auftraggeber || '');
+    } catch (_) {
+      setAehnlicheAnzahl(0);
+    }
+  };
+
   // Transaktion zuordnen
-  const zuordnenTransaktion = async (kategorie, lerneRegel = false) => {
+  const zuordnenTransaktion = async (kategorie) => {
     if (!selectedBankTx) return;
 
     try {
       setLoading(true);
-      await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, {
-        kategorie,
-        lerne_regel: lerneRegel
+      const res = await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, {
+        kategorie
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSuccess('Transaktion zugeordnet');
+      const autoCount = res.data?.auto_zugeordnet || 0;
+      const msg = autoCount > 0
+        ? `Zugeordnet + ${autoCount} weitere Transaktionen von "${aehnlicheAuftraggeber}" automatisch zugeordnet`
+        : 'Transaktion zugeordnet';
+      setSuccess(msg);
       setShowKategorieModal(false);
       setSelectedBankTx(null);
+      setAehnlicheAnzahl(0);
       loadBankTransaktionen();
       loadBankStatistik();
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler bei der Zuordnung');
     } finally {
@@ -308,15 +355,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   };
 
   // Batch-Zuordnung
-  const batchZuordnen = async (kategorie, lerneRegel = false) => {
+  const batchZuordnen = async (kategorie) => {
     if (selectedBankTxIds.length === 0) return;
 
     try {
       setLoading(true);
       const transaktionen = selectedBankTxIds.map(id => ({ id, kategorie }));
       await axios.post('/buchhaltung/bank-import/batch-zuordnen', {
-        transaktionen,
-        lerne_regel: lerneRegel
+        transaktionen
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -427,6 +473,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     // Kategorie Filter
     if (bankKategorieFilter) {
       filtered = filtered.filter(tx => tx.kategorie === bankKategorieFilter);
+    }
+
+    // Datum Von/Bis Filter
+    if (bankDatumVon) {
+      filtered = filtered.filter(tx => tx.buchungsdatum >= bankDatumVon);
+    }
+    if (bankDatumBis) {
+      filtered = filtered.filter(tx => tx.buchungsdatum <= bankDatumBis);
     }
 
     // Sortierung
@@ -639,49 +693,59 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // ===================================================================
   // 📊 GuV DATA FETCHING
   // ===================================================================
-  const fetchGuvData = useCallback(() => {
-    setLoading(true);
-    axios.get('/buchhaltung/guv/details', {
-      params: {
-        organisation: selectedOrg,
-        jahr: selectedJahr,
-        quartal: selectedQuartal
-      },
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(response => {
-      setGuvDetails(response.data);
-      setLoading(false);
-    })
-    .catch(err => {
+  const fetchGuvData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await axios.get('/buchhaltung/guv/details', {
+        params: { organisation: selectedOrg, jahr: selectedJahr, quartal: selectedQuartal },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGuvDetails(response.data || null);
+    } catch (err) {
       console.error('GuV-Fehler:', err);
       setError('Fehler beim Laden der GuV-Daten');
+    } finally {
       setLoading(false);
-    });
+    }
   }, [token, selectedOrg, selectedJahr, selectedQuartal]);
 
   // ===================================================================
   // 📊 BILANZ DATA FETCHING
   // ===================================================================
-  const fetchBilanzData = useCallback(() => {
-    setLoading(true);
-    axios.get('/buchhaltung/bilanz', {
-      params: {
-        organisation: selectedOrg,
-        jahr: selectedJahr
-      },
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(response => {
-      setBilanzData(response.data);
-      setLoading(false);
-    })
-    .catch(err => {
+  const fetchBilanzData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await axios.get('/buchhaltung/bilanz', {
+        params: { organisation: selectedOrg, jahr: selectedJahr },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBilanzData(response.data || null);
+    } catch (err) {
       console.error('Bilanz-Fehler:', err);
       setError('Fehler beim Laden der Bilanz-Daten');
+    } finally {
       setLoading(false);
-    });
+    }
   }, [token, selectedOrg, selectedJahr]);
+
+  const saveGewinnvortrag = useCallback(async (newValue) => {
+    setEditingGewinnvortrag(false);
+    const raw = bilanzData?.raw || {};
+    try {
+      await axios.post('/buchhaltung/bilanz/stammdaten', {
+        organisation: selectedOrg,
+        jahr: selectedJahr,
+        ...raw,
+        gewinnvortrag: parseFloat(newValue) || 0
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchBilanzData();
+    } catch (err) {
+      console.error('Gewinnvortrag speichern:', err);
+      setError('Fehler beim Speichern des Gewinnvortrags');
+    }
+  }, [bilanzData, selectedOrg, selectedJahr, token, fetchBilanzData]);
 
   // Initial Load
   useEffect(() => {
@@ -709,7 +773,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     } else if (activeSubTab === 'abschluss') {
       loadAbschluss();
     }
-  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadAbschluss, fetchGuvData, fetchBilanzData]);
+  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchBilanzData]);
 
   // Beleg speichern
   const saveBeleg = async () => {
@@ -898,6 +962,54 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     setShowBelegModal(true);
   };
 
+  // Beiträge Drill-down laden
+  const ladeBeitraegeDetail = async (monat, jahr, label, organisation) => {
+    console.log('[BeitraegeDetail] params:', { monat, jahr, label, organisation });
+    setBeitraegeDetailLoading(true);
+    setBeitraegeDetail({ monat, jahr, label, eintraege: [] });
+    if (!monat || !jahr || isNaN(Number(monat)) || isNaN(Number(jahr))) {
+      setBeitraegeDetail({ monat, jahr, label, eintraege: [], fehler: `Ungültige Parameter: monat=${monat}, jahr=${jahr}` });
+      setBeitraegeDetailLoading(false);
+      return;
+    }
+    try {
+      const res = await axios.get('/buchhaltung/euer/beitraege-detail', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          monat: String(monat),
+          jahr: String(jahr),
+          ...(organisation && organisation !== 'alle' ? { organisation } : {})
+        }
+      });
+      setBeitraegeDetail({ monat, jahr, label, eintraege: res.data });
+    } catch (err) {
+      console.error('Beiträge-Detail laden fehlgeschlagen:', err, err?.response?.data);
+      const errMsg = err?.response?.data?.message
+        || (typeof err?.response?.data === 'string' ? err.response.data.substring(0, 200) : null)
+        || JSON.stringify(err?.response?.data)
+        || err.message;
+      setBeitraegeDetail(prev => prev ? { ...prev, fehler: errMsg } : null);
+    } finally {
+      setBeitraegeDetailLoading(false);
+    }
+  };
+
+  // Verkauf Drill-down laden
+  const ladeVerkaufDetail = async (verkaufId, label) => {
+    setVerkaufDetailLoading(true);
+    setVerkaufDetail({ label, loading: true });
+    try {
+      const res = await axios.get(`/buchhaltung/euer/verkauf-detail/${verkaufId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setVerkaufDetail({ label, ...res.data });
+    } catch (err) {
+      setVerkaufDetail({ label, fehler: err?.response?.data?.message || err.message });
+    } finally {
+      setVerkaufDetailLoading(false);
+    }
+  };
+
   // Format currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0);
@@ -918,6 +1030,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   // Sub-Tabs
   const subTabs = [
     { id: 'euer', label: 'EÜR Übersicht', icon: <PieChart size={16} /> },
+    { id: 'ustVA', label: 'UStVA', icon: <Calculator size={16} /> },
     { id: 'guv', label: 'GuV', icon: <TrendingUp size={16} /> },
     { id: 'bilanz', label: 'Bilanz', icon: <Building2 size={16} /> },
     { id: 'belege', label: 'Belegerfassung', icon: <Receipt size={16} /> },
@@ -934,7 +1047,16 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       <div className="buchhaltung-header">
         <div className="header-title">
           <Calculator size={24} />
-          <h2>Buchhaltung - EÜR</h2>
+          <div>
+            <h2>Buchhaltung</h2>
+            <span className="scope-subtitle">
+              {selectedOrg === 'alle'
+                ? 'Alle Organisationen — Gesamtansicht'
+                : selectedOrg}
+              {' · '}{selectedJahr}
+              {selectedQuartal ? ` · Q${selectedQuartal}` : ''}
+            </span>
+          </div>
         </div>
 
         <div className="header-filters">
@@ -1019,6 +1141,17 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
             </button>
           );
         })}
+      </div>
+
+      {/* Scope-Kontext-Banner */}
+      <div className={`scope-banner ${selectedOrg === 'alle' ? 'scope-gesamt' : 'scope-einzeln'}`}>
+        <Building2 size={14} />
+        <strong>
+          {selectedOrg === 'alle' ? 'Gesamtansicht — Alle Organisationen' : selectedOrg}
+        </strong>
+        <span className="scope-divider">·</span>
+        <span>Geschäftsjahr {selectedJahr}</span>
+        {selectedQuartal && <><span className="scope-divider">·</span><span>Q{selectedQuartal}</span></>}
       </div>
 
       {/* Sub-Tab Content */}
@@ -1113,10 +1246,21 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 <td className="right">{formatCurrency(detail.summe)}</td>
                               </tr>
                               {expandedKategorien[`ein_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
-                                <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
+                                <tr
+                                  key={`${kat}-${idx}-${bIdx}`}
+                                  className={`einzelbuchung-row${buchung.drilldown ? ' clickable bt-cursor-pointer' : ''}`}
+                                  onClick={buchung.drilldown ? () => {
+                                    if (buchung.drilldown.typ === 'beitraege') ladeBeitraegeDetail(buchung.drilldown.monat, buchung.drilldown.jahr, buchung.beschreibung, buchung.drilldown.organisation);
+                                    else if (buchung.drilldown.typ === 'verkauf') ladeVerkaufDetail(buchung.drilldown.verkauf_id, buchung.beschreibung);
+                                  } : undefined}
+                                  title={buchung.drilldown ? 'Klicken für Einzelmitglieder' : undefined}
+                                >
                                   <td></td>
                                   <td className="bt-cell-sub">
-                                    {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
+                                    <span className="bt-flex-icon">
+                                      {buchung.drilldown && <ChevronRight size={12} />}
+                                      {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
+                                    </span>
                                   </td>
                                   <td className="right bt-cell-sub-right">{formatCurrency(buchung.betrag)}</td>
                                 </tr>
@@ -1212,6 +1356,13 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           </div>
         )}
 
+        {/* ==================== UStVA TAB ==================== */}
+        {activeSubTab === 'ustVA' && (
+          <div style={{ marginTop: 8 }}>
+            <UStVATab dojoId={dojoId} />
+          </div>
+        )}
+
         {/* ==================== GuV TAB ==================== */}
         {activeSubTab === 'guv' && (
           <div className="guv-content">
@@ -1256,10 +1407,26 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       <td className="right">{formatCurrency(guvDetails.umsatzerloese.gesamt)}</td>
                     </tr>
                     {expandedKategorien['guv_umsatz'] && guvDetails.umsatzerloese.details.map((detail, idx) => (
-                      <tr key={idx} className="detail-row">
-                        <td className="bt-pl-4">{detail.quelle}</td>
-                        <td className="right">{formatCurrency(detail.betrag)}</td>
-                      </tr>
+                      <React.Fragment key={idx}>
+                        <tr
+                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
+                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`umsatz_${idx}`]: !prev[`umsatz_${idx}`] })) : undefined}
+                        >
+                          <td className="bt-pl-4">
+                            <span className="bt-flex-icon">
+                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`umsatz_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
+                              {detail.quelle}
+                            </span>
+                          </td>
+                          <td className="right">{formatCurrency(detail.betrag)}</td>
+                        </tr>
+                        {expandedGuvDetails[`umsatz_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
+                          <tr key={bIdx} className="einzelbuchung-row">
+                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
+                            <td className="right bt-cell-sub-right">{formatCurrency(buch.betrag)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
                     ))}
 
                     {/* Material Costs */}
@@ -1277,10 +1444,26 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       <td className="right negative">-{formatCurrency(guvDetails.materialaufwand.gesamt)}</td>
                     </tr>
                     {expandedKategorien['guv_material'] && guvDetails.materialaufwand.details.map((detail, idx) => (
-                      <tr key={idx} className="detail-row">
-                        <td className="bt-pl-4">{detail.quelle}</td>
-                        <td className="right negative">-{formatCurrency(detail.betrag)}</td>
-                      </tr>
+                      <React.Fragment key={idx}>
+                        <tr
+                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
+                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`material_${idx}`]: !prev[`material_${idx}`] })) : undefined}
+                        >
+                          <td className="bt-pl-4">
+                            <span className="bt-flex-icon">
+                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`material_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
+                              {detail.quelle}
+                            </span>
+                          </td>
+                          <td className="right negative">-{formatCurrency(detail.betrag)}</td>
+                        </tr>
+                        {expandedGuvDetails[`material_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
+                          <tr key={bIdx} className="einzelbuchung-row">
+                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
+                            <td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
                     ))}
 
                     {/* Personnel Costs */}
@@ -1298,10 +1481,26 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       <td className="right negative">-{formatCurrency(guvDetails.personalaufwand.gesamt)}</td>
                     </tr>
                     {expandedKategorien['guv_personal'] && guvDetails.personalaufwand.details.map((detail, idx) => (
-                      <tr key={idx} className="detail-row">
-                        <td className="bt-pl-4">{detail.quelle}</td>
-                        <td className="right negative">-{formatCurrency(detail.betrag)}</td>
-                      </tr>
+                      <React.Fragment key={idx}>
+                        <tr
+                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
+                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`personal_${idx}`]: !prev[`personal_${idx}`] })) : undefined}
+                        >
+                          <td className="bt-pl-4">
+                            <span className="bt-flex-icon">
+                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`personal_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
+                              {detail.quelle}
+                            </span>
+                          </td>
+                          <td className="right negative">-{formatCurrency(detail.betrag)}</td>
+                        </tr>
+                        {expandedGuvDetails[`personal_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
+                          <tr key={bIdx} className="einzelbuchung-row">
+                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
+                            <td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
                     ))}
 
                     {/* Depreciation */}
@@ -1328,10 +1527,26 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       <td className="right negative">-{formatCurrency(guvDetails.sonstige_aufwendungen.gesamt)}</td>
                     </tr>
                     {expandedKategorien['guv_sonstige'] && guvDetails.sonstige_aufwendungen.details.map((detail, idx) => (
-                      <tr key={idx} className="detail-row">
-                        <td className="bt-pl-4">{detail.kategorie} ({detail.quelle})</td>
-                        <td className="right negative">-{formatCurrency(detail.betrag)}</td>
-                      </tr>
+                      <React.Fragment key={idx}>
+                        <tr
+                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
+                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`sonstige_${idx}`]: !prev[`sonstige_${idx}`] })) : undefined}
+                        >
+                          <td className="bt-pl-4">
+                            <span className="bt-flex-icon">
+                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`sonstige_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
+                              {detail.kategorie} ({detail.quelle})
+                            </span>
+                          </td>
+                          <td className="right negative">-{formatCurrency(detail.betrag)}</td>
+                        </tr>
+                        {expandedGuvDetails[`sonstige_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
+                          <tr key={bIdx} className="einzelbuchung-row">
+                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
+                            <td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
                     ))}
 
                     {/* Result */}
@@ -1373,47 +1588,88 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
 
             {loading && <div className="loading">Lade Bilanz-Daten...</div>}
 
+            {!bilanzData && !loading && (
+              <div className="message info">
+                <AlertCircle size={16} />
+                Keine Bilanz-Daten vorhanden. Bitte Stammdaten eingeben.
+              </div>
+            )}
+
             {bilanzData && (
               <div className="bilanz-layout">
+                {!bilanzData.stammdaten_vorhanden && (
+                  <div className="message warning" style={{ marginBottom: '1rem' }}>
+                    <AlertCircle size={16} />
+                    Stammdaten fehlen noch. Bitte über "Stammdaten bearbeiten" die Eröffnungswerte eingeben.
+                  </div>
+                )}
                 <div className="bilanz-columns">
                   {/* AKTIVA (Left) */}
                   <div className="bilanz-column">
                     <h4>AKTIVA</h4>
                     <table className="bilanz-table">
                       <tbody>
+                        {/* A. Anlagevermögen */}
                         <tr className="section-header-row">
-                          <td><strong>A. Anlagevermögen</strong></td>
-                          <td className="right"></td>
+                          <td colSpan="2"><strong>A. Anlagevermögen</strong></td>
                         </tr>
                         <tr>
-                          <td className="bt-pl-2">Sachanlagen</td>
+                          <td className="bt-pl-2">I. Immaterielle Vermögensgegenstände</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.immat_vermoegensgegenstaende)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">II. Sachanlagen</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.sachanlagen)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">III. Finanzanlagen</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.finanzanlagen)}</td>
                         </tr>
                         <tr className="subtotal-row">
                           <td className="bt-pl-1"><strong>Summe Anlagevermögen</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.aktiva.anlagevermoegen.gesamt)}</strong></td>
                         </tr>
 
+                        {/* B. Umlaufvermögen */}
                         <tr className="section-header-row">
-                          <td><strong>B. Umlaufvermögen</strong></td>
-                          <td className="right"></td>
+                          <td colSpan="2"><strong>B. Umlaufvermögen</strong></td>
                         </tr>
                         <tr>
-                          <td className="bt-pl-2">Bankguthaben</td>
+                          <td className="bt-pl-2">I. Vorräte</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.vorraete)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">II. Forderungen aus Lieferungen und Leistungen</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.forderungen_ll)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-3">Sonstige Forderungen</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.sonstige_forderungen)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">III. Kassenbestand, Bankguthaben</td>
+                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.bank_guthaben + bilanzData.aktiva.umlaufvermoegen.kassenbestand)}</td>
+                        </tr>
+                        <tr className="detail-row">
+                          <td className="bt-pl-3">davon Bankguthaben</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.bank_guthaben)}</td>
                         </tr>
-                        <tr>
-                          <td className="bt-pl-2">Kassenbestand</td>
+                        <tr className="detail-row">
+                          <td className="bt-pl-3">davon Kassenbestand</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.kassenbestand)}</td>
-                        </tr>
-                        <tr>
-                          <td className="bt-pl-2">Forderungen</td>
-                          <td className="right">{formatCurrency(bilanzData.aktiva.umlaufvermoegen.forderungen)}</td>
                         </tr>
                         <tr className="subtotal-row">
                           <td className="bt-pl-1"><strong>Summe Umlaufvermögen</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.aktiva.umlaufvermoegen.gesamt)}</strong></td>
                         </tr>
+
+                        {/* C. Rechnungsabgrenzungsposten */}
+                        {bilanzData.aktiva.rechnungsabgrenzung > 0 && (
+                          <tr>
+                            <td><strong>C. Aktive Rechnungsabgrenzungsposten</strong></td>
+                            <td className="right">{formatCurrency(bilanzData.aktiva.rechnungsabgrenzung)}</td>
+                          </tr>
+                        )}
 
                         <tr className="total-row">
                           <td><strong>SUMME AKTIVA</strong></td>
@@ -1428,35 +1684,100 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     <h4>PASSIVA</h4>
                     <table className="bilanz-table">
                       <tbody>
+                        {/* A. Eigenkapital */}
                         <tr className="section-header-row">
-                          <td><strong>A. Eigenkapital</strong></td>
-                          <td className="right"></td>
+                          <td colSpan="2"><strong>A. Eigenkapital</strong></td>
                         </tr>
                         <tr>
-                          <td className="bt-pl-2">Anfangsbestand</td>
+                          <td className="bt-pl-2">I. Kapital / Anfangsbestand</td>
                           <td className="right">{formatCurrency(bilanzData.passiva.eigenkapital.anfangsbestand)}</td>
                         </tr>
                         <tr>
-                          <td className="bt-pl-2">Kumulierter Gewinn</td>
-                          <td className="right">{formatCurrency(bilanzData.passiva.eigenkapital.kumulierter_gewinn)}</td>
+                          <td className="bt-pl-2">
+                            II. Gewinnvortrag aus Vorjahren
+                          </td>
+                          <td className="right">
+                            {editingGewinnvortrag ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                autoFocus
+                                className="inline-number-input"
+                                defaultValue={bilanzData.passiva.eigenkapital.gewinnvortrag}
+                                onBlur={(e) => saveGewinnvortrag(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveGewinnvortrag(e.target.value);
+                                  if (e.key === 'Escape') setEditingGewinnvortrag(false);
+                                }}
+                              />
+                            ) : (
+                              <span
+                                className="inline-edit-value"
+                                onClick={() => setEditingGewinnvortrag(true)}
+                                title="Klicken zum Bearbeiten"
+                              >
+                                {formatCurrency(bilanzData.passiva.eigenkapital.gewinnvortrag)}
+                                <Edit size={11} className="inline-edit-icon" />
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">III. Jahresüberschuss / -fehlbetrag</td>
+                          <td className={`right ${bilanzData.passiva.eigenkapital.jahresueberschuss < 0 ? 'bt-negative' : ''}`}>
+                            {formatCurrency(bilanzData.passiva.eigenkapital.jahresueberschuss)}
+                          </td>
                         </tr>
                         <tr className="subtotal-row">
                           <td className="bt-pl-1"><strong>Summe Eigenkapital</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.passiva.eigenkapital.gesamt)}</strong></td>
                         </tr>
 
+                        {/* B. Rückstellungen */}
                         <tr className="section-header-row">
-                          <td><strong>B. Verbindlichkeiten</strong></td>
-                          <td className="right"></td>
+                          <td colSpan="2"><strong>B. Rückstellungen</strong></td>
                         </tr>
                         <tr>
-                          <td className="bt-pl-2">Darlehen</td>
+                          <td className="bt-pl-2">Steuerrückstellungen</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.rueckstellungen.steuerrueckstellungen)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">Sonstige Rückstellungen</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.rueckstellungen.sonstige_rueckstellungen)}</td>
+                        </tr>
+                        <tr className="subtotal-row">
+                          <td className="bt-pl-1"><strong>Summe Rückstellungen</strong></td>
+                          <td className="right"><strong>{formatCurrency(bilanzData.passiva.rueckstellungen.gesamt)}</strong></td>
+                        </tr>
+
+                        {/* C. Verbindlichkeiten */}
+                        <tr className="section-header-row">
+                          <td colSpan="2"><strong>C. Verbindlichkeiten</strong></td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">Verbindlichkeiten ggü. Kreditinstituten</td>
                           <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.darlehen)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">Verbindlichkeiten aus Lieferungen und Leistungen</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.verbindlichkeiten_lieferanten)}</td>
+                        </tr>
+                        <tr>
+                          <td className="bt-pl-2">Sonstige Verbindlichkeiten</td>
+                          <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.sonstige_verbindlichkeiten)}</td>
                         </tr>
                         <tr className="subtotal-row">
                           <td className="bt-pl-1"><strong>Summe Verbindlichkeiten</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.passiva.verbindlichkeiten.gesamt)}</strong></td>
                         </tr>
+
+                        {/* D. Rechnungsabgrenzungsposten */}
+                        {bilanzData.passiva.rechnungsabgrenzung > 0 && (
+                          <tr>
+                            <td><strong>D. Passive Rechnungsabgrenzungsposten</strong></td>
+                            <td className="right">{formatCurrency(bilanzData.passiva.rechnungsabgrenzung)}</td>
+                          </tr>
+                        )}
 
                         <tr className="total-row">
                           <td><strong>SUMME PASSIVA</strong></td>
@@ -1467,19 +1788,20 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </div>
                 </div>
 
-                {/* Balance Check */}
-                {!bilanzData.bilanz_ausgeglichen && (
-                  <div className="message warning">
-                    <AlertCircle size={16} />
-                    Achtung: Bilanz ist nicht ausgeglichen! Aktiva und Passiva müssen übereinstimmen.
-                  </div>
-                )}
-                {bilanzData.bilanz_ausgeglichen && (
-                  <div className="message success">
-                    <CheckCircle size={16} />
-                    Bilanz ist ausgeglichen.
-                  </div>
-                )}
+                {/* Differenz-Anzeige */}
+                <div className={`bilanz-check ${bilanzData.bilanz_ausgeglichen ? 'ausgeglichen' : 'nicht-ausgeglichen'}`}>
+                  {bilanzData.bilanz_ausgeglichen ? (
+                    <span className="message success">
+                      <CheckCircle size={16} />
+                      Bilanz ist ausgeglichen.
+                    </span>
+                  ) : (
+                    <span className="message warning">
+                      <AlertCircle size={16} />
+                      Differenz: {formatCurrency(Math.abs(bilanzData.aktiva.gesamt - bilanzData.passiva.gesamt))} — Aktiva und Passiva stimmen nicht überein. Bitte Stammdaten prüfen.
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1565,7 +1887,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                           )}
                           {beleg.datei_name && (
                             <a
-                              href={`${axios.defaults.baseURL}/buchhaltung/belege/${beleg.beleg_id}/datei`}
+                              href={`/api/buchhaltung/belege/${beleg.beleg_id}/datei`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="btn-icon"
@@ -1752,6 +2074,27 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     </button>
                   )}
                 </div>
+                <div className="bank-datum-filter">
+                  <Calendar size={14} />
+                  <input
+                    type="date"
+                    title="Von Datum"
+                    value={bankDatumVon}
+                    onChange={(e) => setBankDatumVon(e.target.value)}
+                  />
+                  <span className="datum-separator">–</span>
+                  <input
+                    type="date"
+                    title="Bis Datum"
+                    value={bankDatumBis}
+                    onChange={(e) => setBankDatumBis(e.target.value)}
+                  />
+                  {(bankDatumVon || bankDatumBis) && (
+                    <button className="search-clear" onClick={() => { setBankDatumVon(''); setBankDatumBis(''); }} title="Datumsfilter zurücksetzen">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
                 <div className="bank-search">
                   <Search size={16} />
                   <input
@@ -1780,7 +2123,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 <div className="batch-buttons">
                   <button
                     className="btn-primary"
-                    onClick={() => setShowKategorieModal(true)}
+                    onClick={() => { setAehnlicheAnzahl(0); setShowKategorieModal(true); }}
                   >
                     Kategorie zuordnen
                   </button>
@@ -1896,7 +2239,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 <button
                                   className="btn-icon"
                                   title="Andere Kategorie wählen"
-                                  onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); }}
+                                  onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); ladeAehnliche(tx.transaktion_id); }}
                                 >
                                   <Edit size={14} />
                                 </button>
@@ -1906,7 +2249,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                               <button
                                 className="btn-icon"
                                 title="Kategorie zuordnen"
-                                onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); }}
+                                onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); ladeAehnliche(tx.transaktion_id); }}
                               >
                                 <Plus size={14} />
                               </button>
@@ -2624,14 +2967,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
               <div className="upload-area">
                 <div className="upload-info">
                   <FileUp size={48} />
-                  <p>CSV, Excel oder MT940 Datei hochladen</p>
+                  <p>Kontoauszug hochladen</p>
                   <p className="upload-hint">
-                    Unterstützte Formate: CSV, XLS, XLSX, MT940 (STA)
+                    CSV, XLS, XLSX, MT940 (STA) oder PDF
                   </p>
                 </div>
                 <input
                   type="file"
-                  accept=".csv,.sta,.mt940,.txt,.xls,.xlsx"
+                  accept=".csv,.sta,.mt940,.txt,.xls,.xlsx,.pdf,application/pdf"
                   onChange={(e) => setBankUploadFile(e.target.files[0])}
                 />
                 {bankUploadFile && (
@@ -2675,13 +3018,16 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
             </div>
 
             <div className="modal-body">
-              {/* Regel lernen - jetzt oben */}
-              <div className="form-group checkbox-group regel-lernen-top">
-                <label>
-                  <input type="checkbox" id="lerne-regel" />
-                  Regel lernen (diese Zuordnung für ähnliche Transaktionen merken)
-                </label>
-              </div>
+              {/* Auto-Zuordnung Hinweis */}
+              {selectedBankTx && aehnlicheAnzahl > 0 && (
+                <div className="auto-zuordnung-hint">
+                  <span>⚡</span>
+                  <span>
+                    <span className="hint-count">{aehnlicheAnzahl} weitere</span> unzugeordnete Transaktionen von{' '}
+                    <strong>"{aehnlicheAuftraggeber}"</strong> werden automatisch mit derselben Kategorie zugeordnet.
+                  </span>
+                </div>
+              )}
 
               {/* Single Transaction Preview */}
               {selectedBankTx && (
@@ -2748,12 +3094,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     key={kat.id}
                     className={`kategorie-btn ${kat.typ}`}
                     onClick={() => {
-                      const lerneRegel = document.getElementById('lerne-regel')?.checked || false;
                       if (selectedBankTxIds.length > 0 && !selectedBankTx) {
-                        batchZuordnen(kat.id, lerneRegel);
+                        batchZuordnen(kat.id);
                         setShowKategorieModal(false);
                       } else {
-                        zuordnenTransaktion(kat.id, lerneRegel);
+                        zuordnenTransaktion(kat.id);
                       }
                     }}
                   >
@@ -2762,6 +3107,109 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== BEITRAEGE DETAIL MODAL ==================== */}
+      {beitraegeDetail && (
+        <div className="modal-overlay" onClick={() => setBeitraegeDetail(null)}>
+          <div className="modal beitraege-detail-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{beitraegeDetail.label}</h3>
+              <button className="modal-close" onClick={() => setBeitraegeDetail(null)}><X size={18} /></button>
+            </div>
+            <div className="modal-body">
+              {beitraegeDetailLoading ? (
+                <div className="loading-spinner">Laden...</div>
+              ) : beitraegeDetail?.fehler ? (
+                <div className="message error" style={{margin:'1rem'}}>Fehler: {beitraegeDetail.fehler}</div>
+              ) : beitraegeDetail?.eintraege?.length === 0 ? (
+                <div className="message" style={{margin:'1rem'}}>Keine Einträge gefunden für {beitraegeDetail.label}</div>
+              ) : (
+                <>
+                  <table className="beitraege-detail-table">
+                    <thead>
+                      <tr>
+                        <th>Mitglied</th>
+                        <th>Zahlungsdatum</th>
+                        <th>Zahlungsart</th>
+                        <th className="right">Betrag</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {beitraegeDetail.eintraege.map(e => (
+                        <tr key={e.beitrag_id}>
+                          <td>{e.nachname}, {e.vorname}</td>
+                          <td>{new Date(e.zahlungsdatum).toLocaleDateString('de-DE')}</td>
+                          <td>{e.zahlungsart || '—'}</td>
+                          <td className="right">{formatCurrency(e.betrag)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="total-row">
+                        <td colSpan="3"><strong>Gesamt ({beitraegeDetail.eintraege.length} Einträge)</strong></td>
+                        <td className="right"><strong>{formatCurrency(beitraegeDetail.eintraege.reduce((s, e) => s + parseFloat(e.betrag), 0))}</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== VERKAUF DETAIL MODAL ==================== */}
+      {verkaufDetail && (
+        <div className="modal-overlay" onClick={() => setVerkaufDetail(null)}>
+          <div className="modal beitraege-detail-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{verkaufDetail.label}</h3>
+              <button className="modal-close" onClick={() => setVerkaufDetail(null)}><X size={18} /></button>
+            </div>
+            <div className="modal-body">
+              {verkaufDetailLoading || verkaufDetail.loading ? (
+                <div className="loading-spinner">Laden...</div>
+              ) : verkaufDetail.fehler ? (
+                <div className="message error" style={{margin:'1rem'}}>Fehler: {verkaufDetail.fehler}</div>
+              ) : (
+                <>
+                  <div style={{padding:'0.75rem 1rem', background:'var(--bg-secondary)', borderRadius:6, marginBottom:'0.75rem', fontSize:'0.85rem', display:'flex', gap:'2rem'}}>
+                    <span><strong>Kunde:</strong> {verkaufDetail.kunde}</span>
+                    <span><strong>Datum:</strong> {new Date(verkaufDetail.datum).toLocaleDateString('de-DE')}</span>
+                    <span><strong>Zahlungsart:</strong> {verkaufDetail.zahlungsart}</span>
+                  </div>
+                  <table className="beitraege-detail-table">
+                    <thead>
+                      <tr>
+                        <th>Artikel</th>
+                        <th className="right">Menge</th>
+                        <th className="right">Einzelpreis</th>
+                        <th className="right">Brutto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {verkaufDetail.positionen?.map((p, i) => (
+                        <tr key={i}>
+                          <td>{p.artikel_name}</td>
+                          <td className="right">{p.menge}x</td>
+                          <td className="right">{formatCurrency(p.einzelpreis)}</td>
+                          <td className="right">{formatCurrency(p.brutto)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="total-row">
+                        <td colSpan="3"><strong>Gesamt</strong></td>
+                        <td className="right"><strong>{formatCurrency(verkaufDetail.gesamt)}</strong></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -2935,9 +3383,20 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 kasse_anfangsbestand: parseFloat(formData.get('kasse_anfangsbestand')) || 0,
                 sachanlagen: parseFloat(formData.get('sachanlagen')) || 0,
                 sachanlagen_beschreibung: formData.get('sachanlagen_beschreibung'),
+                immat_vermoegensgegenstaende: parseFloat(formData.get('immat_vermoegensgegenstaende')) || 0,
+                finanzanlagen: parseFloat(formData.get('finanzanlagen')) || 0,
+                vorraete: parseFloat(formData.get('vorraete')) || 0,
+                sonstige_forderungen: parseFloat(formData.get('sonstige_forderungen')) || 0,
+                rechnungsabgrenzung_aktiv: parseFloat(formData.get('rechnungsabgrenzung_aktiv')) || 0,
                 eigenkapital_anfang: parseFloat(formData.get('eigenkapital_anfang')) || 0,
+                gewinnvortrag: bilanzData?.raw?.gewinnvortrag || 0,
                 darlehen: parseFloat(formData.get('darlehen')) || 0,
-                darlehen_beschreibung: formData.get('darlehen_beschreibung')
+                darlehen_beschreibung: formData.get('darlehen_beschreibung'),
+                steuerrueckstellungen: parseFloat(formData.get('steuerrueckstellungen')) || 0,
+                sonstige_rueckstellungen: parseFloat(formData.get('sonstige_rueckstellungen')) || 0,
+                verbindlichkeiten_lieferanten: parseFloat(formData.get('verbindlichkeiten_lieferanten')) || 0,
+                sonstige_verbindlichkeiten: parseFloat(formData.get('sonstige_verbindlichkeiten')) || 0,
+                rechnungsabgrenzung_passiv: parseFloat(formData.get('rechnungsabgrenzung_passiv')) || 0
               };
 
               axios.post('/buchhaltung/bilanz/stammdaten', data, {
@@ -2954,64 +3413,105 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
               });
             }}>
               <div className="form-grid">
-                <div className="form-group">
-                  <label>Bank-Anfangsbestand (EUR)</label>
-                  <input
-                    type="number"
-                    name="bank_anfangsbestand"
-                    step="0.01"
-                    defaultValue={0}
-                  />
+                <div className="form-group full-width">
+                  <h4 className="form-section-title">AKTIVA — Anlagevermögen</h4>
                 </div>
-
                 <div className="form-group">
-                  <label>Kasse-Anfangsbestand (EUR)</label>
-                  <input
-                    type="number"
-                    name="kasse_anfangsbestand"
-                    step="0.01"
-                    defaultValue={0}
-                  />
+                  <label>Immaterielle Vermögensgegenstände (€)</label>
+                  <input type="number" name="immat_vermoegensgegenstaende" step="0.01" defaultValue={bilanzData?.raw?.immat_vermoegensgegenstaende ?? 0} />
+                  <small>Lizenzen, Software, Geschäftswert</small>
                 </div>
-
                 <div className="form-group">
-                  <label>Sachanlagen (EUR)</label>
-                  <input
-                    type="number"
-                    name="sachanlagen"
-                    step="0.01"
-                    defaultValue={0}
-                  />
+                  <label>Sachanlagen (€)</label>
+                  <input type="number" name="sachanlagen" step="0.01" defaultValue={bilanzData?.raw?.sachanlagen ?? 0} />
+                  <small>Sportgeräte, Trainingsgeräte, Möbel</small>
                 </div>
-
-                <div className="form-group">
-                  <label>Sachanlagen-Beschreibung</label>
-                  <textarea name="sachanlagen_beschreibung" rows="2"></textarea>
+                <div className="form-group full-width">
+                  <label>Sachanlagen — Beschreibung</label>
+                  <textarea name="sachanlagen_beschreibung" rows="2" defaultValue={bilanzData?.raw?.sachanlagen_beschreibung || ''} />
                 </div>
-
                 <div className="form-group">
-                  <label>Eigenkapital-Anfangsbestand (EUR)</label>
-                  <input
-                    type="number"
-                    name="eigenkapital_anfang"
-                    step="0.01"
-                    defaultValue={0}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Darlehen (EUR)</label>
-                  <input
-                    type="number"
-                    name="darlehen"
-                    step="0.01"
-                    defaultValue={0}
-                  />
+                  <label>Finanzanlagen (€)</label>
+                  <input type="number" name="finanzanlagen" step="0.01" defaultValue={bilanzData?.raw?.finanzanlagen ?? 0} />
+                  <small>Beteiligungen, Wertpapiere</small>
                 </div>
 
                 <div className="form-group full-width">
-                  <label>Darlehen-Beschreibung</label>
-                  <textarea name="darlehen_beschreibung" rows="2"></textarea>
+                  <h4 className="form-section-title">AKTIVA — Umlaufvermögen</h4>
+                </div>
+                <div className="form-group">
+                  <label>Vorräte (€)</label>
+                  <input type="number" name="vorraete" step="0.01" defaultValue={bilanzData?.raw?.vorraete ?? 0} />
+                  <small>Warenvorräte, Artikel-Inventar (Buchwert)</small>
+                </div>
+                <div className="form-group">
+                  <label>Sonstige Forderungen (€)</label>
+                  <input type="number" name="sonstige_forderungen" step="0.01" defaultValue={bilanzData?.raw?.sonstige_forderungen ?? 0} />
+                  <small>Sonstige Vermögensgegenstände</small>
+                </div>
+                <div className="form-group">
+                  <label>Bankguthaben — Anfangsbestand (€)</label>
+                  <input type="number" name="bank_anfangsbestand" step="0.01" defaultValue={bilanzData?.raw?.bank_anfangsbestand ?? 0} />
+                  <small>Kontostand zum Jahresbeginn (wird um importierte Transaktionen ergänzt)</small>
+                </div>
+                <div className="form-group">
+                  <label>Kassenbestand — Anfangsbestand (€)</label>
+                  <input type="number" name="kasse_anfangsbestand" step="0.01" defaultValue={bilanzData?.raw?.kasse_anfangsbestand ?? 0} />
+                  <small>Fallback wenn kein Kassenbuch-Eintrag vorhanden</small>
+                </div>
+                <div className="form-group">
+                  <label>Aktive Rechnungsabgrenzungsposten (€)</label>
+                  <input type="number" name="rechnungsabgrenzung_aktiv" step="0.01" defaultValue={bilanzData?.raw?.rechnungsabgrenzung_aktiv ?? 0} />
+                  <small>Vorauszahlungen für folgendes Geschäftsjahr</small>
+                </div>
+
+                <div className="form-group full-width">
+                  <h4 className="form-section-title">PASSIVA — Eigenkapital</h4>
+                </div>
+                <div className="form-group">
+                  <label>Kapital / Anfangsbestand (€)</label>
+                  <input type="number" name="eigenkapital_anfang" step="0.01" defaultValue={bilanzData?.raw?.eigenkapital_anfang ?? 0} />
+                  <small>Eigenkapital zum Jahresbeginn (ohne Gewinnvortrag und Jahresüberschuss)</small>
+                </div>
+
+                <div className="form-group full-width">
+                  <h4 className="form-section-title">PASSIVA — Rückstellungen</h4>
+                </div>
+                <div className="form-group">
+                  <label>Steuerrückstellungen (€)</label>
+                  <input type="number" name="steuerrueckstellungen" step="0.01" defaultValue={bilanzData?.raw?.steuerrueckstellungen ?? 0} />
+                  <small>Rückstellungen für Einkommensteuer, USt-Nachzahlungen</small>
+                </div>
+                <div className="form-group">
+                  <label>Sonstige Rückstellungen (€)</label>
+                  <input type="number" name="sonstige_rueckstellungen" step="0.01" defaultValue={bilanzData?.raw?.sonstige_rueckstellungen ?? 0} />
+                  <small>Urlaubsrückstellungen, Prozessrisiken, etc.</small>
+                </div>
+
+                <div className="form-group full-width">
+                  <h4 className="form-section-title">PASSIVA — Verbindlichkeiten</h4>
+                </div>
+                <div className="form-group">
+                  <label>Verbindlichkeiten ggü. Kreditinstituten (€)</label>
+                  <input type="number" name="darlehen" step="0.01" defaultValue={bilanzData?.raw?.darlehen ?? 0} />
+                </div>
+                <div className="form-group full-width">
+                  <label>Darlehen — Beschreibung</label>
+                  <textarea name="darlehen_beschreibung" rows="2" defaultValue={bilanzData?.raw?.darlehen_beschreibung || ''} />
+                </div>
+                <div className="form-group">
+                  <label>Verbindlichkeiten aus Lieferungen und Leistungen (€)</label>
+                  <input type="number" name="verbindlichkeiten_lieferanten" step="0.01" defaultValue={bilanzData?.raw?.verbindlichkeiten_lieferanten ?? 0} />
+                  <small>Offene Rechnungen von Lieferanten</small>
+                </div>
+                <div className="form-group">
+                  <label>Sonstige Verbindlichkeiten (€)</label>
+                  <input type="number" name="sonstige_verbindlichkeiten" step="0.01" defaultValue={bilanzData?.raw?.sonstige_verbindlichkeiten ?? 0} />
+                </div>
+                <div className="form-group">
+                  <label>Passive Rechnungsabgrenzungsposten (€)</label>
+                  <input type="number" name="rechnungsabgrenzung_passiv" step="0.01" defaultValue={bilanzData?.raw?.rechnungsabgrenzung_passiv ?? 0} />
+                  <small>Vereinnahmte Entgelte für das Folgejahr</small>
                 </div>
               </div>
 

@@ -341,7 +341,10 @@
   gap: 0.4rem;
   margin-bottom: 1rem;
 }
-.dt-detail-notiz label { font-size: 0.8rem; color: var(--text-secondary, #94a3b8); }
+.dt-detail-notiz label { font-size: 0.8rem; color: var(--text-secondary, #94a3b8); font-weight: 600; }
+.dt-notiz-hint { font-weight: 400; opacity: 0.75; }
+.dt-detail-notiz-email textarea { border-color: #6366f133; }
+.dt-detail-notiz-email textarea:focus { border-color: #6366f1; }
 .dt-detail-notiz textarea {
   background: var(--bg-primary, #0f172a);
   border: 1px solid var(--border-color, #334155);
@@ -352,6 +355,60 @@
   resize: vertical;
 }
 .dt-detail-notiz textarea:focus { outline: none; border-color: #6366f1; }
+
+.dt-detail-email-action { padding: 0.5rem 0; }
+
+.dt-detail-teams-action { padding: 0.5rem 0; }
+
+.dt-teams-link-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dt-btn-teams {
+  background: #5B5EA6;
+  color: #fff;
+  border: none;
+}
+.dt-btn-teams:hover { background: #464775; }
+
+.dt-btn-danger-xs {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+}
+.dt-btn-danger-xs:hover { background: #ef4444; color: #fff; }
+
+.dt-teams-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.dt-teams-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94a3b8);
+  margin-top: 0.25rem;
+}
+.dt-teams-input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.dt-teams-input {
+  flex: 1;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 4px;
+  color: var(--text-primary, #f1f5f9);
+  min-width: 0;
+}
+.dt-teams-input:focus { outline: none; border-color: #5B5EA6; }
 
 .dt-detail-buchdat { font-size: 0.75rem; color: var(--text-secondary, #94a3b8); border-top: 1px solid var(--border-color, #334155); padding-top: 0.75rem; }
 
@@ -1123,6 +1180,31 @@
 
 .dt-week-day--active .dt-week-day-name {
   color: #818cf8;
+}
+
+.dt-week-day-name--clickable {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 4px;
+  padding: 1px 3px;
+  margin: -1px -3px;
+  transition: background 0.15s;
+}
+.dt-week-day-name--clickable:hover {
+  background: rgba(99,102,241,0.15);
+}
+
+.dt-week-day-chevron {
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+
+.dt-week-day--collapsed .dt-week-times {
+  display: none;
 }
 
 .dt-week-times {

@@ -98,14 +98,21 @@ router.get('/count', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
+    let query = `
       SELECT i.*
       FROM interessenten i
       WHERE i.id = ?
     `;
+    const params = [id];
 
-    const result = await queryAsync(query, [id]);
+    if (secureDojoId) {
+      query += ` AND i.dojo_id = ?`;
+      params.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, params);
 
     if (result.length === 0) {
       return res.status(404).json({ error: 'Interessent nicht gefunden' });
@@ -176,8 +183,9 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
+    let query = `
       UPDATE interessenten SET
         vorname = ?, nachname = ?, geburtsdatum = ?, \`alter\` = ?,
         email = ?, telefon = ?, telefon_mobil = ?, strasse = ?, hausnummer = ?, plz = ?, ort = ?,
@@ -217,7 +225,15 @@ router.put('/:id', async (req, res) => {
       id
     ];
 
-    await queryAsync(query, values);
+    if (secureDojoId) {
+      query = query.replace('WHERE id = ?', 'WHERE id = ? AND dojo_id = ?');
+      values.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, values);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Interessent nicht gefunden' });
+    }
     res.json({ message: 'Interessent erfolgreich aktualisiert' });
   } catch (error) {
     logger.error('Fehler beim Aktualisieren des Interessenten:', { error: error });
@@ -230,16 +246,26 @@ router.patch('/:id/konvertieren', async (req, res) => {
   try {
     const { id } = req.params;
     const { mitglied_id } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
+    let query = `
       UPDATE interessenten SET
         status = 'konvertiert',
         konvertiert_zu_mitglied_id = ?,
         konvertiert_am = NOW()
       WHERE id = ?
     `;
+    const params = [mitglied_id, id];
 
-    await queryAsync(query, [mitglied_id, id]);
+    if (secureDojoId) {
+      query = query.replace('WHERE id = ?', 'WHERE id = ? AND dojo_id = ?');
+      params.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, params);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Interessent nicht gefunden' });
+    }
     res.json({ message: 'Interessent erfolgreich zu Mitglied konvertiert' });
   } catch (error) {
     logger.error('Fehler beim Konvertieren des Interessenten:', { error: error });
@@ -252,10 +278,20 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { grund } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `UPDATE interessenten SET archiviert = TRUE, archiviert_grund = ? WHERE id = ?`;
-    await queryAsync(query, [grund || null, id]);
+    let query = `UPDATE interessenten SET archiviert = TRUE, archiviert_grund = ? WHERE id = ?`;
+    const params = [grund || null, id];
 
+    if (secureDojoId) {
+      query += ` AND dojo_id = ?`;
+      params.push(secureDojoId);
+    }
+
+    const result = await queryAsync(query, params);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Interessent nicht gefunden' });
+    }
     res.json({ message: 'Interessent erfolgreich archiviert' });
   } catch (error) {
     logger.error('Fehler beim Archivieren des Interessenten:', { error: error });

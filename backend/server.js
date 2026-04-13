@@ -597,6 +597,19 @@ try {
     });
 }
 
+// STEUER ROUTES (UStVA-Vorschau, ELSTER-XML, EÜR-Jahresübersicht)
+try {
+  const steuerRouter = require(path.join(__dirname, "routes", "steuer.js"));
+  app.use("/api/steuer", authenticateToken, steuerRouter);
+  logger.success('Route gemountet', { path: '/api/steuer' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'steuer',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
 // EMAIL-SETTINGS ROUTES (globale und Dojo-spezifische E-Mail-Konfiguration)
 try {
   const emailSettingsRoutes = require('./routes/email-settings');
@@ -1812,7 +1825,8 @@ const skipFiles = [
   "vertragPdfGeneratorExtended.js",
   "ManualSepaProvider.js",
   "PaymentProviderFactory.js",
-  "StripeDataevProvider.js"
+  "StripeDataevProvider.js",
+  "steuer.js"
 ];
 
 fs.readdirSync(routesPath).forEach((file) => {

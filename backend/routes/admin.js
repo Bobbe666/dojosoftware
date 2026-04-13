@@ -2406,9 +2406,24 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
       ORDER BY typ
     `, [currentYear]);
 
-    const [[{ active_dojos }]] = await db.promise().query(`SELECT COUNT(*) as active_dojos FROM dojo WHERE ist_aktiv = 1`);
-    const [[{ aktive_verbandsmitglieder }]] = await db.promise().query(`SELECT COUNT(*) as aktive_verbandsmitglieder FROM verbandsmitgliedschaften WHERE status = 'aktiv'`);
-    const [[{ software_nutzer }]] = await db.promise().query(`SELECT COUNT(*) as software_nutzer FROM dojo WHERE subscription_status IN ('active','trial') AND ist_aktiv = 1`);
+    const [
+      [[{ active_dojos }]],
+      [[{ aktive_verbandsmitglieder }]],
+      [[{ software_nutzer }]],
+      [[neuDojos7d]], [[neuDojos30d]],
+      [[neuVerband7d]], [[neuVerband30d]],
+      [[neuMitglieder7d]], [[neuMitglieder30d]]
+    ] = await Promise.all([
+      db.promise().query(`SELECT COUNT(*) as active_dojos FROM dojo WHERE ist_aktiv = 1`),
+      db.promise().query(`SELECT COUNT(*) as aktive_verbandsmitglieder FROM verbandsmitgliedschaften WHERE status = 'aktiv'`),
+      db.promise().query(`SELECT COUNT(*) as software_nutzer FROM dojo WHERE subscription_status IN ('active','trial') AND ist_aktiv = 1`),
+      db.promise().query(`SELECT COUNT(*) as cnt FROM dojo WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`),
+      db.promise().query(`SELECT COUNT(*) as cnt FROM dojo WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`),
+      db.promise().query(`SELECT COUNT(*) as cnt FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`),
+      db.promise().query(`SELECT COUNT(*) as cnt FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`),
+      db.promise().query(`SELECT COUNT(*) as cnt FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 7 DAY)`),
+      db.promise().query(`SELECT COUNT(*) as cnt FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 30 DAY)`)
+    ]);
 
     const istWerte = { dojos: active_dojos, verband_mitglieder: aktive_verbandsmitglieder, software_nutzer: software_nutzer };
 
@@ -2418,13 +2433,7 @@ router.get('/overview-summary', requireSuperAdmin, async (req, res) => {
       prozent: g.ziel_wert > 0 ? Math.round((istWerte[g.typ] || 0) / g.ziel_wert * 100) : 0
     }));
 
-    // 2. Neuanmeldungen
-    const [[neuDojos7d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM dojo WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
-    const [[neuDojos30d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM dojo WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`);
-    const [[neuVerband7d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
-    const [[neuVerband30d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM verbandsmitgliedschaften WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)`);
-    const [[neuMitglieder7d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 7 DAY)`);
-    const [[neuMitglieder30d]] = await db.promise().query(`SELECT COUNT(*) as cnt FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE d.ist_aktiv = 1 AND m.eintrittsdatum >= DATE_SUB(NOW(), INTERVAL 30 DAY)`);
+    // 2. Neuanmeldungen (bereits parallel geladen)
 
     // 3. Trial läuft bald ab
     const [trialExpiring] = await db.promise().query(`

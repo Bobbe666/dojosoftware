@@ -185,6 +185,10 @@ const MemberDashboard = () => {
   const [referralData, setReferralData] = useState(null);
   const [referralCopied, setReferralCopied] = useState(false);
 
+  // Dokumente
+  const [memberDokumente, setMemberDokumente] = useState([]);
+  const [dokLoading, setDokLoading] = useState(false);
+
   // ProfilWizard: beim ersten Login anzeigen
   const [showProfilWizard, setShowProfilWizard] = useState(false);
 
@@ -503,6 +507,19 @@ const MemberDashboard = () => {
     const remaining = neueEvents.filter(e => e.event_id !== event.event_id);
     setNeueEvents(remaining);
     if (remaining.length === 0) setShowEventPopup(false);
+  };
+
+  // Lade Dokumente
+  const loadMemberDokumente = async (memberId) => {
+    setDokLoading(true);
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberId}/dokumente`);
+      if (r.ok) {
+        const data = await r.json();
+        setMemberDokumente((Array.isArray(data) ? data : data.dokumente || []).filter(d => d.typ === 'dokument'));
+      }
+    } catch (e) { /* optional */ }
+    finally { setDokLoading(false); }
   };
 
   // Lade Referral-Daten (Freunde werben Freunde)
@@ -829,6 +846,7 @@ const MemberDashboard = () => {
           loadNeueEvents(memberData.mitglied_id),
           loadUpcomingEvents(memberData.mitglied_id),
           loadMemberNews(),
+          loadMemberDokumente(memberData.mitglied_id),
         ]);
 
         // Separat laden — darf Hauptload nicht blockieren
@@ -2478,6 +2496,47 @@ const MemberDashboard = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Meine Dokumente */}
+      {(dokLoading || memberDokumente.length > 0) && (
+        <div className="md-anpassung-section" style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', color: 'var(--text-primary)' }}>📄 Meine Dokumente</h3>
+          {dokLoading ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Lädt...</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {memberDokumente.map(dok => (
+                <div key={dok.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>📋</span>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dok.dokumentname}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{new Date(dok.erstellt_am).toLocaleDateString('de-DE')}</div>
+                    </div>
+                  </div>
+                  <button
+                    style={{ background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '6px', padding: '0.3rem 0.7rem', color: '#ffd700', fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, fontWeight: 500 }}
+                    onClick={async () => {
+                      try {
+                        const token = localStorage.getItem('token');
+                        const r = await fetch(`${window.location.origin}/api/mitglieder/${dok.mitglied_id}/dokumente/${dok.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
+                        if (!r.ok) throw new Error('Fehler');
+                        const blob = await r.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${dok.dokumentname}.pdf`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (e) { alert('Download fehlgeschlagen'); }
+                    }}
+                  >⬇ PDF</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

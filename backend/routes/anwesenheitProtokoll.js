@@ -297,7 +297,7 @@ router.get("/uebersicht", (req, res) => {
       sp.tag,
       CONCAT(TIME_FORMAT(sp.uhrzeit_start, '%H:%i'), '-', TIME_FORMAT(sp.uhrzeit_ende, '%H:%i')) as zeit,
       k.kurs_id,
-      k.gruppenname as kursname,
+      CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
       k.stil,
       t.trainer_id,
       CONCAT(t.vorname, ' ', t.nachname) as trainer_name,

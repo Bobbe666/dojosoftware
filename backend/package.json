@@ -42,6 +42,7 @@
     "mysql2": "^3.14.0",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.9",
+    "pdf-parse": "^2.4.5",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.26.0",
     "qrcode": "^1.5.4",
