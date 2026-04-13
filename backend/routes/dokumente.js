@@ -16,11 +16,13 @@ const logger = require('../utils/logger');
 // =====================================================
 router.get('/', authenticateToken, (req, res) => {
   const { typ, status } = req.query;
-  const dojoId = req.dojo_id;
+  const dojoId = getSecureDojoId(req);
 
   // SECURITY: Multi-Tenancy - nur Dokumente des eigenen Dojos
-  let query = 'SELECT * FROM dokumente WHERE dojo_id = ?';
-  const params = [dojoId];
+  let query = dojoId
+    ? 'SELECT * FROM dokumente WHERE dojo_id = ?'
+    : 'SELECT * FROM dokumente WHERE 1=1';
+  const params = dojoId ? [dojoId] : [];
 
   if (typ && typ !== 'all') {
     query += ' AND typ = ?';
@@ -158,16 +160,16 @@ router.post('/generate', authenticateToken, async (req, res) => {
     // Speichere Dokument-Metadaten in Datenbank
     const insertQuery = `
       INSERT INTO dokumente
-      (name, typ, dateiname, dateipfad, dateigroesse, parameter, erstellt_von, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'erstellt')
+      (name, typ, dateiname, dateipfad, dateigroesse, parameter, dojo_id, erstellt_von, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'erstellt')
     `;
 
     const parameterJson = JSON.stringify(parameter || {});
-    const erstellt_von = req.user?.id || null; // Falls Auth-Middleware vorhanden
+    const erstellt_von = req.user?.id || null;
 
     req.db.query(
       insertQuery,
-      [name, typ, dateiname, dateipfad, dateigroesse, parameterJson, erstellt_von],
+      [name, typ, dateiname, dateipfad, dateigroesse, parameterJson, dojoId, erstellt_von],
       (err, result) => {
         if (err) {
           logger.error('Fehler beim Speichern des Dokuments:', { error: err });
