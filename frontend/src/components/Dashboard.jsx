@@ -464,6 +464,13 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '✅',
+      title: 'Lastschrift-Einverständnis',
+      description: 'Zustimmung zum Einzug bei Einkäufen einholen',
+      path: '/dashboard/lastschrift-einverstaendnis',
+      featured: true
+    },
+    {
       icon: '🔴',
       title: 'Offene Zahlungen',
       description: 'Rücklastschriften & Chargebacks verwalten',

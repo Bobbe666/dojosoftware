@@ -894,6 +894,18 @@ try {
     });
 }
 
+// LASTSCHRIFT-EINVERSTÄNDNIS — Öffentlicher Formular-Endpunkt MUSS vor authenticateToken stehen
+try {
+  const lastschriftRouter = require('./routes/lastschriftEinverstaendnis');
+  // Öffentlich: /formular/:token (kein Login)
+  app.use('/api/lastschrift-einverstaendnis/formular', lastschriftRouter);
+  // Admin (auth): alle anderen Endpunkte
+  app.use('/api/lastschrift-einverstaendnis', authenticateToken, lastschriftRouter);
+  logger.success('Route geladen', { path: '/api/lastschrift-einverstaendnis' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'lastschrift-einverstaendnis', error: error.message });
+}
+
 // 3. CHECKIN ROUTE - HIGHEST PRIORITY
 try {
   const checkinPath = path.join(__dirname, "routes", "checkin.js");
@@ -1829,7 +1841,8 @@ const skipFiles = [
   "ManualSepaProvider.js",
   "PaymentProviderFactory.js",
   "StripeDataevProvider.js",
-  "steuer.js"
+  "steuer.js",
+  "lastschriftEinverstaendnis.js"
 ];
 
 fs.readdirSync(routesPath).forEach((file) => {

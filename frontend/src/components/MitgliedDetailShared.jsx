@@ -492,6 +492,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [verträge, setVerträge] = useState([]);
   const [ruecklastschriftenStats, setRuecklastschriftenStats] = useState(null);
 
+  // Lastschrift-Einverständnis State
+  const [lsEinverstaendnis, setLsEinverstaendnis] = useState(null);
+
   // Nachrichten State
   const [memberNotifications, setMemberNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -702,6 +705,28 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
       }
       console.error('❌ Fehler beim Laden der Finanzdaten:', err);
       console.error('🔍 Error Details:', err.response || err);
+    }
+  };
+
+  // Lastschrift-Einverständnis laden (für Bank/SEPA-Tab)
+  const fetchLsEinverstaendnis = async () => {
+    if (!id) return;
+    try {
+      const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+      const res = await axios.get(`/lastschrift-einverstaendnis${dojoParam}`);
+      const found = (res.data.data || []).find(m => m.mitglied_id === parseInt(id, 10));
+      setLsEinverstaendnis(found
+        ? {
+            status:         found.einverstaendnis_status,
+            angefragt_am:   found.angefragt_am,
+            beantwortet_am: found.beantwortet_am,
+            kanal:          found.kanal,
+            notiz:          found.notiz,
+          }
+        : null
+      );
+    } catch {
+      // Silently ignore
     }
   };
 
@@ -2066,6 +2091,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     loadSepaMandate(controller.signal);
     loadArchivierteMandate(controller.signal);
     fetchRuecklastschriftenStats();
+    fetchLsEinverstaendnis();
 
     return () => {
       controller.abort();
@@ -5337,6 +5363,62 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               {financeSubTab === "bank" && (
                 <div className="bnk-wrap">
+
+                  {/* ── Lastschrift-Einverständnis (Einkäufe) ── */}
+                  {(() => {
+                    const le = lsEinverstaendnis;
+                    const statusMap = {
+                      zugestimmt: { label: 'Zugestimmt', color: '#2ea043' },
+                      abgelehnt:  { label: 'Abgelehnt',  color: '#d73a49' },
+                      ausstehend: { label: 'Ausstehend', color: '#f0a500' },
+                    };
+                    const st = le ? (statusMap[le.status] || statusMap.ausstehend) : null;
+                    const fmt = (dt) => dt ? new Date(dt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
+                    return (
+                      <div className="bnk-card" style={{ marginBottom: '1rem' }}>
+                        <div className="bnk-card-title">✅ Lastschrift-Einverständnis (Einkäufe)</div>
+                        {!le ? (
+                          <div style={{ color: 'var(--ds-text-muted, #888)', fontSize: '0.85rem', padding: '0.5rem 0' }}>
+                            Noch keine Anfrage gesendet.{' '}
+                            <a href="/dashboard/lastschrift-einverstaendnis" style={{ color: 'var(--ds-accent, #7c6ee0)' }}>Verwalten →</a>
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.88rem' }}>
+                            <div className="bnk-kv">
+                              <div className="bnk-kv-label">Status</div>
+                              <div className="bnk-kv-value">
+                                <span style={{ display: 'inline-block', padding: '0.15rem 0.6rem', borderRadius: '12px', background: st.color + '22', color: st.color, fontWeight: 600 }}>
+                                  {st.label}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="bnk-kv">
+                              <div className="bnk-kv-label">Angefragt am</div>
+                              <div className="bnk-kv-value">{fmt(le.angefragt_am)}</div>
+                            </div>
+                            {le.beantwortet_am && (
+                              <div className="bnk-kv">
+                                <div className="bnk-kv-label">Beantwortet am</div>
+                                <div className="bnk-kv-value">{fmt(le.beantwortet_am)}</div>
+                              </div>
+                            )}
+                            {le.kanal && (
+                              <div className="bnk-kv">
+                                <div className="bnk-kv-label">Kanal</div>
+                                <div className="bnk-kv-value" style={{ textTransform: 'capitalize' }}>{le.kanal}</div>
+                              </div>
+                            )}
+                            {le.notiz && (
+                              <div className="bnk-kv">
+                                <div className="bnk-kv-label">Notiz</div>
+                                <div className="bnk-kv-value">{le.notiz}</div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* ── Bankdaten ── */}
                   <div className="bnk-card">

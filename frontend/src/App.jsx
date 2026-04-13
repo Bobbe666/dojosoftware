@@ -100,6 +100,7 @@ const AusgabenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "fin
 const KontoauszugImport = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/KontoauszugImport"));
 const Jahresuebersicht = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Jahresuebersicht"));
 const RuecklastschriftVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/RuecklastschriftVerwaltung"));
+const LastschriftEinverstaendnis = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/LastschriftEinverstaendnis"));
 const VorlagenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "vorlagen" */ "./components/VorlagenVerwaltung"));
 const Beitraege = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Beitraege"));
 const Mahnwesen = lazyWithReload(() => import(/* webpackChunkName: "finance" */ "./components/Mahnwesen"));
@@ -229,6 +230,7 @@ const NewsFormular = lazyWithReload(() => import(/* webpackChunkName: "news" */ 
 const Homepage = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/Homepage"));
 const PublicRegistration = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicRegistration"));
 const BuddyInviteRegistration = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/BuddyInviteRegistration"));
+const LastschriftZustimmung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/LastschriftZustimmung"));
 const VerbandMitgliedWerden = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/VerbandMitgliedWerden"));
 const ProbetrainingBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
 const DemoBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/DemoBuchung"));
@@ -515,6 +517,9 @@ const App = () => {
 
             {/* Buddy Invite Registration - No authentication required */}
             <Route path="/registration/buddy-invite/:token" element={<Suspense fallback={<LazyLoadFallback />}><BuddyInviteRegistration /></Suspense>} />
+
+            {/* Lastschrift-Einverständnis — Mitglied antwortet via E-Mail-Link */}
+            <Route path="/lastschrift-zustimmung/:token" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftZustimmung /></Suspense>} />
 
             {/* Verbandsmitgliedschaft - Öffentliche Anmeldung */}
             <Route path="/verband/mitglied-werden" element={<Suspense fallback={<LazyLoadFallback />}><VerbandMitgliedWerden /></Suspense>} />
@@ -859,6 +864,7 @@ const App = () => {
               <Route path="lastschriftlauf" element={<Suspense fallback={<LazyLoadFallback />}><Lastschriftlauf /></Suspense>} />
               <Route path="sepa-mandate" element={<Suspense fallback={<LazyLoadFallback />}><SepaMandateVerwaltung /></Suspense>} />
               <Route path="zahllaeufe" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftManagement /></Suspense>} />
+              <Route path="lastschrift-einverstaendnis" element={<Suspense fallback={<LazyLoadFallback />}><LastschriftEinverstaendnis /></Suspense>} />
 
               {/* Zahlungszyklen-Management */}
               <Route path="zahlungszyklen" element={<Suspense fallback={<LazyLoadFallback />}><ZahlungszyklenSeite /></Suspense>} />
