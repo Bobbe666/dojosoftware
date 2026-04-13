@@ -31,6 +31,7 @@ import DojoLizenzverwaltung from './DojoLizenzverwaltung';
 import AdminChatPage from './chat/AdminChatPage';
 import BesucherChat from './chat/BesucherChat';
 import SecurityDashboard from './SecurityDashboard';
+import BackupEinstellungen from './BackupEinstellungen';
 import DokumentenZentrale from './DokumentenZentrale';
 import Auswertungen from './Auswertungen';
 import PlattformZentrale from './PlattformZentrale';
@@ -2454,7 +2455,8 @@ const SuperAdminDashboard = () => {
               { id: 'email',       icon: '✉️', label: 'E-Mail' },
               { id: 'passwoerter', icon: '🔑', label: 'Passwörter' },
               { id: 'security',    icon: '🛡️', label: 'Security' },
-              { id: 'kalender',    icon: '📅', label: 'iCloud Kalender' }
+              { id: 'kalender',    icon: '📅', label: 'iCloud Kalender' },
+              { id: 'backup',      icon: '💾', label: 'Backups' }
             ])}
 
             {subActiveTab.system === 'benutzer' && (
@@ -2616,6 +2618,12 @@ const SuperAdminDashboard = () => {
                 )}
               </div>
               </>
+            )}
+
+            {subActiveTab.system === 'backup' && (
+              <div className="section-card">
+                <BackupEinstellungen />
+              </div>
             )}
           </div>
         )}
