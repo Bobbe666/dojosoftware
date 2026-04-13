@@ -3852,49 +3852,40 @@ ${pages}
                               />
                               <span>{pruefung.graduierung_nachher}</span>
                             </div>
-                            <div className="pv3-cand-status" style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
-                              {/* Mitglied-Antwort: Kommt / Kommt nicht / Unbekannt */}
-                              <div style={{ display: 'flex', gap: '3px' }}>
-                                <button
-                                  onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt' ? null : 'kommt' })}
-                                  title="Mitglied kommt"
-                                  style={{
-                                    padding: '2px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid',
-                                    background: pruefung.mitglied_antwort === 'kommt' ? 'rgba(34,197,94,.2)' : 'rgba(255,255,255,.05)',
-                                    borderColor: pruefung.mitglied_antwort === 'kommt' ? 'rgba(34,197,94,.5)' : 'rgba(255,255,255,.1)',
-                                    color: pruefung.mitglied_antwort === 'kommt' ? '#22c55e' : 'var(--text-muted,#888)',
-                                    fontWeight: pruefung.mitglied_antwort === 'kommt' ? 700 : 400,
-                                  }}
-                                >✓ Kommt</button>
-                                <button
-                                  onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt_nicht' ? null : 'kommt_nicht' })}
-                                  title="Mitglied kommt nicht"
-                                  style={{
-                                    padding: '2px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid',
-                                    background: pruefung.mitglied_antwort === 'kommt_nicht' ? 'rgba(239,68,68,.2)' : 'rgba(255,255,255,.05)',
-                                    borderColor: pruefung.mitglied_antwort === 'kommt_nicht' ? 'rgba(239,68,68,.5)' : 'rgba(255,255,255,.1)',
-                                    color: pruefung.mitglied_antwort === 'kommt_nicht' ? '#ef4444' : 'var(--text-muted,#888)',
-                                    fontWeight: pruefung.mitglied_antwort === 'kommt_nicht' ? 700 : 400,
-                                  }}
-                                >✗ Kommt nicht</button>
-                                {!pruefung.mitglied_antwort && (
-                                  <span style={{ fontSize: '10px', color: 'var(--text-muted,#888)', alignSelf: 'center', paddingLeft: '2px' }}>?</span>
-                                )}
-                              </div>
-                              {/* Bestätigung */}
+                            <div className="pv3-cand-status" style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                              <button
+                                onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt' ? null : 'kommt' })}
+                                title="Kommt"
+                                style={{
+                                  padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid', whiteSpace: 'nowrap',
+                                  background: pruefung.mitglied_antwort === 'kommt' ? 'rgba(34,197,94,.2)' : 'rgba(255,255,255,.05)',
+                                  borderColor: pruefung.mitglied_antwort === 'kommt' ? 'rgba(34,197,94,.5)' : 'rgba(255,255,255,.1)',
+                                  color: pruefung.mitglied_antwort === 'kommt' ? '#22c55e' : 'var(--text-muted,#888)',
+                                  fontWeight: pruefung.mitglied_antwort === 'kommt' ? 700 : 400,
+                                }}
+                              >✓ Kommt</button>
+                              <button
+                                onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt_nicht' ? null : 'kommt_nicht' })}
+                                title="Kommt nicht"
+                                style={{
+                                  padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid', whiteSpace: 'nowrap',
+                                  background: pruefung.mitglied_antwort === 'kommt_nicht' ? 'rgba(239,68,68,.2)' : 'rgba(255,255,255,.05)',
+                                  borderColor: pruefung.mitglied_antwort === 'kommt_nicht' ? 'rgba(239,68,68,.5)' : 'rgba(255,255,255,.1)',
+                                  color: pruefung.mitglied_antwort === 'kommt_nicht' ? '#ef4444' : 'var(--text-muted,#888)',
+                                  fontWeight: pruefung.mitglied_antwort === 'kommt_nicht' ? 700 : 400,
+                                }}
+                              >✗ Nein</button>
                               <button
                                 onClick={() => handleAdminStatus(pruefung, { teilnahme_bestaetigt: !pruefung.teilnahme_bestaetigt })}
                                 title={pruefung.teilnahme_bestaetigt ? 'Bestätigung zurücksetzen' : 'Als bestätigt markieren'}
                                 style={{
-                                  padding: '2px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid',
+                                  padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid', whiteSpace: 'nowrap',
                                   background: pruefung.teilnahme_bestaetigt ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.05)',
                                   borderColor: pruefung.teilnahme_bestaetigt ? 'rgba(99,102,241,.5)' : 'rgba(255,255,255,.1)',
                                   color: pruefung.teilnahme_bestaetigt ? '#818cf8' : 'var(--text-muted,#888)',
                                   fontWeight: pruefung.teilnahme_bestaetigt ? 700 : 400,
                                 }}
-                              >
-                                {pruefung.teilnahme_bestaetigt ? '★ Bestätigt' : '☆ Nicht bestätigt'}
-                              </button>
+                              >{pruefung.teilnahme_bestaetigt ? '★ Best.' : '☆ Best.'}</button>
                             </div>
                             <div className="pv3-cand-actions u-flex-wrap-gap">
                                 {(pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden') ? (
