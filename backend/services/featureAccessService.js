@@ -359,7 +359,7 @@ async function startFeatureTrial(dojoId, featureId, adminId = null) {
     };
 
   } catch (error) {
-    console.error('Start trial error:', error);
+    logger.error('Start trial error:', { error: error.message });
     return { success: false, error: error.message };
   }
 }
@@ -448,7 +448,7 @@ async function processExpiredTrials() {
     return { processed: expiredTrials.length, trials: expiredTrials };
 
   } catch (error) {
-    console.error('Process expired trials error:', error);
+    logger.error('Process expired trials error:', { error: error.message });
     return { processed: 0, error: error.message };
   }
 }
@@ -520,7 +520,7 @@ async function sendTrialReminders() {
     };
 
   } catch (error) {
-    console.error('Send trial reminders error:', error);
+    logger.error('Send trial reminders error:', { error: error.message });
     return { error: error.message };
   }
 }

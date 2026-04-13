@@ -450,3 +450,79 @@
   .tp-dok-card { flex-wrap: wrap; }
   .tp-dok-actions { width: 100%; justify-content: flex-start; }
 }
+
+/* ══════════════════════════════════════════
+   TAB: Vergütung
+   ══════════════════════════════════════════ */
+.tp-verg-settings {
+  background: var(--ds-bg-card, #1e1e30);
+  border: 1px solid var(--ds-border, #2a2a3e);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.tp-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ds-text, #e0e0e0);
+  margin: 0;
+}
+
+.tp-verg-period {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.tp-verg-period-selectors {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.tp-verg-summary {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.tp-verg-card {
+  flex: 1;
+  min-width: 110px;
+  background: var(--ds-bg, #161625);
+  border: 1px solid var(--ds-border, #2a2a3e);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  text-align: center;
+}
+
+.tp-verg-card--highlight {
+  border-color: var(--ds-accent, #7c6ee0);
+  background: color-mix(in srgb, var(--ds-accent, #7c6ee0) 10%, var(--ds-bg, #161625));
+}
+
+.tp-verg-card-label {
+  font-size: 0.78rem;
+  color: var(--ds-text-muted, #888);
+  margin-bottom: 0.3rem;
+}
+
+.tp-verg-card-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--ds-text, #e0e0e0);
+}
+
+.tp-verg-jahres {
+  margin-top: 1.5rem;
+}
+
+.tp-row--highlight td {
+  background: color-mix(in srgb, var(--ds-accent, #7c6ee0) 8%, transparent) !important;
+  font-weight: 600;
+}

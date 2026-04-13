@@ -599,3 +599,182 @@
   flex-direction: column;
   gap: 0.5rem;
 }
+
+/* ══════════════════════════════════════════
+   View-Tabs (Mitarbeiter / Lohnabrechnung)
+   ══════════════════════════════════════════ */
+.personal-view-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--ds-border, #2a2a3e);
+}
+
+.personal-view-tab {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  background: transparent;
+  color: var(--ds-text-muted, #888);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.personal-view-tab:hover {
+  color: var(--ds-text, #e0e0e0);
+}
+
+.personal-view-tab--active {
+  color: var(--ds-accent, #7c6ee0);
+  border-bottom-color: var(--ds-accent, #7c6ee0);
+}
+
+/* ══════════════════════════════════════════
+   Lohnabrechnung View
+   ══════════════════════════════════════════ */
+.lohnabrechnung-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lohn-period-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lohn-period-selectors {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lohn-select {
+  padding: 0.45rem 0.75rem;
+  background: var(--ds-bg-card, #1e1e30);
+  color: var(--ds-text, #e0e0e0);
+  border: 1px solid var(--ds-border, #2a2a3e);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.lohn-btn {
+  padding: 0.45rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.lohn-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.lohn-btn--primary  { background: var(--ds-accent, #7c6ee0); color: #fff; }
+.lohn-btn--export   { background: var(--ds-success, #2ea043); color: #fff; }
+
+.lohn-summary-cards {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.lohn-summary-card {
+  flex: 1;
+  min-width: 120px;
+  background: var(--ds-bg-card, #1e1e30);
+  border: 1px solid var(--ds-border, #2a2a3e);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.lohn-summary-card--highlight {
+  border-color: var(--ds-accent, #7c6ee0);
+  background: color-mix(in srgb, var(--ds-accent, #7c6ee0) 10%, var(--ds-bg-card, #1e1e30));
+}
+
+.lohn-summary-label {
+  font-size: 0.8rem;
+  color: var(--ds-text-muted, #888);
+  margin-bottom: 0.3rem;
+}
+
+.lohn-summary-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--ds-text, #e0e0e0);
+}
+
+.lohn-loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--ds-text-muted, #888);
+}
+
+.lohn-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--ds-text-muted, #888);
+}
+
+.lohn-hint {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.lohn-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid var(--ds-border, #2a2a3e);
+}
+
+.lohn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.lohn-table th {
+  background: var(--ds-bg-card, #1e1e30);
+  color: var(--ds-text-muted, #888);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--ds-border, #2a2a3e);
+}
+
+.lohn-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--ds-border, #2a2a3e) 50%, transparent);
+  color: var(--ds-text, #e0e0e0);
+}
+
+.lohn-table tr:hover td {
+  background: color-mix(in srgb, var(--ds-accent, #7c6ee0) 5%, transparent);
+}
+
+.lohn-table tfoot .lohn-total-row td {
+  font-weight: 700;
+  border-top: 2px solid var(--ds-border, #2a2a3e);
+  background: var(--ds-bg-card, #1e1e30);
+}
+
+.lohn-name   { font-weight: 600; }
+.lohn-number { text-align: right; font-variant-numeric: tabular-nums; }
+.lohn-stunden { color: var(--ds-info, #58a6ff); }
+.lohn-betrag  { color: var(--ds-success, #2ea043); font-weight: 600; }
+.lohn-zeitraum { font-size: 0.82rem; color: var(--ds-text-muted, #888); }
+
+.lohn-art-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: color-mix(in srgb, var(--ds-accent, #7c6ee0) 15%, transparent);
+  color: var(--ds-accent, #7c6ee0);
+  border-radius: 12px;
+  font-size: 0.8rem;
+}

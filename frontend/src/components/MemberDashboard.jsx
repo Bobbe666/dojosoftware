@@ -347,6 +347,9 @@ const MemberDashboard = () => {
   const [pruefProtokolle, setPruefProtokolle] = useState([]);
   const [protokollViewId, setProtokolViewId] = useState(null);
 
+  // Prüfungseinladungs-Popup (Lesebestätigung)
+  const [pruefungsEinladungPopup, setPruefungsEinladungPopup] = useState(null);
+
   // Quick Action Handler
   const handleQuickAction = (action) => {
     switch (action) {
@@ -663,6 +666,32 @@ const MemberDashboard = () => {
     } catch (error) {
       console.error('❌ Fehler beim Laden der Prüfungstermine:', error);
     }
+  };
+
+  // Zeige Einladungs-Popup wenn ungelesene Prüfungseinladung vorhanden
+  useEffect(() => {
+    if (approvedExams && approvedExams.length > 0) {
+      const ungelesen = approvedExams.find(e => !e.benachrichtigung_gelesen);
+      if (ungelesen) {
+        setPruefungsEinladungPopup(ungelesen);
+      }
+    }
+  }, [approvedExams]);
+
+  const handlePruefungsEinladungGelesen = async (pruefung) => {
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/pruefungen/kandidaten/${pruefung.pruefung_id}/gelesen`, {
+        method: 'POST',
+      });
+      setApprovedExams(prev => prev.map(e =>
+        e.pruefung_id === pruefung.pruefung_id
+          ? { ...e, benachrichtigung_gelesen: 1 }
+          : e
+      ));
+    } catch (err) {
+      console.error('Fehler beim Speichern der Lesebestätigung', err);
+    }
+    setPruefungsEinladungPopup(null);
   };
 
   // Lade abgeschlossene Prüfungen (Ergebnisse)
@@ -1198,6 +1227,51 @@ const MemberDashboard = () => {
             <div className="pnp-footer">
               <span />
               <button className="pnp-next-btn" onClick={() => setExpandedNotif(null)}>Schließen</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prüfungseinladungs-Popup (Lesebestätigung) */}
+      {pruefungsEinladungPopup && (
+        <div className="pnp-overlay" onClick={() => setPruefungsEinladungPopup(null)}>
+          <div className="pnp-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+            <div className="pnp-header">
+              <div className="pnp-header-left">
+                <span style={{ fontSize: '20px' }}>🥋</span>
+                <span className="pnp-header-title">Gürtelprüfung – Einladung</span>
+              </div>
+              <button className="pnp-close-btn" onClick={() => setPruefungsEinladungPopup(null)} title="Schließen">✕</button>
+            </div>
+            <div className="pnp-body">
+              <p style={{ marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                Du wurdest zur <strong>{pruefungsEinladungPopup.stil_name}</strong>-Prüfung eingeladen!
+              </p>
+              {pruefungsEinladungPopup.graduierung_nachher && (
+                <p style={{ marginBottom: '0.5rem' }}>
+                  🎯 Prüfung zum: <strong>{pruefungsEinladungPopup.graduierung_nachher}</strong>
+                </p>
+              )}
+              {pruefungsEinladungPopup.pruefungsdatum && (
+                <p style={{ marginBottom: '0.5rem' }}>
+                  📅 Termin: <strong>{new Date(pruefungsEinladungPopup.pruefungsdatum).toLocaleDateString('de-DE', {
+                    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                  })}</strong>
+                  {pruefungsEinladungPopup.pruefungszeit && ` um ${pruefungsEinladungPopup.pruefungszeit} Uhr`}
+                </p>
+              )}
+              {pruefungsEinladungPopup.pruefungsort && (
+                <p style={{ marginBottom: '0.75rem' }}>
+                  📍 Ort: <strong>{pruefungsEinladungPopup.pruefungsort}</strong>
+                </p>
+              )}
+              <button
+                className="pnp-confirm-btn"
+                style={{ marginTop: '0.5rem', width: '100%' }}
+                onClick={() => handlePruefungsEinladungGelesen(pruefungsEinladungPopup)}
+              >
+                ✓ Zur Kenntnis genommen
+              </button>
             </div>
           </div>
         </div>

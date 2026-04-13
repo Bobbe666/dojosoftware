@@ -1,4 +1,5 @@
 
+const Sentry = require("@sentry/node");
 const express = require("express");
 const db = require("./db");
 const cors = require("cors");
@@ -10,6 +11,16 @@ const rateLimit = require("express-rate-limit");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
 require("dotenv").config();
+
+// ── Sentry Fehler-Monitoring ──────────────────────────────────────────────────
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'production',
+    tracesSampleRate: 0.1,
+    integrations: [Sentry.httpIntegration(), Sentry.expressIntegration()],
+  });
+}
 
 // JWT für Authentication
 const jwt = require('jsonwebtoken');
@@ -1658,14 +1669,6 @@ try {
   });
 }
 
-// Monatsreport Route (TODO: Route noch nicht implementiert)
-// try {
-//   const monatsreportRouter = require(path.join(__dirname, "routes", "monatsreport.js"));
-//   app.use("/api/monatsreport", monatsreportRouter);
-//   logger.success('Route gemountet', { path: '/api/monatsreport' });
-// } catch (error) {
-//   logger.error('Fehler beim Laden der Route', { route: 'monatsreport', error: error.message });
-// }
 
 // Mahnwesen Route
 try {
@@ -1856,6 +1859,28 @@ fs.readdirSync(routesPath).forEach((file) => {
 // =============================================
 
 // General test route
+// ── Health-Check für UptimeRobot / Monitoring ─────────────────────────────────
+app.get('/api/health', async (req, res) => {
+  const start = Date.now();
+  try {
+    await db.promise().query('SELECT 1');
+    res.json({
+      status: 'ok',
+      db: 'ok',
+      uptime: Math.floor(process.uptime()),
+      latency_ms: Date.now() - start,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(503).json({
+      status: 'error',
+      db: 'unreachable',
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.get('/api/test', (req, res) => {
   res.json({ 
     success: true, 
@@ -2058,6 +2083,11 @@ app.use(errorHandler);
 
 const { initCronJobs } = require('./cron-jobs');
 initCronJobs();
+
+// ── Sentry Error-Handler (muss nach allen Routen, vor eigenem Error-Handler stehen) ─
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 // =============================================
 // SERVER STARTUP

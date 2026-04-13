@@ -9,6 +9,7 @@ const db = require("../db");
 const logger = require("../utils/logger");
 const { authenticateToken } = require("../middleware/auth");
 const { getSecureDojoId } = require("../middleware/tenantSecurity");
+const { sendEmail } = require("../services/emailService");
 
 // Helper: Get Stripe instance for dojo
 const getStripeForDojo = async (dojoId) => {
@@ -652,7 +653,23 @@ async function handleInvoicePaid(invoice) {
 
 async function handleInvoiceFailed(invoice) {
   logger.error("Rechnungszahlung fehlgeschlagen:", invoice.id);
-  // TODO: Admin benachrichtigen
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || 'admin@dojosoftware.com';
+  try {
+    await sendEmail({
+      to: adminEmail,
+      subject: `⚠️ Stripe Zahlung fehlgeschlagen: ${invoice.id}`,
+      html: `
+        <h3>Stripe Zahlung fehlgeschlagen</h3>
+        <p><strong>Invoice ID:</strong> ${invoice.id}</p>
+        <p><strong>Betrag:</strong> ${(invoice.amount_due / 100).toFixed(2)} ${invoice.currency?.toUpperCase()}</p>
+        <p><strong>Kunde:</strong> ${invoice.customer_email || invoice.customer || 'Unbekannt'}</p>
+        <p><strong>Zeitpunkt:</strong> ${new Date().toLocaleString('de-DE')}</p>
+        <p>Bitte im Stripe-Dashboard prüfen und den Kunden kontaktieren.</p>
+      `
+    });
+  } catch (mailErr) {
+    logger.warn('Admin-Benachrichtigung für fehlgeschlagene Zahlung konnte nicht gesendet werden:', { error: mailErr.message });
+  }
 }
 
 async function updatePaymentStatus(stripeId, status) {

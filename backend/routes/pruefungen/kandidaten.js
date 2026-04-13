@@ -224,6 +224,22 @@ router.delete('/:mitglied_id/zulassung/:pruefung_id', (req, res) => {
   });
 });
 
+// POST /:pruefung_id/gelesen - Mitglied bestätigt Lesebestätigung der Prüfungseinladung
+router.post('/:pruefung_id/gelesen', (req, res) => {
+  const pruefung_id = parseInt(req.params.pruefung_id);
+  if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  db.query(
+    `UPDATE pruefungen SET benachrichtigung_gelesen = 1, benachrichtigung_gelesen_am = NOW()
+     WHERE pruefung_id = ? AND (benachrichtigung_gelesen = 0 OR benachrichtigung_gelesen IS NULL)`,
+    [pruefung_id],
+    (err) => {
+      if (err) return res.status(500).json({ error: 'Fehler beim Speichern der Lesebestätigung', details: err.message });
+      res.json({ success: true });
+    }
+  );
+});
+
 // PUT /:pruefung_id/admin-status - Admin setzt Anmelde- und Bestätigungsstatus manuell
 router.put('/:pruefung_id/admin-status', (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);

@@ -1,15 +1,30 @@
-import React, { useContext, useState, useMemo, useEffect } from "react";
+import React, { useContext, useState, useMemo, useEffect, useCallback } from "react";
 import axios from "axios";
-import config from '../config/config.js';
 import "../styles/Personal.css";
 import { DatenContext } from "@shared/DatenContext.jsx";
 
+const MONATSNAMEN = [
+  '', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+];
+
 const Personal = () => {
   const { ladeAlleDaten } = useContext(DatenContext);
-  
+
   const [personal, setPersonal] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // View-Tabs
+  const [activeView, setActiveView] = useState('personal'); // 'personal' | 'lohnabrechnung'
+
+  // Lohnabrechnung State
+  const now = new Date();
+  const [lohnMonat, setLohnMonat]   = useState(now.getMonth() + 1);
+  const [lohnJahr, setLohnJahr]     = useState(now.getFullYear());
+  const [lohnData, setLohnData]     = useState([]);
+  const [lohnGesamt, setLohnGesamt] = useState({ total_stunden: 0, total_lohn: 0 });
+  const [lohnLoading, setLohnLoading] = useState(false);
   
   const [neuerMitarbeiter, setNeuerMitarbeiter] = useState({
     personalnummer: "",
@@ -37,18 +52,36 @@ const Personal = () => {
     try {
       const response = await axios.get(`/personal`);
       setPersonal(response.data);
-      console.log("✅ Personal-Daten geladen:", response.data.length);
     } catch (err) {
-      console.error("❌ Fehler beim Laden der Personal-Daten:", err);
       setError("Fehler beim Laden der Personal-Daten: " + (err.response?.data?.error || err.message));
     } finally {
       setLoading(false);
     }
   };
 
+  // Lohnabrechnung laden
+  const ladeLohnabrechnung = useCallback(async () => {
+    setLohnLoading(true);
+    try {
+      const res = await axios.get('/personalCheckin/lohnabrechnung', {
+        params: { monat: lohnMonat, jahr: lohnJahr }
+      });
+      setLohnData(res.data.data || []);
+      setLohnGesamt(res.data.gesamt || { total_stunden: 0, total_lohn: 0 });
+    } catch (err) {
+      setLohnData([]);
+    } finally {
+      setLohnLoading(false);
+    }
+  }, [lohnMonat, lohnJahr]);
+
   useEffect(() => {
     ladePersonalDaten();
   }, []);
+
+  useEffect(() => {
+    if (activeView === 'lohnabrechnung') ladeLohnabrechnung();
+  }, [activeView, ladeLohnabrechnung]);
 
   const handleSort = (key) => {
     let direction = 'asc';
@@ -159,6 +192,27 @@ const Personal = () => {
     return new Date(datum).toLocaleDateString('de-DE');
   };
 
+  const exportLohnCSV = () => {
+    if (!lohnData.length) return;
+    const header = ['Name', 'Position', 'Beschäftigung', 'Stundenlohn (€)', 'Schichten', 'Stunden', 'Lohn (€)'];
+    const rows = lohnData.map(p => [
+      `${p.vorname} ${p.nachname}`,
+      p.position || '',
+      p.beschaeftigungsart || '',
+      parseFloat(p.stundenlohn || 0).toFixed(2),
+      p.anzahl_schichten,
+      parseFloat(p.total_stunden || 0).toFixed(2),
+      parseFloat(p.total_lohn || 0).toFixed(2),
+    ]);
+    rows.push(['GESAMT', '', '', '', '', lohnGesamt.total_stunden, lohnGesamt.total_lohn]);
+    const csv = [header, ...rows].map(r => r.join(';')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `Lohnabrechnung_${MONATSNAMEN[lohnMonat]}_${lohnJahr}.csv`;
+    link.click();
+  };
+
   if (loading) return <div className="personal-container-modern">Lade Personal-Daten...</div>;
   if (error) return <div className="personal-container-modern error">{error}</div>;
 
@@ -168,6 +222,131 @@ const Personal = () => {
         <h2>🧑‍💼 Personal-Verwaltung</h2>
         <p className="personal-subtitle">Mitarbeiter und Personalverwaltung</p>
       </div>
+
+      {/* View-Tabs */}
+      <div className="personal-view-tabs">
+        <button
+          className={`personal-view-tab${activeView === 'personal' ? ' personal-view-tab--active' : ''}`}
+          onClick={() => setActiveView('personal')}
+        >
+          👥 Mitarbeiter
+        </button>
+        <button
+          className={`personal-view-tab${activeView === 'lohnabrechnung' ? ' personal-view-tab--active' : ''}`}
+          onClick={() => setActiveView('lohnabrechnung')}
+        >
+          💰 Lohnabrechnung
+        </button>
+      </div>
+
+      {/* ═══ LOHNABRECHNUNG VIEW ═══ */}
+      {activeView === 'lohnabrechnung' && (
+        <div className="lohnabrechnung-view">
+          {/* Periode-Auswahl */}
+          <div className="lohn-period-bar">
+            <div className="lohn-period-selectors">
+              <select
+                className="lohn-select"
+                value={lohnMonat}
+                onChange={e => setLohnMonat(parseInt(e.target.value))}
+              >
+                {MONATSNAMEN.slice(1).map((name, i) => (
+                  <option key={i+1} value={i+1}>{name}</option>
+                ))}
+              </select>
+              <select
+                className="lohn-select"
+                value={lohnJahr}
+                onChange={e => setLohnJahr(parseInt(e.target.value))}
+              >
+                {[now.getFullYear() - 1, now.getFullYear()].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <button className="lohn-btn lohn-btn--primary" onClick={ladeLohnabrechnung}>
+                Laden
+              </button>
+            </div>
+            <button className="lohn-btn lohn-btn--export" onClick={exportLohnCSV} disabled={!lohnData.length}>
+              CSV Export
+            </button>
+          </div>
+
+          {/* Zusammenfassung */}
+          <div className="lohn-summary-cards">
+            <div className="lohn-summary-card">
+              <div className="lohn-summary-label">Mitarbeiter</div>
+              <div className="lohn-summary-value">{lohnData.length}</div>
+            </div>
+            <div className="lohn-summary-card">
+              <div className="lohn-summary-label">Gesamtstunden</div>
+              <div className="lohn-summary-value">{lohnGesamt.total_stunden} h</div>
+            </div>
+            <div className="lohn-summary-card lohn-summary-card--highlight">
+              <div className="lohn-summary-label">Gesamtlohn</div>
+              <div className="lohn-summary-value">€ {parseFloat(lohnGesamt.total_lohn || 0).toFixed(2)}</div>
+            </div>
+          </div>
+
+          {/* Tabelle */}
+          {lohnLoading ? (
+            <div className="lohn-loading">Berechne Lohnabrechnung…</div>
+          ) : lohnData.length === 0 ? (
+            <div className="lohn-empty">
+              <p>Keine Arbeitszeiten für {MONATSNAMEN[lohnMonat]} {lohnJahr} erfasst.</p>
+              <p className="lohn-hint">Zeiten werden über Personal Check-in erfasst.</p>
+            </div>
+          ) : (
+            <div className="lohn-table-wrap">
+              <table className="lohn-table">
+                <thead>
+                  <tr>
+                    <th>Mitarbeiter</th>
+                    <th>Position</th>
+                    <th>Art</th>
+                    <th>€/h</th>
+                    <th>Schichten</th>
+                    <th>Stunden</th>
+                    <th>Lohn</th>
+                    <th>Zeitraum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lohnData.map(p => (
+                    <tr key={p.personal_id}>
+                      <td className="lohn-name">{p.vorname} {p.nachname}</td>
+                      <td>{p.position || '–'}</td>
+                      <td>
+                        <span className="lohn-art-badge">{p.beschaeftigungsart || '–'}</span>
+                      </td>
+                      <td className="lohn-number">€ {parseFloat(p.stundenlohn || 0).toFixed(2)}</td>
+                      <td className="lohn-number">{p.anzahl_schichten}</td>
+                      <td className="lohn-number lohn-stunden">{parseFloat(p.total_stunden || 0).toFixed(2)} h</td>
+                      <td className="lohn-number lohn-betrag">€ {parseFloat(p.total_lohn || 0).toFixed(2)}</td>
+                      <td className="lohn-zeitraum">
+                        {p.erster_tag && p.letzter_tag
+                          ? `${new Date(p.erster_tag).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} – ${new Date(p.letzter_tag).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}`
+                          : '–'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="lohn-total-row">
+                    <td colSpan={5}>Gesamt</td>
+                    <td className="lohn-number">{lohnGesamt.total_stunden} h</td>
+                    <td className="lohn-number">€ {parseFloat(lohnGesamt.total_lohn || 0).toFixed(2)}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══ MITARBEITER VIEW ═══ */}
+      {activeView !== 'lohnabrechnung' && (<>
 
       {/* Filter + Export */}
       <div className="personal-controls">
@@ -539,6 +718,7 @@ const Personal = () => {
           </button>
         </div>
       </div>
+      </>)}
     </div>
   );
 };

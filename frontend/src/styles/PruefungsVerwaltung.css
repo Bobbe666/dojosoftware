@@ -1433,6 +1433,80 @@ h2.pv3-zug-h2 {
   border-color: rgba(255,255,255,0.15);
 }
 
+/* Inline Grad-Selects in der Zugelassen-Zeile */
+.pv3-inline-grad-select {
+  padding: 2px 4px;
+  font-size: 0.71rem;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary, #e8eaed);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px;
+  outline: none;
+  max-width: 120px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.pv3-inline-grad-select:hover {
+  border-color: rgba(255,255,255,0.25);
+}
+.pv3-inline-grad-select:focus {
+  border-color: rgba(99,140,255,0.55);
+}
+.pv3-inline-grad-select--ziel {
+  border-color: rgba(234,179,8,0.3);
+}
+.pv3-inline-grad-select--ziel:hover {
+  border-color: rgba(234,179,8,0.55);
+}
+.pv3-inline-grad-select--ziel:focus {
+  border-color: rgba(234,179,8,0.75);
+}
+
+/* Admin-Status Buttons (Kommt / Nein / Best. / Gel.) */
+.pv3-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.34rem 0.72rem;
+  font-size: 0.74rem;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.pv3-status-btn--kommt {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.45);
+  color: #22c55e;
+  font-weight: 700;
+}
+.pv3-status-btn--kommt:hover { background: rgba(34,197,94,0.25); }
+.pv3-status-btn--nein {
+  background: rgba(239,68,68,0.15);
+  border-color: rgba(239,68,68,0.45);
+  color: #ef4444;
+  font-weight: 700;
+}
+.pv3-status-btn--nein:hover { background: rgba(239,68,68,0.25); }
+.pv3-status-btn--best {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.45);
+  color: #818cf8;
+  font-weight: 700;
+}
+.pv3-status-btn--best:hover { background: rgba(99,102,241,0.25); }
+.pv3-status-btn--gelesen {
+  background: rgba(6,182,212,0.15);
+  border-color: rgba(6,182,212,0.45);
+  color: #22d3ee;
+  font-weight: 700;
+  cursor: default;
+}
+
 /* Warning button (Status ändern) */
 .pv3-zug-btn-warning {
   display: inline-flex;
@@ -4487,7 +4561,7 @@ h4.pv3-grad-card-name {
 
 .pv3-candidate-row {
   display: grid;
-  grid-template-columns: minmax(130px, 1.8fr) minmax(90px, 1fr) minmax(210px, auto) auto;
+  grid-template-columns: minmax(130px, 1.5fr) minmax(240px, 2fr) minmax(280px, auto) auto;
   align-items: center;
   gap: 0.5rem;
   padding: 0.38rem 1rem;

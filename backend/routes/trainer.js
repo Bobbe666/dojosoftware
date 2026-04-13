@@ -447,6 +447,71 @@ router.get("/:id", async (req, res) => {
   }
 });
 
+// GET /:id/verguetung — Vergütungsübersicht (Monats- und Jahresansicht)
+router.get("/:id/verguetung", async (req, res) => {
+  const trainerId = parseInt(req.params.id);
+  const dojoId = getSecureDojoId(req) || req.user?.dojo_id;
+  const { monat, jahr } = req.query;
+  const m = parseInt(monat, 10) || new Date().getMonth() + 1;
+  const y = parseInt(jahr, 10)  || new Date().getFullYear();
+  const pool = db.promise();
+  try {
+    const dojoWhere = dojoId ? 'AND t.dojo_id = ?' : '';
+    const [trainerRows] = await pool.query(
+      `SELECT trainer_id, vorname, nachname,
+              COALESCE(stundenlohn, 0) AS stundenlohn,
+              COALESCE(grundverguetung, 0) AS grundverguetung,
+              beschaeftigungsart, iban, bic, steuerklasse
+       FROM trainer WHERE trainer_id = ? ${dojoWhere}`,
+      dojoId ? [trainerId, dojoId] : [trainerId]
+    );
+    if (trainerRows.length === 0) return res.status(404).json({ error: 'Trainer nicht gefunden' });
+    const trainer = trainerRows[0];
+
+    const dojoStunden = dojoId ? 'AND ts.dojo_id = ?' : '';
+    // Aktuelle Monats-Stunden mit Kursname
+    const [monatsStunden] = await pool.query(
+      `SELECT ts.id, ts.datum, ts.stunden, ts.status, ts.notiz,
+              COALESCE(k.gruppenname, 'Kein Kurs') AS kursname
+       FROM trainer_stunden ts
+       LEFT JOIN kurse k ON k.kurs_id = ts.kurs_id
+       WHERE ts.trainer_id = ? AND MONTH(ts.datum) = ? AND YEAR(ts.datum) = ? ${dojoStunden}
+       ORDER BY ts.datum DESC`,
+      dojoId ? [trainerId, m, y, dojoId] : [trainerId, m, y]
+    );
+
+    // Jahresverlauf (Monats-Zusammenfassung)
+    const [jahresVerlauf] = await pool.query(
+      `SELECT MONTH(ts.datum) AS monat,
+              COUNT(ts.id)          AS anzahl_einheiten,
+              SUM(ts.stunden)       AS total_stunden,
+              ROUND(SUM(ts.stunden) * ?, 2) AS berechnet_lohn
+       FROM trainer_stunden ts
+       WHERE ts.trainer_id = ? AND YEAR(ts.datum) = ? ${dojoStunden}
+       GROUP BY MONTH(ts.datum) ORDER BY monat ASC`,
+      dojoId
+        ? [trainer.stundenlohn, trainerId, y, dojoId]
+        : [trainer.stundenlohn, trainerId, y]
+    );
+
+    const totalMonat  = monatsStunden.reduce((s, r) => s + parseFloat(r.stunden || 0), 0);
+    const lohnMonat   = Math.round(totalMonat * parseFloat(trainer.stundenlohn) * 100) / 100;
+
+    res.json({
+      success: true,
+      trainer,
+      monat: m, jahr: y,
+      monatsStunden,
+      totalMonat: Math.round(totalMonat * 100) / 100,
+      lohnMonat,
+      jahresVerlauf
+    });
+  } catch (err) {
+    logger.error('Trainer Vergütung Fehler:', { error: err });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
 // PUT /:id/details — Erweiterte Felder aktualisieren
 router.put("/:id/details", async (req, res) => {
   const trainerId = parseInt(req.params.id);
@@ -454,7 +519,8 @@ router.put("/:id/details", async (req, res) => {
   const {
     vorname, nachname, email, telefon,
     anschrift, geburtsdatum, graduierung, steuer_id,
-    einstellungsdatum, status, notizen, stile
+    einstellungsdatum, status, notizen, stile,
+    stundenlohn, grundverguetung, beschaeftigungsart, iban, bic, steuerklasse
   } = req.body;
 
   const pool = db.promise();
@@ -478,12 +544,23 @@ router.put("/:id/details", async (req, res) => {
         steuer_id = ?,
         einstellungsdatum = ?,
         status = COALESCE(?, status),
-        notizen = ?
+        notizen = ?,
+        stundenlohn     = COALESCE(?, stundenlohn),
+        grundverguetung = COALESCE(?, grundverguetung),
+        beschaeftigungsart = COALESCE(?, beschaeftigungsart),
+        iban            = COALESCE(?, iban),
+        bic             = COALESCE(?, bic),
+        steuerklasse    = COALESCE(?, steuerklasse)
       WHERE trainer_id = ?
     `, [
       vorname || null, nachname || null, email !== undefined ? email : null, telefon !== undefined ? telefon : null,
       anschrift || null, geburtsdatum || null, graduierung || null, steuer_id || null,
       einstellungsdatum || null, status || null, notizen !== undefined ? notizen : null,
+      stundenlohn != null ? parseFloat(stundenlohn) : null,
+      grundverguetung != null ? parseFloat(grundverguetung) : null,
+      beschaeftigungsart || null,
+      iban || null, bic || null,
+      steuerklasse != null ? parseInt(steuerklasse, 10) : null,
       trainerId
     ]);
 

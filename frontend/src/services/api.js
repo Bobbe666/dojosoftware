@@ -59,8 +59,7 @@ apiClient.interceptors.request.use(
       requestConfig.headers['X-CSRF-Token'] = csrfToken;
     }
 
-    // JWT-Fallback für Übergangsphase (Backend akzeptiert beides)
-    // TODO: Nach vollständiger Migration zu Session-only entfernen
+    // JWT-Fallback: Backend akzeptiert Session-Cookie und Bearer-Token parallel
     const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
     if (token && requestConfig.headers) {
       requestConfig.headers['Authorization'] = `Bearer ${token}`;

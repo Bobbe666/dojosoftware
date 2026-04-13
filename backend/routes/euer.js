@@ -219,7 +219,7 @@ router.get('/tda', async (req, res) => {
   const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
 
   // TDA Dojo-ID aus Einstellungen oder Standard
-  const TDA_DOJO_ID = 2; // TODO: Aus Konfiguration laden
+  const TDA_DOJO_ID = parseInt(process.env.TDA_DOJO_ID || '2');
 
   try {
     // 1. TDA Dojo-Mitglieder (Beiträge)
@@ -273,9 +273,7 @@ router.get('/tda', async (req, res) => {
     `;
     const verbandZahlungen = await queryAsync(verbandQuery, [jahr]);
 
-    // 5. Software-Einnahmen (Dojo-Abos)
-    // TODO: Tabelle für Software-Lizenzen/Abos erstellen
-    // Vorerst Platzhalter - muss später implementiert werden
+    // 5. Software-Einnahmen (Dojo-Abos) — Tabelle software_lizenzen (Migration 118)
     const softwareQuery = `
       SELECT
         MONTH(bezahlt_am) as monat,

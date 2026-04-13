@@ -231,8 +231,7 @@ const PublicRegistration = ({ onClose }) => {
     // Aus lokalem State entfernen (optimistisch)
     setFamilyMembers(prev => prev.filter((_, i) => i !== index));
 
-    // TODO: Backend-Call zum Entfernen könnte hier hinzugefügt werden
-    // Da die Registrierung noch nicht abgeschlossen ist, reicht lokales Entfernen
+    // Lokales Entfernen reicht hier — die Registrierung ist noch nicht abgeschlossen
   };
 
   const handleInputChange = (field, value) => {

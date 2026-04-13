@@ -138,6 +138,36 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
 });
 
 // ===================================================================
+// TIMELINE (Wochenverlauf Benachrichtigungen)
+// ===================================================================
+
+router.get('/notification-timeline', authenticateToken, async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 7, 30);
+    const [rows] = await db.promise().query(
+      `SELECT
+         DATE(created_at) AS tag,
+         SUM(CASE WHEN type = 'email' THEN 1 ELSE 0 END) AS emails,
+         SUM(CASE WHEN type = 'push'  THEN 1 ELSE 0 END) AS push
+       FROM notifications
+       WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+       GROUP BY DATE(created_at)
+       ORDER BY tag ASC`,
+      [days]
+    );
+    const timeline = rows.map(r => ({
+      tag: new Date(r.tag).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' }),
+      emails: Number(r.emails),
+      push: Number(r.push)
+    }));
+    res.json({ success: true, timeline });
+  } catch (error) {
+    logger.error('Timeline Fehler:', { error: error.message });
+    res.status(500).json({ success: false, message: 'Fehler beim Laden der Timeline' });
+  }
+});
+
+// ===================================================================
 // EINSTELLUNGEN VERWALTUNG
 // ===================================================================
 

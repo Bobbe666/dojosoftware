@@ -128,7 +128,7 @@ const NotificationSystem = () => {
     loadHistory();
     loadPushSubscriptions();
     loadKurse();
-    // loadTimelineData(); // TODO: Endpoint noch nicht implementiert
+    loadTimelineData();
   }, []);
 
   // Lade Empfänger + Kurse neu, wenn sich der Dojo-Filter ändert
@@ -427,7 +427,6 @@ const NotificationSystem = () => {
       const data = await response.json();
       if (data.success && data.timeline) {
         setTimelineData(data.timeline);
-        console.log('✅ Timeline-Daten geladen:', data.timeline);
       }
     } catch (error) {
       console.error('❌ Timeline Fehler:', error);
@@ -838,8 +837,9 @@ const NotificationSystem = () => {
 
         {/* Charts Section */}
         <div className="ns-charts-grid">
-          {/* Zeitverlauf Chart — TODO: Backend-Endpunkt noch nicht implementiert */}
-          {/* <div className="ns-chart-card">
+          {/* Zeitverlauf Chart */}
+          {timelineData.length > 0 && (
+          <div className="ns-chart-card">
             <h4 className="ns-chart-title">📈 Wochenverlauf</h4>
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={timelineData}>
@@ -859,7 +859,8 @@ const NotificationSystem = () => {
                 <Line type="monotone" dataKey="push" stroke="#22c55e" strokeWidth={2} name="Push" />
               </LineChart>
             </ResponsiveContainer>
-          </div> */}
+          </div>
+          )}
 
           {/* Verteilung Email vs Push */}
           <div className="ns-chart-card">

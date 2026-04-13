@@ -315,6 +315,91 @@ router.get("/stats", (req, res) => {
   });
 });
 
+// GET /api/personalCheckin/lohnabrechnung - Monatliche Gehaltsabrechnung pro Mitarbeiter
+router.get("/lohnabrechnung", (req, res) => {
+  const { monat, jahr, personal_id } = req.query;
+  const m = parseInt(monat) || new Date().getMonth() + 1;
+  const y = parseInt(jahr) || new Date().getFullYear();
+
+  const conds = [
+    'YEAR(pc.checkin_time) = ?',
+    'MONTH(pc.checkin_time) = ?',
+    "pc.status = 'ausgecheckt'"
+  ];
+  const params = [y, m];
+
+  if (personal_id) {
+    conds.push('pc.personal_id = ?');
+    params.push(parseInt(personal_id, 10));
+  }
+
+  const query = `
+    SELECT
+      p.personal_id,
+      p.vorname,
+      p.nachname,
+      p.position,
+      p.beschaeftigungsart,
+      p.stundenlohn,
+      p.grundgehalt,
+      COUNT(pc.checkin_id)                            AS anzahl_schichten,
+      SUM(COALESCE(pc.arbeitszeit_minuten, 0))        AS total_minuten,
+      ROUND(SUM(COALESCE(pc.arbeitszeit_minuten, 0)) / 60.0, 2) AS total_stunden,
+      ROUND(SUM(COALESCE(pc.kosten, 0)), 2)           AS total_lohn,
+      MIN(DATE(pc.checkin_time))                      AS erster_tag,
+      MAX(DATE(pc.checkin_time))                      AS letzter_tag
+    FROM personal_checkin pc
+    JOIN personal p ON pc.personal_id = p.personal_id
+    WHERE ${conds.join(' AND ')}
+    GROUP BY p.personal_id, p.vorname, p.nachname, p.position,
+             p.beschaeftigungsart, p.stundenlohn, p.grundgehalt
+    ORDER BY p.nachname, p.vorname
+  `;
+
+  db.query(query, params, (error, results) => {
+    if (error) {
+      logger.error('Fehler Lohnabrechnung:', { error });
+      return res.status(500).json({ success: false, error: 'Datenbankfehler' });
+    }
+
+    const gesamt = {
+      total_stunden: results.reduce((s, r) => s + parseFloat(r.total_stunden || 0), 0).toFixed(2),
+      total_lohn:    results.reduce((s, r) => s + parseFloat(r.total_lohn    || 0), 0).toFixed(2),
+    };
+
+    res.json({ success: true, data: results, gesamt, monat: m, jahr: y });
+  });
+});
+
+// GET /api/personalCheckin/verlauf/:personal_id - Jahresverlauf eines Mitarbeiters
+router.get("/verlauf/:personal_id", (req, res) => {
+  const personal_id = parseInt(req.params.personal_id, 10);
+  const { jahr } = req.query;
+  const y = parseInt(jahr) || new Date().getFullYear();
+
+  const query = `
+    SELECT
+      MONTH(pc.checkin_time)                             AS monat,
+      COUNT(pc.checkin_id)                               AS anzahl_schichten,
+      ROUND(SUM(COALESCE(pc.arbeitszeit_minuten, 0)) / 60.0, 2) AS total_stunden,
+      ROUND(SUM(COALESCE(pc.kosten, 0)), 2)              AS total_lohn
+    FROM personal_checkin pc
+    WHERE pc.personal_id = ?
+      AND YEAR(pc.checkin_time) = ?
+      AND pc.status = 'ausgecheckt'
+    GROUP BY MONTH(pc.checkin_time)
+    ORDER BY monat ASC
+  `;
+
+  db.query(query, [personal_id, y], (error, results) => {
+    if (error) {
+      logger.error('Fehler Verlauf:', { error });
+      return res.status(500).json({ success: false, error: 'Datenbankfehler' });
+    }
+    res.json({ success: true, data: results, personal_id, jahr: y });
+  });
+});
+
 // DELETE /api/personal-checkin/:checkin_id - Check-in löschen (nur Admin)
 router.delete("/:checkin_id", (req, res) => {
   const { checkin_id } = req.params;

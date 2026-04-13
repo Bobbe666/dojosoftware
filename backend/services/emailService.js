@@ -33,13 +33,13 @@ const getEmailSettings = async () => {
         if (err) {
           // Fallback zu Umgebungsvariablen
           resolve({
-            email_enabled: !!process.env.EMAIL_USER,
+            email_enabled: !!(process.env.EMAIL_USER || process.env.SMTP_USER),
             email_config: JSON.stringify({
-              smtp_host: process.env.EMAIL_HOST || 'smtp.alfahosting.de',
+              smtp_host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.alfahosting.de',
               smtp_port: process.env.EMAIL_PORT || 587,
               smtp_secure: false,
-              smtp_user: process.env.EMAIL_USER || '',
-              smtp_password: process.env.EMAIL_PASS || ''
+              smtp_user: process.env.EMAIL_USER || process.env.SMTP_USER || '',
+              smtp_password: process.env.EMAIL_PASS || process.env.SMTP_PASS || ''
             }),
             default_from_email: process.env.EMAIL_FROM || 'noreply@dojosoftware.com',
             default_from_name: 'Dojo Software'
@@ -49,13 +49,13 @@ const getEmailSettings = async () => {
         } else {
           // Fallback zu Umgebungsvariablen
           resolve({
-            email_enabled: !!process.env.EMAIL_USER,
+            email_enabled: !!(process.env.EMAIL_USER || process.env.SMTP_USER),
             email_config: JSON.stringify({
-              smtp_host: process.env.EMAIL_HOST || 'smtp.alfahosting.de',
+              smtp_host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.alfahosting.de',
               smtp_port: process.env.EMAIL_PORT || 587,
               smtp_secure: false,
-              smtp_user: process.env.EMAIL_USER || '',
-              smtp_password: process.env.EMAIL_PASS || ''
+              smtp_user: process.env.EMAIL_USER || process.env.SMTP_USER || '',
+              smtp_password: process.env.EMAIL_PASS || process.env.SMTP_PASS || ''
             }),
             default_from_email: process.env.EMAIL_FROM || 'noreply@dojosoftware.com',
             default_from_name: 'Dojo Software'
@@ -155,12 +155,12 @@ const getEmailSettingsForDojo = async (dojoId) => {
 
         // Absoluter Fallback zu Environment-Variablen
         resolve({
-          email_enabled: !!process.env.EMAIL_USER,
-          smtp_host: process.env.EMAIL_HOST || 'smtp.alfahosting.de',
+          email_enabled: !!(process.env.EMAIL_USER || process.env.SMTP_USER),
+          smtp_host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.alfahosting.de',
           smtp_port: parseInt(process.env.EMAIL_PORT) || 587,
           smtp_secure: false,
-          smtp_user: process.env.EMAIL_USER || '',
-          smtp_password: process.env.EMAIL_PASS || '',
+          smtp_user: process.env.EMAIL_USER || process.env.SMTP_USER || '',
+          smtp_password: process.env.EMAIL_PASS || process.env.SMTP_PASS || '',
           default_from_email: process.env.EMAIL_FROM || 'noreply@dojosoftware.com',
           default_from_name: dojo.dojoname || 'Dojo Software',
           reply_to: dojo.email,
@@ -182,12 +182,12 @@ const getGlobalEmailSettings = async () => {
         if (err || !results || results.length === 0 || !results[0].smtp_host) {
           // Fallback zu Umgebungsvariablen
           resolve({
-            email_enabled: !!process.env.EMAIL_USER,
-            smtp_host: process.env.EMAIL_HOST || 'smtp.alfahosting.de',
+            email_enabled: !!(process.env.EMAIL_USER || process.env.SMTP_USER),
+            smtp_host: process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.alfahosting.de',
             smtp_port: parseInt(process.env.EMAIL_PORT) || 587,
             smtp_secure: false,
-            smtp_user: process.env.EMAIL_USER || '',
-            smtp_password: process.env.EMAIL_PASS || '',
+            smtp_user: process.env.EMAIL_USER || process.env.SMTP_USER || '',
+            smtp_password: process.env.EMAIL_PASS || process.env.SMTP_PASS || '',
             default_from_email: process.env.EMAIL_FROM || 'noreply@dojosoftware.com',
             default_from_name: 'DojoSoftware',
             mode: 'environment'

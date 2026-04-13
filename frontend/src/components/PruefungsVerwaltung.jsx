@@ -1056,7 +1056,7 @@ const PruefungsVerwaltung = () => {
 
   // Funktion zum Entfernen der Zulassung
   const handleZulassungEntfernen = async (pruefung) => {
-    if (!window.confirm(`Möchten Sie die Zulassung von ${pruefung.vorname} ${pruefung.nachname} wirklich entfernen?`)) {
+    if (!window.confirm(`${pruefung.vorname} ${pruefung.nachname} kommt nicht zur Prüfung?\n\nZulassung entfernen — Stunden und Wartezeit laufen normal weiter.`)) {
       return;
     }
 
@@ -1341,6 +1341,41 @@ const PruefungsVerwaltung = () => {
       setError(error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Graduierung in der Zugelassen-Ansicht ändern (vorher + nachher)
+  const handleGraduierungZulassungAendern = async (pruefung, vorher_id, nachher_id) => {
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    try {
+      const res = await fetch(`${API_BASE_URL}/pruefungen/${pruefung.pruefung_id}/graduierung`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          graduierung_nachher_id: nachher_id,
+          graduierung_vorher_id: vorher_id || null,
+          graduierung_zwischen_id: pruefung.graduierung_zwischen_id || null,
+        }),
+      });
+      if (!res.ok) throw new Error('Fehler beim Speichern der Graduierung');
+      const grads = graduierungenProStil[pruefung.stil_id] || [];
+      const vGrad = grads.find(g => g.graduierung_id === vorher_id);
+      const nGrad = grads.find(g => g.graduierung_id === nachher_id);
+      setZugelassenePruefungen(prev => prev.map(p =>
+        p.pruefung_id === pruefung.pruefung_id
+          ? {
+              ...p,
+              graduierung_vorher_id: vorher_id || null,
+              graduierung_vorher: vGrad?.name || p.graduierung_vorher,
+              farbe_vorher: vGrad?.farbe_hex || p.farbe_vorher,
+              graduierung_nachher_id: nachher_id,
+              graduierung_nachher: nGrad?.name || p.graduierung_nachher,
+              farbe_nachher: nGrad?.farbe_hex || p.farbe_nachher,
+            }
+          : p
+      ));
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -3833,9 +3868,26 @@ ${pages}
                           </span>
                           <span className="pv3-stil-badge-sm">{group.stil_name}</span>
                         </div>
-                        <span className="pv3-group-count">
-                          {group.candidates.length} Kandidat{group.candidates.length !== 1 ? 'en' : ''}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span className="pv3-group-count">
+                            {group.candidates.length} Kandidat{group.candidates.length !== 1 ? 'en' : ''}
+                          </span>
+                          {group.candidates.filter(c => c.mitglied_antwort === 'kommt').length > 0 && (
+                            <span style={{ fontSize: '11px', background: 'rgba(34,197,94,.15)', border: '1px solid rgba(34,197,94,.35)', color: '#22c55e', borderRadius: '4px', padding: '1px 6px' }}>
+                              ✓ {group.candidates.filter(c => c.mitglied_antwort === 'kommt').length} Ja
+                            </span>
+                          )}
+                          {group.candidates.filter(c => c.teilnahme_bestaetigt).length > 0 && (
+                            <span style={{ fontSize: '11px', background: 'rgba(99,102,241,.15)', border: '1px solid rgba(99,102,241,.35)', color: '#818cf8', borderRadius: '4px', padding: '1px 6px' }}>
+                              ★ {group.candidates.filter(c => c.teilnahme_bestaetigt).length} Best.
+                            </span>
+                          )}
+                          {group.candidates.filter(c => c.benachrichtigung_gelesen).length > 0 && (
+                            <span style={{ fontSize: '11px', background: 'rgba(6,182,212,.15)', border: '1px solid rgba(6,182,212,.35)', color: '#22d3ee', borderRadius: '4px', padding: '1px 6px' }}>
+                              👁 {group.candidates.filter(c => c.benachrichtigung_gelesen).length} Gel.
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {isOpen && <div className="pv3-candidate-list">
@@ -3844,48 +3896,79 @@ ${pages}
                             <div className="pv3-cand-name">
                               {pruefung.vorname} {pruefung.nachname}
                             </div>
-                            <div className="pv3-cand-grad">
-                              <div
-                                className="pv3-gurt-dot-sm"
-                                style={{ '--dot-color': pruefung.farbe_nachher || 'rgba(255,255,255,0.1)' }}
-                                title={pruefung.graduierung_nachher}
-                              />
-                              <span>{pruefung.graduierung_nachher}</span>
+                            <div className="pv3-cand-grad" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
+                              {/* Vorhanden */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontSize: '9px', color: 'var(--text-muted,#888)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Vorhanden</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                  <div className="pv3-gurt-dot-sm" style={{ '--dot-color': pruefung.farbe_vorher || '#6b7280' }} />
+                                  <select
+                                    value={pruefung.graduierung_vorher_id || ''}
+                                    className="pv3-inline-grad-select"
+                                    title="Aktuellen Gurt ändern (wird in der Prüfung gespeichert)"
+                                    onFocus={() => { if (!graduierungenProStil[pruefung.stil_id]) loadGraduierungenFuerModal(pruefung.stil_id); }}
+                                    onChange={e => {
+                                      const vorher_id = e.target.value ? parseInt(e.target.value) : null;
+                                      const grads = (graduierungenProStil[pruefung.stil_id] || []).filter(g => g.aktiv === 1).sort((a, b) => a.reihenfolge - b.reihenfolge);
+                                      const selectedGrad = grads.find(g => g.graduierung_id === vorher_id);
+                                      const nextGrad = selectedGrad ? grads.find(g => g.reihenfolge > selectedGrad.reihenfolge) : null;
+                                      const nachher_id = nextGrad ? nextGrad.graduierung_id : pruefung.graduierung_nachher_id;
+                                      handleGraduierungZulassungAendern(pruefung, vorher_id, nachher_id);
+                                    }}
+                                  >
+                                    <option value="">– kein –</option>
+                                    {(graduierungenProStil[pruefung.stil_id] || []).filter(g => g.aktiv === 1).sort((a, b) => a.reihenfolge - b.reihenfolge).map(g =>
+                                      <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>
+                                    )}
+                                    {!graduierungenProStil[pruefung.stil_id] && pruefung.graduierung_vorher_id && (
+                                      <option value={pruefung.graduierung_vorher_id}>{pruefung.graduierung_vorher || '…'}</option>
+                                    )}
+                                  </select>
+                                </div>
+                              </div>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted,#888)', paddingBottom: '3px' }}>→</span>
+                              {/* Prüfung zum */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ fontSize: '9px', color: 'rgba(234,179,8,0.85)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Prüfung zum</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                  <div className="pv3-gurt-dot-sm" style={{ '--dot-color': pruefung.farbe_nachher || '#EAB308' }} />
+                                  <select
+                                    value={pruefung.graduierung_nachher_id || ''}
+                                    className="pv3-inline-grad-select pv3-inline-grad-select--ziel"
+                                    title="Zielgurt ändern"
+                                    onFocus={() => { if (!graduierungenProStil[pruefung.stil_id]) loadGraduierungenFuerModal(pruefung.stil_id); }}
+                                    onChange={e => handleGraduierungZulassungAendern(pruefung, pruefung.graduierung_vorher_id, parseInt(e.target.value))}
+                                  >
+                                    {(graduierungenProStil[pruefung.stil_id] || []).filter(g => g.aktiv === 1).sort((a, b) => a.reihenfolge - b.reihenfolge).map(g =>
+                                      <option key={g.graduierung_id} value={g.graduierung_id}>{g.name}</option>
+                                    )}
+                                    {!graduierungenProStil[pruefung.stil_id] && pruefung.graduierung_nachher_id && (
+                                      <option value={pruefung.graduierung_nachher_id}>{pruefung.graduierung_nachher || '…'}</option>
+                                    )}
+                                  </select>
+                                </div>
+                              </div>
                             </div>
-                            <div className="pv3-cand-status" style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                            <div className="pv3-cand-status" style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'nowrap' }}>
                               <button
                                 onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt' ? null : 'kommt' })}
                                 title="Kommt"
-                                style={{
-                                  padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid', whiteSpace: 'nowrap',
-                                  background: pruefung.mitglied_antwort === 'kommt' ? 'rgba(34,197,94,.2)' : 'rgba(255,255,255,.05)',
-                                  borderColor: pruefung.mitglied_antwort === 'kommt' ? 'rgba(34,197,94,.5)' : 'rgba(255,255,255,.1)',
-                                  color: pruefung.mitglied_antwort === 'kommt' ? '#22c55e' : 'var(--text-muted,#888)',
-                                  fontWeight: pruefung.mitglied_antwort === 'kommt' ? 700 : 400,
-                                }}
+                                className={`pv3-status-btn${pruefung.mitglied_antwort === 'kommt' ? ' pv3-status-btn--kommt' : ''}`}
                               >✓ Kommt</button>
                               <button
-                                onClick={() => handleAdminStatus(pruefung, { mitglied_antwort: pruefung.mitglied_antwort === 'kommt_nicht' ? null : 'kommt_nicht' })}
-                                title="Kommt nicht"
-                                style={{
-                                  padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid', whiteSpace: 'nowrap',
-                                  background: pruefung.mitglied_antwort === 'kommt_nicht' ? 'rgba(239,68,68,.2)' : 'rgba(255,255,255,.05)',
-                                  borderColor: pruefung.mitglied_antwort === 'kommt_nicht' ? 'rgba(239,68,68,.5)' : 'rgba(255,255,255,.1)',
-                                  color: pruefung.mitglied_antwort === 'kommt_nicht' ? '#ef4444' : 'var(--text-muted,#888)',
-                                  fontWeight: pruefung.mitglied_antwort === 'kommt_nicht' ? 700 : 400,
-                                }}
+                                onClick={() => handleZulassungEntfernen(pruefung)}
+                                title="Kommt nicht — Zulassung entfernen"
+                                className="pv3-status-btn"
                               >✗ Nein</button>
                               <button
                                 onClick={() => handleAdminStatus(pruefung, { teilnahme_bestaetigt: !pruefung.teilnahme_bestaetigt })}
                                 title={pruefung.teilnahme_bestaetigt ? 'Bestätigung zurücksetzen' : 'Als bestätigt markieren'}
-                                style={{
-                                  padding: '3px 8px', fontSize: '11px', borderRadius: '4px', cursor: 'pointer', border: '1px solid', whiteSpace: 'nowrap',
-                                  background: pruefung.teilnahme_bestaetigt ? 'rgba(99,102,241,.2)' : 'rgba(255,255,255,.05)',
-                                  borderColor: pruefung.teilnahme_bestaetigt ? 'rgba(99,102,241,.5)' : 'rgba(255,255,255,.1)',
-                                  color: pruefung.teilnahme_bestaetigt ? '#818cf8' : 'var(--text-muted,#888)',
-                                  fontWeight: pruefung.teilnahme_bestaetigt ? 700 : 400,
-                                }}
+                                className={`pv3-status-btn${pruefung.teilnahme_bestaetigt ? ' pv3-status-btn--best' : ''}`}
                               >{pruefung.teilnahme_bestaetigt ? '★ Best.' : '☆ Best.'}</button>
+                              <button
+                                title={pruefung.benachrichtigung_gelesen ? `Einladung gelesen${pruefung.benachrichtigung_gelesen_am ? ' am ' + new Date(pruefung.benachrichtigung_gelesen_am).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}` : 'Einladung noch nicht gelesen'}
+                                className={`pv3-status-btn${pruefung.benachrichtigung_gelesen ? ' pv3-status-btn--gelesen' : ''}`}
+                              >{pruefung.benachrichtigung_gelesen ? '👁 Gel.' : '○ Ungel.'}</button>
                             </div>
                             <div className="pv3-cand-actions u-flex-wrap-gap">
                                 {(pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden') ? (
@@ -3967,12 +4050,6 @@ ${pages}
                                       className="pv3-zug-btn-primary"
                                     >
                                       <Check size={13} /> Ergebnis
-                                    </button>
-                                    <button
-                                      onClick={() => handleZulassungEntfernen(pruefung)}
-                                      className="pv3-zug-btn-danger"
-                                    >
-                                      <X size={13} /> Entfernen
                                     </button>
                                   </>
                                 )}

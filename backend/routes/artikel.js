@@ -8,12 +8,34 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const { authenticateToken } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/featureAccess');
-// const multer = require('multer'); // TODO: Später für Bild-Uploads hinzufügen
-// const path = require('path');
-// const fs = require('fs');
 const logger = require('../utils/logger');
+
+// ── Multer Bild-Upload Konfiguration ─────────────────────────────────────────
+const UPLOAD_DIR = path.join(__dirname, '../../uploads/artikel');
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
+const bildStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `artikel_${req.params.id}_${Date.now()}${ext}`);
+  }
+});
+const bildUpload = multer({
+  storage: bildStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error('Nur Bilder erlaubt (jpg, png, webp, gif)'));
+  }
+});
 
 // =====================================================================================
 // FEATURE PROTECTION: Verkauf & Lagerhaltung
@@ -26,8 +48,6 @@ router.use(requireFeature('verkauf'));
 // MIDDLEWARE & KONFIGURATION
 // =====================================================================================
 
-// TODO: Multer für Bild-Uploads implementieren
-// const upload = null; // Placeholder
 
 // =====================================================================================
 // HILFSFUNKTIONEN
@@ -510,7 +530,6 @@ router.post('/', (req, res) => {
 
   // Validierung
   const vkMissing = verkaufspreis_euro === undefined || verkaufspreis_euro === null || String(verkaufspreis_euro).trim() === '';
-  console.log('[ARTIKEL POST] Validierung:', JSON.stringify({ kategorie_id, hasName: !!name, verkaufspreis_euro, vkMissing }));
   logger.info('POST /artikel Validierung:', { kategorie_id, name: !!name, verkaufspreis_euro, vkMissing });
   if (!kategorie_id || !name || vkMissing) {
     return res.status(400).json({
@@ -550,7 +569,7 @@ router.post('/', (req, res) => {
   const preis_kids_cent = preis_kids_euro ? Math.round(parseFloat(preis_kids_euro) * 100) : null;
   const preis_erwachsene_cent = preis_erwachsene_euro ? Math.round(parseFloat(preis_erwachsene_euro) * 100) : null;
 
-  // TODO: Bild-Upload implementieren
+  // Bild wird separat via POST /:id/bild hochgeladen
   let bild_url = null;
   let bild_base64 = null;
 
@@ -803,8 +822,6 @@ router.put('/:id', (req, res) => {
       updateValues.push(groessen_erwachsene ? JSON.stringify(groessen_erwachsene) : null);
     }
 
-    // TODO: Bild-Upload für Updates implementieren
-    
     // Lagerbestand separat behandeln (wegen Lagerbewegung)
     let lagerbestandChanged = false;
     let alterBestand = currentArtikel.lagerbestand;
@@ -929,6 +946,51 @@ router.delete('/:id', (req, res) => {
       });
     }
   });
+});
+
+// =====================================================================================
+// BILD-UPLOAD
+// =====================================================================================
+
+// POST /api/artikel/:id/bild - Artikelbild hochladen
+router.post('/:id/bild', bildUpload.single('bild'), async (req, res) => {
+  const artikelId = parseInt(req.params.id);
+  if (!req.file) return res.status(400).json({ error: 'Kein Bild hochgeladen' });
+
+  const bild_url = `/uploads/artikel/${req.file.filename}`;
+
+  try {
+    await db.promise().query(
+      'UPDATE artikel SET bild_url = ? WHERE artikel_id = ?',
+      [bild_url, artikelId]
+    );
+    res.json({ success: true, bild_url });
+  } catch (err) {
+    try { fs.unlinkSync(req.file.path); } catch (_) {}
+    logger.error('Fehler beim Speichern des Artikelbilds:', { error: err.message });
+    res.status(500).json({ error: 'Fehler beim Speichern des Bilds' });
+  }
+});
+
+// DELETE /api/artikel/:id/bild - Artikelbild löschen
+router.delete('/:id/bild', async (req, res) => {
+  const artikelId = parseInt(req.params.id);
+  try {
+    const [[artikel]] = await db.promise().query(
+      'SELECT bild_url FROM artikel WHERE artikel_id = ?', [artikelId]
+    );
+    if (artikel?.bild_url) {
+      const filePath = path.join(__dirname, '../../', artikel.bild_url);
+      try { fs.unlinkSync(filePath); } catch (_) {}
+    }
+    await db.promise().query(
+      'UPDATE artikel SET bild_url = NULL, bild_base64 = NULL WHERE artikel_id = ?', [artikelId]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Fehler beim Löschen des Artikelbilds:', { error: err.message });
+    res.status(500).json({ error: 'Fehler beim Löschen des Bilds' });
+  }
 });
 
 // =====================================================================================

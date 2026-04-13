@@ -12,6 +12,11 @@ import { useNavigate } from 'react-router-dom';
 import { DatenContext } from '@shared/DatenContext.jsx';
 import '../styles/TrainerPersonal.css';
 
+const MONATSNAMEN = [
+  '', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+];
+
 const STATUS_LABELS = { aktiv: 'Aktiv', inaktiv: 'Inaktiv', pausiert: 'Pausiert' };
 const STATUS_CLASS  = { aktiv: 'tp-badge--aktiv', inaktiv: 'tp-badge--inaktiv', pausiert: 'tp-badge--pausiert' };
 const DOK_STATUS    = { erstellt: 'Erstellt', versendet: 'Versendet', unterschrieben: 'Unterschrieben' };
@@ -41,6 +46,15 @@ export default function TrainerPersonal() {
   const [saving, setSaving]               = useState(false);
   const [msg, setMsg]                     = useState('');
 
+  // Vergütung
+  const now = new Date();
+  const [vergMonat, setVergMonat]   = useState(now.getMonth() + 1);
+  const [vergJahr, setVergJahr]     = useState(now.getFullYear());
+  const [vergData, setVergData]     = useState(null);
+  const [vergLoading, setVergLoading] = useState(false);
+  const [vergEdit, setVergEdit]     = useState(false);
+  const [vergEditData, setVergEditData] = useState({});
+
   // Dokument-Generierung
   const [dokTyp, setDokTyp]     = useState('vereinbarung');
   const [dokParams, setDokParams] = useState({
@@ -50,6 +64,22 @@ export default function TrainerPersonal() {
     wettbewerb_radius: '10',
   });
   const [generating, setGenerating] = useState(false);
+
+  // Vergütungsdaten laden
+  const ladeVerguetung = useCallback(async (id, monat, jahr) => {
+    if (!id) return;
+    setVergLoading(true);
+    try {
+      const res = await axios.get(`/trainer/${id}/verguetung`, {
+        params: { monat, jahr }
+      });
+      setVergData(res.data);
+    } catch {
+      setVergData(null);
+    } finally {
+      setVergLoading(false);
+    }
+  }, []);
 
   // Trainer-Details laden (ohne /api prefix — axios baseURL ist schon /api)
   const ladeDetails = useCallback(async (id) => {
@@ -71,11 +101,19 @@ export default function TrainerPersonal() {
         notizen:           res.data.notizen || '',
         stile:             res.data.stile || [],
       });
+      setVergEditData({
+        stundenlohn:       res.data.stundenlohn || '',
+        grundverguetung:   res.data.grundverguetung || '',
+        beschaeftigungsart: res.data.beschaeftigungsart || 'Freelancer',
+        iban:              res.data.iban || '',
+        bic:               res.data.bic || '',
+        steuerklasse:      res.data.steuerklasse || '',
+      });
       setEditMode(false);
+      setVergEdit(false);
       setActiveTab('stamm');
       setMsg('');
     } catch (err) {
-      console.error('Fehler beim Laden der Details:', err);
       setMsg('Fehler beim Laden der Trainerdaten.');
     } finally {
       setDetailLoading(false);
@@ -86,6 +124,12 @@ export default function TrainerPersonal() {
     if (selected?.trainer_id === t.trainer_id) return;
     ladeDetails(t.trainer_id);
   };
+
+  useEffect(() => {
+    if (activeTab === 'verguetung' && selected?.trainer_id) {
+      ladeVerguetung(selected.trainer_id, vergMonat, vergJahr);
+    }
+  }, [activeTab, selected?.trainer_id, vergMonat, vergJahr, ladeVerguetung]);
 
   // Speichern
   const handleSave = async () => {
@@ -279,6 +323,7 @@ export default function TrainerPersonal() {
               {[
                 { id: 'stamm', label: 'Stammdaten' },
                 { id: 'kurse', label: `Kurse (${selected.kurse?.length || 0})` },
+                { id: 'verguetung', label: 'Vergütung' },
                 { id: 'dokumente', label: `Dokumente (${selected.dokumente?.length || 0})` },
               ].map(tab => (
                 <button
@@ -411,6 +456,218 @@ export default function TrainerPersonal() {
                       ))}
                     </tbody>
                   </table>
+                )}
+              </div>
+            )}
+
+            {/* ── TAB: Vergütung ─────────────────────────────────── */}
+            {activeTab === 'verguetung' && (
+              <div className="tp-tab-content">
+                {/* Vergütungs-Einstellungen */}
+                <div className="tp-verg-settings">
+                  <div className="tp-section-actions">
+                    <h3 className="tp-section-title">Vergütungseinstellungen</h3>
+                    {!vergEdit ? (
+                      <button className="tp-btn tp-btn--secondary" onClick={() => setVergEdit(true)}>
+                        Bearbeiten
+                      </button>
+                    ) : (
+                      <>
+                        <button className="tp-btn tp-btn--primary" onClick={async () => {
+                          try {
+                            await axios.put(`/trainer/${selected.trainer_id}/details`, vergEditData);
+                            setMsg('Vergütung gespeichert.');
+                            await ladeDetails(selected.trainer_id);
+                          } catch (e) {
+                            setMsg('Fehler: ' + (e.response?.data?.error || e.message));
+                          }
+                        }}>Speichern</button>
+                        <button className="tp-btn tp-btn--ghost" onClick={() => setVergEdit(false)}>Abbrechen</button>
+                      </>
+                    )}
+                  </div>
+                  <div className="tp-form-grid">
+                    <Field label="Beschäftigungsart">
+                      {vergEdit ? (
+                        <select className="tp-input" value={vergEditData.beschaeftigungsart}
+                          onChange={e => setVergEditData(d => ({ ...d, beschaeftigungsart: e.target.value }))}>
+                          <option value="Freelancer">Freelancer</option>
+                          <option value="Honorar">Honorar</option>
+                          <option value="Angestellt">Angestellt</option>
+                          <option value="Minijob">Minijob</option>
+                          <option value="Ehrenamt">Ehrenamt</option>
+                        </select>
+                      ) : (
+                        <div className="tp-value">{selected.beschaeftigungsart || 'Freelancer'}</div>
+                      )}
+                    </Field>
+                    <Field label="Stundenlohn (€/h)">
+                      {vergEdit ? (
+                        <input className="tp-input" type="number" step="0.01" min="0" placeholder="18.50"
+                          value={vergEditData.stundenlohn}
+                          onChange={e => setVergEditData(d => ({ ...d, stundenlohn: e.target.value }))} />
+                      ) : (
+                        <div className="tp-value">
+                          {selected.stundenlohn ? `€ ${parseFloat(selected.stundenlohn).toFixed(2)} / h` : '–'}
+                        </div>
+                      )}
+                    </Field>
+                    <Field label="Grundvergütung (€/Monat)">
+                      {vergEdit ? (
+                        <input className="tp-input" type="number" step="0.01" min="0" placeholder="500.00"
+                          value={vergEditData.grundverguetung}
+                          onChange={e => setVergEditData(d => ({ ...d, grundverguetung: e.target.value }))} />
+                      ) : (
+                        <div className="tp-value">
+                          {selected.grundverguetung ? `€ ${parseFloat(selected.grundverguetung).toFixed(2)}` : '–'}
+                        </div>
+                      )}
+                    </Field>
+                    <Field label="IBAN">
+                      {vergEdit ? (
+                        <input className="tp-input" type="text" placeholder="DE12 3456 7890..."
+                          value={vergEditData.iban}
+                          onChange={e => setVergEditData(d => ({ ...d, iban: e.target.value }))} />
+                      ) : (
+                        <div className="tp-value">{selected.iban || '–'}</div>
+                      )}
+                    </Field>
+                    <Field label="BIC">
+                      {vergEdit ? (
+                        <input className="tp-input" type="text" placeholder="COBADEFFXXX"
+                          value={vergEditData.bic}
+                          onChange={e => setVergEditData(d => ({ ...d, bic: e.target.value }))} />
+                      ) : (
+                        <div className="tp-value">{selected.bic || '–'}</div>
+                      )}
+                    </Field>
+                    <Field label="Steuerklasse">
+                      {vergEdit ? (
+                        <select className="tp-input" value={vergEditData.steuerklasse}
+                          onChange={e => setVergEditData(d => ({ ...d, steuerklasse: e.target.value }))}>
+                          <option value="">–</option>
+                          {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                      ) : (
+                        <div className="tp-value">{selected.steuerklasse || '–'}</div>
+                      )}
+                    </Field>
+                  </div>
+                </div>
+
+                {/* Monats-Auswahl */}
+                <div className="tp-verg-period">
+                  <h3 className="tp-section-title">Stunden-Abrechnung</h3>
+                  <div className="tp-verg-period-selectors">
+                    <select className="tp-select-sm" value={vergMonat}
+                      onChange={e => setVergMonat(parseInt(e.target.value))}>
+                      {MONATSNAMEN.slice(1).map((name, i) => (
+                        <option key={i+1} value={i+1}>{name}</option>
+                      ))}
+                    </select>
+                    <select className="tp-select-sm" value={vergJahr}
+                      onChange={e => setVergJahr(parseInt(e.target.value))}>
+                      {[now.getFullYear() - 1, now.getFullYear()].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Monats-Zusammenfassung */}
+                {vergLoading ? (
+                  <div className="tp-loading">Lade Vergütungsdaten…</div>
+                ) : vergData ? (
+                  <>
+                    <div className="tp-verg-summary">
+                      <div className="tp-verg-card">
+                        <div className="tp-verg-card-label">Einheiten</div>
+                        <div className="tp-verg-card-value">{vergData.monatsStunden?.length || 0}</div>
+                      </div>
+                      <div className="tp-verg-card">
+                        <div className="tp-verg-card-label">Gesamtstunden</div>
+                        <div className="tp-verg-card-value">{vergData.totalMonat} h</div>
+                      </div>
+                      <div className="tp-verg-card tp-verg-card--highlight">
+                        <div className="tp-verg-card-label">Berechneter Lohn</div>
+                        <div className="tp-verg-card-value">€ {(vergData.lohnMonat || 0).toFixed(2)}</div>
+                      </div>
+                      {vergData.trainer?.grundverguetung > 0 && (
+                        <div className="tp-verg-card">
+                          <div className="tp-verg-card-label">Grundvergütung</div>
+                          <div className="tp-verg-card-value">€ {parseFloat(vergData.trainer.grundverguetung).toFixed(2)}</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stunden-Tabelle */}
+                    {vergData.monatsStunden?.length > 0 ? (
+                      <table className="tp-table">
+                        <thead>
+                          <tr>
+                            <th>Datum</th>
+                            <th>Kurs</th>
+                            <th>Stunden</th>
+                            <th>Status</th>
+                            <th>Betrag</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {vergData.monatsStunden.map(s => (
+                            <tr key={s.id}>
+                              <td>{new Date(s.datum).toLocaleDateString('de-DE')}</td>
+                              <td>{s.kursname}</td>
+                              <td>{parseFloat(s.stunden).toFixed(1)} h</td>
+                              <td>
+                                <span className={`tp-badge ${s.status === 'bestaetigt' ? 'tp-badge--aktiv' : 'tp-badge--pausiert'}`}>
+                                  {s.status}
+                                </span>
+                              </td>
+                              <td>€ {(parseFloat(s.stunden) * parseFloat(vergData.trainer.stundenlohn || 0)).toFixed(2)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="tp-empty-state">
+                        <p>Keine Stunden für {MONATSNAMEN[vergMonat]} {vergJahr} erfasst.</p>
+                        <p className="tp-hint">Stunden werden über die Trainer-Stunden-Verwaltung erfasst.</p>
+                      </div>
+                    )}
+
+                    {/* Jahresverlauf */}
+                    {vergData.jahresVerlauf?.length > 0 && (
+                      <div className="tp-verg-jahres">
+                        <h4 className="tp-section-title">Jahresverlauf {vergJahr}</h4>
+                        <table className="tp-table">
+                          <thead>
+                            <tr>
+                              <th>Monat</th>
+                              <th>Einheiten</th>
+                              <th>Stunden</th>
+                              <th>Lohn</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {vergData.jahresVerlauf.map(row => (
+                              <tr key={row.monat}
+                                className={row.monat === vergMonat ? 'tp-row--highlight' : ''}>
+                                <td>{MONATSNAMEN[row.monat]}</td>
+                                <td>{row.anzahl_einheiten}</td>
+                                <td>{parseFloat(row.total_stunden).toFixed(1)} h</td>
+                                <td>€ {parseFloat(row.berechnet_lohn || 0).toFixed(2)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="tp-empty-state">
+                    <p>Keine Vergütungsdaten verfügbar.</p>
+                    <p className="tp-hint">Stundenlohn unter Vergütungseinstellungen eintragen.</p>
+                  </div>
                 )}
               </div>
             )}

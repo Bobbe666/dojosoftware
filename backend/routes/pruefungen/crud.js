@@ -1121,10 +1121,10 @@ router.post('/:id/bewertungen', (req, res) => {
 
 module.exports = router;
 
-// PUT /:id/graduierung - Aktualisiert die Ziel-Graduierung einer geplanten Prüfung
+// PUT /:id/graduierung - Aktualisiert die Graduierungen einer geplanten Prüfung
 router.put('/:id/graduierung', (req, res) => {
   const pruefung_id = parseInt(req.params.id);
-  const { graduierung_nachher_id, graduierung_zwischen_id } = req.body;
+  const { graduierung_nachher_id, graduierung_vorher_id, graduierung_zwischen_id } = req.body;
 
   if (!pruefung_id || isNaN(pruefung_id)) {
     return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
@@ -1147,6 +1147,7 @@ router.put('/:id/graduierung', (req, res) => {
 
     const pruefung = results[0];
     const zwischenId = graduierung_zwischen_id !== undefined ? (graduierung_zwischen_id ? parseInt(graduierung_zwischen_id) : null) : pruefung.graduierung_zwischen_id;
+    const vorherIdNeu = graduierung_vorher_id !== undefined ? (graduierung_vorher_id ? parseInt(graduierung_vorher_id) : null) : pruefung.graduierung_vorher_id;
 
     // Ziel-Graduierung nur bei geplanten Prüfungen änderbar;
     // Zwischengurt (Doppelprüfung) ist auch nach der Prüfung setzbar (für Urkundendruck)
@@ -1157,15 +1158,15 @@ router.put('/:id/graduierung', (req, res) => {
       return res.status(400).json({ error: 'Nur geplante Prüfungen können geändert werden' });
     }
 
-    // Update: Ziel-Graduierung + optionaler Zwischengurt (Doppelprüfung)
-    const updateQuery = 'UPDATE pruefungen SET graduierung_nachher_id = ?, graduierung_zwischen_id = ?, aktualisiert_am = NOW() WHERE pruefung_id = ?';
-    db.query(updateQuery, [graduierung_nachher_id, zwischenId, pruefung_id], (updateErr) => {
+    // Update: Vor-/Ziel-Graduierung + optionaler Zwischengurt (Doppelprüfung)
+    const updateQuery = 'UPDATE pruefungen SET graduierung_nachher_id = ?, graduierung_vorher_id = ?, graduierung_zwischen_id = ?, aktualisiert_am = NOW() WHERE pruefung_id = ?';
+    db.query(updateQuery, [graduierung_nachher_id, vorherIdNeu, zwischenId, pruefung_id], (updateErr) => {
       if (updateErr) {
         logger.error('Fehler beim Aktualisieren der Graduierung:', { error: updateErr });
         return res.status(500).json({ error: 'Fehler beim Aktualisieren', details: updateErr.message });
       }
 
-      logger.info('Graduierung aktualisiert', { pruefung_id, graduierung_nachher_id, graduierung_zwischen_id: zwischenId });
+      logger.info('Graduierung aktualisiert', { pruefung_id, graduierung_nachher_id, graduierung_vorher_id: vorherIdNeu, graduierung_zwischen_id: zwischenId });
       res.json({ success: true, message: 'Graduierung erfolgreich aktualisiert' });
     });
   });

@@ -1,8 +1,30 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react';
 import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+
+// ── Sentry Fehler-Monitoring ──────────────────────────────────────────────────
+// DSN eintragen: https://sentry.io → Projekt erstellen → DSN kopieren
+const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration({ maskAllText: false, blockAllMedia: false }),
+    ],
+    tracesSampleRate: 0.2,      // 20% der Requests werden getraced
+    replaysSessionSampleRate: 0, // Session-Replay nur bei Fehlern
+    replaysOnErrorSampleRate: 1.0,
+    ignoreErrors: [
+      'ResizeObserver loop limit exceeded',
+      'Non-Error promise rejection',
+    ],
+  });
+}
 
 // i18n - Internationalisierung
 import './locales/i18n';
@@ -10,15 +32,11 @@ import './locales/i18n';
 // Design System - Neue zentrale Styles
 import './design-system/index.css';
 
-// Legacy Styles (schrittweise Migration zu design-system/components/*.css)
-// TODO: designsystem.css → nach vollständiger Token-Migration entfernen
-import './styles/designsystem.css';
-// TODO: themes.css → theme-midnight.css + theme-tda-vib.css (bereits in design-system)
-import './styles/themes.css';
-// TODO: Buttons.css → ds-btn Klassen aus design-system/components/Button.css verwenden
-import './styles/Buttons.css';
-// TODO: components.css → schrittweise in design-system/components/ auslagern
-import './styles/components.css';
+// Legacy Styles (schrittweise Migration zu design-system/components/*.css läuft)
+import './styles/designsystem.css';  // Ablösung: nach vollständiger Token-Migration entfernen
+import './styles/themes.css';        // Ablösung: theme-midnight.css + theme-tda-vib.css (bereits in design-system)
+import './styles/Buttons.css';       // Ablösung: ds-btn Klassen aus design-system/components/Button.css
+import './styles/components.css';    // Ablösung: schrittweise in design-system/components/ auslagern
 import './styles/utility-classes.css'; // BEM-konforme Utility-Klassen (ds- Präfix)
 
 // Theme-spezifische Styles (global für Theme-Switching)

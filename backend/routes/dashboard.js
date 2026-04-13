@@ -131,9 +131,30 @@ async function getDashboardStats(dojo_id) {
 }
 
 async function getRecentActivities(dojo_id) {
-  // Simplified recent activities - would need proper filtering implementation
-  // TODO: Add dojo_id filtering when implementing full activity feed
-  return [];
+  if (!dojo_id) return [];
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT
+         m.vorname, m.nachname,
+         c.checkin_time AS zeitpunkt,
+         'checkin' AS typ
+       FROM checkins c
+       JOIN mitglieder m ON m.mitglied_id = c.mitglied_id
+       WHERE m.dojo_id = ?
+         AND c.checkin_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+       ORDER BY c.checkin_time DESC
+       LIMIT 10`,
+      [dojo_id]
+    );
+    return rows.map(r => ({
+      text: `${r.vorname} ${r.nachname} eingecheckt`,
+      zeitpunkt: r.zeitpunkt,
+      typ: r.typ
+    }));
+  } catch (error) {
+    logger.error('getRecentActivities Fehler:', { error: error.message });
+    return [];
+  }
 }
 
 async function getTarife() {

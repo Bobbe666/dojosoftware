@@ -9,7 +9,9 @@ const https = require('https');
 const http = require('http');
 const { authenticateToken } = require('../middleware/auth');
 const { sendPushToMitglied } = require('../utils/pushNotification');
+const { sendEmailForDojo } = require('../services/emailService');
 const db = require('../db');
+const logger = require('../utils/logger');
 const router = express.Router();
 const pool = db.promise();
 
@@ -149,7 +151,7 @@ router.get('/nominierung/:id/pdf', authenticateToken, (req, res) => {
       if (cd) res.setHeader('Content-Disposition', cd);
       hofRes.pipe(res);
     });
-    hofReq.on('error', () => res.status(502).json({ message: 'PDF nicht verfügbar' }));
+    hofReq.on('error', (e) => { logger.warn('[HOF] PDF-Proxy-Fehler:', { error: e.message }); res.status(502).json({ message: 'PDF nicht verfügbar' }); });
     hofReq.end();
   } catch (err) {
     res.status(502).json({ message: 'PDF-Proxy-Fehler' });
@@ -201,8 +203,32 @@ router.post('/nomination-approved', async (req, res) => {
       '/member/dashboard',
       { type: 'hof_approved', nominierung_id, pdf_url: pdfUrl }
     );
+
+    // 4. E-Mail ans Mitglied
+    if (email) {
+      const [[mitglied]] = await pool.query(
+        'SELECT dojo_id FROM mitglieder WHERE mitglied_id = ? LIMIT 1', [mitglied_id]
+      ).catch(() => [[null]]);
+      await sendEmailForDojo({
+        to: email,
+        subject: titel,
+        html: `
+          <h2 style="color:#b8860b;">🏆 TDA Hall of Fame — Nominierung genehmigt!</h2>
+          <p>Herzlichen Glückwunsch!</p>
+          <p>Deine Nominierung für die <strong>TDA Hall of Fame</strong> wurde offiziell genehmigt.</p>
+          <table style="margin:1rem 0;border-collapse:collapse;">
+            <tr><td style="padding:4px 12px 4px 0;color:#666;">Nominierungsnummer:</td><td><strong>${nominierungsnummer}</strong></td></tr>
+          </table>
+          <p>Deine Nominierungsurkunde steht jetzt in der Mitglieder-App bereit:</p>
+          <p><a href="${pdfUrl}" style="color:#b8860b;">📄 Urkunde herunterladen</a></p>
+          <p style="margin-top:1.5rem;font-size:0.9em;color:#999;">Diese Nachricht wurde automatisch durch das Dojosoftware-System versendet.</p>
+        `
+      }, mitglied?.dojo_id || null).catch(mailErr =>
+        logger.warn('[HOF] E-Mail Genehmigung fehlgeschlagen:', { error: mailErr.message })
+      );
+    }
   } catch (err) {
-    console.error('[HOF] Approved-Notification-Fehler:', err.message);
+    logger.error('[HOF] Approved-Notification-Fehler:', { error: err.message });
   }
 });
 
@@ -258,6 +284,19 @@ router.post('/nominieren', authenticateToken, requireAdminOrTrainer, async (req,
       ? nominiert_durch_input
       : `${userName}${dojoId ? ` (dojo:${dojoId})` : ''}`;
 
+    // 2b. Bestehenden Sportler mit E-Mail aktualisieren falls leer
+    if (finalSportlerId && email) {
+      try {
+        const existing = await hofRequest('GET', `/sportler/${finalSportlerId}`);
+        if (existing.status === 200 && !existing.body?.email) {
+          await hofRequest('PUT', `/sportler/${finalSportlerId}`, { email });
+          logger.info(`[HOF] E-Mail für Sportler ${finalSportlerId} nachgetragen`);
+        }
+      } catch (e) {
+        logger.warn('[HOF] Sportler E-Mail Update fehlgeschlagen:', { error: e.message });
+      }
+    }
+
     // 3. Nominierung erstellen
     const callbackUrl = HOF_CALLBACK_SECRET
       ? `${DOJO_BASE_URL}/api/hof/nomination-approved`
@@ -303,12 +342,34 @@ router.post('/nominieren', authenticateToken, requireAdminOrTrainer, async (req,
         // Push (falls Subscription vorhanden)
         await sendPushToMitglied(mitglied_id, titel, text, '/member/dashboard',
           { type: 'hof_nominiert', nominierung_id: nomId, pdf_url: pdfUrl });
+
+        // E-Mail ans Mitglied
+        if (members[0]?.email) {
+          const mitgliedEmail = members[0].email;
+          await sendEmailForDojo({
+            to: mitgliedEmail,
+            subject: titel,
+            html: `
+              <h2 style="color:#b8860b;">🏛️ TDA Hall of Fame — Du wurdest nominiert!</h2>
+              <p>Herzlichen Glückwunsch!</p>
+              <p>Du wurdest offiziell für die <strong>TDA Hall of Fame</strong> nominiert.</p>
+              <table style="margin:1rem 0;border-collapse:collapse;">
+                <tr><td style="padding:4px 12px 4px 0;color:#666;">Nominierungsnummer:</td><td><strong>${nomNr}</strong></td></tr>
+                <tr><td style="padding:4px 12px 4px 0;color:#666;">Jahr:</td><td>${nomResult.body.jahr || new Date().getFullYear()}</td></tr>
+              </table>
+              <p>Deine Nominierungsurkunde steht nach Genehmigung in der App bereit.</p>
+              <p style="margin-top:1.5rem;font-size:0.9em;color:#999;">Diese Nachricht wurde automatisch durch das Dojosoftware-System versendet.</p>
+            `
+          }, dojoId).catch(mailErr =>
+            logger.warn('[HOF] E-Mail Nominierung fehlgeschlagen:', { error: mailErr.message })
+          );
+        }
       } catch (pushErr) {
-        console.error('[HOF] Notification-Fehler:', pushErr.message);
+        logger.error('[HOF] Notification-Fehler:', { error: pushErr.message });
       }
     }
   } catch (err) {
-    console.error('[HOF] Fehler bei Nominierung:', err);
+    logger.error('[HOF] Fehler bei Nominierung:', { error: err.message });
     res.status(502).json({ message: 'HOF-API nicht erreichbar.' });
   }
 });
@@ -323,7 +384,7 @@ router.post('/sync-sportler', authenticateToken, async (req, res) => {
     }
     res.json(result.body);
   } catch (err) {
-    console.error('[HOF] Sync-Fehler:', err.message);
+    logger.error('[HOF] Sync-Fehler:', { error: err.message });
     res.status(502).json({ message: 'HOF-API nicht erreichbar.' });
   }
 });
