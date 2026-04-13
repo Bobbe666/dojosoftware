@@ -104,7 +104,7 @@ router.get('/:id', (req, res) => {
 // =====================================================
 // POST /api/dokumente/generate - Neues Dokument generieren
 // =====================================================
-router.post('/generate', async (req, res) => {
+router.post('/generate', authenticateToken, async (req, res) => {
   const { typ, name, parameter } = req.body;
 
   if (!typ || !name) {
@@ -112,6 +112,8 @@ router.post('/generate', async (req, res) => {
   }
 
   try {
+    const dojoId = getSecureDojoId(req);
+
     // Generiere eindeutigen Dateinamen
     const timestamp = Date.now();
     const dateiname = `${typ}_${timestamp}.pdf`;
@@ -128,7 +130,7 @@ router.post('/generate', async (req, res) => {
     let pdfBuffer;
     switch (typ) {
       case 'mitgliederliste':
-        pdfBuffer = await generateMitgliederlistePDF(req.db, parameter);
+        pdfBuffer = await generateMitgliederlistePDF(req.db, { ...parameter, dojoId });
         break;
       case 'anwesenheit':
         pdfBuffer = await generateAnwesenheitPDF(req.db, parameter);
@@ -502,10 +504,12 @@ router.delete('/:id', (req, res) => {
 // Mitgliederliste PDF
 async function generateMitgliederlistePDF(db, parameter = {}) {
   return new Promise((resolve, reject) => {
-    // Hole Mitglieder aus DB
-    const query = 'SELECT * FROM mitglieder WHERE status = "aktiv" ORDER BY nachname, vorname';
+    const { dojoId } = parameter;
+    const dojoFilter = dojoId ? ' AND dojo_id = ?' : '';
+    const dojoParams = dojoId ? [dojoId] : [];
+    const query = `SELECT * FROM mitglieder WHERE aktiv = 1${dojoFilter} ORDER BY nachname, vorname`;
 
-    db.query(query, (err, mitglieder) => {
+    db.query(query, dojoParams, (err, mitglieder) => {
       if (err) {
         return reject(err);
       }
