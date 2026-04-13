@@ -27,6 +27,79 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   );
 }
 
+// ─── Auto-Reply: kein Staff online ────────────────────────────────────────────
+async function sendAutoReply(session, io) {
+  const visitorName = session.visitor_name || 'Besucher';
+  const dojoId = session.dojo_id || null;
+
+  // Dojo-Name laden
+  let dojoName = 'TDA';
+  if (dojoId) {
+    try {
+      const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+      if (dojo?.dojoname) dojoName = dojo.dojoname;
+    } catch (_) { /* ignore */ }
+  }
+
+  const autoText = 'Danke für deine Nachricht! Aktuell ist kein Support-Mitarbeiter online. Deine Anfrage ist bei uns eingegangen – wir melden uns so bald wie möglich hier im Chat und per E-Mail.';
+
+  // Auto-Reply-Nachricht in DB speichern
+  const [insertResult] = await pool.query(
+    `INSERT INTO visitor_chat_messages (session_id, sender_type, sender_name, message)
+     VALUES (?, 'staff', ?, ?)`,
+    [session.id, dojoName + ' Support', autoText]
+  );
+
+  const [[autoMsg]] = await pool.query(
+    `SELECT id, sender_type, sender_name, message, created_at FROM visitor_chat_messages WHERE id = ?`,
+    [insertResult.insertId]
+  );
+
+  // Sofort an Besucher per Socket senden
+  if (io) {
+    io.to(`visitor-session:${session.visitor_token}`).emit('visitor-chat:message', autoMsg);
+  }
+
+  // Bestätigungs-E-Mail an Besucher (nur wenn E-Mail vorhanden)
+  if (session.visitor_email) {
+    try {
+      const subject = `Deine Nachricht bei ${dojoName} – wir melden uns!`;
+      const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family:Arial,sans-serif;background:#f5f5f5;margin:0;padding:20px">
+  <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08)">
+    <div style="background:#1a1a2e;padding:24px 28px">
+      <h2 style="color:#fff;margin:0;font-size:1.1rem">${dojoName}</h2>
+      <p style="color:#aaa;margin:4px 0 0;font-size:0.85rem">Nachricht erhalten</p>
+    </div>
+    <div style="padding:28px">
+      <p style="color:#333;margin:0 0 16px">Hallo ${visitorName},</p>
+      <p style="color:#333;margin:0 0 16px">vielen Dank für deine Nachricht! Wir haben sie erhalten und werden uns so bald wie möglich bei dir melden.</p>
+      <div style="background:#f0f9ff;border-left:4px solid #0ea5e9;border-radius:4px;padding:14px 18px;margin:0 0 20px">
+        <p style="color:#0c4a6e;margin:0;font-size:0.9rem">⏳ Aktuell ist kein Support-Mitarbeiter online. Du erhältst eine Antwort hier im Chat und per E-Mail, sobald wir wieder erreichbar sind.</p>
+      </div>
+      <p style="color:#666;font-size:0.85rem;margin:0">
+        Du kannst die Seite erneut besuchen und im Chat nachschauen – deine Unterhaltung bleibt gespeichert.
+      </p>
+    </div>
+    <div style="background:#f9fafb;padding:14px 28px;border-top:1px solid #eee">
+      <p style="color:#999;font-size:0.75rem;margin:0">${dojoName} · Diese E-Mail wurde automatisch versandt.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+      const text = `Hallo ${visitorName},\n\nvielen Dank für deine Nachricht! Wir haben sie erhalten und melden uns so bald wie möglich – hier im Chat und per E-Mail.\n\n-- ${dojoName}`;
+      await sendEmailForDojo({ to: session.visitor_email, subject, html, text }, dojoId);
+    } catch (emailErr) {
+      logger.warn('Auto-Reply E-Mail konnte nicht gesendet werden', { error: emailErr.message, sessionId: session.id });
+    }
+  }
+
+  logger.info('🤖 Auto-Reply gesendet (kein Staff online)', { sessionId: session.id, dojoId });
+}
+
 // ─── E-Mail-Benachrichtigung an Besucher ──────────────────────────────────────
 async function sendVisitorReplyEmail(session, staffName, replyText) {
   const visitorName = session.visitor_name || 'Besucher';
@@ -741,13 +814,15 @@ router.post('/sessions/:token/messages', async (req, res) => {
 
   try {
     const [[session]] = await pool.query(
-      `SELECT id, dojo_id, visitor_name, source_site, status FROM visitor_chat_sessions WHERE visitor_token = ?`,
+      `SELECT id, dojo_id, visitor_name, visitor_email, visitor_token, source_site, status FROM visitor_chat_sessions WHERE visitor_token = ?`,
       [token]
     );
     if (!session) return res.status(404).json({ success: false, error: 'Session nicht gefunden' });
     if (session.status === 'closed') {
       return res.status(400).json({ success: false, error: 'Diese Chat-Session wurde geschlossen' });
     }
+
+    const isFirstMessage = session.status === 'open';
 
     const [insertResult] = await pool.query(
       `INSERT INTO visitor_chat_messages (session_id, sender_type, sender_name, message)
@@ -756,7 +831,7 @@ router.post('/sessions/:token/messages', async (req, res) => {
     );
 
     // Session auf 'active' setzen wenn noch 'open'
-    if (session.status === 'open') {
+    if (isFirstMessage) {
       await pool.query(
         `UPDATE visitor_chat_sessions SET status = 'active' WHERE id = ?`,
         [session.id]
@@ -771,9 +846,9 @@ router.post('/sessions/:token/messages', async (req, res) => {
 
     // Socket.io: Staff in Echtzeit benachrichtigen
     const io = req.app.get('io');
+    const staffRoom = session.dojo_id ? `visitor-dojo:${session.dojo_id}` : 'visitor-super-admin';
     if (io) {
-      const room = session.dojo_id ? `visitor-dojo:${session.dojo_id}` : 'visitor-super-admin';
-      io.to(room).emit('visitor-chat:new-message', {
+      io.to(staffRoom).emit('visitor-chat:new-message', {
         sessionId: session.id,
         message: newMsg,
         visitor_name: session.visitor_name,
@@ -781,7 +856,7 @@ router.post('/sessions/:token/messages', async (req, res) => {
       });
     }
 
-    // Push nur bei erster Nachricht ODER wenn keine Socket-Verbindung zum Staff
+    // Push-Notification an Staff
     const pushPayload = {
       title: `💬 ${session.visitor_name}`,
       body: message.trim().length > 80 ? message.trim().substring(0, 80) + '…' : message.trim(),
@@ -790,6 +865,20 @@ router.post('/sessions/:token/messages', async (req, res) => {
       data: { url: '/dashboard/besucher-chat', session_id: session.id }
     };
     await pushToStaff(session.dojo_id, pushPayload);
+
+    // Auto-Reply wenn kein Staff online (nur bei erster Nachricht der Session)
+    if (isFirstMessage && io) {
+      const staffRoomSockets = io.sockets.adapter.rooms.get(staffRoom);
+      const staffOnline = staffRoomSockets && staffRoomSockets.size > 0;
+      if (!staffOnline) {
+        // Kurze Verzögerung damit Visitor zuerst seine eigene Nachricht sieht
+        setTimeout(() => {
+          sendAutoReply(session, io).catch(err =>
+            logger.warn('Auto-Reply Fehler', { error: err.message, sessionId: session.id })
+          );
+        }, 1500);
+      }
+    }
 
     res.json({ success: true, message: newMsg });
   } catch (err) {
