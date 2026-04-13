@@ -224,6 +224,50 @@ router.delete('/:mitglied_id/zulassung/:pruefung_id', (req, res) => {
   });
 });
 
+// PUT /:pruefung_id/admin-status - Admin setzt Anmelde- und Bestätigungsstatus manuell
+router.put('/:pruefung_id/admin-status', (req, res) => {
+  const pruefung_id = parseInt(req.params.pruefung_id);
+  if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const { mitglied_antwort, teilnahme_bestaetigt } = req.body;
+
+  // Valide Werte prüfen
+  const erlaubteAntworten = ['kommt', 'kommt_nicht', null];
+  if (mitglied_antwort !== undefined && !erlaubteAntworten.includes(mitglied_antwort)) {
+    return res.status(400).json({ error: 'mitglied_antwort muss kommt, kommt_nicht oder null sein' });
+  }
+
+  const felder = [];
+  const werte = [];
+
+  if (mitglied_antwort !== undefined) {
+    felder.push('mitglied_antwort = ?');
+    felder.push('mitglied_antwort_am = ?');
+    werte.push(mitglied_antwort);
+    werte.push(mitglied_antwort ? new Date() : null);
+  }
+
+  if (teilnahme_bestaetigt !== undefined) {
+    felder.push('teilnahme_bestaetigt = ?');
+    felder.push('teilnahme_bestaetigt_am = ?');
+    werte.push(teilnahme_bestaetigt ? 1 : 0);
+    werte.push(teilnahme_bestaetigt ? new Date() : null);
+  }
+
+  if (felder.length === 0) return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
+
+  werte.push(pruefung_id);
+  db.query(
+    `UPDATE pruefungen SET ${felder.join(', ')} WHERE pruefung_id = ?`,
+    werte,
+    (err, result) => {
+      if (err) return res.status(500).json({ error: 'Fehler beim Aktualisieren', details: err.message });
+      if (result.affectedRows === 0) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+      res.json({ success: true });
+    }
+  );
+});
+
 // POST /:pruefung_id/teilnahme-bestaetigen - Teilnahme bestätigen
 router.post('/:pruefung_id/teilnahme-bestaetigen', (req, res) => {
   const pruefung_id = parseInt(req.params.pruefung_id);
