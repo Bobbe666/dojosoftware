@@ -1,7 +1,7 @@
 const PDFDocument = require('pdfkit');
 
 const COLORS = {
-  primary:   '#CC0000',   // Rot (statt Gold)
+  primary:   '#CC0000',
   text:      '#1A1A1A',
   muted:     '#555555',
   lightGray: '#F5F5F5',
@@ -9,7 +9,7 @@ const COLORS = {
   white:     '#FFFFFF',
 };
 
-const PAGE_W    = 595.28;  // A4 Breite in pt
+const PAGE_W    = 595.28;
 const MARGIN    = 50;
 const CONTENT_W = PAGE_W - MARGIN * 2;
 
@@ -38,9 +38,9 @@ class SepaPdfGenerator {
 
         let y = this._header(mandateData);
         y = this._mandateInfo(mandateData, y);
-        y = this._section('Zahlungsempfänger / Creditor', y, d => this._creditorBody(mandateData, d));
-        y = this._section('Zahlungspflichtiger / Debtor',  y, d => this._debtorBody(mandateData, d));
-        y = this._section('Konto-Information / Account Information', y, d => this._bankingBody(mandateData, d));
+        y = this._section('Zahlungsempfänger / Creditor', y, sy => this._creditorBody(mandateData, sy));
+        y = this._section('Zahlungspflichtiger / Debtor',  y, sy => this._debtorBody(mandateData, sy));
+        y = this._section('Konto-Information / Account Information', y, sy => this._bankingBody(mandateData, sy));
         y = this._legalText(y);
         y = this._signatureSection(mandateData, y);
         this._footer();
@@ -54,7 +54,6 @@ class SepaPdfGenerator {
 
   // ── Hilfsmethoden ────────────────────────────────────────────────────────────
 
-  /** Gibt sicher y zurück und bricht ggf. auf neue Seite um */
   _ensureSpace(y, needed) {
     const pageH = this.doc.page.height - MARGIN;
     if (y + needed > pageH) {
@@ -64,19 +63,24 @@ class SepaPdfGenerator {
     return y;
   }
 
-  /** Zeichnet eine rote horizontale Linie */
+  /** Rote horizontale Linie */
   _rule(y, width = CONTENT_W, x = MARGIN) {
     this.doc.strokeColor(COLORS.primary).lineWidth(1.5)
       .moveTo(x, y).lineTo(x + width, y).stroke();
-    return y + 6;
+    return y + 8;
   }
 
-  /** Zweispaltige Label/Wert Zeile */
+  /**
+   * Zweispaltige Label/Wert-Zeile.
+   * lineBreak:false beim Label verhindert, dass pdfkit den Cursor in y vorschiebt
+   * bevor der Wert in derselben Zeile gesetzt wird.
+   */
   _row(label, value, x, y, labelW = 140) {
+    const valW = CONTENT_W - labelW - (x - MARGIN);
     this.doc.fontSize(9).font('Helvetica-Bold').fillColor(COLORS.muted)
-      .text(label, x, y, { width: labelW });
-    this.doc.fontSize(10).font('Helvetica-Bold').fillColor(COLORS.text)
-      .text(value || '–', x + labelW, y, { width: CONTENT_W - labelW - (x - MARGIN) });
+      .text(label, x, y, { width: labelW, lineBreak: false });
+    this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.text)
+      .text(value || '–', x + labelW, y, { width: valW, lineBreak: false });
     return y + 16;
   }
 
@@ -85,20 +89,18 @@ class SepaPdfGenerator {
   _header(mandateData) {
     const doc = this.doc;
 
-    // Roter Header-Balken
     doc.rect(0, 0, PAGE_W, 90).fill(COLORS.primary);
 
     doc.fontSize(22).font('Helvetica-Bold').fillColor(COLORS.white)
-      .text('SEPA-LASTSCHRIFTMANDAT', MARGIN, 22, { align: 'center', width: CONTENT_W });
+      .text('SEPA-LASTSCHRIFTMANDAT', MARGIN, 22, { align: 'center', width: CONTENT_W, lineBreak: false });
 
     doc.fontSize(11).font('Helvetica').fillColor('#FFCCCC')
-      .text('SEPA Direct Debit Mandate', MARGIN, 52, { align: 'center', width: CONTENT_W });
+      .text('SEPA Direct Debit Mandate', MARGIN, 50, { align: 'center', width: CONTENT_W, lineBreak: false });
 
-    // Dojo-Name rechts unten im Header
     const dojoName = mandateData.dojoname || '';
     if (dojoName) {
       doc.fontSize(9).fillColor('#FFDDDD')
-        .text(dojoName, MARGIN, 72, { align: 'right', width: CONTENT_W });
+        .text(dojoName, MARGIN, 72, { align: 'right', width: CONTENT_W, lineBreak: false });
     }
 
     doc.fillColor(COLORS.text);
@@ -109,10 +111,9 @@ class SepaPdfGenerator {
 
   _mandateInfo(mandateData, y) {
     const doc = this.doc;
-    y = this._ensureSpace(y, 70);
+    y = this._ensureSpace(y, 75);
 
-    // Hintergrundfläche
-    doc.rect(MARGIN, y, CONTENT_W, 60).fillAndStroke(COLORS.lightGray, COLORS.border);
+    doc.rect(MARGIN, y, CONTENT_W, 62).fillAndStroke(COLORS.lightGray, COLORS.border);
 
     const erstellungsdatum = mandateData.erstellungsdatum
       ? new Date(mandateData.erstellungsdatum).toLocaleDateString('de-DE')
@@ -120,50 +121,47 @@ class SepaPdfGenerator {
 
     const col1x = MARGIN + 10;
     const col2x = MARGIN + CONTENT_W / 2;
+    const colW  = CONTENT_W / 2 - 20;
 
-    // Gläubiger-ID
+    // Spalte 1 — komplett mit lineBreak:false → kein y-Vorschub durch pdfkit
     doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.muted)
-      .text('Gläubiger-Identifikationsnummer', col1x, y + 8);
+      .text('Gläubiger-Identifikationsnummer', col1x, y + 8,  { width: colW, lineBreak: false });
     doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.primary)
-      .text(mandateData.glaeubiger_id || '–', col1x, y + 20);
+      .text(mandateData.glaeubiger_id || '–',   col1x, y + 20, { width: colW, lineBreak: false });
 
-    // Mandatsreferenz
+    // Spalte 2 — selbe y-Positionen, kein Rücksprung nötig weil col1 keinen y-Vorschub machte
     doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.muted)
-      .text('Mandatsreferenz', col2x, y + 8);
+      .text('Mandatsreferenz',                   col2x, y + 8,  { width: colW, lineBreak: false });
     doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.primary)
-      .text(mandateData.mandatsreferenz || '–', col2x, y + 20);
+      .text(mandateData.mandatsreferenz || '–',  col2x, y + 20, { width: colW, lineBreak: false });
 
-    // Erstellungsdatum
+    // Unterzeile
     doc.fontSize(8).font('Helvetica').fillColor(COLORS.muted)
-      .text(`Erstellt am: ${erstellungsdatum}`, col1x, y + 42);
+      .text(`Erstellt am: ${erstellungsdatum}`, col1x, y + 44, { width: colW * 2, lineBreak: false });
 
-    return y + 72;
+    return y + 76;
   }
 
-  // ── Generische Section mit Rahmen ────────────────────────────────────────────
+  // ── Generische Sektion ───────────────────────────────────────────────────────
 
-  /**
-   * Zeichnet eine benannte Sektion.
-   * bodyFn(doc) gibt die Höhe des Inhalts zurück.
-   */
   _section(title, y, bodyFn) {
     const doc = this.doc;
-    y = this._ensureSpace(y, 40) + 8;
+    y = this._ensureSpace(y, 50) + 8;
 
-    // Sektion-Titel
+    // Titel
     doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
-      .text(title, MARGIN, y);
-    y += 4;
+      .text(title, MARGIN, y, { width: CONTENT_W, lineBreak: false });
+    y += 18;                     // fontSize(11) ≈ 14pt + 4pt Abstand
     y = this._rule(y);
-    y += 6;
 
-    // bodyFn bekommt start-y, zeichnet, gibt end-y zurück
     const startY = y;
-    const contentH = bodyFn(y);
-    y = contentH + 12;
+    y = bodyFn(y) + 12;
 
     // Linker roter Akzentstreifen
-    doc.rect(MARGIN, startY - 2, 3, y - startY).fill(COLORS.primary);
+    const barH = y - startY;
+    if (barH > 0) {
+      doc.rect(MARGIN, startY - 2, 3, barH).fill(COLORS.primary);
+    }
 
     return y;
   }
@@ -172,36 +170,36 @@ class SepaPdfGenerator {
 
   _creditorBody(mandateData, y) {
     const x = MARGIN + 12;
-    const dojoName = mandateData.dojoname || 'Dojo Software';
+    const w = CONTENT_W - 12;
 
     this.doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.text)
-      .text(dojoName, x, y);
+      .text(mandateData.dojoname || 'Dojo Software', x, y, { width: w, lineBreak: false });
     y += 18;
 
-    const adresse = [
+    const lines = [
       mandateData.dojo_strasse && mandateData.dojo_hausnummer
-        ? `${mandateData.dojo_strasse} ${mandateData.dojo_hausnummer}`
-        : null,
+        ? `${mandateData.dojo_strasse} ${mandateData.dojo_hausnummer}` : null,
       mandateData.dojo_plz && mandateData.dojo_ort
-        ? `${mandateData.dojo_plz} ${mandateData.dojo_ort}`
-        : null,
+        ? `${mandateData.dojo_plz} ${mandateData.dojo_ort}` : null,
       'Deutschland',
     ].filter(Boolean);
 
-    adresse.forEach(line => {
-      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted).text(line, x, y);
+    for (const line of lines) {
+      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted)
+        .text(line, x, y, { width: w, lineBreak: false });
       y += 14;
-    });
+    }
 
     if (mandateData.inhaber) {
       y += 4;
-      this.doc.fontSize(9).fillColor(COLORS.muted).text(`Inhaber: ${mandateData.inhaber}`, x, y);
+      this.doc.fontSize(9).font('Helvetica').fillColor(COLORS.muted)
+        .text(`Inhaber: ${mandateData.inhaber}`, x, y, { width: w, lineBreak: false });
       y += 14;
     }
 
     if (mandateData.sepa_glaeubiger_id) {
-      this.doc.fontSize(9).fillColor(COLORS.muted)
-        .text(`Gläubiger-ID: ${mandateData.sepa_glaeubiger_id}`, x, y);
+      this.doc.fontSize(9).font('Helvetica').fillColor(COLORS.muted)
+        .text(`Gläubiger-ID: ${mandateData.sepa_glaeubiger_id}`, x, y, { width: w, lineBreak: false });
       y += 14;
     }
 
@@ -212,25 +210,25 @@ class SepaPdfGenerator {
 
   _debtorBody(mandateData, y) {
     const x = MARGIN + 12;
+    const w = CONTENT_W - 12;
 
     this.doc.fontSize(12).font('Helvetica-Bold').fillColor(COLORS.text)
-      .text(`${mandateData.vorname} ${mandateData.nachname}`, x, y);
+      .text(`${mandateData.vorname} ${mandateData.nachname}`, x, y, { width: w, lineBreak: false });
     y += 18;
 
-    const adresse = [
+    const lines = [
       mandateData.strasse && mandateData.hausnummer
-        ? `${mandateData.strasse} ${mandateData.hausnummer}`
-        : null,
+        ? `${mandateData.strasse} ${mandateData.hausnummer}` : null,
       mandateData.plz && mandateData.ort
-        ? `${mandateData.plz} ${mandateData.ort}`
-        : null,
+        ? `${mandateData.plz} ${mandateData.ort}` : null,
       'Deutschland',
     ].filter(Boolean);
 
-    adresse.forEach(line => {
-      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted).text(line, x, y);
+    for (const line of lines) {
+      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted)
+        .text(line, x, y, { width: w, lineBreak: false });
       y += 14;
-    });
+    }
 
     return y;
   }
@@ -238,21 +236,24 @@ class SepaPdfGenerator {
   // ── Banking Body ─────────────────────────────────────────────────────────────
 
   _bankingBody(mandateData, y) {
-    const x   = MARGIN + 12;
+    const x    = MARGIN + 12;
     const col2 = MARGIN + CONTENT_W / 2;
+    const colW = CONTENT_W / 2 - 20;
 
-    // IBAN / BIC nebeneinander
-    this.doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.muted).text('IBAN', x, y);
-    this.doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.muted).text('BIC', col2, y);
-    y += 10;
+    // Labels — lineBreak:false verhindert y-Vorschub
+    this.doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.muted)
+      .text('IBAN', x,    y, { width: colW, lineBreak: false });
+    this.doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.muted)
+      .text('BIC',  col2, y, { width: colW, lineBreak: false });
+    y += 12;
 
+    // Werte — lineBreak:false
     this.doc.fontSize(13).font('Helvetica-Bold').fillColor(COLORS.primary)
-      .text(mandateData.iban || '–', x, y, { width: CONTENT_W / 2 - 10, characterSpacing: 1 });
+      .text(mandateData.iban || '–', x,    y, { width: colW, lineBreak: false, characterSpacing: 1 });
     this.doc.fontSize(13).font('Helvetica-Bold').fillColor(COLORS.primary)
-      .text(mandateData.bic || '–', col2, y);
-    y += 20;
+      .text(mandateData.bic  || '–', col2, y, { width: colW, lineBreak: false });
+    y += 22;
 
-    // Kontoinhaber / Bank
     y = this._row('Kontoinhaber:', mandateData.kontoinhaber || '–', x, y);
     if (mandateData.bankname) {
       y = this._row('Bank:', mandateData.bankname, x, y);
@@ -261,18 +262,16 @@ class SepaPdfGenerator {
     return y;
   }
 
-  // ── Mandat-Text ──────────────────────────────────────────────────────────────
+  // ── Mandatstext ──────────────────────────────────────────────────────────────
 
   _legalText(y) {
-    y = this._ensureSpace(y, 100) + 8;
+    y = this._ensureSpace(y, 120) + 8;
 
     this.doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
-      .text('Mandatstext / Mandate Text', MARGIN, y);
-    y += 4;
+      .text('Mandatstext / Mandate Text', MARGIN, y, { width: CONTENT_W, lineBreak: false });
+    y += 18;
     y = this._rule(y);
-    y += 8;
 
-    // Box
     const boxX = MARGIN + 3;
     const boxW = CONTENT_W - 3;
 
@@ -284,15 +283,16 @@ class SepaPdfGenerator {
       'Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut ' +
       'vereinbarten Bedingungen.';
 
-    // Höhe messen
-    const textH = this.doc.heightOfString(text, { width: boxW - 20, lineGap: 3 });
-    const boxH  = textH + 24;
+    // Höhe zuverlässig messen: Schrift setzen BEVOR heightOfString
+    this.doc.fontSize(10).font('Helvetica');
+    const textH = this.doc.heightOfString(text, { width: boxW - 24, lineGap: 2 });
+    const boxH  = textH + 28;
 
     this.doc.rect(boxX, y, boxW, boxH).fillAndStroke('#FAFAFA', COLORS.border);
     this.doc.rect(boxX, y, 3, boxH).fill(COLORS.primary);
 
     this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.text)
-      .text(text, boxX + 14, y + 12, { width: boxW - 24, align: 'justify', lineGap: 3 });
+      .text(text, boxX + 14, y + 14, { width: boxW - 28, align: 'justify', lineGap: 2 });
 
     return y + boxH + 16;
   }
@@ -300,68 +300,64 @@ class SepaPdfGenerator {
   // ── Unterschrift ─────────────────────────────────────────────────────────────
 
   _signatureSection(mandateData, y) {
-    y = this._ensureSpace(y, 180) + 8;
+    y = this._ensureSpace(y, 190) + 8;
 
     this.doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
-      .text('Unterschrift / Signature', MARGIN, y);
-    y += 4;
+      .text('Unterschrift / Signature', MARGIN, y, { width: CONTENT_W, lineBreak: false });
+    y += 18;
     y = this._rule(y);
-    y += 12;
+    y += 8;
 
     if (mandateData && mandateData.unterschrift_digital) {
-      // Digitale Unterschrift
-      this.doc.rect(MARGIN, y, CONTENT_W, 150)
-        .fillAndStroke('#f0fff0', '#10b981');
+      this.doc.rect(MARGIN, y, CONTENT_W, 150).fillAndStroke('#f0fff0', '#10b981');
 
       this.doc.fontSize(11).font('Helvetica-Bold').fillColor('#10b981')
-        .text('✓ Digital unterschrieben', MARGIN + 10, y + 12);
+        .text('✓ Digital unterschrieben', MARGIN + 10, y + 12, { lineBreak: false });
 
       try {
-        const b64  = mandateData.unterschrift_digital.split(',')[1] || mandateData.unterschrift_digital;
-        const buf  = Buffer.from(b64, 'base64');
+        const b64 = mandateData.unterschrift_digital.split(',')[1] || mandateData.unterschrift_digital;
+        const buf = Buffer.from(b64, 'base64');
         this.doc.image(buf, MARGIN + 10, y + 35, { width: 280, height: 70, fit: [280, 70] });
       } catch (_) {
         this.doc.fontSize(9).fillColor('#ef4444')
-          .text('(Unterschrift konnte nicht geladen werden)', MARGIN + 10, y + 40);
+          .text('(Unterschrift konnte nicht geladen werden)', MARGIN + 10, y + 40, { lineBreak: false });
       }
 
       let metaY = y + 115;
       if (mandateData.unterschrift_datum) {
         const d = new Date(mandateData.unterschrift_datum).toLocaleString('de-DE');
         this.doc.fontSize(8).font('Helvetica').fillColor(COLORS.muted)
-          .text(`Unterzeichnet am: ${d}`, MARGIN + 10, metaY);
+          .text(`Unterzeichnet am: ${d}`, MARGIN + 10, metaY, { lineBreak: false });
         metaY += 12;
       }
       if (mandateData.unterschrift_ip) {
-        this.doc.text(`IP-Adresse: ${mandateData.unterschrift_ip}`, MARGIN + 10, metaY);
+        this.doc.fontSize(8).font('Helvetica').fillColor(COLORS.muted)
+          .text(`IP-Adresse: ${mandateData.unterschrift_ip}`, MARGIN + 10, metaY, { lineBreak: false });
         metaY += 12;
       }
       if (mandateData.unterschrift_hash) {
         this.doc.fontSize(7).fillColor('#9ca3af')
-          .text(`Prüfsumme: ${mandateData.unterschrift_hash.substring(0, 16)}…`, MARGIN + 10, metaY);
+          .text(`Prüfsumme: ${mandateData.unterschrift_hash.substring(0, 16)}…`, MARGIN + 10, metaY, { lineBreak: false });
       }
       y += 162;
 
     } else {
-      // Manuelle Unterschrift — Felder
       this.doc.rect(MARGIN, y, CONTENT_W, 130).stroke(COLORS.border);
 
-      const lineY = y + 70;
-      // Datum-Linie
-      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted)
-        .text('Ort, Datum', MARGIN + 10, y + 20);
-      this.doc.strokeColor(COLORS.border).lineWidth(0.8)
-        .moveTo(MARGIN + 10, lineY).lineTo(MARGIN + 180, lineY).stroke();
+      const lineY = y + 72;
 
-      // Unterschrifts-Linie
-      this.doc.fontSize(10).fillColor(COLORS.muted)
-        .text('Unterschrift des Zahlungspflichtigen', MARGIN + 220, y + 20);
-      this.doc.moveTo(MARGIN + 220, lineY)
+      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted)
+        .text('Ort, Datum', MARGIN + 10, y + 20, { lineBreak: false });
+      this.doc.strokeColor(COLORS.border).lineWidth(0.8)
+        .moveTo(MARGIN + 10, lineY).lineTo(MARGIN + 185, lineY).stroke();
+
+      this.doc.fontSize(10).font('Helvetica').fillColor(COLORS.muted)
+        .text('Unterschrift des Zahlungspflichtigen', MARGIN + 225, y + 20, { lineBreak: false });
+      this.doc.moveTo(MARGIN + 225, lineY)
         .lineTo(MARGIN + CONTENT_W - 10, lineY).stroke();
 
-      // Minderjährige
-      this.doc.fontSize(8).fillColor(COLORS.muted)
-        .text('Bei Minderjährigen: Unterschrift des gesetzlichen Vertreters', MARGIN + 10, y + 90);
+      this.doc.fontSize(8).font('Helvetica').fillColor(COLORS.muted)
+        .text('Bei Minderjährigen: Unterschrift des gesetzlichen Vertreters', MARGIN + 10, y + 92, { lineBreak: false });
       this.doc.moveTo(MARGIN + 10, y + 120)
         .lineTo(MARGIN + CONTENT_W - 10, y + 120).stroke();
 
@@ -381,16 +377,16 @@ class SepaPdfGenerator {
       .moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).stroke();
 
     this.doc.fontSize(7.5).font('Helvetica').fillColor('#999999')
-      .text('Dieses Dokument wurde automatisch generiert von Dojo Software', MARGIN, y + 8,
-        { align: 'center', width: CONTENT_W });
+      .text('Dieses Dokument wurde automatisch generiert von Dojo Software',
+        MARGIN, y + 8, { align: 'center', width: CONTENT_W, lineBreak: false });
 
     const gen = new Date().toLocaleString('de-DE');
     this.doc.text(`Erstellt am: ${gen}`, MARGIN, y + 19,
-      { align: 'center', width: CONTENT_W });
+      { align: 'center', width: CONTENT_W, lineBreak: false });
 
     this.doc.fontSize(8).font('Helvetica-Bold').fillColor(COLORS.primary)
-      .text('Bitte ausdrucken, unterschreiben und zurücksenden.', MARGIN, y + 33,
-        { align: 'center', width: CONTENT_W });
+      .text('Bitte ausdrucken, unterschreiben und zurücksenden.',
+        MARGIN, y + 33, { align: 'center', width: CONTENT_W, lineBreak: false });
   }
 }
 
