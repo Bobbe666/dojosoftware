@@ -371,7 +371,8 @@ class SepaPdfGenerator {
 
   _footer() {
     const pageH = this.doc.page.height;
-    const y     = pageH - 55;
+    // MARGIN=50 → maxY=791.89; alle Texte müssen darunter bleiben
+    const y     = pageH - MARGIN - 45;
 
     this.doc.strokeColor(COLORS.primary).lineWidth(1.5)
       .moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).stroke();
