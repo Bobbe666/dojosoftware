@@ -45,7 +45,7 @@ class SepaPdfGenerator {
         // PDF-Inhalt generieren
         this.generateHeader();
         this.generateMandateInfo(mandateData);
-        this.generateCreditorInfo();
+        this.generateCreditorInfo(mandateData);
         this.generateDebtorInfo(mandateData);
         this.generateBankingInfo(mandateData);
         this.generateLegalText();
