@@ -401,17 +401,23 @@ router.get('/kasse', (req, res) => {
         catch { return null; }
       };
 
+      // Effektiver Lagerbestand: bei Varianten-Artikeln Summe aus varianten_bestand
+      const variantenBestand = parseJson(artikel.varianten_bestand) || {};
+      const effectiveLagerbestand = (artikel.hat_varianten && Object.keys(variantenBestand).length > 0)
+        ? Object.values(variantenBestand).reduce((sum, v) => sum + (v?.bestand || 0), 0)
+        : (artikel.lagerbestand || 0);
+
       kategorien[katId].artikel.push({
         artikel_id: artikel.artikel_id,
         name: artikel.name,
         verkaufspreis_cent: artikel.verkaufspreis_cent,
         verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
         mwst_prozent: artikel.mwst_prozent,
-        lagerbestand: artikel.lagerbestand,
+        lagerbestand: effectiveLagerbestand,
         lager_tracking: artikel.lager_tracking,
         bild_url: artikel.bild_url,
         bild_base64: artikel.bild_base64,
-        verfuegbar: artikel.lager_tracking ? artikel.lagerbestand > 0 : true,
+        verfuegbar: artikel.lager_tracking ? effectiveLagerbestand > 0 : true,
         // Varianten-Daten
         hat_varianten: artikel.hat_varianten === 1,
         varianten_groessen: parseJson(artikel.varianten_groessen) || [],
