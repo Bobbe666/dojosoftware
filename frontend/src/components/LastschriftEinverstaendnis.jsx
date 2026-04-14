@@ -154,6 +154,22 @@ export default function LastschriftEinverstaendnis() {
     }
   };
 
+  if (!dojoId) {
+    return (
+      <div className="le-container">
+        <div className="le-header">
+          <div>
+            <h2 className="le-title">Lastschrift-Einverständnis</h2>
+            <p className="le-subtitle">Verwalte, wer dem automatischen Lastschrifteinzug bei Einkäufen zugestimmt hat.</p>
+          </div>
+        </div>
+        <div className="le-hint-box">
+          <strong>Bitte wähle zuerst ein Dojo aus</strong>, um die Lastschrift-Einverständnisse zu verwalten.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="le-container">
       {/* Header */}
