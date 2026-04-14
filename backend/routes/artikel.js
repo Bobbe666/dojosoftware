@@ -53,33 +53,42 @@ router.use(requireFeature('verkauf'));
 // HILFSFUNKTIONEN
 // =====================================================================================
 
-const formatArtikel = (artikel) => ({
-  ...artikel,
-  verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
-  einkaufspreis_euro: artikel.einkaufspreis_cent / 100,
-  zusatzkosten_euro: artikel.zusatzkosten_cent ? artikel.zusatzkosten_cent / 100 : 0,
-  // Handelskalkulation - Bezugskalkulation (Einzelpreis)
-  listeneinkaufspreis_euro: artikel.listeneinkaufspreis_cent ? artikel.listeneinkaufspreis_cent / 100 : 0,
-  bezugskosten_euro: artikel.bezugskosten_cent ? artikel.bezugskosten_cent / 100 : 0,
-  // Handelskalkulation - Größenabhängig (Kids)
-  listeneinkaufspreis_kids_euro: artikel.listeneinkaufspreis_kids_cent ? artikel.listeneinkaufspreis_kids_cent / 100 : 0,
-  bezugskosten_kids_euro: artikel.bezugskosten_kids_cent ? artikel.bezugskosten_kids_cent / 100 : 0,
-  // Handelskalkulation - Größenabhängig (Erwachsene)
-  listeneinkaufspreis_erwachsene_euro: artikel.listeneinkaufspreis_erwachsene_cent ? artikel.listeneinkaufspreis_erwachsene_cent / 100 : 0,
-  bezugskosten_erwachsene_euro: artikel.bezugskosten_erwachsene_cent ? artikel.bezugskosten_erwachsene_cent / 100 : 0,
-  // Varianten-Preise (VK)
-  preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
-  preis_erwachsene_euro: artikel.preis_erwachsene_cent ? artikel.preis_erwachsene_cent / 100 : null,
+const formatArtikel = (artikel) => {
   // JSON-Felder parsen
-  varianten_groessen: artikel.varianten_groessen ? (typeof artikel.varianten_groessen === 'string' ? JSON.parse(artikel.varianten_groessen) : artikel.varianten_groessen) : [],
-  varianten_farben: artikel.varianten_farben ? (typeof artikel.varianten_farben === 'string' ? JSON.parse(artikel.varianten_farben) : artikel.varianten_farben) : [],
-  varianten_material: artikel.varianten_material ? (typeof artikel.varianten_material === 'string' ? JSON.parse(artikel.varianten_material) : artikel.varianten_material) : [],
-  varianten_bestand: artikel.varianten_bestand ? (typeof artikel.varianten_bestand === 'string' ? JSON.parse(artikel.varianten_bestand) : artikel.varianten_bestand) : {},
-  groessen_kids: artikel.groessen_kids ? (typeof artikel.groessen_kids === 'string' ? JSON.parse(artikel.groessen_kids) : artikel.groessen_kids) : ['100', '110', '120', '130', '140', '150'],
-  groessen_erwachsene: artikel.groessen_erwachsene ? (typeof artikel.groessen_erwachsene === 'string' ? JSON.parse(artikel.groessen_erwachsene) : artikel.groessen_erwachsene) : ['160', '170', '180', '190', '200', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  lager_status: artikel.lagerbestand <= artikel.mindestbestand ?
-    (artikel.lagerbestand === 0 ? 'ausverkauft' : 'nachbestellen') : 'verfuegbar'
-});
+  const variantenBestand = artikel.varianten_bestand
+    ? (typeof artikel.varianten_bestand === 'string' ? JSON.parse(artikel.varianten_bestand) : artikel.varianten_bestand)
+    : {};
+
+  // Für Varianten-Artikel: lagerbestand = Summe aller Varianten-Bestände
+  const effectiveLagerbestand = artikel.hat_varianten && Object.keys(variantenBestand).length > 0
+    ? Object.values(variantenBestand).reduce((sum, v) => sum + (v?.bestand || 0), 0)
+    : (artikel.lagerbestand || 0);
+
+  return {
+    ...artikel,
+    lagerbestand: effectiveLagerbestand,
+    verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
+    einkaufspreis_euro: artikel.einkaufspreis_cent / 100,
+    zusatzkosten_euro: artikel.zusatzkosten_cent ? artikel.zusatzkosten_cent / 100 : 0,
+    listeneinkaufspreis_euro: artikel.listeneinkaufspreis_cent ? artikel.listeneinkaufspreis_cent / 100 : 0,
+    bezugskosten_euro: artikel.bezugskosten_cent ? artikel.bezugskosten_cent / 100 : 0,
+    listeneinkaufspreis_kids_euro: artikel.listeneinkaufspreis_kids_cent ? artikel.listeneinkaufspreis_kids_cent / 100 : 0,
+    bezugskosten_kids_euro: artikel.bezugskosten_kids_cent ? artikel.bezugskosten_kids_cent / 100 : 0,
+    listeneinkaufspreis_erwachsene_euro: artikel.listeneinkaufspreis_erwachsene_cent ? artikel.listeneinkaufspreis_erwachsene_cent / 100 : 0,
+    bezugskosten_erwachsene_euro: artikel.bezugskosten_erwachsene_cent ? artikel.bezugskosten_erwachsene_cent / 100 : 0,
+    preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
+    preis_erwachsene_euro: artikel.preis_erwachsene_cent ? artikel.preis_erwachsene_cent / 100 : null,
+    varianten_groessen: artikel.varianten_groessen ? (typeof artikel.varianten_groessen === 'string' ? JSON.parse(artikel.varianten_groessen) : artikel.varianten_groessen) : [],
+    varianten_farben: artikel.varianten_farben ? (typeof artikel.varianten_farben === 'string' ? JSON.parse(artikel.varianten_farben) : artikel.varianten_farben) : [],
+    varianten_material: artikel.varianten_material ? (typeof artikel.varianten_material === 'string' ? JSON.parse(artikel.varianten_material) : artikel.varianten_material) : [],
+    varianten_bestand: variantenBestand,
+    groessen_kids: artikel.groessen_kids ? (typeof artikel.groessen_kids === 'string' ? JSON.parse(artikel.groessen_kids) : artikel.groessen_kids) : ['100', '110', '120', '130', '140', '150'],
+    groessen_erwachsene: artikel.groessen_erwachsene ? (typeof artikel.groessen_erwachsene === 'string' ? JSON.parse(artikel.groessen_erwachsene) : artikel.groessen_erwachsene) : ['160', '170', '180', '190', '200', 'XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+    lager_status: effectiveLagerbestand <= artikel.mindestbestand
+      ? (effectiveLagerbestand === 0 ? 'ausverkauft' : 'nachbestellen')
+      : 'verfuegbar'
+  };
+};
 
 const createLagerbewegung = (artikel_id, bewegungsart, menge, alter_bestand, neuer_bestand, grund, benutz_id = null) => {
   const query = `
