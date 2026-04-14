@@ -4,9 +4,9 @@
  * Zeigt Status aller Mitglieder, erlaubt Massen-E-Mail-Versand und manuelle Anpassungen.
  */
 
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { DatenContext } from '@shared/DatenContext.jsx';
+import { useDojoContext } from '../context/DojoContext';
 import '../styles/LastschriftEinverstaendnis.css';
 
 const STATUS_LABEL = {
@@ -40,7 +40,7 @@ function fmt(dt) {
 }
 
 export default function LastschriftEinverstaendnis() {
-  const { activeDojo } = useContext(DatenContext);
+  const { activeDojo } = useDojoContext();
   const dojoId = activeDojo?.id || null;
 
   const [members, setMembers]         = useState([]);
