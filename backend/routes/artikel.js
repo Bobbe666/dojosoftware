@@ -407,11 +407,17 @@ router.get('/kasse', (req, res) => {
         ? Object.values(variantenBestand).reduce((sum, v) => sum + (v?.bestand || 0), 0)
         : (artikel.lagerbestand || 0);
 
+      // DB speichert Netto-Preise → für Kasse Brutto berechnen (inkl. MwSt)
+      const mwstFaktor = 1 + (parseFloat(artikel.mwst_prozent) || 19) / 100;
+      const bruttoCent     = Math.round(artikel.verkaufspreis_cent * mwstFaktor);
+      const bruttoKidsCent = artikel.preis_kids_cent ? Math.round(artikel.preis_kids_cent * mwstFaktor) : null;
+      const bruttoErwCent  = artikel.preis_erwachsene_cent ? Math.round(artikel.preis_erwachsene_cent * mwstFaktor) : null;
+
       kategorien[katId].artikel.push({
         artikel_id: artikel.artikel_id,
         name: artikel.name,
-        verkaufspreis_cent: artikel.verkaufspreis_cent,
-        verkaufspreis_euro: artikel.verkaufspreis_cent / 100,
+        verkaufspreis_cent: bruttoCent,
+        verkaufspreis_euro: bruttoCent / 100,
         mwst_prozent: artikel.mwst_prozent,
         lagerbestand: effectiveLagerbestand,
         lager_tracking: artikel.lager_tracking,
@@ -427,10 +433,10 @@ router.get('/kasse', (req, res) => {
         hat_preiskategorien: artikel.hat_preiskategorien === 1,
         mitglieder_rabatt_typ: artikel.mitglieder_rabatt_typ || null,
         mitglieder_rabatt_wert: artikel.mitglieder_rabatt_wert ? parseFloat(artikel.mitglieder_rabatt_wert) : 0,
-        preis_kids_cent: artikel.preis_kids_cent,
-        preis_kids_euro: artikel.preis_kids_cent ? artikel.preis_kids_cent / 100 : null,
-        preis_erwachsene_cent: artikel.preis_erwachsene_cent,
-        preis_erwachsene_euro: artikel.preis_erwachsene_cent ? artikel.preis_erwachsene_cent / 100 : null,
+        preis_kids_cent: bruttoKidsCent,
+        preis_kids_euro: bruttoKidsCent ? bruttoKidsCent / 100 : null,
+        preis_erwachsene_cent: bruttoErwCent,
+        preis_erwachsene_euro: bruttoErwCent ? bruttoErwCent / 100 : null,
         groessen_kids: parseJson(artikel.groessen_kids) || [],
         groessen_erwachsene: parseJson(artikel.groessen_erwachsene) || []
       });
