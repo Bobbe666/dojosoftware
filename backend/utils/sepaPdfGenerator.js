@@ -38,8 +38,7 @@ class SepaPdfGenerator {
 
         let y = this._header(mandateData);
         y = this._mandateInfo(mandateData, y);
-        y = this._section('Zahlungsempfänger / Creditor', y, sy => this._creditorBody(mandateData, sy));
-        y = this._section('Zahlungspflichtiger / Debtor',  y, sy => this._debtorBody(mandateData, sy));
+        y = this._creditorDebtorColumns(mandateData, y);
         y = this._section('Konto-Information / Account Information', y, sy => this._bankingBody(mandateData, sy));
         y = this._legalText(y);
         y = this._signatureSection(mandateData, y);
@@ -231,6 +230,97 @@ class SepaPdfGenerator {
     }
 
     return y;
+  }
+
+  // ── Creditor + Debtor nebeneinander ──────────────────────────────────────────
+
+  _creditorDebtorColumns(mandateData, y) {
+    const doc  = this.doc;
+    y = this._ensureSpace(y, 50) + 8;
+
+    const colW  = CONTENT_W / 2 - 6;
+    const col1x = MARGIN;
+    const col2x = MARGIN + CONTENT_W / 2 + 6;
+
+    // ── Spaltenköpfe ────────────────────────────────────────────────────────
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
+      .text('Zahlungsempfänger / Creditor', col1x, y, { width: colW, lineBreak: false });
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
+      .text('Zahlungspflichtiger / Debtor',  col2x, y, { width: colW, lineBreak: false });
+    y += 18;
+
+    // Rote Linien unter Köpfen
+    doc.strokeColor(COLORS.primary).lineWidth(1.5)
+      .moveTo(col1x, y).lineTo(col1x + colW, y).stroke();
+    doc.moveTo(col2x, y).lineTo(col2x + colW, y).stroke();
+    y += 10;
+
+    const startY = y;
+
+    // ── Creditor (links) ────────────────────────────────────────────────────
+    let yL = y;
+    const xL = col1x + 4;
+
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
+      .text(mandateData.dojoname || 'Dojo Software', xL, yL, { width: colW - 4, lineBreak: false });
+    yL += 16;
+
+    const credLines = [
+      mandateData.dojo_strasse && mandateData.dojo_hausnummer
+        ? `${mandateData.dojo_strasse} ${mandateData.dojo_hausnummer}` : null,
+      mandateData.dojo_plz && mandateData.dojo_ort
+        ? `${mandateData.dojo_plz} ${mandateData.dojo_ort}` : null,
+    ].filter(Boolean);
+
+    for (const line of credLines) {
+      doc.fontSize(9).font('Helvetica').fillColor(COLORS.muted)
+        .text(line, xL, yL, { width: colW - 4, lineBreak: false });
+      yL += 13;
+    }
+    if (mandateData.inhaber) {
+      yL += 3;
+      doc.fontSize(8.5).font('Helvetica').fillColor(COLORS.muted)
+        .text(`Inhaber: ${mandateData.inhaber}`, xL, yL, { width: colW - 4, lineBreak: false });
+      yL += 13;
+    }
+    if (mandateData.sepa_glaeubiger_id) {
+      doc.fontSize(8.5).font('Helvetica').fillColor(COLORS.muted)
+        .text(`Gläubiger-ID: ${mandateData.sepa_glaeubiger_id}`, xL, yL, { width: colW - 4, lineBreak: false });
+      yL += 13;
+    }
+
+    // ── Debtor (rechts) ─────────────────────────────────────────────────────
+    let yR = y;
+    const xR = col2x + 4;
+
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(COLORS.text)
+      .text(`${mandateData.vorname} ${mandateData.nachname}`, xR, yR, { width: colW - 4, lineBreak: false });
+    yR += 16;
+
+    const debtLines = [
+      mandateData.strasse && mandateData.hausnummer
+        ? `${mandateData.strasse} ${mandateData.hausnummer}` : null,
+      mandateData.plz && mandateData.ort
+        ? `${mandateData.plz} ${mandateData.ort}` : null,
+    ].filter(Boolean);
+
+    for (const line of debtLines) {
+      doc.fontSize(9).font('Helvetica').fillColor(COLORS.muted)
+        .text(line, xR, yR, { width: colW - 4, lineBreak: false });
+      yR += 13;
+    }
+
+    // Trennlinie Mitte
+    const colEnd = Math.max(yL, yR) + 4;
+    doc.strokeColor(COLORS.border).lineWidth(0.5)
+      .moveTo(MARGIN + CONTENT_W / 2, startY - 4)
+      .lineTo(MARGIN + CONTENT_W / 2, colEnd).stroke();
+
+    // Linke rote Akzentstreifen
+    doc.rect(col1x, startY - 2, 3, colEnd - startY).fill(COLORS.primary);
+    doc.rect(col2x, startY - 2, 3, colEnd - startY).fill(COLORS.primary);
+
+    return colEnd + 10;
   }
 
   // ── Banking Body ─────────────────────────────────────────────────────────────
