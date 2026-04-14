@@ -4,8 +4,9 @@
  * Zeigt Status aller Mitglieder, erlaubt Massen-E-Mail-Versand und manuelle Anpassungen.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import axios from 'axios';
+import { DatenContext } from '@shared/DatenContext.jsx';
 import '../styles/LastschriftEinverstaendnis.css';
 
 const STATUS_LABEL = {
@@ -39,6 +40,9 @@ function fmt(dt) {
 }
 
 export default function LastschriftEinverstaendnis() {
+  const { activeDojo } = useContext(DatenContext);
+  const dojoId = activeDojo?.id || null;
+
   const [members, setMembers]         = useState([]);
   const [stats, setStats]             = useState(null);
   const [loading, setLoading]         = useState(true);
@@ -50,11 +54,12 @@ export default function LastschriftEinverstaendnis() {
   const [editRow, setEditRow]         = useState(null); // { id, status, notiz }
 
   const ladeData = useCallback(async () => {
+    if (!dojoId) return;
     setLoading(true);
     try {
       const [membRes, statsRes] = await Promise.all([
-        axios.get('/lastschrift-einverstaendnis', { params: { status: filterStatus, search } }),
-        axios.get('/lastschrift-einverstaendnis/stats'),
+        axios.get('/lastschrift-einverstaendnis', { params: { status: filterStatus, search, dojo_id: dojoId } }),
+        axios.get('/lastschrift-einverstaendnis/stats', { params: { dojo_id: dojoId } }),
       ]);
       setMembers(membRes.data.data || []);
       setStats(statsRes.data.stats || null);
@@ -63,16 +68,18 @@ export default function LastschriftEinverstaendnis() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, search]);
+  }, [filterStatus, search, dojoId]);
 
   useEffect(() => { ladeData(); }, [ladeData]);
+
+  const [showVorlage, setShowVorlage] = useState(false);
 
   const handleSendenAlle = async () => {
     if (!window.confirm('E-Mail-Anfrage an alle Mitglieder ohne bisherige Anfrage senden?')) return;
     setSending(true);
     setMsg({ type: '', text: '' });
     try {
-      const res = await axios.post('/lastschrift-einverstaendnis/senden', { nur_ohne_anfrage: true });
+      const res = await axios.post('/lastschrift-einverstaendnis/senden', { nur_ohne_anfrage: true, dojo_id: dojoId });
       setMsg({ type: 'ok', text: res.data.message });
       ladeData();
     } catch (err) {
@@ -89,6 +96,7 @@ export default function LastschriftEinverstaendnis() {
     try {
       const res = await axios.post('/lastschrift-einverstaendnis/senden', {
         mitglied_ids: [...selectedIds],
+        dojo_id: dojoId,
       });
       setMsg({ type: 'ok', text: res.data.message });
       setSelectedIds(new Set());
@@ -104,7 +112,7 @@ export default function LastschriftEinverstaendnis() {
     if (!window.confirm('Erinnerungs-E-Mail an alle mit Status "Ausstehend" senden?')) return;
     setSending(true);
     try {
-      const res = await axios.post('/lastschrift-einverstaendnis/erinnerung');
+      const res = await axios.post('/lastschrift-einverstaendnis/erinnerung', { dojo_id: dojoId });
       setMsg({ type: 'ok', text: res.data.message });
       ladeData();
     } catch (err) {
@@ -120,6 +128,7 @@ export default function LastschriftEinverstaendnis() {
       await axios.put(`/lastschrift-einverstaendnis/${editRow.id}/status`, {
         status: editRow.status,
         notiz:  editRow.notiz,
+        dojo_id: dojoId,
       });
       setMsg({ type: 'ok', text: 'Status gespeichert.' });
       setEditRow(null);
@@ -182,6 +191,43 @@ export default function LastschriftEinverstaendnis() {
           ))}
         </div>
       )}
+
+      {/* E-Mail-Vorlage */}
+      <div className="le-vorlage-wrap">
+        <button className="le-vorlage-toggle" onClick={() => setShowVorlage(v => !v)}>
+          {showVorlage ? '▲' : '▼'} E-Mail-Vorschau anzeigen
+        </button>
+        {showVorlage && (
+          <div className="le-vorlage-box">
+            <div className="le-vorlage-meta">
+              <span><strong>Betreff:</strong> Einverständnis Lastschrifteinzug — [Dojo-Name]</span>
+            </div>
+            <div className="le-vorlage-body">
+              <p>Hallo <em>[Vorname Nachname]</em>,</p>
+              <p>
+                um Ihnen den Einkauf in unserem Shop so komfortabel wie möglich zu gestalten,
+                möchten wir Sie fragen, ob Sie damit einverstanden sind, dass zukünftige Einkäufe
+                automatisch per <strong>SEPA-Lastschrift</strong> von Ihrem hinterlegten Konto
+                eingezogen werden.
+              </p>
+              <div className="le-vorlage-infobox">
+                <strong>Was bedeutet das konkret?</strong><br />
+                Bei jedem Kauf im Dojo-Shop wird der Betrag automatisch von Ihrem Bankkonto
+                abgebucht — bequem ohne weiteren Zahlungsschritt. Sie haben gemäß SEPA-Regelwerk
+                ein Widerrufsrecht von 8 Wochen.
+              </div>
+              <p>Bitte teilen Sie uns Ihre Entscheidung mit:</p>
+              <div className="le-vorlage-btns">
+                <span className="le-vorlage-btn-ja">✓ Ja, ich stimme zu</span>
+                <span className="le-vorlage-btn-nein">✗ Nein, ich lehne ab</span>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: '#888' }}>
+                Dieser Link ist 30 Tage gültig. Sie können Ihre Entscheidung jederzeit über uns widerrufen.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Aktions-Leiste */}
       <div className="le-actions">

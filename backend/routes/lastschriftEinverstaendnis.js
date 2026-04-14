@@ -41,11 +41,19 @@ function getFrontendBase(req) {
   return `${proto}://${host}`;
 }
 
+// ── Hilfsfunktion: dojoId aus Query ODER Body ODER JWT ───────────────────────
+function resolveDojoId(req) {
+  return getSecureDojoId(req)
+    || (req.body?.dojo_id ? parseInt(req.body.dojo_id, 10) : null)
+    || req.user?.dojo_id
+    || null;
+}
+
 // ── Admin-Endpunkte (auth middleware sitzt in server.js beim Mounten) ────────
 
 // GET / — alle Mitglieder mit Einverständnis-Status
 router.get('/', async (req, res) => {
-  const dojoId = getSecureDojoId(req);
+  const dojoId = resolveDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
 
   const { status, search } = req.query;
@@ -100,7 +108,7 @@ router.get('/', async (req, res) => {
 
 // GET /stats
 router.get('/stats', async (req, res) => {
-  const dojoId = getSecureDojoId(req);
+  const dojoId = resolveDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
   try {
     const [[{ total }]]       = await pool.query('SELECT COUNT(*) AS total FROM mitglieder WHERE dojo_id = ? AND aktiv = 1', [dojoId]);
@@ -119,7 +127,7 @@ router.get('/stats', async (req, res) => {
 
 // POST /senden — E-Mail-Anfrage an ausgewählte Mitglieder (oder alle ohne Anfrage)
 router.post('/senden', async (req, res) => {
-  const dojoId = getSecureDojoId(req);
+  const dojoId = resolveDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
 
   const { mitglied_ids, nur_ohne_anfrage = true } = req.body;
@@ -256,7 +264,7 @@ router.post('/senden', async (req, res) => {
 
 // POST /erinnerung — Erinnerung an Mitglieder mit status=ausstehend
 router.post('/erinnerung', async (req, res) => {
-  const dojoId = getSecureDojoId(req);
+  const dojoId = resolveDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
   const base = getFrontendBase(req);
 
@@ -327,7 +335,7 @@ router.post('/erinnerung', async (req, res) => {
 
 // PUT /:id/status — Admin: Status manuell setzen
 router.put('/:id/status', async (req, res) => {
-  const dojoId = getSecureDojoId(req);
+  const dojoId = resolveDojoId(req);
   if (!dojoId) return res.status(400).json({ error: 'Dojo-ID erforderlich' });
 
   const { status, notiz } = req.body;
