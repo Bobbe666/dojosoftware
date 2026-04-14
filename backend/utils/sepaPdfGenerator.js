@@ -157,9 +157,9 @@ class SepaPdfGenerator {
     y = this._rule(y);
     y += 6;
 
-    // Inhalt messen: bodyFn bekommt einen Proxy-doc und gibt Höhe zurück
+    // bodyFn bekommt start-y, zeichnet, gibt end-y zurück
     const startY = y;
-    const contentH = bodyFn(doc, y);    // bodyFn zeichnet und gibt End-y zurück
+    const contentH = bodyFn(y);
     y = contentH + 12;
 
     // Linker roter Akzentstreifen
