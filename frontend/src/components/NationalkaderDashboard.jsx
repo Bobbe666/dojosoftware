@@ -91,7 +91,7 @@ const NationalkaderDashboard = () => {
     setLoading(true);
     setError('');
     try {
-      const res = await axios.get('/api/nationalkader', { headers });
+      const res = await axios.get('/nationalkader', { headers });
       setKaderListe(res.data.kader || []);
     } catch (err) {
       setError('Fehler beim Laden der Kader');
@@ -103,7 +103,7 @@ const NationalkaderDashboard = () => {
   const loadNominierungen = useCallback(async (kaderId) => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/nationalkader/${kaderId}/nominierungen`, { headers });
+      const res = await axios.get(`/nationalkader/${kaderId}/nominierungen`, { headers });
       setNominierungen(res.data.nominierungen || []);
     } catch (err) {
       setError('Fehler beim Laden der Nominierungen');
@@ -116,7 +116,7 @@ const NationalkaderDashboard = () => {
     setKandidatenLoading(true);
     setError('');
     try {
-      const res = await axios.get('/api/nationalkader/kandidaten', { headers });
+      const res = await axios.get('/nationalkader/kandidaten', { headers });
       setKandidaten(res.data.kandidaten || []);
     } catch (err) {
       setError('Fehler beim Laden der Kandidaten von TDA-Events');
@@ -140,10 +140,10 @@ const NationalkaderDashboard = () => {
     setError('');
     try {
       if (editingKader) {
-        await axios.put(`/api/nationalkader/${editingKader.id}`, kaderForm, { headers });
+        await axios.put(`/nationalkader/${editingKader.id}`, kaderForm, { headers });
         showSuccess('Kader gespeichert');
       } else {
-        await axios.post('/api/nationalkader', kaderForm, { headers });
+        await axios.post('/nationalkader', kaderForm, { headers });
         showSuccess('Kader erstellt');
       }
       setKaderForm({ bezeichnung: '', saison: new Date().getFullYear().toString(), sportart: '', beschreibung: '' });
@@ -169,7 +169,7 @@ const NationalkaderDashboard = () => {
   const handleKaderDelete = async (kader) => {
     if (!confirm(`Kader "${kader.bezeichnung}" wirklich löschen? Alle Nominierungen werden ebenfalls gelöscht.`)) return;
     try {
-      await axios.delete(`/api/nationalkader/${kader.id}`, { headers });
+      await axios.delete(`/nationalkader/${kader.id}`, { headers });
       showSuccess('Kader gelöscht');
       loadKader();
       if (selectedKader?.id === kader.id) {
@@ -194,7 +194,7 @@ const NationalkaderDashboard = () => {
     setSyncLoading(true);
     setError('');
     try {
-      const res = await axios.post(`/api/nationalkader/${selectedKader.id}/auto-sync`, {}, { headers });
+      const res = await axios.post(`/nationalkader/${selectedKader.id}/auto-sync`, {}, { headers });
       showSuccess(res.data.message);
       loadNominierungen(selectedKader.id);
       loadKader();
@@ -215,7 +215,7 @@ const NationalkaderDashboard = () => {
       )
     );
     try {
-      await axios.post(`/api/nationalkader/${selectedKader.id}/nominieren`, {
+      await axios.post(`/nationalkader/${selectedKader.id}/nominieren`, {
         events_wettkaempfer_id: pseudoId,
         vorname: kandidat.vorname,
         nachname: kandidat.nachname,
@@ -239,7 +239,7 @@ const NationalkaderDashboard = () => {
 
   const handleNomSave = async () => {
     try {
-      await axios.put(`/api/nationalkader/nominierungen/${editNom.id}`, editNomData, { headers });
+      await axios.put(`/nationalkader/nominierungen/${editNom.id}`, editNomData, { headers });
       showSuccess('Gespeichert');
       setEditNom(null);
       loadNominierungen(selectedKader.id);
@@ -251,7 +251,7 @@ const NationalkaderDashboard = () => {
   const handleNomDelete = async (nom) => {
     if (!confirm(`Nominierung von ${nom.vorname} ${nom.nachname} entfernen?`)) return;
     try {
-      await axios.delete(`/api/nationalkader/nominierungen/${nom.id}`, { headers });
+      await axios.delete(`/nationalkader/nominierungen/${nom.id}`, { headers });
       showSuccess('Nominierung entfernt');
       loadNominierungen(selectedKader.id);
       loadKader();
