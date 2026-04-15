@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const db = require('../db');
 const pool = db.promise(); // Promise-basierte API von mysql2
 const logger = require('../utils/logger');
@@ -35,9 +36,10 @@ function getSenderInfo(req) {
 }
 
 // ─── Hilfsfunktion: Dojo-ID sicher ermitteln ─────────────────────────────────
+// 🔒 Nur dem JWT vertrauen — Query/Body-Parameter werden ignoriert
 
 function getDojoId(req) {
-  return req.user.dojo_id || req.query.dojo_id || req.body?.dojo_id || null;
+  return getSecureDojoId(req);
 }
 
 // ─── Hilfsfunktion: Sendernamen aus DB laden ──────────────────────────────────
@@ -253,6 +255,13 @@ router.put('/rooms/:id', async (req, res) => {
       if (!myRole[0] || !['owner', 'admin'].includes(myRole[0].role)) {
         return res.status(403).json({ success: false, message: 'Keine Berechtigung' });
       }
+    } else if (req.user.dojo_id) {
+      // Lokaler Admin: Raum muss zum eigenen Dojo gehören
+      const [roomCheck] = await pool.query(
+        `SELECT id FROM chat_rooms WHERE id = ? AND dojo_id = ?`,
+        [room_id, req.user.dojo_id]
+      );
+      if (!roomCheck[0]) return res.status(403).json({ success: false, message: 'Raum gehört nicht zu deinem Dojo' });
     }
 
     const updates = [];
@@ -293,6 +302,13 @@ router.delete('/rooms/:id', async (req, res) => {
       if (!myRole[0] || myRole[0].role !== 'owner') {
         return res.status(403).json({ success: false, message: 'Keine Berechtigung' });
       }
+    } else if (req.user.dojo_id) {
+      // Lokaler Admin: Raum muss zum eigenen Dojo gehören
+      const [roomCheck] = await pool.query(
+        `SELECT id FROM chat_rooms WHERE id = ? AND dojo_id = ?`,
+        [room_id, req.user.dojo_id]
+      );
+      if (!roomCheck[0]) return res.status(403).json({ success: false, message: 'Raum gehört nicht zu deinem Dojo' });
     }
 
     // Kaskadenweise löschen
@@ -566,12 +582,147 @@ router.put('/rooms/:id/read', async (req, res) => {
         `INSERT IGNORE INTO chat_message_reads (message_id, room_id, member_id, member_type) VALUES ?`,
         [values]
       );
+
+      // Socket-Event: andere Teilnehmer informieren wer gelesen hat
+      try {
+        const io = require('../server').io || null;
+        const senderName = await getSenderName(sender_id, sender_type);
+        if (io) {
+          io.to(`chat:${room_id}`).emit('chat:read', {
+            room_id,
+            reader_id: sender_id,
+            reader_type: sender_type,
+            reader_name: senderName,
+            message_ids: unread.map(m => m.id),
+            read_at: new Date()
+          });
+        }
+      } catch (_) { /* Socket optional */ }
     }
 
     res.json({ success: true, marked: unread.length });
   } catch (error) {
     logger.error('Chat read Fehler', { error: error.message });
     res.status(500).json({ success: false });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/chat/rooms/:id/reads-summary — Wer hat welche Nachrichten gelesen
+// Gibt für die letzten 100 Nachrichten im Raum zurück, welche Mitglieder sie
+// gelesen haben (Name + Zeitstempel). Für Admin-Ansicht + Read-Receipts.
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get('/rooms/:id/reads-summary', async (req, res) => {
+  try {
+    const room_id = parseInt(req.params.id);
+    const { sender_id, sender_type } = getSenderInfo(req);
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
+
+    // Zugriffsprüfung: Raum-Mitglied oder Admin
+    if (!isAdmin) {
+      const [access] = await pool.query(
+        `SELECT id FROM chat_room_members WHERE room_id = ? AND member_id = ? AND member_type = ?`,
+        [room_id, sender_id, sender_type]
+      );
+      if (!access[0]) return res.status(403).json({ message: 'Kein Zugriff' });
+    }
+
+    // Gesamtzahl Mitglieder im Raum (für "X von Y gelesen")
+    const [[{ total_members }]] = await pool.query(
+      `SELECT COUNT(*) AS total_members FROM chat_room_members WHERE room_id = ?`,
+      [room_id]
+    );
+
+    // Lesestatus der letzten 100 Nachrichten laden
+    const [reads] = await pool.query(
+      `SELECT
+         r.message_id,
+         COUNT(*) AS read_count,
+         GROUP_CONCAT(
+           CASE
+             WHEN r.member_type = 'mitglied' THEN CONCAT(m.vorname, ' ', m.nachname)
+             ELSE COALESCE(u.username, 'Admin')
+           END
+           ORDER BY r.read_at ASC
+           SEPARATOR '|||'
+         ) AS reader_names,
+         MAX(r.read_at) AS last_read_at
+       FROM chat_message_reads r
+       LEFT JOIN mitglieder m ON r.member_type = 'mitglied' AND r.member_id = m.mitglied_id
+       LEFT JOIN users u ON r.member_type != 'mitglied' AND r.member_id = u.id
+       WHERE r.room_id = ?
+         AND r.message_id IN (
+           SELECT id FROM chat_messages WHERE room_id = ? ORDER BY sent_at DESC LIMIT 100
+         )
+       GROUP BY r.message_id`,
+      [room_id, room_id]
+    );
+
+    // Als Map aufbereiten
+    const summary = {};
+    for (const row of reads) {
+      summary[row.message_id] = {
+        read_count: row.read_count,
+        total_members: total_members,
+        reader_names: row.reader_names ? row.reader_names.split('|||') : [],
+        last_read_at: row.last_read_at
+      };
+    }
+
+    res.json({ success: true, summary });
+  } catch (error) {
+    logger.error('Reads-Summary Fehler', { error: error.message });
+    res.status(500).json({ success: false });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/chat/announcements — Letzte Ankündigungen für dieses Dojo/Member
+// Liefert die neuesten Nachrichten aus allen Ankündigungs-Räumen des Dojos.
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get('/announcements', async (req, res) => {
+  try {
+    const { sender_id, sender_type } = getSenderInfo(req);
+    const dojo_id = getDojoId(req);
+    const limit = Math.min(parseInt(req.query.limit) || 10, 30);
+
+    // Ankündigungs-Räume des Dojos holen (Member müssen Mitglied sein oder Raum ist offen)
+    const [messages] = await pool.query(
+      `SELECT
+         cm.id, cm.content, cm.sent_at, cm.message_type,
+         cr.id AS room_id, cr.name AS room_name,
+         CASE
+           WHEN cm.sender_type = 'mitglied' THEN CONCAT(m.vorname, ' ', m.nachname)
+           ELSE COALESCE(u.username, 'Admin')
+         END AS sender_name,
+         EXISTS(
+           SELECT 1 FROM chat_message_reads cmr
+           WHERE cmr.message_id = cm.id AND cmr.member_id = ? AND cmr.member_type = ?
+         ) AS is_read
+       FROM chat_messages cm
+       JOIN chat_rooms cr ON cm.room_id = cr.id
+       LEFT JOIN mitglieder m ON cm.sender_type = 'mitglied' AND cm.sender_id = m.mitglied_id
+       LEFT JOIN users u ON cm.sender_type != 'mitglied' AND cm.sender_id = u.id
+       WHERE cr.type = 'announcement'
+         AND cr.dojo_id = ?
+         AND cm.deleted_at IS NULL
+         AND (
+           cr.id IN (
+             SELECT room_id FROM chat_room_members
+             WHERE member_id = ? AND member_type = ?
+           )
+         )
+       ORDER BY cm.sent_at DESC
+       LIMIT ?`,
+      [sender_id, sender_type, dojo_id, sender_id, sender_type, limit]
+    );
+
+    res.json({ success: true, announcements: messages });
+  } catch (error) {
+    logger.error('Announcements Fehler', { error: error.message });
+    res.status(500).json({ success: false, announcements: [] });
   }
 });
 
