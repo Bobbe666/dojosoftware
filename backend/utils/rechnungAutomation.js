@@ -284,6 +284,59 @@ async function createRechnungForBeitrag(vertrag_id, mitglied_id, monat, jahr) {
       vertrag.tarif_name || 'Mitgliedschaft'
     ]);
 
+    // ── Ratenplan-Aufschlag prüfen und ggf. hinzufügen ──────────────────────
+    const ratenplanRows = await queryAsync(
+      `SELECT * FROM mitglied_ratenplan WHERE mitglied_id = ? AND aktiv = 1 ORDER BY erstellt_am DESC LIMIT 1`,
+      [mitglied_id]
+    );
+
+    if (ratenplanRows.length > 0) {
+      const ratenplan = ratenplanRows[0];
+      const aufschlag = parseFloat(ratenplan.monatlicher_aufschlag);
+      const bereits = parseFloat(ratenplan.bereits_abgezahlt);
+      const gesamt = parseFloat(ratenplan.ausstehender_betrag);
+      const offen = gesamt - bereits;
+
+      // Nicht mehr abbuchen als noch aussteht
+      const dieserAufschlag = Math.min(aufschlag, offen);
+
+      if (dieserAufschlag > 0) {
+        // Rechnungsbetrag erhöhen
+        await queryAsync(
+          `UPDATE rechnungen SET betrag = betrag + ?, brutto_betrag = brutto_betrag + ? WHERE rechnung_id = ?`,
+          [dieserAufschlag, dieserAufschlag, rechnung_id]
+        );
+
+        // Eigene Position für den Ratenanteil
+        await queryAsync(insertPositionQuery, [
+          rechnung_id,
+          2,
+          `Ratenanteil Nachzahlung (${bereits.toFixed(2)} € / ${gesamt.toFixed(2)} € beglichen)`,
+          1.00,
+          dieserAufschlag,
+          dieserAufschlag,
+          19.00,
+          'Ratenzahlungsplan'
+        ]);
+
+        // Fortschritt im Ratenplan aktualisieren
+        const neuAbgezahlt = bereits + dieserAufschlag;
+        if (neuAbgezahlt >= gesamt) {
+          // Plan abgeschlossen
+          await queryAsync(
+            `UPDATE mitglied_ratenplan SET bereits_abgezahlt = ?, aktiv = 0 WHERE id = ?`,
+            [gesamt, ratenplan.id]
+          );
+          logger.info(`Ratenplan #${ratenplan.id} für Mitglied #${mitglied_id} vollständig abgezahlt`);
+        } else {
+          await queryAsync(
+            `UPDATE mitglied_ratenplan SET bereits_abgezahlt = ? WHERE id = ?`,
+            [neuAbgezahlt, ratenplan.id]
+          );
+        }
+      }
+    }
+
     logger.info('Rechnung ${rechnungsnummer} für Beitrag ${monat}/${jahr} erstellt');
 
     return {

@@ -17,6 +17,7 @@ const crudRouter = require('./crud');
 const zahlungenRouter = require('./zahlungen');
 const pdfRouter = require('./pdf');
 const automationRouter = require('./automation');
+const ratenplanRouter = require('./ratenplan');
 
 // Automation-Routes (MUSS VOR CRUD wegen /generate-monthly, /auto-create)
 router.use('/', automationRouter);
@@ -29,5 +30,8 @@ router.use('/', zahlungenRouter);
 
 // PDF-Router (/:id/vorschau, /:id/pdf)
 router.use('/', pdfRouter);
+
+// Ratenplan-Router (/ratenplan/:mitglied_id, /ratenplan)
+router.use('/', ratenplanRouter);
 
 module.exports = router;

@@ -26,6 +26,7 @@ import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
 
 // Extrahierte Tab-Komponenten
 import { MemberSecurityTab, MemberAdditionalDataTab, MemberMedicalTab, MemberFamilyTab, MemberStatisticsTab, MemberInjuryTab } from './mitglied-detail';
+import RatenzahlungTab from './mitglied-detail/tabs/RatenzahlungTab';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import VorlagenSendenModal from './VorlagenSendenModal';
 import HofNominierungModal from './HofNominierungModal';
@@ -455,6 +456,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [stilDropdownOpen, setStilDropdownOpen] = useState(false);
   const [activeExamTab, setActiveExamTab] = useState(0);
   const [financeSubTab, setFinanceSubTab] = useState("finanzübersicht");
+  const [mitgliedschaftSubTab, setMitgliedschaftSubTab] = useState("vertrag");
+  const [gesundheitSubTab, setGesundheitSubTab] = useState("medizinisch");
+  const [entwicklungSubTab, setEntwicklungSubTab] = useState("anwesenheit");
   const [graduationListCollapsed, setGraduationListCollapsed] = useState(true); // Graduierungen-Liste standardmäßig eingeklappt
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -523,6 +527,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   });
   const [vertragAnpassungLoading, setVertragAnpassungLoading] = useState(false);
   const [vertragAnpassungError, setVertragAnpassungError] = useState('');
+  const [editingAnpassungId, setEditingAnpassungId] = useState(null);
   const [archiveReason, setArchiveReason] = useState('');
   const [newVertrag, setNewVertrag] = useState(() => {
     const heute = new Date();
@@ -1970,6 +1975,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           agb_akzeptiert_am: newVertrag.agb_akzeptiert ? now : null,
           datenschutz_akzeptiert_am: newVertrag.datenschutz_akzeptiert ? now : null,
           hausordnung_akzeptiert_am: newVertrag.hausordnung_akzeptiert ? now : null,
+          widerruf_akzeptiert_am: newVertrag.widerruf_akzeptiert ? now : null,
           haftungsausschluss_datum: newVertrag.haftungsausschluss_akzeptiert ? now : null,
           gesundheitserklaerung_datum: newVertrag.gesundheitserklaerung ? now : null,
           foto_einverstaendnis_datum: newVertrag.foto_einverstaendnis ? now : null,
@@ -2181,7 +2187,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // ✨ NEU: Anwesenheitsdaten für Anwesenheits-Tab laden (alle Stile)
   useEffect(() => {
-    if (activeTab === "anwesenheit") {
+    if (activeTab === "entwicklung") {
       const controller = new AbortController();
       fetchAnwesenheitsDaten(null, controller.signal); // Alle Stile
       fetchStilStatistiken(controller.signal);
@@ -2193,7 +2199,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // ✨ NEU: Finanzdaten laden wenn Finanzen-Tab aktiv
   useEffect(() => {
-    if (activeTab === "finanzen" && id) {
+    if (activeTab === "mitgliedschaft" && id) {
       const controller = new AbortController();
       fetchFinanzDaten(controller.signal);
       fetchTarifeUndZahlungszyklen(controller.signal);
@@ -2333,7 +2339,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // Load buddy groups when buddy_gruppen tab is active
   useEffect(() => {
-    if (activeTab === "buddy_gruppen" && mitglied?.mitglied_id && token) {
+    if (activeTab === "allgemein" && mitglied?.mitglied_id && token) {
       const controller = new AbortController();
       
       const loadBuddyGroups = async () => {
@@ -2707,21 +2713,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
   // Tab configuration - all tabs visible, but some content is admin-only
   const allTabs = [
-    { key: "allgemein", label: "Allgemein", icon: "👤" },
-    { key: "medizinisch", label: "Medizinisch", icon: "🏥" },
-    { key: "fortschritt", label: "Fortschritt", icon: "📈" },
-    { key: "anwesenheit", label: "Anwesenheit", icon: "📅" },
-    { key: "finanzen", label: "Finanzen", icon: "💰" },
-    { key: "vertrag", label: "Vertrag", icon: "📄" },
-    { key: "dokumente", label: "Dokumente", icon: "📁" },
-    { key: "familie", label: "Familie & Vertreter", icon: "👨‍👩‍👧‍👦" },
-    { key: "gurt_stil", label: "Gurt & Stil / Prüfung", icon: "🥋" },
-    { key: "buddy_gruppen", label: "Buddy-Gruppen", icon: "👥" },
-    { key: "verletzungen", label: "Verletzungen", icon: "🩹" },
-    { key: "nachrichten", label: "Nachrichten", icon: "📬" },
-    { key: "statistiken", label: "Statistiken", icon: "📊" },
-    { key: "zusatzdaten", label: "Lehrgänge & Ehrungen", icon: "🏆" },
-    { key: "sicherheit", label: "Sicherheit", icon: "🔒" },
+    { key: "allgemein",      label: "Allgemein",            icon: "👤" },
+    { key: "gesundheit",     label: "Gesundheit",           icon: "🏥" },
+    { key: "entwicklung",    label: "Entwicklung",          icon: "📈" },
+    { key: "mitgliedschaft", label: "Mitgliedschaft",       icon: "💼" },
+    { key: "dokumente",      label: "Dokumente",            icon: "📁" },
+    { key: "gurt_stil",      label: "Gurt & Stil / Prüfung",icon: "🥋" },
+    { key: "nachrichten",    label: "Nachrichten",          icon: "📬" },
   ];
 
   // Sicherheit-Tab State
@@ -2852,26 +2850,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </button>
               )}
               
-              {/* Status-Badges - nebeneinander */}
-              <div className="mitglied-detail-status-badges">
-              <div className="mitglied-detail-badge" title="Offene Dokumente">
-                <span className="badge-icon">📄</span>
-                <span className="badge-label">Dokumente:</span>
-                <span className="badge-value">{offeneDokumente}</span>
-              </div>
-              <div className="mitglied-detail-badge" title="Offene Nachrichten">
-                <span className="badge-icon">✉️</span>
-                <span className="badge-label">Nachrichten:</span>
-                <span className="badge-value">{offeneNachrichten}</span>
-              </div>
-              {offeneBeiträge > 0 && (
-                <div className="mitglied-detail-badge badge-warning" title="Offene Beiträge">
-                  <span className="badge-icon">💰</span>
-                  <span className="badge-label">Beiträge:</span>
-                  <span className="badge-value warning">{offeneBeiträge}</span>
-                </div>
-              )}
-            </div>
             </div>
 
             {/* Aktionen-Menü */}
@@ -3012,9 +2990,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
             >
-          {activeTab === "sicherheit" && (
-            <MemberSecurityTab CustomSelect={CustomSelect} />
-          )}
           {activeTab === "allgemein" && (
             <div className="grid-container">
               {/* Mitgliedsausweis - ganz oben */}
@@ -3138,12 +3113,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
               <div className="field-group card">
                 <h3>Allgemeine Informationen</h3>
-                
+
                 <div>
                   <label>Mitgliedsnummer:</label>
                   <span>{mitglied.mitglied_id}</span>
                 </div>
-                
+
                 {/* Foto-Upload Bereich */}
                 <div className="foto-upload-section">
                   <div className="foto-container">
@@ -3255,7 +3230,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
                   <label>Vorname:</label>
                   {editMode ? (
@@ -3467,7 +3442,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                       ]}
                     />
                   ) : (
-                    <span>{mitglied.newsletter_abo ? "? Abonniert" : "? Nicht abonniert"}</span>
+                    <span>{mitglied.newsletter_abo ? "✓ Abonniert" : "✗ Nicht abonniert"}</span>
                   )}
                 </div>
 
@@ -3525,7 +3500,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         ]}
                       />
                     ) : (
-                      <span>{mitglied.online_portal_aktiv ? "✅ Aktiv" : "? Inaktiv"}</span>
+                      <span>{mitglied.online_portal_aktiv ? "✅ Aktiv" : "✗ Inaktiv"}</span>
                     )}
                   </div>
                 )}
@@ -3576,7 +3551,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           })()
                         }}>
                           {(() => {
-                            // Nur fällige (nicht zukünftige) unbezahlte Beiträge
                             const heute = new Date(); heute.setHours(23, 59, 59, 999);
                             const kontostand = finanzDaten
                               .filter(item => !item.bezahlt && new Date(item.zahlungsdatum || item.datum || 0) <= heute)
@@ -3655,25 +3629,30 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
-          {activeTab === "medizinisch" && (
-            <MemberMedicalTab
-              mitglied={mitglied}
-              updatedData={updatedData}
-              editMode={editMode}
-              handleChange={handleChange}
-              CustomSelect={CustomSelect}
-              allergien={allergien}
-              allergienArchiv={allergienArchiv}
-              newAllergie={newAllergie}
-              setNewAllergie={setNewAllergie}
-              addAllergie={addAllergie}
-              removeAllergie={removeAllergie}
-            />
+          {activeTab === "gesundheit" && (
+            <div>
+              <MemberMedicalTab
+                mitglied={mitglied}
+                updatedData={updatedData}
+                editMode={editMode}
+                handleChange={handleChange}
+                CustomSelect={CustomSelect}
+                allergien={allergien}
+                allergienArchiv={allergienArchiv}
+                newAllergie={newAllergie}
+                setNewAllergie={setNewAllergie}
+                addAllergie={addAllergie}
+                removeAllergie={removeAllergie}
+              />
+              <MemberInjuryTab mitgliedId={id} isAdmin={isAdmin} />
+            </div>
           )}
 
-          {activeTab === "fortschritt" && (
-            <div className="fortschritt-tab-container">
-              <MitgliedFortschritt mitgliedId={id} />
+          {activeTab === "entwicklung" && (
+            <div className="finance-sub-tabs mds-finance-sub-tabs-row">
+              <button className={`finance-sub-tab-btn ${entwicklungSubTab === "anwesenheit" ? "active" : ""}`} onClick={() => setEntwicklungSubTab("anwesenheit")}>📅 Anwesenheit</button>
+              <button className={`finance-sub-tab-btn ${entwicklungSubTab === "fortschritt" ? "active" : ""}`} onClick={() => setEntwicklungSubTab("fortschritt")}>📈 Fortschritt</button>
+              <button className={`finance-sub-tab-btn ${entwicklungSubTab === "statistiken" ? "active" : ""}`} onClick={() => setEntwicklungSubTab("statistiken")}>📊 Statistiken</button>
             </div>
           )}
 
@@ -4078,7 +4057,13 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
-          {activeTab === "familie" && (
+          {activeTab === "allgemein" && (
+            <div className="mds-section-divider">
+              <span className="mds-section-divider-label">👨‍👩‍👧‍👦 Familie &amp; Vertreter</span>
+            </div>
+          )}
+
+          {activeTab === "allgemein" && (
             <>
               {/* Familienmitglied hinzufügen Banner - nur für Admin */}
               {isAdmin && (
@@ -4112,7 +4097,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
 
-          {activeTab === "vertrag" && (
+          {activeTab === "mitgliedschaft" && (
+            <div className="finance-sub-tabs mds-finance-sub-tabs-row">
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "vertrag" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("vertrag")}>📄 Vertrag</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("finanzen")}>💰 Finanzen</button>
+            </div>
+          )}
+
+          {activeTab === "mitgliedschaft" && mitgliedschaftSubTab === "vertrag" && (
             <div className="vtr-wrapper">
 
               {/* ── Header ── */}
@@ -4296,13 +4288,27 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               </div>
                               <button
                                 className="vtr-summary-link"
-                                onClick={() => { setActiveTab('finanzen'); setFinanceSubTab('beitraege'); }}
+                                onClick={() => { setActiveTab('mitgliedschaft'); setMitgliedschaftSubTab('finanzen'); setFinanceSubTab('beitraege'); }}
                               >
                                 Vollständige Beitragsübersicht →
                               </button>
                             </div>
                           );
                         })()}
+
+                        {/* Vertragsanpassungen */}
+                        {isAdmin && vertrag.status === 'aktiv' && (
+                          <VertragAnpassungSektion
+                            vertrag={vertrag}
+                            mitglied={mitglied}
+                            vertragAnpassungen={vertragAnpassungen}
+                            setVertragAnpassungen={setVertragAnpassungen}
+                            vertragAnpassungForm={vertragAnpassungForm}
+                            setVertragAnpassungForm={setVertragAnpassungForm}
+                            editingAnpassungId={editingAnpassungId}
+                            setEditingAnpassungId={setEditingAnpassungId}
+                          />
+                        )}
 
                         {/* Actions */}
                         <div className="vtr-actions">
@@ -4386,7 +4392,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
-          {activeTab === "anwesenheit" && (
+          {activeTab === "entwicklung" && entwicklungSubTab === "anwesenheit" && (
             <div className="anw-container">
 
               {/* ── Zeile 1: 4 Hauptkarten ── */}
@@ -4516,9 +4522,14 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
-          {activeTab === "finanzen" && (
+          {activeTab === "entwicklung" && entwicklungSubTab === "fortschritt" && (
+            <div className="fortschritt-tab-container">
+              <MitgliedFortschritt mitgliedId={id} />
+            </div>
+          )}
+
+          {activeTab === "mitgliedschaft" && mitgliedschaftSubTab === "finanzen" && (
             <div className="finance-management-container">
-              {/* Sub-Tabs für Finanzen - Horizontal mit Sidebar-Design */}
               <div className="finance-sub-tabs mds-finance-sub-tabs-row">
                 <button
                   className={`finance-sub-tab-btn ${financeSubTab === "finanzübersicht" ? "active" : ""}`}
@@ -4549,6 +4560,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   onClick={() => setFinanceSubTab("einkäufe")}
                 >
                   🛒 Einkäufe
+                </button>
+                <button
+                  className={`finance-sub-tab-btn ${financeSubTab === "ratenzahlung" ? "active" : ""}`}
+                  onClick={() => setFinanceSubTab("ratenzahlung")}
+                >
+                  📋 Ratenzahlung
                 </button>
               </div>
 
@@ -5266,6 +5283,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                                   <div className={`btr-entry-badge${bezahlt ? ' btr-badge--paid' : isFutureBtr ? ' btr-badge--future' : ' btr-badge--open'}`}>
                                                     {bezahlt ? 'Bezahlt' : isFutureBtr ? 'Geplant' : 'Überfällig'}
                                                   </div>
+                                                  {beitrag.magicline_description && (
+                                                    <div style={{ gridColumn: '1/-1', fontSize: '0.72rem', color: '#fbbf24', background: 'rgba(251,191,36,0.08)', borderRadius: 4, padding: '2px 7px', marginTop: '2px' }}>
+                                                      ℹ️ {beitrag.magicline_description}
+                                                    </div>
+                                                  )}
                                                   {isAdmin && (
                                                     <button
                                                       className={`btr-action-btn${bezahlt ? ' btr-action--unpay' : ' btr-action--pay'}`}
@@ -5566,10 +5588,27 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
               {financeSubTab === "einkäufe" && (
                 <MitgliedEinkäufeTab mitgliedId={id} activeDojo={activeDojo} />
               )}
+
+              {financeSubTab === "ratenzahlung" && (
+                <RatenzahlungTab
+                  mitglied_id={id}
+                  monatsbeitrag={parseFloat(
+                    finanzDaten?.aktuellerVertrag?.monatsbeitrag ||
+                    finanzDaten?.monatsbeitrag ||
+                    0
+                  )}
+                />
+              )}
             </div>
           )}
 
-          {activeTab === "buddy_gruppen" && (
+          {activeTab === "allgemein" && (
+            <div className="mds-section-divider">
+              <span className="mds-section-divider-label">👥 Buddy-Gruppen &amp; Empfehlungen</span>
+            </div>
+          )}
+
+          {activeTab === "allgemein" && (
             <div className="buddy-gruppen-content mds-buddy-content">
               <div className="mds-buddy-header">
                 <h3 className="mds-buddy-title">
@@ -5740,6 +5779,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
+          {activeTab === "allgemein" && (
+            <div className="mds-section-divider">
+              <span className="mds-section-divider-label">🔒 Sicherheit &amp; Zugangsdaten</span>
+            </div>
+          )}
+
+          {activeTab === "allgemein" && (
+            <MemberSecurityTab CustomSelect={CustomSelect} />
+          )}
+
           {activeTab === "nachrichten" && (
             <div className="nachrichten-content mds-nachrichten-content">
 
@@ -5868,7 +5917,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
-          {activeTab === "statistiken" && (
+          {activeTab === "entwicklung" && entwicklungSubTab === "statistiken" && (
             <MemberStatisticsTab
               statistikDaten={statistikDaten}
               mitglied={mitglied}
@@ -5878,7 +5927,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             />
           )}
 
-          {activeTab === "zusatzdaten" && (
+          {activeTab === "gurt_stil" && (
             <MemberAdditionalDataTab
               mitgliedId={id}
               dojoId={mitglied?.dojo_id}
@@ -5886,12 +5935,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             />
           )}
 
-          {activeTab === "verletzungen" && (
-            <MemberInjuryTab
-              mitgliedId={id}
-              isAdmin={isAdmin}
-            />
-          )}
 
                     {activeTab === "gurt_stil" && (
             <div className="style-management-container">
@@ -7684,26 +7727,111 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {vertragAnpassungen.map(a => {
                     const statusColors = { genehmigt: '#4caf50', beantragt: '#ff9800', abgelehnt: '#f44336', abgelaufen: '#888' };
-                    const typLabels = { schueler: 'Schüler', student: 'Student', azubi: 'Azubi', rentner: 'Rentner', sonstiges: 'Sonstiges' };
+                    const typLabels = { schueler: 'Schüler', student: 'Student', azubi: 'Azubi', rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause' };
+                    const isEditing = editingAnpassungId === a.id;
+                    const mid = mitglied?.mitglied_id || mitglied?.id;
                     return (
-                      <div key={a.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.65rem 0.85rem', border: `1px solid ${statusColors[a.status] || '#555'}40`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
-                        <div>
-                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{typLabels[a.typ] || a.typ}</span>
-                          <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginLeft: '0.5rem' }}>
-                            {new Date(a.gueltig_von).toLocaleDateString('de-DE')} – {new Date(a.gueltig_bis).toLocaleDateString('de-DE')}
-                          </span>
+                      <div key={a.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.65rem 0.85rem', border: `1px solid ${statusColors[a.status] || '#555'}40`, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {/* Kopfzeile */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                          <div>
+                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{typLabels[a.typ] || a.typ}</span>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginLeft: '0.5rem' }}>
+                              {new Date(a.gueltig_von).toLocaleDateString('de-DE')} – {new Date(a.gueltig_bis).toLocaleDateString('de-DE')}
+                            </span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{parseFloat(a.neuer_betrag).toFixed(2).replace('.', ',')} €</span>
+                            <span style={{ background: `${statusColors[a.status] || '#555'}20`, color: statusColors[a.status] || '#888', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize' }}>{a.status}</span>
+                            {a.status === 'genehmigt' && (
+                              <>
+                                <button
+                                  onClick={() => {
+                                    if (isEditing) { setEditingAnpassungId(null); return; }
+                                    setEditingAnpassungId(a.id);
+                                    setVertragAnpassungForm({ typ: a.typ, neuer_betrag: a.neuer_betrag, gueltig_von: a.gueltig_von?.slice(0,10), gueltig_bis: a.gueltig_bis?.slice(0,10), grund: a.grund || '' });
+                                  }}
+                                  style={{ padding: '3px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.78rem' }}
+                                >{isEditing ? '✕ Abbrechen' : '✏️ Bearbeiten'}</button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      const r2 = await axios.post(`/vertrag-anpassungen/${a.id}/neu-anwenden`);
+                                      const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
+                                      setVertragAnpassungen(r.data.anpassungen || []);
+                                      alert(`✓ ${r2.data.angepasste_beitraege} Beitrag/Beiträge aktualisiert.`);
+                                    } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
+                                  }}
+                                  style={{ padding: '3px 10px', borderRadius: 6, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer', fontSize: '0.78rem' }}
+                                >🔄 Neu anwenden</button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{parseFloat(a.neuer_betrag).toFixed(2).replace('.', ',')} €</span>
-                          <span style={{ background: `${statusColors[a.status] || '#555'}20`, color: statusColors[a.status] || '#888', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600, textTransform: 'capitalize' }}>{a.status}</span>
-                        </div>
+
+                        {/* Inline-Edit-Formular */}
+                        {isEditing && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.25rem' }}>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Typ</label>
+                              <select value={vertragAnpassungForm.typ} onChange={e => setVertragAnpassungForm(f => ({ ...f, typ: e.target.value }))}
+                                style={{ width: '100%', padding: '0.4rem', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                                <option value="schueler">Schüler</option>
+                                <option value="student">Student</option>
+                                <option value="azubi">Azubi</option>
+                                <option value="rentner">Rentner</option>
+                                <option value="sonstiges">Sonstiges</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Neuer Betrag (€)</label>
+                              <input type="number" step="0.01" value={vertragAnpassungForm.neuer_betrag} onChange={e => setVertragAnpassungForm(f => ({ ...f, neuer_betrag: e.target.value }))}
+                                style={{ width: '100%', padding: '0.4rem', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', fontSize: '0.85rem' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Gültig von</label>
+                              <input type="date" value={vertragAnpassungForm.gueltig_von} onChange={e => setVertragAnpassungForm(f => ({ ...f, gueltig_von: e.target.value }))}
+                                style={{ width: '100%', padding: '0.4rem', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', fontSize: '0.85rem' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Gültig bis</label>
+                              <input type="date" value={vertragAnpassungForm.gueltig_bis} onChange={e => setVertragAnpassungForm(f => ({ ...f, gueltig_bis: e.target.value }))}
+                                style={{ width: '100%', padding: '0.4rem', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', fontSize: '0.85rem' }} />
+                            </div>
+                            <div style={{ gridColumn: '1/-1' }}>
+                              <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Grund</label>
+                              <input type="text" value={vertragAnpassungForm.grund} onChange={e => setVertragAnpassungForm(f => ({ ...f, grund: e.target.value }))}
+                                style={{ width: '100%', padding: '0.4rem', borderRadius: 6, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-primary)', fontSize: '0.85rem' }} />
+                            </div>
+                            <div style={{ gridColumn: '1/-1' }}>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await axios.put(`/vertrag-anpassungen/${a.id}`, {
+                                      typ: vertragAnpassungForm.typ,
+                                      neuer_betrag: parseFloat(vertragAnpassungForm.neuer_betrag),
+                                      gueltig_von: vertragAnpassungForm.gueltig_von,
+                                      gueltig_bis: vertragAnpassungForm.gueltig_bis,
+                                      grund: vertragAnpassungForm.grund || null
+                                    });
+                                    const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
+                                    setVertragAnpassungen(r.data.anpassungen || []);
+                                    setEditingAnpassungId(null);
+                                  } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
+                                }}
+                                style={{ width: '100%', padding: '0.45rem', borderRadius: 6, background: 'rgba(76,175,80,0.15)', border: '1px solid #4caf50', color: '#4caf50', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}
+                              >✓ Änderungen speichern</button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Mitglied-Antrag genehmigen/ablehnen */}
                         {a.erstellt_von === 'mitglied' && a.status === 'beantragt' && (
-                          <div style={{ width: '100%', display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                             <button
                               onClick={async () => {
                                 try {
                                   await axios.put(`/vertrag-anpassungen/${a.id}/genehmigen`, { neuer_betrag: a.neuer_betrag });
-                                  const mid = mitglied?.mitglied_id || mitglied?.id;
                                   const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
                                   setVertragAnpassungen(r.data.anpassungen || []);
                                 } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
@@ -7714,7 +7842,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                               onClick={async () => {
                                 try {
                                   await axios.put(`/vertrag-anpassungen/${a.id}/ablehnen`);
-                                  const mid = mitglied?.mitglied_id || mitglied?.id;
                                   const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
                                   setVertragAnpassungen(r.data.anpassungen || []);
                                 } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
@@ -7737,5 +7864,222 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   );
 };
 
+
+// ── Vertragsanpassung-Sektion (inline in Vertragskarte) ───────────────────
+function VertragAnpassungSektion({ vertrag, mitglied, vertragAnpassungen, setVertragAnpassungen, vertragAnpassungForm, setVertragAnpassungForm, editingAnpassungId, setEditingAnpassungId }) {
+  const [open, setOpen] = React.useState(true);
+  const [showNewForm, setShowNewForm] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const [localForm, setLocalForm] = React.useState({ typ: 'schueler', neuer_betrag: '', gueltig_von: '', gueltig_bis: '', grund: '' });
+  const [localEdit, setLocalEdit] = React.useState({});
+
+  const mid = mitglied?.mitglied_id || mitglied?.id;
+
+  const loadAnpassungen = async () => {
+    try {
+      const r = await axios.get(`/vertrag-anpassungen/mitglied/${mid}`);
+      setVertragAnpassungen(r.data.anpassungen || []);
+    } catch {}
+  };
+
+  React.useEffect(() => { if (mid) loadAnpassungen(); }, [mid]);
+
+  const handleOpen = async () => {
+    if (!open) await loadAnpassungen();
+    setOpen(v => !v);
+  };
+
+  const typLabels = { schueler: 'Schüler', student: 'Student', azubi: 'Azubi', rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause' };
+  const statusColors = { genehmigt: '#4caf50', beantragt: '#ff9800', abgelehnt: '#f44336', abgelaufen: '#888' };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const aktive = vertragAnpassungen.filter(a => a.status === 'genehmigt' && a.gueltig_bis >= today);
+
+  return (
+    <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
+      <button
+        onClick={handleOpen}
+        style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.82rem', padding: '0 0 0.25rem 0' }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          🎓 <strong style={{ color: 'var(--text-primary)' }}>Vertragsanpassungen</strong>
+          {aktive.length > 0 && (
+            <span style={{ background: '#4caf5022', color: '#4caf50', borderRadius: 10, padding: '1px 7px', fontSize: '0.72rem', fontWeight: 600 }}>
+              {aktive.length} aktiv
+            </span>
+          )}
+        </span>
+        <span style={{ fontSize: '0.8rem' }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+
+          {/* Bestehende Anpassungen */}
+          {vertragAnpassungen.length === 0 && (
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>Keine Anpassungen vorhanden.</p>
+          )}
+          {vertragAnpassungen.map(a => {
+            const isEditing = editingAnpassungId === a.id;
+            const edit = localEdit[a.id] || { typ: a.typ, neuer_betrag: a.neuer_betrag, gueltig_von: a.gueltig_von?.slice(0,10), gueltig_bis: a.gueltig_bis?.slice(0,10), grund: a.grund || '' };
+            return (
+              <div key={a.id} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '0.6rem 0.8rem', border: `1px solid ${statusColors[a.status] || '#555'}30`, display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <div>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>{typLabels[a.typ] || a.typ}</span>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
+                      {new Date(a.gueltig_von).toLocaleDateString('de-DE')} – {new Date(a.gueltig_bis).toLocaleDateString('de-DE')}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.875rem' }}>{parseFloat(a.neuer_betrag).toFixed(2).replace('.', ',')} €</span>
+                    <span style={{ background: `${statusColors[a.status] || '#555'}18`, color: statusColors[a.status] || '#888', padding: '1px 7px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 600 }}>{a.status}</span>
+                    {a.status === 'genehmigt' && (
+                      <>
+                        <button onClick={() => {
+                          if (isEditing) { setEditingAnpassungId(null); return; }
+                          setEditingAnpassungId(a.id);
+                          setLocalEdit(prev => ({ ...prev, [a.id]: { typ: a.typ, neuer_betrag: a.neuer_betrag, gueltig_von: a.gueltig_von?.slice(0,10), gueltig_bis: a.gueltig_bis?.slice(0,10), grund: a.grund || '' } }));
+                        }} style={{ padding: '2px 8px', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.75rem' }}>
+                          {isEditing ? '✕' : '✏️'}
+                        </button>
+                        <button onClick={async () => {
+                          try {
+                            const r2 = await axios.post(`/vertrag-anpassungen/${a.id}/neu-anwenden`);
+                            await loadAnpassungen();
+                            alert(`✓ ${r2.data.angepasste_beitraege} Beitrag/Beiträge aktualisiert.`);
+                          } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
+                        }} style={{ padding: '2px 8px', borderRadius: 5, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)', color: '#818cf8', cursor: 'pointer', fontSize: '0.75rem' }}>
+                          🔄
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Inline-Edit */}
+                {isEditing && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginTop: '0.2rem' }}>
+                    {[
+                      { label: 'Typ', key: 'typ', type: 'select' },
+                      { label: 'Betrag (€)', key: 'neuer_betrag', type: 'number' },
+                      { label: 'Gültig von', key: 'gueltig_von', type: 'date' },
+                      { label: 'Gültig bis', key: 'gueltig_bis', type: 'date' },
+                    ].map(({ label, key, type }) => (
+                      <div key={key}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: 2 }}>{label}</div>
+                        {type === 'select' ? (
+                          <select value={edit[key]} onChange={e => setLocalEdit(prev => ({ ...prev, [a.id]: { ...edit, [key]: e.target.value } }))}
+                            style={{ width: '100%', padding: '0.35rem', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
+                            <option value="schueler">Schüler</option>
+                            <option value="student">Student</option>
+                            <option value="azubi">Azubi</option>
+                            <option value="rentner">Rentner</option>
+                            <option value="sonstiges">Sonstiges</option>
+                          </select>
+                        ) : (
+                          <input type={type} step={type === 'number' ? '0.01' : undefined} value={edit[key]}
+                            onChange={e => setLocalEdit(prev => ({ ...prev, [a.id]: { ...edit, [key]: e.target.value } }))}
+                            style={{ width: '100%', padding: '0.35rem', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-primary)', fontSize: '0.82rem' }} />
+                        )}
+                      </div>
+                    ))}
+                    <div style={{ gridColumn: '1/-1' }}>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: 2 }}>Grund</div>
+                      <input type="text" value={edit.grund}
+                        onChange={e => setLocalEdit(prev => ({ ...prev, [a.id]: { ...edit, grund: e.target.value } }))}
+                        style={{ width: '100%', padding: '0.35rem', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-primary)', fontSize: '0.82rem' }} />
+                    </div>
+                    <div style={{ gridColumn: '1/-1' }}>
+                      <button onClick={async () => {
+                        try {
+                          await axios.put(`/vertrag-anpassungen/${a.id}`, { typ: edit.typ, neuer_betrag: parseFloat(edit.neuer_betrag), gueltig_von: edit.gueltig_von, gueltig_bis: edit.gueltig_bis, grund: edit.grund || null });
+                          await loadAnpassungen();
+                          setEditingAnpassungId(null);
+                        } catch (err) { alert('Fehler: ' + (err.response?.data?.error || err.message)); }
+                      }} style={{ width: '100%', padding: '0.4rem', borderRadius: 5, background: 'rgba(76,175,80,0.12)', border: '1px solid #4caf50', color: '#4caf50', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>
+                        ✓ Speichern
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Neue Anpassung */}
+          {!showNewForm ? (
+            <button onClick={() => { setShowNewForm(true); setLocalForm({ typ: 'schueler', neuer_betrag: '', gueltig_von: '', gueltig_bis: '', grund: '' }); setError(''); }}
+              style={{ padding: '0.4rem 0.8rem', borderRadius: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.82rem', alignSelf: 'flex-start' }}>
+              + Neue Anpassung
+            </button>
+          ) : (
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '0.75rem', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>Neue Vertragsanpassung</span>
+                <button onClick={() => setShowNewForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '1rem' }}>✕</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem' }}>
+                {[
+                  { label: 'Typ', key: 'typ', type: 'select' },
+                  { label: 'Neuer Betrag (€)', key: 'neuer_betrag', type: 'number' },
+                  { label: 'Gültig von', key: 'gueltig_von', type: 'date' },
+                  { label: 'Gültig bis', key: 'gueltig_bis', type: 'date' },
+                ].map(({ label, key, type }) => (
+                  <div key={key}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: 2 }}>{label}</div>
+                    {type === 'select' ? (
+                      <select value={localForm[key]} onChange={e => setLocalForm(f => ({ ...f, [key]: e.target.value }))}
+                        style={{ width: '100%', padding: '0.35rem', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
+                        <option value="schueler">Schüler</option>
+                        <option value="student">Student</option>
+                        <option value="azubi">Azubi</option>
+                        <option value="rentner">Rentner</option>
+                        <option value="sonstiges">Sonstiges</option>
+                      </select>
+                    ) : (
+                      <input type={type} step={type === 'number' ? '0.01' : undefined} value={localForm[key]}
+                        onChange={e => setLocalForm(f => ({ ...f, [key]: e.target.value }))}
+                        style={{ width: '100%', padding: '0.35rem', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-primary)', fontSize: '0.82rem' }} />
+                    )}
+                  </div>
+                ))}
+                <div style={{ gridColumn: '1/-1' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: 2 }}>Grund (optional)</div>
+                  <input type="text" value={localForm.grund} onChange={e => setLocalForm(f => ({ ...f, grund: e.target.value }))}
+                    style={{ width: '100%', padding: '0.35rem', borderRadius: 5, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-primary)', fontSize: '0.82rem' }} />
+                </div>
+              </div>
+              {error && <div style={{ fontSize: '0.8rem', color: '#ef4444' }}>{error}</div>}
+              <button
+                disabled={loading}
+                onClick={async () => {
+                  if (!localForm.neuer_betrag || !localForm.gueltig_von || !localForm.gueltig_bis) { setError('Bitte Betrag, Beginn und Ende ausfüllen.'); return; }
+                  setLoading(true); setError('');
+                  try {
+                    const dojoParam = mitglied?.dojo_id ? `?dojo_id=${mitglied.dojo_id}` : '';
+                    await axios.post(`/vertrag-anpassungen${dojoParam}`, {
+                      mitglied_id: mid, typ: localForm.typ,
+                      alter_betrag: vertrag.monatsbeitrag || 0,
+                      neuer_betrag: parseFloat(localForm.neuer_betrag),
+                      gueltig_von: localForm.gueltig_von, gueltig_bis: localForm.gueltig_bis,
+                      grund: localForm.grund || null
+                    });
+                    await loadAnpassungen();
+                    setShowNewForm(false);
+                  } catch (err) { setError(err.response?.data?.error || err.message || 'Fehler'); }
+                  finally { setLoading(false); }
+                }}
+                style={{ padding: '0.45rem', borderRadius: 5, background: 'rgba(76,175,80,0.12)', border: '1px solid #4caf50', color: '#4caf50', cursor: loading ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>
+                {loading ? '⏳ Speichern…' : '✓ Anpassung speichern'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default MitgliedDetailShared;
