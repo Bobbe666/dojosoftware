@@ -27,6 +27,7 @@ import AutoLastschriftTab from './AutoLastschriftTab';
 import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
 import VerbandUrkundenRegister from './VerbandUrkundenRegister';
+import NationalkaderDashboard from './NationalkaderDashboard';
 import '../styles/VerbandDashboard.css';
 
 const VerbandDashboard = () => {
@@ -122,6 +123,7 @@ const VerbandDashboard = () => {
     { id: 'shop', label: 'Artikel/Shop', icon: ShoppingCart },
     { id: 'entwicklung', label: 'Entwicklung', icon: Target },
     { id: 'support', label: 'Support', icon: Ticket },
+    { id: 'nationalkader', label: 'Nationalkader', icon: Award },
     { id: 'turniere', label: 'Turniere', icon: Trophy },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'finanzen', label: 'Finanzen', icon: Euro },
@@ -562,6 +564,7 @@ const VerbandDashboard = () => {
         {activeTab === 'shop' && <ArtikelVerwaltung />}
         {activeTab === 'entwicklung' && <ZieleEntwicklung bereich="verband" />}
         {activeTab === 'support' && <SupportTickets bereich="verband" />}
+        {activeTab === 'nationalkader' && <NationalkaderDashboard />}
         {activeTab === 'turniere' && <TurniereContent />}
         {activeTab === 'events' && <EventsContent />}
         {activeTab === 'finanzen' && <FinanzenContent />}

@@ -218,6 +218,16 @@ app.use(logUnauthorizedAccess);
 
 logger.success('Security-Monitoring aktiviert', { features: ['SQL-Injection', 'XSS', 'Brute-Force', 'Path-Traversal'] });
 
+// =============================================
+// GLOBALES WRITE-AUDIT LOGGING
+// =============================================
+// Protokolliert automatisch ALLE POST/PUT/PATCH/DELETE-Requests mit User, IP, Body
+// Läuft NACH Security-Monitor, NACH JSON-Parsing, NACH Auth-Middleware
+// Eingebunden nach allen anderen globalen Middlewares, direkt vor den Routen
+const writeAuditMiddleware = require('./middleware/writeAuditMiddleware');
+app.use('/api', writeAuditMiddleware);
+logger.success('Write-Audit-Logging aktiviert', { coverage: 'POST/PUT/PATCH/DELETE auf /api/*' });
+
 // API Documentation mit Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
@@ -1311,6 +1321,17 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "demo-termine", error: error.message });
 }
 
+// Gutschein-System (Premium Feature)
+// Öffentlich: GET /api/gutscheine/public/:code  (kein Auth erforderlich — in Route definiert)
+// Geschützt:  alle anderen /api/gutscheine/... Endpunkte (requireFeature('gutscheine'))
+try {
+  const gutscheineRouter = require(path.join(__dirname, "routes", "gutscheine.js"));
+  app.use("/api/gutscheine", gutscheineRouter);
+  logger.success("Route gemountet", { path: "/api/gutscheine" });
+} catch (error) {
+  logger.error("Fehler beim Laden der Route", { route: "gutscheine", error: error.message });
+}
+
 // 10.3 WEBHOOKS - Zapier & externe Integrationen
 try {
   const webhooksRouter = require(path.join(__dirname, "routes", "webhooks.js"));
@@ -1383,6 +1404,19 @@ try {
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
       route: 'verband-urkunden',
+      error: error.message,
+      stack: error.stack
+    });
+}
+
+// NATIONALKADER
+try {
+  const nationalkaderRouter = require(path.join(__dirname, "routes", "nationalkader.js"));
+  app.use("/api/nationalkader", nationalkaderRouter);
+  logger.success('Route gemountet', { path: '/api/nationalkader' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', {
+      route: 'nationalkader',
       error: error.message,
       stack: error.stack
     });
@@ -2217,6 +2251,47 @@ try {
   logger.success("Route gemountet", { path: "/api/hof" });
 } catch (error) {
   logger.error("Fehler beim Laden der Route", { route: "hof", error: error.message });
+}
+
+// ─── HOMEPAGE BUILDER ─────────────────────────────────────────────────────────
+// Premium Feature: Dojo-Homepages unter *.dojo-pages.de
+// Routen: /api/homepage/** (API) + /site/:slug (HTML-Render via Pfad)
+//         Subdomain-Routing: Host-Header wird ausgewertet (*.dojo-pages.de)
+try {
+  const homepageRouter = require('./routes/homepage');
+  app.use('/api/homepage', homepageRouter);
+  logger.success('Route gemountet', { path: '/api/homepage' });
+
+  // ── Subdomain-Routing für *.dojo-pages.de ────────────────────────────────
+  // Nginx sendet alle *.dojo-pages.de Anfragen an diesen Backend-Port.
+  // Aus dem Host-Header extrahieren wir den Slug (erster Teil vor dem ersten Punkt).
+  // Beispiel: "kampfkunst-schreiner.dojo-pages.de" → slug = "kampfkunst-schreiner"
+  app.use((req, res, next) => {
+    const host = (req.headers.host || '').toLowerCase();
+    const isDojoPagesSubdomain = host.includes('.dojo-pages.de') && !host.startsWith('www.');
+    if (!isDojoPagesSubdomain) return next();
+
+    const slug = host.split('.')[0];
+    if (!slug || !/^[a-z0-9-]+$/.test(slug)) return next();
+
+    // Intern auf den Render-Endpunkt umleiten
+    req.url = `/render/${slug}`;
+    homepageRouter(req, res, next);
+  });
+
+  // ── Fallback: /site/:slug (direkte URL für Tests ohne eigene Domain) ─────
+  app.get('/site/:slug', (req, res) => {
+    const slug = req.params.slug || '';
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return res.status(400).send('Ungültiger Slug');
+    }
+    // Intern auf Render-Route delegieren
+    req.url = `/render/${slug}`;
+    homepageRouter(req, res, () => res.status(404).send('Nicht gefunden'));
+  });
+
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'homepage', error: error.message });
 }
 
 // ─── Visitor Chat Socket Events ───────────────────────────────────────────────
