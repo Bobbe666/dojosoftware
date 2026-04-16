@@ -205,6 +205,46 @@ router.get('/dojos', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/dojos/statistics - Statistiken für Dojo-Übersicht
+router.get('/dojos/statistics', requireSuperAdmin, async (req, res) => {
+  try {
+    const pool = db.promise();
+    const [[stats]] = await pool.query(`
+      SELECT
+        COUNT(*) as total_dojos,
+        SUM(CASE WHEN ist_aktiv = 1 THEN 1 ELSE 0 END) as active_dojos,
+        SUM(CASE WHEN subscription_status = 'trial' OR trial_ends_at > NOW() THEN 1 ELSE 0 END) as trial_dojos,
+        SUM(CASE WHEN subscription_status = 'active' AND (trial_ends_at IS NULL OR trial_ends_at <= NOW()) THEN 1 ELSE 0 END) as paid_dojos
+      FROM dojo
+    `);
+    const [[memberStats]] = await pool.query(`SELECT COUNT(*) as total_members FROM mitglieder WHERE aktiv = 1`);
+    const [[revenueStats]] = await pool.query(`
+      SELECT COALESCE(SUM(betrag), 0) as monthly_revenue
+      FROM rechnungen
+      WHERE status = 'bezahlt' AND MONTH(erstellt_am) = MONTH(NOW()) AND YEAR(erstellt_am) = YEAR(NOW())
+    `);
+    res.json({
+      success: true,
+      statistics: {
+        total_dojos: stats.total_dojos || 0,
+        active_dojos: stats.active_dojos || 0,
+        trial_dojos: stats.trial_dojos || 0,
+        paid_dojos: stats.paid_dojos || 0,
+        total_members: memberStats.total_members || 0,
+        monthly_revenue: revenueStats.monthly_revenue || 0
+      }
+    });
+  } catch (err) {
+    logger.error('Fehler bei /dojos/statistics:', err);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
+// POST /api/admin/sync-features - Feature-Sync (wird von Frontend aufgerufen, Daten kommen aus Migrationen)
+router.post('/sync-features', requireSuperAdmin, async (req, res) => {
+  res.json({ success: true, message: 'Synchronisiert' });
+});
+
 // GET /api/admin/dojos/:id - Einzelnes Dojo abrufen
 router.get('/dojos/:id', requireSuperAdmin, async (req, res) => {
   try {
