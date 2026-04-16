@@ -7,6 +7,7 @@ const logger = require('../../utils/logger');
 const db = require('../../db');
 const router = express.Router();
 const { requireSuperAdmin, calculateAllDojosStorageUsage } = require('./shared');
+const { syncPlanFeatures } = require('../../middleware/featureAccess');
 
 // GET /features - Verfügbare Features auflisten
 router.get('/features', requireSuperAdmin, async (req, res) => {
@@ -194,6 +195,30 @@ router.post('/dojos', requireSuperAdmin, async (req, res) => {
     );
 
     logger.info('Neues Dojo angelegt:', { dojoname, id: result.insertId });
+
+    // Auto: Akquise-Kontakt anlegen falls noch kein Eintrag für dieses Dojo
+    try {
+      const pool = db.promise();
+      const [existing] = await pool.query(
+        'SELECT id FROM akquise_kontakte WHERE organisation=? OR verbandsmitgliedschaft_id=?',
+        [dojoname, result.insertId]
+      );
+      if (existing.length === 0) {
+        await pool.query(`
+          INSERT INTO akquise_kontakte
+            (organisation, ansprechpartner, email, telefon, strasse, plz, ort, land,
+             typ, status, prioritaet, quelle, verbandsmitgliedschaft_id, notiz)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'schule', 'interessiert', 'hoch', 'trial', ?, ?)
+        `, [dojoname, inhaber||null, email||null, telefon||null,
+            (strasse||'') + (hausnummer ? ' ' + hausnummer : '')||null,
+            plz||null, ort||null, land||'Deutschland',
+            result.insertId, `Trial-Lizenz angelegt — Conversion-Follow-up`]);
+        logger.info('[Akquise] Auto-Kontakt für neues Dojo angelegt:', dojoname);
+      }
+    } catch (akErr) {
+      logger.warn('[Akquise] Auto-Kontakt Fehler (nicht kritisch):', akErr.message);
+    }
+
     res.status(201).json({ success: true, message: 'Dojo erfolgreich angelegt', dojo_id: result.insertId, dojoname, subdomain });
   } catch (error) {
     logger.error('Fehler beim Anlegen des Dojos:', { error: error.message, stack: error.stack });
@@ -507,6 +532,9 @@ router.put('/dojos/:id/activate-subscription', requireSuperAdmin, async (req, re
     );
 
     await connection.commit();
+
+    // Feature-Flags aus plan_feature_mapping synchronisieren (nach commit!)
+    await syncPlanFeatures(id, plan_type);
 
     logger.info('Subscription für Dojo aktiviert:', {
       dojo_id: id,

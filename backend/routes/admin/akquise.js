@@ -8,6 +8,7 @@
 const express = require('express');
 const router = express.Router();
 const https = require('https');
+const cron = require('node-cron');
 const db = require('../../db');
 const logger = require('../../utils/logger');
 const { requireSuperAdmin } = require('./shared');
@@ -482,6 +483,111 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// GET /api/admin/akquise/kontakte/check-duplicate?organisation=X
+router.get('/kontakte/check-duplicate', async (req, res) => {
+  const { organisation } = req.query;
+  if (!organisation || organisation.length < 3) return res.json({ success: true, duplikate: [] });
+  try {
+    const [rows] = await pool.query(
+      'SELECT id, organisation, status, ort FROM akquise_kontakte WHERE organisation LIKE ? LIMIT 5',
+      [`%${organisation.trim()}%`]
+    );
+    res.json({ success: true, duplikate: rows });
+  } catch (err) {
+    res.json({ success: true, duplikate: [] });
+  }
+});
+
+// POST /api/admin/akquise/kontakte/bulk-update
+router.post('/kontakte/bulk-update', async (req, res) => {
+  const { ids, status, prioritaet } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ success: false, message: 'Keine IDs' });
+  const updates = [];
+  const params = [];
+  if (status)     { updates.push('status=?');     params.push(status); }
+  if (prioritaet) { updates.push('prioritaet=?'); params.push(prioritaet); }
+  if (updates.length === 0) return res.status(400).json({ success: false, message: 'Kein Feld' });
+  try {
+    const placeholders = ids.map(() => '?').join(',');
+    params.push(...ids.map(Number));
+    await pool.query(`UPDATE akquise_kontakte SET ${updates.join(', ')} WHERE id IN (${placeholders})`, params);
+    res.json({ success: true, updated: ids.length });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/akquise/kontakte/csv-import
+router.post('/kontakte/csv-import', async (req, res) => {
+  const { csv } = req.body;
+  if (!csv) return res.status(400).json({ success: false, message: 'Kein Inhalt' });
+  const lines = csv.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return res.status(400).json({ success: false, message: 'Kopfzeile + Daten erforderlich' });
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const parseLine = (l) => l.split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
+  const rawHeaders = parseLine(lines[0]);
+  const headers = rawHeaders.map(h => {
+    const low = h.toLowerCase();
+    if (/organisation|name|verein|schule/.test(low)) return 'organisation';
+    if (/ansprechpartner|kontaktperson/.test(low))    return 'ansprechpartner';
+    if (/e.?mail|mail/.test(low))                     return 'email';
+    if (/telefon|tel\b|phone/.test(low))              return 'telefon';
+    if (/\bort\b|stadt|city/.test(low))               return 'ort';
+    if (/plz|postleitzahl/.test(low))                 return 'plz';
+    if (/strasse|stra[ß]e|address/.test(low))         return 'strasse';
+    if (/sportart|stil|disziplin/.test(low))          return 'sportart';
+    return low;
+  });
+  const results = { importiert: 0, duplikate: 0, fehler: [] };
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = cols[idx] || ''; });
+    const org = (row.organisation || '').trim();
+    if (org.length < 2) { results.fehler.push(`Zeile ${i + 1}: Kein Name`); continue; }
+    try {
+      await pool.query(`
+        INSERT INTO akquise_kontakte
+          (organisation, email, ort, plz, strasse, telefon, ansprechpartner, sportart, typ, status, prioritaet, quelle)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'schule', 'neu', 'mittel', 'manuell')
+      `, [org, row.email||null, row.ort||null, row.plz||null, row.strasse||null,
+          row.telefon||null, row.ansprechpartner||null, row.sportart||null]);
+      results.importiert++;
+    } catch (err) {
+      if (err.code === 'ER_DUP_ENTRY') results.duplikate++;
+      else results.fehler.push(`Zeile ${i + 1} (${org}): ${err.message}`);
+    }
+  }
+  res.json({ success: true, ...results });
+});
+
+// POST /api/admin/akquise/kontakte/:id/create-dojo — Gewonnenen Kontakt als Dojo anlegen
+router.post('/kontakte/:id/create-dojo', async (req, res) => {
+  const { dojoname, subdomain, inhaber, email } = req.body;
+  if (!dojoname || !inhaber) return res.status(400).json({ success: false, message: 'dojoname und inhaber sind Pflichtfelder' });
+  try {
+    const [[kontakt]] = await pool.query('SELECT * FROM akquise_kontakte WHERE id=?', [req.params.id]);
+    if (!kontakt) return res.status(404).json({ success: false, message: 'Kontakt nicht gefunden' });
+    if (subdomain) {
+      const [existing] = await pool.query('SELECT id FROM dojo WHERE subdomain=?', [subdomain]);
+      if (existing.length > 0) return res.status(400).json({ success: false, message: 'Subdomain bereits vergeben' });
+    }
+    const [result] = await pool.query(`
+      INSERT INTO dojo (dojoname, subdomain, inhaber, email, telefon, strasse, plz, ort, land, ist_aktiv, onboarding_completed, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NOW())
+    `, [dojoname, subdomain||null, inhaber,
+        email||kontakt.email||null, kontakt.telefon||null,
+        kontakt.strasse||null, kontakt.plz||null, kontakt.ort||null,
+        kontakt.land||'Deutschland']);
+    await pool.query('UPDATE akquise_kontakte SET verbandsmitgliedschaft_id=? WHERE id=?', [result.insertId, req.params.id]);
+    logger.info(`[Akquise] Dojo aus Kontakt angelegt: ${dojoname} id=${result.insertId}`);
+    res.status(201).json({ success: true, dojo_id: result.insertId, message: `Dojo "${dojoname}" angelegt` });
+  } catch (err) {
+    logger.error('[Akquise] create-dojo Fehler:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/admin/akquise/kontakte/:id
 router.get('/kontakte/:id', async (req, res) => {
   try {
@@ -798,5 +904,113 @@ router.post('/tda-events/importieren', async (req, res) => {
   }
   res.json({ success: true, importiert, duplikate, message: `${importiert} Vereine importiert` });
 });
+
+// ============================================================================
+// TRIAL-LIZENZEN INTEGRATION
+// ============================================================================
+
+// GET /api/admin/akquise/trial-dojos — Trial-Dojos die noch kein Akquise-Follow-up haben
+router.get('/trial-dojos', async (req, res) => {
+  try {
+    const [dojos] = await pool.query(`
+      SELECT d.id, d.dojoname, d.inhaber, d.email, d.telefon, d.ort, d.plz, d.strasse,
+             d.subdomain, d.created_at,
+             ds.plan_name, ds.trial_ends_at,
+             DATEDIFF(ds.trial_ends_at, NOW()) AS trial_tage_verbleibend,
+             ak.id AS akquise_id, ak.status AS akquise_status
+      FROM dojo d
+      LEFT JOIN dojo_subscriptions ds ON d.id = ds.dojo_id
+      LEFT JOIN akquise_kontakte ak ON (
+        ak.organisation = d.dojoname OR ak.verbandsmitgliedschaft_id = d.id
+      )
+      WHERE (ds.plan_name = 'trial' OR d.subscription_status = 'trial')
+        AND d.ist_aktiv = 1
+      ORDER BY d.created_at DESC
+      LIMIT 100
+    `);
+    res.json({ success: true, dojos });
+  } catch (err) {
+    logger.error('[Akquise] GET /trial-dojos Fehler:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/akquise/trial-dojos/importieren — Trial-Dojos als Akquise-Kontakte anlegen
+router.post('/trial-dojos/importieren', async (req, res) => {
+  const { dojo_ids } = req.body;
+  if (!Array.isArray(dojo_ids) || dojo_ids.length === 0) return res.status(400).json({ success: false, message: 'Keine IDs' });
+  let importiert = 0, duplikate = 0;
+  for (const dojoId of dojo_ids) {
+    try {
+      const [[dojo]] = await pool.query('SELECT * FROM dojo WHERE id=?', [dojoId]);
+      if (!dojo) continue;
+      const [existing] = await pool.query(
+        'SELECT id FROM akquise_kontakte WHERE organisation=? OR verbandsmitgliedschaft_id=?',
+        [dojo.dojoname, dojoId]
+      );
+      if (existing.length > 0) { duplikate++; continue; }
+      await pool.query(`
+        INSERT INTO akquise_kontakte
+          (organisation, ansprechpartner, email, telefon, strasse, plz, ort, land,
+           typ, status, prioritaet, quelle, verbandsmitgliedschaft_id, notiz)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'schule', 'interessiert', 'hoch', 'trial', ?, ?)
+      `, [dojo.dojoname, dojo.inhaber||null, dojo.email||null, dojo.telefon||null,
+          dojo.strasse||null, dojo.plz||null, dojo.ort||null, dojo.land||'Deutschland',
+          dojoId, `Trial-Lizenz seit ${new Date(dojo.created_at).toLocaleDateString('de-DE')} — Conversion-Follow-up`]);
+      importiert++;
+    } catch (err) {
+      if (err.code !== 'ER_DUP_ENTRY') logger.error('[Akquise] trial-import Fehler:', err.message);
+      else duplikate++;
+    }
+  }
+  res.json({ success: true, importiert, duplikate, message: `${importiert} Trial-Dojos importiert` });
+});
+
+// ─── Tägliche Follow-up Erinnerung — 08:00 Uhr ───────────────────────────────
+cron.schedule('0 8 * * *', async () => {
+  try {
+    const [faellig] = await pool.query(`
+      SELECT id, organisation, naechste_aktion, naechste_aktion_info, status
+      FROM akquise_kontakte
+      WHERE naechste_aktion IS NOT NULL
+        AND naechste_aktion <= CURDATE()
+        AND status NOT IN ('gewonnen','abgelehnt')
+      ORDER BY naechste_aktion ASC
+      LIMIT 50
+    `);
+    if (faellig.length === 0) return;
+    const rows = faellig.map(k =>
+      `<tr>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee"><strong>${k.organisation}</strong></td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee">${k.naechste_aktion_info || '—'}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;color:#6b7280">${new Date(k.naechste_aktion).toLocaleDateString('de-DE')}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #eee;color:#f59e0b;font-weight:600">${k.status}</td>
+      </tr>`
+    ).join('');
+    const html = `
+      <h2 style="color:#1e3a5f;font-family:Arial,sans-serif">Follow-Up Erinnerung — Akquise CRM</h2>
+      <p style="font-family:Arial,sans-serif">Heute sind <strong>${faellig.length} Follow-up(s)</strong> fällig:</p>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;font-family:Arial,sans-serif;margin-top:12px">
+        <thead><tr style="background:#f3f4f6">
+          <th style="padding:8px 10px;text-align:left">Organisation</th>
+          <th style="padding:8px 10px;text-align:left">Geplante Aktion</th>
+          <th style="padding:8px 10px;text-align:left">Datum</th>
+          <th style="padding:8px 10px;text-align:left">Status</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p style="margin-top:16px;color:#6b7280;font-size:12px;font-family:Arial,sans-serif">
+        Bitte in der Akquise-Verwaltung nachverfolgen (Lizenzen → Akquise).
+      </p>`;
+    await sendEmailForDojo({
+      to: 'info@tda-intl.com',
+      subject: `[CRM] ${faellig.length} Follow-up${faellig.length !== 1 ? 's' : ''} fällig heute`,
+      html,
+    }, 2);
+    logger.info(`[Akquise Cron] Follow-up-Erinnerung: ${faellig.length} Kontakte`);
+  } catch (err) {
+    logger.error('[Akquise Cron] Fehler:', err.message);
+  }
+}, { timezone: 'Europe/Berlin' });
 
 module.exports = router;
