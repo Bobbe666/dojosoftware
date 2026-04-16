@@ -351,26 +351,11 @@ const AkquiseDashboard = () => {
 
   const printBrief = () => {
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-    <title>Brief — ${selectedKontakt?.organisation}</title>
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:Arial,sans-serif;font-size:11pt;line-height:1.6;color:#000;background:#fff}
-      @page{size:A4;margin:2.5cm 2cm 2cm 2.5cm}
-      @media print{body{margin:0}.toolbar{display:none!important}}
-      @media screen{body{max-width:21cm;margin:1cm auto;padding:2.5cm 2cm 2cm 2.5cm;background:#fff;box-shadow:0 2px 20px rgba(0,0,0,0.15)}}
-      p{margin-bottom:0.8em}ul,ol{margin-left:1.5em;margin-bottom:0.8em}
-      h1,h2,h3{font-size:11pt;font-weight:bold}table{border-collapse:collapse}
-      .toolbar{background:#1e3a5f;color:#fff;padding:10px 20px;display:flex;align-items:center;gap:12px;
-        margin:-2.5cm -2cm 2cm -2.5cm;font-family:Arial,sans-serif;font-size:13px}
-    </style></head><body>
-    <div class="toolbar">
-      <strong>Brief-Vorschau (DIN A4)</strong>
-      <button onclick="window.print()" style="background:#DAA520;color:#000;border:none;padding:7px 16px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px">🖨 Drucken / Als PDF speichern</button>
-      <button onclick="window.close()" style="background:none;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:7px 14px;border-radius:4px;cursor:pointer;font-size:13px">Schließen</button>
-    </div>
-    ${briefHtml}
-    </body></html>`);
+    // briefHtml ist bereits ein vollständiges HTML-Dokument aus buildLetterheadHtml
+    // Druckbutton-Toolbar per JS injizieren
+    const toolbar = `<div id="print-toolbar" style="position:fixed;top:0;left:0;right:0;z-index:9999;background:#1e3a5f;color:#fff;padding:8px 20px;display:flex;align-items:center;gap:12px;font-family:Arial,sans-serif;font-size:13px;print-color-adjust:exact"><strong>Brief-Vorschau (DIN A4)</strong><button onclick="window.print()" style="background:#DAA520;color:#000;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-weight:bold">🖨 Drucken / PDF</button><button onclick="window.close()" style="background:none;color:#fff;border:1px solid rgba(255,255,255,0.4);padding:6px 12px;border-radius:4px;cursor:pointer">Schließen</button><style>@media print{#print-toolbar{display:none!important}}</style></div><div style="height:44px"></div>`;
+    const html = briefHtml.replace('</body>', toolbar + '</body>');
+    w.document.write(html);
     w.document.close();
   };
 
@@ -1123,12 +1108,14 @@ const AkquiseDashboard = () => {
       {briefHtml && (
         <div>
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
-            <strong>Vorschau</strong>
+            <strong style={{ color:'var(--text)' }}>Vorschau</strong>
             <button className="btn-primary" onClick={printBrief}><Printer size={14}/> Drucken / PDF (A4)</button>
           </div>
-          <div style={{ border:'1px solid var(--border)', borderRadius:8, padding:28, background:'#fff', color:'#000',
-            fontFamily:'Arial,sans-serif', fontSize:'11pt', lineHeight:1.6, maxWidth:'700px' }}
-            dangerouslySetInnerHTML={{ __html: briefHtml }}/>
+          <iframe
+            srcDoc={briefHtml}
+            style={{ width:'100%', height:'1060px', border:'1px solid var(--border)', borderRadius:8, background:'#fff' }}
+            title="Brief-Vorschau"
+          />
         </div>
       )}
     </div>
