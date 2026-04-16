@@ -915,7 +915,7 @@ router.get('/trial-dojos', async (req, res) => {
     const [dojos] = await pool.query(`
       SELECT d.id, d.dojoname, d.inhaber, d.email, d.telefon, d.ort, d.plz, d.strasse,
              d.subdomain, d.created_at,
-             ds.plan_name, ds.trial_ends_at,
+             ds.plan_type, ds.trial_ends_at,
              DATEDIFF(ds.trial_ends_at, NOW()) AS trial_tage_verbleibend,
              ak.id AS akquise_id, ak.status AS akquise_status
       FROM dojo d
@@ -923,7 +923,7 @@ router.get('/trial-dojos', async (req, res) => {
       LEFT JOIN akquise_kontakte ak ON (
         ak.organisation = d.dojoname OR ak.verbandsmitgliedschaft_id = d.id
       )
-      WHERE (ds.plan_name = 'trial' OR d.subscription_status = 'trial')
+      WHERE (ds.plan_type = 'trial' OR d.subscription_status = 'trial')
         AND d.ist_aktiv = 1
       ORDER BY d.created_at DESC
       LIMIT 100
