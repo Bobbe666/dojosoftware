@@ -8,11 +8,14 @@
 const express = require('express');
 const router = express.Router();
 const https = require('https');
+const path = require('path');
+const fs = require('fs');
 const cron = require('node-cron');
 const db = require('../../db');
 const logger = require('../../utils/logger');
 const { requireSuperAdmin } = require('./shared');
 const { sendEmailForDojo } = require('../../services/emailService');
+const { buildLetterheadHtml, formatDate } = require('../../utils/vorlagenPdfGenerator');
 
 const pool = db.promise();
 const EVENTS_API_BASE = 'https://events.tda-intl.org/api';
@@ -788,26 +791,88 @@ router.post('/kontakte/:id/email', async (req, res) => {
 // POST /api/admin/akquise/kontakte/:id/brief — Brief-Vorschau (HTML zum Drucken)
 router.post('/kontakte/:id/brief', async (req, res) => {
   const { html_raw, betreff_raw, vorlage_name } = req.body;
+  const TDA_DOJO_ID = 2;
   try {
     const [[kontakt]] = await pool.query('SELECT * FROM akquise_kontakte WHERE id=?', [req.params.id]);
     if (!kontakt) return res.status(404).json({ success: false, message: 'Kontakt nicht gefunden' });
-    const [[dojoInfo]] = await pool.query(
-      'SELECT dojoname, email, inhaber, telefon, internet FROM dojo WHERE id = 2 LIMIT 1'
+
+    // Dojo-Stammdaten (TDA International = dojo_id 2)
+    const [[dojo]] = await pool.query(
+      'SELECT dojoname, inhaber, strasse, hausnummer, plz, ort, telefon, email, internet, bank_name, bank_iban, bank_bic FROM dojo WHERE id=? LIMIT 1',
+      [TDA_DOJO_ID]
     ).catch(() => [[null]]);
-    const absender = {
-      name: dojoInfo?.dojoname || 'Tiger & Dragon Association - International',
-      email: dojoInfo?.email || 'info@tda-intl.com',
-      inhaber: dojoInfo?.inhaber || 'Sascha Schreiner',
-      telefon: dojoInfo?.telefon || '',
-      internet: dojoInfo?.internet || 'www.tda-intl.com',
+
+    // Brief-Einstellungen laden (farbe_primaer, Ränder, Schrift etc.)
+    const [[einstellungen]] = await pool.query(
+      'SELECT * FROM brief_einstellungen WHERE dojo_id=? LIMIT 1', [TDA_DOJO_ID]
+    ).catch(() => [[null]]);
+
+    // Absender-Profil aufbauen
+    const absenderProfil = {
+      organisation: dojo?.dojoname || 'Tiger & Dragon Association – International',
+      inhaber: dojo?.inhaber || 'Sascha Schreiner',
+      strasse: dojo?.strasse || '',
+      hausnummer: dojo?.hausnummer || '',
+      plz: dojo?.plz || '',
+      ort: dojo?.ort || '',
+      telefon: dojo?.telefon || '',
+      email: dojo?.email || 'info@tda-intl.com',
+      internet: dojo?.internet || 'www.tda-intl.com',
+      bank_name: dojo?.bank_name || '',
+      bank_iban: dojo?.bank_iban || '',
+      bank_bic: dojo?.bank_bic || '',
+      farbe_primaer: einstellungen?.farbe_primaer || '#8B0000',
     };
-    const html = ersetzePlatzhalter(html_raw, kontakt, absender);
+
+    // Logo als Data-URI laden
+    let logoUrl = null;
+    try {
+      const [[logo]] = await pool.query(
+        "SELECT file_name FROM dojo_logos WHERE dojo_id=? AND logo_type='haupt' LIMIT 1", [TDA_DOJO_ID]
+      );
+      if (logo?.file_name) {
+        const filePath = path.join(__dirname, '../../uploads/logos', logo.file_name);
+        const data = fs.readFileSync(filePath);
+        const ext = path.extname(logo.file_name).toLowerCase().replace('.', '');
+        const mimes = { svg:'image/svg+xml', png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', webp:'image/webp' };
+        logoUrl = `data:${mimes[ext]||'image/png'};base64,${data.toString('base64')}`;
+      }
+    } catch (_) {}
+
+    // Platzhalter im Brieftext ersetzen
+    const absenderSimple = { name: absenderProfil.organisation, email: absenderProfil.email,
+      inhaber: absenderProfil.inhaber, telefon: absenderProfil.telefon, internet: absenderProfil.internet };
+    const briefInhalt = ersetzePlatzhalter(html_raw, kontakt, absenderSimple);
+    const betreff = ersetzePlatzhalter(betreff_raw || '', kontakt, absenderSimple);
+
+    // Empfänger-Block aus Kontakt
+    const empfaenger = {
+      anrede: kontakt.ansprechpartner ? `Sehr geehrte/r ${kontakt.ansprechpartner},` : 'Sehr geehrte Damen und Herren,',
+      vorname: '',
+      nachname: kontakt.ansprechpartner || kontakt.organisation,
+      strasse: kontakt.strasse || '',
+      hausnummer: '',
+      plz: kontakt.plz || '',
+      ort: kontakt.ort || '',
+    };
+
+    // Vollständiges Brief-HTML mit TDA-Briefkopf erzeugen
+    const datumStr = new Date().toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+    const html = buildLetterheadHtml({
+      briefHtml: briefInhalt,
+      absenderProfil,
+      empfaenger,
+      briefTitel: betreff || 'Informationsschreiben',
+      datumStr,
+      einstellungen: einstellungen || {},
+      logoUrl,
+    });
 
     // Aktivität protokollieren
     await pool.query(`
       INSERT INTO akquise_aktivitaeten (kontakt_id, art, betreff, inhalt, vorlage_name, ergebnis, erstellt_von_user_id)
       VALUES (?, 'brief', ?, ?, ?, 'ausstehend', ?)
-    `, [req.params.id, ersetzePlatzhalter(betreff_raw, kontakt, absender), html, vorlage_name||null, req.user?.id||null]);
+    `, [req.params.id, betreff, html, vorlage_name||null, req.user?.id||null]);
 
     if (kontakt.status === 'neu') {
       await pool.query("UPDATE akquise_kontakte SET status='kontaktiert' WHERE id=?", [req.params.id]);
