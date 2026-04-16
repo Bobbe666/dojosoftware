@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS akquise_kontakte (
   -- Pipeline-Status
   status ENUM('neu','kontaktiert','interessiert','angebot','gewonnen','abgelehnt','pausiert') DEFAULT 'neu',
   prioritaet ENUM('hoch','mittel','niedrig') DEFAULT 'mittel',
-  quelle ENUM('manuell','tda_events','empfehlung','messe','internet','sonstige') DEFAULT 'manuell',
+  quelle ENUM('manuell','tda_events','empfehlung','messe','internet','trial','sonstige') DEFAULT 'manuell',
   -- Verbandsstatus (nach Gewinn)
   verbandsmitgliedschaft_id INT                         COMMENT 'Verknüpfung nach erfolgreicher Aufnahme',
   -- TDA-Events-Referenz
