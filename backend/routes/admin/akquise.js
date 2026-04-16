@@ -136,24 +136,227 @@ const STANDARD_VORLAGEN = [
 <br><br>
 <p>{{absender_inhaber}}<br>{{absender_name}}</p>`,
   },
+  {
+    name: 'Software-Präsentation — Dojosoftware + TDA Events (E-Mail)',
+    typ: 'email',
+    kategorie: 'angebot',
+    betreff: 'Komplettlösung für {{organisation}}: Vereinsverwaltung + Turniersoftware vom TDA International Verband',
+    html: `<p>{{anrede_persoenlich}},</p>
+
+<p>als Mitglied im <strong>Tiger &amp; Dragon Association International (TDA-International) Verband</strong> erhalten Sie nicht nur Zugang zu unserem Turniernetzwerk — wir stellen Ihnen auch eine leistungsstarke <strong>All-in-One-Verwaltungssoftware</strong> für Ihren Verein zur Verfügung, die speziell für Kampfkunstschulen und -vereine entwickelt wurde.</p>
+
+<p>Im Folgenden möchte ich Ihnen einen Überblick geben, was <strong>{{organisation}}</strong> mit der TDA-Softwarelösung gewinnt:</p>
+
+<hr style="border:none;border-top:2px solid #e5e7eb;margin:24px 0">
+
+<h2 style="color:#1e3a5f;font-size:18px;margin-bottom:8px">🥋 Dojosoftware — Ihr Vereins-Management</h2>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600;width:30%">Mitgliederverwaltung</td>
+    <td style="padding:8px 12px">Vollständige Mitgliederdatenbank mit Profilen, Verlauf, CSV-Import, Interessenten-Tracking und Eltern-Portal für Minderjährige</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Kurse &amp; Stundenplan</td>
+    <td style="padding:8px 12px">Wöchentlicher Stundenplan für mehrere Standorte und Trainer — mit öffentlichem Aushang für Ihre Website</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Anwesenheit &amp; Check-In</td>
+    <td style="padding:8px 12px">QR-Code-Scanner (Tablet/Handy), Echtzeit-Dashboard, Kalenderansicht und automatische Statistiken pro Mitglied</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Prüfungen &amp; Graduierungen</td>
+    <td style="padding:8px 12px">Prüfungsverwaltung, automatisches Gürtelgrad-Tracking, Entwicklungsziele, Badges und Leistungsmeilensteine</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Finanzen &amp; Rechnungen</td>
+    <td style="padding:8px 12px">Flexible Tarifmodelle, automatische Rechnungen, SEPA-Lastschrift, Mahnwesen, EÜR-Generierung und DATEV-Export</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Mitgliederbereich</td>
+    <td style="padding:8px 12px">Persönliches Online-Portal mit Fortschrittsanzeige, Kalender-Sync (Google/Outlook) und mobiler PWA-App</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Kommunikation</td>
+    <td style="padding:8px 12px">Internes Chat-System, Push-Benachrichtigungen und E-Mail-Kampagnen direkt aus der Software</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Marketing</td>
+    <td style="padding:8px 12px">Probe-Training-Buchung online, Buddy-/Referral-Programm, Rabattcodes und Kampagnenverwaltung</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Kasse &amp; Shop</td>
+    <td style="padding:8px 12px">Point-of-Sale, Ausrüstungsverkauf, Zahlungsintegration (Stripe, PayPal, SumUp) und Gutscheinsystem</td>
+  </tr>
+</table>
+
+<hr style="border:none;border-top:2px solid #e5e7eb;margin:24px 0">
+
+<h2 style="color:#1e3a5f;font-size:18px;margin-bottom:8px">🏆 TDA Events — Professioneller Turnierbetrieb</h2>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600;width:30%">Turnierverwaltung</td>
+    <td style="padding:8px 12px">Komplette Turnier-Konfiguration (Kategorien, Divisionen, Preise), Frühbucherpreise, Kapazitätsgrenzen und Statusmanagement von der Planung bis zur Abrechnung</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Anmeldung &amp; Registrierung</td>
+    <td style="padding:8px 12px">Online-Anmeldung, Gewichtseintragung, ID-Card-Generierung (PDF), CSV-Massen-Upload und Wartelisten-Management</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Kampfverwaltung</td>
+    <td style="padding:8px 12px">Automatische Bracket-Generierung (Single/Double Elimination), Echtzeit-Mattenplanung, Kampfrichter-Zuweisung und Live-Ergebniserfassung</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Siegerehrung</td>
+    <td style="padding:8px 12px">Platzierungs-Dashboard in Echtzeit, automatische Urkundengenerierung (PDF) und Podium-Anzeige</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Saison-Rangliste</td>
+    <td style="padding:8px 12px">ELO-/Punktbasiertes Ranking pro Division, öffentliche Ranglisten-Seite einbettbar auf Ihrer Website, historisches Archiv</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Live &amp; Publikum</td>
+    <td style="padding:8px 12px">Live-Anzeige auf Arena-Bildschirmen, Zuschauer-Dashboard mit Echtzeitergebnissen und YouTube/Streaming-Integration</td>
+  </tr>
+</table>
+
+<hr style="border:none;border-top:2px solid #e5e7eb;margin:24px 0">
+
+<h2 style="color:#1e3a5f;font-size:18px;margin-bottom:8px">🔗 Integration beider Systeme</h2>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px">
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600;width:35%">Wettkämpfer-Export</td>
+    <td style="padding:8px 12px">Ihre Mitglieder direkt aus der Vereinsverwaltung als Turnierteilnehmer anmelden — kein doppeltes Erfassen</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Turnierergebnisse im Profil</td>
+    <td style="padding:8px 12px">Platzierungen werden automatisch im Mitgliederprofil sichtbar und fließen ins Kader-Tracking ein</td>
+  </tr>
+  <tr style="background:#f3f4f6">
+    <td style="padding:8px 12px;font-weight:600">Club-Ranking</td>
+    <td style="padding:8px 12px">Verbandsrangliste Ihres Vereins live im Club-Dashboard sichtbar</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 12px;font-weight:600">Startgebühren-Abrechnung</td>
+    <td style="padding:8px 12px">Turnier-Startgebühren optional über das Dojo-Rechnungssystem abgewickelt — alles in einer Buchhaltung</td>
+  </tr>
+</table>
+
+<hr style="border:none;border-top:2px solid #e5e7eb;margin:24px 0">
+
+<p><strong>Besonders relevant für {{organisation}}:</strong><br>
+Unsere Multi-Tenant-Architektur bedeutet: Ihr Verein bekommt eine eigene, vollständig isolierte Umgebung — inklusive eigener Subdomain und optionalem eigenem Branding. Alle Daten bleiben bei Ihnen.</p>
+
+<p>Ich würde Ihnen gerne in einem persönlichen Demo-Gespräch zeigen, wie das System für <strong>{{sportart}}</strong> optimal konfiguriert werden kann. Dauert nicht länger als 30 Minuten — und Sie werden direkt sehen, was Sie gewinnen.</p>
+
+<p>Wann hätten Sie kurz Zeit?</p>
+
+<p>Mit freundlichen Grüßen,<br>
+<strong>{{absender_inhaber}}</strong><br>
+{{absender_name}}<br>
+<a href="mailto:{{absender_email}}">{{absender_email}}</a> | <a href="https://{{absender_internet}}">{{absender_internet}}</a></p>`,
+  },
+  {
+    name: 'Software-Präsentation — Dojosoftware + TDA Events (Brief)',
+    typ: 'brief',
+    kategorie: 'angebot',
+    betreff: 'Komplettlösung für Kampfkunstvereine: Dojosoftware + TDA Events Turniersystem',
+    html: `<div style="font-family:Arial,sans-serif;font-size:12pt;line-height:1.6;color:#111">
+
+<table style="width:100%;margin-bottom:40px">
+  <tr>
+    <td style="vertical-align:top">
+      <strong>{{absender_name}}</strong><br>
+      {{absender_inhaber}}<br>
+      {{absender_email}}<br>
+      {{absender_internet}}
+    </td>
+  </tr>
+</table>
+
+<table style="width:100%;margin-bottom:32px">
+  <tr>
+    <td>
+      <strong>{{organisation}}</strong><br>
+      z. H. {{ansprechpartner}}<br>
+      {{strasse}}<br>
+      {{plz}} {{ort}}
+    </td>
+  </tr>
+</table>
+
+<p>{{ort}}, den {{datum}}</p>
+
+<p><strong>Betreff: Komplettlösung für {{organisation}} — Dojosoftware + TDA Events Turniersystem</strong></p>
+
+<p>{{anrede_persoenlich}},</p>
+
+<p>als Teil des <strong>Tiger &amp; Dragon Association International (TDA-International) Verbands</strong> erhalten Sie Zugang zu zwei leistungsstarken Systemen, die speziell für Kampfkunstvereine entwickelt wurden und nahtlos ineinandergreifen.</p>
+
+<p><strong>1. Dojosoftware — Vereinsverwaltung</strong></p>
+
+<p>Die Dojosoftware deckt den gesamten Vereinsalltag von <strong>{{organisation}}</strong> ab:</p>
+
+<ul>
+  <li><strong>Mitglieder:</strong> Vollständige Datenbank, Interessenten-Tracking, Eltern-Portal, CSV-Import</li>
+  <li><strong>Kurse &amp; Anwesenheit:</strong> Stundenplan für mehrere Standorte, QR-Code-Check-In, Statistiken</li>
+  <li><strong>Prüfungen:</strong> Gürtelgrad-Tracking, Badges, Leistungsmeilensteine, Kader-Tracking</li>
+  <li><strong>Finanzen:</strong> Automatische Rechnungen, SEPA-Lastschrift, Mahnwesen, DATEV-Export, EÜR</li>
+  <li><strong>Mitgliederbereich:</strong> Online-Portal mit App (PWA), Kalender-Sync, eigene Subdomain</li>
+  <li><strong>Kasse &amp; Shop:</strong> Point-of-Sale, Ausrüstungsverkauf, Stripe/PayPal/SumUp-Integration</li>
+  <li><strong>Marketing:</strong> Probe-Training-Buchung, Referral-Programm, Kampagnenverwaltung</li>
+  <li><strong>Datenschutz:</strong> DSGVO-konform, vollständige Datenisolierung, Audit-Log</li>
+</ul>
+
+<p><strong>2. TDA Events — Turnierbetrieb</strong></p>
+
+<p>Für den Wettkampfbetrieb steht die TDA Events Plattform zur Verfügung:</p>
+
+<ul>
+  <li><strong>Turnierverwaltung:</strong> Komplette Konfiguration, Kategorien, Preise, Frühbucherangebote</li>
+  <li><strong>Anmeldung:</strong> Online-Registrierung, ID-Cards, Gewichtseintragung, CSV-Upload</li>
+  <li><strong>Kampfbetrieb:</strong> Automatische Brackets, Echtzeit-Mattenplanung, Live-Ergebniserfassung</li>
+  <li><strong>Siegerehrung:</strong> Automatische Urkunden (PDF), Podium-Anzeige, Ergebnisarchiv</li>
+  <li><strong>Rangliste:</strong> Saisonrangliste pro Division, einbettbar auf Ihrer Vereinswebsite</li>
+</ul>
+
+<p><strong>3. Verbindung beider Systeme</strong></p>
+
+<p>Wettkämpfer aus der Vereinsverwaltung werden direkt als Turnierteilnehmer übernommen — ohne doppelte Dateneingabe. Turnierergebnisse fließen automatisch ins Mitgliederprofil ein. Startgebühren können über die Vereinsbuchhaltung abgerechnet werden.</p>
+
+<p>Ich würde Ihnen das System gerne in einem persönlichen Gespräch vorstellen — ca. 30 Minuten, auf Wunsch auch als Video-Call. Bitte teilen Sie mir mit, wann es Ihnen passt.</p>
+
+<p>Mit freundlichen Grüßen</p>
+
+<br><br>
+
+<p>{{absender_inhaber}}<br>
+{{absender_name}}<br>
+{{absender_email}} | {{absender_internet}}</p>
+
+</div>`,
+  },
 ];
 
-// Vorlagen in DB anlegen (idempotent)
+// Vorlagen in DB anlegen — idempotent per Name, ergänzt fehlende Templates
 async function ensureVorlagenExist() {
   try {
-    const [existing] = await pool.query(
-      "SELECT COUNT(*) AS cnt FROM akquise_vorlagen"
-    );
-    if (existing[0].cnt > 0) return;
+    const [existing] = await pool.query('SELECT name FROM akquise_vorlagen');
+    const existingNames = new Set(existing.map(r => r.name));
+    let added = 0;
     for (const v of STANDARD_VORLAGEN) {
-      await pool.query(
-        'INSERT INTO akquise_vorlagen (name, typ, kategorie, betreff, html) VALUES (?, ?, ?, ?, ?)',
-        [v.name, v.typ, v.kategorie, v.betreff, v.html]
-      );
+      if (!existingNames.has(v.name)) {
+        await pool.query(
+          'INSERT INTO akquise_vorlagen (name, typ, kategorie, betreff, html) VALUES (?, ?, ?, ?, ?)',
+          [v.name, v.typ, v.kategorie, v.betreff, v.html]
+        );
+        added++;
+      }
     }
-    logger.info('[Akquise] Standard-Vorlagen angelegt');
+    if (added > 0) logger.info(`[Akquise] ${added} Standard-Vorlagen ergänzt`);
   } catch (err) {
-    // Tabelle fehlt noch → ignorieren, Migration läuft zuerst
     logger.debug('[Akquise] Vorlagen noch nicht anlegen (Tabelle fehlt?)');
   }
 }
@@ -163,6 +366,7 @@ async function ensureVorlagenExist() {
 // ============================================================================
 
 router.get('/vorlagen', async (req, res) => {
+  await ensureVorlagenExist();
   try {
     const [vorlagen] = await pool.query(
       'SELECT * FROM akquise_vorlagen ORDER BY kategorie, name'
