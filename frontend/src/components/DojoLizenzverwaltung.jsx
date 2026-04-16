@@ -12,6 +12,7 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import LizenzDokumente from './LizenzDokumente';
 import DemoTermine from './DemoTermine';
+import AkquiseDashboard from './AkquiseDashboard';
 import '../styles/DojoLizenzverwaltung.css';
 
 const PLAN_HIERARCHY = {
@@ -1776,6 +1777,9 @@ const DojoLizenzverwaltung = () => {
         </button>
         <button className={`lnav-btn ${activeTab === 'dokumente' ? 'active' : ''}`} onClick={() => setActiveTab('dokumente')}>
           <FileText size={13} /> Dokumente
+        </button>
+        <button className={`lnav-btn ${activeTab === 'akquise' ? 'active' : ''}`} onClick={() => setActiveTab('akquise')}>
+          <Target size={13} /> Akquise
         </button>
         <span className="lnav-sep" />
         <button className={`lnav-btn lnav-btn--dim ${activeTab === 'vergleich' ? 'active' : ''}`} onClick={() => { setActiveTab('vergleich'); loadComparisonData(); }}>
@@ -3978,6 +3982,13 @@ const DojoLizenzverwaltung = () => {
         {activeTab === 'dokumente' && (
           <div className="tab-content">
             <LizenzDokumente dojos={dojos} />
+          </div>
+        )}
+
+        {/* Akquise Tab */}
+        {activeTab === 'akquise' && (
+          <div className="tab-content">
+            <AkquiseDashboard />
           </div>
         )}
 
