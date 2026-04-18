@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Trophy, Calendar, ChevronRight, CheckCircle, Target } from 'lucide-react';
+import { Trophy, Calendar, ChevronRight, CheckCircle, Target, Award, FileText } from 'lucide-react';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import MemberHeader from './MemberHeader.jsx';
@@ -211,7 +211,7 @@ const MemberStyles = () => {
                         </div>
                       )}
 
-                      {/* Exam Dates */}
+                      {/* Exam Dates + Gürtellänge */}
                       <div className="mst-exam-grid">
                         <div className="mst-exam-box">
                           <Calendar size={14} className="mst-icon-muted" />
@@ -231,7 +231,97 @@ const MemberStyles = () => {
                             </div>
                           </div>
                         </div>
+                        {stilData?.guertellaenge_cm && (
+                          <div className="mst-exam-box">
+                            <Award size={14} className="mst-icon-primary" />
+                            <div>
+                              <div className="mst-exam-box-label">Gürtellänge</div>
+                              <div className="mst-exam-date-primary mst-exam-date-primary--set">
+                                {stilData.guertellaenge_cm} cm
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Prüfungshistorie */}
+                      {analysis?.pruefungs_historie?.length > 0 && (
+                        <div className="mst-progress-section" style={{marginTop:'1rem'}}>
+                          <div className="mst-grad-path-label">
+                            <FileText size={13} style={{display:'inline',verticalAlign:'middle',marginRight:'4px'}} />
+                            Prüfungshistorie
+                          </div>
+                          <div style={{display:'flex',flexDirection:'column',gap:'0.5rem',marginTop:'0.5rem'}}>
+                            {analysis.pruefungs_historie.map((p, idx) => {
+                              const hatProtokoll = !!(p.gesamtkommentar || p.staerken || p.verbesserungen || p.empfehlungen);
+                              const bestandenColor = p.bestanden ? '#4ade80' : p.status === 'durchgefuehrt' ? '#fbbf24' : '#f87171';
+                              const bestandenText = p.bestanden ? 'Bestanden' : p.status === 'durchgefuehrt' ? 'Durchgeführt' : 'Nicht bestanden';
+                              return (
+                                <div key={idx} style={{
+                                  background:'rgba(255,255,255,0.04)',
+                                  border:'1px solid rgba(255,255,255,0.08)',
+                                  borderRadius:'8px', padding:'0.6rem 0.85rem',
+                                }}>
+                                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.35rem'}}>
+                                    <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                                      <span style={{
+                                        fontSize:'0.7rem',fontWeight:700,padding:'2px 7px',borderRadius:'4px',
+                                        background:`${bestandenColor}20`,color:bestandenColor,
+                                        border:`1px solid ${bestandenColor}44`,
+                                      }}>
+                                        {bestandenText}
+                                      </span>
+                                      <span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--text-1,#fff)'}}>
+                                        {formatDate(p.pruefungsdatum)}
+                                      </span>
+                                    </div>
+                                    <div style={{fontSize:'0.75rem',color:'var(--text-3,#888)'}}>
+                                      {p.graduierung_vorher} → {p.graduierung_nachher}
+                                      {p.punktzahl ? ` · ${p.punktzahl}/${p.max_punktzahl} Pkt.` : ''}
+                                    </div>
+                                  </div>
+                                  {hatProtokoll && (
+                                    <div style={{marginTop:'0.5rem',padding:'0.4rem 0.6rem',
+                                      background:'rgba(99,102,241,0.07)',borderRadius:'5px',
+                                      borderLeft:'2px solid rgba(99,102,241,0.4)'}}>
+                                      {p.gesamtkommentar && (
+                                        <p style={{fontSize:'0.78rem',color:'var(--text-2,#ccc)',margin:'0 0 0.25rem 0'}}>
+                                          {p.gesamtkommentar}
+                                        </p>
+                                      )}
+                                      {p.staerken && (
+                                        <p style={{fontSize:'0.72rem',color:'#4ade80',margin:'0 0 0.15rem 0'}}>
+                                          <strong>Stärken:</strong> {p.staerken}
+                                        </p>
+                                      )}
+                                      {p.verbesserungen && (
+                                        <p style={{fontSize:'0.72rem',color:'#fbbf24',margin:'0 0 0.15rem 0'}}>
+                                          <strong>Verbesserung:</strong> {p.verbesserungen}
+                                        </p>
+                                      )}
+                                      {p.empfehlungen && (
+                                        <p style={{fontSize:'0.72rem',color:'#a5b4fc',margin:'0'}}>
+                                          <strong>Empfehlungen:</strong> {p.empfehlungen}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                  {p.prueferkommentar && !hatProtokoll && (
+                                    <p style={{fontSize:'0.78rem',color:'var(--text-3,#888)',margin:'0.3rem 0 0 0',fontStyle:'italic'}}>
+                                      {p.prueferkommentar}
+                                    </p>
+                                  )}
+                                  {!hatProtokoll && !p.prueferkommentar && (
+                                    <p style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.2)',margin:'0.25rem 0 0 0',fontStyle:'italic'}}>
+                                      Prüfungsprotokoll wird vorbereitet…
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                     </div>
                   </div>

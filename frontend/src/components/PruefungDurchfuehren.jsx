@@ -76,6 +76,17 @@ const PruefungDurchfuehren = () => {
   // Ausgeklappte Kategorien pro Prüfling: Key = `${pruefung_id}_${kategorie}`, Value = boolean
   const [kategorienExpanded, setKategorienExpanded] = useState({});
 
+  // Grid-Ansicht
+  const [gridModus, setGridModus] = useState(true);
+  const [gridAktiveKategorie, setGridAktiveKategorie] = useState({}); // Key: `${datum}_${gruppenKey}` → kategorie
+  const gridInitDatenRef = useRef(new Set()); // Tracks which date keys have been auto-initialized
+  const bewertungenLoadedRef = useRef(new Set()); // pruefung_ids für die Bewertungen bereits geladen wurden
+  const ergebnisManualRef = useRef(new Set()); // pruefung_ids wo der User das Gesamt-Ergebnis manuell gesetzt hat
+  const [gridSchnellPunkte, setGridSchnellPunkte] = useState({}); // Key: pruefung_id → punktzahl-Input
+  const [kategorienMeta, setKategorienMeta] = useState({}); // Key: stil_id → { kategorie_key: { label, icon, reihenfolge } }
+  const [guertelBestand, setGuertelBestand] = useState({}); // Key: farbe_hex_uppcase → { bestand, name }
+  const guertelBestandLoadedRef = useRef(new Set()); // datum keys already loaded
+
   // Prüfungs-Timer
   const [timerVisible, setTimerVisible] = useState(false);
   const [timerModus, setTimerModus] = useState('blöcke'); // 'einfach' | 'blöcke'
@@ -93,6 +104,7 @@ const PruefungDurchfuehren = () => {
   const timerIntervalRef = useRef(null);
   const timerDataRef = useRef({});
   const timerSaveRef = useRef(null);
+  const audioCtxRef = useRef(null);
   const timerConfigGeladen = useRef(false);
   const ergebnisseRef = useRef({});
   const ergebnisAutoSaveTimers = useRef({});
@@ -108,7 +120,104 @@ const PruefungDurchfuehren = () => {
   useEffect(() => { ergebnisseRef.current = ergebnisse; }, [ergebnisse]);
 
   useEffect(() => { gesprungeneAktivRef.current = gesprungeneAktiv; }, [gesprungeneAktiv]);
+
+  // Grid-Modus: Automatisch alle Kandidaten eines Termins laden wenn Datum aufgeklappt
+  useEffect(() => {
+    if (!gridModus) return;
+    expandedDates.forEach(datum => {
+      if (gridInitDatenRef.current.has(datum)) return;
+      const pruefungenAmTag = pruefungen.filter(p => (p.pruefungsdatum || 'Kein Datum') === datum);
+      if (pruefungenAmTag.length === 0) return;
+      gridInitDatenRef.current.add(datum);
+      pruefungenAmTag.forEach(p => {
+        const grads = graduierungen[p.stil_id] || [];
+        const targetGurtIdx = grads.findIndex(g => g.id === p.graduierung_nachher_id);
+        const targetGurt = grads[targetGurtIdx >= 0 ? targetGurtIdx : 0];
+        setErgebnisse(prev => prev[p.pruefung_id] ? prev : {
+          ...prev,
+          [p.pruefung_id]: {
+            bestanden: p.bestanden || false,
+            punktzahl: p.punktzahl || '',
+            max_punktzahl: p.max_punktzahl || 100,
+            prueferkommentar: p.prueferkommentar || '',
+            neuer_gurt_index: targetGurtIdx,
+            neuer_gurt_id: p.graduierung_nachher_id,
+            neuer_gurt_name: targetGurt?.name || p.graduierung_nachher || '',
+            neuer_gurt_farbe: targetGurt?.farbe_hex || ''
+          }
+        });
+        if (!pruefungsinhalteRef.current[p.pruefung_id]) {
+          loadPruefungsinhalte(p.pruefung_id, p.stil_id, p.graduierung_nachher_id);
+        }
+      });
+      // Grid-Default: gesprungene Techniken sind aktiv (inkludiert) — nur setzen wenn noch nicht explizit gesetzt
+      setGesprungeneAktiv(prev => {
+        const updated = { ...prev };
+        pruefungenAmTag.forEach(p => {
+          if (updated[p.pruefung_id] === undefined) {
+            updated[p.pruefung_id] = true; // Grid-Default: gesprungene inkludiert
+          }
+        });
+        return updated;
+      });
+
+      // Gürtel-Lagerbestand für diesen Tag laden (einmalig pro Datum)
+      if (!guertelBestandLoadedRef.current.has(datum)) {
+        guertelBestandLoadedRef.current.add(datum);
+        // Für jede Gürtellänge der Kandidaten separat laden
+        const laengen = [...new Set(pruefungenAmTag.map(p => p.guertellaenge_cm).filter(Boolean))];
+        const alleFarben = [...new Set(pruefungenAmTag.map(p => p.farbe_nachher).filter(Boolean))];
+        if (alleFarben.length > 0) {
+          // Lade für alle Längen in einem Call (zeigt Gesamtbestand wenn keine Länge)
+          const allLaengen = laengen.length > 0 ? laengen : [null];
+          allLaengen.forEach(l => loadGuertelBestand(pruefungenAmTag, l));
+        }
+      }
+    });
+  }, [expandedDates, gridModus, pruefungen, graduierungen]);
+
   useEffect(() => { return () => { clearInterval(timerIntervalRef.current); clearTimeout(timerSaveRef.current); }; }, []);
+
+  // Timer-Status in localStorage senden → externer Bildschirm liest mit
+  useEffect(() => {
+    const aktBlock = timerBlöcke[timerAktivBlockIdx];
+    const totalRunden = timerModus === 'einfach' ? timerEinfachRunden : (aktBlock?.runden || 1);
+    const rundenzeit  = timerModus === 'einfach' ? timerEinfachRundenzeit : (aktBlock?.rundenzeit || 120);
+    const pausezeit   = timerModus === 'einfach' ? timerEinfachPausezeit  : (aktBlock?.pausezeit || 60);
+
+    // Nächste Phase berechnen
+    let next = null;
+    if (timerPhase === 'runde') {
+      if (timerAktuelleRunde < totalRunden) {
+        next = { label: 'Pause', dauer: pausezeit };
+      } else {
+        const nextBlock = timerBlöcke[timerAktivBlockIdx + 1];
+        next = nextBlock
+          ? { label: `Block-Pause → ${nextBlock.name}`, dauer: 60 }
+          : { label: 'Fertig', dauer: null };
+      }
+    } else if (timerPhase === 'pause') {
+      next = { label: `Runde ${timerAktuelleRunde + 1}`, dauer: rundenzeit };
+    } else if (timerPhase === 'blockpause') {
+      const nb = timerBlöcke[timerAktivBlockIdx];
+      next = { label: `${nb?.name || 'Nächster Block'} · Runde 1`, dauer: nb?.rundenzeit || rundenzeit };
+    }
+
+    const state = {
+      phase: timerPhase,
+      sekundenLeft: timerSekundenLeft,
+      aktuelleRunde: timerAktuelleRunde,
+      timerLaeuft,
+      modus: timerModus,
+      blockName: aktBlock?.name || '',
+      totalRunden,
+      rundenzeit,
+      pausezeit,
+      next,
+      ts: Date.now(),
+    };
+    localStorage.setItem('dojo_timer_extern', JSON.stringify(state));
+  }, [timerPhase, timerSekundenLeft, timerAktuelleRunde, timerLaeuft, timerModus, timerAktivBlockIdx, timerBlöcke, timerEinfachRunden, timerEinfachRundenzeit, timerEinfachPausezeit]);
 
   // Prüfungsprotokoll
   const [protokollModal, setProtokolModal] = useState(null); // pruefung_id
@@ -352,6 +461,32 @@ const PruefungDurchfuehren = () => {
     }
   };
 
+  const loadGuertelBestand = async (pruefungenListe, laengeCm) => {
+    const farben = [...new Set(
+      pruefungenListe
+        .map(p => p.farbe_nachher)
+        .filter(Boolean)
+        .map(h => h.replace('#', '').toUpperCase())
+    )];
+    if (farben.length === 0) return;
+    try {
+      const params = `farbe_hex=${farben.join(',')}&laenge_cm=${laengeCm || ''}`;
+      const res = await fetch(`${API_BASE_URL}/pruefungen/guertel-bestand?${params}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!res.ok) return;
+      const d = await res.json();
+      if (d.success) {
+        // Key: "${hex}_${laenge}" for length-specific stock, "${hex}_" for general
+        const keyed = {};
+        Object.entries(d.bestand).forEach(([hex, info]) => {
+          keyed[`${hex}_${laengeCm || ''}`] = info;
+        });
+        setGuertelBestand(prev => ({ ...prev, ...keyed }));
+      }
+    } catch (_) {}
+  };
+
   const fetchPruefungen = async () => {
     setLoading(true);
     setError('');
@@ -460,9 +595,29 @@ const PruefungDurchfuehren = () => {
       console.log('📍 Target Index:', targetGurtIndex);
       console.log('🥋 Target Gurt:', targetGurt);
 
-      // Ergebnisse IMMER neu setzen, auch wenn schon vorhanden
+      // Bestanden-Status ermitteln (Priorität: manuell > Einzel-Bewertungen > DB)
+      let bestandenValue;
+      if (ergebnisManualRef.current.has(pruefling.pruefung_id)) {
+        // User hat explizit umgeschaltet → State-Wert beibehalten
+        bestandenValue = ergebnisseRef.current[pruefling.pruefung_id]?.bestanden ?? false;
+      } else {
+        // Aus Einzel-Bewertungen ableiten wenn vorhanden
+        const bewInState = bewertungenRef.current[pruefling.pruefung_id];
+        if (bewInState) {
+          const allEntries = Object.values(bewInState).flat().filter(b => !b.nicht_bewertet);
+          if (allEntries.length > 0) {
+            bestandenValue = allEntries.every(b => b.bestanden === true);
+          } else {
+            bestandenValue = pruefling.bestanden || false;
+          }
+        } else {
+          bestandenValue = pruefling.bestanden || false;
+        }
+      }
+
+      // Ergebnisse setzen
       const neuesErgebnis = {
-        bestanden: pruefling.bestanden || false,
+        bestanden: bestandenValue,
         punktzahl: pruefling.punktzahl || '',
         max_punktzahl: pruefling.max_punktzahl || 100,
         prueferkommentar: pruefling.prueferkommentar || '',
@@ -551,6 +706,7 @@ const PruefungDurchfuehren = () => {
   };
 
   const updateErgebnis = (pruefungId, field, value) => {
+    if (field === 'bestanden') ergebnisManualRef.current.add(pruefungId);
     setErgebnisse(prev => ({
       ...prev,
       [pruefungId]: {
@@ -813,6 +969,11 @@ const PruefungDurchfuehren = () => {
         [pruefungId]: data.pruefungsinhalte || {}
       }));
 
+      // Kategorie-Labels für diesen Stil merken
+      if (data.kategorienMeta && stilId) {
+        setKategorienMeta(prev => ({ ...prev, [stilId]: data.kategorienMeta }));
+      }
+
       // Lade bestehende Bewertungen
       await loadBewertungen(pruefungId);
     } catch (error) {
@@ -822,6 +983,9 @@ const PruefungDurchfuehren = () => {
 
   // Lädt bestehende Bewertungen für eine Prüfung
   const loadBewertungen = async (pruefungId) => {
+    // Bereits in dieser Session geladen → nicht nochmal vom Backend überschreiben (preserviert In-Memory-Änderungen)
+    if (bewertungenLoadedRef.current.has(pruefungId)) return;
+    bewertungenLoadedRef.current.add(pruefungId);
     try {
       const response = await fetch(
         `${API_BASE_URL}/pruefungen/${pruefungId}/bewertungen`,
@@ -887,12 +1051,11 @@ const PruefungDurchfuehren = () => {
       // Finde bestehende Bewertung oder erstelle neue
       const existingIndex = kategorieBewertungen[kategorie].findIndex(b => b.inhalt_id === inhaltId);
 
-      // Auto-Threshold: wenn Punkte >= Schwelle, automatisch bestanden setzen
+      // Auto-Threshold: Punkte-Eingabe bestimmt immer bestanden/nicht bestanden
       let additionalFields = {};
-      if (field === 'punktzahl') {
+      if (field === 'punktzahl' && value !== '' && value != null) {
         const newPkt = parseFloat(value);
-        const existingBew = existingIndex >= 0 ? kategorieBewertungen[kategorie][existingIndex] : {};
-        if (!isNaN(newPkt) && existingBew.bestanden !== false) {
+        if (!isNaN(newPkt)) {
           additionalFields.bestanden = newPkt >= (pruefSettings.bestanden_item_punkte ?? 5);
         }
       }
@@ -952,7 +1115,8 @@ const PruefungDurchfuehren = () => {
               bestanden: b.bestanden,
               punktzahl: b.punktzahl,
               max_punktzahl: b.max_punktzahl || 10,
-              kommentar: b.kommentar
+              kommentar: b.kommentar,
+              nicht_bewertet: b.nicht_bewertet || false
             });
           });
         }
@@ -1088,6 +1252,39 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
   // ============================================================
   // PRÜFUNGS-TIMER (Multi-Block)
   // ============================================================
+
+  // Töne via Web Audio API — nutzt vorher erstellten AudioContext (muss aus User-Geste stammen)
+  const playTimerSound = (type) => {
+    try {
+      const ctx = audioCtxRef.current;
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume();
+      const t = ctx.currentTime;
+      const beep = (freq, start, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(freq, t + start);
+        gain.gain.setValueAtTime(0.45, t + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + start + duration);
+        osc.start(t + start);
+        osc.stop(t + start + duration);
+      };
+      if (type === 'warning') {
+        beep(880, 0, 0.15);
+        beep(880, 0.25, 0.15);
+      } else if (type === 'end') {
+        beep(440, 0, 0.3);
+        beep(330, 0.35, 0.5);
+      } else if (type === 'pause_end') {
+        beep(440, 0, 0.2);
+        beep(550, 0.25, 0.2);
+        beep(660, 0.5, 0.3);
+      }
+    } catch (e) { /* Audio nicht verfügbar */ }
+  };
+
   const formatTimerSek = (sek) => {
     const m = Math.floor(sek / 60);
     const s = sek % 60;
@@ -1116,9 +1313,15 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
     const d = timerDataRef.current;
     d.sekundenLeft = Math.max(0, d.sekundenLeft - 1);
 
+    // Töne: 10-Sekunden-Warnung
+    if (d.sekundenLeft === 10) {
+      playTimerSound('warning');
+    }
+
     if (d.sekundenLeft === 0) {
       const block = d.blöcke[d.blockIdx];
       if (d.phase === 'runde') {
+        playTimerSound('end'); // Rundenzeit abgelaufen
         if (d.aktuelleRunde >= block.runden) {
           // Block fertig → nächster
           setTimerBlöcke(prev => prev.map((b, i) => i === d.blockIdx ? { ...b, erledigt: true } : b));
@@ -1140,10 +1343,12 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
           d.sekundenLeft = block.pausezeit;
         }
       } else if (d.phase === 'pause') {
+        playTimerSound('pause_end'); // Pause vorbei
         d.aktuelleRunde++;
         d.phase = 'runde';
         d.sekundenLeft = block.rundenzeit;
       } else if (d.phase === 'blockpause') {
+        playTimerSound('pause_end'); // Blockpause vorbei
         d.phase = 'runde';
         d.sekundenLeft = d.blöcke[d.blockIdx].rundenzeit;
       }
@@ -1154,6 +1359,12 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
   };
 
   const timerStarten = (startIdx = 0) => {
+    // AudioContext muss aus User-Geste heraus erstellt werden
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    } else if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
     let blöckeZumStarten;
     if (timerModus === 'einfach') {
       blöckeZumStarten = [{ id: 0, name: 'Timer', runden: timerEinfachRunden, rundenzeit: timerEinfachRundenzeit, pausezeit: timerEinfachPausezeit, erledigt: false }];
@@ -1197,6 +1408,441 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
     setTimerAktuelleRunde(1);
     setTimerAktivBlockIdx(0);
     setTimerBlöcke(prev => prev.map(b => ({ ...b, erledigt: false })));
+  };
+
+  // Icon-Map nur im Frontend — nicht aus DB (Charset-Problem mit Emojis)
+  const KATEGORIE_ICONS = {
+    kondition: '💪', warmup: '🔥', grundtechniken: '🥋',
+    fusstechniken: '🦵', kata: '🎭', kombitechniken: '🤜',
+    sandsack: '🥊', kumite: '⚔️', sparring: '⚔️',
+    krafttest: '🏋️', theorie: '📚',
+  };
+  const KATEGORIE_LABELS = {
+    kondition: '💪 Kondition',
+    warmup: '🔥 Warm Up',
+    grundtechniken: '🥋 Grundtechniken',
+    fusstechniken: '🦵 Fusstechniken',
+    kata: '🎭 Kata',
+    sandsack: '🥊 Sandsack / Pratzen',
+    kumite: '⚔️ Sparring',
+    theorie: '📚 Theorie',
+  };
+
+  const setAlleAufPunkte = (pruefungId, techniken, kategorie, punkte) => {
+    const pkt = parseFloat(punkte);
+    if (isNaN(pkt)) return;
+    techniken.forEach(tech => {
+      const tid = tech.id || tech.inhalt_id;
+      updateBewertung(pruefungId, tid, kategorie, 'punktzahl', pkt);
+    });
+  };
+
+  const renderGridAnsicht = (datum, pruefungenAmTag) => {
+    // Gruppe nach stil_id + graduierung_nachher_id
+    const gruppenMap = {};
+    pruefungenAmTag.forEach(p => {
+      const key = `${p.stil_id}_${p.graduierung_nachher_id}`;
+      if (!gruppenMap[key]) gruppenMap[key] = [];
+      gruppenMap[key].push(p);
+    });
+
+    const mehrereGruppen = Object.keys(gruppenMap).length > 1;
+
+    return Object.entries(gruppenMap).map(([gruppenKey, kandidaten]) => {
+      const ersteK = kandidaten[0];
+      const inhalteMap = pruefungsinhalte[ersteK.pruefung_id] || {};
+      const kategorien = Object.keys(inhalteMap);
+      const tabKey = datum; // Alle Gruppen desselben Datums teilen denselben aktiven Tab
+      const aktiveKat = gridAktiveKategorie[tabKey] || kategorien[0] || '';
+      const techniken = aktiveKat ? (inhalteMap[aktiveKat] || []) : [];
+      // Stil-spezifische Labels (vom Backend) mit globalem Fallback
+      const stilMeta = kategorienMeta[ersteK.stil_id] || {};
+      const getKatLabel = (kat) => {
+        // Icon immer aus Frontend-Map (Charset-sicher)
+        const icon = KATEGORIE_ICONS[kat] || '';
+        const dbLabel = stilMeta[kat]?.label;
+        const frontendText = KATEGORIE_LABELS[kat]?.replace(/^\S+\s/, '');
+        // Mojibake-Check: Ã gefolgt von Sonderzeichen = falsch codiertes UTF-8
+        const isMojibake = dbLabel && dbLabel.includes('\xc3'); // Ã = Zeichen für kaputtes UTF-8-Encoding
+        const label = (dbLabel && !isMojibake) ? dbLabel : (frontendText || kat);
+        return icon ? `${icon} ${label}` : label;
+      };
+      const isLoading = kategorien.length === 0;
+
+      return (
+        <div key={gruppenKey} style={{
+          marginBottom: mehrereGruppen ? '0' : 0,
+          borderTop: mehrereGruppen ? '2px solid rgba(255,215,0,0.15)' : 'none',
+        }}>
+          {/* Gruppen-Header falls mehrere Graduierungen */}
+          {mehrereGruppen && (
+            <div style={{padding:'0.5rem 0.75rem',fontSize:'0.72rem',fontWeight:700,
+              letterSpacing:'0.1em',textTransform:'uppercase',
+              color:'var(--primary,#ffd700)',opacity:0.8,
+              background:'rgba(255,215,0,0.04)',
+              display:'flex',alignItems:'center',gap:'0.5rem'}}>
+              <span>▸</span>
+              <span>{ersteK.stil_name} — {ersteK.graduierung_nachher}</span>
+              <span style={{fontWeight:400,color:'var(--text-3,#888)',textTransform:'none',letterSpacing:0}}>
+                ({kandidaten.length} Kandid{kandidaten.length===1?'at':'aten'})
+              </span>
+            </div>
+          )}
+
+          {isLoading ? (
+            <div style={{padding:'2rem',textAlign:'center',color:'var(--text-3,#888)',fontSize:'0.85rem'}}>
+              ⏳ Techniken werden geladen…
+            </div>
+          ) : (
+            <>
+              {/* Kategorie-Tabs */}
+              <div style={{display:'flex',alignItems:'center',gap:'0.25rem',padding:'0.5rem 0.75rem',
+                borderBottom:'1px solid rgba(255,255,255,0.07)',flexWrap:'wrap'}}>
+                {kategorien.map(kat => (
+                  <button key={kat}
+                    onClick={() => setGridAktiveKategorie(prev => ({ ...prev, [tabKey]: kat }))}
+                    style={{padding:'0.32rem 0.75rem',borderRadius:'999px',border:'none',cursor:'pointer',
+                      fontSize:'0.78rem',fontWeight:600,whiteSpace:'nowrap',transition:'all 0.15s',
+                      background: aktiveKat === kat ? 'rgba(255,215,0,0.15)' : 'transparent',
+                      color: aktiveKat === kat ? 'var(--primary,#ffd700)' : 'var(--text-2,#aaa)',
+                      boxShadow: aktiveKat === kat ? '0 0 0 1px rgba(255,215,0,0.35) inset' : 'none',
+                    }}>
+                    {getKatLabel(kat)}
+                    <span style={{marginLeft:'5px',fontSize:'0.68rem',opacity:0.65}}>
+                      ({(inhalteMap[kat]||[]).length})
+                    </span>
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    const techs = inhalteMap[aktiveKat] || [];
+                    techs.forEach(t => {
+                      const tid = t.id || t.inhalt_id;
+                      kandidaten.forEach(k => updateBewertung(k.pruefung_id, tid, aktiveKat, 'bestanden', true));
+                    });
+                    // Gesamt-Ergebnis für alle Kandidaten dieser Gruppe auf Bestanden setzen
+                    kandidaten.forEach(k => updateErgebnis(k.pruefung_id, 'bestanden', true));
+                  }}
+                  style={{marginLeft:'auto',padding:'0.3rem 0.8rem',borderRadius:'6px',border:'1px solid rgba(34,197,94,0.4)',
+                    background:'rgba(34,197,94,0.1)',color:'#4ade80',fontSize:'0.75rem',fontWeight:700,cursor:'pointer'}}>
+                  ✓ Alle bestanden
+                </button>
+              </div>
+
+              {/* Technik-Grid */}
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.82rem',tableLayout:'fixed'}}>
+                  <colgroup>
+                    <col style={{width:'220px'}} />
+                    {kandidaten.map(k => <col key={k.pruefung_id} />)}
+                  </colgroup>
+                  <thead>
+                    <tr style={{borderBottom:'1px solid rgba(255,255,255,0.1)'}}>
+                      <th style={{padding:'0.5rem 0.75rem',textAlign:'left',fontWeight:700,
+                        color:'var(--text-3,#888)',fontSize:'0.7rem',textTransform:'uppercase',
+                        letterSpacing:'0.08em',width:'220px',position:'sticky',left:0,
+                        background:'var(--surface-3,#1a1a1a)'}}>
+                        Technik
+                      </th>
+                      {kandidaten.map(k => {
+                        const schnellPkt = gridSchnellPunkte[k.pruefung_id] ?? '';
+                        const maxPkt = pruefSettings.max_punkte_item || 10;
+
+                        // Alter berechnen
+                        const geburt = k.geburtsdatum ? new Date(k.geburtsdatum) : null;
+                        const alter = geburt
+                          ? Math.floor((Date.now() - geburt.getTime()) / (365.25 * 24 * 3600 * 1000))
+                          : null;
+                        const istAelter40 = alter !== null && alter >= 40;
+
+                        // Gesprungen-Toggle: default true (inkludiert), kann pro Kandidat deaktiviert werden
+                        const gesprungAktiv = gesprungeneAktiv[k.pruefung_id] !== undefined
+                          ? gesprungeneAktiv[k.pruefung_id]
+                          : true;
+
+                        return (
+                          <th key={k.pruefung_id}
+                            style={{padding:'0.4rem 0.5rem',textAlign:'center',minWidth:'160px',
+                              fontWeight:600,color:'var(--text-1,#fff)',
+                              background: istAelter40 ? 'rgba(251,191,36,0.04)' : 'inherit'}}>
+
+                            {/* Name + Alters-Badge */}
+                            <div style={{fontSize:'0.82rem',marginBottom:'0.2rem',display:'flex',
+                              alignItems:'center',justifyContent:'center',gap:'0.35rem',flexWrap:'wrap'}}>
+                              <span>
+                                {(k.vorname||'').charAt(0).toUpperCase()+(k.vorname||'').slice(1).toLowerCase()}{' '}
+                                {(k.nachname||'').charAt(0).toUpperCase()+(k.nachname||'').slice(1).toLowerCase()}
+                              </span>
+                              {alter !== null && (
+                                <span style={{
+                                  fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
+                                  background: istAelter40 ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.07)',
+                                  color: istAelter40 ? '#fbbf24' : 'var(--text-3,#888)',
+                                  border: istAelter40 ? '1px solid rgba(251,191,36,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                                }}>
+                                  {alter} J.{istAelter40 ? ' ⚠' : ''}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Gesprungen-Toggle (nur wenn Kategorie gesprungene enthält) */}
+                            {techniken.some(t => t.ist_gesprungen) && (
+                              <div style={{marginBottom:'0.3rem'}}>
+                                <button
+                                  onClick={() => setGesprungeneAktiv(prev => ({
+                                    ...prev,
+                                    [k.pruefung_id]: !gesprungAktiv
+                                  }))}
+                                  title={gesprungAktiv ? 'Gesprungene Techniken ausschließen' : 'Gesprungene Techniken einschließen'}
+                                  style={{height:'22px',padding:'0 0.5rem',borderRadius:'4px',border:'none',
+                                    cursor:'pointer',fontSize:'0.65rem',fontWeight:700,
+                                    background: gesprungAktiv
+                                      ? 'rgba(99,102,241,0.15)'
+                                      : 'rgba(255,255,255,0.05)',
+                                    color: gesprungAktiv ? '#818cf8' : 'var(--text-3,#666)',
+                                    outline: gesprungAktiv
+                                      ? '1px solid rgba(99,102,241,0.4)'
+                                      : '1px solid rgba(255,255,255,0.1)',
+                                    transition:'all 0.15s'}}>
+                                  ⬆️ {gesprungAktiv ? 'inkl.' : 'ausgeschl.'}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Schnellset */}
+                            <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'0.25rem',marginBottom:'0.2rem'}}>
+                              <input
+                                type="number"
+                                min={0}
+                                max={maxPkt}
+                                placeholder="Pkt"
+                                value={schnellPkt}
+                                onChange={e => setGridSchnellPunkte(prev => ({...prev, [k.pruefung_id]: e.target.value}))}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') {
+                                    setAlleAufPunkte(k.pruefung_id,
+                                      techniken.filter(t => gesprungAktiv || !t.ist_gesprungen),
+                                      aktiveKat, schnellPkt);
+                                  }
+                                }}
+                                style={{width:'46px',height:'24px',borderRadius:'5px',
+                                  border:'1px solid rgba(255,215,0,0.25)',fontSize:'0.75rem',
+                                  background:'rgba(255,215,0,0.06)',color:'var(--text-1,#fff)',
+                                  padding:'0 5px',textAlign:'center',outline:'none',
+                                  MozAppearance:'textfield'}}
+                              />
+                              <button
+                                onClick={() => setAlleAufPunkte(k.pruefung_id,
+                                  techniken.filter(t => gesprungAktiv || !t.ist_gesprungen),
+                                  aktiveKat, schnellPkt)}
+                                title="Alle (aktiven) Techniken dieser Kategorie auf diesen Wert setzen"
+                                style={{height:'24px',padding:'0 0.45rem',borderRadius:'5px',border:'none',
+                                  cursor:'pointer',fontSize:'0.7rem',fontWeight:700,
+                                  background:'rgba(255,215,0,0.15)',color:'var(--primary,#ffd700)',
+                                  outline:'1px solid rgba(255,215,0,0.3)'}}>
+                                alle
+                              </button>
+                            </div>
+
+                            {autoSaveStatus[k.pruefung_id] && (
+                              <div style={{fontSize:'0.62rem',color:autoSaveStatus[k.pruefung_id]==='saved'?'#4ade80':'#fbbf24'}}>
+                                {autoSaveStatus[k.pruefung_id]==='saved' ? '✓ gespeichert' : '💾 …'}
+                              </div>
+                            )}
+
+                            {/* Gürtellänge + Lagerbestand */}
+                            {(() => {
+                              const laenge = k.guertellaenge_cm;
+                              const farbe = (k.farbe_nachher || '').replace('#', '').toUpperCase();
+                              const bestandKey = `${farbe}_${laenge || ''}`;
+                              const bestandInfo = farbe ? (guertelBestand[bestandKey] || guertelBestand[`${farbe}_`]) : null;
+                              const bestand = bestandInfo?.bestand ?? null;
+                              const bestandColor = bestand === null ? '#888'
+                                : bestand === 0 ? '#f87171'
+                                : bestand <= 2 ? '#fbbf24'
+                                : '#4ade80';
+                              if (!laenge && bestand === null) return null;
+                              return (
+                                <div style={{marginTop:'0.2rem',display:'flex',alignItems:'center',
+                                  justifyContent:'center',gap:'0.3rem',flexWrap:'wrap'}}>
+                                  {laenge && (
+                                    <span style={{
+                                      fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
+                                      background:'rgba(99,102,241,0.15)',color:'#a5b4fc',
+                                      border:'1px solid rgba(99,102,241,0.3)',
+                                    }}>
+                                      📏 {laenge} cm
+                                    </span>
+                                  )}
+                                  {bestand !== null && (
+                                    <span style={{
+                                      fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
+                                      background:`${bestandColor}22`,color:bestandColor,
+                                      border:`1px solid ${bestandColor}55`,
+                                    }}
+                                    title={bestandInfo?.name || 'Lagerbestand'}>
+                                      📦 {bestand}×
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {techniken.map((tech, idx) => {
+                      const tid = tech.id || tech.inhalt_id;
+                      const rowBg = idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
+                      return (
+                        <tr key={tid || idx}
+                          style={{borderBottom:'1px solid rgba(255,255,255,0.04)',background:rowBg}}>
+                          <td style={{padding:'0.42rem 0.75rem',color:'var(--text-1,#fff)',
+                            position:'sticky',left:0,background:rowBg || 'var(--surface-3,#1a1a1a)',
+                            fontWeight: tech.ist_gesprungen ? 400 : 500,
+                            width:'220px',maxWidth:'220px',wordBreak:'break-word'}}>
+                            {tech.titel || tech.inhalt}
+                            {tech.ist_gesprungen && (
+                              <span style={{marginLeft:'6px',fontSize:'0.65rem',
+                                background:'rgba(99,102,241,0.2)',color:'#818cf8',
+                                border:'1px solid rgba(99,102,241,0.35)',
+                                borderRadius:'4px',padding:'1px 5px'}}>⬆️</span>
+                            )}
+                            {tech.graduierung_name && !tech.ist_aktuell && (
+                              <div style={{fontSize:'0.62rem',color:'var(--text-3,#666)',
+                                marginTop:'1px',fontWeight:400,fontStyle:'italic'}}>
+                                {tech.graduierung_name}
+                              </div>
+                            )}
+                          </td>
+                          {kandidaten.map(k => {
+                            const bew = bewertungen[k.pruefung_id]?.[aktiveKat]?.find(b => b.inhalt_id === tid) || {};
+                            const nichtBew = !!bew.nicht_bewertet;
+                            const kGesprungAktiv = gesprungeneAktiv[k.pruefung_id] !== undefined
+                              ? gesprungeneAktiv[k.pruefung_id] : true;
+                            const entfaellt = tech.ist_gesprungen && !kGesprungAktiv;
+                            return (
+                              <td key={k.pruefung_id}
+                                style={{padding:'0.3rem 0.5rem',textAlign:'center',verticalAlign:'middle',
+                                  background: entfaellt ? 'rgba(99,102,241,0.04)'
+                                    : nichtBew ? 'rgba(156,163,175,0.06)' : 'inherit',
+                                  transition:'background 0.15s'}}>
+                                {entfaellt ? (
+                                  /* Gesprungene ausgeschaltet für diesen Kandidaten */
+                                  <span style={{fontSize:'0.7rem',color:'rgba(99,102,241,0.5)',
+                                    fontStyle:'italic'}}>entfällt</span>
+                                ) : nichtBew ? (
+                                  /* N/A-Modus: nur Deaktiviert-Anzeige + Rückgängig-Button */
+                                  <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'0.3rem'}}>
+                                    <span style={{fontSize:'0.72rem',color:'var(--text-3,#666)',
+                                      fontStyle:'italic',letterSpacing:'0.04em'}}>nicht bew.</span>
+                                    <button
+                                      tabIndex={-1}
+                                      onClick={() => updateBewertung(k.pruefung_id, tid, aktiveKat, 'nicht_bewertet', false)}
+                                      title="Wieder bewerten"
+                                      style={{width:'22px',height:'22px',borderRadius:'4px',border:'none',
+                                        cursor:'pointer',fontSize:'0.7rem',lineHeight:1,
+                                        background:'rgba(255,255,255,0.08)',color:'var(--text-3,#888)'}}>
+                                      ↩
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'0.3rem'}}>
+                                    <button
+                                      tabIndex={-1}
+                                      onClick={() => updateBewertung(k.pruefung_id, tid, aktiveKat, 'bestanden', !bew.bestanden)}
+                                      style={{width:'32px',height:'28px',borderRadius:'6px',border:'none',
+                                        cursor:'pointer',fontWeight:700,fontSize:'0.85rem',
+                                        background: bew.bestanden ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.07)',
+                                        color: bew.bestanden ? '#4ade80' : 'var(--text-3,#888)',
+                                        outline: bew.bestanden ? '1px solid rgba(34,197,94,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                                        transition:'all 0.12s'}}>
+                                      {bew.bestanden ? '✓' : '○'}
+                                    </button>
+                                    {!tech.ohne_punkte && (
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        max={tech.max_punktzahl || pruefSettings.max_punkte_item || 10}
+                                        value={bew.punktzahl != null && bew.punktzahl !== '' ? bew.punktzahl : ''}
+                                        onChange={e => {
+                                          const val = e.target.value;
+                                          updateBewertung(k.pruefung_id, tid, aktiveKat, 'punktzahl',
+                                            val === '' ? '' : parseFloat(val));
+                                        }}
+                                        style={{width:'52px',height:'28px',borderRadius:'5px',
+                                          border:'1px solid rgba(255,255,255,0.12)',fontSize:'0.82rem',
+                                          background:'var(--surface-2,rgba(255,255,255,0.05))',
+                                          color:'var(--text-1,#fff)',padding:'0 6px',
+                                          textAlign:'center',outline:'none',
+                                          MozAppearance:'textfield'}}
+                                      />
+                                    )}
+                                    <button
+                                      tabIndex={-1}
+                                      onClick={() => updateBewertung(k.pruefung_id, tid, aktiveKat, 'nicht_bewertet', true)}
+                                      title="Nicht bewertet (z.B. Verletzung)"
+                                      style={{width:'26px',height:'28px',borderRadius:'6px',border:'none',
+                                        cursor:'pointer',fontSize:'0.75rem',lineHeight:1,
+                                        background:'rgba(255,255,255,0.05)',
+                                        color:'var(--text-3,#666)',
+                                        outline:'1px solid rgba(255,255,255,0.08)',
+                                        transition:'all 0.12s'}}
+                                      onMouseEnter={e => {e.currentTarget.style.background='rgba(251,191,36,0.15)'; e.currentTarget.style.color='#fbbf24';}}
+                                      onMouseLeave={e => {e.currentTarget.style.background='rgba(255,255,255,0.05)'; e.currentTarget.style.color='var(--text-3,#666)';}}>
+                                      –
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Ergebnis-Zeile (bestanden / speichern) */}
+              <div style={{display:'flex',flexWrap:'wrap',gap:'0.5rem',padding:'0.65rem 0.75rem',
+                borderTop:'1px solid rgba(255,255,255,0.07)',marginTop:'0.25rem',alignItems:'center'}}>
+                <span style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',
+                  letterSpacing:'0.08em',color:'var(--text-3,#888)',marginRight:'0.25rem'}}>
+                  Ergebnis:
+                </span>
+                {kandidaten.map(k => {
+                  const erg = ergebnisse[k.pruefung_id] || {};
+                  const name = `${(k.vorname||'').charAt(0).toUpperCase()+(k.vorname||'').slice(1).toLowerCase()} ${(k.nachname||'').charAt(0).toUpperCase()+(k.nachname||'').slice(1).toLowerCase()}`;
+                  return (
+                    <div key={k.pruefung_id}
+                      style={{display:'flex',alignItems:'center',gap:'0.3rem',
+                        padding:'0.25rem 0.5rem',borderRadius:'6px',
+                        background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                      <span style={{fontSize:'0.78rem',color:'var(--text-2,#ccc)',fontWeight:600}}>
+                        {name}
+                      </span>
+                      <span style={{fontSize:'0.72rem',color:'var(--text-3,#888)'}}>
+                        {erg.punktzahl != null && erg.punktzahl !== '' ? `${erg.punktzahl} Pkt` : ''}
+                      </span>
+                      <button
+                        onClick={() => handleToggleEdit(k)}
+                        style={{padding:'0.18rem 0.5rem',borderRadius:'5px',border:'1px solid rgba(255,215,0,0.3)',
+                          background:'rgba(255,215,0,0.08)',color:'var(--primary,#ffd700)',
+                          fontSize:'0.72rem',fontWeight:600,cursor:'pointer'}}>
+                        Ergebnis
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      );
+    });
   };
 
   return (
@@ -1364,6 +2010,30 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
             <span>Prüfungs-Timer</span>
             {timerLaeuft && <span className="pd-timer-live-badge">● LIVE</span>}
             {timerPhase === 'fertig' && <span className="pd-timer-done-badge">✓ Fertig</span>}
+            <button
+              onClick={async e => {
+                e.stopPropagation();
+                try {
+                  // Window Management API: Zweiten Bildschirm erkennen und Fenster dort öffnen
+                  if ('getScreenDetails' in window) {
+                    const details = await window.getScreenDetails();
+                    const second = details.screens.find(s => !s.isPrimary) || details.currentScreen;
+                    const popup = window.open(
+                      '/timer-extern', 'dojo-timer-extern',
+                      `left=${second.availLeft},top=${second.availTop},width=${second.availWidth},height=${second.availHeight}`
+                    );
+                    if (popup) return;
+                  }
+                } catch {}
+                // Fallback: normaler neuer Tab
+                window.open('/timer-extern', 'dojo-timer-extern');
+              }}
+              title="Externen Bildschirm öffnen (automatisch auf 2. Monitor)"
+              style={{marginLeft:'0.5rem',padding:'2px 8px',borderRadius:'5px',border:'1px solid rgba(255,255,255,0.2)',
+                background:'rgba(255,255,255,0.07)',color:'var(--text-2,#ccc)',fontSize:'0.7rem',
+                cursor:'pointer',fontWeight:600}}>
+              📺 Extern
+            </button>
           </div>
           {!timerVisible && timerPhase !== 'bereit' && (
             <span className="pd-timer-mini-display">
@@ -1446,11 +2116,14 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                     </div>
                     {timerPhase !== 'fertig' && (
                       <>
-                        <div className="pd-timer-countdown">{formatTimerSek(timerSekundenLeft)}</div>
+                        <div className="pd-timer-countdown" style={{
+                          color: timerPhase === 'pause' ? '#f87171' : '#4ade80',
+                          textShadow: timerPhase === 'pause' ? '0 0 20px rgba(248,113,113,0.4)' : '0 0 20px rgba(74,222,128,0.4)'
+                        }}>{formatTimerSek(timerSekundenLeft)}</div>
                         <div className="pd-timer-bar-wrap">
                           <div className="pd-timer-bar-fill" style={{
                             width: `${(timerSekundenLeft / (timerPhase === 'runde' ? (timerEinfachRundenzeit || 1) : (timerEinfachPausezeit || 1))) * 100}%`,
-                            background: timerPhase === 'pause' ? '#f59e0b' : 'var(--primary-color, #d4af37)'
+                            background: timerPhase === 'pause' ? '#f87171' : '#4ade80'
                           }} />
                         </div>
                       </>
@@ -1461,15 +2134,24 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                   {timerPhase === 'bereit' && (
                     <button className="btn btn-primary pd-timer-btn" onClick={() => timerStarten()}>▶ Start</button>
                   )}
-                  {(timerPhase === 'runde' || timerPhase === 'pause') && timerLaeuft && (
-                    <button className="btn btn-warning pd-timer-btn" onClick={timerStoppen}>⏸ Stopp</button>
-                  )}
-                  {(timerPhase === 'runde' || timerPhase === 'pause') && !timerLaeuft && (
-                    <button className="btn btn-primary pd-timer-btn" onClick={timerFortsetzen}>▶ Weiter</button>
-                  )}
-                  {timerPhase !== 'bereit' && (
-                    <button className="btn btn-secondary pd-timer-btn" onClick={timerZuruecksetzen}>↺ Zurücksetzen</button>
-                  )}
+                  {(timerPhase === 'runde' || timerPhase === 'pause' || timerPhase === 'fertig') && (<>
+                    <button className="btn btn-warning pd-timer-btn"
+                      onClick={timerStoppen}
+                      disabled={!timerLaeuft}
+                      style={{opacity: timerLaeuft ? 1 : 0.4}}>
+                      ⏸ Pause
+                    </button>
+                    <button className="btn btn-danger pd-timer-btn"
+                      onClick={timerZuruecksetzen}>
+                      ⏹ Stop
+                    </button>
+                    <button className="btn btn-primary pd-timer-btn"
+                      onClick={timerFortsetzen}
+                      disabled={timerLaeuft}
+                      style={{opacity: timerLaeuft ? 0.4 : 1}}>
+                      ▶ Play
+                    </button>
+                  </>)}
                 </div>
               </div>
             )}
@@ -1491,14 +2173,17 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                       </div>
                       {timerPhase !== 'fertig' && (
                         <>
-                          <div className="pd-timer-countdown">{formatTimerSek(timerSekundenLeft)}</div>
+                          <div className="pd-timer-countdown" style={{
+                            color: (timerPhase === 'pause' || timerPhase === 'blockpause') ? '#f87171' : '#4ade80',
+                            textShadow: (timerPhase === 'pause' || timerPhase === 'blockpause') ? '0 0 20px rgba(248,113,113,0.4)' : '0 0 20px rgba(74,222,128,0.4)'
+                          }}>{formatTimerSek(timerSekundenLeft)}</div>
                           <div className="pd-timer-bar-wrap">
                             <div className="pd-timer-bar-fill" style={{
                               width: `${(timerSekundenLeft / (timerPhase === 'runde'
                                 ? (timerBlöcke[timerAktivBlockIdx]?.rundenzeit || 1)
                                 : timerPhase === 'blockpause' ? 60
                                 : (timerBlöcke[timerAktivBlockIdx]?.pausezeit || 1))) * 100}%`,
-                              background: (timerPhase === 'pause' || timerPhase === 'blockpause') ? '#f59e0b' : 'var(--primary-color, #d4af37)'
+                              background: (timerPhase === 'pause' || timerPhase === 'blockpause') ? '#f87171' : '#4ade80'
                             }} />
                           </div>
                         </>
@@ -1515,15 +2200,24 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                     {timerPhase === 'bereit' && (
                       <button className="btn btn-primary pd-timer-btn" onClick={() => timerStarten(0)} disabled={timerBlöcke.length === 0}>▶ Alle starten</button>
                     )}
-                    {(timerPhase === 'runde' || timerPhase === 'pause' || timerPhase === 'blockpause') && timerLaeuft && (
-                      <button className="btn btn-warning pd-timer-btn" onClick={timerStoppen}>⏸ Stopp</button>
-                    )}
-                    {(timerPhase === 'runde' || timerPhase === 'pause' || timerPhase === 'blockpause') && !timerLaeuft && (
-                      <button className="btn btn-primary pd-timer-btn" onClick={timerFortsetzen}>▶ Weiter</button>
-                    )}
-                    {timerPhase !== 'bereit' && (
-                      <button className="btn btn-secondary pd-timer-btn" onClick={timerZuruecksetzen}>↺ Zurücksetzen</button>
-                    )}
+                    {(timerPhase === 'runde' || timerPhase === 'pause' || timerPhase === 'blockpause' || timerPhase === 'fertig') && (<>
+                      <button className="btn btn-warning pd-timer-btn"
+                        onClick={timerStoppen}
+                        disabled={!timerLaeuft}
+                        style={{opacity: timerLaeuft ? 1 : 0.4}}>
+                        ⏸ Pause
+                      </button>
+                      <button className="btn btn-danger pd-timer-btn"
+                        onClick={timerZuruecksetzen}>
+                        ⏹ Stop
+                      </button>
+                      <button className="btn btn-primary pd-timer-btn"
+                        onClick={timerFortsetzen}
+                        disabled={timerLaeuft}
+                        style={{opacity: timerLaeuft ? 0.4 : 1}}>
+                        ▶ Play
+                      </button>
+                    </>)}
                   </div>
                 </div>
 
@@ -1777,7 +2471,56 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                   {/* Teilnehmer-Liste (expandierbar) */}
                   {isExpanded && (
                     <div className="pd-expanded-body">
-                      {pruefungenAmTag.map((pruefling, index) => {
+                      {gridModus ? (
+                        /* Grid-Modus: volle Breite, aus dem CSS-Grid raus */
+                        <div style={{gridColumn:'1 / -1', display:'flex', flexDirection:'column'}}>
+                          {/* Ansicht-Toggle */}
+                          <div style={{display:'flex',alignItems:'center',gap:'0.25rem',padding:'0.4rem 0.75rem',
+                            borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                            <span style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',
+                              letterSpacing:'0.08em',color:'var(--text-3,#888)',marginRight:'0.25rem'}}>Ansicht:</span>
+                            <button
+                              onClick={() => setGridModus(true)}
+                              style={{padding:'0.25rem 0.65rem',borderRadius:'6px',border:'none',cursor:'pointer',
+                                fontSize:'0.75rem',fontWeight:700,
+                                background:'rgba(255,215,0,0.15)',color:'var(--primary,#ffd700)',
+                                boxShadow:'0 0 0 1px rgba(255,215,0,0.35) inset'}}>
+                              ⊞ Grid
+                            </button>
+                            <button
+                              onClick={() => setGridModus(false)}
+                              style={{padding:'0.25rem 0.65rem',borderRadius:'6px',border:'none',cursor:'pointer',
+                                fontSize:'0.75rem',fontWeight:700,
+                                background:'transparent',color:'var(--text-3,#888)',boxShadow:'none'}}>
+                              ≡ Liste
+                            </button>
+                          </div>
+                          {renderGridAnsicht(datum, pruefungenAmTag)}
+                        </div>
+                      ) : (
+                      <>
+                        {/* Toggle auch im Listen-Modus */}
+                        <div style={{gridColumn:'1 / -1',display:'flex',alignItems:'center',gap:'0.25rem',
+                          padding:'0.4rem 0.75rem',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                          <span style={{fontSize:'0.7rem',fontWeight:700,textTransform:'uppercase',
+                            letterSpacing:'0.08em',color:'var(--text-3,#888)',marginRight:'0.25rem'}}>Ansicht:</span>
+                          <button
+                            onClick={() => setGridModus(true)}
+                            style={{padding:'0.25rem 0.65rem',borderRadius:'6px',border:'none',cursor:'pointer',
+                              fontSize:'0.75rem',fontWeight:700,
+                              background:'transparent',color:'var(--text-3,#888)',boxShadow:'none'}}>
+                            ⊞ Grid
+                          </button>
+                          <button
+                            onClick={() => setGridModus(false)}
+                            style={{padding:'0.25rem 0.65rem',borderRadius:'6px',border:'none',cursor:'pointer',
+                              fontSize:'0.75rem',fontWeight:700,
+                              background:'rgba(255,215,0,0.15)',color:'var(--primary,#ffd700)',
+                              boxShadow:'0 0 0 1px rgba(255,215,0,0.35) inset'}}>
+                            ≡ Liste
+                          </button>
+                        </div>
+                        {pruefungenAmTag.map((pruefling, index) => {
                         const isEditing = editingPruefling?.pruefung_id === pruefling.pruefung_id;
                         const ergebnis = ergebnisse[pruefling.pruefung_id] || {
                           bestanden: false,
@@ -1816,6 +2559,16 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                                   </h4>
                                   <p className="pd-pruefling-sub">
                                     {pruefling.stil_name} · {pruefling.graduierung_vorher} → {pruefling.graduierung_nachher}
+                                    {pruefling.guertellaenge_cm && (
+                                      <span style={{
+                                        marginLeft:'0.5rem',fontSize:'0.7rem',fontWeight:700,
+                                        padding:'1px 5px',borderRadius:'4px',
+                                        background:'rgba(99,102,241,0.15)',color:'#a5b4fc',
+                                        border:'1px solid rgba(99,102,241,0.3)',
+                                      }}>
+                                        📏 {pruefling.guertellaenge_cm} cm
+                                      </span>
+                                    )}
                                   </p>
                                   <div className="pd-status-row">
                                     {getStatusBadge(pruefling)}
@@ -2001,7 +2754,7 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                                           <span>
                                             {kategorie === 'kondition' && '💪 Kondition / Warm Up'}
                                             {kategorie === 'grundtechniken' && '🥋 Grundtechniken'}
-                                            {kategorie === 'fusstechniken' && '🦵 Fußtechniken'}
+                                            {kategorie === 'fusstechniken' && '🦵 Fusstechniken'}
                                             {kategorie === 'kata' && '🎭 Kata / Kombinationen'}
                                             {kategorie === 'kumite' && '⚔️ Kumite / Sparring'}
                                             {kategorie === 'theorie' && '📚 Theorie'}
@@ -2280,6 +3033,8 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                           <Check size={14} /> {loading ? 'Speichern…' : 'Alle speichern'}
                         </button>
                       </div>
+                      </>
+                      )}
                     </div>
                   )}
                 </div>

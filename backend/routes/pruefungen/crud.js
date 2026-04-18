@@ -46,6 +46,73 @@ function formatDate(dateValue) {
 // ============================================================================
 
 /**
+ * GET /guertel-bestand
+ * Lagerbestand für spezifische Gürtel (Farbe + Länge) abfragen
+ * Query: farbe_hex (kommagetrennt) + laenge_cm
+ */
+router.get('/guertel-bestand', (req, res) => {
+  const { farbe_hex, laenge_cm } = req.query;
+  if (!farbe_hex) return res.json({ success: true, bestand: {} });
+
+  const pool = db.promise();
+  const farben = farbe_hex.split(',').map(f => f.trim().replace(/^#/, '').toUpperCase());
+  const laenge = laenge_cm ? parseInt(laenge_cm, 10) : null;
+
+  const run = async () => {
+    // Gürtel & Graduierung Kategorien ermitteln (ID 7 + Kinder)
+    const [katRows] = await pool.query(
+      `SELECT kategorie_id FROM artikel_kategorien WHERE parent_id = 7 OR kategorie_id = 7`
+    );
+    const katIds = katRows.map(r => r.kategorie_id);
+    if (katIds.length === 0) return {};
+
+    // Artikel mit passender Farbe in Gürtel-Kategorie finden
+    const placeholders = farben.map(() => '?').join(',');
+    const hexList = farben.map(f => `#${f}`);
+    const [artikelRows] = await pool.query(
+      `SELECT artikel_id, name, farbe_hex, varianten_groessen, varianten_bestand, lagerbestand, hat_varianten
+       FROM artikel
+       WHERE UPPER(REPLACE(farbe_hex,'#','')) IN (${placeholders})
+         AND kategorie_id IN (${katIds.map(() => '?').join(',')})
+         AND aktiv = 1`,
+      [...farben, ...katIds]
+    );
+
+    const result = {};
+    for (const art of artikelRows) {
+      const hex = (art.farbe_hex || '').replace('#', '').toUpperCase();
+      const varBestand = art.varianten_bestand
+        ? (typeof art.varianten_bestand === 'string' ? JSON.parse(art.varianten_bestand) : art.varianten_bestand)
+        : {};
+      const varGroessen = art.varianten_groessen
+        ? (typeof art.varianten_groessen === 'string' ? JSON.parse(art.varianten_groessen) : art.varianten_groessen)
+        : [];
+
+      let bestand;
+      if (laenge && varGroessen.length > 0) {
+        // Varianten-Artikel: Bestand für spezifische Länge
+        const key = String(laenge);
+        bestand = varBestand[key] ?? varBestand[`${key}cm`] ?? 0;
+      } else {
+        bestand = art.lagerbestand || 0;
+      }
+
+      if (!result[hex] || result[hex].bestand < bestand) {
+        result[hex] = { artikel_id: art.artikel_id, name: art.name, bestand };
+      }
+    }
+    return result;
+  };
+
+  run()
+    .then(bestand => res.json({ success: true, bestand }))
+    .catch(err => {
+      logger.error('Fehler bei guertel-bestand:', err);
+      res.json({ success: true, bestand: {} });
+    });
+});
+
+/**
  * GET /heute
  * Prüfungen für ein bestimmtes Datum (Live-Prüfungsansicht)
  */
@@ -248,7 +315,8 @@ router.get('/', (req, res) => {
       g_vorher.name as graduierung_vorher, g_vorher.farbe_hex as farbe_vorher,
       g_nachher.name as graduierung_nachher, g_nachher.farbe_hex as farbe_nachher,
       g_nachher.dan_grad,
-      g_zwischen.name as graduierung_zwischen, g_zwischen.farbe_hex as farbe_zwischen
+      g_zwischen.name as graduierung_zwischen, g_zwischen.farbe_hex as farbe_zwischen,
+      msd.guertellaenge_cm
     FROM pruefungen p
     LEFT JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
     INNER JOIN stile s ON p.stil_id = s.stil_id
@@ -256,6 +324,7 @@ router.get('/', (req, res) => {
     LEFT JOIN graduierungen g_vorher ON p.graduierung_vorher_id = g_vorher.graduierung_id
     LEFT JOIN graduierungen g_nachher ON p.graduierung_nachher_id = g_nachher.graduierung_id
     LEFT JOIN graduierungen g_zwischen ON p.graduierung_zwischen_id = g_zwischen.graduierung_id
+    LEFT JOIN mitglied_stil_data msd ON p.mitglied_id = msd.mitglied_id AND p.stil_id = msd.stil_id
     ${whereClause}
     ORDER BY p.pruefungsdatum DESC
     LIMIT ? OFFSET ?
@@ -1081,6 +1150,39 @@ router.post('/:id/bewertungen', (req, res) => {
             return res.status(500).json({ error: 'Fehler beim Speichern', details: updateErr.message });
           }
           res.json({ success: true, message: 'Bewertungen gespeichert', count: bewertungen.length });
+
+          // Zusätzlich: pruefung_bewertungen-Tabelle befüllen (wird vom Protokoll-Export genutzt)
+          const upsertRows = bewertungen
+            .filter(b => b.inhalt_id)
+            .map(b => [
+              pruefung_id,
+              b.inhalt_id,
+              b.bestanden != null ? (b.bestanden ? 1 : 0) : null,
+              b.punktzahl != null ? b.punktzahl : null,
+              b.max_punktzahl != null ? b.max_punktzahl : null,
+              b.kommentar || null,
+              b.nicht_bewertet ? 1 : 0
+            ]);
+          if (upsertRows.length > 0) {
+            db.query(
+              `INSERT INTO pruefung_bewertungen
+                (pruefung_id, inhalt_id, bestanden, punktzahl, max_punktzahl, kommentar, nicht_bewertet)
+               VALUES ?
+               ON DUPLICATE KEY UPDATE
+                bestanden = VALUES(bestanden),
+                punktzahl = VALUES(punktzahl),
+                max_punktzahl = VALUES(max_punktzahl),
+                kommentar = VALUES(kommentar),
+                nicht_bewertet = VALUES(nicht_bewertet),
+                aktualisiert_am = NOW()`,
+              [upsertRows],
+              (upsertErr) => {
+                if (upsertErr) {
+                  logger.error('Fehler beim UPSERT pruefung_bewertungen:', { error: upsertErr });
+                }
+              }
+            );
+          }
         }
       );
     };

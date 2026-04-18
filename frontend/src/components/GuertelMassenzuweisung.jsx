@@ -13,6 +13,8 @@ function GuertelMassenzuweisung() {
   const [graduierungen, setGraduierungen] = useState([]);
   const [mitglieder, setMitglieder] = useState([]);
   const [pendingChanges, setPendingChanges] = useState({});
+  const [pendingLaengen, setPendingLaengen] = useState({}); // mitglied_id → guertellaenge_cm (pending)
+  const [savingLaenge, setSavingLaenge] = useState({}); // mitglied_id → bool
   const [viewMode, setViewMode] = useState('tabelle'); // 'tabelle' | 'karten'
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'unassigned' | 'assigned'
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,6 +132,24 @@ function GuertelMassenzuweisung() {
       setError('Fehler beim Speichern. Bitte erneut versuchen.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleLaengeSave = async (mitgliedId, laenge) => {
+    if (!selectedStilId) return;
+    setSavingLaenge(prev => ({ ...prev, [mitgliedId]: true }));
+    try {
+      await axios.put(withDojo(`/mitglieder/${mitgliedId}/stil/${selectedStilId}/guertellaenge`), {
+        guertellaenge_cm: laenge || null
+      });
+      setMitglieder(prev => prev.map(m =>
+        m.mitglied_id === mitgliedId ? { ...m, guertellaenge_cm: laenge || null } : m
+      ));
+      setPendingLaengen(prev => { const u = {...prev}; delete u[mitgliedId]; return u; });
+    } catch {
+      // silently ignore — user can retry
+    } finally {
+      setSavingLaenge(prev => { const u = {...prev}; delete u[mitgliedId]; return u; });
     }
   };
 
@@ -349,6 +369,7 @@ function GuertelMassenzuweisung() {
                   Aktueller Gürtel <SortArrow field="guertel" />
                 </th>
                 <th>Neuer Gürtel</th>
+                <th title="Gürtellänge in cm (220–340)">Länge (cm)</th>
                 <th className="gm-th-sortable" onClick={() => handleSort('status')}>
                   Status <SortArrow field="status" />
                 </th>
@@ -392,6 +413,52 @@ function GuertelMassenzuweisung() {
                           </option>
                         ))}
                       </select>
+                    </td>
+                    <td className="gm-cell-laenge">
+                      {(() => {
+                        const currentLaenge = pendingLaengen[m.mitglied_id] !== undefined
+                          ? pendingLaengen[m.mitglied_id]
+                          : (m.guertellaenge_cm || '');
+                        const isSaving = savingLaenge[m.mitglied_id];
+                        const isDirty = pendingLaengen[m.mitglied_id] !== undefined;
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <select
+                              value={currentLaenge}
+                              disabled={isSaving}
+                              onChange={e => {
+                                const val = e.target.value ? parseInt(e.target.value, 10) : '';
+                                setPendingLaengen(prev => ({ ...prev, [m.mitglied_id]: val }));
+                              }}
+                              style={{
+                                padding: '2px 4px', borderRadius: '4px', fontSize: '0.8rem',
+                                border: isDirty ? '1px solid #ffd700' : '1px solid rgba(255,255,255,0.15)',
+                                background: 'var(--surface-2, #1a1a1a)', color: 'var(--text-1, #fff)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <option value="">—</option>
+                              {[220, 240, 260, 280, 300, 320, 340].map(l => (
+                                <option key={l} value={l}>{l}</option>
+                              ))}
+                            </select>
+                            {isDirty && (
+                              <button
+                                onClick={() => handleLaengeSave(m.mitglied_id, pendingLaengen[m.mitglied_id])}
+                                disabled={isSaving}
+                                style={{
+                                  padding: '2px 6px', borderRadius: '4px', fontSize: '0.72rem',
+                                  border: 'none', cursor: 'pointer', fontWeight: 700,
+                                  background: 'rgba(255,215,0,0.15)', color: '#ffd700',
+                                  outline: '1px solid rgba(255,215,0,0.3)'
+                                }}
+                              >
+                                {isSaving ? '…' : '✓'}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="gm-cell-status">
                       {hasPending ? (

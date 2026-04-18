@@ -29,6 +29,7 @@ router.get('/zuweisung/stil/:stil_id', (req, res) => {
       m.nachname,
       msd.current_graduierung_id,
       msd.letzte_pruefung,
+      msd.guertellaenge_cm,
       g.name as graduierung_name,
       g.farbe_hex,
       g.reihenfolge as graduierung_reihenfolge,
@@ -36,10 +37,10 @@ router.get('/zuweisung/stil/:stil_id', (req, res) => {
       g.dan_grad
     FROM mitglieder m
     INNER JOIN (
-      SELECT mitglied_id, current_graduierung_id, letzte_pruefung
+      SELECT mitglied_id, current_graduierung_id, letzte_pruefung, guertellaenge_cm
       FROM mitglied_stil_data WHERE stil_id = ?
       UNION
-      SELECT ms.mitglied_id, NULL, NULL
+      SELECT ms.mitglied_id, NULL, NULL, NULL
       FROM mitglied_stile ms
         JOIN stile s ON s.stil_id = ? AND ms.stil = s.name
       WHERE ms.mitglied_id NOT IN (
@@ -471,6 +472,8 @@ router.get('/:id/stil/:stil_id/training-analysis', (req, res) => {
     `
   };
 
+  const pool = db.promise();
+
   Promise.all([
     new Promise((resolve, reject) => {
       db.query(queries.currentData, [mitglied_id, stil_id], (err, results) => {
@@ -486,9 +489,32 @@ router.get('/:id/stil/:stil_id/training-analysis', (req, res) => {
       db.query(queries.attendanceCount, [mitglied_id, mitglied_id, stil_id], (err, results) => {
         if (err) reject(err); else resolve(results[0].training_sessions || 0);
       });
-    })
+    }),
+    // Letzte abgeschlossene Prüfung aus pruefungen-Tabelle (authoritative)
+    pool.query(
+      `SELECT p.pruefung_id, p.pruefungsdatum, p.bestanden, p.punktzahl, p.max_punktzahl,
+              p.prueferkommentar, p.status,
+              gv.name AS graduierung_vorher, gv.farbe_hex AS farbe_vorher,
+              gn.name AS graduierung_nachher, gn.farbe_hex AS farbe_nachher,
+              pp.gesamtkommentar, pp.staerken, pp.verbesserungen, pp.empfehlungen,
+              pp.gesendet_am AS protokoll_gesendet
+       FROM pruefungen p
+       LEFT JOIN graduierungen gv ON p.graduierung_vorher_id = gv.graduierung_id
+       LEFT JOIN graduierungen gn ON p.graduierung_nachher_id = gn.graduierung_id
+       LEFT JOIN pruefungs_protokolle pp ON pp.pruefung_id = p.pruefung_id
+       WHERE p.mitglied_id = ? AND p.stil_id = ?
+         AND p.status IN ('bestanden','nicht_bestanden','durchgefuehrt')
+       ORDER BY p.pruefungsdatum DESC
+       LIMIT 5`,
+      [mitglied_id, stil_id]
+    ).then(([rows]) => rows).catch(() => [])
   ])
-  .then(([currentData, nextGraduation, trainingSessions]) => {
+  .then(([currentData, nextGraduation, trainingSessions, pruefungsHistorie]) => {
+    // last_exam_date: pruefungen-Tabelle hat Vorrang vor mitglied_stil_data
+    const letzteAusPruefungen = pruefungsHistorie.length > 0 ? pruefungsHistorie[0].pruefungsdatum : null;
+    const letzteAusMSD = currentData?.letzte_pruefung || null;
+    const lastExamDate = letzteAusPruefungen || letzteAusMSD;
+
     const analysis = {
       current_graduation: currentData,
       next_graduation: nextGraduation,
@@ -496,7 +522,8 @@ router.get('/:id/stil/:stil_id/training-analysis', (req, res) => {
       training_sessions_required: nextGraduation?.trainingsstunden_min || 0,
       training_sessions_remaining: Math.max(0, (nextGraduation?.trainingsstunden_min || 0) - trainingSessions),
       is_ready_for_exam: nextGraduation ? trainingSessions >= nextGraduation.trainingsstunden_min : false,
-      last_exam_date: currentData?.letzte_pruefung || null
+      last_exam_date: lastExamDate,
+      pruefungs_historie: pruefungsHistorie
     };
     res.json({ success: true, analysis });
   })
@@ -504,6 +531,57 @@ router.get('/:id/stil/:stil_id/training-analysis', (req, res) => {
     logger.error('Fehler bei der Trainingsstunden-Analyse:', err);
     res.status(500).json({ error: 'Fehler bei der Analyse' });
   });
+});
+
+// Gürtellänge aktualisieren (PUT)
+router.put('/:id/stil/:stil_id/guertellaenge', async (req, res) => {
+  const mitglied_id = parseInt(req.params.id, 10);
+  const stil_id = parseInt(req.params.stil_id, 10);
+  const { guertellaenge_cm } = req.body;
+
+  if (isNaN(mitglied_id) || isNaN(stil_id)) {
+    return res.status(400).json({ error: 'Ungültige Mitglieds- oder Stil-ID' });
+  }
+
+  const laenge = guertellaenge_cm ? parseInt(guertellaenge_cm, 10) : null;
+  if (laenge !== null && (laenge < 100 || laenge > 500)) {
+    return res.status(400).json({ error: 'Ungültige Gürtellänge (erlaubt: 100–500 cm)' });
+  }
+
+  const secureDojoId = getSecureDojoId(req);
+  const pool = db.promise();
+
+  try {
+    if (secureDojoId) {
+      const [member] = await pool.query(
+        'SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?',
+        [mitglied_id, secureDojoId]
+      );
+      if (member.length === 0) return res.status(403).json({ error: 'Nicht berechtigt' });
+    }
+
+    const [existing] = await pool.query(
+      'SELECT id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+      [mitglied_id, stil_id]
+    );
+
+    if (existing.length > 0) {
+      await pool.query(
+        'UPDATE mitglied_stil_data SET guertellaenge_cm = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE mitglied_id = ? AND stil_id = ?',
+        [laenge, mitglied_id, stil_id]
+      );
+    } else {
+      await pool.query(
+        'INSERT INTO mitglied_stil_data (mitglied_id, stil_id, guertellaenge_cm, erstellt_am) VALUES (?, ?, ?, NOW())',
+        [mitglied_id, stil_id, laenge]
+      );
+    }
+
+    res.json({ success: true, guertellaenge_cm: laenge });
+  } catch (err) {
+    logger.error('Fehler beim Speichern der Gürtellänge:', err);
+    res.status(500).json({ error: 'Fehler beim Speichern' });
+  }
 });
 
 // Graduierung aktualisieren (PUT)
