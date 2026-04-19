@@ -213,9 +213,41 @@ const PlanUpgradeSection = () => {
   }
 
   const currentPlan = subscription?.plan_type || 'trial';
+  const currentPlanLevel = PLAN_HIERARCHY[currentPlan] ?? 0;
   const currentPlanInfo = PLAN_FEATURES[currentPlan] || {
     name: currentPlan === 'trial' ? 'Trial' : currentPlan,
     color: 'var(--text-muted)'
+  };
+
+  // Fächert "Alles aus X" rekursiv auf und gibt jedes Feature mit seinem Quell-Plan zurück.
+  // { text, fromPlan, isNew } — isNew = true wenn das Feature NEU in diesem Plan ist
+  const expandPlanFeatures = (planName, targetPlanName = planName, visited = new Set()) => {
+    if (visited.has(planName)) return [];
+    visited.add(planName);
+    const planInfo = PLAN_FEATURES[planName];
+    if (!planInfo) return [];
+
+    const result = [];
+    for (const feature of planInfo.features || []) {
+      const match = feature.match(/^Alles aus (\w+)/i);
+      if (match) {
+        const refPlanKey = match[1].toLowerCase();
+        // Rekursiv aufklappen
+        const subFeatures = expandPlanFeatures(refPlanKey, targetPlanName, visited);
+        result.push(...subFeatures);
+      } else {
+        result.push({
+          text: feature,
+          fromPlan: planName,
+          fromPlanName: PLAN_FEATURES[planName]?.name || planName,
+          // isNew = dieses Feature gehört zum Plan der auf der Karte steht, nicht zu einem niedrigeren
+          isNew: planName === targetPlanName,
+          // isIncluded = User hat diesen Plan bereits
+          isIncluded: (PLAN_HIERARCHY[planName] ?? 0) <= currentPlanLevel
+        });
+      }
+    }
+    return result;
   };
 
   return (
@@ -350,10 +382,21 @@ const PlanUpgradeSection = () => {
                   </div>
 
                   <ul className="plan-features">
-                    {(planInfo.features || []).map((feature, idx) => (
-                      <li key={idx}>
-                        <Check size={16} className="plan-feature-check" />
-                        {feature}
+                    {expandPlanFeatures(plan.plan_name).map((feature, idx) => (
+                      <li
+                        key={idx}
+                        className={`plan-feature-item ${feature.isIncluded ? 'plan-feature-item--included' : ''} ${feature.isNew ? 'plan-feature-item--new' : ''}`}
+                      >
+                        <Check
+                          size={16}
+                          className={`plan-feature-check ${feature.isIncluded ? 'plan-feature-check--included' : ''}`}
+                        />
+                        <span className="plan-feature-text">{feature.text}</span>
+                        {!feature.isNew && (
+                          <span className="plan-feature-origin-badge">
+                            {feature.fromPlanName}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>

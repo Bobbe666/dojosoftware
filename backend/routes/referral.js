@@ -40,8 +40,9 @@ const generateReferralCode = (mitgliedId) => {
 router.get('/settings', async (req, res) => {
     try {
         const dojoId = getSecureDojoId(req);
+        // Super-Admin hat keine Dojo-ID — leere Defaults zurückgeben
         if (!dojoId) {
-            return res.status(400).json({ error: 'Dojo-ID erforderlich' });
+            return res.json({ aktiv: false, standard_praemie: 0, auszahlungsmodus: 'mitglied_waehlt' });
         }
 
         let [settings] = await queryAsync(

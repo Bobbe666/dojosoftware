@@ -6,6 +6,11 @@ const nodemailer = require('nodemailer');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 
 // API: Alle offenen Beiträge abrufen (nicht bezahlt)
+// Regeln:
+//   1. Stripe-Mitglieder: NIE anzeigen (Stripe verwaltet eigene Zahlungen & Retries)
+//   2. SEPA/Lastschrift: erst nach der 2. Rücklastschrift (nicht nach 1. Versuch)
+//   3. Andere (Bar, Überweisung): erst nach gesetzlicher Frist (≥ 14 Tage)
+//   4. Bereits gemahnt: immer anzeigen (laufende Mahnverfahren nicht verstecken)
 router.get("/offene-beitraege", (req, res) => {
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const secureDojoId = getSecureDojoId(req);
@@ -17,6 +22,31 @@ router.get("/offene-beitraege", (req, res) => {
         whereConditions.push('b.dojo_id = ?');
         queryParams.push(secureDojoId);
     }
+
+    // Stripe komplett ausschließen
+    whereConditions.push("LOWER(COALESCE(m.zahlungsmethode, '')) NOT LIKE '%stripe%'");
+
+    // Fälligkeitslogik: SEPA erst nach 2. RL, andere nach 14 Tagen, bereits gemahnte immer
+    whereConditions.push(`(
+        -- SEPA/Lastschrift: erst nach 2. Rücklastschrift
+        (
+            LOWER(COALESCE(m.zahlungsmethode, '')) IN ('sepa-lastschrift', 'lastschrift', 'sepa', 'direct_debit')
+            AND (
+                SELECT COUNT(*) FROM offene_zahlungen oz
+                WHERE oz.mitglied_id = b.mitglied_id
+                AND oz.typ = 'ruecklastschrift'
+            ) >= 2
+        )
+        OR
+        -- Alle anderen Zahlungswege (Bar, Überweisung, Kasse ...): nach 14 Tagen Frist
+        (
+            LOWER(COALESCE(m.zahlungsmethode, '')) NOT IN ('sepa-lastschrift', 'lastschrift', 'sepa', 'direct_debit')
+            AND DATEDIFF(CURDATE(), b.zahlungsdatum) >= 14
+        )
+        OR
+        -- Bereits gemahnte Beiträge: immer anzeigen (laufende Verfahren nicht verstecken)
+        (SELECT COUNT(*) FROM mahnungen WHERE beitrag_id = b.beitrag_id) > 0
+    )`);
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
 
@@ -31,8 +61,12 @@ router.get("/offene-beitraege", (req, res) => {
             CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
             m.email,
             m.telefon,
+            m.zahlungsmethode,
             DATEDIFF(CURDATE(), b.zahlungsdatum) as tage_ueberfaellig,
-            (SELECT COUNT(*) FROM mahnungen WHERE beitrag_id = b.beitrag_id) as mahnstufe
+            (SELECT COUNT(*) FROM mahnungen WHERE beitrag_id = b.beitrag_id) as mahnstufe,
+            (SELECT COUNT(*) FROM offene_zahlungen oz
+             WHERE oz.mitglied_id = b.mitglied_id
+             AND oz.typ = 'ruecklastschrift') as rl_anzahl
         FROM beitraege b
         JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
         ${whereClause}
@@ -191,8 +225,30 @@ router.get("/statistiken", (req, res) => {
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const secureDojoId = getSecureDojoId(req);
 
-    let whereCondition = secureDojoId ? 'WHERE b.dojo_id = ?' : '';
-    let queryParams = secureDojoId ? [secureDojoId] : [];
+    let whereConditions = [
+        'b.bezahlt = 0',
+        "LOWER(COALESCE(m.zahlungsmethode, '')) NOT LIKE '%stripe%'",
+        // Gleiche Fälligkeitslogik wie /offene-beitraege
+        `(
+            (
+                LOWER(COALESCE(m.zahlungsmethode, '')) IN ('sepa-lastschrift', 'lastschrift', 'sepa', 'direct_debit')
+                AND (SELECT COUNT(*) FROM offene_zahlungen oz WHERE oz.mitglied_id = b.mitglied_id AND oz.typ = 'ruecklastschrift') >= 2
+            )
+            OR (
+                LOWER(COALESCE(m.zahlungsmethode, '')) NOT IN ('sepa-lastschrift', 'lastschrift', 'sepa', 'direct_debit')
+                AND DATEDIFF(CURDATE(), b.zahlungsdatum) >= 14
+            )
+            OR (SELECT COUNT(*) FROM mahnungen WHERE beitrag_id = b.beitrag_id) > 0
+        )`
+    ];
+    let queryParams = [];
+
+    if (secureDojoId) {
+        whereConditions.push('b.dojo_id = ?');
+        queryParams.push(secureDojoId);
+    }
+
+    const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
 
     const query = `
         SELECT
@@ -204,9 +260,9 @@ router.get("/statistiken", (req, res) => {
             COUNT(DISTINCT CASE WHEN mah.mahnstufe = 2 THEN mah.mahnung_id END) as mahnstufe_2,
             COUNT(DISTINCT CASE WHEN mah.mahnstufe = 3 THEN mah.mahnung_id END) as mahnstufe_3
         FROM beitraege b
+        JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
         LEFT JOIN mahnungen mah ON b.beitrag_id = mah.beitrag_id
-        ${whereCondition}
-        AND b.bezahlt = 0
+        ${whereClause}
     `;
 
     db.query(query, queryParams, (err, results) => {
@@ -555,6 +611,7 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                 b.betrag as beitrag_betrag,
                 b.beschreibung as beitrag_beschreibung,
                 b.zahlungsdatum as faelligkeitsdatum,
+                b.dojo_id,
                 m.mitglied_id,
                 m.vorname,
                 m.nachname,
@@ -659,6 +716,16 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                         // Mahnung als versendet markieren
                         const updateQuery = `UPDATE mahnungen SET versandt = 1, versand_art = 'email' WHERE mahnung_id = ?`;
                         db.query(updateQuery, [mahnung_id]);
+
+                        // Audit-Log in notifications-Tabelle
+                        const notifSubject = `Mahnung Stufe ${mahnungData.mahnstufe}: ${mahnungData.vorname} ${mahnungData.nachname}`;
+                        const notifMsg = `Mahnung (Stufe ${mahnungData.mahnstufe}) über ${Number(mahnungData.beitrag_betrag || 0).toFixed(2)} € an ${mahnungData.email} gesendet. Mahnung-ID: ${mahnung_id}`;
+                        db.query(
+                            `INSERT INTO notifications (type, recipient, subject, message, status, dojo_id, notification_group_id, created_at)
+                             VALUES ('email', ?, ?, ?, 'sent', ?, ?, NOW())`,
+                            [mahnungData.email, notifSubject, notifMsg, mahnungData.dojo_id || null, `mahnung_${mahnung_id}`],
+                            () => {}
+                        );
 
                         res.json({
                             success: true,

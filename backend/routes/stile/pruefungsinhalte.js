@@ -261,31 +261,55 @@ router.delete('/:stilId/kategorien/:katId', (req, res) => {
 // ============================================================================
 
 // GET /:stilId/graduierungen/:graduierungId/pruefungsinhalte - Prüfungsinhalte abrufen
+// Lädt kumulativ alle Techniken aus dieser und allen vorherigen Graduierungen des Stils
 router.get('/:stilId/graduierungen/:graduierungId/pruefungsinhalte', (req, res) => {
-  const { graduierungId } = req.params;
+  const { stilId, graduierungId } = req.params;
 
   if (!graduierungId || isNaN(graduierungId)) {
     return res.status(400).json({ error: 'Ungültige Graduierung-ID' });
   }
 
   const query = `
-    SELECT inhalt_id, kategorie, titel, beschreibung, reihenfolge, pflicht, aktiv, ohne_punkte, ist_gesprungen
-    FROM pruefungsinhalte
-    WHERE graduierung_id = ? AND aktiv = 1
-    ORDER BY kategorie, reihenfolge
+    SELECT
+      pi.inhalt_id, pi.kategorie, pi.titel, pi.beschreibung,
+      pi.reihenfolge, pi.pflicht, pi.aktiv, pi.ohne_punkte, pi.ist_gesprungen,
+      g.graduierung_id, g.name AS graduierung_name, g.reihenfolge AS grad_reihenfolge
+    FROM pruefungsinhalte pi
+    JOIN graduierungen g ON pi.graduierung_id = g.graduierung_id
+    WHERE g.stil_id = ?
+      AND g.reihenfolge <= (
+        SELECT reihenfolge FROM graduierungen WHERE graduierung_id = ?
+      )
+      AND pi.aktiv = 1
+    ORDER BY pi.kategorie, pi.ist_gesprungen, g.reihenfolge, pi.reihenfolge
   `;
 
-  db.query(query, [graduierungId], (error, results) => {
+  db.query(query, [stilId, graduierungId], (error, results) => {
     if (error) {
       logger.error('Fehler beim Abrufen der Prüfungsinhalte:', error);
       return res.status(500).json({ error: 'Fehler beim Abrufen der Prüfungsinhalte' });
     }
 
+    const targetId = parseInt(graduierungId);
+
+    // Schritt 1: Titel aus der aktuellen Graduierung pro Kategorie sammeln
+    const aktuelleSchluessel = new Set();
+    results.forEach(inhalt => {
+      if (inhalt.graduierung_id === targetId) {
+        const key = `${inhalt.kategorie}::${(inhalt.titel || '').toLowerCase().trim()}::${inhalt.ist_gesprungen}`;
+        aktuelleSchluessel.add(key);
+      }
+    });
+
+    // Schritt 2: Einträge aufnehmen, Duplikate aus früheren Graduierungen überspringen
     const pruefungsinhalte = {};
     results.forEach(inhalt => {
-      if (!pruefungsinhalte[inhalt.kategorie]) {
-        pruefungsinhalte[inhalt.kategorie] = [];
+      const istAktuell = inhalt.graduierung_id === targetId;
+      if (!istAktuell) {
+        const key = `${inhalt.kategorie}::${(inhalt.titel || '').toLowerCase().trim()}::${inhalt.ist_gesprungen}`;
+        if (aktuelleSchluessel.has(key)) return;
       }
+      if (!pruefungsinhalte[inhalt.kategorie]) pruefungsinhalte[inhalt.kategorie] = [];
       pruefungsinhalte[inhalt.kategorie].push({
         id: inhalt.inhalt_id,
         titel: inhalt.titel,
@@ -293,11 +317,37 @@ router.get('/:stilId/graduierungen/:graduierungId/pruefungsinhalte', (req, res) 
         pflicht: inhalt.pflicht === 1,
         reihenfolge: inhalt.reihenfolge,
         ohne_punkte: inhalt.ohne_punkte === 1,
-        ist_gesprungen: inhalt.ist_gesprungen === 1
+        ist_gesprungen: inhalt.ist_gesprungen === 1,
+        graduierung_name: inhalt.graduierung_name,
+        graduierung_id: inhalt.graduierung_id,
+        ist_aktuell: istAktuell
       });
     });
 
-    res.json({ pruefungsinhalte });
+    // Schritt 3: Kategorie-Labels + Reihenfolge aus pruefungsinhalte_kategorien laden
+    db.query(
+      'SELECT kategorie_key, label, icon, reihenfolge FROM pruefungsinhalte_kategorien WHERE stil_id = ? AND aktiv = 1 ORDER BY reihenfolge',
+      [stilId],
+      (katErr, katResults) => {
+        const kategorienMeta = {};
+        if (!katErr && katResults) {
+          katResults.forEach(k => {
+            kategorienMeta[k.kategorie_key] = { label: k.label, icon: k.icon, reihenfolge: k.reihenfolge };
+          });
+        }
+        // Kategorien in definierter Reihenfolge sortieren
+        const sortedPruefungsinhalte = {};
+        const katKeys = Object.keys(pruefungsinhalte);
+        katKeys.sort((a, b) => {
+          const ra = kategorienMeta[a]?.reihenfolge ?? 99;
+          const rb = kategorienMeta[b]?.reihenfolge ?? 99;
+          return ra - rb;
+        });
+        katKeys.forEach(k => { sortedPruefungsinhalte[k] = pruefungsinhalte[k]; });
+
+        res.json({ pruefungsinhalte: sortedPruefungsinhalte, kategorienMeta });
+      }
+    );
   });
 });
 

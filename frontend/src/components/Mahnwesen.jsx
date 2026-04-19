@@ -16,7 +16,8 @@ import {
   Download,
   Play,
   Settings,
-  RefreshCw
+  RefreshCw,
+  X
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -228,9 +229,9 @@ const Mahnwesen = () => {
 
   if (loading) {
     return (
-      <div className="mahnwesen-container">
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
+      <div className="mw-page">
+        <div className="mw-card mw-loading">
+          <div className="mw-spinner" />
           <p>Lade Mahnwesen-Daten...</p>
         </div>
       </div>
@@ -238,84 +239,93 @@ const Mahnwesen = () => {
   }
 
   return (
-    <div className="mahnwesen-container">
-      {/* Header */}
-      <div className="mahnwesen-header">
-        <button className="btn btn-secondary" onClick={() => navigate('/dashboard/beitraege')}>
-          <ArrowLeft size={20} />
-          Zurück
-        </button>
-        <div>
-          <h1>⚠️ Mahnwesen</h1>
-          <p>Verwalte offene Beiträge und Mahnungen</p>
+    <div className="mw-page">
+
+      {/* ── Header Card ─────────────────────────────────────────── */}
+      <div className="mw-card mw-header">
+        <div className="mw-header__left">
+          <span className="mw-eyebrow">MAHNWESEN</span>
+          <div className="mw-header__title-row">
+            <h1 className="mw-title">Mahnwesen</h1>
+            <span className="mw-badge mw-badge--accent">
+              {offeneBeitraege.length} offen
+            </span>
+          </div>
         </div>
-        <div className="header-actions">
+        <div className="mw-header__actions">
           <button
-            className="btn btn-secondary"
+            className="btn btn-ghost mw-btn-sm"
             onClick={() => navigate('/dashboard/einstellungen/mahnstufen')}
             title="Mahnstufen konfigurieren"
           >
-            <Settings size={18} />
+            <Settings size={15} />
             Einstellungen
           </button>
           <button
-            className="btn btn-warning"
+            className="btn btn-warning mw-btn-sm"
             onClick={() => handleMahnlauf(true)}
             disabled={mahnlaufLoading}
             title="Simuliert den Mahnlauf ohne echte Mahnungen zu erstellen"
           >
-            <Play size={18} />
-            {mahnlaufLoading ? 'Läuft...' : 'Mahnlauf simulieren'}
+            <Play size={15} />
+            {mahnlaufLoading ? 'Läuft...' : 'Simulieren'}
           </button>
           <button
-            className="btn btn-danger"
+            className="btn btn-danger mw-btn-sm"
             onClick={() => handleMahnlauf(false)}
             disabled={mahnlaufLoading}
             title="Erstellt echte Mahnungen basierend auf den Mahnstufen-Einstellungen"
           >
-            <RefreshCw size={18} />
+            <RefreshCw size={15} />
             Mahnlauf starten
           </button>
         </div>
       </div>
 
-      {/* Mahnlauf Ergebnis */}
+      {/* ── Mahnlauf Ergebnis ────────────────────────────────────── */}
       {mahnlaufErgebnis && (
-        <div className={`mahnlauf-ergebnis${mahnlaufErgebnis.simulation ? ' mahnlauf-ergebnis--simulation' : ' mahnlauf-ergebnis--real'}`}>
-          <div className="mahnlauf-ergebnis-header">
-            <h3 className="mahnlauf-ergebnis-title">
-              {mahnlaufErgebnis.simulation ? '🔍 Simulation' : '✅ Mahnlauf durchgeführt'}
-            </h3>
+        <div className={`mw-card mw-result${mahnlaufErgebnis.simulation ? ' mw-result--sim' : ' mw-result--real'}`}>
+          <div className="mw-result__header">
+            <span className="mw-result__label">
+              {mahnlaufErgebnis.simulation ? 'Simulation' : 'Mahnlauf durchgeführt'}
+            </span>
             <button
-              className="btn btn-sm btn-secondary mahnlauf-close-btn"
+              className="mw-close-btn"
               onClick={() => setMahnlaufErgebnis(null)}
+              aria-label="Schließen"
             >
-              ×
+              <X size={14} />
             </button>
           </div>
-          <div className="mahnlauf-grid">
-            <div>
-              <strong>Geprüft:</strong> {mahnlaufErgebnis.zusammenfassung?.geprueft || 0}
+          <div className="mw-result__grid">
+            <div className="mw-result__stat">
+              <span className="mw-result__stat-label">Geprüft</span>
+              <span className="mw-result__stat-value">{mahnlaufErgebnis.zusammenfassung?.geprueft || 0}</span>
             </div>
-            <div className="u-text-success">
-              <strong>Neue Mahnungen:</strong> {mahnlaufErgebnis.zusammenfassung?.neueMahnungen || 0}
+            <div className="mw-result__stat mw-result__stat--success">
+              <span className="mw-result__stat-label">Neue Mahnungen</span>
+              <span className="mw-result__stat-value">{mahnlaufErgebnis.zusammenfassung?.neueMahnungen || 0}</span>
             </div>
-            <div className="u-text-muted">
-              <strong>Übersprungen:</strong> {mahnlaufErgebnis.zusammenfassung?.uebersprungen || 0}
+            <div className="mw-result__stat">
+              <span className="mw-result__stat-label">Übersprungen</span>
+              <span className="mw-result__stat-value">{mahnlaufErgebnis.zusammenfassung?.uebersprungen || 0}</span>
             </div>
-            <div className="u-text-error">
-              <strong>Fehler:</strong> {mahnlaufErgebnis.zusammenfassung?.fehler || 0}
+            <div className="mw-result__stat mw-result__stat--error">
+              <span className="mw-result__stat-label">Fehler</span>
+              <span className="mw-result__stat-value">{mahnlaufErgebnis.zusammenfassung?.fehler || 0}</span>
             </div>
           </div>
           {mahnlaufErgebnis.ergebnisse?.neueMahnungen?.length > 0 && (
-            <div className="mahnlauf-ergebnis-details">
-              <strong>Neue Mahnungen:</strong>
-              <ul className="mahnlauf-ergebnis-list">
+            <div className="mw-result__details">
+              <span className="mw-result__details-label">Neue Mahnungen:</span>
+              <ul className="mw-result__list">
                 {mahnlaufErgebnis.ergebnisse.neueMahnungen.slice(0, 5).map((m, i) => (
-                  <li key={i}>{m.mitglied} - {m.mahnstufe}. Mahnung (€{parseFloat(m.betrag).toFixed(2)})</li>
+                  <li key={i}>{m.mitglied} — {m.mahnstufe}. Mahnung (€{parseFloat(m.betrag).toFixed(2)})</li>
                 ))}
                 {mahnlaufErgebnis.ergebnisse.neueMahnungen.length > 5 && (
-                  <li>... und {mahnlaufErgebnis.ergebnisse.neueMahnungen.length - 5} weitere</li>
+                  <li className="mw-result__list-more">
+                    ... und {mahnlaufErgebnis.ergebnisse.neueMahnungen.length - 5} weitere
+                  </li>
                 )}
               </ul>
             </div>
@@ -323,219 +333,272 @@ const Mahnwesen = () => {
         </div>
       )}
 
-      {/* Statistiken */}
-      <div className="stats-grid">
-        <div className="stat-card warning">
-          <div className="stat-icon">
-            <AlertCircle size={24} />
+      {/* ── KPI Grid ─────────────────────────────────────────────── */}
+      <div className="mw-kpi-grid">
+
+        <div className="mw-card mw-kpi-card">
+          <div className="mw-kpi__icon mw-kpi__icon--warning">
+            <AlertCircle size={18} />
           </div>
-          <div className="stat-info">
-            <h3>Offene Beiträge</h3>
-            <p className="stat-value">{statistiken.offene_beitraege || 0}</p>
-            <span className="stat-trend">Nicht bezahlt</span>
-          </div>
+          <span className="mw-kpi__label">Offene Beiträge</span>
+          <span className="mw-kpi__value">{statistiken.offene_beitraege || 0}</span>
+          <span className="mw-kpi__detail">Nicht bezahlt</span>
         </div>
 
-        <div className="stat-card danger">
-          <div className="stat-icon">
-            <DollarSign size={24} />
+        <div className="mw-card mw-kpi-card">
+          <div className="mw-kpi__icon mw-kpi__icon--danger">
+            <DollarSign size={18} />
           </div>
-          <div className="stat-info">
-            <h3>Offene Summe</h3>
-            <p className="stat-value">€{parseFloat(statistiken.offene_summe || 0).toFixed(2)}</p>
-            <span className="stat-trend">Gesamt</span>
-          </div>
+          <span className="mw-kpi__label">Offene Summe</span>
+          <span className="mw-kpi__value mw-kpi__value--danger">
+            €{parseFloat(statistiken.offene_summe || 0).toFixed(2)}
+          </span>
+          <span className="mw-kpi__detail">Gesamt ausstehend</span>
         </div>
 
-        <div className="stat-card info">
-          <div className="stat-icon">
-            <Clock size={24} />
+        <div className="mw-card mw-kpi-card">
+          <div className="mw-kpi__icon mw-kpi__icon--warning">
+            <Clock size={18} />
           </div>
-          <div className="stat-info">
-            <h3>Überfällig 30+ Tage</h3>
-            <p className="stat-value">{statistiken.ueberfaellig_30_tage || 0}</p>
-            <span className="stat-trend">Kritisch</span>
-          </div>
+          <span className="mw-kpi__label">Überfällig 30+ Tage</span>
+          <span className="mw-kpi__value mw-kpi__value--warning">
+            {statistiken.ueberfaellig_30_tage || 0}
+          </span>
+          <span className="mw-kpi__detail">Kritisch</span>
         </div>
 
-        <div className="stat-card success">
-          <div className="stat-icon">
-            <FileText size={24} />
+        <div className="mw-card mw-kpi-card">
+          <div className="mw-kpi__icon mw-kpi__icon--neutral">
+            <FileText size={18} />
           </div>
-          <div className="stat-info">
-            <h3>Mahnungen gesamt</h3>
-            <p className="stat-value">{statistiken.anzahl_mahnungen || 0}</p>
-            <span className="stat-trend">
-              {statistiken.mahnstufe_1 || 0} / {statistiken.mahnstufe_2 || 0} / {statistiken.mahnstufe_3 || 0}
-            </span>
-          </div>
+          <span className="mw-kpi__label">Mahnungen gesamt</span>
+          <span className="mw-kpi__value">{statistiken.anzahl_mahnungen || 0}</span>
+          <span className="mw-kpi__detail">
+            Stufe 1: {statistiken.mahnstufe_1 || 0} &nbsp;·&nbsp;
+            2: {statistiken.mahnstufe_2 || 0} &nbsp;·&nbsp;
+            3: {statistiken.mahnstufe_3 || 0}
+          </span>
         </div>
+
       </div>
 
-      {/* View Toggle */}
-      <div className="view-toggle">
-        <button
-          className={`btn-toggle ${selectedView === 'offene' ? 'active' : ''}`}
-          onClick={() => setSelectedView('offene')}
-        >
-          <AlertCircle size={18} />
-          Offene Beiträge ({offeneBeitraege.length})
-        </button>
-        <button
-          className={`btn-toggle ${selectedView === 'mahnungen' ? 'active' : ''}`}
-          onClick={() => setSelectedView('mahnungen')}
-        >
-          <FileText size={18} />
-          Mahnungen ({mahnungen.length})
-        </button>
+      {/* ── Tabs + Content Card ───────────────────────────────────── */}
+      <div className="mw-card mw-content-card">
+
+        {/* Tab bar */}
+        <div className="mw-tabs">
+          <button
+            className={`mw-tab${selectedView === 'offene' ? ' mw-tab--active' : ''}`}
+            onClick={() => setSelectedView('offene')}
+          >
+            <AlertCircle size={14} />
+            Offene Beiträge
+            <span className="mw-tab__count">{offeneBeitraege.length}</span>
+          </button>
+          <button
+            className={`mw-tab${selectedView === 'mahnungen' ? ' mw-tab--active' : ''}`}
+            onClick={() => setSelectedView('mahnungen')}
+          >
+            <FileText size={14} />
+            Mahnungen
+            <span className="mw-tab__count">{mahnungen.length}</span>
+          </button>
+        </div>
+
+        {/* ── Offene Beiträge ─────────────────────────────────────── */}
+        {selectedView === 'offene' && (
+          <div className="mw-list">
+            {offeneBeitraege.length === 0 ? (
+              <div className="mw-empty">
+                <CheckCircle size={40} />
+                <p>Keine offenen Beiträge vorhanden</p>
+              </div>
+            ) : (
+
+              <div className="mw-rows">
+                {/* Column headers */}
+                <div className="mw-row mw-row--head">
+                  <span className="mw-col mw-col--name">Mitglied</span>
+                  <span className="mw-col mw-col--amount">Betrag</span>
+                  <span className="mw-col mw-col--date">Fällig seit</span>
+                  <span className="mw-col mw-col--days">Überfällig</span>
+                  <span className="mw-col mw-col--stufe">Mahnstufe</span>
+                  <span className="mw-col mw-col--actions">Aktionen</span>
+                </div>
+
+                {offeneBeitraege.map((beitrag) => (
+                  <div key={beitrag.beitrag_id} className="mw-row">
+
+                    {/* Name + Zahlungsmethode */}
+                    <div className="mw-col mw-col--name">
+                      <span className="mw-member-name">{beitrag.mitglied_name}</span>
+                      <div className="mw-member-meta">
+                        {beitrag.zahlungsmethode && (
+                          <span className="mw-meta-tag">{beitrag.zahlungsmethode}</span>
+                        )}
+                        {beitrag.rl_anzahl > 0 && (
+                          <span className="mw-badge mw-badge--warning mw-badge--xs">
+                            RL {beitrag.rl_anzahl}x
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Betrag */}
+                    <div className="mw-col mw-col--amount">
+                      <span className="mw-amount">
+                        €{parseFloat(beitrag.betrag).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Fällig seit */}
+                    <div className="mw-col mw-col--date">
+                      <span className="mw-date">
+                        {new Date(beitrag.zahlungsdatum).toLocaleDateString('de-DE')}
+                      </span>
+                    </div>
+
+                    {/* Tage überfällig */}
+                    <div className="mw-col mw-col--days">
+                      <span className={`mw-badge ${beitrag.tage_ueberfaellig > 30 ? 'mw-badge--danger' : 'mw-badge--warning'}`}>
+                        {beitrag.tage_ueberfaellig}d
+                      </span>
+                    </div>
+
+                    {/* Mahnstufe */}
+                    <div className="mw-col mw-col--stufe">
+                      <span className={`mw-badge mw-badge--${getMahnstufeColor(beitrag.mahnstufe)}`}>
+                        {getMahnstufeText(beitrag.mahnstufe)}
+                      </span>
+                    </div>
+
+                    {/* Aktionen */}
+                    <div className="mw-col mw-col--actions">
+                      <button
+                        className="mw-action-btn mw-action-btn--warning"
+                        onClick={() => handleMahnungErstellen(beitrag.beitrag_id, beitrag.mahnstufe + 1)}
+                        disabled={beitrag.mahnstufe >= 3}
+                        title="Mahnung erstellen"
+                      >
+                        <Send size={13} />
+                        Mahnung
+                      </button>
+                      <button
+                        className="mw-action-btn mw-action-btn--success"
+                        onClick={() => handleAlsBezahltMarkieren(beitrag.beitrag_id)}
+                        title="Als bezahlt markieren"
+                      >
+                        <CheckCircle size={13} />
+                        Bezahlt
+                      </button>
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Mahnungen ───────────────────────────────────────────── */}
+        {selectedView === 'mahnungen' && (
+          <div className="mw-list">
+            {mahnungen.length === 0 ? (
+              <div className="mw-empty">
+                <FileText size={40} />
+                <p>Keine Mahnungen vorhanden</p>
+              </div>
+            ) : (
+
+              <div className="mw-rows">
+                {/* Column headers */}
+                <div className="mw-row mw-row--head">
+                  <span className="mw-col mw-col--name">Mitglied</span>
+                  <span className="mw-col mw-col--amount">Betrag</span>
+                  <span className="mw-col mw-col--stufe">Mahnstufe</span>
+                  <span className="mw-col mw-col--date">Mahndatum</span>
+                  <span className="mw-col mw-col--fee">Gebühr</span>
+                  <span className="mw-col mw-col--status">Status</span>
+                  <span className="mw-col mw-col--actions">Aktionen</span>
+                </div>
+
+                {mahnungen.map((mahnung) => (
+                  <div key={mahnung.mahnung_id} className="mw-row">
+
+                    {/* Name + Email */}
+                    <div className="mw-col mw-col--name">
+                      <span className="mw-member-name">{mahnung.mitglied_name}</span>
+                      {mahnung.email && (
+                        <span className="mw-member-email">{mahnung.email}</span>
+                      )}
+                    </div>
+
+                    {/* Betrag */}
+                    <div className="mw-col mw-col--amount">
+                      <span className="mw-amount">
+                        €{parseFloat(mahnung.beitrag_betrag).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Mahnstufe */}
+                    <div className="mw-col mw-col--stufe">
+                      <span className={`mw-badge mw-badge--${getMahnstufeColor(mahnung.mahnstufe)}`}>
+                        {getMahnstufeText(mahnung.mahnstufe)}
+                      </span>
+                    </div>
+
+                    {/* Mahndatum */}
+                    <div className="mw-col mw-col--date">
+                      <span className="mw-date">
+                        {new Date(mahnung.mahndatum).toLocaleDateString('de-DE')}
+                      </span>
+                    </div>
+
+                    {/* Mahngebühr */}
+                    <div className="mw-col mw-col--fee">
+                      <span className="mw-fee">
+                        €{parseFloat(mahnung.mahngebuehr).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Versandt Status */}
+                    <div className="mw-col mw-col--status">
+                      {mahnung.versandt ? (
+                        <span className="mw-badge mw-badge--success">Versendet</span>
+                      ) : (
+                        <span className="mw-badge mw-badge--warning">Ausstehend</span>
+                      )}
+                    </div>
+
+                    {/* Aktionen */}
+                    <div className="mw-col mw-col--actions">
+                      <button
+                        className="mw-action-btn mw-action-btn--ghost"
+                        onClick={() => handlePdfDownload(mahnung.mahnung_id, mahnung.mitglied_name)}
+                        title="PDF herunterladen"
+                      >
+                        <Download size={13} />
+                      </button>
+                      {!mahnung.versandt && (
+                        <button
+                          className="mw-action-btn mw-action-btn--primary"
+                          onClick={() => handleMahnungSenden(mahnung.mahnung_id, mahnung.email)}
+                          title={mahnung.email ? `E-Mail an ${mahnung.email}` : 'Keine E-Mail hinterlegt'}
+                          disabled={!mahnung.email}
+                        >
+                          <Send size={13} />
+                        </button>
+                      )}
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
-
-      {/* Offene Beiträge Ansicht */}
-      {selectedView === 'offene' && (
-        <div className="section">
-          <div className="section-header">
-            <h2>Offene Beiträge</h2>
-          </div>
-
-          {offeneBeitraege.length === 0 ? (
-            <div className="empty-state">
-              <CheckCircle size={48} />
-              <p>Keine offenen Beiträge vorhanden</p>
-            </div>
-          ) : (
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Mitglied</th>
-                    <th>Betrag</th>
-                    <th>Fällig seit</th>
-                    <th>Überfällig</th>
-                    <th>Mahnstufe</th>
-                    <th>Kontakt</th>
-                    <th>Aktionen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {offeneBeitraege.map((beitrag) => (
-                    <tr key={beitrag.beitrag_id}>
-                      <td>{beitrag.mitglied_name}</td>
-                      <td className="amount">€{parseFloat(beitrag.betrag).toFixed(2)}</td>
-                      <td>{new Date(beitrag.zahlungsdatum).toLocaleDateString('de-DE')}</td>
-                      <td className={beitrag.tage_ueberfaellig > 30 ? 'critical' : 'warning'}>
-                        {beitrag.tage_ueberfaellig} Tage
-                      </td>
-                      <td>
-                        <span className={`badge badge-${getMahnstufeColor(beitrag.mahnstufe)}`}>
-                          {getMahnstufeText(beitrag.mahnstufe)}
-                        </span>
-                      </td>
-                      <td className="contact-info">
-                        {beitrag.email && (
-                          <div><Mail size={14} /> {beitrag.email}</div>
-                        )}
-                        {beitrag.telefon && (
-                          <div><Phone size={14} /> {beitrag.telefon}</div>
-                        )}
-                      </td>
-                      <td className="actions">
-                        <button
-                          className="btn btn-sm btn-warning"
-                          onClick={() => handleMahnungErstellen(beitrag.beitrag_id, beitrag.mahnstufe + 1)}
-                          disabled={beitrag.mahnstufe >= 3}
-                        >
-                          <Send size={14} />
-                          Mahnung
-                        </button>
-                        <button
-                          className="btn btn-sm btn-success"
-                          onClick={() => handleAlsBezahltMarkieren(beitrag.beitrag_id)}
-                        >
-                          <CheckCircle size={14} />
-                          Bezahlt
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Mahnungen Ansicht */}
-      {selectedView === 'mahnungen' && (
-        <div className="section">
-          <div className="section-header">
-            <h2>Versendete Mahnungen</h2>
-          </div>
-
-          {mahnungen.length === 0 ? (
-            <div className="empty-state">
-              <FileText size={48} />
-              <p>Keine Mahnungen vorhanden</p>
-            </div>
-          ) : (
-            <div className="table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Mitglied</th>
-                    <th>Beitrag</th>
-                    <th>Mahnstufe</th>
-                    <th>Mahndatum</th>
-                    <th>Mahngebühr</th>
-                    <th>Status</th>
-                    <th>Aktionen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mahnungen.map((mahnung) => (
-                    <tr key={mahnung.mahnung_id}>
-                      <td>{mahnung.mitglied_name}</td>
-                      <td className="amount">€{parseFloat(mahnung.beitrag_betrag).toFixed(2)}</td>
-                      <td>
-                        <span className={`badge badge-${getMahnstufeColor(mahnung.mahnstufe)}`}>
-                          {getMahnstufeText(mahnung.mahnstufe)}
-                        </span>
-                      </td>
-                      <td>{new Date(mahnung.mahndatum).toLocaleDateString('de-DE')}</td>
-                      <td className="amount">€{parseFloat(mahnung.mahngebuehr).toFixed(2)}</td>
-                      <td>
-                        {mahnung.versandt ? (
-                          <span className="badge badge-success">Versendet</span>
-                        ) : (
-                          <span className="badge badge-warning">Ausstehend</span>
-                        )}
-                      </td>
-                      <td className="actions">
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handlePdfDownload(mahnung.mahnung_id, mahnung.mitglied_name)}
-                          title="PDF herunterladen"
-                        >
-                          <Download size={14} />
-                        </button>
-                        {!mahnung.versandt && (
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleMahnungSenden(mahnung.mahnung_id, mahnung.email)}
-                            title={mahnung.email ? `E-Mail an ${mahnung.email}` : 'Keine E-Mail hinterlegt'}
-                            disabled={!mahnung.email}
-                          >
-                            <Send size={14} />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };

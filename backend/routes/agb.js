@@ -251,7 +251,7 @@ router.get("/:dojoId/members-need-acceptance", authenticateToken, requireAdmin, 
 // =====================================================
 // POST /api/agb/member/:mitgliedId/accept - Akzeptanz erfassen
 // =====================================================
-router.post('/member/:mitgliedId/accept', (req, res) => {
+router.post('/member/:mitgliedId/accept', authenticateToken, (req, res) => {
   const { mitgliedId } = req.params;
   const { agb_version, dsgvo_version, dojo_regeln_version, hausordnung_version } = req.body;
 
@@ -291,7 +291,7 @@ router.post('/member/:mitgliedId/accept', (req, res) => {
 // =====================================================
 // POST /api/agb/import-confirmation/:mitgliedId - Erst-Login Bestaetigung
 // =====================================================
-router.post('/import-confirmation/:mitgliedId', async (req, res) => {
+router.post('/import-confirmation/:mitgliedId', authenticateToken, async (req, res) => {
   const { mitgliedId } = req.params;
   const {
     agb_akzeptiert,
@@ -347,7 +347,7 @@ router.post('/import-confirmation/:mitgliedId', async (req, res) => {
 
   } catch (error) {
     logger.error('Fehler:', { error: error });
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Fehler beim Speichern der Bestätigung' });
   }
 });
 

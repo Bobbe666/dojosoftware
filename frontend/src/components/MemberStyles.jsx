@@ -4,8 +4,10 @@ import { Trophy, Calendar, ChevronRight, CheckCircle, Target, Award, FileText } 
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import MemberHeader from './MemberHeader.jsx';
+import GuertelRechner from './GuertelRechner.jsx';
 import '../styles/themes.css';
 import '../styles/MemberStyles.css';
+import '../styles/MitgliedDetailShared.css';
 
 const API_BASE = config.apiBaseUrl;
 
@@ -242,6 +244,22 @@ const MemberStyles = () => {
                             </div>
                           </div>
                         )}
+                      </div>
+
+                      {/* Gürtellängen-Rechner */}
+                      <div className="mst-progress-section" style={{marginTop:'1rem'}}>
+                        <GuertelRechner
+                          onApply={async (laenge) => {
+                            try {
+                              await fetchWithAuth(`${API_BASE}/mitglieder/${user.mitglied_id}/stil/${stil.stil_id}/guertellaenge`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ guertellaenge_cm: laenge }),
+                              });
+                              loadAll();
+                            } catch (e) { console.error('Gürtellänge speichern:', e); }
+                          }}
+                        />
                       </div>
 
                       {/* Prüfungshistorie */}

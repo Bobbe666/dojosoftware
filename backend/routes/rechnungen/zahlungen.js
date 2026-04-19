@@ -6,9 +6,12 @@ const express = require('express');
 const router = express.Router();
 const db = require('../../db');
 const logger = require('../../utils/logger');
+const { getSecureDojoId } = require('../../middleware/tenantSecurity');
 
 // POST /:id/zahlung - Zahlung erfassen
 router.post('/:id/zahlung', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
   const { betrag, zahlungsdatum, zahlungsart, referenz, notizen } = req.body;
 
@@ -16,43 +19,63 @@ router.post('/:id/zahlung', (req, res) => {
     return res.status(400).json({ success: false, error: 'Pflichtfelder fehlen' });
   }
 
-  // Zahlung einfügen
-  const insertQuery = `
-    INSERT INTO zahlungen (rechnung_id, betrag, zahlungsdatum, zahlungsart, referenz, notizen)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
+  const betragNum = parseFloat(betrag);
+  if (isNaN(betragNum) || betragNum <= 0) {
+    return res.status(400).json({ success: false, error: 'Ungültiger Betrag' });
+  }
 
-  db.query(insertQuery, [id, betrag, zahlungsdatum, zahlungsart, referenz, notizen], (insertErr) => {
-    if (insertErr) {
-      logger.error('Fehler beim Erfassen der Zahlung:', { error: insertErr });
-      return res.status(500).json({ success: false, error: insertErr.message });
+  // 🔒 Dojo-Check + Restbetrag-Prüfung in einem Query
+  const rechnungQuery = secureDojoId
+    ? `SELECT r.betrag as rechnung_betrag,
+              COALESCE((SELECT SUM(z.betrag) FROM zahlungen z WHERE z.rechnung_id = r.rechnung_id), 0) as bereits_gezahlt
+       FROM rechnungen r
+       JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.rechnung_id = ? AND m.dojo_id = ?`
+    : `SELECT r.betrag as rechnung_betrag,
+              COALESCE((SELECT SUM(z.betrag) FROM zahlungen z WHERE z.rechnung_id = r.rechnung_id), 0) as bereits_gezahlt
+       FROM rechnungen r
+       WHERE r.rechnung_id = ?`;
+  const rechnungParams = secureDojoId ? [id, secureDojoId] : [id];
+
+  db.query(rechnungQuery, rechnungParams, (rErr, rResults) => {
+    if (rErr) {
+      logger.error('Fehler beim Laden der Rechnung:', { error: rErr });
+      return res.status(500).json({ success: false, error: rErr.message });
+    }
+    if (rResults.length === 0) {
+      return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
     }
 
-    // Prüfe Zahlungsstatus
-    const checkQuery = `
-      SELECT
-        r.betrag as rechnung_betrag,
-        COALESCE(SUM(z.betrag), 0) as gezahlt
-      FROM rechnungen r
-      LEFT JOIN zahlungen z ON r.rechnung_id = z.rechnung_id
-      WHERE r.rechnung_id = ?
-      GROUP BY r.rechnung_id, r.betrag
+    const { rechnung_betrag, bereits_gezahlt } = rResults[0];
+    const restbetrag = parseFloat(rechnung_betrag) - parseFloat(bereits_gezahlt);
+
+    if (betragNum > restbetrag + 0.01) { // +0.01 Toleranz für Rundungsfehler
+      return res.status(400).json({
+        success: false,
+        error: `Betrag (${betragNum.toFixed(2)} €) überschreitet den offenen Restbetrag (${restbetrag.toFixed(2)} €)`
+      });
+    }
+
+    // Zahlung einfügen
+    const insertQuery = `
+      INSERT INTO zahlungen (rechnung_id, betrag, zahlungsdatum, zahlungsart, referenz, notizen)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(checkQuery, [id], (checkErr, checkResults) => {
-      if (checkErr) {
-        logger.error('Fehler beim Prüfen des Status:', { error: checkErr });
-        return res.status(500).json({ success: false, error: checkErr.message });
+    db.query(insertQuery, [id, betragNum, zahlungsdatum, zahlungsart, referenz, notizen], (insertErr) => {
+      if (insertErr) {
+        logger.error('Fehler beim Erfassen der Zahlung:', { error: insertErr });
+        return res.status(500).json({ success: false, error: insertErr.message });
       }
 
-      const { rechnung_betrag, gezahlt } = checkResults[0];
+      const neugezahlt = parseFloat(bereits_gezahlt) + betragNum;
       let neuer_status = 'offen';
       let bezahlt_am = null;
 
-      if (parseFloat(gezahlt) >= parseFloat(rechnung_betrag)) {
+      if (neugezahlt >= parseFloat(rechnung_betrag) - 0.01) {
         neuer_status = 'bezahlt';
         bezahlt_am = zahlungsdatum;
-      } else if (parseFloat(gezahlt) > 0) {
+      } else if (neugezahlt > 0) {
         neuer_status = 'teilweise_bezahlt';
       }
 

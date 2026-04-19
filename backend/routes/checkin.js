@@ -37,18 +37,25 @@ const performMultiCourseCheckin = async (mitglied_id, stundenplan_ids, checkin_m
 
   // 1. Verify member exists
   const members = await queryAsync(
-    'SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id = ?',
+    'SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt, gekuendigt_am FROM mitglieder WHERE mitglied_id = ?',
     [mitglied_id]
   );
 
   if (members.length === 0) {
     throw new Error('Mitglied nicht gefunden');
   }
-  
+
   if (members[0].aktiv !== 1) {
     throw new Error('Mitglied ist nicht aktiv');
   }
-  
+
+  if (members[0].gekuendigt) {
+    const kuendigungsDatum = members[0].gekuendigt_am
+      ? new Date(members[0].gekuendigt_am).toLocaleDateString('de-DE')
+      : '';
+    throw new Error(`Mitglied hat gekündigt${kuendigungsDatum ? ' (zum ' + kuendigungsDatum + ')' : ''} — Check-in nicht möglich`);
+  }
+
   const member = members[0];
   
   // 2. Check if checkins table exists
@@ -342,7 +349,7 @@ router.post('/multi-course', async (req, res) => {
 
       // Hole Mitgliedsdaten
       const members = await queryAsync(
-        'SELECT mitglied_id, vorname, nachname, aktiv FROM mitglieder WHERE mitglied_id = ?',
+        'SELECT mitglied_id, vorname, nachname, aktiv, gekuendigt, gekuendigt_am FROM mitglieder WHERE mitglied_id = ?',
         [mitglied_id]
       );
 
@@ -357,6 +364,16 @@ router.post('/multi-course', async (req, res) => {
         return res.status(400).json({
           success: false,
           error: 'Mitglied ist nicht aktiv'
+        });
+      }
+
+      if (members[0].gekuendigt) {
+        const kuendigungsDatum = members[0].gekuendigt_am
+          ? new Date(members[0].gekuendigt_am).toLocaleDateString('de-DE')
+          : '';
+        return res.status(400).json({
+          success: false,
+          error: `Mitglied hat gekündigt${kuendigungsDatum ? ' (zum ' + kuendigungsDatum + ')' : ''} — Check-in nicht möglich`
         });
       }
 

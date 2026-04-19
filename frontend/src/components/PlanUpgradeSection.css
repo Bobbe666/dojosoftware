@@ -328,7 +328,7 @@
 
 .plan-features li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0;
   color: #e5e7eb;
@@ -349,6 +349,43 @@
   flex-shrink: 0;
   margin-top: 2px;
   color: var(--plan-color, var(--status-indigo));
+}
+
+/* Feature-Zeilen: Neue Features (gehören zu diesem Plan) */
+.plan-feature-item--new {
+  color: #e5e7eb;
+}
+
+/* Feature-Zeilen: Bereits in niedrigerem/aktuellem Plan enthalten → gedimmt */
+.plan-feature-item--included {
+  color: rgba(156, 163, 175, 0.6);
+  font-size: 0.82rem;
+}
+
+.plan-feature-check--included {
+  color: rgba(156, 163, 175, 0.4) !important;
+}
+
+/* Text-Wrapper damit Badge nicht umbricht */
+.plan-feature-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Kleines Badge das den Quell-Plan anzeigt (z.B. "Starter") */
+.plan-feature-origin-badge {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: rgba(156, 163, 175, 0.7);
+  background: rgba(156, 163, 175, 0.12);
+  border: 1px solid rgba(156, 163, 175, 0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  align-self: center;
 }
 
 /* Upgrade Button */

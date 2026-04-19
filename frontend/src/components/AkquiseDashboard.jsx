@@ -132,6 +132,12 @@ const AkquiseDashboard = () => {
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState(null);
 
+  // Wiedervorlagen
+  const [wiedervorlagen, setWiedervorlagen] = useState([]);
+  const [wvLoading, setWvLoading] = useState(false);
+  const [wvForm, setWvForm] = useState({ datum: '', info: '' });
+  const [wvKontakt, setWvKontakt] = useState(null); // Kontakt für das Quick-Set-Modal
+
   // Dojo-Wizard (Status → gewonnen)
   const [dojoWizard, setDojoWizard] = useState({ show:false, kontakt:null });
   const [dojoWizardForm, setDojoWizardForm] = useState({ dojoname:'', subdomain:'', inhaber:'', email:'' });
@@ -194,12 +200,39 @@ const AkquiseDashboard = () => {
     finally { setSubLoading(false); }
   }, []);
 
+  const loadWiedervorlagen = useCallback(async () => {
+    setWvLoading(true);
+    try { const r = await fetchWithAuth(`${API}/wiedervorlagen`); const d = await r.json(); setWiedervorlagen(d.wiedervorlagen || []); }
+    catch (e) { showError('Fehler beim Laden der Wiedervorlagen'); }
+    finally { setWvLoading(false); }
+  }, []);
+
+  const saveWiedervorlage = async (kontaktId, datum, info) => {
+    try {
+      await fetchWithAuth(`${API}/kontakte/${kontaktId}/wiedervorlage`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ naechste_aktion: datum || null, naechste_aktion_info: info || null }),
+      });
+      showSuccess(datum ? 'Wiedervorlage gespeichert' : 'Wiedervorlage gelöscht');
+      loadWiedervorlagen();
+      loadKontakte();
+      // Aktiven Kontakt aktualisieren
+      if (selectedKontakt?.id === kontaktId) {
+        const r = await fetchWithAuth(`${API}/kontakte/${kontaktId}`);
+        const d = await r.json();
+        if (d.kontakt) setSelectedKontakt(d.kontakt);
+      }
+    } catch (e) { showError('Fehler beim Speichern'); }
+  };
+
   useEffect(() => { loadKontakte(); }, [loadKontakte]);
   useEffect(() => { loadStats(); loadVorlagen(); }, []);
   useEffect(() => {
     if (view === 'detail' && selectedKontakt) loadAktivitaeten(selectedKontakt.id);
     if (view === 'tda-import' && tdaVereine.length === 0) loadTdaVereine();
     if (view === 'trial-import') loadTrialDojos();
+    if (view === 'wiedervorlagen') loadWiedervorlagen();
   }, [view, selectedKontakt]);
 
   // ── Duplicate check ─────────────────────────────────────────────────────────
@@ -529,109 +562,161 @@ const AkquiseDashboard = () => {
 
   const OverviewView = () => (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-        <h3 style={{ margin:0, display:'flex', alignItems:'center', gap:8 }}><Target size={20}/> Akquise & Partnerschaften</h3>
+      {/* Header */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24, flexWrap:'wrap', gap:12 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:'rgba(251,146,60,0.18)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Target size={20} style={{ color:'#fb923c' }}/>
+          </div>
+          <div>
+            <h3 style={{ margin:0, fontSize:18, fontWeight:700, letterSpacing:0.3 }}>Akquise & Partnerschaften</h3>
+            {stats && <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:1 }}>{stats.gesamt} Kontakte · {stats.gewonnen} gewonnen</div>}
+          </div>
+        </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          <button className="btn-secondary" onClick={() => setView('trial-import')}><CreditCard size={15}/> Trial-Lizenzen</button>
-          <button className="btn-secondary" onClick={() => setView('tda-import')}><Zap size={15}/> TDA-Events</button>
-          <button className="btn-secondary" onClick={() => setView('csv-import')}><Upload size={15}/> CSV-Import</button>
-          <button className="btn-secondary" onClick={() => setView('vorlagen')}><FileText size={15}/> Vorlagen</button>
+          {(() => {
+            const fällig = kontakte.filter(k => k.naechste_aktion && new Date(k.naechste_aktion) <= new Date() && !['gewonnen','abgelehnt'].includes(k.status)).length;
+            return (
+              <button className="btn-secondary" onClick={() => setView('wiedervorlagen')}
+                style={fällig > 0 ? { borderColor:'#f59e0b', color:'#f59e0b', position:'relative' } : {}}>
+                <Clock size={14}/> Wiedervorlagen
+                {fällig > 0 && <span style={{ marginLeft:6, background:'#f59e0b', color:'#000', borderRadius:10, fontSize:10, fontWeight:700, padding:'1px 6px' }}>{fällig}</span>}
+              </button>
+            );
+          })()}
+          <button className="btn-secondary" onClick={() => setView('trial-import')}><CreditCard size={14}/> Trial-Lizenzen</button>
+          <button className="btn-secondary" onClick={() => setView('tda-import')}><Zap size={14}/> TDA-Events</button>
+          <button className="btn-secondary" onClick={() => setView('csv-import')}><Upload size={14}/> CSV-Import</button>
+          <button className="btn-secondary" onClick={() => setView('vorlagen')}><FileText size={14}/> Vorlagen</button>
           <button className="btn-primary" onClick={() => { setEditingKontakt(null); setKontaktForm(emptyKontaktForm()); setView('form'); }}>
-            <Plus size={15}/> Neuer Kontakt
+            <Plus size={14}/> Neuer Kontakt
           </button>
         </div>
       </div>
 
-      {/* Pipeline */}
+      {/* Pipeline-Karten */}
       {stats && (
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:20 }}>
-          {STATUS_PIPELINE.map(s => (
-            <div key={s.id} onClick={() => { setStatusFilter(s.id); setView('liste'); }}
-              style={{ flex:'1 0 90px', padding:'12px 14px', borderRadius:10, cursor:'pointer',
-                background:s.bg, border:`1px solid ${s.color}40`, textAlign:'center', transition:'transform 0.1s' }}
-              onMouseEnter={e => e.currentTarget.style.transform='scale(1.04)'}
-              onMouseLeave={e => e.currentTarget.style.transform='scale(1)'}>
-              <div style={{ fontSize:24, fontWeight:800, color:s.color }}>{stats.pipeline?.[s.id] || 0}</div>
-              <div style={{ fontSize:11, color:s.color, opacity:0.85 }}>{s.label}</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:10, marginBottom:20 }}>
+          {STATUS_PIPELINE.map(s => {
+            const count = stats.pipeline?.[s.id] || 0;
+            return (
+              <div key={s.id} onClick={() => { setStatusFilter(s.id); setView('liste'); }}
+                style={{
+                  padding:'14px 10px 12px', borderRadius:12, cursor:'pointer',
+                  background:`linear-gradient(145deg, ${s.color}22, ${s.color}0d)`,
+                  border:`1.5px solid ${s.color}55`,
+                  borderTop:`3px solid ${s.color}`,
+                  textAlign:'center',
+                  transition:'all 0.15s ease',
+                  position:'relative', overflow:'hidden',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow=`0 6px 20px ${s.color}30`; }}
+                onMouseLeave={e => { e.currentTarget.style.transform='none'; e.currentTarget.style.boxShadow='none'; }}>
+                <div style={{ fontSize:28, fontWeight:800, color:s.color, lineHeight:1, marginBottom:5 }}>{count}</div>
+                <div style={{ fontSize:11, fontWeight:600, color:'var(--text)', opacity:0.8, letterSpacing:0.3, textTransform:'uppercase' }}>
+                  {s.label.replace(' ✓','')}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* KPI-Leiste */}
+      {stats && (
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:20 }}>
+          {[
+            { cls:'success', icon:<CheckCircle size={20}/>, val:stats.gewonnen, label:'Gewonnen' },
+            { cls:'warning', icon:<Clock size={20}/>, val:stats.followUp_faellig, label:'Follow-Up fällig' },
+            { cls:'gold',    icon:<Target size={20}/>, val:stats.gesamt, label:'Gesamt' },
+            { cls:'info',    icon:<TrendingUp size={20}/>, val:`${stats.gesamt>0?Math.round((stats.gewonnen/stats.gesamt)*100):0}%`, label:'Conversion' },
+          ].map(c => (
+            <div key={c.label} className={`verband-stat-card ${c.cls}`}>
+              <div className="stat-icon">{c.icon}</div>
+              <div className="stat-content">
+                <span className="stat-value" style={{ fontSize:22, fontWeight:800 }}>{c.val}</span>
+                <span className="stat-label" style={{ fontSize:12 }}>{c.label}</span>
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* KPIs */}
-      {stats && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(170px,1fr))', gap:12, marginBottom:20 }}>
-          <div className="verband-stat-card success">
-            <div className="stat-icon"><CheckCircle size={22}/></div>
-            <div className="stat-content"><span className="stat-value">{stats.gewonnen}</span><span className="stat-label">Gewonnen</span></div>
-          </div>
-          <div className="verband-stat-card warning">
-            <div className="stat-icon"><Clock size={22}/></div>
-            <div className="stat-content"><span className="stat-value">{stats.followUp_faellig}</span><span className="stat-label">Follow-Up fällig</span></div>
-          </div>
-          <div className="verband-stat-card gold">
-            <div className="stat-icon"><Target size={22}/></div>
-            <div className="stat-content"><span className="stat-value">{stats.gesamt}</span><span className="stat-label">Gesamt</span></div>
-          </div>
-          <div className="verband-stat-card info">
-            <div className="stat-icon"><TrendingUp size={22}/></div>
-            <div className="stat-content">
-              <span className="stat-value">{stats.gesamt > 0 ? Math.round((stats.gewonnen / stats.gesamt) * 100) : 0}%</span>
-              <span className="stat-label">Conversion</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Follow-Up fällig */}
       {kontakte.filter(k => k.naechste_aktion && new Date(k.naechste_aktion) <= new Date() && !['gewonnen','abgelehnt'].includes(k.status)).length > 0 && (
-        <div className="verband-panel" style={{ marginBottom:16 }}>
-          <div className="panel-header">
-            <h4 style={{ margin:0, display:'flex', alignItems:'center', gap:6, color:'var(--warning,#f59e0b)' }}>
-              <Clock size={16}/> Follow-Up fällig
+        <div className="verband-panel" style={{ marginBottom:16, border:'1px solid rgba(245,158,11,0.35)', borderLeft:'3px solid #f59e0b' }}>
+          <div className="panel-header" style={{ background:'rgba(245,158,11,0.07)' }}>
+            <h4 style={{ margin:0, display:'flex', alignItems:'center', gap:6, color:'#f59e0b', fontSize:13, fontWeight:700 }}>
+              <Clock size={15}/> Follow-Up fällig
             </h4>
           </div>
           <div className="panel-content">
             {kontakte.filter(k => k.naechste_aktion && new Date(k.naechste_aktion) <= new Date() && !['gewonnen','abgelehnt'].includes(k.status))
               .slice(0,5).map(k => (
-              <div key={k.id} onClick={() => openKontakt(k)} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'1px solid var(--border)', cursor:'pointer' }}>
-                <Flag size={14} style={{ color:'var(--warning,#f59e0b)', flexShrink:0 }}/>
-                <span style={{ flex:1, fontWeight:500 }}>{k.organisation}</span>
+              <div key={k.id} onClick={() => openKontakt(k)}
+                style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom:'1px solid var(--border)', cursor:'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.opacity='0.8'}
+                onMouseLeave={e => e.currentTarget.style.opacity='1'}>
+                <Flag size={13} style={{ color:'#f59e0b', flexShrink:0 }}/>
+                <span style={{ flex:1, fontWeight:600, fontSize:14 }}>{k.organisation}</span>
                 <span style={{ fontSize:12, color:'var(--text-muted)' }}>{k.naechste_aktion_info || 'Follow-Up'}</span>
                 <StatusBadge status={k.status} small />
-                <ChevronRight size={14} style={{ color:'var(--text-muted)' }}/>
+                <ChevronRight size={13} style={{ color:'var(--text-muted)' }}/>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {/* Letzte Kontakte */}
+      {/* Kontakte-Liste */}
       <div className="verband-panel">
         <div className="panel-header">
-          <h4 style={{ margin:0 }}><Users size={15}/> Alle Kontakte</h4>
-          <button className="btn-link" onClick={() => setView('liste')}>Alle anzeigen <ChevronRight size={13}/></button>
+          <h4 style={{ margin:0, display:'flex', alignItems:'center', gap:7, fontSize:14, fontWeight:700 }}>
+            <Users size={15}/> Alle Kontakte
+          </h4>
+          <button className="btn-link" onClick={() => setView('liste')} style={{ fontSize:13 }}>
+            Alle anzeigen <ChevronRight size={13}/>
+          </button>
         </div>
         <div className="panel-content">
-          {kontakte.slice(0,8).map(k => (
-            <div key={k.id} onClick={() => openKontakt(k)} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'1px solid var(--border)', cursor:'pointer' }}>
-              <div style={{ width:32, height:32, borderRadius:'50%', background:STATUS_PIPELINE.find(s=>s.id===k.status)?.bg||'var(--bg)',
-                border:`1px solid ${STATUS_PIPELINE.find(s=>s.id===k.status)?.color||'var(--border)'}40`,
-                display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, flexShrink:0,
-                color:STATUS_PIPELINE.find(s=>s.id===k.status)?.color }}>
-                {k.organisation[0]}
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontWeight:600, fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{k.organisation}</div>
-                <div style={{ fontSize:11, color:'var(--text-muted)' }}>
-                  {k.ort && `${k.ort} · `}{k.sportart || k.typ}
-                  {k.aktivitaeten_count > 0 && ` · ${k.aktivitaeten_count} Akt.`}
-                </div>
-              </div>
-              <StatusBadge status={k.status} small />
-              <ChevronRight size={14} style={{ color:'var(--text-muted)' }}/>
+          {kontakte.length === 0 && (
+            <div style={{ padding:'24px 0', textAlign:'center', color:'var(--text-muted)', fontSize:13 }}>
+              Noch keine Kontakte. <button className="btn-link" onClick={() => { setEditingKontakt(null); setKontaktForm(emptyKontaktForm()); setView('form'); }}>Jetzt anlegen →</button>
             </div>
-          ))}
+          )}
+          {kontakte.slice(0,8).map(k => {
+            const sp = STATUS_PIPELINE.find(s => s.id === k.status);
+            return (
+              <div key={k.id} onClick={() => openKontakt(k)}
+                style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border)', cursor:'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.opacity='0.8'}
+                onMouseLeave={e => e.currentTarget.style.opacity='1'}>
+                <div style={{
+                  width:38, height:38, borderRadius:10,
+                  background: sp ? `${sp.color}22` : 'var(--bg-secondary)',
+                  border:`1.5px solid ${sp ? sp.color+'55' : 'var(--border)'}`,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:15, fontWeight:800, flexShrink:0,
+                  color: sp?.color || 'var(--text)',
+                }}>
+                  {k.organisation[0].toUpperCase()}
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', marginBottom:2 }}>
+                    {k.organisation}
+                  </div>
+                  <div style={{ fontSize:11, color:'var(--text-muted)', display:'flex', gap:6, alignItems:'center' }}>
+                    {k.ort && <span>{k.ort}</span>}
+                    {k.ort && <span>·</span>}
+                    <span style={{ textTransform:'capitalize' }}>{k.sportart || k.typ}</span>
+                    {k.aktivitaeten_count > 0 && <><span>·</span><span>{k.aktivitaeten_count} Akt.</span></>}
+                  </div>
+                </div>
+                <StatusBadge status={k.status} small />
+                <ChevronRight size={14} style={{ color:'var(--text-muted)' }}/>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -918,6 +1003,10 @@ const AkquiseDashboard = () => {
               <button className="btn-secondary" style={{ justifyContent:'flex-start', gap:6 }}
                 onClick={() => setShowAktivitaetForm(true)}>
                 <PenLine size={15}/> Aktivität protokollieren
+              </button>
+              <button className="btn-secondary" style={{ justifyContent:'flex-start', gap:6, color:'#f59e0b', borderColor:'rgba(245,158,11,0.4)' }}
+                onClick={() => { setWvKontakt(k); setWvForm({ datum: k.naechste_aktion ? k.naechste_aktion.split('T')[0] : '', info: k.naechste_aktion_info || '' }); }}>
+                <Clock size={15}/> Wiedervorlage {k.naechste_aktion ? 'ändern' : 'setzen'}
               </button>
               {k.status === 'gewonnen' && !k.verbandsmitgliedschaft_id && (
                 <button className="btn-secondary" style={{ justifyContent:'flex-start', gap:6, color:'#22c55e', borderColor:'rgba(34,197,94,0.4)' }}
@@ -1580,6 +1669,140 @@ const AkquiseDashboard = () => {
     </div>
   );
 
+  // ── Wiedervorlagen-View ─────────────────────────────────────────────────────
+  const WiedervorlagenView = () => {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const in7    = new Date(today); in7.setDate(today.getDate() + 7);
+    const in30   = new Date(today); in30.setDate(today.getDate() + 30);
+
+    const ueberfaellig = wiedervorlagen.filter(k => new Date(k.naechste_aktion) < today);
+    const heute        = wiedervorlagen.filter(k => { const d = new Date(k.naechste_aktion); return d >= today && d < new Date(today.getTime()+86400000); });
+    const diese_woche  = wiedervorlagen.filter(k => { const d = new Date(k.naechste_aktion); return d >= new Date(today.getTime()+86400000) && d <= in7; });
+    const spaeter      = wiedervorlagen.filter(k => new Date(k.naechste_aktion) > in7);
+
+    const WvRow = ({ k }) => {
+      const [editMode, setEditMode] = useState(false);
+      const [datum, setDatum] = useState(k.naechste_aktion ? k.naechste_aktion.split('T')[0] : '');
+      const [info, setInfo] = useState(k.naechste_aktion_info || '');
+
+      return (
+        <div style={{ padding:'14px 0', borderBottom:'1px solid var(--border)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            {/* Avatar */}
+            <div style={{
+              width:40, height:40, borderRadius:10, flexShrink:0,
+              background:'rgba(245,158,11,0.12)', border:'1.5px solid rgba(245,158,11,0.4)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontWeight:700, fontSize:15, color:'#f59e0b'
+            }}>
+              {(k.organisation||'?')[0].toUpperCase()}
+            </div>
+            {/* Info */}
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:14, cursor:'pointer' }}
+                onClick={() => openKontakt(k)}>{k.organisation}</div>
+              <div style={{ fontSize:12, color:'var(--text-muted)', marginTop:2 }}>
+                {k.ansprechpartner && <span>{k.ansprechpartner} · </span>}
+                {k.ort && <span>{k.ort} · </span>}
+                <StatusBadge status={k.status} small />
+              </div>
+            </div>
+            {/* Datum + Info */}
+            <div style={{ textAlign:'right', flexShrink:0 }}>
+              <div style={{ fontSize:13, fontWeight:700, color: new Date(k.naechste_aktion) < today ? '#ef4444' : new Date(k.naechste_aktion) < new Date(today.getTime()+86400000) ? '#f59e0b' : 'var(--text)' }}>
+                <Calendar size={12} style={{ marginRight:4, verticalAlign:'middle' }}/>
+                {new Date(k.naechste_aktion).toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' })}
+              </div>
+              {k.naechste_aktion_info && <div style={{ fontSize:11, color:'var(--text-muted)', marginTop:2 }}>{k.naechste_aktion_info}</div>}
+            </div>
+            {/* Aktionen */}
+            <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+              <button title="Bearbeiten" className="btn-icon" style={{ padding:'5px', borderRadius:7 }}
+                onClick={() => setEditMode(m => !m)}>
+                <Edit3 size={14}/>
+              </button>
+              <button title="Erledigt / löschen" className="btn-icon" style={{ padding:'5px', borderRadius:7, color:'#22c55e' }}
+                onClick={() => saveWiedervorlage(k.id, null, null)}>
+                <CheckCircle size={14}/>
+              </button>
+              <button title="Kontakt öffnen" className="btn-icon" style={{ padding:'5px', borderRadius:7 }}
+                onClick={() => openKontakt(k)}>
+                <ChevronRight size={14}/>
+              </button>
+            </div>
+          </div>
+          {/* Edit-Zeile */}
+          {editMode && (
+            <div style={{ display:'flex', gap:8, marginTop:10, paddingLeft:52, flexWrap:'wrap' }}>
+              <input type="date" value={datum} onChange={e => setDatum(e.target.value)}
+                style={{ ...INP, width:'auto', flex:'0 0 150px' }}/>
+              <input type="text" value={info} onChange={e => setInfo(e.target.value)}
+                placeholder="Beschreibung (z.B. Anruf, Angebot…)"
+                style={{ ...INP, flex:1 }}/>
+              <button className="btn-primary" style={{ padding:'8px 16px', fontSize:13 }}
+                onClick={() => { saveWiedervorlage(k.id, datum, info); setEditMode(false); }}>
+                <Save size={13}/> Speichern
+              </button>
+              <button className="btn-secondary" style={{ padding:'8px 12px', fontSize:13 }}
+                onClick={() => setEditMode(false)}>Abbrechen</button>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const Gruppe = ({ titel, items, color, icon }) => {
+      if (items.length === 0) return null;
+      return (
+        <div style={{ marginBottom:24 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12,
+            padding:'8px 12px', borderRadius:8, background:`${color}18`, border:`1px solid ${color}44` }}>
+            <span style={{ color }}>{icon}</span>
+            <span style={{ fontWeight:700, fontSize:13, color }}>{titel}</span>
+            <span style={{ marginLeft:'auto', background:color, color:'#fff', borderRadius:12, fontSize:11, fontWeight:700, padding:'1px 8px' }}>{items.length}</span>
+          </div>
+          {items.map(k => <WvRow key={k.id} k={k} />)}
+        </div>
+      );
+    };
+
+    return (
+      <div>
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:24 }}>
+          <button className="btn-icon" onClick={() => setView('overview')}><ArrowLeft size={18}/></button>
+          <div style={{ width:36, height:36, borderRadius:10, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <Clock size={20} style={{ color:'#f59e0b' }}/>
+          </div>
+          <div>
+            <h3 style={{ margin:0, fontSize:18, fontWeight:700 }}>Wiedervorlagen</h3>
+            <div style={{ fontSize:12, color:'var(--text-muted)' }}>{wiedervorlagen.length} aktive Wiedervorlagen</div>
+          </div>
+          <button className="btn-secondary" style={{ marginLeft:'auto' }} onClick={loadWiedervorlagen}>
+            <RefreshCw size={14}/> Aktualisieren
+          </button>
+        </div>
+
+        {wvLoading ? (
+          <div style={{ textAlign:'center', padding:'40px', color:'var(--text-muted)' }}><Loader2 size={24} style={{ animation:'spin 1s linear infinite' }}/></div>
+        ) : wiedervorlagen.length === 0 ? (
+          <div style={{ textAlign:'center', padding:'60px 20px', color:'var(--text-muted)' }}>
+            <Clock size={40} style={{ marginBottom:12, opacity:0.3 }}/>
+            <p style={{ fontSize:14 }}>Keine offenen Wiedervorlagen</p>
+            <p style={{ fontSize:12, opacity:0.6 }}>Setze Wiedervorlagen im Kontakt-Detailbereich unter "Nächste Aktion"</p>
+          </div>
+        ) : (
+          <div>
+            <Gruppe titel="Überfällig" items={ueberfaellig} color="#ef4444" icon={<AlertTriangle size={14}/>}/>
+            <Gruppe titel="Heute" items={heute} color="#f59e0b" icon={<Clock size={14}/>}/>
+            <Gruppe titel="Diese Woche" items={diese_woche} color="#3b82f6" icon={<Calendar size={14}/>}/>
+            <Gruppe titel="Später" items={spaeter} color="#6b7280" icon={<ChevronRight size={14}/>}/>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER
   // ══════════════════════════════════════════════════════════════════════════
@@ -1587,6 +1810,48 @@ const AkquiseDashboard = () => {
   return (
     <div style={{ padding:4 }}>
       <DojoWizardModal />
+
+      {/* Wiedervorlage Quick-Set Modal */}
+      {wvKontakt && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={() => setWvKontakt(null)}>
+          <div style={{ background:'var(--bg-card)', borderRadius:16, padding:28, width:420, maxWidth:'90vw', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:20 }}>
+              <div style={{ width:36, height:36, borderRadius:10, background:'rgba(245,158,11,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <Clock size={20} style={{ color:'#f59e0b' }}/>
+              </div>
+              <div>
+                <div style={{ fontWeight:700, fontSize:16 }}>Wiedervorlage setzen</div>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>{wvKontakt.organisation}</div>
+              </div>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, marginBottom:5 }}>Datum</label>
+              <input type="date" value={wvForm.datum} onChange={e => setWvForm(f => ({...f, datum:e.target.value}))} style={{ ...INP }}/>
+            </div>
+            <div style={{ marginBottom:20 }}>
+              <label style={{ display:'block', fontSize:12, fontWeight:600, marginBottom:5 }}>Aufgabe / Beschreibung</label>
+              <input type="text" value={wvForm.info} onChange={e => setWvForm(f => ({...f, info:e.target.value}))}
+                placeholder="z.B. Anruf wegen Angebot, Follow-Up senden…" style={{ ...INP }}/>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              <button className="btn-primary" style={{ flex:1 }}
+                onClick={() => { saveWiedervorlage(wvKontakt.id, wvForm.datum, wvForm.info); setWvKontakt(null); }}>
+                <Save size={14}/> Speichern
+              </button>
+              {wvKontakt.naechste_aktion && (
+                <button className="btn-secondary" style={{ color:'#ef4444', borderColor:'rgba(239,68,68,0.4)' }}
+                  onClick={() => { saveWiedervorlage(wvKontakt.id, null, null); setWvKontakt(null); }}>
+                  <X size={14}/> Löschen
+                </button>
+              )}
+              <button className="btn-secondary" onClick={() => setWvKontakt(null)}><X size={14}/></button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <FlashMsg msg={flash.msg} type={flash.type} onClose={() => setFlash({ msg:'', type:'' })}/>
       {view === 'overview'      && <OverviewView />}
       {view === 'liste'         && <ListeView />}
@@ -1596,8 +1861,9 @@ const AkquiseDashboard = () => {
       {view === 'vorlagen'      && <VorlagenView />}
       {view === 'tda-import'    && <TdaImportView />}
       {view === 'trial-import'  && <TrialImportView />}
-      {view === 'csv-import'    && <CsvImportView />}
-      {view === 'form'          && <FormView />}
+      {view === 'csv-import'      && <CsvImportView />}
+      {view === 'wiedervorlagen'  && <WiedervorlagenView />}
+      {view === 'form'            && <FormView />}
     </div>
   );
 };

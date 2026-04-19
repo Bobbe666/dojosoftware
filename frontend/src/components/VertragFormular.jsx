@@ -669,6 +669,26 @@ const VertragFormular = ({
             </span>
           </div>
 
+          <div className={`vertrag-checkbox-wrapper ${vertrag.widerruf_akzeptiert ? 'checked' : ''}`}>
+            <input
+              type="checkbox"
+              className="vertrag-checkbox"
+              checked={vertrag.widerruf_akzeptiert || false}
+              onChange={(e) => onChange({...vertrag, widerruf_akzeptiert: e.target.checked})}
+            />
+            <span className="vertrag-checkbox-label vf-small">
+              <strong>Widerrufsbelehrung zur Kenntnis genommen *</strong>
+              {' '}
+              <button
+                type="button"
+                onClick={() => openDokument('widerruf')}
+                className="vf-gold-btn"
+              >
+                📄 Anzeigen
+              </button>
+            </span>
+          </div>
+
           <div className={`vertrag-checkbox-wrapper ${vertrag.haftungsausschluss_akzeptiert ? 'checked' : ''}`}>
             <input
               type="checkbox"

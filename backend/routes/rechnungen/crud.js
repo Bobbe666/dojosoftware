@@ -254,6 +254,9 @@ router.get('/:id', (req, res) => {
 
 // POST / - Neue Rechnung erstellen
 router.post('/', (req, res) => {
+  // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+  const secureDojoId = getSecureDojoId(req);
+
   const {
     mitglied_id,
     datum,
@@ -288,15 +291,42 @@ router.post('/', (req, res) => {
   const tag = String(datumObj.getDate()).padStart(2, '0');
   const datumPrefix = `${jahr}/${monat}/${tag}`;
 
-  // Zähle ALLE Rechnungen aus beiden Tabellen für dieses Jahr (fortlaufend)
-  const checkQuery = `
-    SELECT
-      (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
-      (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
-    AS count
-  `;
+  // 🔒 Dojo-Check: mitglied_id muss zum eigenen Dojo gehören
+  const dojoCheckQuery = secureDojoId
+    ? `SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?`
+    : `SELECT mitglied_id FROM mitglieder WHERE mitglied_id = ?`;
+  const dojoCheckParams = secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id];
 
-  db.query(checkQuery, [jahr, jahr], (checkErr, checkResults) => {
+  db.query(dojoCheckQuery, dojoCheckParams, (dojoErr, dojoResults) => {
+    if (dojoErr) {
+      logger.error('Fehler beim Dojo-Check:', { error: dojoErr });
+      return res.status(500).json({ success: false, error: dojoErr.message });
+    }
+    if (dojoResults.length === 0) {
+      return res.status(403).json({ success: false, error: 'Mitglied nicht gefunden oder kein Zugriff' });
+    }
+
+  // Zähle Rechnungen — dojo-spezifisch für normale Dojos, global für Super-Admin
+  let checkQuery, checkParams;
+  if (secureDojoId) {
+    checkQuery = `
+      SELECT COUNT(*) AS count
+      FROM rechnungen r
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE YEAR(r.datum) = ? AND m.dojo_id = ?
+    `;
+    checkParams = [jahr, secureDojoId];
+  } else {
+    checkQuery = `
+      SELECT
+        (SELECT COUNT(*) FROM rechnungen WHERE YEAR(datum) = ?) +
+        (SELECT COUNT(*) FROM verbandsmitgliedschaft_zahlungen WHERE YEAR(rechnungsdatum) = ?)
+      AS count
+    `;
+    checkParams = [jahr, jahr];
+  }
+
+  db.query(checkQuery, checkParams, (checkErr, checkResults) => {
     if (checkErr) {
       logger.error('Fehler beim Prüfen der Rechnungsnummer:', { error: checkErr });
       return res.status(500).json({ success: false, error: checkErr.message });
@@ -384,7 +414,8 @@ router.post('/', (req, res) => {
           res.status(500).json({ success: false, error: posErr.message });
         });
     });
-  });
+  }); // checkQuery
+  }); // dojoCheckQuery
 });
 
 // PUT /:id - Rechnung aktualisieren
@@ -423,6 +454,17 @@ router.put('/:id', (req, res) => {
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, error: 'Rechnung nicht gefunden oder kein Zugriff' });
+    }
+
+    // Wenn Rechnung auf bezahlt gesetzt: verknüpften Beitrag ebenfalls als bezahlt markieren
+    if (status === 'bezahlt') {
+      db.query(
+        `UPDATE beitraege SET bezahlt = 1, zahlungsart = COALESCE(?, zahlungsart) WHERE rechnung_id = ? AND bezahlt = 0`,
+        [zahlungsart || null, id],
+        (bErr) => {
+          if (bErr) logger.error('Fehler beim Sync beitrag.bezahlt nach rechnung.bezahlt:', { error: bErr.message });
+        }
+      );
     }
 
     res.json({ success: true, message: 'Rechnung aktualisiert' });

@@ -70,7 +70,7 @@ async function sendTrainingsausfallPush(dojoId, datum, trainingName) {
 
 // POST /termine - Erstellt einen Prüfungstermin
 router.post('/', (req, res) => {
-  const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, send_trainingsausfall_push, trainingsausfall_kurs_name } = req.body;
+  const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen, send_trainingsausfall_push, trainingsausfall_kurs_name } = req.body;
 
   // Dojo-ID IMMER aus Token, nie aus Body (Sicherheit)
   const secureDojoId = getSecureDojoId(req);
@@ -109,11 +109,11 @@ router.post('/', (req, res) => {
     }
 
     const insertQuery = `
-      INSERT INTO pruefungstermin_vorlagen (pruefungsdatum, pruefungszeit, pruefungsort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, dojo_id, erstellt_am)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      INSERT INTO pruefungstermin_vorlagen (pruefungsdatum, pruefungszeit, pruefungsort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen, dojo_id, erstellt_am)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `;
 
-    db.query(insertQuery, [datum, zeitValue, ort || null, pruefer_name || null, stil_id, pruefungsgebuehr || null, anmeldefrist || null, bemerkungen || null, teilnahmebedingungen || null, oeffentlich ? 1 : 0, oeffentlich_vib ? 1 : 0, dojo_id], (err, result) => {
+    db.query(insertQuery, [datum, zeitValue, ort || null, pruefer_name || null, stil_id, pruefungsgebuehr || null, anmeldefrist || null, bemerkungen || null, teilnahmebedingungen || null, oeffentlich ? 1 : 0, oeffentlich_vib ? 1 : 0, gebuehr_auto_verrechnen ? 1 : 0, dojo_id], (err, result) => {
       if (err) {
         logger.error('Fehler beim Erstellen des Prüfungstermins:', { error: err.message, stack: err.stack });
         return res.status(500).json({ error: 'Interner Serverfehler' });
@@ -228,7 +228,7 @@ router.put('/:id', (req, res) => {
   if (!termin_id || isNaN(termin_id)) return res.status(400).json({ error: 'Ungültige Termin-ID' });
 
   const secureDojoId = getSecureDojoId(req);
-  const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib } = req.body;
+  const { datum, zeit, ort, pruefer_name, stil_id, pruefungsgebuehr, anmeldefrist, bemerkungen, teilnahmebedingungen, oeffentlich, oeffentlich_vib, gebuehr_auto_verrechnen } = req.body;
   if (!datum || !stil_id) return res.status(400).json({ error: 'Fehlende erforderliche Felder', required: ['datum', 'stil_id'] });
 
   // Ownership-Check: Termin muss zum eigenen Dojo gehören
@@ -243,11 +243,12 @@ router.put('/:id', (req, res) => {
 
     const updateQuery = `
       UPDATE pruefungstermin_vorlagen SET pruefungsdatum = ?, pruefungszeit = ?, pruefungsort = ?, pruefer_name = ?,
-        stil_id = ?, pruefungsgebuehr = ?, anmeldefrist = ?, bemerkungen = ?, teilnahmebedingungen = ?, oeffentlich = ?, oeffentlich_vib = ?
+        stil_id = ?, pruefungsgebuehr = ?, anmeldefrist = ?, bemerkungen = ?, teilnahmebedingungen = ?, oeffentlich = ?, oeffentlich_vib = ?,
+        gebuehr_auto_verrechnen = ?
       WHERE termin_id = ?
     `;
 
-    db.query(updateQuery, [datum, zeit || '10:00', ort || null, pruefer_name || null, stil_id, pruefungsgebuehr || null, anmeldefrist || null, bemerkungen || null, teilnahmebedingungen || null, oeffentlich ? 1 : 0, oeffentlich_vib ? 1 : 0, termin_id], (err, result) => {
+    db.query(updateQuery, [datum, zeit || '10:00', ort || null, pruefer_name || null, stil_id, pruefungsgebuehr || null, anmeldefrist || null, bemerkungen || null, teilnahmebedingungen || null, oeffentlich ? 1 : 0, oeffentlich_vib ? 1 : 0, gebuehr_auto_verrechnen ? 1 : 0, termin_id], (err, result) => {
       if (err) {
         logger.error('Fehler beim Aktualisieren des Termins:', { error: err.message, stack: err.stack });
         return res.status(500).json({ error: 'Interner Serverfehler' });

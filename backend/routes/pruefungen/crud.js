@@ -41,6 +41,102 @@ function formatDate(dateValue) {
   return null;
 }
 
+// Hilfsfunktion: RGB-Abstand zweier Hex-Farben (ohne #)
+function hexColorDist(h1, h2) {
+  const parse = h => ({ r: parseInt(h.substr(0,2),16)||0, g: parseInt(h.substr(2,2),16)||0, b: parseInt(h.substr(4,2),16)||0 });
+  const a = parse(h1), b = parse(h2);
+  return Math.sqrt((a.r-b.r)**2 + (a.g-b.g)**2 + (a.b-b.b)**2);
+}
+
+/**
+ * Zieht einen Gürtel vom Lagerbestand ab, wenn beim Bestehen ein Gürtel vergeben wird.
+ * Matching: graduierung_nachher_id → farbe_hex → nächster Gürtel-Artikel per RGB-Abstand.
+ * Bei Varianten-Artikel: varianten_bestand[gurtlaenge] -= 1, sonst lagerbestand -= 1.
+ */
+async function guertelBestandAbziehen(pool, graduierung_nachher_id, gurtlaenge, dojoId) {
+  try {
+    const [[grad]] = await pool.query(
+      'SELECT farbe_hex FROM graduierungen WHERE graduierung_id = ?', [graduierung_nachher_id]
+    );
+    if (!grad || !grad.farbe_hex) return;
+
+    const farbeHex = grad.farbe_hex.replace('#', '').toUpperCase();
+
+    // Gürtel-Artikel für dieses Dojo laden
+    const [katRows] = await pool.query(
+      `SELECT kategorie_id FROM artikel_kategorien WHERE name LIKE '%ürtel%'`
+    );
+    const katIds = katRows.map(r => r.kategorie_id);
+
+    let alleArtikel = [];
+    if (katIds.length > 0) {
+      [alleArtikel] = await pool.query(
+        `SELECT artikel_id, name, farbe_hex, varianten_groessen, varianten_bestand, lagerbestand, hat_varianten, lager_tracking
+         FROM artikel WHERE kategorie_id IN (${katIds.map(()=>'?').join(',')}) AND aktiv = 1 AND (dojo_id = ? OR dojo_id IS NULL)`,
+        [...katIds, dojoId]
+      );
+    }
+    if (alleArtikel.length === 0) {
+      [alleArtikel] = await pool.query(
+        `SELECT artikel_id, name, farbe_hex, varianten_groessen, varianten_bestand, lagerbestand, hat_varianten, lager_tracking
+         FROM artikel WHERE name LIKE '%ürtel%' AND aktiv = 1 AND (dojo_id = ? OR dojo_id IS NULL)`,
+        [dojoId]
+      );
+    }
+
+    // Nächsten Artikel per RGB-Abstand finden (max. 80 Einheiten)
+    let besterArtikel = null;
+    let besterAbstand = Infinity;
+    for (const art of alleArtikel) {
+      if (!art.lager_tracking) continue;
+      const artHex = (art.farbe_hex || '').replace('#', '').toUpperCase();
+      if (!artHex || artHex.length !== 6) continue;
+      const dist = hexColorDist(farbeHex, artHex);
+      if (dist < besterAbstand) { besterAbstand = dist; besterArtikel = art; }
+    }
+
+    if (!besterArtikel || besterAbstand > 80) {
+      logger.info(`Kein passender Gürtel-Artikel gefunden für Farbe #${farbeHex} (Abstand ${Math.round(besterAbstand)})`);
+      return;
+    }
+
+    if (besterArtikel.hat_varianten && gurtlaenge) {
+      // Varianten-Bestand für die Gurtlänge abziehen
+      const varBestand = typeof besterArtikel.varianten_bestand === 'string'
+        ? JSON.parse(besterArtikel.varianten_bestand || '{}')
+        : (besterArtikel.varianten_bestand || {});
+      const key = String(gurtlaenge);
+      const aktuell = varBestand[key] ?? varBestand[`${key}cm`] ?? 0;
+      if (aktuell > 0) {
+        // Korrekten Schlüssel bestimmen
+        const realKey = varBestand[key] !== undefined ? key : `${key}cm`;
+        varBestand[realKey] = Math.max(0, (varBestand[realKey] || 0) - 1);
+        await pool.query(
+          `UPDATE artikel SET varianten_bestand = ? WHERE artikel_id = ?`,
+          [JSON.stringify(varBestand), besterArtikel.artikel_id]
+        );
+        logger.info(`✅ Gürtel-Bestand abgezogen: Artikel ${besterArtikel.artikel_id} "${besterArtikel.name}" Länge ${key}: ${aktuell} → ${varBestand[realKey]}`);
+      } else {
+        logger.warn(`⚠️ Gürtel-Bestand Länge ${key} bereits 0 für Artikel ${besterArtikel.artikel_id}`);
+      }
+    } else {
+      // Einfacher Lagerbestand
+      const aktuell = besterArtikel.lagerbestand || 0;
+      if (aktuell > 0) {
+        await pool.query(
+          `UPDATE artikel SET lagerbestand = GREATEST(0, lagerbestand - 1) WHERE artikel_id = ?`,
+          [besterArtikel.artikel_id]
+        );
+        logger.info(`✅ Gürtel-Bestand abgezogen: Artikel ${besterArtikel.artikel_id} "${besterArtikel.name}": ${aktuell} → ${aktuell - 1}`);
+      } else {
+        logger.warn(`⚠️ Gürtel-Bestand bereits 0 für Artikel ${besterArtikel.artikel_id}`);
+      }
+    }
+  } catch (err) {
+    logger.error('Fehler beim Gürtel-Bestandsabzug:', { error: err.message });
+  }
+}
+
 // ============================================================================
 // SPEZIELLE ROUTES (müssen VOR /:id kommen)
 // ============================================================================
@@ -55,52 +151,76 @@ router.get('/guertel-bestand', (req, res) => {
   if (!farbe_hex) return res.json({ success: true, bestand: {} });
 
   const pool = db.promise();
-  const farben = farbe_hex.split(',').map(f => f.trim().replace(/^#/, '').toUpperCase());
+  const angefragteHex = farbe_hex.split(',').map(f => f.trim().replace(/^#/, '').toUpperCase());
   const laenge = laenge_cm ? parseInt(laenge_cm, 10) : null;
 
+  // RGB-Abstand zweier Hex-Farben (ohne #)
+  const hexToRgb = (h) => ({
+    r: parseInt(h.substr(0, 2), 16) || 0,
+    g: parseInt(h.substr(2, 2), 16) || 0,
+    b: parseInt(h.substr(4, 2), 16) || 0,
+  });
+  const colorDist = (h1, h2) => {
+    const a = hexToRgb(h1), b = hexToRgb(h2);
+    return Math.sqrt((a.r-b.r)**2 + (a.g-b.g)**2 + (a.b-b.b)**2);
+  };
+
   const run = async () => {
-    // Gürtel & Graduierung Kategorien ermitteln (ID 7 + Kinder)
+    // Alle Gürtel-Artikel laden (Kategorie "Farbgürtel" oder Name enthält "ürtel")
     const [katRows] = await pool.query(
-      `SELECT kategorie_id FROM artikel_kategorien WHERE parent_id = 7 OR kategorie_id = 7`
+      `SELECT kategorie_id FROM artikel_kategorien WHERE name LIKE '%ürtel%'`
     );
     const katIds = katRows.map(r => r.kategorie_id);
-    if (katIds.length === 0) return {};
 
-    // Artikel mit passender Farbe in Gürtel-Kategorie finden
-    const placeholders = farben.map(() => '?').join(',');
-    const hexList = farben.map(f => `#${f}`);
-    const [artikelRows] = await pool.query(
-      `SELECT artikel_id, name, farbe_hex, varianten_groessen, varianten_bestand, lagerbestand, hat_varianten
-       FROM artikel
-       WHERE UPPER(REPLACE(farbe_hex,'#','')) IN (${placeholders})
-         AND kategorie_id IN (${katIds.map(() => '?').join(',')})
-         AND aktiv = 1`,
-      [...farben, ...katIds]
-    );
+    const artikelQuery = katIds.length > 0
+      ? `SELECT artikel_id, name, farbe_hex, varianten_groessen, varianten_bestand, lagerbestand, hat_varianten
+         FROM artikel WHERE kategorie_id IN (${katIds.map(() => '?').join(',')}) AND aktiv = 1`
+      : `SELECT artikel_id, name, farbe_hex, varianten_groessen, varianten_bestand, lagerbestand, hat_varianten
+         FROM artikel WHERE name LIKE '%ürtel%' AND aktiv = 1`;
+    const [alleArtikel] = await pool.query(artikelQuery, katIds.length > 0 ? katIds : []);
 
+    // Für jede angefragte Farbe: nächsten Artikel per RGB-Abstand finden (max. 80 Einheiten)
+    const MAX_DIST = 80;
     const result = {};
-    for (const art of artikelRows) {
-      const hex = (art.farbe_hex || '').replace('#', '').toUpperCase();
-      const varBestand = art.varianten_bestand
-        ? (typeof art.varianten_bestand === 'string' ? JSON.parse(art.varianten_bestand) : art.varianten_bestand)
+
+    for (const hex of angefragteHex) {
+      let besterArtikel = null;
+      let besterAbstand = Infinity;
+
+      for (const art of alleArtikel) {
+        const artHex = (art.farbe_hex || '').replace('#', '').toUpperCase();
+        if (!artHex || artHex.length !== 6) continue;
+        const dist = colorDist(hex, artHex);
+        if (dist < besterAbstand) {
+          besterAbstand = dist;
+          besterArtikel = art;
+        }
+      }
+
+      if (!besterArtikel || besterAbstand > MAX_DIST) continue;
+
+      const varBestand = besterArtikel.varianten_bestand
+        ? (typeof besterArtikel.varianten_bestand === 'string'
+            ? JSON.parse(besterArtikel.varianten_bestand)
+            : besterArtikel.varianten_bestand)
         : {};
-      const varGroessen = art.varianten_groessen
-        ? (typeof art.varianten_groessen === 'string' ? JSON.parse(art.varianten_groessen) : art.varianten_groessen)
+      const varGroessen = besterArtikel.varianten_groessen
+        ? (typeof besterArtikel.varianten_groessen === 'string'
+            ? JSON.parse(besterArtikel.varianten_groessen)
+            : besterArtikel.varianten_groessen)
         : [];
 
       let bestand;
       if (laenge && varGroessen.length > 0) {
-        // Varianten-Artikel: Bestand für spezifische Länge
         const key = String(laenge);
         bestand = varBestand[key] ?? varBestand[`${key}cm`] ?? 0;
       } else {
-        bestand = art.lagerbestand || 0;
+        bestand = besterArtikel.lagerbestand || 0;
       }
 
-      if (!result[hex] || result[hex].bestand < bestand) {
-        result[hex] = { artikel_id: art.artikel_id, name: art.name, bestand };
-      }
+      result[hex] = { artikel_id: besterArtikel.artikel_id, name: besterArtikel.name, bestand, abstand: Math.round(besterAbstand) };
     }
+
     return result;
   };
 
@@ -598,7 +718,7 @@ router.put('/:id', (req, res) => {
 
       const pruefung = selectResults[0];
 
-      // Wenn Prüfung auf "bestanden" gesetzt wurde, aktualisiere letzte_pruefung
+      // Wenn Prüfung auf "bestanden" gesetzt wurde, aktualisiere letzte_pruefung + Gürtel-Bestand
       if (updateData.bestanden === true || updateData.bestanden === 1) {
         const updateStilDataQuery = `
           INSERT INTO mitglied_stil_data (
@@ -619,6 +739,12 @@ router.put('/:id', (req, res) => {
             }
           }
         );
+
+        // Gürtel-Bestand abziehen (fire-and-forget, inkl. Zwischengurt bei Doppelprüfung)
+        guertelBestandAbziehen(db.promise(), pruefung.graduierung_nachher_id, pruefung.gurtlaenge, pruefung.dojo_id);
+        if (pruefung.graduierung_zwischen_id) {
+          guertelBestandAbziehen(db.promise(), pruefung.graduierung_zwischen_id, pruefung.gurtlaenge, pruefung.dojo_id);
+        }
       }
 
       res.json({
@@ -890,7 +1016,7 @@ router.post('/:id/status-aendern', (req, res) => {
 
         const graduierung_id = bestanden ? graduierung_nachher_id : graduierung_vorher_id;
 
-        const getPruefungQuery = 'SELECT pruefungsdatum FROM pruefungen WHERE pruefung_id = ?';
+        const getPruefungQuery = 'SELECT pruefungsdatum, gurtlaenge, dojo_id, graduierung_zwischen_id FROM pruefungen WHERE pruefung_id = ?';
         connection.query(getPruefungQuery, [pruefung_id], (getPruefungErr, pruefungResults) => {
           if (getPruefungErr) {
             return connection.rollback(() => {
@@ -903,6 +1029,9 @@ router.post('/:id/status-aendern', (req, res) => {
           }
 
           const pruefungsdatum = pruefungResults[0]?.pruefungsdatum;
+          const gurtlaenge = pruefungResults[0]?.gurtlaenge;
+          const dojoId = pruefungResults[0]?.dojo_id;
+          const graduierung_zwischen_id = pruefungResults[0]?.graduierung_zwischen_id;
 
           const updateGraduierungQuery = bestanden
             ? `
@@ -950,6 +1079,15 @@ router.post('/:id/status-aendern', (req, res) => {
               }
 
               connection.release();
+
+              // Gürtel-Bestand abziehen wenn bestanden (inkl. Zwischengurt bei Doppelprüfung)
+              if (bestanden) {
+                guertelBestandAbziehen(db.promise(), graduierung_nachher_id, gurtlaenge, dojoId);
+                if (graduierung_zwischen_id) {
+                  guertelBestandAbziehen(db.promise(), graduierung_zwischen_id, gurtlaenge, dojoId);
+                }
+              }
+
               res.json({
                 success: true,
                 message: `Status erfolgreich auf "${bestanden ? 'bestanden' : 'nicht bestanden'}" geändert`,

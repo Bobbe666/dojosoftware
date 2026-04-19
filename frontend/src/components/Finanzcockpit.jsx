@@ -525,7 +525,7 @@ const Finanzcockpit = () => {
       tone: memberStats.sepaRate >= 70 ? 'positive' : memberStats.sepaRate >= 40 ? 'warning' : 'negative',
       progress: memberStats.sepaRate
     },
-    {
+    memberStats.inkassoQuote !== null && {
       id: 'inkasso',
       icon: CheckCircle2,
       label: 'Inkasso-Quote',
@@ -542,7 +542,7 @@ const Finanzcockpit = () => {
       detail: `+${memberStats.neueMitglieder} neu · -${memberStats.verloreneMitglieder} beendet`,
       tone: memberStats.nettoWachstum > 0 ? 'positive' : memberStats.nettoWachstum < 0 ? 'negative' : 'neutral'
     }
-  ] : [];
+  ].filter(Boolean) : [];
 
   // Zahlungsarten mit Prozentwerten für Progress-Bars
   const totalZahlungen = stats
@@ -575,12 +575,12 @@ const Finanzcockpit = () => {
       title: 'Hohe SEPA-Automatisierung',
       description: `${memberStats.sepaRate}\u202f% der Mitglieder zahlen per Lastschrift – sehr gut`
     },
-    memberStats.inkassoQuote < 80 && {
+    memberStats.inkassoQuote !== null && memberStats.inkassoQuote < 80 && {
       id: 'inkasso-low',
       icon: AlertTriangle,
       tone: 'negative',
-      title: 'Inkasso-Quote unter 80\u202f%',
-      description: `${100 - memberStats.inkassoQuote}\u202f% der fälligen Rechnungen noch offen`
+      title: `Inkasso-Quote ${memberStats.inkassoQuote}\u202f%`,
+      description: `${memberStats.bezahltRechnungen} von ${memberStats.totalRechnungen} Rechnungen beglichen (ohne Stripe)`
     },
     memberStats.nettoWachstum > 0 && {
       id: 'growth',
@@ -775,68 +775,70 @@ const Finanzcockpit = () => {
             </ResponsiveContainer>
           </div>
 
-          <div className="finanzcockpit-card">
-            <div className="finanzcockpit__card-header">
-              <div>
-                <span className="finanzcockpit__card-eyebrow">Aufschlüsselung</span>
-                <h3>{aktiverChartTab === 'zahlungsarten' ? 'Zahlungsarten' : 'Einnahmen'}</h3>
+          <div className="fc__charts-bottom-row">
+            <div className="finanzcockpit-card">
+              <div className="finanzcockpit__card-header">
+                <div>
+                  <span className="finanzcockpit__card-eyebrow">Aufschlüsselung</span>
+                  <h3>{aktiverChartTab === 'zahlungsarten' ? 'Zahlungsarten' : 'Einnahmen'}</h3>
+                </div>
+                <div className="fc__chart-tabs">
+                  <button className={aktiverChartTab === 'zahlungsarten' ? 'is-active' : ''} onClick={() => setAktiverChartTab('zahlungsarten')}>
+                    <PieChartIcon size={13} /> Zahlungsarten
+                  </button>
+                  <button className={aktiverChartTab === 'einnahmen' ? 'is-active' : ''} onClick={() => setAktiverChartTab('einnahmen')}>
+                    <BarChart3 size={13} /> Aufschlüsselung
+                  </button>
+                </div>
               </div>
-              <div className="fc__chart-tabs">
-                <button className={aktiverChartTab === 'zahlungsarten' ? 'is-active' : ''} onClick={() => setAktiverChartTab('zahlungsarten')}>
-                  <PieChartIcon size={13} /> Zahlungsarten
-                </button>
-                <button className={aktiverChartTab === 'einnahmen' ? 'is-active' : ''} onClick={() => setAktiverChartTab('einnahmen')}>
-                  <BarChart3 size={13} /> Aufschlüsselung
-                </button>
-              </div>
+              {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length > 0 && (
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={paymentMethodData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={65} dataKey="value">
+                      {paymentMethodData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length === 0 && (
+                <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
+              )}
+              {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length > 0 && (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={incomeBreakdownData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" />
+                    <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
+                    <Tooltip content={<CustomIncomeTooltip />} />
+                    <Bar dataKey="value" fill="#ffd700" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+              {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length === 0 && (
+                <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
+              )}
             </div>
-            {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length > 0 && (
-              <ResponsiveContainer width="100%" height={210}>
-                <PieChart>
-                  <Pie data={paymentMethodData} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={80} dataKey="value">
-                    {paymentMethodData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: 'var(--modal-bg-dark)', border: '1px solid var(--border-accent)', borderRadius: '12px', color: 'var(--text-1)' }} formatter={(value) => formatCurrency(value)} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
-            {aktiverChartTab === 'zahlungsarten' && paymentMethodData.length === 0 && (
-              <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
-            )}
-            {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length > 0 && (
-              <ResponsiveContainer width="100%" height={210}>
-                <BarChart data={incomeBreakdownData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                  <XAxis dataKey="name" stroke="rgba(255,255,255,0.5)" />
-                  <YAxis stroke="rgba(255,255,255,0.5)" tickFormatter={formatCurrencyCompact} />
-                  <Tooltip content={<CustomIncomeTooltip />} />
-                  <Bar dataKey="value" fill="#ffd700" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-            {aktiverChartTab === 'einnahmen' && incomeBreakdownData.length === 0 && (
-              <p className="fc__no-data">Keine Daten im gewählten Zeitraum</p>
-            )}
-          </div>
 
-          <div className="finanzcockpit-card finanzcockpit__insights">
-            <div className="finanzcockpit__card-header">
-              <div>
-                <span className="finanzcockpit__card-eyebrow">Insights</span>
-                <h3>Schnelle Einschätzungen</h3>
+            <div className="finanzcockpit-card finanzcockpit__insights">
+              <div className="finanzcockpit__card-header">
+                <div>
+                  <span className="finanzcockpit__card-eyebrow">Insights</span>
+                  <h3>Einschätzungen</h3>
+                </div>
               </div>
+              <ul className="finanzcockpit__insight-list">
+                {[...insights, ...memberInsights].map(({ id, icon: Icon, title, description, tone }) => (
+                  <li key={id}>
+                    <div className={`finanzcockpit__insight-icon${tone ? ` finanzcockpit__insight-icon--${tone}` : ''}`}><Icon size={13} /></div>
+                    <div>
+                      <p className="finanzcockpit__insight-title">{title}</p>
+                      <p className="finanzcockpit__insight-description">{description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="finanzcockpit__insight-list">
-              {[...insights, ...memberInsights].map(({ id, icon: Icon, title, description, tone }) => (
-                <li key={id}>
-                  <div className={`finanzcockpit__insight-icon${tone ? ` finanzcockpit__insight-icon--${tone}` : ''}`}><Icon size={16} /></div>
-                  <div>
-                    <p className="finanzcockpit__insight-title">{title}</p>
-                    <p className="finanzcockpit__insight-description">{description}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
           </div>
         </div>
 

@@ -629,7 +629,7 @@ router.get('/member-stats', (req, res) => {
     new Promise((resolve, reject) => {
       const { clause, params } = buildFilter('m');
       db.query(
-        "SELECT COUNT(*) as total, SUM(CASE WHEN r.status = 'bezahlt' THEN 1 ELSE 0 END) as bezahlt FROM rechnungen r LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id WHERE r.archiviert = 0 AND r.faelligkeitsdatum >= ? AND r.faelligkeitsdatum <= ?" + clause,
+        "SELECT COUNT(*) as total, SUM(CASE WHEN r.status = 'bezahlt' THEN 1 ELSE 0 END) as bezahlt FROM rechnungen r LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id WHERE r.archiviert = 0 AND r.faelligkeitsdatum >= ? AND r.faelligkeitsdatum <= ? AND LOWER(COALESCE(m.zahlungsmethode, '')) NOT LIKE '%stripe%'" + clause,
         [dateStart, dateEnd, ...params], (err, r) => { if (err) return reject(err); resolve(r[0] || {}); }
       );
     }),
@@ -657,7 +657,7 @@ router.get('/member-stats', (req, res) => {
       totalVertraege: total,
       sepaRate: total > 0 ? Math.round((sepaCount / total) * 100) : 0,
       sepaCount,
-      inkassoQuote: totalR > 0 ? Math.round((bezahlt / totalR) * 100) : 100,
+      inkassoQuote: totalR > 0 ? Math.round((bezahlt / totalR) * 100) : null,
       totalRechnungen: totalR,
       bezahltRechnungen: bezahlt,
       neueMitglieder: neueV,

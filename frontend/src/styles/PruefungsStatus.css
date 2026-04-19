@@ -559,6 +559,36 @@
 .ps2-dv { font-size: 13px; color: var(--text, #e8eaed); }
 .ps2-dv-accent { color: var(--primary, #c9a84c); font-weight: 600; }
 
+.ps2-storno-hinweis {
+  display: flex;
+  gap: 12px;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.ps2-storno-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+.ps2-storno-text {
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.5;
+}
+.ps2-storno-text > strong {
+  display: block;
+  color: #fbbf24;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.ps2-storno-text p {
+  margin: 0;
+  color: var(--text-secondary, #94a3b8);
+}
+
 .ps2-checkbox-row {
   display: flex;
   align-items: flex-start;

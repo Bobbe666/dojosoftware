@@ -614,6 +614,60 @@
   opacity: 1;
 }
 
+/* ─── Read Receipts ──────────────────────────────────────────────────────────── */
+
+.chat-read-receipt {
+  font-size: 0.65rem;
+  margin-left: 0.4rem;
+  opacity: 0.45;
+  cursor: default;
+  user-select: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.7);
+  transition: opacity 0.2s;
+}
+
+.chat-read-receipt--read {
+  opacity: 1;
+  color: #a5f3fc;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chat-read-receipt--read:hover {
+  color: #fff;
+}
+
+.chat-readers-popup {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  background: var(--card-bg, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  min-width: 150px;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  cursor: pointer;
+}
+
+.chat-readers-popup-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.chat-readers-popup-item {
+  font-size: 0.8rem;
+  color: var(--text-primary, #f1f5f9);
+  padding: 0.15rem 0;
+}
+
 /* ─── Datums-Trennlinie ───────────────────────────────────────────────────────── */
 
 .chat-date-separator {

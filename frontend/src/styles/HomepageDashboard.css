@@ -1037,3 +1037,127 @@
 }
 [data-theme="dark"] .hpb-dns-col-value { color: var(--text-2, rgba(255,255,255,0.75)); }
 [data-theme="dark"] .hpb-dns-highlight { color: #60a5fa; }
+
+/* ─── Template Selector ─── */
+.hpb-template-selector {
+  padding: 0.25rem 0;
+}
+
+.hpb-template-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hpb-template-card {
+  border: 2px solid var(--border-color, #e5e7eb);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-card, #fff);
+}
+
+.hpb-template-card:hover {
+  border-color: var(--color-primary, #2563eb);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.hpb-template-card.active {
+  border-color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.hpb-tpl-header {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.hpb-tpl-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hpb-tpl-emoji {
+  font-size: 1.4rem;
+}
+
+.hpb-tpl-body {
+  padding: 10px 12px 12px;
+}
+
+.hpb-tpl-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.hpb-tpl-name-row strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hpb-tpl-active-badge {
+  background: var(--color-primary, #2563eb);
+  color: #fff;
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-weight: 600;
+}
+
+.hpb-tpl-style {
+  font-size: 0.72rem;
+  color: var(--color-primary, #2563eb);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.hpb-tpl-preview {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #6b7280);
+  line-height: 1.4;
+}
+
+/* ─── Slug Preview Box ─── */
+.hpb-slug-preview-box {
+  background: rgba(37,99,235,0.06);
+  border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.hpb-slug-preview-url {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-primary, #2563eb);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* ─── Dark Mode: Template Cards ─── */
+[data-theme="dark"] .hpb-template-card {
+  border-color: rgba(255,255,255,0.1);
+  background: var(--surface-1, rgba(255,255,255,0.03));
+}
+[data-theme="dark"] .hpb-template-card:hover {
+  border-color: var(--color-primary, #3b82f6);
+}
+[data-theme="dark"] .hpb-template-card.active {
+  border-color: var(--color-primary, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+}
+[data-theme="dark"] .hpb-tpl-preview {
+  color: var(--text-3, rgba(255,255,255,0.55));
+}
+[data-theme="dark"] .hpb-slug-preview-box {
+  background: rgba(59,130,246,0.08);
+  border-color: rgba(59,130,246,0.25);
+}

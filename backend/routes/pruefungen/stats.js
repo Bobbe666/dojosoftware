@@ -60,20 +60,46 @@ router.get('/statistiken', (req, res) => {
   const gurtWhereClause = 'WHERE ' + gurtConditions.join(' AND ');
 
   const queries = {
-    gesamt: `SELECT COUNT(*) as gesamt, COUNT(DISTINCT CONCAT(DATE(pruefungsdatum), '_', CAST(stil_id AS CHAR))) as termine, SUM(CASE WHEN bestanden = 1 THEN 1 ELSE 0 END) as bestanden, SUM(CASE WHEN bestanden = 0 AND status = 'nicht_bestanden' THEN 1 ELSE 0 END) as nicht_bestanden, SUM(CASE WHEN status = 'geplant' THEN 1 ELSE 0 END) as geplant FROM pruefungen ${whereClause}`,
+    gesamt: `SELECT COUNT(*) as gesamt,
+  COUNT(DISTINCT CONCAT(DATE(pruefungsdatum), '_', CAST(stil_id AS CHAR))) as termine,
+  SUM(CASE WHEN bestanden = 1 THEN 1 ELSE 0 END) as bestanden,
+  SUM(CASE WHEN bestanden = 0 AND status = 'nicht_bestanden' THEN 1 ELSE 0 END) as nicht_bestanden,
+  SUM(CASE WHEN status = 'geplant' THEN 1 ELSE 0 END) as geplant,
+  SUM(COALESCE(pruefungsgebuehr, 0)) as gebuehren_gesamt,
+  SUM(CASE WHEN gebuehr_bezahlt = 1 THEN COALESCE(pruefungsgebuehr, 0) ELSE 0 END) as gebuehren_bezahlt,
+  SUM(CASE WHEN (gebuehr_bezahlt = 0 OR gebuehr_bezahlt IS NULL) AND status != 'geplant' AND pruefungsgebuehr > 0 THEN COALESCE(pruefungsgebuehr, 0) ELSE 0 END) as gebuehren_offen,
+  SUM(CASE WHEN zahlungsart = 'bar' AND gebuehr_bezahlt = 1 THEN COALESCE(pruefungsgebuehr, 0) ELSE 0 END) as gebuehren_bar,
+  SUM(CASE WHEN zahlungsart = 'lastschrift' AND gebuehr_bezahlt = 1 THEN COALESCE(pruefungsgebuehr, 0) ELSE 0 END) as gebuehren_lastschrift
+FROM pruefungen ${whereClause}`,
     nach_stil: `SELECT s.name as stil_name, COUNT(*) as anzahl, SUM(CASE WHEN p.bestanden = 1 THEN 1 ELSE 0 END) as bestanden FROM pruefungen p INNER JOIN stile s ON p.stil_id = s.stil_id ${whereClause} GROUP BY s.stil_id, s.name ORDER BY anzahl DESC`,
     nach_monat: `SELECT YEAR(pruefungsdatum) as jahr, MONTH(pruefungsdatum) as monat, COUNT(*) as anzahl, SUM(CASE WHEN bestanden = 1 THEN 1 ELSE 0 END) as bestanden FROM pruefungen ${whereClause} GROUP BY YEAR(pruefungsdatum), MONTH(pruefungsdatum) ORDER BY jahr DESC, monat DESC LIMIT 12`,
-    gurtverteilung: `SELECT g.name as graduierung_name, g.farbe_hex as farbe, g.reihenfolge, s.name as stil_name, COUNT(DISTINCT m.mitglied_id) as anzahl FROM mitglieder m INNER JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id INNER JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id INNER JOIN stile s ON g.stil_id = s.stil_id ${gurtWhereClause} GROUP BY g.graduierung_id, g.name, g.farbe_hex, g.reihenfolge, s.name ORDER BY s.name ASC, g.reihenfolge ASC`
+    gurtverteilung: `SELECT g.name as graduierung_name, g.farbe_hex as farbe, g.reihenfolge, s.name as stil_name, COUNT(DISTINCT m.mitglied_id) as anzahl FROM mitglieder m INNER JOIN mitglied_stil_data msd ON m.mitglied_id = msd.mitglied_id INNER JOIN graduierungen g ON msd.current_graduierung_id = g.graduierung_id INNER JOIN stile s ON g.stil_id = s.stil_id ${gurtWhereClause} GROUP BY g.graduierung_id, g.name, g.farbe_hex, g.reihenfolge, s.name ORDER BY s.name ASC, g.reihenfolge ASC`,
+    wartezeit: `SELECT
+  g_nach.name as graduierung_name, g_nach.farbe_hex as farbe, g_nach.reihenfolge,
+  s.name as stil_name, COUNT(*) as anzahl,
+  ROUND(AVG(TIMESTAMPDIFF(MONTH,
+    COALESCE(
+      (SELECT MAX(p2.pruefungsdatum) FROM pruefungen p2 WHERE p2.mitglied_id = p.mitglied_id AND p2.stil_id = p.stil_id AND p2.pruefungsdatum < p.pruefungsdatum AND p2.status IN ('bestanden','nicht_bestanden')),
+      (SELECT m2.eintrittsdatum FROM mitglieder m2 WHERE m2.mitglied_id = p.mitglied_id)
+    ), p.pruefungsdatum)), 1) as avg_wartezeit_monate
+FROM pruefungen p
+JOIN graduierungen g_nach ON p.graduierung_nachher_id = g_nach.graduierung_id
+JOIN stile s ON g_nach.stil_id = s.stil_id
+WHERE p.pruefungsdatum IS NOT NULL AND p.status IN ('bestanden','nicht_bestanden')${whereConditions.length > 0 ? ' AND ' + whereConditions.join(' AND ') : ''}
+GROUP BY g_nach.graduierung_id, g_nach.name, g_nach.farbe_hex, g_nach.reihenfolge, s.name
+HAVING COUNT(*) >= 2
+ORDER BY s.name ASC, g_nach.reihenfolge ASC`
   };
 
   Promise.all([
     new Promise((resolve, reject) => { db.query(queries.gesamt, queryParams, (err, r) => err ? reject(err) : resolve(r[0])); }),
     new Promise((resolve, reject) => { db.query(queries.nach_stil, queryParams, (err, r) => err ? reject(err) : resolve(r)); }),
     new Promise((resolve, reject) => { db.query(queries.nach_monat, queryParams, (err, r) => err ? reject(err) : resolve(r)); }),
-    new Promise((resolve, reject) => { db.query(queries.gurtverteilung, gurtParams, (err, r) => err ? reject(err) : resolve(r)); })
+    new Promise((resolve, reject) => { db.query(queries.gurtverteilung, gurtParams, (err, r) => err ? reject(err) : resolve(r)); }),
+    new Promise((resolve, reject) => { db.query(queries.wartezeit, queryParams, (err, r) => err ? reject(err) : resolve(r)); })
   ])
-  .then(([gesamt, nach_stil, nach_monat, gurtverteilung]) => {
-    res.json({ success: true, statistiken: { gesamt, nach_stil, nach_monat, gurtverteilung } });
+  .then(([gesamt, nach_stil, nach_monat, gurtverteilung, wartezeit]) => {
+    res.json({ success: true, statistiken: { gesamt, nach_stil, nach_monat, gurtverteilung, wartezeit } });
   })
   .catch(err => {
     logger.error('Fehler bei Prüfungsstatistiken:', { error: err });

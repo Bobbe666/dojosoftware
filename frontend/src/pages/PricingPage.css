@@ -391,6 +391,56 @@
   font-weight: bold;
   font-size: 1.1rem;
   flex-shrink: 0;
+  width: 1.2rem;
+  text-align: center;
+}
+
+.feature-dash {
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 400;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 1.2rem;
+  text-align: center;
+}
+
+.feature-icon-label {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.card-features li.feature-included {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.card-features li.feature-excluded {
+  color: rgba(255, 255, 255, 0.25);
+  text-decoration: none;
+}
+
+/* Limits-Badges */
+.plan-limits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.limit-badge {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--comp-radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
+
+.limit-badge--highlight {
+  background: rgba(var(--primary-rgb, 255, 107, 53), 0.15);
+  border-color: var(--primary-alpha-40);
+  color: var(--primary);
 }
 
 /* Feature Comparison Table */
@@ -467,6 +517,21 @@
 
 .comparison-table tr:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.comparison-table td.included {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.comparison-table td.not-included {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
+}
+
+.comparison-table .feature-icon {
+  margin-right: 0.4rem;
 }
 
 /* FAQ */

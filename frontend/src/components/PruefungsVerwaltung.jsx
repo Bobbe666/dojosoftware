@@ -66,11 +66,13 @@ const PruefungsVerwaltung = () => {
 
   // Daten für zugelassene und abgeschlossene Prüfungen
   const [zugelassenePruefungen, setZugelassenePruefungen] = useState([]);
+  const [gebuehrDialog, setGebuehrDialog] = useState(null); // { pruefung } oder null
   const [abgeschlossenePruefungen, setAbgeschlossenePruefungen] = useState([]);
   const [statistiken, setStatistiken] = useState(null);
   const [technikStats, setTechnikStats] = useState(null);
   const [erwStats, setErwStats] = useState(null);
   const [gurtView, setGurtView] = useState('stil');
+  const [statsJahr, setStatsJahr] = useState('');
   const [pruefungstermine, setPruefungstermine] = useState([]);
 
   // Neuer Termin Modal
@@ -90,6 +92,7 @@ const PruefungsVerwaltung = () => {
     teilnahmebedingungen: '',
     oeffentlich: false,
     oeffentlich_vib: false,
+    gebuehr_auto_verrechnen: false,
     ist_historisch: false,
     historisch_bemerkung: ''
   });
@@ -117,6 +120,40 @@ const PruefungsVerwaltung = () => {
   const [druckPreviewData, setDruckPreviewData] = useState(null); // { pruefung, termin }
   const [protokollSendStatus, setProtokolSendStatus] = useState({}); // Key: pruefung_id → 'sending'|'sent'|'error'
   const [trainingsKonfliktDialog, setTrainingsKonfliktDialog] = useState(null); // { konflikte: [...], sendPush: true, terminData: {...} }
+  const [erinnerungStatus, setErinnerungStatus] = useState({}); // key: `${datum}___${stil_id}` → 'sending'|'sent'|'error'
+  const [erinnerungDialog, setErinnerungDialog] = useState(null); // { group, ohneAntwort }
+
+  const handleErinnerungSenden = async (group) => {
+    const ohneAntwort = group.candidates.filter(c => !c.mitglied_antwort);
+    setErinnerungDialog({ group, ohneAntwort });
+  };
+
+  const handleErinnerungBestaetigen = async () => {
+    if (!erinnerungDialog) return;
+    const { group } = erinnerungDialog;
+    const key = `${group.datum}___${group.stil_id}`;
+    setErinnerungDialog(null);
+    setErinnerungStatus(prev => ({ ...prev, [key]: 'sending' }));
+    try {
+      const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+      const dojoParam = getDojoFilterParam();
+      const res = await fetch(`${API_BASE_URL}/pruefungen/kandidaten/erinnerung-ohne-antwort${dojoParam ? `?${dojoParam}` : ''}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ datum: group.datum, stil_id: group.stil_id }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Fehler');
+      setErinnerungStatus(prev => ({ ...prev, [key]: 'sent' }));
+      setSuccess(`✓ Erinnerung an ${data.count} Mitglied${data.count !== 1 ? 'er' : ''} gesendet (E-Mail + Push)`);
+      setTimeout(() => setSuccess(''), 5000);
+      setTimeout(() => setErinnerungStatus(prev => ({ ...prev, [key]: null })), 8000);
+    } catch (err) {
+      setErinnerungStatus(prev => ({ ...prev, [key]: 'error' }));
+      setError('Fehler beim Senden der Erinnerung: ' + err.message);
+      setTimeout(() => setError(''), 5000);
+    }
+  };
 
   const handleProtokolInsDashboard = async () => {
     if (!druckPreviewData) return;
@@ -167,7 +204,7 @@ const PruefungsVerwaltung = () => {
   const [batchExpandedRows, setBatchExpandedRows] = useState({}); // {pruefung_id: bool}
 
   // Termin-Auswahl Modal (beim Zulassen)
-  const [terminAuswahlModal, setTerminAuswahlModal] = useState({ open: false, kandidat: null, termine: [], isAusnahme: false });
+  const [terminAuswahlModal, setTerminAuswahlModal] = useState({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null });
 
   // Filter für Kandidaten
   const [berechtigungsFilter, setBerechtigungsFilter] = useState('all'); // 'all', 'berechtigt', 'nicht_berechtigt'
@@ -249,7 +286,7 @@ const PruefungsVerwaltung = () => {
       fetchZugelassenePruefungen();
       fetchAbgeschlossenePruefungen();
     }
-  }, [activeTab, selectedStil, dojosLoading, dojos, activeDojo]);
+  }, [activeTab, selectedStil, dojosLoading, dojos, activeDojo, statsJahr]);
 
   const fetchStile = async () => {
     try {
@@ -414,8 +451,9 @@ const PruefungsVerwaltung = () => {
         return;
       }
 
+      const jahrParam = statsJahr ? `&jahr=${statsJahr}` : '';
       const response = await fetch(
-        `${API_BASE_URL}/pruefungen/stats/statistiken?${dojoParam}`,
+        `${API_BASE_URL}/pruefungen/stats/statistiken?${dojoParam}${jahrParam}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken')}`
@@ -1024,13 +1062,18 @@ const PruefungsVerwaltung = () => {
       return;
     }
 
-    setTerminAuswahlModal({ open: true, kandidat, termine: verfuegbareTermine, isAusnahme });
+    setTerminAuswahlModal({ open: true, kandidat, termine: verfuegbareTermine, isAusnahme, step: 1, selectedTermin: null });
   };
 
   // Termin im Modal ausgewählt
-  const handleTerminAuswahlSelected = async (termin) => {
-    const { kandidat, isAusnahme } = terminAuswahlModal;
-    setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false });
+  const handleTerminAuswahlSelected = (termin) => {
+    // Schritt 1 → 2: Termin merken, Zahlungsart abfragen
+    setTerminAuswahlModal(prev => ({ ...prev, step: 2, selectedTermin: termin }));
+  };
+
+  const handleZahlungsartAuswahlSelected = async (zahlungsart) => {
+    const { kandidat, isAusnahme, selectedTermin: termin } = terminAuswahlModal;
+    setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null });
 
     const customDaten = {
       pruefungsdatum: termin.datum,
@@ -1039,7 +1082,8 @@ const PruefungsVerwaltung = () => {
       pruefungsgebuehr: termin.vorlageData?.pruefungsgebuehr,
       anmeldefrist: termin.vorlageData?.anmeldefrist,
       bemerkungen: termin.vorlageData?.bemerkungen,
-      teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen
+      teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen,
+      zahlungsart
     };
 
     if (isAusnahme) {
@@ -1398,6 +1442,57 @@ const PruefungsVerwaltung = () => {
     }
   };
 
+  // Individuelle Gebühren-Einstellung für einen Prüfling togglen
+  const handleGebuehrAutoToggle = async (pruefung) => {
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    // Zyklus: null (Termin-Std.) → 1 (erzwingen an) → 0 (erzwingen aus) → null
+    const current = pruefung.gebuehr_auto_verrechnen;
+    const next = current === null || current === undefined ? 1 : current === 1 ? 0 : null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/pruefungen/kandidaten/${pruefung.pruefung_id}/gebuehr-auto`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ gebuehr_auto_verrechnen: next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fehler');
+      setZugelassenePruefungen(prev =>
+        prev.map(p => p.pruefung_id === pruefung.pruefung_id
+          ? { ...p, gebuehr_auto_verrechnen: next, gebuehr_rechnung_id: data.rechnung_id ?? p.gebuehr_rechnung_id }
+          : p)
+      );
+      if (data.rechnung_erstellt) setSuccess('Rechnung automatisch erstellt');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleGebuehrBar = async (pruefung) => {
+    const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+    try {
+      const res = await fetch(`${API_BASE_URL}/pruefungen/kandidaten/${pruefung.pruefung_id}/gebuehr-bar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fehler');
+      setZugelassenePruefungen(prev =>
+        prev.map(p => p.pruefung_id === pruefung.pruefung_id
+          ? { ...p, zahlungsart: 'bar', gebuehr_bezahlt: 1, gebuehr_auto_verrechnen: 0, gebuehr_rechnung_id: null }
+          : p)
+      );
+      setGebuehrDialog(null);
+      setSuccess('Prüfungsgebühr als Bar-Zahlung erfasst');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleGebuehrRechnung = async (pruefung) => {
+    setGebuehrDialog(null);
+    await handleGebuehrAutoToggle({ ...pruefung, gebuehr_auto_verrechnen: null }); // force → 1
+  };
+
   // Alle als bestanden/nicht bestanden markieren
   const addFreieTechnik = (pruefungId, kat, titel) => {
     if (!titel.trim()) return;
@@ -1543,7 +1638,7 @@ const PruefungsVerwaltung = () => {
       pruefungsdatum: '', pruefungszeit: '10:00', pruefungsort: '', pruefer_name: '',
       stil_id: '', pruefungsgebuehr: '', anmeldefrist: '', gurtlaenge: '',
       bemerkungen: '', teilnahmebedingungen: '', oeffentlich: false,
-      oeffentlich_vib: false, ist_historisch: false, historisch_bemerkung: ''
+      oeffentlich_vib: false, gebuehr_auto_verrechnen: false, ist_historisch: false, historisch_bemerkung: ''
     });
     fetchPruefungstermine();
   };
@@ -1565,6 +1660,7 @@ const PruefungsVerwaltung = () => {
       teilnahmebedingungen: neuerTermin.teilnahmebedingungen || null,
       oeffentlich: neuerTermin.oeffentlich ? 1 : 0,
       oeffentlich_vib: neuerTermin.oeffentlich_vib ? 1 : 0,
+      gebuehr_auto_verrechnen: neuerTermin.gebuehr_auto_verrechnen ? 1 : 0,
       dojo_id: activeDojo.id
     };
 
@@ -1632,7 +1728,8 @@ const PruefungsVerwaltung = () => {
       bemerkungen: termin.vorlageData?.bemerkungen || '',
       teilnahmebedingungen: termin.vorlageData?.teilnahmebedingungen || '',
       oeffentlich: termin.vorlageData?.oeffentlich ? true : false,
-      oeffentlich_vib: termin.vorlageData?.oeffentlich_vib ? true : false
+      oeffentlich_vib: termin.vorlageData?.oeffentlich_vib ? true : false,
+      gebuehr_auto_verrechnen: termin.vorlageData?.gebuehr_auto_verrechnen ? true : false
     });
     setShowEditTerminModal(true);
   };
@@ -1725,7 +1822,8 @@ const PruefungsVerwaltung = () => {
           bemerkungen: editTermin.bemerkungen || null,
           teilnahmebedingungen: editTermin.teilnahmebedingungen || null,
           oeffentlich: editTermin.oeffentlich ? 1 : 0,
-          oeffentlich_vib: editTermin.oeffentlich_vib ? 1 : 0
+          oeffentlich_vib: editTermin.oeffentlich_vib ? 1 : 0,
+          gebuehr_auto_verrechnen: editTermin.gebuehr_auto_verrechnen ? 1 : 0
         })
       });
 
@@ -1901,7 +1999,7 @@ const PruefungsVerwaltung = () => {
         bgImage: `${origin}/assets/urkunde_kickboxen.jpg`,
         styles: `
           .cert-name { position:absolute;width:100%;top:64mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
-          .cert-rank { position:absolute;width:100%;top:102mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
+          .cert-rank { position:absolute;width:100%;top:65mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:22pt;font-style:italic;color:#000;letter-spacing:0.5px; }
           .cert-nummer { position:absolute;width:100%;top:165mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000;letter-spacing:1px; }
           .cert-datum { position:absolute;width:100%;top:173mm;text-align:center;font-family:'Times New Roman',Georgia,serif;font-size:11pt;color:#000; }
         `,
@@ -1946,14 +2044,14 @@ const PruefungsVerwaltung = () => {
       const useBonzai = vorlage === 'aikido_schuelergrad';
       const bz = (s) => useBonzai ? (s || '').replace(/ß/g, 'ss') : (s || '');
 
-      const pages = kandidatenMitNummern.map((p, i) => `
-        <div class="cert-page" style="${i > 0 ? 'page-break-before:always;break-before:page;' : ''}">
-          <div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div>
-          <div class="cert-rank">${bz(p.graduierung_nachher || '—')}</div>
-          ${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}
-          <div class="cert-datum">${pruefDatumDE}</div>
-        </div>
-      `).join('');
+      // Jede Seite als Div, durch einen Seitenumbruch getrennt.
+      // WICHTIG: cert-page bekommt calc(pageH - 1px) damit der Trenner (height:0)
+      // auf DERSELBEN Seite wie die Cert-Page bleibt — sonst schiebt Chrome ihn auf
+      // die nächste Seite und der page-break-before erzeugt eine zusätzliche Leerseite.
+      const pageBlocks = kandidatenMitNummern.map((p, i) =>
+        (i > 0 ? '<div class="page-break"></div>' : '') +
+        `<div class="cert-page"><div class="cert-name">${bz(`${p.vorname || ''} ${p.nachname || ''}`)}</div><div class="cert-rank">${bz(p.graduierung_nachher || '—')}</div>${p.urkundennummer ? `<div class="cert-nummer">${bz(p.urkundennummer)}</div>` : ''}<div class="cert-datum">${pruefDatumDE}</div></div>`
+      ).join('');
 
       const html = `<!DOCTYPE html>
 <html lang="de">
@@ -1963,26 +2061,28 @@ const PruefungsVerwaltung = () => {
   ${cfg.extraFonts || ''}
   <style>
     @page { size: ${cfg.pageSize}; margin: 0; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #fff; }
+    html, body { margin: 0; padding: 0; background: #fff; }
     .cert-page {
       width: ${cfg.pageW};
-      height: ${cfg.pageH};
+      height: calc(${cfg.pageH} - 1px);
       position: relative;
-      background: transparent;
-      break-inside: avoid;
-      page-break-inside: avoid;
+      overflow: hidden;
+    }
+    .page-break {
+      height: 0;
+      margin: 0;
+      padding: 0;
+      border: none;
+      page-break-before: always;
     }
     ${cfg.styles}
     @media print {
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       @page { size: ${cfg.pageSize}; margin: 0; }
     }
   </style>
 </head>
-<body>
-${pages}
-</body>
+<body>${pageBlocks}</body>
 </html>`;
 
       win.document.open();
@@ -3631,22 +3731,35 @@ ${pages}
                         </div>
                       </td>
                       <td>
-                        {kandidat.bereits_zugelassen ? (
-                          <span className="badge badge-warning pv3-badge-flex">
-                            <Check size={14} />
-                            Zugelassen
-                          </span>
-                        ) : kandidat.berechtigt ? (
-                          <span className="badge badge-success pv3-badge-flex">
-                            <Check size={14} />
-                            Berechtigt
-                          </span>
-                        ) : (
-                          <span className="badge badge-neutral pv3-badge-flex">
-                            <X size={14} />
-                            Noch nicht
-                          </span>
-                        )}
+                        {(() => {
+                          const stufen = kandidat.naechste_reihenfolge && kandidat.aktuelle_reihenfolge
+                            ? Math.max(1, kandidat.naechste_reihenfolge - kandidat.aktuelle_reihenfolge)
+                            : 1;
+                          const gebuehr = stufen * 35;
+                          return (
+                            <div style={{ display:'flex', flexDirection:'column', gap:'3px' }}>
+                              {kandidat.bereits_zugelassen ? (
+                                <span className="badge badge-warning pv3-badge-flex">
+                                  <Check size={14} />
+                                  Zugelassen
+                                </span>
+                              ) : kandidat.berechtigt ? (
+                                <span className="badge badge-success pv3-badge-flex">
+                                  <Check size={14} />
+                                  Berechtigt
+                                </span>
+                              ) : (
+                                <span className="badge badge-neutral pv3-badge-flex">
+                                  <X size={14} />
+                                  Noch nicht
+                                </span>
+                              )}
+                              <span style={{ fontSize:'0.68rem', color:'rgba(255,215,0,0.7)', fontWeight:600 }}>
+                                {gebuehr.toFixed(2).replace('.',',')} €{stufen > 1 ? ` (${stufen}×35)` : ''}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="pv2-text-center">
                         {!kandidat.bereits_zugelassen ? (
@@ -3868,7 +3981,7 @@ ${pages}
                           </span>
                           <span className="pv3-stil-badge-sm">{group.stil_name}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
                           <span className="pv3-group-count">
                             {group.candidates.length} Kandidat{group.candidates.length !== 1 ? 'en' : ''}
                           </span>
@@ -3887,6 +4000,41 @@ ${pages}
                               👁 {group.candidates.filter(c => c.benachrichtigung_gelesen).length} Gel.
                             </span>
                           )}
+                          {group.candidates.filter(c => c.erinnerung_gesendet_am).length > 0 && (
+                            <span
+                              style={{ fontSize: '11px', background: 'rgba(251,191,36,.12)', border: '1px solid rgba(251,191,36,.35)', color: '#fbbf24', borderRadius: '4px', padding: '1px 6px', cursor: 'default' }}
+                              title={`Erinnerung zuletzt gesendet: ${new Date(Math.max(...group.candidates.filter(c=>c.erinnerung_gesendet_am).map(c=>new Date(c.erinnerung_gesendet_am)))).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}`}
+                            >
+                              📩 {group.candidates.filter(c => c.erinnerung_gesendet_am).length} Erin.
+                            </span>
+                          )}
+                          {/* Erinnerung-Button: nur für zukünftige Termine mit offenen Antworten */}
+                          {isFuture && (() => {
+                            const ohneAntwort = group.candidates.filter(c => !c.mitglied_antwort).length;
+                            const key = `${group.datum}___${group.stil_id}`;
+                            const status = erinnerungStatus[key];
+                            if (ohneAntwort === 0) return null;
+                            return (
+                              <button
+                                onClick={() => handleErinnerungSenden(group)}
+                                disabled={status === 'sending'}
+                                title={`Erinnerung an ${ohneAntwort} Mitglied${ohneAntwort !== 1 ? 'er' : ''} ohne Antwort senden`}
+                                style={{
+                                  fontSize: '11px',
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  border: `1px solid ${status === 'sent' ? 'rgba(34,197,94,.4)' : status === 'error' ? 'rgba(239,68,68,.4)' : 'rgba(234,179,8,.4)'}`,
+                                  background: status === 'sent' ? 'rgba(34,197,94,.12)' : status === 'error' ? 'rgba(239,68,68,.12)' : 'rgba(234,179,8,.1)',
+                                  color: status === 'sent' ? '#22c55e' : status === 'error' ? '#ef4444' : '#EAB308',
+                                  cursor: status === 'sending' ? 'wait' : 'pointer',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1.6,
+                                }}
+                              >
+                                {status === 'sending' ? '⏳ Sendet…' : status === 'sent' ? '✓ Gesendet' : status === 'error' ? '✗ Fehler' : `🔔 ${ohneAntwort} erinnern`}
+                              </button>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -3895,6 +4043,17 @@ ${pages}
                           <div key={pruefung.pruefung_id} className="pv3-candidate-row">
                             <div className="pv3-cand-name">
                               {pruefung.vorname} {pruefung.nachname}
+                              {pruefung.guertellaenge_cm && (
+                                <span style={{
+                                  marginLeft:'0.4rem',fontSize:'0.68rem',fontWeight:700,
+                                  padding:'1px 5px',borderRadius:'4px',
+                                  background:'rgba(99,102,241,0.15)',color:'#a5b4fc',
+                                  border:'1px solid rgba(99,102,241,0.3)',
+                                  verticalAlign:'middle',
+                                }}>
+                                  📏 {pruefung.guertellaenge_cm} cm
+                                </span>
+                              )}
                             </div>
                             <div className="pv3-cand-grad" style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
                               {/* Vorhanden */}
@@ -3969,6 +4128,14 @@ ${pages}
                                 title={pruefung.benachrichtigung_gelesen ? `Einladung gelesen${pruefung.benachrichtigung_gelesen_am ? ' am ' + new Date(pruefung.benachrichtigung_gelesen_am).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : ''}` : 'Einladung noch nicht gelesen'}
                                 className={`pv3-status-btn${pruefung.benachrichtigung_gelesen ? ' pv3-status-btn--gelesen' : ''}`}
                               >{pruefung.benachrichtigung_gelesen ? '👁 Gel.' : '○ Ungel.'}</button>
+                              {pruefung.erinnerung_gesendet_am && (
+                                <span
+                                  className="pv3-status-btn pv3-status-btn--erinnerung"
+                                  title={`Erinnerung gesendet am ${new Date(pruefung.erinnerung_gesendet_am).toLocaleString('de-DE', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}${pruefung.erinnerung_anzahl > 1 ? ' ('+pruefung.erinnerung_anzahl+'x)' : ''}`}
+                                >
+                                  📩 {pruefung.erinnerung_anzahl > 1 ? `${pruefung.erinnerung_anzahl}x` : ''} Erin.
+                                </span>
+                              )}
                             </div>
                             <div className="pv3-cand-actions u-flex-wrap-gap">
                                 {(pruefung.status === 'bestanden' || pruefung.status === 'nicht_bestanden') ? (
@@ -4051,6 +4218,30 @@ ${pages}
                                     >
                                       <Check size={13} /> Ergebnis
                                     </button>
+                                    {pruefung.pruefungsgebuehr && parseFloat(pruefung.pruefungsgebuehr) > 0 && (
+                                      <button
+                                        onClick={() => {
+                                          if (!pruefung.gebuehr_rechnung_id && !pruefung.gebuehr_bezahlt) {
+                                            setGebuehrDialog(pruefung);
+                                          }
+                                        }}
+                                        title={
+                                          pruefung.gebuehr_bezahlt && pruefung.zahlungsart === 'bar'
+                                            ? 'Bar bezahlt ✓'
+                                            : pruefung.gebuehr_rechnung_id
+                                            ? `Rechnung erstellt (ID ${pruefung.gebuehr_rechnung_id})`
+                                            : `Gebühr ${parseFloat(pruefung.pruefungsgebuehr).toFixed(2)} € abrechnen`
+                                        }
+                                        className={`pv3-zug-btn-neutral pv3-gebuehr-toggle${pruefung.gebuehr_rechnung_id ? ' pv3-gebuehr-toggle--on' : pruefung.gebuehr_bezahlt ? ' pv3-gebuehr-toggle--on' : ''}`}
+                                        disabled={!!pruefung.gebuehr_rechnung_id || !!pruefung.gebuehr_bezahlt}
+                                      >
+                                        {pruefung.gebuehr_bezahlt && pruefung.zahlungsart === 'bar'
+                                          ? '💵 Bar ✓'
+                                          : pruefung.gebuehr_rechnung_id
+                                          ? '🧾 Rechnung ✓'
+                                          : '💶 Rechnung'}
+                                      </button>
+                                    )}
                                   </>
                                 )}
                             </div>
@@ -4259,6 +4450,44 @@ ${pages}
       {activeTab === 'statistiken' && statistiken && (
         <div className="pv3-stat-section">
 
+          {/* ── JAHRESFILTER ──────────────────────────────────────── */}
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem', marginBottom:'1rem', flexWrap:'wrap' }}>
+            <span style={{ fontSize:'0.75rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--text-3,#888)' }}>Jahr:</span>
+            {['', ...Array.from({ length: 6 }, (_, i) => String(new Date().getFullYear() - i))].map(j => (
+              <button
+                key={j || 'alle'}
+                onClick={() => setStatsJahr(j)}
+                style={{
+                  padding:'0.2rem 0.6rem', borderRadius:'6px', border:'none', cursor:'pointer',
+                  fontSize:'0.75rem', fontWeight:600,
+                  background: statsJahr === j ? 'rgba(255,215,0,0.18)' : 'rgba(255,255,255,0.05)',
+                  color: statsJahr === j ? 'var(--primary,#ffd700)' : 'var(--text-3,#888)',
+                  boxShadow: statsJahr === j ? '0 0 0 1px rgba(255,215,0,0.35) inset' : 'none',
+                  transition: 'all 0.12s',
+                }}
+              >{j || 'Alle Jahre'}</button>
+            ))}
+            <button
+              onClick={() => window.print()}
+              style={{
+                marginLeft: 'auto',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '6px',
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text-2,#ccc)',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+              }}
+            >
+              🖨️ Drucken / PDF
+            </button>
+          </div>
+
           {/* ── KPI CARDS ─────────────────────────────────────────── */}
           <div className="pvs-kpi-grid">
             {/* Termine */}
@@ -4327,19 +4556,45 @@ ${pages}
             <div className="stat-card pvs-kpi-card">
               <div className="pvs-kpi-label">Ø Training</div>
               <div className="pvs-kpi-value pvs-kpi-green">
-                {kandidaten.length > 0 ? Math.round(kandidaten.reduce((s, k) => s + (k.trainingsstunden || 0), 0) / kandidaten.length) : 0}h
+                {kandidaten.length > 0 ? Math.round(kandidaten.reduce((s, k) => s + (k.absolvierte_stunden || 0), 0) / kandidaten.length) : 0}
               </div>
-              <div className="pvs-kpi-sub">pro Kandidat</div>
+              <div className="pvs-kpi-sub">Einheiten pro Kandidat</div>
             </div>
             {/* Ø Monate */}
             <div className="stat-card pvs-kpi-card">
               <div className="pvs-kpi-label">Ø Wartezeit</div>
               <div className="pvs-kpi-value pvs-kpi-cyan">
-                {kandidaten.length > 0 ? Math.round(kandidaten.reduce((s, k) => s + (k.monate_seit_letzter || 0), 0) / kandidaten.length) : 0}
+                {kandidaten.length > 0 ? Math.round(kandidaten.reduce((s, k) => s + (k.monate_seit_letzter_pruefung || 0), 0) / kandidaten.length) : 0}
               </div>
               <div className="pvs-kpi-sub">Monate seit letzter</div>
             </div>
           </div>
+
+          {/* ── PRÜFUNGSGEBÜHREN ──────────────────────────────────── */}
+          {statistiken.gesamt.gebuehren_gesamt > 0 && (
+            <div style={{ marginTop:'1rem' }}>
+              <div style={{ fontSize:'0.7rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:'var(--text-3,#888)', marginBottom:'0.5rem' }}>
+                Prüfungsgebühren
+              </div>
+              <div className="pvs-kpi-grid">
+                <div className="stat-card pvs-kpi-card">
+                  <div className="pvs-kpi-label">Gesamt</div>
+                  <div className="pvs-kpi-value pvs-kpi-purple">{Number(statistiken.gesamt.gebuehren_gesamt).toLocaleString('de-DE', { minimumFractionDigits:2, maximumFractionDigits:2 })} €</div>
+                  <div className="pvs-kpi-sub">alle Prüfungsgebühren</div>
+                </div>
+                <div className="stat-card pvs-kpi-card">
+                  <div className="pvs-kpi-label">Bezahlt</div>
+                  <div className="pvs-kpi-value pvs-kpi-green">{Number(statistiken.gesamt.gebuehren_bezahlt).toLocaleString('de-DE', { minimumFractionDigits:2, maximumFractionDigits:2 })} €</div>
+                  <div className="pvs-kpi-sub pvs-kpi-green-text">{statistiken.gesamt.gebuehren_gesamt > 0 ? Math.round(statistiken.gesamt.gebuehren_bezahlt / statistiken.gesamt.gebuehren_gesamt * 100) : 0}% eingegangen</div>
+                </div>
+                <div className="stat-card pvs-kpi-card">
+                  <div className="pvs-kpi-label">Offen</div>
+                  <div className={`pvs-kpi-value ${statistiken.gesamt.gebuehren_offen > 0 ? 'pvs-kpi-red' : 'pvs-kpi-green'}`}>{Number(statistiken.gesamt.gebuehren_offen).toLocaleString('de-DE', { minimumFractionDigits:2, maximumFractionDigits:2 })} €</div>
+                  <div className="pvs-kpi-sub">ausstehend</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="pvs-sep" />
 
@@ -4684,19 +4939,67 @@ ${pages}
 
           <div className="pvs-sep" />
 
+          {/* ── Ø WARTEZEIT PRO GRADUIERUNGSSTUFE ────────────────── */}
+          {statistiken.wartezeit && statistiken.wartezeit.length > 0 && (
+            <div style={{ marginTop:'1.5rem' }}>
+              <h3 className="pv3-section-h3" style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>
+                Ø Wartezeit bis Prüfung
+                <span className="pv-tooltip-wrap" data-tip="Durchschnittliche Wartezeit in Monaten zwischen der letzten Prüfung und der nächsten Prüfung, gruppiert nach Graduierungsstufe. Nur Stufen mit mindestens 2 Prüfungen werden angezeigt.">
+                  <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:'16px', height:'16px', borderRadius:'50%', background:'rgba(99,102,241,0.2)', border:'1px solid rgba(99,102,241,0.4)', color:'#a5b4fc', fontSize:'0.6rem', fontWeight:700, cursor:'help', flexShrink:0 }}>i</span>
+                </span>
+              </h3>
+              <div className="pvs-grad-diff-list">
+                {statistiken.wartezeit.map((w, i) => {
+                  const monate = w.avg_wartezeit_monate || 0;
+                  const maxMonate = Math.max(...statistiken.wartezeit.map(x => x.avg_wartezeit_monate || 0), 1);
+                  const pct = Math.round(monate / maxMonate * 100);
+                  const col = monate <= 3 ? '#4ade80' : monate <= 6 ? '#fbbf24' : '#f87171';
+                  return (
+                    <div key={i} className="pvs-grad-diff-row">
+                      <div className="pvs-grad-dot" style={{ background: w.farbe || '#ccc' }}/>
+                      <div className="pvs-grad-diff-info">
+                        <div className="pvs-grad-diff-name">{w.graduierung_name}</div>
+                        <div className="pvs-grad-diff-stil">{w.stil_name}</div>
+                      </div>
+                      <div className="pvs-grad-diff-bar">
+                        <div className="pvs-bar-track">
+                          <div style={{ height:'100%', width:`${pct}%`, background:col, borderRadius:4, transition:'width 0.5s', opacity:0.85 }}/>
+                        </div>
+                      </div>
+                      <div className="pvs-grad-diff-score" style={{ color:col }}>
+                        {monate} Mon.
+                        <span className="pvs-text-muted" style={{ fontSize:'0.65rem', display:'block' }}>{w.anzahl} Prüfg.</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ── GRAD-SCHWIERIGKEIT + TOP-PRÜFLINGE ───────────────── */}
           {erwStats && (
             <div className="pvs-two-col pvs-mt-2">
               {/* Graduierungs-Schwierigkeit */}
               <div>
-                <h3 className="pv3-section-h3">Schwierigkeit nach Prüfung</h3>
+                <h3 className="pv3-section-h3" style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>
+                  Bestehensquote nach Graduierung
+                  <span className="pv-tooltip-wrap" data-tip="Zeigt pro Graduierungsstufe wie viele Prüflinge bestanden haben. Grün = hohe Bestehensquote, Rot = viele sind durchgefallen. So erkennst du welche Prüfungen besonders anspruchsvoll sind.">
+                    <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                      width:'16px', height:'16px', borderRadius:'50%',
+                      background:'rgba(99,102,241,0.2)', border:'1px solid rgba(99,102,241,0.4)',
+                      color:'#a5b4fc', fontSize:'0.6rem', fontWeight:700, cursor:'help',
+                      flexShrink:0 }}>i</span>
+                  </span>
+                </h3>
                 {erwStats.grad_stats.length === 0 ? (
-                  <p style={{ color:'var(--text-muted)', fontSize:'0.85rem' }}>Noch keine Daten</p>
+                  <p style={{ color:'var(--text-muted)', fontSize:'0.85rem' }}>Noch keine abgeschlossenen Prüfungen vorhanden</p>
                 ) : (
                   <div className="pvs-grad-diff-list">
                     {erwStats.grad_stats.map((g, i) => {
-                      const quote = g.gesamt > 0 ? Math.round(g.nicht_bestanden / g.gesamt * 100) : 0;
-                      const col = quote === 0 ? '#4ade80' : quote < 20 ? '#fbbf24' : '#f87171';
+                      const bestandenPct = g.gesamt > 0 ? Math.round(g.bestanden / g.gesamt * 100) : 0;
+                      const durchfallPct = g.gesamt > 0 ? Math.round(g.nicht_bestanden / g.gesamt * 100) : 0;
+                      const col = bestandenPct === 100 ? '#4ade80' : bestandenPct >= 80 ? '#a3e635' : bestandenPct >= 60 ? '#fbbf24' : '#f87171';
                       return (
                         <div key={i} className="pvs-grad-diff-row">
                           <div className="pvs-grad-dot" style={{ background: g.farbe || '#ccc' }}/>
@@ -4705,12 +5008,18 @@ ${pages}
                             <div className="pvs-grad-diff-stil">{g.stil_name}</div>
                           </div>
                           <div className="pvs-grad-diff-bar">
-                            <div className="pvs-bar-track">
-                              <div style={{ height:'100%', width:`${quote}%`, background:col, borderRadius:4, transition:'width 0.5s' }}/>
+                            <div className="pvs-bar-track" style={{ position:'relative', overflow:'hidden' }}>
+                              <div style={{ position:'absolute', height:'100%', width:`${bestandenPct}%`, background:col, borderRadius:4, transition:'width 0.5s', opacity:0.85 }}/>
+                              {durchfallPct > 0 && (
+                                <div style={{ position:'absolute', left:`${bestandenPct}%`, height:'100%', width:`${durchfallPct}%`, background:'#f87171', borderRadius:4, transition:'width 0.5s', opacity:0.7 }}/>
+                              )}
                             </div>
                           </div>
                           <div className="pvs-grad-diff-score" style={{ color: col }}>
-                            {quote}%<span className="pvs-text-muted" style={{ fontSize:'0.65rem', display:'block' }}>{g.nicht_bestanden}/{g.gesamt}</span>
+                            {bestandenPct}%
+                            <span className="pvs-text-muted" style={{ fontSize:'0.65rem', display:'block' }}>
+                              {g.bestanden}/{g.gesamt} best.
+                            </span>
                           </div>
                         </div>
                       );
@@ -4744,7 +5053,16 @@ ${pages}
               </div>
               {/* Top-Prüflinge */}
               <div>
-                <h3 className="pv3-section-h3">🏅 Top-Prüflinge</h3>
+                <h3 className="pv3-section-h3" style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>
+                  🏅 Top-Prüflinge
+                  <span className="pv-tooltip-wrap" data-tip="Ranking der Mitglieder nach ihrer durchschnittlichen Punktzahl über alle bestandenen Prüfungen. Nur Prüfungen mit Punktbewertung werden berücksichtigt.">
+                    <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center',
+                      width:'16px', height:'16px', borderRadius:'50%',
+                      background:'rgba(99,102,241,0.2)', border:'1px solid rgba(99,102,241,0.4)',
+                      color:'#a5b4fc', fontSize:'0.6rem', fontWeight:700, cursor:'help',
+                      flexShrink:0 }}>i</span>
+                  </span>
+                </h3>
                 {erwStats.top_pruefling.length === 0 ? (
                   <p style={{ color:'var(--text-muted)', fontSize:'0.85rem' }}>Noch keine Punktzahlen erfasst</p>
                 ) : (
@@ -5534,6 +5852,21 @@ ${pages}
                       🌐 Auf tda-vib.de veröffentlichen
                     </label>
                   </div>
+                  {neuerTermin.pruefungsgebuehr && parseFloat(neuerTermin.pruefungsgebuehr) > 0 && (
+                    <div className="pv3-oeffentlich-row pv3-gebuehr-auto-row">
+                      <input
+                        type="checkbox"
+                        id="neuerTermin_gebuehr_auto"
+                        checked={neuerTermin.gebuehr_auto_verrechnen}
+                        onChange={(e) => setNeuerTermin({ ...neuerTermin, gebuehr_auto_verrechnen: e.target.checked })}
+                        className="pv2-checkbox"
+                      />
+                      <label htmlFor="neuerTermin_gebuehr_auto" className="pv3-oeffentlich-label">
+                        💶 Prüfungsgebühr automatisch als Rechnung erstellen
+                        <span className="pv3-gebuehr-auto-hint">Bei Zulassung wird automatisch eine offene Rechnung über {parseFloat(neuerTermin.pruefungsgebuehr).toFixed(2)} € erstellt</span>
+                      </label>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -5766,6 +6099,21 @@ ${pages}
                 🌐 Auf tda-vib.de veröffentlichen
               </label>
             </div>
+            {editTermin.pruefungsgebuehr && parseFloat(editTermin.pruefungsgebuehr) > 0 && (
+              <div className="pv3-edit-oeffentlich-row pv3-gebuehr-auto-row">
+                <input
+                  type="checkbox"
+                  id="editTermin_gebuehr_auto"
+                  checked={editTermin.gebuehr_auto_verrechnen || false}
+                  onChange={(e) => setEditTermin({ ...editTermin, gebuehr_auto_verrechnen: e.target.checked })}
+                  className="pv2-checkbox"
+                />
+                <label htmlFor="editTermin_gebuehr_auto" className="pv3-edit-oeffentlich-label">
+                  💶 Prüfungsgebühr automatisch als Rechnung erstellen
+                  <span className="pv3-gebuehr-auto-hint">Bei Zulassung wird automatisch eine offene Rechnung über {parseFloat(editTermin.pruefungsgebuehr).toFixed(2)} € erstellt</span>
+                </label>
+              </div>
+            )}
 
             {/* Zusätzliche Informationen */}
             <h3 className="pv3-edit-section-heading-mt">Zusätzliche Informationen</h3>
@@ -5823,14 +6171,16 @@ ${pages}
       {terminAuswahlModal.open && createPortal(
         <div
           className="pv3-auswahl-modal-overlay"
-          onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false })}
+          onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null })}
         >
           <div
             className="pv3-auswahl-modal-box"
             onClick={e => e.stopPropagation()}
           >
             <h3 className="pv2-mb-05">
-              {terminAuswahlModal.isAusnahme ? 'Ausnahme-Zulassung' : 'Prüfungstermin wählen'}
+              {terminAuswahlModal.step === 1
+                ? (terminAuswahlModal.isAusnahme ? 'Ausnahme-Zulassung' : 'Prüfungstermin wählen')
+                : 'Zahlungsart festlegen'}
             </h3>
             <p className="pv3-auswahl-muted-p">
               {terminAuswahlModal.kandidat?.vorname} {terminAuswahlModal.kandidat?.nachname} —{' '}
@@ -5840,34 +6190,75 @@ ${pages}
                   ⚠️ Zeitliche Voraussetzungen nicht erfüllt
                 </span>
               )}
+              {terminAuswahlModal.step === 2 && terminAuswahlModal.selectedTermin && (
+                <span style={{ display: 'block', marginTop: '0.25rem', color: 'var(--text-secondary, #aaa)', fontSize: '0.85rem' }}>
+                  📅 {new Date(terminAuswahlModal.selectedTermin.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}
+                  {terminAuswahlModal.selectedTermin.vorlageData?.pruefungsgebuehr &&
+                    ` · ${parseFloat(terminAuswahlModal.selectedTermin.vorlageData.pruefungsgebuehr).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}`}
+                </span>
+              )}
             </p>
-            <div className="u-flex-col-md">
-              {terminAuswahlModal.termine.map((termin, idx) => (
+
+            {terminAuswahlModal.step === 1 && (
+              <div className="u-flex-col-md">
+                {terminAuswahlModal.termine.map((termin, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleTerminAuswahlSelected(termin)}
+                    className="pv3-auswahl-btn"
+                    onMouseEnter={e => e.currentTarget.style.borderColor = '#6366f1'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color, #333)'}
+                  >
+                    <div className="pv3-auswahl-btn-date">
+                      {new Date(termin.datum).toLocaleDateString('de-DE', {
+                        weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                      })}
+                    </div>
+                    <div className="pv3-auswahl-btn-meta">
+                      {termin.zeit !== 'Nicht festgelegt' && `🕐 ${termin.zeit} Uhr`}
+                      {termin.zeit !== 'Nicht festgelegt' && termin.ort !== 'Nicht festgelegt' && '  '}
+                      {termin.ort !== 'Nicht festgelegt' && `📍 ${termin.ort}`}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {terminAuswahlModal.step === 2 && (
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
                 <button
-                  key={idx}
-                  onClick={() => handleTerminAuswahlSelected(termin)}
+                  onClick={() => handleZahlungsartAuswahlSelected('bar')}
                   className="pv3-auswahl-btn"
+                  style={{ flex: 1, textAlign: 'center', padding: '1rem' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#22c55e'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color, #333)'}
+                >
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>💵</div>
+                  <div style={{ fontWeight: 600 }}>Bar</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #aaa)', marginTop: '0.2rem' }}>Wird direkt kassiert</div>
+                </button>
+                <button
+                  onClick={() => handleZahlungsartAuswahlSelected('lastschrift')}
+                  className="pv3-auswahl-btn"
+                  style={{ flex: 1, textAlign: 'center', padding: '1rem' }}
                   onMouseEnter={e => e.currentTarget.style.borderColor = '#6366f1'}
                   onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color, #333)'}
                 >
-                  <div className="pv3-auswahl-btn-date">
-                    {new Date(termin.datum).toLocaleDateString('de-DE', {
-                      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
-                    })}
-                  </div>
-                  <div className="pv3-auswahl-btn-meta">
-                    {termin.zeit !== 'Nicht festgelegt' && `🕐 ${termin.zeit} Uhr`}
-                    {termin.zeit !== 'Nicht festgelegt' && termin.ort !== 'Nicht festgelegt' && '  '}
-                    {termin.ort !== 'Nicht festgelegt' && `📍 ${termin.ort}`}
-                  </div>
+                  <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>🏦</div>
+                  <div style={{ fontWeight: 600 }}>Lastschrift</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #aaa)', marginTop: '0.2rem' }}>Wird per SEPA eingezogen</div>
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
+
             <button
-              onClick={() => setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false })}
+              onClick={() => terminAuswahlModal.step === 2
+                ? setTerminAuswahlModal(prev => ({ ...prev, step: 1, selectedTermin: null }))
+                : setTerminAuswahlModal({ open: false, kandidat: null, termine: [], isAusnahme: false, step: 1, selectedTermin: null })
+              }
               className="pv3-auswahl-cancel"
             >
-              Abbrechen
+              {terminAuswahlModal.step === 2 ? '← Zurück' : 'Abbrechen'}
             </button>
           </div>
         </div>
@@ -6253,6 +6644,86 @@ ${pages}
                 style={{padding:'9px 18px',border:'none',borderRadius:'6px',background:'#c8a84b',color:'#fff',cursor:'pointer',fontWeight:600}}
               >
                 Ja, Termin anlegen
+              </button>
+            </div>
+          </div>
+        </div>
+      , document.body)}
+
+      {/* Gebühren-Dialog: Bar oder Rechnung */}
+      {gebuehrDialog && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setGebuehrDialog(null)}>
+          <div style={{ background: 'var(--card-bg, #1e2235)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 14, padding: '1.75rem 2rem', minWidth: 320, maxWidth: 400 }}
+            onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#ffd700', fontSize: '1rem' }}>💶 Prüfungsgebühr abrechnen</h3>
+            <p style={{ margin: '0 0 1.25rem', color: 'rgba(255,255,255,0.6)', fontSize: '0.875rem' }}>
+              {gebuehrDialog.vorname} {gebuehrDialog.nachname} — {parseFloat(gebuehrDialog.pruefungsgebuehr).toFixed(2)} €
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => handleGebuehrBar(gebuehrDialog)}
+                style={{ flex: 1, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(34,197,94,0.4)', background: 'rgba(34,197,94,0.12)', color: '#4ade80', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                💵 Bar
+              </button>
+              <button
+                onClick={() => handleGebuehrRechnung(gebuehrDialog)}
+                style={{ flex: 1, padding: '0.75rem', borderRadius: 8, border: '1px solid rgba(255,215,0,0.4)', background: 'rgba(255,215,0,0.1)', color: '#ffd700', fontWeight: 700, fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                🧾 Rechnung
+              </button>
+            </div>
+            <button
+              onClick={() => setGebuehrDialog(null)}
+              style={{ marginTop: '0.75rem', width: '100%', padding: '0.5rem', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Erinnerung Bestätigungs-Dialog */}
+      {erinnerungDialog && createPortal(
+        <div className="pv3-auswahl-modal-overlay" style={{ zIndex: 10000 }} onClick={() => setErinnerungDialog(null)}>
+          <div className="pv3-auswahl-modal-box" onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 10px', fontSize: '1.1rem', color: 'var(--text-primary, #e8eaed)' }}>
+              🔔 Erinnerung senden
+            </h3>
+            <p className="pv3-auswahl-muted-p" style={{ marginBottom: '4px' }}>
+              Termin: <strong style={{ color: 'var(--text-primary, #e8eaed)' }}>{erinnerungDialog.group.datum
+                ? new Date(erinnerungDialog.group.datum).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+                : '–'}</strong>
+            </p>
+            <p className="pv3-auswahl-muted-p">
+              {erinnerungDialog.ohneAntwort.length} Mitglied{erinnerungDialog.ohneAntwort.length !== 1 ? 'er haben' : ' hat'} noch nicht geantwortet:
+            </p>
+            <ul style={{ background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', borderRadius: 6, padding: '10px 16px', marginBottom: '14px', listStyle: 'none' }}>
+              {erinnerungDialog.ohneAntwort.slice(0, 8).map(c => (
+                <li key={c.pruefung_id} style={{ color: 'var(--text-primary, #e8eaed)', fontSize: '14px', padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  {c.vorname} {c.nachname}
+                </li>
+              ))}
+              {erinnerungDialog.ohneAntwort.length > 8 && (
+                <li style={{ color: 'var(--text-secondary, #888)', fontSize: '13px', paddingTop: '6px' }}>… und {erinnerungDialog.ohneAntwort.length - 8} weitere</li>
+              )}
+            </ul>
+            <p style={{ color: 'var(--text-secondary, #888)', fontSize: '13px', marginBottom: '20px', lineHeight: 1.5 }}>
+              Jedes Mitglied erhält eine <strong style={{ color: 'var(--text-primary, #e8eaed)' }}>E-Mail</strong> und eine <strong style={{ color: 'var(--text-primary, #e8eaed)' }}>Push-Benachrichtigung</strong> mit der Bitte zur Rückmeldung.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setErinnerungDialog(null)}
+                style={{ padding: '9px 18px', border: '1px solid var(--border-color, #333)', borderRadius: 6, background: 'transparent', cursor: 'pointer', color: 'var(--text-secondary, #888)', fontSize: '14px' }}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleErinnerungBestaetigen}
+                style={{ padding: '9px 20px', borderRadius: 6, border: 'none', background: '#c8a84b', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: '14px' }}
+              >
+                🔔 Jetzt erinnern
               </button>
             </div>
           </div>

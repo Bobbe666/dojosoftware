@@ -1,219 +1,186 @@
 // Personal Check-in API Routes
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const db = require("../db");
+const db = require('../db');
+const logger = require('../utils/logger');
+const { authenticateToken } = require('../middleware/auth');
+const { getSecureDojoId } = require('../utils/dojo-filter-helper');
 
-// GET /api/personal-checkin - Alle Personal Check-ins für heute abrufen
-router.get("/", (req, res) => {
+// Alle Routen erfordern Auth
+router.use(authenticateToken);
+
+// GET /api/personalCheckin - Check-ins für ein Datum laden
+router.get('/', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
   const { datum } = req.query;
   const targetDate = datum || new Date().toISOString().split('T')[0];
-  
+
+  const dojoCondition = secureDojoId ? 'AND p.dojo_id = ?' : '';
+  const params = secureDojoId ? [targetDate, secureDojoId] : [targetDate];
+
   const query = `
-    SELECT 
+    SELECT
       pc.*,
-      p.vorname,
-      p.nachname,
-      p.position,
-      p.stundenlohn,
-      CASE 
-        WHEN pc.checkout_time IS NOT NULL THEN 
+      p.vorname, p.nachname, p.position, p.stundenlohn,
+      CASE
+        WHEN pc.checkout_time IS NOT NULL THEN
           TIMESTAMPDIFF(MINUTE, pc.checkin_time, pc.checkout_time)
-        ELSE 
+        ELSE
           TIMESTAMPDIFF(MINUTE, pc.checkin_time, NOW())
-      END as aktuelle_arbeitszeit_minuten,
-      CASE 
-        WHEN pc.checkout_time IS NOT NULL THEN 
+      END AS aktuelle_arbeitszeit_minuten,
+      CASE
+        WHEN pc.checkout_time IS NOT NULL THEN
           ROUND((TIMESTAMPDIFF(MINUTE, pc.checkin_time, pc.checkout_time) / 60.0) * p.stundenlohn, 2)
-        ELSE 
+        ELSE
           ROUND((TIMESTAMPDIFF(MINUTE, pc.checkin_time, NOW()) / 60.0) * p.stundenlohn, 2)
-      END as aktuelle_kosten
+      END AS aktuelle_kosten
     FROM personal_checkin pc
     JOIN personal p ON pc.personal_id = p.personal_id
     WHERE DATE(pc.checkin_time) = ?
+      ${dojoCondition}
     ORDER BY pc.checkin_time DESC
   `;
-  
-  db.query(query, [targetDate], (error, results) => {
+
+  db.query(query, params, (error, results) => {
     if (error) {
-      logger.error('Fehler beim Abrufen der Personal Check-ins:', { error: error });
-      return res.status(500).json({
-        success: false,
-        error: "Fehler beim Abrufen der Check-in Daten"
-      });
+      logger.error('Fehler beim Abrufen der Personal Check-ins:', { error: error.message });
+      return res.status(500).json({ success: false, error: 'Fehler beim Abrufen der Check-in Daten' });
     }
-    
-    // Statistiken berechnen
+
     const stats = {
       total_checkins: results.length,
       eingecheckt: results.filter(r => r.status === 'eingecheckt').length,
       ausgecheckt: results.filter(r => r.status === 'ausgecheckt').length,
-      total_kosten: results.reduce((sum, r) => sum + (r.aktuelle_kosten || 0), 0),
+      total_kosten: results.reduce((sum, r) => sum + (parseFloat(r.aktuelle_kosten) || 0), 0),
       total_arbeitszeit_stunden: Math.round(results.reduce((sum, r) => sum + (r.aktuelle_arbeitszeit_minuten || 0), 0) / 60 * 10) / 10
     };
-    
-    res.json({
-      success: true,
-      checkins: results,
-      stats: stats,
-      datum: targetDate
-    });
+
+    res.json({ success: true, checkins: results, stats, datum: targetDate });
   });
 });
 
-// GET /api/personal-checkin/personal - Alle Personal für Check-in Dropdown
-router.get("/personal", (req, res) => {
+// GET /api/personalCheckin/personal - Aktive Mitarbeiter für Dropdown
+router.get('/personal', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
+  const dojoCondition = secureDojoId ? 'AND dojo_id = ?' : '';
+  const params = secureDojoId ? [secureDojoId] : [];
+
   const query = `
-    SELECT 
-      personal_id,
-      vorname,
-      nachname,
-      position,
-      stundenlohn,
-      status
-    FROM personal 
+    SELECT personal_id, vorname, nachname, position, stundenlohn, status
+    FROM personal
     WHERE status = 'aktiv'
+      ${dojoCondition}
     ORDER BY nachname, vorname
   `;
-  
-  db.query(query, (error, results) => {
+
+  db.query(query, params, (error, results) => {
     if (error) {
-      logger.error('Fehler beim Abrufen der Personal-Liste:', { error: error });
-      return res.status(500).json({
-        success: false,
-        error: "Fehler beim Abrufen der Personal-Daten"
-      });
+      logger.error('Fehler beim Abrufen der Personal-Liste:', { error: error.message });
+      return res.status(500).json({ success: false, error: 'Fehler beim Abrufen der Personal-Daten' });
     }
-    
-    res.json({
-      success: true,
-      personal: results
-    });
+    res.json({ success: true, personal: results });
   });
 });
 
-// POST /api/personal-checkin - Personal einchecken
-router.post("/", (req, res) => {
+// POST /api/personalCheckin - Einchecken
+router.post('/', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
   const { personal_id, bemerkung } = req.body;
-  
+
   if (!personal_id) {
-    return res.status(400).json({
-      success: false,
-      error: "Personal ID ist erforderlich"
-    });
+    return res.status(400).json({ success: false, error: 'Personal ID ist erforderlich' });
   }
-  
-  // Prüfen ob bereits eingecheckt heute
-  const checkQuery = `
-    SELECT checkin_id, status 
-    FROM personal_checkin 
-    WHERE personal_id = ? 
-    AND DATE(checkin_time) = CURDATE() 
-    AND status = 'eingecheckt'
-  `;
-  
-  db.query(checkQuery, [personal_id], (error, existing) => {
-    if (error) {
-      logger.error('Fehler beim Prüfen bestehender Check-ins:', { error: error });
-      return res.status(500).json({
-        success: false,
-        error: "Fehler beim Prüfen des Check-in Status"
-      });
+
+  // Mitarbeiter gehört zu diesem Dojo?
+  const ownerCheck = secureDojoId
+    ? 'SELECT personal_id FROM personal WHERE personal_id = ? AND dojo_id = ?'
+    : 'SELECT personal_id FROM personal WHERE personal_id = ?';
+  const ownerParams = secureDojoId ? [personal_id, secureDojoId] : [personal_id];
+
+  db.query(ownerCheck, ownerParams, (ownerErr, ownerRows) => {
+    if (ownerErr || ownerRows.length === 0) {
+      return res.status(403).json({ success: false, error: 'Mitarbeiter nicht gefunden oder kein Zugriff' });
     }
-    
-    if (existing.length > 0) {
-      return res.status(400).json({
-        success: false,
-        error: "Personal ist bereits heute eingecheckt",
-        existing_checkin_id: existing[0].checkin_id
-      });
-    }
-    
-    // Neuen Check-in erstellen
-    const insertQuery = `
-      INSERT INTO personal_checkin (
-        personal_id, 
-        checkin_time, 
-        bemerkung, 
-        status
-      ) VALUES (?, NOW(), ?, 'eingecheckt')
+
+    // Bereits heute eingecheckt?
+    const checkQuery = `
+      SELECT checkin_id FROM personal_checkin
+      WHERE personal_id = ? AND DATE(checkin_time) = CURDATE() AND status = 'eingecheckt'
     `;
-    
-    db.query(insertQuery, [personal_id, bemerkung || null], (error, result) => {
+
+    db.query(checkQuery, [personal_id], (error, existing) => {
       if (error) {
-        logger.error('Fehler beim Einchecken:', { error: error });
-        return res.status(500).json({
+        logger.error('Fehler beim Prüfen bestehender Check-ins:', { error: error.message });
+        return res.status(500).json({ success: false, error: 'Fehler beim Prüfen des Check-in Status' });
+      }
+
+      if (existing.length > 0) {
+        return res.status(400).json({
           success: false,
-          error: "Fehler beim Einchecken"
+          error: 'Personal ist bereits heute eingecheckt',
+          existing_checkin_id: existing[0].checkin_id
         });
       }
-      
-      // Den neuen Check-in mit Personal-Details zurückgeben
-      const selectQuery = `
-        SELECT 
-          pc.*,
-          p.vorname,
-          p.nachname,
-          p.position,
-          p.stundenlohn
-        FROM personal_checkin pc
-        JOIN personal p ON pc.personal_id = p.personal_id
-        WHERE pc.checkin_id = ?
+
+      const insertQuery = `
+        INSERT INTO personal_checkin (personal_id, checkin_time, bemerkung, status)
+        VALUES (?, NOW(), ?, 'eingecheckt')
       `;
-      
-      db.query(selectQuery, [result.insertId], (error, checkinData) => {
-        if (error) {
-          logger.error('Fehler beim Abrufen des Check-in:', { error: error });
-          return res.status(500).json({
-            success: false,
-            error: "Check-in erstellt, aber Daten konnten nicht abgerufen werden"
-          });
+
+      db.query(insertQuery, [personal_id, bemerkung || null], (insertErr, result) => {
+        if (insertErr) {
+          logger.error('Fehler beim Einchecken:', { error: insertErr.message });
+          return res.status(500).json({ success: false, error: 'Fehler beim Einchecken' });
         }
-        
-        res.status(201).json({
-          success: true,
-          message: "Personal erfolgreich eingecheckt",
-          checkin: checkinData[0]
+
+        const selectQuery = `
+          SELECT pc.*, p.vorname, p.nachname, p.position, p.stundenlohn
+          FROM personal_checkin pc
+          JOIN personal p ON pc.personal_id = p.personal_id
+          WHERE pc.checkin_id = ?
+        `;
+
+        db.query(selectQuery, [result.insertId], (selErr, checkinData) => {
+          if (selErr) {
+            return res.status(201).json({ success: true, message: 'Personal eingecheckt' });
+          }
+          res.status(201).json({ success: true, message: 'Personal erfolgreich eingecheckt', checkin: checkinData[0] });
         });
       });
     });
   });
 });
 
-// PUT /api/personal-checkin/:checkin_id/checkout - Personal auschecken
-router.put("/:checkin_id/checkout", (req, res) => {
+// PUT /api/personalCheckin/:checkin_id/checkout - Auschecken
+router.put('/:checkin_id/checkout', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
   const { checkin_id } = req.params;
   const { bemerkung } = req.body;
-  
-  // Check-in prüfen
-  const checkQuery = `
-    SELECT pc.*, p.stundenlohn
-    FROM personal_checkin pc
-    JOIN personal p ON pc.personal_id = p.personal_id
-    WHERE pc.checkin_id = ? AND pc.status = 'eingecheckt'
-  `;
-  
-  db.query(checkQuery, [checkin_id], (error, existing) => {
+
+  const checkQuery = secureDojoId
+    ? `SELECT pc.*, p.stundenlohn FROM personal_checkin pc
+       JOIN personal p ON pc.personal_id = p.personal_id
+       WHERE pc.checkin_id = ? AND pc.status = 'eingecheckt' AND p.dojo_id = ?`
+    : `SELECT pc.*, p.stundenlohn FROM personal_checkin pc
+       JOIN personal p ON pc.personal_id = p.personal_id
+       WHERE pc.checkin_id = ? AND pc.status = 'eingecheckt'`;
+  const checkParams = secureDojoId ? [checkin_id, secureDojoId] : [checkin_id];
+
+  db.query(checkQuery, checkParams, (error, existing) => {
     if (error) {
-      logger.error('Fehler beim Prüfen des Check-ins:', { error: error });
-      return res.status(500).json({
-        success: false,
-        error: "Fehler beim Prüfen des Check-in Status"
-      });
+      logger.error('Fehler beim Prüfen des Check-ins:', { error: error.message });
+      return res.status(500).json({ success: false, error: 'Fehler beim Prüfen des Check-in Status' });
     }
-    
+
     if (existing.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "Check-in nicht gefunden oder bereits ausgecheckt"
-      });
+      return res.status(404).json({ success: false, error: 'Check-in nicht gefunden oder bereits ausgecheckt' });
     }
-    
+
     const checkin = existing[0];
-    
-    // Arbeitszeit und Kosten berechnen
+
     const updateQuery = `
-      UPDATE personal_checkin 
-      SET 
+      UPDATE personal_checkin
+      SET
         checkout_time = NOW(),
         arbeitszeit_minuten = TIMESTAMPDIFF(MINUTE, checkin_time, NOW()),
         kosten = ROUND((TIMESTAMPDIFF(MINUTE, checkin_time, NOW()) / 60.0) * ?, 2),
@@ -222,132 +189,99 @@ router.put("/:checkin_id/checkout", (req, res) => {
         aktualisiert_am = NOW()
       WHERE checkin_id = ?
     `;
-    
-    db.query(updateQuery, [checkin.stundenlohn, bemerkung, checkin_id], (error, result) => {
-      if (error) {
-        logger.error('Fehler beim Auschecken:', { error: error });
-        return res.status(500).json({
-          success: false,
-          error: "Fehler beim Auschecken"
-        });
+
+    db.query(updateQuery, [checkin.stundenlohn, bemerkung || null, checkin_id], (updateErr) => {
+      if (updateErr) {
+        logger.error('Fehler beim Auschecken:', { error: updateErr.message });
+        return res.status(500).json({ success: false, error: 'Fehler beim Auschecken' });
       }
-      
-      // Aktualisierte Daten abrufen
+
       const selectQuery = `
-        SELECT 
-          pc.*,
-          p.vorname,
-          p.nachname,
-          p.position,
-          p.stundenlohn
+        SELECT pc.*, p.vorname, p.nachname, p.position, p.stundenlohn
         FROM personal_checkin pc
         JOIN personal p ON pc.personal_id = p.personal_id
         WHERE pc.checkin_id = ?
       `;
-      
-      db.query(selectQuery, [checkin_id], (error, checkinData) => {
-        if (error) {
-          logger.error('Fehler beim Abrufen der aktualisierten Daten:', { error: error });
-          return res.status(500).json({
-            success: false,
-            error: "Ausgecheckt, aber Daten konnten nicht abgerufen werden"
-          });
+
+      db.query(selectQuery, [checkin_id], (selErr, checkinData) => {
+        if (selErr || !checkinData[0]) {
+          return res.json({ success: true, message: 'Ausgecheckt' });
         }
-        
-        const updatedCheckin = checkinData[0];
-        
+        const updated = checkinData[0];
         res.json({
           success: true,
-          message: `Personal ausgecheckt. Arbeitszeit: ${Math.round(updatedCheckin.arbeitszeit_minuten / 60 * 10) / 10}h, Kosten: €${updatedCheckin.kosten}`,
-          checkin: updatedCheckin
+          message: `Ausgecheckt. Arbeitszeit: ${Math.round(updated.arbeitszeit_minuten / 60 * 10) / 10}h, Kosten: €${updated.kosten}`,
+          checkin: updated
         });
       });
     });
   });
 });
 
-// GET /api/personal-checkin/stats - Statistiken
-router.get("/stats", (req, res) => {
-  const { zeitraum } = req.query; // heute, woche, monat
-  
-  let dateCondition = "DATE(checkin_time) = CURDATE()";
-  
+// GET /api/personalCheckin/stats - Statistiken (heute/woche/monat)
+router.get('/stats', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
+  const { zeitraum } = req.query;
+
+  let dateCondition;
   switch (zeitraum) {
-    case 'woche':
-      dateCondition = "YEARWEEK(checkin_time, 1) = YEARWEEK(CURDATE(), 1)";
-      break;
-    case 'monat':
-      dateCondition = "YEAR(checkin_time) = YEAR(CURDATE()) AND MONTH(checkin_time) = MONTH(CURDATE())";
-      break;
-    default:
-      dateCondition = "DATE(checkin_time) = CURDATE()";
+    case 'woche':  dateCondition = 'YEARWEEK(pc.checkin_time, 1) = YEARWEEK(CURDATE(), 1)'; break;
+    case 'monat':  dateCondition = 'YEAR(pc.checkin_time) = YEAR(CURDATE()) AND MONTH(pc.checkin_time) = MONTH(CURDATE())'; break;
+    default:       dateCondition = 'DATE(pc.checkin_time) = CURDATE()';
   }
-  
+
+  const dojoCondition = secureDojoId ? 'AND p.dojo_id = ?' : '';
+  const params = secureDojoId ? [secureDojoId] : [];
+
   const statsQuery = `
-    SELECT 
-      COUNT(*) as total_checkins,
-      SUM(CASE WHEN status = 'eingecheckt' THEN 1 ELSE 0 END) as aktiv_eingecheckt,
-      SUM(CASE WHEN status = 'ausgecheckt' THEN 1 ELSE 0 END) as ausgecheckt,
-      SUM(COALESCE(kosten, 0)) as gesamtkosten,
-      SUM(COALESCE(arbeitszeit_minuten, 0)) as gesamtarbeitszeit_minuten,
-      COUNT(DISTINCT personal_id) as unterschiedliche_personal
-    FROM personal_checkin
+    SELECT
+      COUNT(*) AS total_checkins,
+      SUM(CASE WHEN pc.status = 'eingecheckt' THEN 1 ELSE 0 END) AS aktiv_eingecheckt,
+      SUM(CASE WHEN pc.status = 'ausgecheckt' THEN 1 ELSE 0 END) AS ausgecheckt,
+      SUM(COALESCE(pc.kosten, 0)) AS gesamtkosten,
+      SUM(COALESCE(pc.arbeitszeit_minuten, 0)) AS gesamtarbeitszeit_minuten,
+      COUNT(DISTINCT pc.personal_id) AS unterschiedliche_personal
+    FROM personal_checkin pc
+    JOIN personal p ON pc.personal_id = p.personal_id
     WHERE ${dateCondition}
+      ${dojoCondition}
   `;
-  
-  db.query(statsQuery, (error, results) => {
+
+  db.query(statsQuery, params, (error, results) => {
     if (error) {
-      logger.error('Fehler beim Abrufen der Statistiken:', { error: error });
-      return res.status(500).json({
-        success: false,
-        error: "Fehler beim Abrufen der Statistiken"
-      });
+      logger.error('Fehler beim Abrufen der Statistiken:', { error: error.message });
+      return res.status(500).json({ success: false, error: 'Fehler beim Abrufen der Statistiken' });
     }
-    
+
     const stats = results[0];
-    stats.gesamtarbeitszeit_stunden = Math.round(stats.gesamtarbeitszeit_minuten / 60 * 10) / 10;
-    
-    res.json({
-      success: true,
-      stats: stats,
-      zeitraum: zeitraum || 'heute'
-    });
+    stats.gesamtarbeitszeit_stunden = Math.round((stats.gesamtarbeitszeit_minuten || 0) / 60 * 10) / 10;
+    res.json({ success: true, stats, zeitraum: zeitraum || 'heute' });
   });
 });
 
-// GET /api/personalCheckin/lohnabrechnung - Monatliche Gehaltsabrechnung pro Mitarbeiter
-router.get("/lohnabrechnung", (req, res) => {
+// GET /api/personalCheckin/lohnabrechnung - Monatliche Lohnabrechnung
+router.get('/lohnabrechnung', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
   const { monat, jahr, personal_id } = req.query;
   const m = parseInt(monat) || new Date().getMonth() + 1;
   const y = parseInt(jahr) || new Date().getFullYear();
 
-  const conds = [
-    'YEAR(pc.checkin_time) = ?',
-    'MONTH(pc.checkin_time) = ?',
-    "pc.status = 'ausgecheckt'"
-  ];
+  const conds = ['YEAR(pc.checkin_time) = ?', 'MONTH(pc.checkin_time) = ?', "pc.status = 'ausgecheckt'"];
   const params = [y, m];
 
-  if (personal_id) {
-    conds.push('pc.personal_id = ?');
-    params.push(parseInt(personal_id, 10));
-  }
+  if (secureDojoId) { conds.push('p.dojo_id = ?'); params.push(secureDojoId); }
+  if (personal_id)  { conds.push('pc.personal_id = ?'); params.push(parseInt(personal_id, 10)); }
 
   const query = `
     SELECT
-      p.personal_id,
-      p.vorname,
-      p.nachname,
-      p.position,
-      p.beschaeftigungsart,
-      p.stundenlohn,
-      p.grundgehalt,
-      COUNT(pc.checkin_id)                            AS anzahl_schichten,
-      SUM(COALESCE(pc.arbeitszeit_minuten, 0))        AS total_minuten,
+      p.personal_id, p.vorname, p.nachname, p.position, p.beschaeftigungsart,
+      p.stundenlohn, p.grundgehalt,
+      COUNT(pc.checkin_id)                                       AS anzahl_schichten,
+      SUM(COALESCE(pc.arbeitszeit_minuten, 0))                   AS total_minuten,
       ROUND(SUM(COALESCE(pc.arbeitszeit_minuten, 0)) / 60.0, 2) AS total_stunden,
-      ROUND(SUM(COALESCE(pc.kosten, 0)), 2)           AS total_lohn,
-      MIN(DATE(pc.checkin_time))                      AS erster_tag,
-      MAX(DATE(pc.checkin_time))                      AS letzter_tag
+      ROUND(SUM(COALESCE(pc.kosten, 0)), 2)                      AS total_lohn,
+      MIN(DATE(pc.checkin_time))                                 AS erster_tag,
+      MAX(DATE(pc.checkin_time))                                 AS letzter_tag
     FROM personal_checkin pc
     JOIN personal p ON pc.personal_id = p.personal_id
     WHERE ${conds.join(' AND ')}
@@ -358,7 +292,7 @@ router.get("/lohnabrechnung", (req, res) => {
 
   db.query(query, params, (error, results) => {
     if (error) {
-      logger.error('Fehler Lohnabrechnung:', { error });
+      logger.error('Fehler Lohnabrechnung:', { error: error.message });
       return res.status(500).json({ success: false, error: 'Datenbankfehler' });
     }
 
@@ -372,60 +306,67 @@ router.get("/lohnabrechnung", (req, res) => {
 });
 
 // GET /api/personalCheckin/verlauf/:personal_id - Jahresverlauf eines Mitarbeiters
-router.get("/verlauf/:personal_id", (req, res) => {
+router.get('/verlauf/:personal_id', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
   const personal_id = parseInt(req.params.personal_id, 10);
-  const { jahr } = req.query;
-  const y = parseInt(jahr) || new Date().getFullYear();
+  const y = parseInt(req.query.jahr) || new Date().getFullYear();
 
-  const query = `
-    SELECT
-      MONTH(pc.checkin_time)                             AS monat,
-      COUNT(pc.checkin_id)                               AS anzahl_schichten,
-      ROUND(SUM(COALESCE(pc.arbeitszeit_minuten, 0)) / 60.0, 2) AS total_stunden,
-      ROUND(SUM(COALESCE(pc.kosten, 0)), 2)              AS total_lohn
-    FROM personal_checkin pc
-    WHERE pc.personal_id = ?
-      AND YEAR(pc.checkin_time) = ?
-      AND pc.status = 'ausgecheckt'
-    GROUP BY MONTH(pc.checkin_time)
-    ORDER BY monat ASC
-  `;
+  // Zugriffsprüfung
+  const ownerCheck = secureDojoId
+    ? 'SELECT personal_id FROM personal WHERE personal_id = ? AND dojo_id = ?'
+    : 'SELECT personal_id FROM personal WHERE personal_id = ?';
+  const ownerParams = secureDojoId ? [personal_id, secureDojoId] : [personal_id];
 
-  db.query(query, [personal_id, y], (error, results) => {
-    if (error) {
-      logger.error('Fehler Verlauf:', { error });
-      return res.status(500).json({ success: false, error: 'Datenbankfehler' });
+  db.query(ownerCheck, ownerParams, (ownerErr, ownerRows) => {
+    if (ownerErr || ownerRows.length === 0) {
+      return res.status(403).json({ success: false, error: 'Kein Zugriff' });
     }
-    res.json({ success: true, data: results, personal_id, jahr: y });
+
+    const query = `
+      SELECT
+        MONTH(pc.checkin_time) AS monat,
+        COUNT(pc.checkin_id)   AS anzahl_schichten,
+        ROUND(SUM(COALESCE(pc.arbeitszeit_minuten, 0)) / 60.0, 2) AS total_stunden,
+        ROUND(SUM(COALESCE(pc.kosten, 0)), 2) AS total_lohn
+      FROM personal_checkin pc
+      WHERE pc.personal_id = ? AND YEAR(pc.checkin_time) = ? AND pc.status = 'ausgecheckt'
+      GROUP BY MONTH(pc.checkin_time)
+      ORDER BY monat ASC
+    `;
+
+    db.query(query, [personal_id, y], (error, results) => {
+      if (error) {
+        logger.error('Fehler Verlauf:', { error: error.message });
+        return res.status(500).json({ success: false, error: 'Datenbankfehler' });
+      }
+      res.json({ success: true, data: results, personal_id, jahr: y });
+    });
   });
 });
 
-// DELETE /api/personal-checkin/:checkin_id - Check-in löschen (nur Admin)
-router.delete("/:checkin_id", (req, res) => {
+// DELETE /api/personalCheckin/:checkin_id - Check-in löschen
+router.delete('/:checkin_id', (req, res) => {
+  const secureDojoId = getSecureDojoId(req);
   const { checkin_id } = req.params;
-  
-  const deleteQuery = "DELETE FROM personal_checkin WHERE checkin_id = ?";
-  
-  db.query(deleteQuery, [checkin_id], (error, result) => {
+
+  const deleteQuery = secureDojoId
+    ? `DELETE pc FROM personal_checkin pc
+       JOIN personal p ON pc.personal_id = p.personal_id
+       WHERE pc.checkin_id = ? AND p.dojo_id = ?`
+    : 'DELETE FROM personal_checkin WHERE checkin_id = ?';
+  const deleteParams = secureDojoId ? [checkin_id, secureDojoId] : [checkin_id];
+
+  db.query(deleteQuery, deleteParams, (error, result) => {
     if (error) {
-      logger.error('Fehler beim Löschen des Check-ins:', { error: error });
-      return res.status(500).json({
-        success: false,
-        error: "Fehler beim Löschen des Check-ins"
-      });
+      logger.error('Fehler beim Löschen des Check-ins:', { error: error.message });
+      return res.status(500).json({ success: false, error: 'Fehler beim Löschen des Check-ins' });
     }
-    
+
     if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        error: "Check-in nicht gefunden"
-      });
+      return res.status(404).json({ success: false, error: 'Check-in nicht gefunden' });
     }
-    
-    res.json({
-      success: true,
-      message: "Check-in erfolgreich gelöscht"
-    });
+
+    res.json({ success: true, message: 'Check-in erfolgreich gelöscht' });
   });
 });
 

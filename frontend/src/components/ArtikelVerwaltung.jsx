@@ -192,7 +192,8 @@ const ArtikelVerwaltung = () => {
   const updateLagerbestand = async () => {
     try {
       const { variante_groesse, variante_farbe, ...bewegungBase } = lagerBewegung;
-      const varianteKey = selectedArtikel?.hat_varianten && variante_groesse
+      const hatGroessen = (selectedArtikel?.varianten_groessen || []).length > 0;
+      const varianteKey = selectedArtikel?.hat_varianten && (variante_groesse || (!hatGroessen && variante_farbe))
         ? `${variante_groesse}|${variante_farbe || ''}|`
         : null;
       const payload = varianteKey ? { ...bewegungBase, variante_key: varianteKey } : bewegungBase;
@@ -219,7 +220,8 @@ const ArtikelVerwaltung = () => {
   // =====================================================================================
   
   const handleCreate = () => {
-    navigate('/dashboard/artikel/neu');
+    const state = (selectedGruppe && selectedGruppe !== 'none') ? { gruppeId: selectedGruppe } : {};
+    navigate('/dashboard/artikel/neu', { state });
   };
 
   const handleEdit = (artikel) => {
@@ -1004,7 +1006,7 @@ const ArtikelVerwaltung = () => {
                           </div>
                         )}
                       </div>
-                      {lagerBewegung.variante_groesse && (
+                      {(lagerBewegung.variante_groesse || (!groessen.length && lagerBewegung.variante_farbe)) && (
                         <div className="av-stock-info-row">
                           <div style={infoBoxStyle}>
                             <div className="av-stock-label">Bestand (Variante)</div>

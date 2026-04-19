@@ -189,6 +189,10 @@ const MemberDashboard = () => {
   const [memberDokumente, setMemberDokumente] = useState([]);
   const [dokLoading, setDokLoading] = useState(false);
 
+  // Ankündigungen (Chat-Announcement-Räume)
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
   // ProfilWizard: beim ersten Login anzeigen
   const [showProfilWizard, setShowProfilWizard] = useState(false);
 
@@ -512,17 +516,51 @@ const MemberDashboard = () => {
     if (remaining.length === 0) setShowEventPopup(false);
   };
 
-  // Lade Dokumente
+  // Lade Dokumente + Rechnungen (unified)
   const loadMemberDokumente = async (memberId) => {
     setDokLoading(true);
     try {
-      const r = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberId}/dokumente`);
-      if (r.ok) {
-        const data = await r.json();
-        setMemberDokumente((Array.isArray(data) ? data : data.dokumente || []).filter(d => d.typ === 'dokument'));
+      const [docsRes, rechnungenRes] = await Promise.all([
+        fetchWithAuth(`${config.apiBaseUrl}/mitglieder/${memberId}/dokumente`),
+        fetchWithAuth(`${config.apiBaseUrl}/member-payments/rechnungen`)
+      ]);
+
+      const docsData = docsRes.ok ? await docsRes.json() : {};
+      const docs = (Array.isArray(docsData) ? docsData : docsData.dokumente || [])
+        .filter(d => d.typ === 'dokument')
+        .map(d => ({ ...d, _itemType: 'dokument' }));
+
+      let rechnungen = [];
+      if (rechnungenRes.ok) {
+        const rData = await rechnungenRes.json();
+        rechnungen = (rData.rechnungen || []).slice(0, 10).map(r => ({
+          id: r.rechnung_id,
+          _itemType: 'rechnung',
+          dokumentname: `${r.art === 'pruefungsgebuehr' ? '🎓 ' : r.art === 'mitgliedsbeitrag' ? '📅 ' : '💶 '}${r.rechnungsnummer}`,
+          beschreibung: r.beschreibung || r.art,
+          betrag: r.betrag,
+          status: r.status,
+          erstellt_am: r.datum,
+          rechnung_id: r.rechnung_id
+        }));
       }
+
+      setMemberDokumente([...docs, ...rechnungen]);
     } catch (e) { /* optional */ }
     finally { setDokLoading(false); }
+  };
+
+  // Lade Ankündigungen aus Chat-Announcement-Räumen
+  const loadAnnouncements = async () => {
+    setAnnouncementsLoading(true);
+    try {
+      const r = await fetchWithAuth(`${config.apiBaseUrl}/chat/announcements?limit=5`);
+      if (r.ok) {
+        const data = await r.json();
+        setAnnouncements(data.announcements || []);
+      }
+    } catch (e) { /* optional */ }
+    finally { setAnnouncementsLoading(false); }
   };
 
   // Lade Referral-Daten (Freunde werben Freunde)
@@ -876,6 +914,7 @@ const MemberDashboard = () => {
           loadUpcomingEvents(memberData.mitglied_id),
           loadMemberNews(),
           loadMemberDokumente(memberData.mitglied_id),
+          loadAnnouncements(),
         ]);
 
         // Separat laden — darf Hauptload nicht blockieren
@@ -2573,42 +2612,96 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      {/* Meine Dokumente */}
+      {/* Ankündigungen */}
+      {(announcementsLoading || announcements.length > 0) && (
+        <div className="md-anpassung-section" style={{ marginBottom: '1.5rem' }}>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', color: 'var(--text-primary)' }}>📢 Ankündigungen</h3>
+          {announcementsLoading ? (
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Lädt...</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {announcements.map(ann => (
+                <div key={ann.id} style={{
+                  display: 'flex', flexDirection: 'column', gap: '0.3rem',
+                  padding: '0.7rem 0.9rem',
+                  background: ann.is_read ? 'rgba(255,255,255,0.03)' : 'rgba(99,102,241,0.08)',
+                  border: `1px solid ${ann.is_read ? 'rgba(255,255,255,0.07)' : 'rgba(99,102,241,0.25)'}`,
+                  borderRadius: '8px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', lineHeight: 1.5, flex: 1 }}>
+                      {ann.message_type === 'push_ref'
+                        ? ann.content.replace(/^📣 \*\*/, '').replace(/\*\*\n\n/, ' — ')
+                        : ann.content}
+                    </span>
+                    {!ann.is_read && <span style={{ fontSize: '0.65rem', background: 'rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: '4px', padding: '1px 5px', flexShrink: 0, fontWeight: 600 }}>NEU</span>}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    <span>📣 {ann.room_name} · {ann.sender_name}</span>
+                    <span>{new Date(ann.sent_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Meine Dokumente + Rechnungen */}
       {(dokLoading || memberDokumente.length > 0) && (
         <div className="md-anpassung-section" style={{ marginBottom: '1.5rem' }}>
-          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', color: 'var(--text-primary)' }}>📄 Meine Dokumente</h3>
+          <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '1rem', color: 'var(--text-primary)' }}>📄 Meine Dokumente & Rechnungen</h3>
           {dokLoading ? (
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Lädt...</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {memberDokumente.map(dok => (
-                <div key={dok.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>📋</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dok.dokumentname}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{new Date(dok.erstellt_am).toLocaleDateString('de-DE')}</div>
+              {memberDokumente.map(dok => {
+                const isRechnung = dok._itemType === 'rechnung';
+                const statusColor = dok.status === 'bezahlt' ? '#22c55e'
+                  : dok.status === 'offen' ? '#fbbf24'
+                  : dok.status === 'ueberfaellig' ? '#ef4444'
+                  : 'var(--text-secondary)';
+                return (
+                  <div key={`${dok._itemType}-${dok.id}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 0.85rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+                      <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{isRechnung ? '🧾' : '📋'}</span>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dok.dokumentname}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span>{new Date(dok.erstellt_am).toLocaleDateString('de-DE')}</span>
+                          {isRechnung && dok.betrag != null && <span>· {parseFloat(dok.betrag).toFixed(2)} €</span>}
+                          {isRechnung && dok.status && <span style={{ color: statusColor, fontWeight: 500 }}>· {dok.status === 'bezahlt' ? '✓ Bezahlt' : dok.status === 'offen' ? '⚠ Offen' : dok.status === 'ueberfaellig' ? '⛔ Überfällig' : dok.status}</span>}
+                        </div>
+                      </div>
                     </div>
+                    <button
+                      style={{ background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '6px', padding: '0.3rem 0.7rem', color: '#ffd700', fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, fontWeight: 500 }}
+                      onClick={async () => {
+                        try {
+                          const authToken = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('dojo_auth_token');
+                          let url, filename;
+                          if (isRechnung) {
+                            url = `${window.location.origin}/api/rechnungen/${dok.rechnung_id}/pdf`;
+                            filename = `Rechnung-${dok.dokumentname}.pdf`;
+                          } else {
+                            url = `${window.location.origin}/api/mitglieder/${dok.mitglied_id}/dokumente/${dok.id}/download`;
+                            filename = `${dok.dokumentname}.pdf`;
+                          }
+                          const r = await fetch(url, { headers: { Authorization: `Bearer ${authToken}` } });
+                          if (!r.ok) throw new Error('Fehler');
+                          const blob = await r.blob();
+                          const blobUrl = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = blobUrl;
+                          a.download = filename;
+                          a.click();
+                          URL.revokeObjectURL(blobUrl);
+                        } catch (e) { alert('Download fehlgeschlagen'); }
+                      }}
+                    >⬇ PDF</button>
                   </div>
-                  <button
-                    style={{ background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.3)', borderRadius: '6px', padding: '0.3rem 0.7rem', color: '#ffd700', fontSize: '0.8rem', cursor: 'pointer', flexShrink: 0, fontWeight: 500 }}
-                    onClick={async () => {
-                      try {
-                        const token = localStorage.getItem('token');
-                        const r = await fetch(`${window.location.origin}/api/mitglieder/${dok.mitglied_id}/dokumente/${dok.id}/download`, { headers: { Authorization: `Bearer ${token}` } });
-                        if (!r.ok) throw new Error('Fehler');
-                        const blob = await r.blob();
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `${dok.dokumentname}.pdf`;
-                        a.click();
-                        URL.revokeObjectURL(url);
-                      } catch (e) { alert('Download fehlgeschlagen'); }
-                    }}
-                  >⬇ PDF</button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

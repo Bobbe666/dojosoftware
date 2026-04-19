@@ -876,11 +876,23 @@ const sendPruefungsAnmeldungBestaetigung = async (anmeldung, termin) => {
         </div>
         ` : ''}
 
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 18px; margin: 20px 0;">
+          <p style="margin: 0 0 8px 0; font-size: 14px; color: #92400e;"><strong>📋 Wichtiger Hinweis zur Stornierung</strong></p>
+          <p style="margin: 0; font-size: 13px; color: #78350f; line-height: 1.6;">
+            Wir freuen uns sehr auf deine Prüfung und wünschen dir schon jetzt ganz viel Erfolg! 🎉<br><br>
+            Damit du bestens vorbereitet bist: Solltest du deinen Termin nicht wahrnehmen können, bitten wir dich, dich so früh wie möglich bei uns abzumelden.<br><br>
+            <strong>Eine kostenfreie Abmeldung ist bis 7 Tage vor der Prüfung möglich.</strong><br><br>
+            Ab diesem Zeitpunkt laufen alle Vorbereitungen auf Hochtouren — deine Urkunde wird gedruckt, Prüfer sind fest eingeplant und die gesamte Veranstaltungsorganisation steht. Dieser Aufwand ist dann bereits entstanden und kann leider nicht mehr rückgängig gemacht werden.
+            Daher bleibt die Prüfungsgebühr bei einer Abmeldung innerhalb dieser Frist in voller Höhe fällig – auch im Krankheitsfall oder bei sonstiger Verhinderung.<br><br>
+            Wir bitten herzlich um dein Verständnis und freuen uns darauf, dich am Prüfungstag zu sehen! 🥋
+          </p>
+        </div>
+
         <p style="font-size: 14px; color: #555; line-height: 1.6;">
-          Bei Fragen wenden Sie sich bitte direkt an ${termin.dojoname}.<br><br>
-          Wir wünschen Ihnen viel Erfolg bei der Prüfung!<br><br>
+          Bei Fragen wende dich gerne direkt an ${termin.dojoname}.<br><br>
+          Wir drücken dir die Daumen – du schaffst das!<br><br>
           Mit sportlichen Grüßen<br>
-          <strong>TDA International</strong>
+          <strong>${termin.dojoname}</strong>
         </p>
 
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -896,17 +908,27 @@ const sendPruefungsAnmeldungBestaetigung = async (anmeldung, termin) => {
   const text = `
 Hallo ${vorname} ${nachname},
 
-Ihre Prüfungsanmeldung wurde erfolgreich registriert.
+Deine Prüfungsanmeldung wurde erfolgreich registriert. Wir freuen uns auf dich!
 
 Prüfungsdetails:
 - Stil: ${termin.stil_name}
 - Datum: ${pruefungsdatum}
 ${termin.pruefungszeit ? `- Uhrzeit: ${termin.pruefungszeit} Uhr\n` : ''}${termin.pruefungsort ? `- Ort: ${termin.pruefungsort}\n` : ''}${termin.pruefungsgebuehr ? `- Gebühr: ${termin.pruefungsgebuehr} €\n` : ''}
 
-Wir wünschen Ihnen viel Erfolg!
+---
+WICHTIGER HINWEIS ZUR STORNIERUNG
+
+Eine kostenfreie Abmeldung ist bis 7 Tage vor der Prüfung möglich.
+
+Ab diesem Zeitpunkt sind alle Vorbereitungen bereits angelaufen (Urkundendruck, Prüferplanung, Organisation). Die Prüfungsgebühr bleibt bei einer späteren Abmeldung in voller Höhe fällig – auch im Krankheitsfall.
+
+Wir bitten herzlich um dein Verständnis.
+---
+
+Wir drücken dir die Daumen – du schaffst das! 🥋
 
 Mit sportlichen Grüßen
-TDA International
+${termin.dojoname}
   `;
 
   return sendEmail({ to: email, subject, text, html });

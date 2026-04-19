@@ -107,7 +107,7 @@ const DateInputAutoAdvance = ({ value, onChange, name, id, required }) => {
 
 const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrationComplete, existingMemberForFamily = null }) => {
   // Hole das aktive Dojo aus dem Context
-  const { activeDojo, getBestDojoForNewMember } = useDojoContext();
+  const { activeDojo, getBestDojoForNewMember, dojos, filter } = useDojoContext();
   // Hole den Update-Context für automatische Updates
   const { triggerUpdate } = useMitgliederUpdate();
 
@@ -220,6 +220,18 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       document.documentElement.style.setProperty('overflow', 'auto', 'important');
     };
   }, []);
+  // Super-Admin-Modus (activeDojo='super-admin') ODER "Alle Dojos"-Filter mit mehreren Dojos
+  // Nur im internen Admin-Modul, nie im öffentlichen Registrierungsformular
+  const isSuperAdminMode = !isRegistrationFlow && (activeDojo === 'super-admin' || (filter === 'all' && dojos.length > 1));
+  const [superAdminDojoConfirmed, setSuperAdminDojoConfirmed] = useState(false);
+  const [superAdminSelectedDojo, setSuperAdminSelectedDojo] = useState('');
+
+  // Rückwirkende Abrechnung Modal
+  const [rueckwirkendModal, setRueckwirkendModal] = useState(null); // { mitglied_id, vertrag_id, monate, gesamtbetrag, monatsbeitrag }
+  const [rueckwirkendModus, setRueckwirkendModus] = useState('einmal');
+  const [rueckwirkendAufschlag, setRueckwirkendAufschlag] = useState('');
+  const [rueckwirkendLoading, setRueckwirkendLoading] = useState(false);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -400,11 +412,20 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         bank_name: existingMemberForFamily.bank_name,
         kontoinhaber: existingMemberForFamily.kontoinhaber
       });
-      // dojo_id auch in memberData setzen für Backend
+      // dojo_id, Bankdaten + Pflichtfelder (für requireFields-Middleware) vom Hauptmitglied übernehmen
       setMemberData(prev => ({
         ...prev,
+        // Pflichtfelder für Backend-Middleware (requireFields prüft diese vor dem Handler)
+        vorname: existingMemberForFamily.vorname || prev.vorname,
+        nachname: existingMemberForFamily.nachname || prev.nachname,
+        geburtsdatum: existingMemberForFamily.geburtsdatum || prev.geburtsdatum,
         dojo_id: existingMemberForFamily.dojo_id,
-        existing_member_dojo_id: existingMemberForFamily.dojo_id
+        existing_member_dojo_id: existingMemberForFamily.dojo_id,
+        // Bankdaten vom Hauptmitglied
+        iban: existingMemberForFamily.iban || '',
+        bic: existingMemberForFamily.bic || '',
+        bankname: existingMemberForFamily.bank_name || existingMemberForFamily.bankname || '',
+        kontoinhaber: existingMemberForFamily.kontoinhaber || ''
       }));
       // Familie-Session starten (inline, da Funktion noch nicht definiert)
       const sessionId = `family_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -621,7 +642,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
             ...member,
             tarif_id: tarif.tarif_id,
             tarif_name: tarif.name,
-            tarif_preis: tarif.monatlicher_beitrag_cents
+            tarif_preis: tarif.monatlicher_beitrag_cents,
+            aufnahmegebuehr_cents: tarif.aufnahmegebuehr_cents || 0
           };
         }
         return member;
@@ -729,8 +751,9 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     }
   }, [memberData.vorname, memberData.nachname, memberData.geburtsdatum]);
 
-  // Intelligente Dojo-Auswahl für neues Mitglied
+  // Intelligente Dojo-Auswahl für neues Mitglied (nicht im Super-Admin-Modus — dort manuell)
   useEffect(() => {
+    if (isSuperAdminMode) return;
     const bestDojo = getBestDojoForNewMember();
     if (bestDojo && bestDojo.id) {
       console.log('🏯 Intelligente Dojo-Auswahl:', bestDojo.id, bestDojo.dojoname);
@@ -927,13 +950,21 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       // Validierung Schritt 4: Vertragsdaten
       if (currentStep === 4) {
-        if (!memberData.vertrag_tarif_id) {
-          setError("Bitte wählen Sie einen Tarif aus");
-          return;
+        // Hauptmitglied-Tarif nur prüfen wenn kein bestehendes Mitglied (existingMemberMode)
+        if (!existingMemberMode) {
+          if (!memberData.vertrag_tarif_id) {
+            setError("Bitte wählen Sie einen Tarif aus");
+            return;
+          }
+          if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
+              !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
+            setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
+            return;
+          }
         }
-        if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert ||
-            !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
-          setError("Bitte akzeptieren Sie AGB, Datenschutz, Dojo-Regeln und Hausordnung");
+        // Vertragsbeginn für Familienmitglieder pflicht
+        if (existingMemberMode && !memberData.vertrag_vertragsbeginn) {
+          setError("Bitte geben Sie den Vertragsbeginn für die Familienmitglieder an");
           return;
         }
         // Prüfen ob alle Familienmitglieder einen Tarif haben
@@ -1056,8 +1087,8 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
       }
     } else {
       // Standard-Validierung für Admin-Bereich
-      // AGB etc. immer prüfen (gilt für Hauptmitglied oder Familienmitglieder)
-      if (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert) {
+      // AGB nur prüfen wenn KEIN bestehendes Mitglied (in existingMemberMode gibt es kein VertragFormular)
+      if (!existingMemberMode && (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert)) {
         setError("Bitte akzeptieren Sie die AGB, Datenschutzerklärung, Dojo-Regeln und Hausordnung.");
         return;
       }
@@ -1122,26 +1153,58 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
 
       // Erfolgsmeldung anzeigen
       setError("");
-      
+
       // 🔄 AUTOMATISCHES UPDATE: Alle betroffenen Komponenten aktualisieren
       triggerUpdate('member_created', response.data);
-      
-      if (isRegistrationFlow) {
-        // Für Registrierungsprozess: Callback aufrufen
-        if (onRegistrationComplete) {
-          onRegistrationComplete(true);
-        }
-        alert("Registrierung erfolgreich abgeschlossen! Sie können sich jetzt anmelden.");
-      } else {
-        alert("Mitglied wurde erfolgreich erstellt!");
-      }
 
-      onClose();
+      if (isRegistrationFlow) {
+        if (onRegistrationComplete) onRegistrationComplete(true);
+        alert("Registrierung erfolgreich abgeschlossen! Sie können sich jetzt anmelden.");
+        onClose();
+      } else {
+        // Rückwirkende Abrechnung prüfen: Vertrag rückwirkend angelegt?
+        const vertragBeginn = memberData.vertrag_vertragsbeginn;
+        const vertragId = response.data.vertrag_id;
+        const neueMitgliedId = response.data.mitglied_id;
+
+        let zeigeRueckwirkend = false;
+        if (vertragBeginn && vertragId) {
+          const beginn = new Date(vertragBeginn);
+          const heute = new Date();
+          const bisMonat = new Date(heute.getFullYear(), heute.getMonth() - 1, 1);
+          if (beginn <= bisMonat) {
+            // Wie viele Monate rückwirkend?
+            let monate = 0;
+            const cursor = new Date(beginn.getFullYear(), beginn.getMonth(), 1);
+            while (cursor <= bisMonat) { monate++; cursor.setMonth(cursor.getMonth() + 1); }
+            if (monate > 0) {
+              // Monatsbeitrag aus Formular schätzen (aus Tarifdaten falls vorhanden, sonst 0)
+              setRueckwirkendModal({
+                mitglied_id: neueMitgliedId,
+                vertrag_id: vertragId,
+                monate,
+                vertragsbeginn: vertragBeginn
+              });
+              setRueckwirkendModus('einmal');
+              setRueckwirkendAufschlag('');
+              zeigeRueckwirkend = true;
+            }
+          }
+        }
+
+        if (!zeigeRueckwirkend) {
+          alert("Mitglied wurde erfolgreich erstellt!");
+          onClose();
+        }
+      }
       
       // ❌ ENTFERNT: window.location.reload() - wird durch Context-System ersetzt
     } catch (error) {
       console.error("❌ Fehler beim Erstellen des Mitglieds:", error);
-      const errorMsg = error.response?.data?.error || error.message || 'Unbekannter Fehler';
+      const errData = error.response?.data;
+      const errorMsg = errData?.error?.message || errData?.message ||
+        (typeof errData?.error === 'string' ? errData.error : null) ||
+        error.message || 'Unbekannter Fehler';
       setError(`Fehler beim Speichern: ${errorMsg}`);
       
       if (isRegistrationFlow && onRegistrationComplete) {
@@ -2069,6 +2132,22 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
         )
       )}
 
+      {/* Vertragsbeginn für Familienmitglieder (nur in existingMemberMode) */}
+      {existingMemberMode && (
+        <div style={{ margin: '0.75rem 0 1rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.04)', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)' }}>
+          <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: '0.4rem' }}>
+            Vertragsbeginn für neue Familienmitglieder *
+          </label>
+          <input
+            type="date"
+            value={memberData.vertrag_vertragsbeginn || ''}
+            onChange={e => setMemberData(prev => ({ ...prev, vertrag_vertragsbeginn: e.target.value }))}
+            className="input-field"
+            style={{ maxWidth: 220 }}
+          />
+        </div>
+      )}
+
       {/* VertragFormular nur anzeigen wenn NICHT im existing member mode */}
       {!existingMemberMode && (
         <VertragFormular
@@ -2179,15 +2258,17 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                       </span>
                     </div>
 
-                    <div className="nma-s6-discount-row">
-                      <span className="u-flex-row-sm">
-                        <span className="nma-s6-discount-badge">-{discount.prozent}%</span>
-                        {discount.name}:
-                      </span>
-                      <span className="nma-s6-discount-amount">
-                        -{(discountAmount / 100).toFixed(2)} €
-                      </span>
-                    </div>
+                    {discount.prozent > 0 && (
+                      <div className="nma-s6-discount-row">
+                        <span className="u-flex-row-sm">
+                          <span className="nma-s6-discount-badge">-{discount.prozent}%</span>
+                          {discount.name}:
+                        </span>
+                        <span className="nma-s6-discount-amount">
+                          -{(discountAmount / 100).toFixed(2)} €
+                        </span>
+                      </div>
+                    )}
 
                     <div className="nma-s6-total-row">
                       <span className="u-text-primary">Endpreis:</span>
@@ -2195,6 +2276,15 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
                         {(finalPrice / 100).toFixed(2)} €/Monat
                       </span>
                     </div>
+
+                    {(selectedTarif.aufnahmegebuehr_cents > 0) && (
+                      <div className="nma-s6-price-row" style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <span className="u-text-secondary">Aufnahmegebühr (einmalig):</span>
+                        <span className="u-text-primary">
+                          {(selectedTarif.aufnahmegebuehr_cents / 100).toFixed(2)} €
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2265,26 +2355,35 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               );
             })}
 
-            {/* Gesamtsumme - unterschiedlich je nach Modus */}
-            <div className="nma-s6-total-sum-row">
-              <span className="u-text-primary">
-                {existingMemberMode ? 'Neue Kosten pro Monat:' : 'Gesamt pro Monat:'}
-              </span>
-              <span className="u-text-accent">
-                {(() => {
-                  // Bei existing member mode: nur Familienmitglieder-Preise
-                  // Sonst: Hauptmitglied + Familienmitglieder
-                  const hauptmitgliedPreis = existingMemberMode ? 0 :
-                    ((availableTarife || []).find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id))?.monatlicher_beitrag_cents || 0);
-                  const familienPreis = familyMembers.reduce((sum, member) => {
-                    const discount = getFamilyDiscount(member.position);
-                    const price = member.tarif_preis || 0;
-                    return sum + price - Math.round(price * discount.prozent / 100);
-                  }, 0);
-                  return `${((hauptmitgliedPreis + familienPreis) / 100).toFixed(2)} €`;
-                })()}
-              </span>
-            </div>
+            {/* Gesamtsumme */}
+            {(() => {
+              const hauptTarif = existingMemberMode ? null :
+                (availableTarife || []).find(t => t.tarif_id === parseInt(memberData.vertrag_tarif_id));
+              const hauptmonatlich = hauptTarif?.monatlicher_beitrag_cents || 0;
+              const hauptaufnahme = existingMemberMode ? 0 : (hauptTarif?.aufnahmegebuehr_cents || 0);
+              const familienMonatlich = familyMembers.reduce((sum, member) => {
+                const discount = getFamilyDiscount(member.position);
+                const price = member.tarif_preis || 0;
+                return sum + price - Math.round(price * discount.prozent / 100);
+              }, 0);
+              const familienAufnahme = familyMembers.reduce((sum, member) => sum + (member.aufnahmegebuehr_cents || 0), 0);
+              const gesamtMonatlich = hauptmonatlich + familienMonatlich;
+              const gesamtAufnahme = hauptaufnahme + familienAufnahme;
+              return (
+                <>
+                  <div className="nma-s6-total-sum-row">
+                    <span className="u-text-primary">{existingMemberMode ? 'Neue Kosten pro Monat:' : 'Gesamt pro Monat:'}</span>
+                    <span className="u-text-accent">{(gesamtMonatlich / 100).toFixed(2)} €</span>
+                  </div>
+                  {gesamtAufnahme > 0 && (
+                    <div className="nma-s6-total-sum-row" style={{ marginTop: '0.25rem', fontSize: '0.9em', opacity: 0.85 }}>
+                      <span className="u-text-secondary">Aufnahmegebühren gesamt (einmalig):</span>
+                      <span className="u-text-primary">{(gesamtAufnahme / 100).toFixed(2)} €</span>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           {/* AGB-Checkboxen für Familienmitglieder im existingMemberMode */}
@@ -2560,6 +2659,71 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     }
   };
 
+  // Super-Admin: Dojo-Auswahl als erster Schritt im selben Modal
+  if (isSuperAdminMode && !superAdminDojoConfirmed) {
+    return createPortal(
+      <div className="modal-overlay nma-modal-overlay">
+        <div className="modal-content step-modal neues-mitglied-modal-v2" style={{ maxWidth: 480 }}>
+          <div className="modal-header">
+            <h2 className="modal-title">Neues Mitglied anlegen</h2>
+          </div>
+          <div style={{ padding: '2rem 1.5rem' }}>
+            <div style={{
+              background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.35)',
+              borderRadius: 12, padding: '1rem 1.25rem', marginBottom: '1.5rem',
+              display: 'flex', gap: '0.75rem', alignItems: 'flex-start'
+            }}>
+              <span style={{ fontSize: '1.3rem' }}>⚠️</span>
+              <div>
+                <div style={{ fontWeight: 700, color: '#f59e0b', marginBottom: '0.3rem' }}>Super-Admin-Modus aktiv</div>
+                <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+                  Du bist in der „Alle Dojos"-Ansicht. Bitte wähle zuerst das Ziel-Dojo für das neue Mitglied.
+                </div>
+              </div>
+            </div>
+            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.5rem', color: 'rgba(255,255,255,0.6)' }}>
+              Mitglied anlegen in:
+            </label>
+            <select
+              value={superAdminSelectedDojo}
+              onChange={e => setSuperAdminSelectedDojo(e.target.value)}
+              style={{
+                width: '100%', padding: '0.7rem 1rem', borderRadius: 9, marginBottom: '1.5rem',
+                border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)',
+                color: '#fff', fontSize: '1rem', cursor: 'pointer', boxSizing: 'border-box'
+              }}
+            >
+              <option value="">— Dojo auswählen —</option>
+              {(dojos || []).filter(d => d.id).map(d => (
+                <option key={d.id} value={d.id}>{d.dojoname}</option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button onClick={onClose} style={{
+                padding: '0.6rem 1.2rem', borderRadius: 9, border: '1px solid rgba(255,255,255,0.15)',
+                background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit'
+              }}>Abbrechen</button>
+              <button
+                disabled={!superAdminSelectedDojo}
+                onClick={() => {
+                  setMemberData(prev => ({ ...prev, dojo_id: parseInt(superAdminSelectedDojo) }));
+                  setSuperAdminDojoConfirmed(true);
+                }}
+                style={{
+                  padding: '0.6rem 1.4rem', borderRadius: 9, border: 'none', fontWeight: 700,
+                  background: superAdminSelectedDojo ? '#2563eb' : 'rgba(255,255,255,0.1)',
+                  color: superAdminSelectedDojo ? '#fff' : 'rgba(255,255,255,0.3)',
+                  cursor: superAdminSelectedDojo ? 'pointer' : 'not-allowed', fontFamily: 'inherit'
+                }}
+              >Weiter →</button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
+
   // PORTAL MODAL TO BODY - BREAK ALL CONTAINERS
   const modalElement = (
     <div className="modal-overlay nma-modal-overlay">
@@ -2647,11 +2811,11 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
               onClick={handleSubmit}
               disabled={
                 loading ||
-                !memberData.vertrag_agb_akzeptiert ||
-                !memberData.vertrag_datenschutz_akzeptiert ||
-                !memberData.vertrag_dojo_regeln_akzeptiert ||
-                !memberData.vertrag_hausordnung_akzeptiert ||
-                !memberData.vertrag_tarif_id ||
+                (!existingMemberMode && (!memberData.vertrag_agb_akzeptiert ||
+                  !memberData.vertrag_datenschutz_akzeptiert ||
+                  !memberData.vertrag_dojo_regeln_akzeptiert ||
+                  !memberData.vertrag_hausordnung_akzeptiert ||
+                  !memberData.vertrag_tarif_id)) ||
                 !memberData.vertragsbeginn_option ||
                 (memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme)) ||
                 (isRegistrationFlow && (!memberData.benutzername || memberData.benutzername.length < 4 || !memberData.passwort || memberData.passwort.length < 8 || memberData.passwort !== memberData.passwort_wiederholen))
@@ -2671,22 +2835,22 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
           </button>
         </div>
 
-        {/* Warnung bei Vertrag-Schritt (Schritt 4 für Registration, Schritt 3 für Admin) */}
-        {((isRegistrationFlow && currentStep === 4) || (!isRegistrationFlow && currentStep === 3)) &&
+        {/* Warnung bei Vertrag-Schritt (Schritt 4 für Registration UND Admin) */}
+        {currentStep === 4 && !existingMemberMode &&
          (!memberData.vertrag_agb_akzeptiert || !memberData.vertrag_datenschutz_akzeptiert || !memberData.vertrag_dojo_regeln_akzeptiert || !memberData.vertrag_hausordnung_akzeptiert || !memberData.vertrag_tarif_id) && (
           <div className="nma-warning-amber">
             ⚠️ Bitte füllen Sie alle Pflichtfelder im Vertrag aus (AGB, Datenschutz, Dojo-Regeln, Hausordnung, Tarif).
           </div>
         )}
 
-        {/* Warnung bei Widerruf-Schritt (Schritt 7 für Registration, Schritt 6 für Admin) */}
-        {((isRegistrationFlow && currentStep === 7) || (!isRegistrationFlow && currentStep === 6)) && !memberData.vertragsbeginn_option && (
+        {/* Warnung bei Widerruf-Schritt (Schritt 7 in beiden Flows) */}
+        {currentStep === 7 && !memberData.vertragsbeginn_option && (
           <div className="nma-warning-amber">
             Bitte wählen Sie eine Option für den Vertragsbeginn aus.
           </div>
         )}
 
-        {((isRegistrationFlow && currentStep === 7) || (!isRegistrationFlow && currentStep === 6)) && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
+        {currentStep === 7 && memberData.vertragsbeginn_option === 'sofort' && (!memberData.vertrag_sofortbeginn_zustimmung || !memberData.vertrag_widerrufsrecht_kenntnisnahme) && (
           <div className="nma-warning-amber">
             Für den Sofortbeginn müssen Sie beide Bestätigungen akzeptieren.
           </div>
@@ -2753,7 +2917,129 @@ const NeuesMitgliedAnlegen = ({ onClose, isRegistrationFlow = false, onRegistrat
     </div>
   );
 
+  // ── Rückwirkende Abrechnung Modal ─────────────────────────────────────────
+  const handleRueckwirkendAbrechnen = async () => {
+    if (!rueckwirkendModal) return;
+    setRueckwirkendLoading(true);
+    try {
+      const body = {
+        mitglied_id: rueckwirkendModal.mitglied_id,
+        vertrag_id: rueckwirkendModal.vertrag_id,
+        modus: rueckwirkendModus,
+      };
+      if (rueckwirkendModus === 'raten') {
+        body.monatlicher_aufschlag = parseFloat(rueckwirkendAufschlag);
+      }
+      await axios.post('/rechnungen/rueckwirkend', body);
+      alert(
+        rueckwirkendModus === 'einmal'
+          ? `Eine Sammelrechnung für ${rueckwirkendModal.monate} Monat(e) wurde erstellt.`
+          : rueckwirkendModus === 'teilzahlung'
+          ? `${rueckwirkendModal.monate} Einzelrechnungen wurden erstellt.`
+          : `Ratenplan mit ${rueckwirkendAufschlag} €/Monat Aufschlag wurde eingerichtet.`
+      );
+    } catch (err) {
+      alert('Fehler bei rückwirkender Abrechnung: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setRueckwirkendLoading(false);
+      setRueckwirkendModal(null);
+      onClose();
+    }
+  };
+
+  const rueckwirkendDialogElement = rueckwirkendModal ? (
+    <div className="modal-overlay nma-modal-overlay">
+      <div className="modal-content step-modal neues-mitglied-modal-v2" style={{ maxWidth: 520 }}>
+        <div className="modal-header">
+          <h2 style={{ margin: 0, fontSize: '1.1rem' }}>Rückwirkende Beiträge abrechnen</h2>
+        </div>
+        <div className="modal-body" style={{ padding: '1.5rem' }}>
+          <p style={{ marginTop: 0, color: 'rgba(255,255,255,0.8)' }}>
+            Der Vertrag beginnt rückwirkend am <strong>{rueckwirkendModal.vertragsbeginn}</strong>.
+            Es sind <strong>{rueckwirkendModal.monate} Monat(e)</strong> offen.
+            Wie sollen die ausstehenden Beiträge abgerechnet werden?
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            {[
+              { value: 'einmal', label: 'Gesamtrechnung', desc: 'Eine Rechnung über alle offenen Monate' },
+              { value: 'teilzahlung', label: 'Einzelne Monatsrechnungen', desc: 'Separate Rechnung pro Monat' },
+              { value: 'raten', label: 'Ratenplan (monatl. Aufschlag)', desc: 'Aufschlag zum laufenden Beitrag, keine sofortige Rechnung' },
+            ].map(opt => (
+              <label key={opt.value} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '0.75rem',
+                padding: '0.85rem 1rem', borderRadius: 10, cursor: 'pointer',
+                border: `2px solid ${rueckwirkendModus === opt.value ? '#4f8ef7' : 'rgba(255,255,255,0.12)'}`,
+                background: rueckwirkendModus === opt.value ? 'rgba(79,142,247,0.12)' : 'rgba(255,255,255,0.04)',
+              }}>
+                <input
+                  type="radio"
+                  name="rueckwirkendModus"
+                  value={opt.value}
+                  checked={rueckwirkendModus === opt.value}
+                  onChange={() => setRueckwirkendModus(opt.value)}
+                  style={{ marginTop: 3 }}
+                />
+                <div>
+                  <div style={{ fontWeight: 600, color: '#fff' }}>{opt.label}</div>
+                  <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.55)' }}>{opt.desc}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {rueckwirkendModus === 'raten' && (
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.9rem', color: 'rgba(255,255,255,0.7)' }}>
+                Monatlicher Aufschlag (€)
+              </label>
+              <input
+                type="number"
+                min="1"
+                step="0.01"
+                value={rueckwirkendAufschlag}
+                onChange={e => setRueckwirkendAufschlag(e.target.value)}
+                placeholder="z. B. 20.00"
+                style={{
+                  width: '100%', padding: '0.6rem 0.8rem', borderRadius: 8,
+                  border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)',
+                  color: '#fff', fontSize: '1rem', boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <button
+              onClick={() => { setRueckwirkendModal(null); onClose(); }}
+              style={{
+                padding: '0.6rem 1.2rem', borderRadius: 9, border: '1px solid rgba(255,255,255,0.15)',
+                background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontFamily: 'inherit'
+              }}
+              disabled={rueckwirkendLoading}
+            >
+              Überspringen
+            </button>
+            <button
+              onClick={handleRueckwirkendAbrechnen}
+              disabled={rueckwirkendLoading || (rueckwirkendModus === 'raten' && !rueckwirkendAufschlag)}
+              style={{
+                padding: '0.6rem 1.4rem', borderRadius: 9, border: 'none',
+                background: '#4f8ef7', color: '#fff', cursor: 'pointer',
+                fontWeight: 600, fontFamily: 'inherit', opacity:
+                  (rueckwirkendLoading || (rueckwirkendModus === 'raten' && !rueckwirkendAufschlag)) ? 0.5 : 1
+              }}
+            >
+              {rueckwirkendLoading ? 'Wird erstellt…' : 'Abrechnen'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // RENDER MODAL DIRECTLY TO BODY - BYPASS ALL CONTAINERS
+  if (rueckwirkendModal) return createPortal(rueckwirkendDialogElement, document.body);
   return createPortal(modalElement, document.body);
 };
 

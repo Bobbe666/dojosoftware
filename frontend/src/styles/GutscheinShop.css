@@ -1,0 +1,625 @@
+/* ================================================================
+   GutscheinShop.css — Öffentliche Gutschein-Kaufseite
+   ================================================================ */
+
+:root {
+  --gs-gold:    #C9A227;
+  --gs-gold-lt: #FFD700;
+  --gs-dark:    #0e0e1a;
+  --gs-card:    #141420;
+  --gs-border:  #2a2a3a;
+  --gs-text:    #f0f0f0;
+  --gs-muted:   #888;
+  --gs-danger:  #ff6b6b;
+  --gs-success: #4ade80;
+  --gs-radius:  12px;
+}
+
+/* ── Seite ────────────────────────────────────────────────────── */
+.gs-page {
+  min-height: 100vh;
+  background: var(--gs-dark);
+  color: var(--gs-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+.gs-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 1rem;
+  color: var(--gs-muted);
+}
+
+.gs-error-page {
+  gap: 0.75rem;
+  text-align: center;
+  padding: 2rem;
+}
+.gs-error-page svg { color: var(--gs-danger); }
+
+/* ── Header ───────────────────────────────────────────────────── */
+.gs-header {
+  background: var(--gs-card);
+  border-bottom: 1px solid var(--gs-border);
+  padding: 1.25rem 1.5rem 0;
+  position: relative;
+  overflow: hidden;
+}
+.gs-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 140% at 100% -30%, rgba(201,162,39,0.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.gs-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  position: relative;
+}
+
+.gs-header-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, rgba(201,162,39,0.2), rgba(201,162,39,0.06));
+  border: 1px solid rgba(201,162,39,0.3);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gs-gold);
+  flex-shrink: 0;
+}
+
+.gs-header-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 0.15rem;
+  color: var(--gs-text);
+}
+
+.gs-header-sub {
+  font-size: 0.8rem;
+  color: var(--gs-muted);
+  margin: 0;
+}
+
+/* ── Schritt-Anzeige ─────────────────────────────────────────── */
+.gs-steps {
+  display: flex;
+  gap: 0;
+  margin-top: 1.25rem;
+  position: relative;
+}
+
+.gs-step {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.78rem;
+  color: var(--gs-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+.gs-step.active {
+  color: var(--gs-gold);
+  border-bottom-color: var(--gs-gold);
+  font-weight: 600;
+}
+.gs-step.done { color: var(--gs-success); }
+
+.gs-step-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.gs-step.active .gs-step-num { background: rgba(201,162,39,0.2); color: var(--gs-gold); }
+.gs-step.done  .gs-step-num { background: rgba(74,222,128,0.15); color: var(--gs-success); }
+
+.gs-step-label { display: none; }
+@media (min-width: 480px) { .gs-step-label { display: inline; } }
+
+/* ── Haupt-Content ───────────────────────────────────────────── */
+.gs-main {
+  flex: 1;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem;
+}
+
+.gs-section { }
+
+.gs-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem;
+  color: var(--gs-text);
+}
+
+.gs-sub-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gs-muted);
+  margin: 0 0 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Anlass-Filter ───────────────────────────────────────────── */
+.gs-anlass-filter {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.gs-anlass-btn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--gs-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--gs-muted);
+  border-radius: 20px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.gs-anlass-btn:hover { border-color: var(--gs-gold); color: var(--gs-text); }
+.gs-anlass-btn.active {
+  background: rgba(201,162,39,0.15);
+  border-color: var(--gs-gold);
+  color: var(--gs-gold);
+  font-weight: 600;
+}
+
+/* ── Vorlage-Grid ────────────────────────────────────────────── */
+.gs-vorlage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.gs-vorlage-card {
+  position: relative;
+  border: 2px solid var(--gs-border);
+  border-radius: var(--gs-radius);
+  background: var(--gs-card);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.12s;
+  padding: 0;
+  text-align: left;
+}
+.gs-vorlage-card:hover { border-color: rgba(201,162,39,0.5); transform: translateY(-2px); }
+.gs-vorlage-card.selected { border-color: var(--gs-gold); box-shadow: 0 0 0 3px rgba(201,162,39,0.18); }
+
+.gs-vorlage-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.gs-vorlage-label {
+  padding: 0.5rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--gs-muted);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.gs-vorlage-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--gs-gold);
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Wert-Auswahl ────────────────────────────────────────────── */
+.gs-wert-section { margin-bottom: 1.5rem; }
+
+.gs-wert-presets {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.gs-wert-btn {
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--gs-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--gs-muted);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gs-wert-btn:hover { border-color: var(--gs-gold); color: var(--gs-text); }
+.gs-wert-btn.active {
+  background: rgba(201,162,39,0.15);
+  border-color: var(--gs-gold);
+  color: var(--gs-gold);
+}
+
+.gs-wert-custom-input {
+  max-width: 160px;
+}
+
+/* ── Formular ────────────────────────────────────────────────── */
+.gs-label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--gs-muted);
+  margin-bottom: 0.3rem;
+  margin-top: 0.75rem;
+}
+.gs-label:first-child { margin-top: 0; }
+
+.gs-required { color: var(--gs-danger); margin-left: 2px; }
+
+.gs-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  color: var(--gs-text);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.gs-input:focus { border-color: var(--gs-gold); }
+.gs-input::placeholder { color: #555; }
+.gs-textarea { resize: vertical; min-height: 72px; }
+
+.gs-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 600px) {
+  .gs-form-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Preview Mini ────────────────────────────────────────────── */
+.gs-preview-mini {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--gs-card);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius);
+  margin-bottom: 1.25rem;
+}
+
+.gs-preview-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.gs-preview-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.gs-preview-wert {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--gs-gold);
+}
+.gs-preview-vorlage {
+  font-size: 0.8rem;
+  color: var(--gs-muted);
+}
+
+/* ── Navigation ──────────────────────────────────────────────── */
+.gs-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  gap: 0.75rem;
+}
+
+.gs-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.4rem;
+  background: linear-gradient(135deg, var(--gs-gold), #b8891f);
+  color: #000;
+  font-weight: 700;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.gs-btn-primary:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.gs-btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.gs-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--gs-border);
+  color: var(--gs-muted);
+  font-size: 0.88rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gs-btn-secondary:hover { border-color: var(--gs-gold); color: var(--gs-text); }
+
+/* ── Zusammenfassung ─────────────────────────────────────────── */
+.gs-summary-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--gs-card);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius);
+  margin-bottom: 1.25rem;
+}
+
+.gs-summary-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.gs-summary-info { flex: 1; }
+.gs-summary-titel { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+.gs-summary-detail { font-size: 0.8rem; color: var(--gs-muted); }
+
+.gs-summary-wert {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--gs-gold);
+  white-space: nowrap;
+}
+
+/* ── Zahlungsart-Tabs ────────────────────────────────────────── */
+.gs-pay-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.gs-pay-tab {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--gs-border);
+  background: rgba(255,255,255,0.03);
+  color: var(--gs-muted);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gs-pay-tab:hover { border-color: var(--gs-gold); color: var(--gs-text); }
+.gs-pay-tab.active {
+  background: rgba(201,162,39,0.12);
+  border-color: var(--gs-gold);
+  color: var(--gs-gold);
+  font-weight: 600;
+}
+
+/* ── PayPal ──────────────────────────────────────────────────── */
+.gs-paypal-wrap {
+  max-width: 400px;
+}
+
+.gs-sandbox-note {
+  font-size: 0.75rem;
+  color: var(--gs-muted);
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* ── Stripe ──────────────────────────────────────────────────── */
+.gs-stripe-wrap { max-width: 420px; }
+
+.gs-stripe-form { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.gs-card-element {
+  padding: 0.75rem 0.9rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+}
+
+.gs-pay-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--gs-gold), #b8891f);
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.gs-pay-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Fehler ──────────────────────────────────────────────────── */
+.gs-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--gs-danger);
+}
+
+.gs-error-box {
+  padding: 0.75rem 1rem;
+  background: rgba(255,107,107,0.08);
+  border: 1px solid rgba(255,107,107,0.25);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.gs-info-box {
+  padding: 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--gs-border);
+  border-radius: 8px;
+  color: var(--gs-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Erfolg ──────────────────────────────────────────────────── */
+.gs-success-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+  gap: 1rem;
+}
+
+.gs-success-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(74,222,128,0.15);
+  border: 2px solid var(--gs-success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gs-success);
+}
+
+.gs-success-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.gs-success-sub {
+  color: var(--gs-muted);
+  font-size: 0.9rem;
+  margin: 0;
+  max-width: 400px;
+}
+
+.gs-code-box {
+  background: var(--gs-card);
+  border: 1px solid var(--gs-border);
+  border-radius: var(--gs-radius);
+  padding: 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 280px;
+}
+
+.gs-code-label {
+  font-size: 0.75rem;
+  color: var(--gs-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.gs-code-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--gs-gold);
+  letter-spacing: 0.1em;
+}
+
+.gs-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.8rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--gs-border);
+  color: var(--gs-muted);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gs-copy-btn:hover { border-color: var(--gs-gold); color: var(--gs-gold); }
+
+.gs-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.75rem;
+  background: linear-gradient(135deg, var(--gs-gold), #b8891f);
+  color: #000;
+  font-weight: 700;
+  font-size: 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.gs-download-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.gs-success-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--gs-muted);
+}
+.gs-success-hint svg { color: var(--gs-gold); flex-shrink: 0; }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.gs-footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.78rem;
+  color: #555;
+  border-top: 1px solid var(--gs-border);
+}
+
+/* ── Spinner ─────────────────────────────────────────────────── */
+.gs-spin { animation: gs-rotate 1s linear infinite; }
+.gs-spin-gold { color: var(--gs-gold); }
+@keyframes gs-rotate { to { transform: rotate(360deg); } }

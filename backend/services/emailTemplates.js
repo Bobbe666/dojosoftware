@@ -156,7 +156,7 @@ async function sendPaymentReminderEmail(dojoId, email, { memberName, amount, due
         <div style="background: #ffffff; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb;">
           <p style="font-size: 16px; color: #333;">Hallo ${memberName},</p>
           <p style="color: #555; line-height: 1.6;">
-            wir möchten Sie freundlich an die ausstehende Zahlung erinnern:
+            wir möchten dich freundlich an die ausstehende Zahlung erinnern:
           </p>
           <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <table style="width: 100%;">
@@ -175,12 +175,12 @@ async function sendPaymentReminderEmail(dojoId, email, { memberName, amount, due
             </table>
           </div>
           <p style="color: #555; line-height: 1.6;">
-            Bitte überweisen Sie den Betrag zeitnah. Falls Sie bereits gezahlt haben, betrachten Sie diese Nachricht als gegenstandslos.
+            Bitte überweise den Betrag zeitnah. Falls du bereits gezahlt hast, betrachte diese Nachricht als gegenstandslos.
           </p>
         </div>
       </div>
     `,
-    text: `${levelTexts[reminderLevel] || 'Zahlungserinnerung'}\n\nHallo ${memberName},\n\nwir möchten Sie an die ausstehende Zahlung erinnern:\n\nRechnungsnummer: ${invoiceNumber}\nBetrag: €${amount.toFixed(2)}\nFällig seit: ${new Date(dueDate).toLocaleDateString('de-DE')}\n\nBitte überweisen Sie den Betrag zeitnah.`
+    text: `${levelTexts[reminderLevel] || 'Zahlungserinnerung'}\n\nHallo ${memberName},\n\nwir möchten dich an die ausstehende Zahlung erinnern:\n\nRechnungsnummer: ${invoiceNumber}\nBetrag: €${amount.toFixed(2)}\nFällig seit: ${new Date(dueDate).toLocaleDateString('de-DE')}\n\nBitte überweise den Betrag zeitnah.`
   });
 }
 

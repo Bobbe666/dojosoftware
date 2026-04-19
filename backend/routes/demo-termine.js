@@ -10,6 +10,7 @@ const db      = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 const { sendEmail } = require('../services/emailService');
 const teamsService = require('../services/teamsService');
+const auditLog = require('../services/auditLogService');
 
 const pool = db.promise();
 
@@ -392,9 +393,21 @@ router.put('/admin/slots/:id', authenticateToken, onlySuperAdmin, async (req, re
 router.delete('/admin/slots/:id', authenticateToken, onlySuperAdmin, async (req, res) => {
   const id = parseInt(req.params.id);
   try {
-    const [rows] = await pool.query('SELECT is_booked FROM demo_termine_slots WHERE id = ?', [id]);
+    const [rows] = await pool.query('SELECT * FROM demo_termine_slots WHERE id = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ success: false, error: 'Slot nicht gefunden' });
     if (rows[0].is_booked) return res.status(400).json({ success: false, error: 'Gebuchte Slots können nicht gelöscht werden' });
+
+    // Datensatz vor der Löschung im Audit-Log sichern
+    await auditLog.log({
+      req,
+      aktion: 'DEMO_SLOT_GELOESCHT',
+      kategorie: 'ADMIN',
+      entityType: 'demo_termine_slots',
+      entityId: id,
+      entityName: `Slot ${new Date(rows[0].slot_start).toLocaleString('de-DE')}`,
+      alteWerte: rows[0],
+      beschreibung: `Demo-Slot gelöscht: ${new Date(rows[0].slot_start).toLocaleString('de-DE')} (${rows[0].duration_minutes} Min.)`,
+    });
 
     await pool.query('DELETE FROM demo_termine_slots WHERE id = ?', [id]);
     res.json({ success: true });
@@ -458,6 +471,21 @@ router.put('/admin/buchungen/:id', authenticateToken, onlySuperAdmin, async (req
     // Wenn abgesagt → Slot wieder freigeben
     if (status === 'abgesagt') {
       await pool.query('UPDATE demo_termine_slots SET is_booked = 0 WHERE id = ?', [buchung.slot_id]);
+    }
+
+    // Audit-Log: Status-Änderungen immer protokollieren
+    if (status && status !== buchung.old_status) {
+      await auditLog.log({
+        req,
+        aktion: status === 'abgesagt' ? 'DEMO_BUCHUNG_ABGESAGT' : 'DEMO_BUCHUNG_BESTAETIGT',
+        kategorie: 'ADMIN',
+        entityType: 'demo_buchungen',
+        entityId: id,
+        entityName: `${buchung.vorname} ${buchung.nachname} (${new Date(buchung.slot_start).toLocaleString('de-DE')})`,
+        alteWerte: { status: buchung.old_status },
+        neueWerte: { status },
+        beschreibung: `Demo-Buchung ${status}: ${buchung.vorname} ${buchung.nachname} — ${new Date(buchung.slot_start).toLocaleString('de-DE')}`,
+      });
     }
 
     // Wenn status auf 'bestaetigt' gesetzt → Bestätigungsmail senden

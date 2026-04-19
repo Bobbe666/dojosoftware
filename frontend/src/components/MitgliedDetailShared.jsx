@@ -30,6 +30,7 @@ import RatenzahlungTab from './mitglied-detail/tabs/RatenzahlungTab';
 import NeuesMitgliedAnlegen from './NeuesMitgliedAnlegen';
 import VorlagenSendenModal from './VorlagenSendenModal';
 import HofNominierungModal from './HofNominierungModal';
+import GuertelRechner from './GuertelRechner';
 
 // ── Versandhistorie-Sektion im Mitgliederprofil ────────────────────────────────
 function MitgliedVersandhistorie({ mitgliedId, activeDojo }) {
@@ -459,7 +460,9 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [mitgliedschaftSubTab, setMitgliedschaftSubTab] = useState("vertrag");
   const [gesundheitSubTab, setGesundheitSubTab] = useState("medizinisch");
   const [entwicklungSubTab, setEntwicklungSubTab] = useState("anwesenheit");
-  const [graduationListCollapsed, setGraduationListCollapsed] = useState(true); // Graduierungen-Liste standardmäßig eingeklappt
+  const [graduationListCollapsed, setGraduationListCollapsed] = useState(true);
+  const [gurtStilHauptTab, setGurtStilHauptTab] = useState("stile");
+  const [gradListCollapsedPerStil, setGradListCollapsedPerStil] = useState({});
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Familienmitglied hinzufügen Modal State
@@ -495,6 +498,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   const [openYears, setOpenYears] = useState(() => new Set([String(new Date().getFullYear())]));
   const [verträge, setVerträge] = useState([]);
   const [ruecklastschriftenStats, setRuecklastschriftenStats] = useState(null);
+  const [aktiverRatenplan, setAktiverRatenplan] = useState(null);
 
   // Lastschrift-Einverständnis State
   const [lsEinverstaendnis, setLsEinverstaendnis] = useState(null);
@@ -702,8 +706,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     try {
       const config = { params: { mitglied_id: id } };
       if (signal) config.signal = signal;
-      const res = await axios.get('/beitraege', config);
-      setFinanzDaten(res.data);
+      const [beitraegeRes, ratenplanRes] = await Promise.all([
+        axios.get('/beitraege', config),
+        axios.get(`/rechnungen/ratenplan/${id}`, signal ? { signal } : {}).catch(() => null)
+      ]);
+      setFinanzDaten(beitraegeRes.data);
+      if (ratenplanRes?.data?.success && ratenplanRes.data.plan) {
+        setAktiverRatenplan(ratenplanRes.data.plan);
+      } else {
+        setAktiverRatenplan(null);
+      }
     } catch (err) {
       if (err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
         return; // Request was cancelled, don't show error
@@ -1602,16 +1614,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     console.log('? Stil entfernt');
   };
 
-  const handleGraduationArrowChange = async (graduationId, direction) => {
-    console.log('🔘 handleGraduationArrowChange aufgerufen:', { graduationId, direction });
-    console.log('🔍 selectedStil:', selectedStil);
-    console.log('🔍 selectedStil.graduierungen:', selectedStil?.graduierungen);
-    console.log('🔍 Anzahl Graduierungen:', selectedStil?.graduierungen?.length);
-
-    if (!selectedStil || !selectedStil.graduierungen) {
+  const handleGraduationArrowChange = async (graduationId, direction, overrideStilData = null) => {
+    const stilToUse = overrideStilData || selectedStil;
+    if (!stilToUse || !stilToUse.graduierungen) {
       console.error('❌ Kein Stil oder keine Graduierungen vorhanden');
-      console.error('❌ selectedStil:', selectedStil);
-      console.error('❌ selectedStil.graduierungen:', selectedStil?.graduierungen);
       return;
     }
 
@@ -1619,38 +1625,24 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
     // Prüfe ob direction eine Zahl ist (direkte Auswahl) oder ein String (up/down)
     if (typeof direction === 'number') {
-      // Direkte Auswahl einer Graduierung per ID
-      newGraduation = selectedStil.graduierungen.find(g => g.graduierung_id === direction);
-      if (!newGraduation) {
-        console.error('❌ Graduierung mit ID', direction, 'nicht gefunden');
+      newGraduation = stilToUse.graduierungen.find(g => g.graduierung_id === direction);
+      if (!newGraduation) return;
+    } else {
+      const currentIndex = stilToUse.graduierungen.findIndex(g => g.graduierung_id === graduationId);
+      let newIndex;
+      if (direction === 'up' && currentIndex > 0) {
+        newIndex = currentIndex - 1;
+      } else if (direction === 'down' && currentIndex < stilToUse.graduierungen.length - 1) {
+        newIndex = currentIndex + 1;
+      } else {
         return;
       }
-      console.log('🎯 Direkt ausgewählte Graduierung:', newGraduation.name, 'ID:', newGraduation.graduierung_id);
-    } else {
-      // Navigation mit Pfeiltasten (up/down)
-      const currentIndex = selectedStil.graduierungen.findIndex(g => g.graduierung_id === graduationId);
-      console.log('📍 Aktueller Index:', currentIndex, 'Direction:', direction);
-
-      let newIndex;
-
-      if (direction === 'up' && currentIndex > 0) {
-        newIndex = currentIndex - 1; // Higher graduation (lower index)
-      } else if (direction === 'down' && currentIndex < selectedStil.graduierungen.length - 1) {
-        newIndex = currentIndex + 1; // Lower graduation (higher index)
-      } else {
-        console.log('⚠️ Keine Änderung möglich');
-        return; // No change possible
-      }
-
-      newGraduation = selectedStil.graduierungen[newIndex];
-      console.log('🎯 Neue Graduierung:', newGraduation.name, 'ID:', newGraduation.graduierung_id);
+      newGraduation = stilToUse.graduierungen[newIndex];
     }
 
-    // Setze sofort die neue Graduierung im State
     setCurrentGraduation(newGraduation);
 
-    // Speichere die neue Graduierung
-    const stilId = selectedStil.stil_id;
+    const stilId = stilToUse.stil_id;
     const updatedData = {
       ...styleSpecificData[stilId],
       current_graduierung_id: newGraduation.graduierung_id
@@ -2249,6 +2241,11 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           // Fallback: Erste Graduierung
           console.log('🎖️ Setze Fallback-Graduierung:', fullStilData.graduierungen[0].name);
           setCurrentGraduation(fullStilData.graduierungen[0]);
+        }
+
+        // Letzte Prüfung aus styleSpecificData übernehmen wenn vorhanden
+        if (stilSpecificData?.letzte_pruefung) {
+          setLastExamDate(toInputDate(stilSpecificData.letzte_pruefung));
         }
       }
     }
@@ -4057,15 +4054,16 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
             </div>
           )}
 
-          {activeTab === "allgemein" && (
-            <div className="mds-section-divider">
-              <span className="mds-section-divider-label">👨‍👩‍👧‍👦 Familie &amp; Vertreter</span>
+          {activeTab === "mitgliedschaft" && (
+            <div className="finance-sub-tabs mds-finance-sub-tabs-row">
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "vertrag" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("vertrag")}>📄 Vertrag</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("finanzen")}>💰 Finanzen</button>
+              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "familie" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("familie")}>👨‍👩‍👧‍👦 Familie</button>
             </div>
           )}
 
-          {activeTab === "allgemein" && (
+          {activeTab === "mitgliedschaft" && mitgliedschaftSubTab === "familie" && (
             <>
-              {/* Familienmitglied hinzufügen Banner - nur für Admin */}
               {isAdmin && (
                 <div className="fam-add-banner">
                   <div className="fam-add-banner-text">
@@ -4077,7 +4075,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   </button>
                 </div>
               )}
-
               <MemberFamilyTab
                 mitglied={mitglied}
                 updatedData={updatedData}
@@ -4085,8 +4082,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 handleChange={handleChange}
                 CustomSelect={CustomSelect}
               />
-
-              {/* Familienmitglied Modal */}
               {showFamilyMemberModal && (
                 <NeuesMitgliedAnlegen
                   onClose={() => setShowFamilyMemberModal(false)}
@@ -4094,14 +4089,6 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 />
               )}
             </>
-          )}
-
-
-          {activeTab === "mitgliedschaft" && (
-            <div className="finance-sub-tabs mds-finance-sub-tabs-row">
-              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "vertrag" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("vertrag")}>📄 Vertrag</button>
-              <button className={`finance-sub-tab-btn ${mitgliedschaftSubTab === "finanzen" ? "active" : ""}`} onClick={() => setMitgliedschaftSubTab("finanzen")}>💰 Finanzen</button>
-            </div>
           )}
 
           {activeTab === "mitgliedschaft" && mitgliedschaftSubTab === "vertrag" && (
@@ -5133,7 +5120,45 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                           const s = (vb.datum || '').substring(0, 7); // "YYYY-MM"
                           return !_echteMonateSet.has(s);
                         });
-                        const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege];
+
+                        // Ratenplan-Aufschläge als generierte Beiträge hinzufügen
+                        const ratenplanBeitraege = [];
+                        if (aktiverRatenplan && parseFloat(aktiverRatenplan.monatlicher_aufschlag) > 0) {
+                          const aufschlag = parseFloat(aktiverRatenplan.monatlicher_aufschlag);
+                          let bereitsAbgezahlt = parseFloat(aktiverRatenplan.bereits_abgezahlt || 0);
+                          const ausstehend = parseFloat(aktiverRatenplan.ausstehender_betrag || 0);
+                          const erstelltAm = new Date(aktiverRatenplan.erstellt_am || new Date());
+                          const heute = new Date();
+                          // Generiere ab Monat der Ratenplan-Erstellung bis Vollzahlung
+                          let cursor = new Date(erstelltAm.getFullYear(), erstelltAm.getMonth(), 1);
+                          const maxMonate = Math.ceil(ausstehend / aufschlag) + 1;
+                          let monatIdx = 0;
+                          while (bereitsAbgezahlt < ausstehend && monatIdx <= maxMonate) {
+                            const restBetrag = ausstehend - bereitsAbgezahlt;
+                            const dieserAufschlag = Math.min(aufschlag, restBetrag);
+                            const year = cursor.getFullYear();
+                            const month = String(cursor.getMonth() + 1).padStart(2, '0');
+                            const datumStr = `${year}-${month}-01`;
+                            const istBezahlt = cursor < erstelltAm ||
+                              (cursor.getFullYear() < heute.getFullYear()) ||
+                              (cursor.getFullYear() === heute.getFullYear() && cursor.getMonth() < heute.getMonth() && bereitsAbgezahlt >= dieserAufschlag);
+                            ratenplanBeitraege.push({
+                              beitrag_id: `ratenplan_${aktiverRatenplan.id}_${monatIdx}`,
+                              betrag: dieserAufschlag.toFixed(2),
+                              zahlungsdatum: datumStr,
+                              datum: datumStr,
+                              zahlungsart: 'Ratenplan-Aufschlag',
+                              bezahlt: 0,
+                              generiert: true,
+                              istRatenplan: true,
+                            });
+                            bereitsAbgezahlt += dieserAufschlag;
+                            cursor.setMonth(cursor.getMonth() + 1);
+                            monatIdx++;
+                          }
+                        }
+
+                        const alleBeitraege = [...finanzDaten, ...zukuenftigeBeitraege, ...ratenplanBeitraege];
 
                         // Sortiere nach Datum (neueste zuerst)
                         alleBeitraege.sort((a, b) => {
@@ -5148,6 +5173,36 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                         
                         return (
                           <div className="btr-wrap">
+                            {/* ── Ratenplan-Banner ── */}
+                            {aktiverRatenplan && (
+                              <div style={{
+                                background: 'rgba(234,179,8,0.1)',
+                                border: '1px solid rgba(234,179,8,0.3)',
+                                borderRadius: 8,
+                                padding: '0.6rem 1rem',
+                                marginBottom: '0.75rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                flexWrap: 'wrap',
+                                fontSize: '0.82rem'
+                              }}>
+                                <span style={{ fontWeight: 700, color: '#eab308' }}>📋 Aktiver Ratenplan</span>
+                                <span style={{ color: 'rgba(255,255,255,0.7)' }}>
+                                  +{parseFloat(aktiverRatenplan.monatlicher_aufschlag).toFixed(2)} €/Monat
+                                </span>
+                                <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                                  {(parseFloat(aktiverRatenplan.ausstehender_betrag) - parseFloat(aktiverRatenplan.bereits_abgezahlt)).toFixed(2)} € noch offen
+                                  {' / '}
+                                  {parseFloat(aktiverRatenplan.ausstehender_betrag).toFixed(2)} € gesamt
+                                </span>
+                                {parseFloat(aktiverRatenplan.bereits_abgezahlt) > 0 && (
+                                  <span style={{ color: '#4ade80' }}>
+                                    ✓ {parseFloat(aktiverRatenplan.bereits_abgezahlt).toFixed(2)} € abgezahlt
+                                  </span>
+                                )}
+                              </div>
+                            )}
                             {/* ── Stats ── */}
                             {alleBeitraege.length > 0 && (() => {
                               const _btrHeute = new Date(); _btrHeute.setHours(23, 59, 59, 999);
@@ -5259,7 +5314,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                             const isFutureBtr = !bezahlt && btrD > _btrN;
                                             return (
                                               <React.Fragment key={beitrag.beitrag_id}>
-                                                <div className={`btr-entry${beitrag.generiert ? ' btr-entry--forecast' : ''}`}>
+                                                <div className={`btr-entry${beitrag.generiert ? ' btr-entry--forecast' : ''}${beitrag.istRatenplan ? ' btr-entry--ratenplan' : ''}`}
+                                                  style={beitrag.istRatenplan ? { opacity: 0.85, borderLeft: '2px solid rgba(234,179,8,0.4)' } : {}}>
                                                   <div className={`btr-dot${bezahlt ? ' btr-dot--paid' : isFutureBtr ? ' btr-dot--future' : ' btr-dot--open'}`} />
                                                   {!beitrag.generiert ? (
                                                     <button
@@ -5268,13 +5324,17 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                                       title="Details"
                                                     >›</button>
                                                   ) : (
-                                                    <div className="btr-forecast-icon" title="Prognostiziert">🔮</div>
+                                                    <div className="btr-forecast-icon" title={beitrag.istRatenplan ? 'Ratenplan-Aufschlag' : 'Prognostiziert'}>
+                                                      {beitrag.istRatenplan ? '📋' : '🔮'}
+                                                    </div>
                                                   )}
                                                   <div className="btr-entry-date">
                                                     {new Date(beitrag.datum || beitrag.zahlungsdatum).toLocaleDateString('de-DE')}
                                                   </div>
                                                   <div className="btr-entry-method">
-                                                    {beitrag.zahlungsart || '—'}
+                                                    {beitrag.istRatenplan
+                                                      ? <span style={{ color: '#eab308', fontSize: '0.78rem' }}>Ratenplan +{parseFloat(beitrag.betrag).toFixed(2)} €</span>
+                                                      : beitrag.zahlungsart || '—'}
                                                     {beitrag.anteilig && <div className="btr-anteilig">anteilig</div>}
                                                   </div>
                                                   <div className={`btr-entry-amount${bezahlt ? '' : ' btr-amount--open'}`}>
@@ -5288,7 +5348,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                                                       ℹ️ {beitrag.magicline_description}
                                                     </div>
                                                   )}
-                                                  {isAdmin && (
+                                                  {isAdmin && !beitrag.istRatenplan && (
                                                     <button
                                                       className={`btr-action-btn${bezahlt ? ' btr-action--unpay' : ' btr-action--pay'}`}
                                                       onClick={async () => {
@@ -5928,213 +5988,151 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
           )}
 
           {activeTab === "gurt_stil" && (
-            <MemberAdditionalDataTab
-              mitgliedId={id}
-              dojoId={mitglied?.dojo_id}
-              editMode={editMode}
-            />
-          )}
-
-
-                    {activeTab === "gurt_stil" && (
             <div className="style-management-container">
 
-              {/* OBERE ZEILE: Stile/Prüfung + Stil wählen/Hinzufügen */}
-              <div className="mds-gurt-top-row">
-                <div className="sub-tabs-sidebar-style">
-
-                  {/* Stile-Button: zeigt aktiven Stil + Dropdown */}
-                  <div className="mds-stil-dropdown-wrapper">
-                    <button
-                      className={`tab-vertical-btn ${styleSubTab === "stile" ? "active" : ""}`}
-                      onClick={() => {
-                        setStyleSubTab("stile");
-                        if (memberStile.length > 1) setStilDropdownOpen(o => !o);
-                      }}
-                    >
-                      <span className="tab-icon">🥋</span>
-                      <span className="tab-label">
-                        {styleSubTab === "stile" && memberStile[activeStyleTab]
-                          ? memberStile[activeStyleTab].stil_name
-                          : "Stile"}
-                      </span>
-                      {memberStile.length > 1 && (
-                        <span className="mds-stil-dropdown-chevron">▾</span>
-                      )}
-                    </button>
-
-                    {stilDropdownOpen && memberStile.length > 1 && (
-                      <>
-                        <div
-                          className="mds-stil-dropdown-backdrop"
-                          onClick={() => setStilDropdownOpen(false)}
-                        />
-                        <div className="mds-stil-dropdown-menu">
-                          {memberStile.map((ms, index) => (
-                            <button
-                              key={ms.stil_id}
-                              className={`mds-stil-dropdown-item${activeStyleTab === index ? ' active' : ''}`}
-                              onClick={() => {
-                                setActiveStyleTab(index);
-                                setStilDropdownOpen(false);
-                              }}
-                            >
-                              <span>{ms.ist_hauptstil ? '⭐' : '🥋'}</span>
-                              <span>{ms.stil_name}</span>
-                              {activeStyleTab === index && <span className="mds-stil-dropdown-check">✓</span>}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <button
-                    className={`tab-vertical-btn ${styleSubTab === "pruefung" ? "active" : ""}`}
-                    onClick={() => { setStyleSubTab("pruefung"); setStilDropdownOpen(false); }}
-                  >
-                    <span className="tab-icon">📝</span>
-                    <span className="tab-label">Prüfung</span>
-                  </button>
-                </div>
-
-                {isAdmin && (
-                  <div className="mds-stil-add-controls">
-                    <select
-                      value={selectedStilId}
-                      onChange={(e) => handleStyleChange(e.target.value)}
-                      disabled={!editMode}
-                      className="mds-stil-select"
-                    >
-                      <option value="" className="mds2-dark-input">➕ Stil wählen...</option>
-                      {stile
-                        .filter(s => s.aktiv === 1 || s.aktiv === true)
-                        .filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id))
-                        .map(stil => (
-                          <option key={stil.stil_id} value={stil.stil_id} className="mds2-dark-input">
-                            {stil.stil_name || stil.name}
-                          </option>
-                        ))}
-                    </select>
-                    <button
-                      onClick={handleAddStyle}
-                      disabled={!selectedStilId || !editMode}
-                      className={(selectedStilId && editMode) ? 'mds-stil-add-btn-active' : 'mds-stil-add-btn-inactive'}
-                    >
-                      Hinzufügen
-                    </button>
-                  </div>
-                )}
+              {/* Drei Haupt-Tabs */}
+              <div className="gurt-haupttab-bar">
+                <button
+                  className={`gurt-haupttab${gurtStilHauptTab === 'stile' ? ' gurt-haupttab--active' : ''}`}
+                  onClick={() => setGurtStilHauptTab('stile')}
+                >
+                  🥋 Stile
+                </button>
+                <button
+                  className={`gurt-haupttab${gurtStilHauptTab === 'lehrgaenge' ? ' gurt-haupttab--active' : ''}`}
+                  onClick={() => setGurtStilHauptTab('lehrgaenge')}
+                >
+                  📚 Lehrgänge
+                </button>
+                <button
+                  className={`gurt-haupttab${gurtStilHauptTab === 'ehrungen' ? ' gurt-haupttab--active' : ''}`}
+                  onClick={() => setGurtStilHauptTab('ehrungen')}
+                >
+                  🏆 Ehrungen
+                </button>
               </div>
 
-              {/* TRENNSTRICH */}
-              <hr className="mds-gurt-divider" />
+              {/* ── TAB: STILE ── */}
+              {gurtStilHauptTab === 'stile' && (
+                <div className="stile-haupt-content">
 
-              {styleSubTab === "stile" && (
-                <div className="stile-sub-tab-content">
+                  {/* Admin: Stil hinzufügen */}
+                  {isAdmin && editMode && (
+                    <div className="mds-stil-add-controls" style={{marginBottom:'1rem'}}>
+                      <select
+                        value={selectedStilId}
+                        onChange={(e) => setSelectedStilId(e.target.value)}
+                        className="mds2-dark-input"
+                      >
+                        <option value="">➕ Stil wählen...</option>
+                        {stile
+                          .filter(s => s.aktiv === 1 || s.aktiv === true)
+                          .filter(s => !memberStile.find(ms => ms.stil_id === s.stil_id))
+                          .map(stil => (
+                            <option key={stil.stil_id} value={stil.stil_id}>
+                              {stil.stil_name || stil.name}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={handleAddStyle}
+                        disabled={!selectedStilId}
+                        className={selectedStilId ? 'mds-stil-add-btn-active' : 'mds-stil-add-btn-inactive'}
+                      >
+                        Hinzufügen
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Grid Container für die Stil-Karten */}
                   {memberStile.length > 0 ? (
-                    (() => {
-                      const memberStil = memberStile[activeStyleTab];
-                      if (!memberStil) return null;
+                    <div className="stile-side-by-side">
+                      {memberStile.map((ms) => {
+                        const stilData = stile.find(s => s.stil_id === ms.stil_id);
+                        const ssd = styleSpecificData[ms.stil_id] || {};
+                        const ta = trainingAnalysis[ms.stil_id];
+                        const currentGrad = stilData?.graduierungen?.find(g => g.graduierung_id === ssd.current_graduierung_id);
+                        const stilLastExam = ssd.letzte_pruefung || ta?.last_exam_date;
+                        const isCollapsed = gradListCollapsedPerStil[ms.stil_id] !== false;
+                        const grads = stilData?.graduierungen || [];
+                        const historie = ta?.pruefungs_historie || [];
+                        const hatLetzteP = !!stilLastExam;
 
-                      const fullStilData = stile.find(s => s.stil_id === memberStil.stil_id);
-                      const isActiveStyle = true;
+                        return (
+                          <div key={ms.stil_id} className="stil-card-col">
 
-                      // DEBUG LOGS
-                      console.log('🔍 RENDER DEBUG:');
-                      console.log('  - selectedStil:', selectedStil?.name || 'NULL');
-                      console.log('  - selectedStil.graduierungen:', selectedStil?.graduierungen?.length || 0);
-                      console.log('  - currentGraduation:', currentGraduation?.name || 'NULL');
-                      console.log('  - editMode:', editMode);
-                      console.log('  - isAdmin:', isAdmin);
-                      console.log('  - fullStilData:', fullStilData?.name || 'NULL');
-
-                      return (
-                        <div key={memberStil.stil_id}>
-                          {/* Stil-Überschrift mit Badge */}
-                          <div className="mds-stil-header">
-                            <h2 className="mds-stil-title">
-                              {memberStil.ist_hauptstil && <span title="Hauptstil" style={{marginRight:'6px',fontSize:'16px'}}>⭐</span>}
-                              {memberStil.stil_name}
-                              {memberStil.ist_hauptstil && <span style={{marginLeft:'8px',fontSize:'11px',background:'#c8a84b',color:'#fff',borderRadius:'4px',padding:'2px 7px',fontWeight:600,verticalAlign:'middle'}}>Hauptstil</span>}
-                            </h2>
-                            <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                              {isAdmin && !memberStil.ist_hauptstil && memberStile.length > 1 && (
-                                <button
-                                  onClick={async () => {
-                                    try {
-                                      await axios.post(`/mitglieder/${id}/stile/hauptstil`, { stil: memberStil.stil_enum || memberStil.stil_name });
-                                      setMemberStile(prev => prev.map(s => ({ ...s, ist_hauptstil: s.stil_id === memberStil.stil_id })));
-                                    } catch (e) {
-                                      console.error('Hauptstil setzen fehlgeschlagen', e);
-                                    }
-                                  }}
-                                  style={{fontSize:'12px',padding:'4px 10px',border:'1px solid #c8a84b',borderRadius:'5px',background:'transparent',color:'#c8a84b',cursor:'pointer',fontWeight:500}}
-                                >
-                                  ⭐ Als Hauptstil setzen
-                                </button>
-                              )}
-                              {editMode && (
-                                <button
-                                  onClick={() => handleRemoveStyle(memberStil.stil_id)}
-                                  className="mds-stil-remove-btn"
-                                >
-                                  🗑️ Stil entfernen
-                                </button>
-                              )}
+                            {/* Stil-Überschrift */}
+                            <div className="mds-stil-header">
+                              <h2 className="mds-stil-title">
+                                {ms.ist_hauptstil && <span title="Hauptstil" style={{marginRight:'6px',fontSize:'16px'}}>⭐</span>}
+                                {ms.stil_name}
+                                {ms.ist_hauptstil && <span style={{marginLeft:'8px',fontSize:'11px',background:'#c8a84b',color:'#fff',borderRadius:'4px',padding:'2px 7px',fontWeight:600,verticalAlign:'middle'}}>Hauptstil</span>}
+                              </h2>
+                              <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
+                                {isAdmin && !ms.ist_hauptstil && memberStile.length > 1 && (
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await axios.post(`/mitglieder/${id}/stile/hauptstil`, { stil: ms.stil_enum || ms.stil_name });
+                                        setMemberStile(prev => prev.map(s => ({ ...s, ist_hauptstil: s.stil_id === ms.stil_id })));
+                                      } catch (e) { console.error('Hauptstil setzen fehlgeschlagen', e); }
+                                    }}
+                                    style={{fontSize:'12px',padding:'4px 10px',border:'1px solid #c8a84b',borderRadius:'5px',background:'transparent',color:'#c8a84b',cursor:'pointer',fontWeight:500}}
+                                  >
+                                    ⭐ Als Hauptstil setzen
+                                  </button>
+                                )}
+                                {editMode && isAdmin && !ms.ist_hauptstil && memberStile.length > 1 && (
+                                  <button onClick={() => handleRemoveStyle(ms.stil_id)} className="mds-stil-remove-btn">
+                                    🗑️ Stil entfernen
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                          </div>
 
-                          {/* ── 2 Karten: Graduierung + Beschreibung ── */}
-                          <div className="grt-top-grid">
-
-                            {/* Karte 1: Aktuelle Graduierung */}
+                            {/* Karte: Aktuelle Graduierung */}
                             <div className="grt-card">
                               <h3 className="grt-card-title">Aktuelle Graduierung</h3>
-
                               <div className="grt-belt-row">
                                 <BeltPreview
-                                  primaer={(isActiveStyle && currentGraduation?.farbe_hex) || '#666'}
-                                  sekundaer={isActiveStyle && currentGraduation?.farbe_sekundaer}
+                                  primaer={currentGrad?.farbe_hex || '#666'}
+                                  sekundaer={currentGrad?.farbe_sekundaer}
                                   size="normal"
                                 />
                                 <span className="grt-belt-name">
-                                  {(isActiveStyle && currentGraduation?.name) || "Keine Graduierung"}
+                                  {currentGrad?.name || "Keine Graduierung"}
                                 </span>
                               </div>
 
-                              {isActiveStyle && isAdmin && (
+                              {isAdmin && (
                                 <div className="grt-grad-btns">
                                   <button
                                     className="grt-grad-btn"
-                                    onClick={() => handleGraduationArrowChange(currentGraduation?.graduierung_id, 'up')}
-                                    disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === 0}
+                                    onClick={() => handleGraduationArrowChange(currentGrad?.graduierung_id, 'up', stilData)}
+                                    disabled={!currentGrad || grads.findIndex(g => g.graduierung_id === currentGrad.graduierung_id) === 0}
                                   >
                                     ⬇ Niedriger
                                   </button>
                                   <button
                                     className="grt-grad-btn grt-grad-btn--up"
-                                    onClick={() => handleGraduationArrowChange(currentGraduation?.graduierung_id, 'down')}
-                                    disabled={!currentGraduation || !selectedStil.graduierungen || selectedStil.graduierungen.findIndex(g => g.graduierung_id === currentGraduation.graduierung_id) === selectedStil.graduierungen.length - 1}
+                                    onClick={() => handleGraduationArrowChange(currentGrad?.graduierung_id, 'down', stilData)}
+                                    disabled={!currentGrad || grads.findIndex(g => g.graduierung_id === currentGrad.graduierung_id) === grads.length - 1}
                                   >
                                     ⬆ Höher
                                   </button>
                                 </div>
                               )}
 
-                              {isActiveStyle && currentGraduation && (
+                              {currentGrad && (
                                 <div className="grt-kv-grid">
                                   <span className="grt-kv-label">Min. Stunden</span>
-                                  <span className="grt-kv-value">{currentGraduation.trainingsstunden_min || 0} h</span>
+                                  <span className="grt-kv-value">{currentGrad.trainingsstunden_min || 0} h</span>
                                   <span className="grt-kv-label">Mindestzeit</span>
-                                  <span className="grt-kv-value">{currentGraduation.mindestzeit_monate || 0} Monate</span>
-                                  {currentGraduation.kategorie && (
+                                  <span className="grt-kv-value">{currentGrad.mindestzeit_monate || 0} Monate</span>
+                                  {currentGrad.kategorie && (
                                     <>
                                       <span className="grt-kv-label">Kategorie</span>
                                       <span className="grt-kv-value">
-                                        <span className="grt-kategorie-badge">{currentGraduation.kategorie}</span>
+                                        <span className="grt-kategorie-badge">{currentGrad.kategorie}</span>
                                       </span>
                                     </>
                                   )}
@@ -6143,97 +6141,180 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
 
                               <div className="grt-kv-grid grt-kv-grid--mt">
                                 <span className="grt-kv-label">Letzte Prüfung</span>
-                                {editMode && isActiveStyle ? (
+                                {editMode && isAdmin ? (
                                   <input
                                     type="date"
                                     className="grt-date-input"
-                                    value={lastExamDate}
-                                    onChange={(e) => setLastExamDate(e.target.value)}
+                                    value={stilLastExam ? String(stilLastExam).split('T')[0] : ''}
+                                    onChange={(e) => handleExamDateChange(ms.stil_id, 'letzte_pruefung', e.target.value)}
                                   />
                                 ) : (
                                   <span className="grt-kv-value">
-                                    {lastExamDate
-                                      ? new Date(lastExamDate).toLocaleDateString('de-DE')
+                                    {stilLastExam
+                                      ? new Date(stilLastExam).toLocaleDateString('de-DE')
                                       : <span className="grt-kv-empty">Keine Prüfung dokumentiert</span>}
                                   </span>
                                 )}
+                                <span className="grt-kv-label">Gürtellänge</span>
+                                {editMode && isAdmin ? (
+                                  <select
+                                    className="grt-date-input"
+                                    value={ssd.guertellaenge_cm || ''}
+                                    onChange={async (e) => {
+                                      const laenge = e.target.value ? parseInt(e.target.value, 10) : null;
+                                      try {
+                                        await axios.put(`/mitglieder/${id}/stil/${ms.stil_id}/guertellaenge`, { guertellaenge_cm: laenge });
+                                        setStyleSpecificData(prev => ({ ...prev, [ms.stil_id]: { ...prev[ms.stil_id], guertellaenge_cm: laenge } }));
+                                      } catch (err) { console.error('Gürtellänge speichern:', err); }
+                                    }}
+                                  >
+                                    <option value="">— nicht gesetzt —</option>
+                                    {[220,240,260,280,300,320,340].map(l => (
+                                      <option key={l} value={l}>{l} cm</option>
+                                    ))}
+                                  </select>
+                                ) : (
+                                  <span className="grt-kv-value">
+                                    {ssd.guertellaenge_cm
+                                      ? `${ssd.guertellaenge_cm} cm`
+                                      : <span className="grt-kv-empty">Nicht erfasst</span>}
+                                  </span>
+                                )}
                               </div>
+
+                              {/* Gürtellängen-Rechner */}
+                              <GuertelRechner
+                                compact={true}
+                                onApply={isAdmin ? async (laenge) => {
+                                  try {
+                                    await axios.put(`/mitglieder/${id}/stil/${ms.stil_id}/guertellaenge`, { guertellaenge_cm: laenge });
+                                    setStyleSpecificData(prev => ({ ...prev, [ms.stil_id]: { ...prev[ms.stil_id], guertellaenge_cm: laenge } }));
+                                  } catch (err) { console.error('Gürtellänge speichern:', err); }
+                                } : undefined}
+                              />
                             </div>
 
-                            {/* Karte 2: Beschreibung */}
-                            <div className="grt-card">
-                              <h3 className="grt-card-title">Über diesen Stil</h3>
-                              <p className="grt-desc-text">
-                                {memberStil.beschreibung || fullStilData?.beschreibung || "Keine Beschreibung verfügbar"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* ── Karte 3: Alle Graduierungen (einklappbar) ── */}
-                          <div className="grt-card grt-card--full grt-card--mt">
-                            <div
-                              className="grt-collapse-header"
-                              onClick={() => setGraduationListCollapsed(!graduationListCollapsed)}
-                            >
-                              <h3 className="grt-card-title grt-card-title--inline">📊 Alle Graduierungen — {memberStil.stil_name}</h3>
-                              <span className={`grt-collapse-icon${graduationListCollapsed ? '' : ' grt-collapse-icon--open'}`}>▼</span>
-                            </div>
-
-                            {!graduationListCollapsed && (
-                              <div className="grt-grad-list">
-                                {fullStilData && fullStilData.graduierungen && fullStilData.graduierungen.length > 0 ? (
-                                  fullStilData.graduierungen
-                                    .sort((a, b) => a.reihenfolge - b.reihenfolge)
-                                    .map((graduation, index) => {
-                                      const isCurrent = isActiveStyle && currentGraduation?.graduierung_id === graduation.graduierung_id;
+                            {/* Karte: Alle Graduierungen (einklappbar) */}
+                            <div className="grt-card grt-card--full grt-card--mt">
+                              <div
+                                className="grt-collapse-header"
+                                onClick={() => setGradListCollapsedPerStil(prev => ({...prev, [ms.stil_id]: !isCollapsed}))}
+                              >
+                                <h3 className="grt-card-title grt-card-title--inline">📊 Alle Graduierungen — {ms.stil_name}</h3>
+                                <span className={`grt-collapse-icon${isCollapsed ? '' : ' grt-collapse-icon--open'}`}>▼</span>
+                              </div>
+                              {!isCollapsed && (
+                                <div className="grt-grad-list">
+                                  {grads.length > 0 ? (
+                                    [...grads].sort((a, b) => a.reihenfolge - b.reihenfolge).map((grad, idx) => {
+                                      const isCurrent = currentGrad?.graduierung_id === grad.graduierung_id;
                                       return (
-                                        <div key={graduation.graduierung_id} className={`grt-grad-row${isCurrent ? ' grt-grad-row--current' : ''}`}>
+                                        <div key={grad.graduierung_id} className={`grt-grad-row${isCurrent ? ' grt-grad-row--current' : ''}`}>
                                           <BeltPreview
-                                            primaer={graduation.farbe_hex}
-                                            sekundaer={graduation.farbe_sekundaer}
+                                            primaer={grad.farbe_hex}
+                                            sekundaer={grad.farbe_sekundaer}
                                             size="small"
                                           />
                                           <div className="grt-grad-row-info">
                                             <div className="grt-grad-row-name">
-                                              {graduation.name}
+                                              {grad.name}
                                               {isCurrent && <span className="grt-aktuell-badge">⭐ Aktuell</span>}
                                             </div>
                                             <div className="grt-grad-row-sub">
-                                              {graduation.reihenfolge || index + 1}. Kyu · {graduation.trainingsstunden_min}h · {graduation.mindestzeit_monate} Monate
+                                              {grad.reihenfolge || idx + 1}. Kyu · {grad.trainingsstunden_min}h · {grad.mindestzeit_monate} Monate
                                             </div>
                                           </div>
                                         </div>
                                       );
                                     })
+                                  ) : (
+                                    <p className="grt-empty-text">Keine Graduierungen verfügbar</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Karte: Prüfungshistorie */}
+                            {(historie.length > 0 || hatLetzteP) && (
+                              <div className="grt-card grt-card--full grt-card--mt">
+                                <h3 className="grt-card-title">📋 Prüfungshistorie</h3>
+                                {historie.length === 0 ? (
+                                  <p style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.3)',fontStyle:'italic',margin:'0.5rem 0 0 0'}}>
+                                    Prüfungsprotokoll wird vorbereitet…
+                                  </p>
                                 ) : (
-                                  <p className="grt-empty-text">Keine Graduierungen verfügbar</p>
+                                  <div style={{display:'flex',flexDirection:'column',gap:'0.5rem',marginTop:'0.5rem'}}>
+                                    {historie.map((p, pidx) => {
+                                      const hatProtokoll = !!(p.gesamtkommentar || p.staerken || p.verbesserungen || p.empfehlungen);
+                                      const bestandenColor = p.bestanden ? '#4ade80' : p.status === 'durchgefuehrt' ? '#fbbf24' : '#f87171';
+                                      const bestandenText = p.bestanden ? 'Bestanden' : p.status === 'durchgefuehrt' ? 'Durchgeführt' : 'Nicht bestanden';
+                                      const datum = p.pruefungsdatum ? new Date(p.pruefungsdatum).toLocaleDateString('de-DE') : '—';
+                                      return (
+                                        <div key={pidx} style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',padding:'0.6rem 0.85rem'}}>
+                                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'0.35rem'}}>
+                                            <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                                              <span style={{fontSize:'0.7rem',fontWeight:700,padding:'2px 7px',borderRadius:'4px',background:`${bestandenColor}20`,color:bestandenColor,border:`1px solid ${bestandenColor}44`}}>{bestandenText}</span>
+                                              <span style={{fontSize:'0.82rem',fontWeight:600,color:'var(--text-primary,#fff)'}}>{datum}</span>
+                                            </div>
+                                            <div style={{fontSize:'0.75rem',color:'var(--text-secondary,#888)'}}>
+                                              {p.graduierung_vorher} → {p.graduierung_nachher}
+                                              {p.punktzahl ? ` · ${p.punktzahl}/${p.max_punktzahl} Pkt.` : ''}
+                                            </div>
+                                          </div>
+                                          {hatProtokoll ? (
+                                            <div style={{marginTop:'0.5rem',padding:'0.4rem 0.6rem',background:'rgba(99,102,241,0.07)',borderRadius:'5px',borderLeft:'2px solid rgba(99,102,241,0.4)'}}>
+                                              {p.gesamtkommentar && <p style={{fontSize:'0.78rem',color:'var(--text-secondary,#ccc)',margin:'0 0 0.25rem 0'}}>{p.gesamtkommentar}</p>}
+                                              {p.staerken && <p style={{fontSize:'0.72rem',color:'#4ade80',margin:'0 0 0.15rem 0'}}><strong>Stärken:</strong> {p.staerken}</p>}
+                                              {p.verbesserungen && <p style={{fontSize:'0.72rem',color:'#fbbf24',margin:'0 0 0.15rem 0'}}><strong>Verbesserung:</strong> {p.verbesserungen}</p>}
+                                              {p.empfehlungen && <p style={{fontSize:'0.72rem',color:'#a5b4fc',margin:'0'}}><strong>Empfehlungen:</strong> {p.empfehlungen}</p>}
+                                            </div>
+                                          ) : (
+                                            <p style={{fontSize:'0.72rem',color:'rgba(255,255,255,0.2)',margin:'0.25rem 0 0 0',fontStyle:'italic'}}>
+                                              {p.prueferkommentar || 'Prüfungsprotokoll wird vorbereitet…'}
+                                            </p>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
                                 )}
                               </div>
                             )}
+
                           </div>
-                        </div>
-                      );
-                    })()
+                        );
+                      })}
+                    </div>
                   ) : (
                     <div className="grt-card">
                       <h3 className="grt-card-title">Stil-Verwaltung</h3>
                       <p className="grt-empty-text">Keine Stile zugeordnet</p>
-                      <p className="grt-empty-hint">Verwenden Sie das Auswahlfeld oben, um einen Stil hinzuzufügen.</p>
+                      <p className="grt-empty-hint">Stil oben auswählen und hinzufügen.</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {styleSubTab === "pruefung" && (
-                <div className="pruefung-sub-tab-content">
-                  {/* Neue Prüfungsstatus-Komponente */}
-                  <PruefungsStatus
-                    mitgliedId={id}
-                    readOnly={!isAdmin}
-                    mitglied={mitglied}
-                  />
-                </div>
+              {/* ── TAB: LEHRGÄNGE ── */}
+              {gurtStilHauptTab === 'lehrgaenge' && (
+                <MemberAdditionalDataTab
+                  mitgliedId={id}
+                  dojoId={mitglied?.dojo_id}
+                  editMode={editMode}
+                  filterArts={['Lehrgang', 'Seminar']}
+                />
               )}
+
+              {/* ── TAB: EHRUNGEN ── */}
+              {gurtStilHauptTab === 'ehrungen' && (
+                <MemberAdditionalDataTab
+                  mitgliedId={id}
+                  dojoId={mitglied?.dojo_id}
+                  editMode={editMode}
+                  filterArts={['Ehrung']}
+                />
+              )}
+
             </div>
           )}
 

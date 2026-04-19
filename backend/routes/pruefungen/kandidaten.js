@@ -8,6 +8,7 @@ const db = require('../../db');
 const router = express.Router();
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
 const { sendPushToMitglied } = require('../../utils/pushNotification');
+const { sendEmailForDojo } = require('../../services/emailService');
 
 // GET /kandidaten - Ermittelt alle Prüfungskandidaten (mit Tenant-Isolation)
 router.get('/', (req, res) => {
@@ -50,6 +51,7 @@ router.get('/', (req, res) => {
       s.stil_id, s.name as stil_name, msd.current_graduierung_id,
       g_current.name as aktuelle_graduierung, g_current.farbe_hex as aktuelle_farbe, g_current.reihenfolge as aktuelle_reihenfolge,
       g_next.graduierung_id as naechste_graduierung_id, g_next.name as naechste_graduierung, g_next.farbe_hex as naechste_farbe,
+      g_next.reihenfolge as naechste_reihenfolge,
       g_next.trainingsstunden_min as benoetigte_stunden, g_next.mindestzeit_monate as benoetigte_monate,
       msd.letzte_pruefung,
       COALESCE((SELECT COUNT(*) FROM anwesenheit a WHERE a.mitglied_id = m.mitglied_id AND a.anwesend = 1 AND (msd.letzte_pruefung IS NULL OR a.datum > msd.letzte_pruefung)), 0) as absolvierte_stunden,
@@ -128,11 +130,53 @@ router.post('/extern', (req, res) => {
   });
 });
 
+// Hilfsfunktion: Erstellt automatisch eine Rechnung für eine Prüfungsgebühr
+async function createPruefungsRechnung(mitglied_id, pruefungsgebuehr, pruefungsdatum, stilName, dojoId) {
+  const pool = db.promise();
+  const heute = new Date();
+  const datumPrefix = `${heute.getFullYear()}${String(heute.getMonth() + 1).padStart(2, '0')}`;
+  const jahr = heute.getFullYear();
+
+  const [[{ count }]] = await pool.query(
+    `SELECT COUNT(*) AS count FROM rechnungen r JOIN mitglieder m ON r.mitglied_id = m.mitglied_id WHERE YEAR(r.datum) = ? AND m.dojo_id = ?`,
+    [jahr, dojoId]
+  );
+  const laufnummer = 1000 + count;
+  const rechnungsnummer = `${datumPrefix}-${laufnummer}`;
+
+  const betrag = parseFloat(pruefungsgebuehr);
+  const faellig = new Date(pruefungsdatum || heute);
+  const fDate = faellig.toISOString().split('T')[0];
+  const beschreibung = `Prüfungsgebühr${stilName ? ' – ' + stilName : ''}`;
+
+  const [result] = await pool.query(
+    `INSERT INTO rechnungen (rechnungsnummer, mitglied_id, datum, faelligkeitsdatum, betrag, netto_betrag, brutto_betrag, mwst_satz, mwst_betrag, art, beschreibung, status, dojo_id)
+     VALUES (?, ?, CURDATE(), ?, ?, ?, ?, 0, 0, 'pruefungsgebuehr', ?, 'offen', ?)`,
+    [rechnungsnummer, mitglied_id, fDate, betrag, betrag, betrag, beschreibung, dojoId]
+  );
+  const rechnungId = result.insertId;
+
+  await pool.query(
+    `INSERT INTO rechnungspositionen (rechnung_id, position_nr, bezeichnung, menge, einzelpreis, gesamtpreis, mwst_satz)
+     VALUES (?, 1, ?, 1, ?, ?, 0)`,
+    [rechnungId, beschreibung, betrag, betrag]
+  );
+
+  // Beitrag für Lastschriftlauf anlegen — verknüpft mit Rechnung (art + rechnung_id)
+  await pool.query(
+    `INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description, art, rechnung_id)
+     VALUES (?, ?, ?, 'Lastschrift', 0, ?, ?, 'pruefungsgebuehr', ?)`,
+    [mitglied_id, betrag, fDate, dojoId, beschreibung, rechnungId]
+  );
+
+  return rechnungId;
+}
+
 // POST /kandidaten/:mitglied_id/zulassen - Mitglied für Prüfung zulassen
 router.post('/:mitglied_id/zulassen', (req, res) => {
   const mitglied_id = parseInt(req.params.mitglied_id);
   const secureDojoId = getSecureDojoId(req);
-  const { stil_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, pruefungszeit = '10:00', zahlungsart } = req.body;
+  const { stil_id, graduierung_nachher_id, pruefungsdatum, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, pruefungszeit = '10:00', zahlungsart, gebuehr_auto_verrechnen } = req.body;
 
   // Dojo-ID immer aus Token erzwingen
   const dojo_id = secureDojoId || parseInt(req.body.dojo_id);
@@ -145,7 +189,7 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
     if (dojoErr) return res.status(500).json({ error: 'Fehler beim Prüfen des Dojos', details: dojoErr.message });
     if (dojoResults.length === 0) return res.status(400).json({ error: `Dojo mit ID ${dojo_id} existiert nicht` });
 
-    db.query('SELECT current_graduierung_id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?', [mitglied_id, stil_id], (gradErr, gradResults) => {
+    db.query('SELECT current_graduierung_id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?', [mitglied_id, stil_id], async (gradErr, gradResults) => {
       if (gradErr) return res.status(500).json({ error: 'Fehler beim Abrufen der aktuellen Graduierung', details: gradErr.message });
 
       const graduierung_vorher_id = gradResults.length > 0 ? gradResults[0].current_graduierung_id : null;
@@ -153,15 +197,68 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
       defaultDate.setDate(defaultDate.getDate() + 30);
       const finalPruefungsdatum = pruefungsdatum || defaultDate.toISOString().split('T')[0];
 
+      // Effektives auto_verrechnen: expliziter Wert aus Body hat Vorrang, sonst NULL (Termin-Einstellung)
+      const autoVerrechnenValue = (gebuehr_auto_verrechnen === true || gebuehr_auto_verrechnen === 1) ? 1
+                                : (gebuehr_auto_verrechnen === false || gebuehr_auto_verrechnen === 0) ? 0
+                                : null;
+
+      // Automatische Gebührenberechnung: 35 € pro Graduierungsschritt
+      const GEBUEHR_PRO_STUFE = 35;
+      let finaleGebuehr = pruefungsgebuehr ? parseFloat(pruefungsgebuehr) : null;
+      if (!finaleGebuehr && graduierung_vorher_id && graduierung_nachher_id) {
+        try {
+          const pool = db.promise();
+          const [[vorher]] = await pool.query('SELECT reihenfolge FROM graduierungen WHERE graduierung_id = ?', [graduierung_vorher_id]);
+          const [[nachher]] = await pool.query('SELECT reihenfolge FROM graduierungen WHERE graduierung_id = ?', [graduierung_nachher_id]);
+          if (vorher && nachher) {
+            const stufen = Math.max(1, nachher.reihenfolge - vorher.reihenfolge);
+            finaleGebuehr = stufen * GEBUEHR_PRO_STUFE;
+          }
+        } catch (e) {
+          logger.error('Fehler bei Gebührenberechnung:', { error: e.message });
+        }
+      } else if (!finaleGebuehr && !graduierung_vorher_id && graduierung_nachher_id) {
+        // Erste Prüfung (kein Vorher-Gurt) = 1 Stufe
+        finaleGebuehr = GEBUEHR_PRO_STUFE;
+      }
+
       const insertQuery = `
-        INSERT INTO pruefungen (mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, pruefungsdatum, pruefungszeit, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, zahlungsart, status, bestanden, erstellt_am, aktualisiert_am)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'geplant', FALSE, NOW(), NOW())
+        INSERT INTO pruefungen (mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, pruefungsdatum, pruefungszeit, pruefungsort, pruefungsgebuehr, anmeldefrist, gurtlaenge, bemerkungen, teilnahmebedingungen, zahlungsart, gebuehr_auto_verrechnen, status, bestanden, erstellt_am, aktualisiert_am)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'geplant', FALSE, NOW(), NOW())
       `;
 
-      db.query(insertQuery, [mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, finalPruefungsdatum, pruefungszeit, pruefungsort || null, pruefungsgebuehr || null, anmeldefrist || null, gurtlaenge || null, bemerkungen || null, teilnahmebedingungen || null, zahlungsart || null], (insertErr, result) => {
+      db.query(insertQuery, [mitglied_id, stil_id, dojo_id, graduierung_vorher_id, graduierung_nachher_id, finalPruefungsdatum, pruefungszeit, pruefungsort || null, finaleGebuehr || null, anmeldefrist || null, gurtlaenge || null, bemerkungen || null, teilnahmebedingungen || null, zahlungsart || null, autoVerrechnenValue], (insertErr, result) => {
         if (insertErr) return res.status(500).json({ error: 'Fehler beim Zulassen zur Prüfung', details: insertErr.message });
 
-        res.status(201).json({ success: true, message: 'Mitglied erfolgreich zur Prüfung zugelassen', pruefung_id: result.insertId, mitglied_id });
+        const pruefungId = result.insertId;
+        res.status(201).json({ success: true, message: 'Mitglied erfolgreich zur Prüfung zugelassen', pruefung_id: pruefungId, mitglied_id });
+
+        // Auto-Rechnung erstellen wenn Gebühr aktiviert
+        (async () => {
+          try {
+            // Effektiven auto_verrechnen-Wert ermitteln: pruefungen-Wert > termin-Wert > 0
+            let effektiv = autoVerrechnenValue;
+            if (effektiv === null) {
+              const pool = db.promise();
+              const [[termin]] = await pool.query(
+                `SELECT ptv.gebuehr_auto_verrechnen FROM pruefungstermin_vorlagen ptv
+                 WHERE ptv.pruefungsdatum = ? AND ptv.stil_id = ? AND ptv.dojo_id = ? LIMIT 1`,
+                [finalPruefungsdatum, stil_id, dojo_id]
+              );
+              effektiv = termin?.gebuehr_auto_verrechnen ?? 0;
+            }
+
+            if (effektiv === 1 && finaleGebuehr && finaleGebuehr > 0) {
+              const pool = db.promise();
+              const [[stilRow]] = await pool.query('SELECT name FROM stile WHERE stil_id = ? LIMIT 1', [stil_id]);
+              const rechnungId = await createPruefungsRechnung(mitglied_id, finaleGebuehr, finalPruefungsdatum, stilRow?.name || '', dojo_id);
+              await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefungId]);
+              logger.info('Auto-Rechnung für Prüfungsgebühr erstellt', { pruefungId, rechnungId, mitglied_id, betrag: finaleGebuehr });
+            }
+          } catch (autoErr) {
+            logger.error('Fehler beim automatischen Erstellen der Prüfungsrechnung:', { error: autoErr.message });
+          }
+        })();
 
         // Notification + Push (fire and forget)
         db.query('SELECT email, vorname, nachname FROM mitglieder WHERE mitglied_id = ? LIMIT 1', [mitglied_id], (emailErr, emailRows) => {
@@ -334,6 +431,231 @@ router.post('/antwort', (req, res) => {
       res.json({ success: true });
     }
   );
+});
+
+// PUT /kandidaten/:pruefung_id/gebuehr-bar - Gebühr als Bar-Zahlung markieren
+router.put('/:pruefung_id/gebuehr-bar', async (req, res) => {
+  const pruefung_id = parseInt(req.params.pruefung_id);
+  if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  try {
+    const pool = db.promise();
+    const ownerCheck = secureDojoId
+      ? 'SELECT pruefung_id FROM pruefungen WHERE pruefung_id = ? AND dojo_id = ?'
+      : 'SELECT pruefung_id FROM pruefungen WHERE pruefung_id = ?';
+    const ownerParams = secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id];
+    const [[pruefung]] = await pool.query(ownerCheck, ownerParams);
+    if (!pruefung) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+
+    // Verknüpfte Rechnung + Beitrag vor dem Nullsetzen holen
+    const [[pruefungMitRechnung]] = await pool.query(
+      'SELECT gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?', [pruefung_id]
+    );
+    const rechnungId = pruefungMitRechnung?.gebuehr_rechnung_id;
+
+    await pool.query(
+      `UPDATE pruefungen SET zahlungsart = 'bar', gebuehr_bezahlt = 1, gebuehr_bezahlt_am = CURDATE(),
+       gebuehr_auto_verrechnen = 0, gebuehr_rechnung_id = NULL WHERE pruefung_id = ?`,
+      [pruefung_id]
+    );
+
+    // Verknüpfte Rechnung + Beitrag als bezahlt markieren
+    if (rechnungId) {
+      await pool.query(
+        `UPDATE rechnungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = 'Bar' WHERE rechnung_id = ?`,
+        [rechnungId]
+      );
+      await pool.query(
+        `UPDATE beitraege SET bezahlt = 1, zahlungsart = 'Bar' WHERE rechnung_id = ?`,
+        [rechnungId]
+      );
+      logger.info('Verknüpfte Rechnung + Beitrag als bar bezahlt markiert', { pruefung_id, rechnungId });
+    }
+
+    logger.info('Prüfungsgebühr bar bezahlt', { pruefung_id });
+    res.json({ success: true, zahlungsart: 'bar', gebuehr_bezahlt: 1 });
+  } catch (err) {
+    logger.error('Fehler bei Bar-Zahlung:', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
+// PUT /kandidaten/:pruefung_id/gebuehr-auto - Individuelle Gebühren-Einstellung überschreiben
+router.put('/:pruefung_id/gebuehr-auto', async (req, res) => {
+  const pruefung_id = parseInt(req.params.pruefung_id);
+  if (!pruefung_id || isNaN(pruefung_id)) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const { gebuehr_auto_verrechnen } = req.body;
+
+  // null = Termin-Einstellung übernehmen, 1 = erzwingen, 0 = unterdrücken
+  const wert = gebuehr_auto_verrechnen === null ? null
+             : (gebuehr_auto_verrechnen ? 1 : 0);
+
+  try {
+    const pool = db.promise();
+    const ownerCheck = secureDojoId
+      ? 'SELECT pruefung_id, mitglied_id, pruefungsgebuehr, dojo_id, status FROM pruefungen WHERE pruefung_id = ? AND dojo_id = ?'
+      : 'SELECT pruefung_id, mitglied_id, pruefungsgebuehr, dojo_id, status FROM pruefungen WHERE pruefung_id = ?';
+    const ownerParams = secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id];
+    const [[pruefung]] = await pool.query(ownerCheck, ownerParams);
+
+    if (!pruefung) return res.status(404).json({ error: 'Prüfung nicht gefunden oder kein Zugriff' });
+
+    await pool.query('UPDATE pruefungen SET gebuehr_auto_verrechnen = ? WHERE pruefung_id = ?', [wert, pruefung_id]);
+
+    // Wenn jetzt aktiviert + noch keine Rechnung + Gebühr vorhanden → auto erstellen
+    if (wert === 1 && pruefung.pruefungsgebuehr && parseFloat(pruefung.pruefungsgebuehr) > 0 && pruefung.status === 'geplant') {
+      const [[existing]] = await pool.query('SELECT gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?', [pruefung_id]);
+      if (!existing?.gebuehr_rechnung_id) {
+        const [[stilRow]] = await pool.query(
+          `SELECT s.name FROM stile s JOIN pruefungen p ON p.stil_id = s.stil_id WHERE p.pruefung_id = ? LIMIT 1`, [pruefung_id]
+        );
+        const [[{ pruefungsdatum }]] = await pool.query('SELECT pruefungsdatum FROM pruefungen WHERE pruefung_id = ?', [pruefung_id]);
+        const rechnungId = await createPruefungsRechnung(pruefung.mitglied_id, pruefung.pruefungsgebuehr, pruefungsdatum, stilRow?.name || '', pruefung.dojo_id);
+        await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefung_id]);
+        logger.info('Auto-Rechnung (manuell aktiviert) erstellt', { pruefung_id, rechnungId });
+        return res.json({ success: true, gebuehr_auto_verrechnen: wert, rechnung_erstellt: true, rechnung_id: rechnungId });
+      }
+    }
+
+    res.json({ success: true, gebuehr_auto_verrechnen: wert });
+  } catch (err) {
+    logger.error('Fehler beim Setzen der Gebühren-Einstellung:', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
+// POST /kandidaten/erinnerung-ohne-antwort
+// Sendet E-Mail + Push an alle Kandidaten eines Termins die noch nicht geantwortet haben
+router.post('/erinnerung-ohne-antwort', async (req, res) => {
+  const { datum, stil_id } = req.body;
+  if (!datum || !stil_id) {
+    return res.status(400).json({ error: 'datum und stil_id sind erforderlich.' });
+  }
+
+  const secureDojoId = getSecureDojoId(req);
+
+  try {
+    const pool = db.promise();
+
+    // Alle geplanten Kandidaten ohne Antwort für diesen Termin laden
+    let query = `
+      SELECT p.pruefung_id, p.mitglied_id, p.pruefungsdatum, p.pruefungszeit, p.pruefungsort,
+             m.email, m.vorname, m.nachname, m.dojo_id,
+             g_vor.name AS graduierung_vorher, g_nach.name AS graduierung_nachher,
+             s.name AS stil_name
+      FROM pruefungen p
+      JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+      LEFT JOIN graduierungen g_vor ON p.graduierung_vorher_id = g_vor.graduierung_id
+      LEFT JOIN graduierungen g_nach ON p.graduierung_nachher_id = g_nach.graduierung_id
+      LEFT JOIN stile s ON p.stil_id = s.stil_id
+      WHERE DATE(p.pruefungsdatum) = ?
+        AND p.stil_id = ?
+        AND p.status = 'geplant'
+        AND p.mitglied_antwort IS NULL
+        AND p.mitglied_id IS NOT NULL
+    `;
+    const params = [datum, stil_id];
+    if (secureDojoId) {
+      query += ' AND p.dojo_id = ?';
+      params.push(secureDojoId);
+    }
+
+    const [kandidaten] = await pool.query(query, params);
+
+    if (kandidaten.length === 0) {
+      return res.json({ success: true, count: 0, message: 'Alle Kandidaten haben bereits geantwortet.' });
+    }
+
+    const [d, m2, y] = (() => {
+      const parts = datum.split('-');
+      return [parts[2], parts[1], parts[0]];
+    })();
+    const datumFormatiert = `${d}.${m2}.${y}`;
+
+    let gesendet = 0;
+    const ergebnisse = [];
+
+    for (const kandidat of kandidaten) {
+      const dojoId = kandidat.dojo_id;
+      const wochentage = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+      const datObj = new Date(kandidat.pruefungsdatum);
+      const wochentag = wochentage[datObj.getDay()];
+
+      const pushTitle = `⏰ Erinnerung: Prüfung am ${wochentag}, ${datumFormatiert}`;
+      const pushBody  = `Hallo ${kandidat.vorname}, bitte antworte ob du zur Gürtelprüfung (${kandidat.graduierung_nachher || kandidat.stil_name}) kommen kannst. Noch keine Antwort vorhanden!`;
+
+      // Push-Notification
+      sendPushToMitglied(kandidat.mitglied_id, pushTitle, pushBody, '/member/dashboard', {
+        type: 'pruefung_erinnerung',
+        pruefung_id: kandidat.pruefung_id
+      }).catch(() => {});
+
+      // Notification in DB speichern
+      const meta = JSON.stringify({ type: 'pruefung_erinnerung', pruefung_id: kandidat.pruefung_id, pruefungsdatum: datum });
+      pool.query(
+        `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
+         VALUES ('push', ?, ?, ?, 'unread', 1, ?, NOW())`,
+        [kandidat.email, 'Prüfungs-Erinnerung', pushBody, meta]
+      ).catch(() => {});
+
+      // E-Mail senden
+      if (kandidat.email) {
+        const zeitInfo = kandidat.pruefungszeit ? ` um ${kandidat.pruefungszeit} Uhr` : '';
+        const ortInfo  = kandidat.pruefungsort  ? `<br><strong>Ort:</strong> ${kandidat.pruefungsort}` : '';
+
+        const emailHtml = `
+          <div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a;">
+            <div style="background:#1a1a1a;padding:24px 32px;border-radius:8px 8px 0 0;">
+              <h2 style="color:#c9a227;margin:0;font-size:20px;">⏰ Erinnerung: Prüfungsanmeldung</h2>
+            </div>
+            <div style="background:#f9f7f3;padding:28px 32px;border-radius:0 0 8px 8px;border:1px solid #e5e0d8;border-top:none;">
+              <p style="margin-top:0;">Hallo <strong>${kandidat.vorname}</strong>,</p>
+              <p>du wurdest zur <strong>Gürtelprüfung</strong> zugelassen, aber wir haben noch keine Rückmeldung von dir erhalten.</p>
+              <div style="background:#fff;border:1px solid #e5e0d8;border-left:4px solid #c9a227;border-radius:4px;padding:16px 20px;margin:20px 0;">
+                <p style="margin:0 0 6px 0;"><strong>Prüfungsdatum:</strong> ${wochentag}, ${datumFormatiert}${zeitInfo}</p>
+                <p style="margin:0 0 6px 0;"><strong>Stil:</strong> ${kandidat.stil_name || '–'}</p>
+                ${kandidat.graduierung_nachher ? `<p style="margin:0 0 6px 0;"><strong>Prüfung zum:</strong> ${kandidat.graduierung_nachher}</p>` : ''}
+                ${ortInfo}
+              </div>
+              <p><strong>Bitte melde dich an oder teile mit, ob du zur Prüfung kommen kannst.</strong><br>
+              Du kannst direkt in der Mitglieder-App antworten.</p>
+              <p style="font-size:13px;color:#666;margin-bottom:0;">Kampfkunstschule Schreiner</p>
+            </div>
+          </div>
+        `;
+        const emailText = `Hallo ${kandidat.vorname},\n\nErinnerung: Du wurdest zur Gürtelprüfung am ${wochentag}, ${datumFormatiert}${zeitInfo} zugelassen.\nBitte antworte ob du kommen kannst.\n\nKampfkunstschule Schreiner`;
+
+        sendEmailForDojo({
+          to:      kandidat.email,
+          subject: `Erinnerung: Prüfung am ${datumFormatiert} — Bitte antworte`,
+          text:    emailText,
+          html:    emailHtml,
+        }, dojoId).catch(() => {});
+      }
+
+      // Erinnerungs-Timestamp auf der Prüfung setzen (Audit-Trail)
+      pool.query(
+        `UPDATE pruefungen
+         SET erinnerung_gesendet_am = NOW(),
+             erinnerung_anzahl = erinnerung_anzahl + 1
+         WHERE pruefung_id = ?`,
+        [kandidat.pruefung_id]
+      ).catch(() => {});
+
+      gesendet++;
+      ergebnisse.push({ vorname: kandidat.vorname, nachname: kandidat.nachname, email: kandidat.email });
+    }
+
+    logger.info('Prüfungs-Erinnerungen gesendet', { datum, stil_id, gesendet });
+    res.json({ success: true, count: gesendet, empfaenger: ergebnisse });
+
+  } catch (err) {
+    logger.error('Fehler beim Senden der Prüfungs-Erinnerungen:', { error: err.message });
+    res.status(500).json({ error: 'Fehler beim Senden der Erinnerungen.', details: err.message });
+  }
 });
 
 // POST /kandidaten/lastschrift-zustimmung - Mitglied stimmt Lastschrift zu/ab

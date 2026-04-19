@@ -76,10 +76,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
-    if (!location.pathname.startsWith('/dashboard')) {
-      navigate('/dashboard', { replace: true });
-    }
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSwitchToSuperAdmin = () => {
@@ -87,10 +84,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
-    if (!location.pathname.startsWith('/dashboard')) {
-      navigate('/dashboard', { replace: true });
-    }
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSwitchToVerband = () => {
@@ -98,10 +92,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
-    if (!location.pathname.startsWith('/dashboard')) {
-      navigate('/dashboard', { replace: true });
-    }
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSwitchToSupport = () => {
@@ -109,10 +100,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
-    if (!location.pathname.startsWith('/dashboard')) {
-      navigate('/dashboard', { replace: true });
-    }
+    navigate('/dashboard', { replace: true });
   };
 
   const handleSwitchToShop = () => {
@@ -120,10 +108,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
-    if (!location.pathname.startsWith('/dashboard')) {
-      navigate('/dashboard', { replace: true });
-    }
+    navigate('/dashboard', { replace: true });
   };
 
   const handleShowAll = () => {

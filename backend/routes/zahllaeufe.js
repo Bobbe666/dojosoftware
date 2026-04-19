@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const logger = require("../utils/logger");
+const { getSecureDojoId } = require("../middleware/tenantSecurity");
 const router = express.Router();
 
 /**
@@ -9,72 +10,64 @@ const router = express.Router();
  */
 router.get("/", async (req, res) => {
     try {
+        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
+        const secureDojoId = getSecureDojoId(req);
+
         // 1. Klassische SEPA-Zahlläufe aus der zahllaeufe Tabelle
-        const sepaQuery = `
-            SELECT
-                zahllauf_id,
-                buchungsnummer,
-                erstellt_am,
-                forderungen_bis,
-                geplanter_einzug,
-                zahlungsanbieter,
-                status,
-                anzahl_buchungen,
-                betrag,
-                ruecklastschrift_anzahl,
-                ruecklastschrift_prozent,
-                csv_datei_pfad,
-                xml_datei_pfad,
-                notizen,
-                ersteller_user_id,
-                abgeschlossen_am,
-                'sepa' as quelle
-            FROM zahllaeufe
-            ORDER BY erstellt_am DESC
-        `;
+        const sepaQuery = secureDojoId
+            ? `SELECT zahllauf_id, buchungsnummer, erstellt_am, forderungen_bis,
+                      geplanter_einzug, zahlungsanbieter, status, anzahl_buchungen,
+                      betrag, ruecklastschrift_anzahl, ruecklastschrift_prozent,
+                      csv_datei_pfad, xml_datei_pfad, notizen, ersteller_user_id,
+                      abgeschlossen_am, 'sepa' as quelle
+               FROM zahllaeufe WHERE dojo_id = ? ORDER BY erstellt_am DESC`
+            : `SELECT zahllauf_id, buchungsnummer, erstellt_am, forderungen_bis,
+                      geplanter_einzug, zahlungsanbieter, status, anzahl_buchungen,
+                      betrag, ruecklastschrift_anzahl, ruecklastschrift_prozent,
+                      csv_datei_pfad, xml_datei_pfad, notizen, ersteller_user_id,
+                      abgeschlossen_am, 'sepa' as quelle
+               FROM zahllaeufe ORDER BY erstellt_am DESC`;
+
+        const sepaParams = secureDojoId ? [secureDojoId] : [];
 
         // 2. Stripe-Lastschrift-Batches
-        const stripeQuery = `
-            SELECT
-                id as zahllauf_id,
-                batch_id as buchungsnummer,
-                created_at as erstellt_am,
-                DATE(CONCAT(jahr, '-', LPAD(monat, 2, '0'), '-01')) as forderungen_bis,
-                NULL as geplanter_einzug,
-                'Stripe SEPA' as zahlungsanbieter,
-                CASE status
-                    WHEN 'completed' THEN 'abgeschlossen'
-                    WHEN 'partial' THEN 'teilweise'
-                    WHEN 'processing' THEN 'offen'
-                    WHEN 'pending' THEN 'geplant'
-                    WHEN 'failed' THEN 'fehler'
-                    ELSE status
-                END as status,
-                anzahl_transaktionen as anzahl_buchungen,
-                gesamtbetrag as betrag,
-                fehlgeschlagene as ruecklastschrift_anzahl,
-                CASE WHEN anzahl_transaktionen > 0
-                    THEN ROUND((fehlgeschlagene / anzahl_transaktionen) * 100, 1)
-                    ELSE 0
-                END as ruecklastschrift_prozent,
-                NULL as csv_datei_pfad,
-                NULL as xml_datei_pfad,
-                NULL as notizen,
-                NULL as ersteller_user_id,
-                completed_at as abgeschlossen_am,
-                'stripe' as quelle
-            FROM stripe_lastschrift_batch
-            ORDER BY created_at DESC
-        `;
+        const stripeQuery = secureDojoId
+            ? `SELECT id as zahllauf_id, batch_id as buchungsnummer, created_at as erstellt_am,
+                      DATE(CONCAT(jahr, '-', LPAD(monat, 2, '0'), '-01')) as forderungen_bis,
+                      NULL as geplanter_einzug, 'Stripe SEPA' as zahlungsanbieter,
+                      CASE status WHEN 'completed' THEN 'abgeschlossen' WHEN 'partial' THEN 'teilweise'
+                          WHEN 'processing' THEN 'offen' WHEN 'pending' THEN 'geplant'
+                          WHEN 'failed' THEN 'fehler' ELSE status END as status,
+                      anzahl_transaktionen as anzahl_buchungen, gesamtbetrag as betrag,
+                      fehlgeschlagene as ruecklastschrift_anzahl,
+                      CASE WHEN anzahl_transaktionen > 0
+                          THEN ROUND((fehlgeschlagene / anzahl_transaktionen) * 100, 1) ELSE 0
+                      END as ruecklastschrift_prozent,
+                      NULL as csv_datei_pfad, NULL as xml_datei_pfad, NULL as notizen,
+                      NULL as ersteller_user_id, completed_at as abgeschlossen_am, 'stripe' as quelle
+               FROM stripe_lastschrift_batch WHERE dojo_id = ? ORDER BY created_at DESC`
+            : `SELECT id as zahllauf_id, batch_id as buchungsnummer, created_at as erstellt_am,
+                      DATE(CONCAT(jahr, '-', LPAD(monat, 2, '0'), '-01')) as forderungen_bis,
+                      NULL as geplanter_einzug, 'Stripe SEPA' as zahlungsanbieter,
+                      CASE status WHEN 'completed' THEN 'abgeschlossen' WHEN 'partial' THEN 'teilweise'
+                          WHEN 'processing' THEN 'offen' WHEN 'pending' THEN 'geplant'
+                          WHEN 'failed' THEN 'fehler' ELSE status END as status,
+                      anzahl_transaktionen as anzahl_buchungen, gesamtbetrag as betrag,
+                      fehlgeschlagene as ruecklastschrift_anzahl,
+                      CASE WHEN anzahl_transaktionen > 0
+                          THEN ROUND((fehlgeschlagene / anzahl_transaktionen) * 100, 1) ELSE 0
+                      END as ruecklastschrift_prozent,
+                      NULL as csv_datei_pfad, NULL as xml_datei_pfad, NULL as notizen,
+                      NULL as ersteller_user_id, completed_at as abgeschlossen_am, 'stripe' as quelle
+               FROM stripe_lastschrift_batch ORDER BY created_at DESC`;
+
+        const stripeParams = secureDojoId ? [secureDojoId] : [];
 
         // Führe beide Queries aus
         const sepaPromise = new Promise((resolve, reject) => {
-            db.query(sepaQuery, (err, results) => {
+            db.query(sepaQuery, sepaParams, (err, results) => {
                 if (err) {
-                    // Falls Tabelle nicht existiert, leere Liste zurückgeben
-                    if (err.code === 'ER_NO_SUCH_TABLE') {
-                        return resolve([]);
-                    }
+                    if (err.code === 'ER_NO_SUCH_TABLE') return resolve([]);
                     return reject(err);
                 }
                 resolve(results || []);
@@ -82,12 +75,9 @@ router.get("/", async (req, res) => {
         });
 
         const stripePromise = new Promise((resolve, reject) => {
-            db.query(stripeQuery, (err, results) => {
+            db.query(stripeQuery, stripeParams, (err, results) => {
                 if (err) {
-                    // Falls Tabelle nicht existiert, leere Liste zurückgeben
-                    if (err.code === 'ER_NO_SUCH_TABLE') {
-                        return resolve([]);
-                    }
+                    if (err.code === 'ER_NO_SUCH_TABLE') return resolve([]);
                     return reject(err);
                 }
                 resolve(results || []);
@@ -123,18 +113,20 @@ router.get("/", async (req, res) => {
  * GET /api/zahllaeufe/:id
  */
 router.get("/:id", (req, res) => {
+    // 🔒 SICHERHEIT
+    const secureDojoId = getSecureDojoId(req);
     const { id } = req.params;
 
+    const dojoFilter = secureDojoId ? ' AND z.dojo_id = ?' : '';
     const query = `
-        SELECT
-            z.*,
-            u.username as ersteller_username
+        SELECT z.*, u.username as ersteller_username
         FROM zahllaeufe z
         LEFT JOIN users u ON z.ersteller_user_id = u.user_id
-        WHERE z.zahllauf_id = ?
+        WHERE z.zahllauf_id = ?${dojoFilter}
     `;
+    const params = secureDojoId ? [id, secureDojoId] : [id];
 
-    db.query(query, [id], (err, results) => {
+    db.query(query, params, (err, results) => {
         if (err) {
             logger.error('Fehler beim Abrufen des Zahllaufs:', err);
             return res.status(500).json({
@@ -264,10 +256,14 @@ router.get("/:quelle/:id/transaktionen", async (req, res) => {
 });
 
 /**
- * API: Zahllauf erstellen
+ * API: Zahllauf erstellen + Beiträge als bezahlt markieren
  * POST /api/zahllaeufe
+ * Body: { ..., beitrag_ids: [1,2,3,...] }  (aus der Vorschau)
  */
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
+    // 🔒 SICHERHEIT
+    const secureDojoId = getSecureDojoId(req);
+
     const {
         buchungsnummer,
         forderungen_bis,
@@ -279,7 +275,8 @@ router.post("/", (req, res) => {
         xml_datei_pfad,
         ersteller_user_id,
         notizen,
-        dojo_id
+        dojo_id,
+        beitrag_ids
     } = req.body;
 
     if (!buchungsnummer || !anzahl_buchungen || !betrag) {
@@ -288,52 +285,132 @@ router.post("/", (req, res) => {
         });
     }
 
-    const insertQuery = `
-        INSERT INTO zahllaeufe (
-            dojo_id,
-            buchungsnummer,
-            forderungen_bis,
-            geplanter_einzug,
-            zahlungsanbieter,
-            status,
-            anzahl_buchungen,
-            betrag,
-            csv_datei_pfad,
-            xml_datei_pfad,
-            ersteller_user_id,
-            notizen
-        ) VALUES (?, ?, ?, ?, ?, 'geplant', ?, ?, ?, ?, ?, ?)
-    `;
+    // Effektive dojo_id: aus JWT bevorzugen (verhindert Fremdzugriff)
+    const effectiveDojoId = secureDojoId || dojo_id || null;
 
-    const params = [
-        dojo_id || null,
-        buchungsnummer,
-        forderungen_bis,
-        geplanter_einzug,
-        zahlungsanbieter || 'SEPA (Lastschrift)',
-        anzahl_buchungen,
-        betrag,
-        csv_datei_pfad,
-        xml_datei_pfad,
-        ersteller_user_id,
-        notizen
-    ];
+    const pool = db.promise ? db.promise() : db;
+    const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+    });
 
-    db.query(insertQuery, params, (err, result) => {
-        if (err) {
-            logger.error('Fehler beim Erstellen des Zahllaufs:', err);
-            return res.status(500).json({
-                error: 'Datenbankfehler',
-                details: err.message
-            });
+    try {
+        // 1. Zahllauf anlegen
+        const insertResult = await queryAsync(`
+            INSERT INTO zahllaeufe (
+                dojo_id, buchungsnummer, forderungen_bis, geplanter_einzug,
+                zahlungsanbieter, status, anzahl_buchungen, betrag,
+                csv_datei_pfad, xml_datei_pfad, ersteller_user_id, notizen
+            ) VALUES (?, ?, ?, ?, ?, 'abgeschlossen', ?, ?, ?, ?, ?, ?)
+        `, [
+            effectiveDojoId, buchungsnummer, forderungen_bis, geplanter_einzug,
+            zahlungsanbieter || 'SEPA (Lastschrift)', anzahl_buchungen, betrag,
+            csv_datei_pfad || null, xml_datei_pfad || null, ersteller_user_id || null, notizen || null
+        ]);
+
+        const zahllauf_id = insertResult.insertId;
+
+        // 2. Beiträge als bezahlt markieren wenn IDs mitgegeben
+        // 🔒 Dojo-Isolation: Nur Beiträge des eigenen Dojos markieren
+        let markedCount = 0;
+        if (Array.isArray(beitrag_ids) && beitrag_ids.length > 0) {
+            const validIds = beitrag_ids.filter(id => Number.isInteger(Number(id)));
+            if (validIds.length > 0) {
+                const placeholders = validIds.map(() => '?').join(',');
+                const updateSql = effectiveDojoId
+                    ? `UPDATE beitraege b
+                       JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                       SET b.bezahlt = 1, b.zahllauf_id = ?
+                       WHERE b.beitrag_id IN (${placeholders}) AND b.bezahlt = 0 AND m.dojo_id = ?`
+                    : `UPDATE beitraege SET bezahlt = 1, zahllauf_id = ?
+                       WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`;
+                const updateParams = effectiveDojoId
+                    ? [zahllauf_id, ...validIds, effectiveDojoId]
+                    : [zahllauf_id, ...validIds];
+                const updateResult = await queryAsync(updateSql, updateParams);
+                markedCount = updateResult.affectedRows;
+            }
+        }
+
+        logger.info(`Zahllauf #${zahllauf_id} erstellt, ${markedCount} Beiträge als bezahlt markiert`);
+
+        res.json({
+            success: true,
+            zahllauf_id,
+            marked_bezahlt: markedCount,
+            message: `Zahllauf erfolgreich erstellt${markedCount > 0 ? ` (${markedCount} Beiträge als bezahlt markiert)` : ''}`
+        });
+
+    } catch (err) {
+        logger.error('Fehler beim Erstellen des Zahllaufs:', err);
+        return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
+});
+
+/**
+ * API: Bestehenden Zahllauf abschließen + Beiträge als bezahlt markieren
+ * POST /api/zahllaeufe/:id/abschliessen
+ * Body: { monat, jahr, dojo_id }  ODER  { beitrag_ids: [...] }
+ */
+router.post("/:id/abschliessen", async (req, res) => {
+    const { id } = req.params;
+    const { monat, jahr, dojo_id, beitrag_ids } = req.body;
+
+    const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+        db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+    });
+
+    try {
+        // Zahllauf auf abgeschlossen setzen
+        await queryAsync(
+            `UPDATE zahllaeufe SET status = 'abgeschlossen', abgeschlossen_am = NOW() WHERE zahllauf_id = ?`,
+            [id]
+        );
+
+        let markedCount = 0;
+
+        if (Array.isArray(beitrag_ids) && beitrag_ids.length > 0) {
+            // Explizite Beitrag-IDs mitgegeben
+            const validIds = beitrag_ids.filter(v => Number.isInteger(Number(v)));
+            if (validIds.length > 0) {
+                const placeholders = validIds.map(() => '?').join(',');
+                const upd = await queryAsync(
+                    `UPDATE beitraege SET bezahlt = 1, zahllauf_id = ? WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
+                    [id, ...validIds]
+                );
+                markedCount = upd.affectedRows;
+            }
+        } else if (monat && jahr) {
+            // Fallback: alle offenen SEPA-Beiträge des Monats markieren
+            const monatStart = `${jahr}-${String(monat).padStart(2, '0')}-01`;
+            const lastDay = new Date(jahr, monat, 0).getDate();
+            const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+            const dojoFilter = dojo_id ? 'AND m.dojo_id = ?' : '';
+            const params = dojo_id
+                ? [id, monatStart, monatEnde, dojo_id]
+                : [id, monatStart, monatEnde];
+
+            const upd = await queryAsync(`
+                UPDATE beitraege b
+                JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                SET b.bezahlt = 1, b.zahllauf_id = ?
+                WHERE b.bezahlt = 0
+                  AND b.zahlungsdatum >= ? AND b.zahlungsdatum <= ?
+                  AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+                  ${dojoFilter}
+            `, params);
+            markedCount = upd.affectedRows;
         }
 
         res.json({
             success: true,
-            zahllauf_id: result.insertId,
-            message: 'Zahllauf erfolgreich erstellt'
+            marked_bezahlt: markedCount,
+            message: `Zahllauf abgeschlossen, ${markedCount} Beiträge als bezahlt markiert`
         });
-    });
+
+    } catch (err) {
+        logger.error('Fehler beim Abschließen des Zahllaufs:', err);
+        return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
+    }
 });
 
 /**
@@ -341,33 +418,22 @@ router.post("/", (req, res) => {
  * PUT /api/zahllaeufe/:id
  */
 router.put("/:id", (req, res) => {
+    // 🔒 SICHERHEIT
+    const secureDojoId = getSecureDojoId(req);
     const { id } = req.params;
-    const {
-        status,
-        ruecklastschrift_anzahl,
-        ruecklastschrift_prozent,
-        notizen
-    } = req.body;
+    const { status, ruecklastschrift_anzahl, ruecklastschrift_prozent, notizen } = req.body;
 
+    const dojoFilter = secureDojoId ? ' AND dojo_id = ?' : '';
     const updateQuery = `
         UPDATE zahllaeufe
-        SET
-            status = ?,
-            ruecklastschrift_anzahl = ?,
-            ruecklastschrift_prozent = ?,
-            notizen = ?,
+        SET status = ?, ruecklastschrift_anzahl = ?, ruecklastschrift_prozent = ?, notizen = ?,
             abgeschlossen_am = CASE WHEN ? = 'abgeschlossen' THEN NOW() ELSE abgeschlossen_am END
-        WHERE zahllauf_id = ?
+        WHERE zahllauf_id = ?${dojoFilter}
     `;
 
-    const params = [
-        status,
-        ruecklastschrift_anzahl,
-        ruecklastschrift_prozent,
-        notizen,
-        status,
-        id
-    ];
+    const params = secureDojoId
+        ? [status, ruecklastschrift_anzahl, ruecklastschrift_prozent, notizen, status, id, secureDojoId]
+        : [status, ruecklastschrift_anzahl, ruecklastschrift_prozent, notizen, status, id];
 
     db.query(updateQuery, params, (err, result) => {
         if (err) {
@@ -396,11 +462,15 @@ router.put("/:id", (req, res) => {
  * DELETE /api/zahllaeufe/:id
  */
 router.delete("/:id", (req, res) => {
+    // 🔒 SICHERHEIT
+    const secureDojoId = getSecureDojoId(req);
     const { id } = req.params;
 
-    const deleteQuery = `DELETE FROM zahllaeufe WHERE zahllauf_id = ?`;
+    const dojoFilter = secureDojoId ? ' AND dojo_id = ?' : '';
+    const deleteQuery = `DELETE FROM zahllaeufe WHERE zahllauf_id = ?${dojoFilter}`;
+    const params = secureDojoId ? [id, secureDojoId] : [id];
 
-    db.query(deleteQuery, [id], (err, result) => {
+    db.query(deleteQuery, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Löschen des Zahllaufs:', err);
             return res.status(500).json({

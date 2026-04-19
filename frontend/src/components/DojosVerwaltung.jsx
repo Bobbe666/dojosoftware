@@ -49,11 +49,11 @@ const DojosVerwaltung = () => {
       // Berechne Gesamt-Statistiken
       const stats = {
         dojos_anzahl: dojos.length,
-        mitglieder_gesamt: dojos.reduce((sum, dojo) => sum + (dojo.mitglieder_anzahl || 0), 0),
-        umsatz_gesamt: dojos.reduce((sum, dojo) => sum + (dojo.jahresumsatz_aktuell || 0), 0),
+        mitglieder_gesamt: dojos.reduce((sum, dojo) => sum + (parseInt(dojo.mitglieder_count) || 0), 0),
+        umsatz_gesamt: dojos.reduce((sum, dojo) => sum + (parseFloat(dojo.jahresumsatz_aktuell) || 0), 0),
         ust_gesamt: dojos.reduce((sum, dojo) => {
-          const umsatz = dojo.jahresumsatz_aktuell || 0;
-          const ust = dojo.steuer_status === 'regelbesteuert' ? umsatz * 0.19 : 0;
+          const umsatz = parseFloat(dojo.jahresumsatz_aktuell) || 0;
+          const ust = dojo.steuer_status === 'regelbesteuerung' ? umsatz * ((dojo.ust_satz || 19) / 100) : 0;
           return sum + ust;
         }, 0)
       };

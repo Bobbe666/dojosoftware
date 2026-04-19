@@ -10,7 +10,7 @@
   margin-bottom: 20px !important;
   margin-left: auto !important;
   margin-right: auto !important;
-  max-height: 85vh !important;
+  max-height: 92vh !important;
   height: auto !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
@@ -19,7 +19,7 @@
   left: 0 !important;
   right: 0 !important;
   transform: translateY(0) !important;
-  padding: 1.5rem !important;
+  padding: 1.25rem 1.5rem 0 !important;
 }
 
 /* Modal Overlay - immer von oben starten */
@@ -326,12 +326,14 @@
 }
 
 .step-indicator {
-  background: var(--primary-color);
-  color: white;
-  padding: 0.4rem 0.8rem;
-  border-radius: 16px;
-  font-weight: bold;
-  font-size: 0.8rem;
+  background: rgba(234,179,8,0.12);
+  color: var(--primary-color);
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.7rem;
+  border: 1px solid rgba(234,179,8,0.3);
+  white-space: nowrap;
 }
 
 .progress-bar {
@@ -651,94 +653,103 @@ select.input-field option {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1.5rem;
-  padding-top: 0.8rem;
-  border-top: 2px solid var(--border-color);
-  gap: var(--ui-btn-gap);
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  margin-top: 0.5rem;
+  padding: 0.6rem 0 0.9rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  gap: 0.5rem;
+  background: var(--background-color);
 }
 
-.modal-buttons .primary-button {
-  background: var(--primary-color) !important;
-  color: white !important;
-  border: none !important;
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x) !important;
+/* Left side: Abbrechen (ghost) */
+.modal-buttons .close-button {
+  background: transparent !important;
+  color: rgba(255,255,255,0.4) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  padding: 0.45rem 1rem !important;
   border-radius: var(--comp-radius-sm) !important;
-  font-weight: 600 !important;
-  font-size: var(--ui-btn-font) !important;
+  font-weight: 500 !important;
+  font-size: 0.82rem !important;
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  order: 2 !important;
-}
-
-.modal-buttons .primary-button:hover:not(:disabled) {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
-}
-
-.modal-buttons .primary-button:disabled {
-  background: var(--disabled-color);
-  cursor: not-allowed;
-  transform: none;
-}
-
-.modal-buttons .secondary-button {
-  background: var(--secondary-color) !important;
-  color: var(--text-color) !important;
-  border: 2px solid var(--border-color) !important;
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x) !important;
-  border-radius: var(--comp-radius-sm) !important;
-  font-weight: 600 !important;
-  font-size: var(--ui-btn-font) !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
   order: 1 !important;
 }
 
-.modal-buttons .secondary-button:hover:not(:disabled) {
-  background: var(--secondary-dark);
-  border-color: var(--primary-color);
+.modal-buttons .close-button:hover:not(:disabled) {
+  background: rgba(255,255,255,0.05) !important;
+  color: rgba(255,255,255,0.65) !important;
+  border-color: rgba(255,255,255,0.2) !important;
 }
 
-.modal-buttons .submit-button {
-  background: var(--success-color);
-  color: white;
-  border: none;
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
-  border-radius: var(--comp-radius-sm);
-  font-weight: 600;
-  font-size: var(--ui-btn-font);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  order: 2;
-}
-
-.modal-buttons .submit-button:hover:not(:disabled) {
-  background: var(--success-dark);
-  transform: translateY(-1px);
-}
-
-.modal-buttons .submit-button:disabled {
-  background: var(--disabled-color);
-  cursor: not-allowed;
-  transform: none;
-}
-
-.modal-buttons .close-button {
-  background: var(--error-color) !important;
-  color: white !important;
-  border: none !important;
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x) !important;
+/* Right side group: Zurück + Weiter/Erstellen */
+.modal-buttons .secondary-button {
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.8) !important;
+  border: 1px solid rgba(255,255,255,0.2) !important;
+  padding: 0.5rem 1.2rem !important;
   border-radius: var(--comp-radius-sm) !important;
   font-weight: 600 !important;
-  font-size: var(--ui-btn-font) !important;
+  font-size: 0.85rem !important;
   cursor: pointer !important;
-  transition: all 0.3s ease !important;
+  transition: all 0.2s ease !important;
+  order: 2 !important;
+}
+
+.modal-buttons .secondary-button:hover:not(:disabled) {
+  background: rgba(255,255,255,0.13) !important;
+  color: #fff !important;
+}
+
+.modal-buttons .primary-button {
+  background: #eab308 !important;
+  color: #111 !important;
+  border: none !important;
+  padding: 0.5rem 1.5rem !important;
+  border-radius: var(--comp-radius-sm) !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
   order: 3 !important;
 }
 
-.modal-buttons .close-button:hover:not(:disabled) {
-  background: var(--error-dark);
-  transform: translateY(-1px);
+.modal-buttons .primary-button:hover:not(:disabled) {
+  background: #ca9f06 !important;
+  transform: translateY(-1px) !important;
+}
+
+.modal-buttons .primary-button:disabled {
+  background: rgba(255,255,255,0.12) !important;
+  color: rgba(255,255,255,0.35) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.modal-buttons .submit-button {
+  background: #16a34a !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5rem 1.5rem !important;
+  border-radius: var(--comp-radius-sm) !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  order: 3 !important;
+}
+
+.modal-buttons .submit-button:hover:not(:disabled) {
+  background: #15803d !important;
+  transform: translateY(-1px) !important;
+}
+
+.modal-buttons .submit-button:disabled {
+  background: rgba(255,255,255,0.1) !important;
+  color: rgba(255,255,255,0.3) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
 }
 
 /* Readonly Input Styles */
@@ -824,9 +835,9 @@ select.input-field option {
   border: none !important;
   height: auto !important;
   margin: 0 !important;
-  margin-bottom: 2.5rem !important;
-  padding: 10px 12px !important;
-  min-height: 55px !important;
+  margin-bottom: 1.25rem !important;
+  padding: 6px 8px !important;
+  min-height: 44px !important;
   flex: none !important;
   border-radius: 0 !important;
   overflow: visible !important;
@@ -848,111 +859,97 @@ select.input-field option {
   font-weight: 600 !important;
 }
 
+/* ── Kompakter moderner Stepper ── */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .nma-progress-bar {
+  padding: 0.5rem 0.75rem !important;
+  gap: 0 !important;
+}
+
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step {
-  min-height: 60px !important;
+  min-height: unset !important;
+  height: 36px !important;
   margin: 0 !important;
-  padding: 6px !important;
+  padding: 0 4px !important;
   display: flex !important;
-  flex-direction: column !important;
+  flex-direction: row !important;
   align-items: center !important;
+  justify-content: center !important;
   flex: 1 !important;
   position: relative !important;
   gap: 5px !important;
-  min-width: 70px !important;
+  min-width: 0 !important;
 }
 
-/* Aktiver Schritt: Weißer Hintergrund mit farbigem Border */
-.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.active .step-number {
-  width: 30px !important;
-  height: 30px !important;
-  font-size: 0.9rem !important;
-  margin: 0 !important;
-  border-radius: 50% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-weight: 700 !important;
-  background: #ffffff !important;
-  color: var(--primary-color) !important;
-  border: 3px solid var(--primary-color) !important;
-  position: relative !important;
-  z-index: 2 !important;
-  transition: all 0.3s ease !important;
-  flex-shrink: 0 !important;
-  box-shadow: 0 2px 6px rgba(234, 179, 8, 0.25) !important;
+/* Verbindungslinie zwischen Schritten */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step:not(:last-child)::after {
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: 1px !important;
+  background: rgba(255,255,255,0.15) !important;
+}
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed:not(:last-child)::after {
+  background: rgba(16, 185, 129, 0.5) !important;
 }
 
-/* Inaktive Schritte: Grauer Hintergrund */
+/* Inaktiv */
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .step-number {
-  width: 26px !important;
-  height: 26px !important;
-  font-size: 0.8rem !important;
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 0.65rem !important;
   margin: 0 !important;
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   font-weight: 700 !important;
-  background: #e5e7eb !important;
-  color: #6b7280 !important;
-  border: 2px solid #e5e7eb !important;
-  position: relative !important;
-  z-index: 2 !important;
-  transition: all 0.3s ease !important;
+  background: rgba(255,255,255,0.08) !important;
+  color: rgba(255,255,255,0.35) !important;
+  border: 1.5px solid rgba(255,255,255,0.15) !important;
   flex-shrink: 0 !important;
+  transition: all 0.25s ease !important;
+  z-index: 2 !important;
+  position: relative !important;
 }
 
-/* Completed Schritt Styling - Weißer Hintergrund mit grünem Border */
+/* Aktiv */
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.active .step-number {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 0.7rem !important;
+  background: var(--primary-color) !important;
+  color: #111 !important;
+  border: none !important;
+  box-shadow: 0 0 8px rgba(234,179,8,0.4) !important;
+}
+
+/* Abgeschlossen */
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed .step-number {
-  background: #ffffff !important;
-  color: var(--status-success) !important;
-  border: 3px solid var(--status-success) !important;
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2) !important;
+  background: rgba(16,185,129,0.2) !important;
+  color: #10b981 !important;
+  border: 1.5px solid rgba(16,185,129,0.5) !important;
+  box-shadow: none !important;
 }
 
-/* Aktiver Schritt Label: Größere & fettere Schrift */
-.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.active .step-label {
-  font-size: 0.7rem !important;
-  margin: 0 !important;
-  line-height: 1.2 !important;
-  font-weight: 600 !important;
-  color: #1f2937 !important;
-  text-align: center !important;
-  transition: all 0.3s ease !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  max-width: 100% !important;
-}
-
-/* Completed Schritt Label - GRÜN */
-.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed .step-label {
-  font-size: 0.7rem !important;
-  margin: 0 !important;
-  line-height: 1.2 !important;
-  font-weight: 500 !important;
-  color: var(--status-success) !important;
-  text-align: center !important;
-  transition: all 0.3s ease !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  max-width: 100% !important;
-}
-
-/* Inaktive Schritte Label */
+/* Labels: nur für aktiven Schritt sichtbar */
 .modal-overlay .modal-content.neues-mitglied-modal-v2 .step-label {
-  font-size: 0.7rem !important;
-  margin: 0 !important;
-  line-height: 1.2 !important;
+  font-size: 0.6rem !important;
   font-weight: 500 !important;
-  color: #6b7280 !important;
-  text-align: center !important;
-  transition: all 0.3s ease !important;
+  color: rgba(255,255,255,0.25) !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
-  max-width: 100% !important;
+  max-width: 52px !important;
+  transition: all 0.25s ease !important;
+  line-height: 1 !important;
+}
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.active .step-label {
+  color: var(--primary-color) !important;
+  font-weight: 600 !important;
+  font-size: 0.65rem !important;
+}
+.modal-overlay .modal-content.neues-mitglied-modal-v2 .progress-step.completed .step-label {
+  color: rgba(16,185,129,0.6) !important;
+  font-size: 0.6rem !important;
 }
 
 .neues-mitglied-modal-v2 .step-content {
@@ -1911,8 +1908,8 @@ select.input-field option {
 
 /* Warning box: amber (used in multiple steps) */
 .nma-warning-amber {
-  margin-top: 1rem;
-  padding: 0.75rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: rgba(120, 53, 15, 0.6);
   border: 2px solid rgba(245, 158, 11, 0.6);
   border-radius: 6px;

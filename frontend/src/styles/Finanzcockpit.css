@@ -1067,3 +1067,263 @@ Basiert auf: --surface-*, --text-*, --border-accent, --gradient-gold,
 .finanzcockpit__insight-icon--warning  { color: #f59e0b; }
 .finanzcockpit__insight-icon--negative { color: #ef4444; }
 .finanzcockpit__insight-icon--neutral  { color: var(--primary, #FFD700); }
+
+/* ============================================================
+   DESIGN REFINEMENT — Kompakt & Modern
+   Reduziert Whitespace, schärft visuelle Hierarchie
+   ============================================================ */
+
+/* Gesamt-Container: engere Section-Abstände */
+.finanzcockpit {
+  gap: 0.65rem;
+}
+
+/* Basis-Karte: weniger Padding, weniger Rundung */
+.finanzcockpit-card {
+  padding: 0.85rem 1rem;
+  border-radius: var(--comp-radius-xl);
+}
+
+/* Header kompakter: Subtitle ausblenden, Abstände reduzieren */
+.finanzcockpit__header {
+  gap: 0.15rem;
+}
+.finanzcockpit__header-top {
+  gap: 0.75rem;
+  align-items: center;
+}
+.finanzcockpit__headline {
+  gap: 0.1rem;
+  max-width: none;
+}
+.finanzcockpit__subtitle {
+  display: none;
+}
+.finanzcockpit__title {
+  font-size: clamp(1.25rem, 2.5vw, 1.55rem);
+}
+.finanzcockpit__eyebrow {
+  font-size: 0.65rem;
+}
+.finanzcockpit__controls {
+  gap: 0.3rem;
+  min-width: 190px;
+}
+.finanzcockpit__period-selector button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+}
+.finanzcockpit__period-info {
+  font-size: 0.78rem;
+  padding: 0.28rem 0.6rem;
+}
+
+/* KPI-Karten: weniger Padding & engere Abstände */
+.finanzcockpit__kpi-card {
+  padding: 0.6rem 0.8rem;
+  gap: 0.2rem;
+}
+.finanzcockpit__kpi-icon {
+  width: 1.85rem;
+  height: 1.85rem;
+}
+.finanzcockpit__kpi-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.finanzcockpit__kpi-label {
+  font-size: 0.68rem;
+}
+.finanzcockpit__kpi-detail {
+  font-size: 0.68rem;
+}
+
+/* Mitglieder-KPI: kompakter */
+.finanzcockpit__member-kpi-grid {
+  gap: 0.55rem;
+}
+.finanzcockpit__member-section-label {
+  margin-bottom: 0.25rem;
+  font-size: 0.65rem;
+}
+.finanzcockpit__kpi-card--mini {
+  padding: 0.5rem 0.75rem;
+}
+.finanzcockpit__kpi-card--mini .finanzcockpit__kpi-value {
+  font-size: 1.25rem;
+}
+.finanzcockpit__kpi-card--mini .finanzcockpit__kpi-detail {
+  font-size: 0.65rem;
+}
+
+/* Chart-Card-Header: engerer Abstand zum Chart */
+.finanzcockpit__card-header {
+  margin-bottom: 0.4rem;
+  gap: 0.45rem;
+}
+.finanzcockpit__card-header h3 {
+  font-size: 0.95rem;
+}
+.finanzcockpit__card-eyebrow {
+  font-size: 0.62rem;
+  margin-bottom: 0.1rem;
+}
+
+/* Main Grid & Charts-Col: engere Abstände */
+.fc__main-grid {
+  gap: 0.65rem;
+}
+.fc__charts-col {
+  gap: 0.6rem;
+}
+
+/* Untere Zeile: Chart + Insights nebeneinander (je ~50%) */
+.fc__charts-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .fc__charts-bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Aktionen-Spalte kompakter */
+.fc__action-groups {
+  padding: 0.85rem 1rem;
+  border-radius: var(--comp-radius-xl);
+  gap: 0.5rem;
+}
+.fc__action-group + .fc__action-group {
+  padding-top: 0.5rem;
+}
+.fc__action-group-title {
+  font-size: 0.65rem;
+  margin: 0 0 0.3rem 0;
+}
+.fc__action-card {
+  padding: 0.5rem 0.65rem;
+  gap: 0.6rem;
+}
+.fc__action-card-label {
+  font-size: 0.82rem;
+}
+.fc__action-card-desc {
+  font-size: 0.72rem;
+}
+.fc__action-card-icon {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+/* Detail-Karten kompakter */
+.finanzcockpit__details {
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.finanzcockpit__detail-card {
+  padding: 0.7rem 0.85rem;
+}
+.finanzcockpit__detail-header {
+  margin-bottom: 0.45rem;
+  gap: 0.55rem;
+}
+.finanzcockpit__detail-header h3 {
+  font-size: 0.88rem;
+}
+.finanzcockpit__detail-header p {
+  font-size: 0.65rem;
+}
+.finanzcockpit__metric-row {
+  padding: 0.35rem 0;
+}
+.finanzcockpit__metric-label {
+  font-size: 0.82rem;
+}
+.finanzcockpit__metric-value {
+  font-size: 0.82rem;
+}
+
+/* Insight-Liste — sehr kompakt */
+.finanzcockpit__insight-list {
+  gap: 0.15rem;
+}
+.finanzcockpit__insight-list li {
+  padding: 0.3rem 0.55rem;
+  gap: 0.45rem;
+  border-radius: var(--comp-radius-md);
+}
+.finanzcockpit__insight-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.finanzcockpit__insight-icon svg {
+  width: 13px;
+  height: 13px;
+}
+.finanzcockpit__insight-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.finanzcockpit__insight-description {
+  font-size: 0.73rem;
+  margin-top: 0.04rem;
+  line-height: 1.3;
+}
+
+/* Alert-Karten kompakter */
+.fc__alerts {
+  gap: 0.4rem;
+}
+.fc__alert-card {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+/* Zahlungsarten-Zeilen — sehr kompakt */
+.fc__payment-row {
+  padding: 0.22rem 0;
+  gap: 0.15rem;
+}
+.fc__payment-row-label {
+  font-size: 0.74rem;
+}
+.fc__payment-row-value {
+  font-size: 0.74rem;
+  min-width: 4.5rem;
+}
+.fc__payment-row-pct {
+  font-size: 0.64rem;
+  min-width: 2.5rem;
+}
+.fc__payment-dot {
+  width: 7px;
+  height: 7px;
+}
+.fc__progress-wrap {
+  height: 3px;
+  margin-top: 0.2rem;
+}
+
+/* Tarif-Liste kompakter */
+.fc__tarif-list {
+  gap: 0.45rem;
+}
+.fc__tarif-header {
+  font-size: 0.78rem;
+}
+.fc__tarif-stats {
+  font-size: 0.68rem;
+}
+.fc__tarif-bar-wrap {
+  height: 2px;
+}
+
+/* Badge & Period-Selector */
+.finanzcockpit__badge {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.65rem;
+}

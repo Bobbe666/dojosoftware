@@ -209,7 +209,12 @@ router.get('/dokumente', (req, res) => {
   logger.debug('🔵 GET /api/dojo/dokumente aufgerufen');
   const dojoId = getSecureDojoId(req);
   if (!dojoId) {
-    return res.status(400).json({ error: 'Kein Dojo ausgewählt' });
+    // Super-Admin ohne Dojo-Kontext: leere Defaults zurückgeben
+    return res.json({
+      agb_text: '', dsgvo_text: '', dojo_regeln_text: '', hausordnung_text: '',
+      haftungsausschluss_text: '', widerrufsbelehrung_text: '', impressum_text: '',
+      vertragsbedingungen_text: ''
+    });
   }
 
   const sqlSelect = `

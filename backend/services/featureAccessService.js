@@ -383,11 +383,18 @@ async function endFeatureTrial(trialId, reason = 'expired') {
   }
 }
 
+const PLAN_HIERARCHY = {
+  trial: 0, starter: 1, professional: 2, premium: 3, enterprise: 4
+};
+
 /**
  * Ermittelt Upgrade-Optionen für ein Feature
+ * Gibt nur Pläne zurück, die ÜBER dem aktuellen Plan liegen
  */
 async function getUpgradeOptionsForFeature(featureId, currentPlan) {
   try {
+    const currentLevel = PLAN_HIERARCHY[currentPlan] ?? 0;
+
     // Finde Pläne die dieses Feature enthalten
     const [plansWithFeature] = await db.promise().query(
       `SELECT sp.plan_name, sp.display_name, sp.price_monthly, sp.price_yearly, sp.sort_order
@@ -398,6 +405,11 @@ async function getUpgradeOptionsForFeature(featureId, currentPlan) {
       [featureId]
     );
 
+    // Nur Pläne über dem aktuellen Plan anzeigen
+    const upgradeablePlans = plansWithFeature.filter(
+      p => (PLAN_HIERARCHY[p.plan_name] ?? 0) > currentLevel
+    );
+
     // Addon-Preis laden
     const [addonPrices] = await db.promise().query(
       `SELECT monthly_price, yearly_price, addon_enabled, upgrade_hint
@@ -406,8 +418,8 @@ async function getUpgradeOptionsForFeature(featureId, currentPlan) {
     );
 
     return {
-      availableInPlans: plansWithFeature,
-      lowestPlan: plansWithFeature[0] || null,
+      availableInPlans: upgradeablePlans,
+      lowestPlan: upgradeablePlans[0] || null,
       addonPrice: addonPrices[0] || { monthly_price: 9, yearly_price: 90, addon_enabled: true },
       upgradeHint: addonPrices[0]?.upgrade_hint || null
     };

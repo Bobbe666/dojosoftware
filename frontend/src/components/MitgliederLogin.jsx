@@ -20,7 +20,7 @@ const MitgliederLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [loginType, setLoginType] = useState('email'); // 'email' oder 'username'
+  const [loginType, setLoginType] = useState('username'); // 'email' oder 'username'
   const [successMessage, setSuccessMessage] = useState('');
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
   const [dojoData, setDojoData] = useState(null);
@@ -119,13 +119,13 @@ const MitgliederLogin = () => {
 
     // Eingabe-Validierung
     if (!formData.loginField.trim()) {
-      setError('Bitte geben Sie Ihren Benutzernamen oder Ihre E-Mail-Adresse ein');
+      setError('Bitte gib deinen Benutzernamen oder deine E-Mail-Adresse ein');
       setLoading(false);
       return;
     }
 
     if (!formData.password.trim()) {
-      setError('Bitte geben Sie Ihr Passwort ein');
+      setError('Bitte gib dein Passwort ein');
       setLoading(false);
       return;
     }
@@ -166,7 +166,7 @@ const MitgliederLogin = () => {
       console.error('Login-Fehler:', err);
 
       if (err.response?.status === 401) {
-        setError('Ungültige Anmeldedaten. Bitte prüfen Sie Ihre E-Mail-Adresse und Passwort.');
+        setError('Ungültige Anmeldedaten. Bitte prüfe deinen Benutzernamen und dein Passwort.');
       } else if (err.response?.status === 400) {
         setError('Bitte füllen Sie alle Felder korrekt aus.');
       } else if (err.response?.status === 500) {
@@ -378,7 +378,7 @@ const MitgliederLogin = () => {
 
               <div className="register-content">
                 <p className="register-description">
-                  Werden Sie jetzt Mitglied! Melden Sie sich online an und schließen Sie Ihren Vertrag digital ab.
+                  Werde jetzt Mitglied! Melde dich online an und schließe deinen Vertrag digital ab.
                 </p>
 
                 <div className="register-benefits">
@@ -420,7 +420,7 @@ const MitgliederLogin = () => {
             {/* Dojo-Admin-Link */}
             <div className="member-link-card dojo-admin-link">
               <Building2 size={16} />
-              <span>Sie sind Dojo-Betreiber?</span>
+              <span>Du bist Dojo-Betreiber?</span>
               <Link to="/login" className="member-login-link">
                 Zum Dojo-Admin-Login
               </Link>
@@ -448,7 +448,7 @@ const MitgliederLogin = () => {
           onRegistrationComplete={(success) => {
             if (success) {
               setShowRegistrationModal(false);
-              setSuccessMessage('Registrierung erfolgreich abgeschlossen! Sie können sich jetzt anmelden.');
+              setSuccessMessage('Registrierung erfolgreich! Du kannst dich jetzt anmelden.');
             }
           }}
         />

@@ -39,7 +39,7 @@ const pool = db.promise();
 
 // ── Beispieldaten für Vorschau ─────────────────────────────────────────────────
 const VORSCHAU_MITGLIED = {
-  anrede: 'Sehr geehrte Damen und Herren',
+  anrede: 'Hallo Maria,',
   vorname: 'Maria',
   nachname: 'Mustermann',
   strasse: 'Hauptstraße',
@@ -50,8 +50,8 @@ const VORSCHAU_MITGLIED = {
 };
 
 const VORSCHAU_BRIEF_HTML = `
-<p>vielen Dank für Ihr Interesse an unserem Dojo und unseren Trainingsangeboten.</p>
-<p>Mit diesem Schreiben möchten wir Ihnen einen Überblick über unsere aktuellen Kurse und Trainingsmöglichkeiten geben. Unser erfahrenes Trainer-Team freut sich darauf, Sie auf Ihrem Weg in der Kampfkunst zu begleiten.</p>
+<p>vielen Dank für dein Interesse an unserem Dojo und unseren Trainingsangeboten.</p>
+<p>Mit diesem Schreiben möchten wir dir einen Überblick über unsere aktuellen Kurse und Trainingsmöglichkeiten geben. Unser erfahrenes Trainer-Team freut sich darauf, dich auf deinem Weg in der Kampfkunst zu begleiten.</p>
 <p><strong>Unser Kursangebot umfasst:</strong></p>
 <ul>
   <li>Anfängerkurse für Kinder (ab 6 Jahre) und Erwachsene</li>
@@ -59,8 +59,8 @@ const VORSCHAU_BRIEF_HTML = `
   <li>Prüfungsvorbereitungen für alle Gürtelgrade</li>
   <li>Seminare, Lehrgänge und Sonderveranstaltungen</li>
 </ul>
-<p>Die Trainingszeiten und weitere Informationen entnehmen Sie bitte unserer aktuellen Kursübersicht oder besuchen Sie uns auf unserer Website.</p>
-<p>Wir freuen uns auf Sie!</p>
+<p>Die Trainingszeiten und weitere Informationen entnimmst du bitte unserer aktuellen Kursübersicht oder besuchst uns auf unserer Website.</p>
+<p>Wir freuen uns auf dich!</p>
 <p>Mit freundlichen Grüßen</p>
 `;
 
@@ -89,6 +89,7 @@ const DEFAULT_EINSTELLUNGEN = {
   footer_bank_ids: null,
   footer_inhaber_aus_stammdaten: 0,
   logo_position: 'rechts',
+  anrede_form: 'du',
 };
 
 // ── GET / — Einstellungen laden (oder Defaults) ───────────────────────────────
@@ -123,6 +124,7 @@ router.put('/', async (req, res) => {
     footer_bank_ids = null,
     footer_inhaber_aus_stammdaten = 0,
     logo_position = 'rechts',
+    anrede_form = 'du',
   } = req.body;
 
   // Bei DIN-Presets → Margin-Werte vom Preset übernehmen (außer bei custom)
@@ -139,8 +141,8 @@ router.put('/', async (req, res) => {
          font_family, font_size_pt, line_height,
          footer_show_bank, footer_show_contact, footer_show_inhaber,
          footer_custom_html, standard_profil_id, farbe_primaer, footer_bank_ids,
-         footer_inhaber_aus_stammdaten, logo_position)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         footer_inhaber_aus_stammdaten, logo_position, anrede_form)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         din_format                   = VALUES(din_format),
         margin_top_mm                = VALUES(margin_top_mm),
@@ -158,7 +160,8 @@ router.put('/', async (req, res) => {
         farbe_primaer                = VALUES(farbe_primaer),
         footer_bank_ids              = VALUES(footer_bank_ids),
         footer_inhaber_aus_stammdaten = VALUES(footer_inhaber_aus_stammdaten),
-        logo_position                = VALUES(logo_position)
+        logo_position                = VALUES(logo_position),
+        anrede_form                  = VALUES(anrede_form)
     `, [
       dojoId, din_format, finalMarginTop, finalMarginBottom, finalMarginLeft, finalMarginRight,
       font_family, font_size_pt, line_height,
@@ -169,6 +172,7 @@ router.put('/', async (req, res) => {
       footer_bank_ids ? JSON.stringify(footer_bank_ids) : null,
       footer_inhaber_aus_stammdaten ? 1 : 0,
       logo_position || 'rechts',
+      ['du', 'sie'].includes(anrede_form) ? anrede_form : 'du',
     ]);
 
     res.json({ success: true });

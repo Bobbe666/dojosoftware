@@ -18,7 +18,8 @@ import {
   ChevronRight,
   User,
   CreditCard,
-  XCircle
+  XCircle,
+  Loader
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -43,6 +44,7 @@ const Zahllaeufe = ({ embedded = false }) => {
     offen: 0,
     gesamtbetrag: 0
   });
+  const [abschliessend, setAbschliessend] = useState(null); // zahllauf_id der gerade abgeschlossen wird
 
   useEffect(() => {
     loadZahllaeufe();
@@ -209,6 +211,39 @@ const Zahllaeufe = ({ embedded = false }) => {
     }
   };
 
+  const handleAbschliessen = async (zahllauf) => {
+    // Monat/Jahr aus forderungen_bis ermitteln
+    const fBis = zahllauf.forderungen_bis ? new Date(zahllauf.forderungen_bis) : null;
+    const monat = fBis ? fBis.getMonth() + 1 : null;
+    const jahr = fBis ? fBis.getFullYear() : null;
+
+    const infoText = monat && jahr
+      ? `Monat ${String(monat).padStart(2,'0')}/${jahr}`
+      : 'diesen Zahllauf';
+
+    if (!window.confirm(`Zahllauf "${zahllauf.buchungsnummer}" als abgeschlossen markieren?\n\nAlle offenen SEPA-Beiträge für ${infoText} werden als bezahlt gesetzt.`)) return;
+
+    setAbschliessend(zahllauf.zahllauf_id);
+    try {
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/zahllaeufe/${zahllauf.zahllauf_id}/abschliessen`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ monat, jahr }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Fehler');
+      alert(`✅ Abgeschlossen — ${data.marked_bezahlt} Beiträge als bezahlt markiert.`);
+      loadZahllaeufe();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setAbschliessend(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="zahllaeufe-container">
@@ -221,7 +256,7 @@ const Zahllaeufe = ({ embedded = false }) => {
   }
 
   return (
-    <div className="zahllaeufe-container">
+    <div className={`zahllaeufe-container${embedded ? ' embedded' : ''}`}>
       {/* Header - nur anzeigen wenn nicht embedded */}
       {!embedded && (
       <div className="zahllaeufe-header">
@@ -417,14 +452,24 @@ const Zahllaeufe = ({ embedded = false }) => {
                       </td>
                       <td>
                         <div className="action-buttons">
-                          {zahllauf.quelle !== 'stripe' && (
+                          {zahllauf.quelle !== 'stripe' && zahllauf.status !== 'abgeschlossen' && (
                             <button
-                              className="btn-icon btn-secondary"
-                              onClick={() => alert('CSV herunterladen')}
-                              title="CSV herunterladen"
+                              className="btn-icon btn-success"
+                              onClick={() => handleAbschliessen(zahllauf)}
+                              disabled={abschliessend === zahllauf.zahllauf_id}
+                              title="Einzug bestätigen — Beiträge als bezahlt markieren"
+                              style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
                             >
-                              <Download size={16} />
+                              {abschliessend === zahllauf.zahllauf_id
+                                ? <Loader size={14} className="spin" />
+                                : <CheckCircle size={14} />}
+                              Einzug bestätigen
                             </button>
+                          )}
+                          {zahllauf.status === 'abgeschlossen' && (
+                            <span style={{ fontSize: '0.8rem', color: 'var(--success, #22c55e)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <CheckCircle size={14} /> Bezahlt
+                            </span>
                           )}
                         </div>
                       </td>

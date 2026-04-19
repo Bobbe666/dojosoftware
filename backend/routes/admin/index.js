@@ -17,6 +17,7 @@ const saasSettingsRouter  = require('./saas-settings');
 const comparisonRouter    = require('./comparison');
 const lizenzvertragRouter = require('./lizenzvertrag');
 const akquiseRouter       = require('./akquise');
+const kampagnenRouter     = require('./kampagnen');
 
 // Sub-Router einbinden
 // Reihenfolge: spezifischere Routen zuerst
@@ -24,6 +25,7 @@ router.use('/saas-settings', saasSettingsRouter);   // /saas-settings
 router.use('/comparison', comparisonRouter);        // /comparison
 router.use('/lizenzvertrag', lizenzvertragRouter);  // /lizenzvertrag/*
 router.use('/akquise',      akquiseRouter);         // /akquise/*
+router.use('/kampagnen',    kampagnenRouter);       // /kampagnen/*
 router.use('/', dojosRouter);           // /dojos, /dojos/:id
 router.use('/', statsRouter);           // /global-stats, /tda-stats, /statistics
 router.use('/', subscriptionsRouter);   // /dojos/:id/extend-trial, /subscription-plans

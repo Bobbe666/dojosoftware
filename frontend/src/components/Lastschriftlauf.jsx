@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -16,7 +16,9 @@ import {
   ChevronRight,
   Zap,
   Settings,
-  Loader
+  Loader,
+  Clock,
+  Info
 } from "lucide-react";
 import config from "../config/config";
 import { useDojoContext } from '../context/DojoContext';
@@ -27,6 +29,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 import openApiBlob from '../utils/openApiBlob';
 import LastschriftAutomatik from './LastschriftAutomatik';
 import '../styles/LastschriftAutomatik.css';
+import Zahllaeufe from './Zahllaeufe';
 
 
 const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
@@ -62,6 +65,19 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [notInRunOpen, setNotInRunOpen] = useState(false);
   const [notInRunLoading, setNotInRunLoading] = useState(false);
 
+  // Mitglieder ohne Tarif (Warnliste aus Preview)
+  const [ohneTarif, setOhneTarif] = useState([]);
+  // Mitglieder mit laufendem Stripe-Einzug (processing)
+  const [inVerarbeitung, setInVerarbeitung] = useState([]);
+  // Cards auf-/zugeklappt
+  const [inVerarbeitungOpen, setInVerarbeitungOpen] = useState(false);
+  const [ohneTarifOpen, setOhneTarifOpen] = useState(false);
+  const [missingMandatesOpen, setMissingMandatesOpen] = useState(false);
+
+  // Aus aktuellem Lauf ausgeschlossene Mitglieder (nur frontend-seitig, beiträge bleiben offen)
+  const [excludedMitglieder, setExcludedMitglieder] = useState(new Set());
+  const [excludedOpen, setExcludedOpen] = useState(false);
+
   const loadNotInRun = async () => {
     setNotInRunLoading(true);
     try {
@@ -92,7 +108,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
   const filteredPreview = React.useMemo(() => {
     if (!preview?.preview) return [];
-    let items = [...preview.preview];
+    let items = preview.preview.filter(i => !excludedMitglieder.has(i.mitglied_id));
     if (previewSearch.trim()) {
       const q = previewSearch.toLowerCase();
       items = items.filter(i =>
@@ -114,7 +130,23 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       return previewSort.dir === 'asc' ? va - vb : vb - va;
     });
     return items;
-  }, [preview, previewSearch, previewMonthFilter, previewSort]);
+  }, [preview, previewSearch, previewMonthFilter, previewSort, excludedMitglieder]);
+
+  // Ausgeschlossene Mitglieder (vollständige Datensätze für die Anzeige)
+  const excludedPreviewItems = React.useMemo(() => {
+    if (!preview?.preview) return [];
+    return preview.preview.filter(i => excludedMitglieder.has(i.mitglied_id));
+  }, [preview, excludedMitglieder]);
+
+  // Aktive Anzahl und Summe (ohne manuell ausgeschlossene)
+  const activeCount = preview?.preview
+    ? preview.preview.filter(i => !excludedMitglieder.has(i.mitglied_id)).length
+    : 0;
+  const activeTotal = preview?.preview
+    ? preview.preview
+        .filter(i => !excludedMitglieder.has(i.mitglied_id))
+        .reduce((sum, i) => sum + parseFloat(i.betrag || 0), 0)
+    : 0;
 
   // Toggle für Beiträge-Details Dropdown
   const toggleRowExpanded = (mitgliedId) => {
@@ -126,6 +158,19 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         newSet.add(mitgliedId);
       }
       return newSet;
+    });
+  };
+
+  // Mitglied aus aktuellem Lauf ausschließen / wieder einschließen
+  const toggleExclude = (mitgliedId) => {
+    setExcludedMitglieder(prev => {
+      const s = new Set(prev);
+      if (s.has(mitgliedId)) {
+        s.delete(mitgliedId);
+      } else {
+        s.add(mitgliedId);
+      }
+      return s;
     });
   };
 
@@ -164,6 +209,8 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       }
       
       setPreview(data);
+      setOhneTarif(data.ohne_tarif || []);
+      setInVerarbeitung(data.in_verarbeitung || []);
       setLoading(false);
     } catch (error) {
       console.error('❌ Fehler beim Laden der Vorschau:', error);
@@ -298,12 +345,16 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       return;
     }
 
+    const excludedNote = excludedMitglieder.size > 0
+      ? `\n⚠️ ${excludedMitglieder.size} Mitglied(er) manuell ausgeschlossen.`
+      : '';
     const confirmMessage = `Stripe SEPA Lastschriftlauf ausführen?\n\n` +
       `Monat: ${selectedMonth}/${selectedYear}\n` +
-      `Anzahl Mitglieder: ${preview.count}\n` +
-      `Gesamtbetrag: €${preview.total_amount}\n\n` +
+      `Anzahl Mitglieder: ${activeCount}\n` +
+      `Gesamtbetrag: €${activeTotal.toFixed(2)}\n\n` +
       `Die Lastschriften werden direkt über Stripe eingezogen.\n` +
-      `ACHTUNG: Dies kann nicht rückgängig gemacht werden!`;
+      `ACHTUNG: Dies kann nicht rückgängig gemacht werden!` +
+      excludedNote;
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -321,13 +372,18 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           dojo_id: numericDojoId,
           monat: selectedMonth,
           jahr: selectedYear,
-          mitglieder: preview.preview.map(m => ({
-            mitglied_id: m.mitglied_id,
-            name: m.name,
-            betrag: m.betrag,
-            beitraege: m.beitraege,
-            offene_monate: m.offene_monate
-          }))
+          mitglieder: preview.preview
+            .filter(m => !excludedMitglieder.has(m.mitglied_id))
+            .map(m => ({
+              mitglied_id: m.mitglied_id,
+              name: m.name,
+              betrag: m.betrag,
+              beitraege: m.beitraege,
+              offene_monate: m.offene_monate,
+              ratenplan_id: m.ratenplan_id || null,
+              ratenplan_aufschlag: m.ratenplan_aufschlag || 0,
+              raten_ausstehend: m.raten_ausstehend || 0
+            }))
         })
       });
 
@@ -391,14 +447,29 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     const einzugDate = new Date(selectedYear, selectedMonth, 5);
     const geplanter_einzug = einzugDate.toISOString().substring(0, 10);
 
+    // Alle Beitrag-IDs aus der Vorschau sammeln — ausgeschlossene Mitglieder überspringen
+    const alleBeitragIds = (preview.preview || [])
+      .filter(m => !excludedMitglieder.has(m.mitglied_id))
+      .flatMap(m => (m.beitraege || []).map(b => b.beitrag_id))
+      .filter(Boolean);
+    const includedCount = (preview.preview || []).filter(m => !excludedMitglieder.has(m.mitglied_id)).length;
+    const includedTotal = (preview.preview || [])
+      .filter(m => !excludedMitglieder.has(m.mitglied_id))
+      .reduce((sum, m) => sum + parseFloat(m.betrag || 0), 0);
+    const excludedNote = excludedMitglieder.size > 0
+      ? `\n⚠️ ${excludedMitglieder.size} Mitglied(er) manuell ausgeschlossen (Beiträge bleiben offen).`
+      : '';
+
     const confirm = window.confirm(
       `Zahllauf in der Datenbank speichern?\n\n` +
       `Buchungsnummer: ${buchungsnummer}\n` +
       `Forderungen bis: ${forderungen_bis}\n` +
       `Geplanter Einzug: ${geplanter_einzug}\n` +
-      `Anzahl: ${preview.count} Mandate\n` +
-      `Betrag: ${preview.total_amount} €\n` +
-      `Bank: ${bankInfo?.bank_name || 'Unbekannt'}`
+      `Anzahl: ${includedCount} Mandate\n` +
+      `Betrag: ${includedTotal.toFixed(2)} €\n` +
+      `Bank: ${bankInfo?.bank_name || 'Unbekannt'}` +
+      excludedNote + `\n\n` +
+      `Die ${alleBeitragIds.length} Beiträge werden direkt als bezahlt markiert.`
     );
     if (!confirm) return;
 
@@ -412,15 +483,17 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           forderungen_bis,
           geplanter_einzug,
           zahlungsanbieter: bankInfo?.bank_typ === 'stripe' ? 'Stripe SEPA' : 'SEPA (Lastschrift)',
-          anzahl_buchungen: preview.count,
-          betrag: preview.total_amount,
+          anzahl_buchungen: includedCount,
+          betrag: includedTotal.toFixed(2),
           dojo_id: dojoId || null,
+          beitrag_ids: alleBeitragIds,
         }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Fehler beim Erstellen');
       setZahllaufCreated(data.zahllauf_id);
-      alert(`✅ Zahllauf #${data.zahllauf_id} erfolgreich gespeichert!\nBuchungsnummer: ${buchungsnummer}`);
+      alert(`✅ Zahllauf #${data.zahllauf_id} erfolgreich gespeichert!\nBuchungsnummer: ${buchungsnummer}\n${data.marked_bezahlt} Beiträge als bezahlt markiert.`);
+      loadPreview(); // Vorschau aktualisieren — sollte jetzt leer sein
     } catch (err) {
       alert('Fehler beim Erstellen des Zahllaufs: ' + err.message);
     } finally {
@@ -488,17 +561,47 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           Zurück
         </button>
         <div>
-          <h1>💶 SEPA-Lastschriftlauf</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h1 style={{ margin: 0 }}>💶 SEPA-Lastschriftlauf</h1>
+            <div className="ll-help-tooltip">
+              <Info size={16} className="ll-help-icon" />
+              <div className="ll-help-popup">
+                <strong>💡 SEPA-Lastschriftverfahren</strong>
+                <p style={{ margin: '0 0 8px', lineHeight: 1.5 }}>
+                  Der Lastschriftlauf generiert eine Datei mit allen aktiven SEPA-Mandaten.
+                  Diese kann direkt in Ihre Online-Banking-Software oder bei Ihrer Bank importiert werden.
+                </p>
+                <ul>
+                  <li><strong>SEPA-Mandat:</strong> Nur Mitglieder mit aktivem Mandat und Zahlungsmethode "SEPA-Lastschrift" werden berücksichtigt.</li>
+                  <li><strong>Vorlaufzeit:</strong> Mind. 5 Bankarbeitstage einplanen.</li>
+                  <li><strong>Format:</strong> CSV für deutsche Banken, XML für internationale Standards.</li>
+                  <li><strong>Prüfung:</strong> Vorschau vor dem Export kontrollieren.</li>
+                  <li><strong>Datenschutz:</strong> Exportierte Datei enthält sensible Kontodaten — sicher aufbewahren!</li>
+                </ul>
+              </div>
+            </div>
+          </div>
           <p>Monatliche Lastschriften generieren und an Bank übermitteln</p>
         </div>
-        <div className="u-flex-gap-sm">
-          <button
-            className="btn btn-secondary ll-btn-sm"
-            onClick={() => navigate('/dashboard/zahllaeufe')}
-          >
-            <FileText size={16} />
-            Zahlläufe-Übersicht
-          </button>
+        <div className="u-flex-gap-sm ll-header-right">
+          {preview && (
+            <>
+              <div className="ll-stat-pill ll-stat-pill--header">
+                <DollarSign size={14} />
+                <div>
+                  <span className="ll-stat-label">Gesamtbetrag</span>
+                  <span className="ll-stat-val">{formatCurrency(activeTotal)}</span>
+                </div>
+              </div>
+              <div className="ll-stat-pill ll-stat-pill--header">
+                <Calendar size={14} />
+                <div>
+                  <span className="ll-stat-label">Abrechnungsmonat</span>
+                  <span className="ll-stat-val">{getMonthName(selectedMonth)} {selectedYear}</span>
+                </div>
+              </div>
+            </>
+          )}
           <button
             className="btn btn-info ll-btn-sm"
             onClick={loadPreview}
@@ -525,6 +628,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         >
           <Zap size={15} /> Automatischer Einzug
         </button>
+        <button
+          className={`ll-tab-btn${activeTab === 'zahllaeufe' ? ' ll-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('zahllaeufe')}
+        >
+          <FileText size={15} /> Zahlläufe Übersicht
+        </button>
       </div>
 
       {/* Tab: Automatischer Einzug */}
@@ -532,271 +641,297 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         <LastschriftAutomatik dojoId={dojoId} />
       )}
 
+      {/* Tab: Zahlläufe Übersicht */}
+      {activeTab === 'zahllaeufe' && (
+        <Zahllaeufe embedded={true} />
+      )}
+
       {/* Tab: Manueller Lauf — bestehender Inhalt */}
       {activeTab === 'manuell' && (
       <>
 
-      {/* Hauptcontainer: Links Info + Stats, Rechts Warning */}
-      <div className="main-layout-container">
-        {/* Linke Seite: Info-Box oben, Statistik-Karten darunter */}
-        <div className="left-section">
-          {/* Info Box */}
-          <div className="info-box compact">
-            <AlertCircle size={20} />
-            <div>
-              <h3>SEPA-Lastschriftverfahren</h3>
-              <p>
-                Der Lastschriftlauf generiert eine Datei mit allen aktiven SEPA-Mandaten.
-                Diese Datei kann direkt in Ihre Online-Banking Software oder bei Ihrer Bank importiert werden.
-                <strong> Nur Mitglieder mit aktivem SEPA-Mandat und Zahlungsmethode "SEPA-Lastschrift" werden berücksichtigt.</strong>
-              </p>
-            </div>
-          </div>
+      {/* Warning-Boxen: nebeneinander (zugeklappt) / untereinander (aufgeklappt) */}
+        {(missingMandates.length > 0 || ohneTarif.length > 0 || inVerarbeitung.length > 0) && (
+          <div style={{
+            display: 'flex',
+            flexDirection: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'column' : 'row',
+            gap: '0.6rem',
+            marginBottom: '0.6rem',
+            alignItems: 'flex-start'
+          }}>
 
-          {/* Statistiken - 2x2 Grid */}
-          {preview && (
-            <div className="stats-grid-compact">
-              <div className="stat-card success">
-                <div className="stat-icon">
-                  <Users size={16} />
-                </div>
-                <div className="stat-info">
-                  <h3>Aktive Mandate</h3>
-                  <p className="stat-value">{preview.count}</p>
-                  <span className="stat-trend">SEPA-Lastschriften</span>
-                </div>
+        {/* In Verarbeitung bei Stripe */}
+        {inVerarbeitung.length > 0 && (
+          <div className="in-verarbeitung-info" style={{ flex: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'none' : 1, minWidth: 0, width: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? '100%' : undefined }}>
+            <Clock size={22} style={{ marginTop: inVerarbeitungOpen ? '0.15rem' : '0' }} />
+            <div style={{ flex: 1 }}>
+              <div className="warn-card-header" onClick={() => setInVerarbeitungOpen(o => !o)}>
+                <h3>Einzug läuft — warte auf Rückmeldung ({inVerarbeitung.length})</h3>
+                {inVerarbeitungOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </div>
-
-              <div className="stat-card info">
-                <div className="stat-icon">
-                  <DollarSign size={16} />
-                </div>
-                <div className="stat-info">
-                  <h3>Gesamtbetrag</h3>
-                  <p className="stat-value">{formatCurrency(preview.total_amount)}</p>
-                  <span className="stat-trend">Monatlich</span>
-                </div>
-              </div>
-
-              <div className="stat-card warning">
-                <div className="stat-icon">
-                  <Calendar size={16} />
-                </div>
-                <div className="stat-info">
-                  <h3>Abrechnungsmonat</h3>
-                  <p className="stat-value">{getMonthName(selectedMonth)}</p>
-                  <span className="stat-trend">{selectedYear}</span>
-                </div>
-              </div>
-
-              <div className="stat-card positive">
-                <div className="stat-icon">
-                  <CreditCard size={16} />
-                </div>
-                <div className="stat-info">
-                  <h3>Einzugsbank</h3>
-                  <p className="stat-value">
-                    {(() => {
-                      const bank = availableBanks.find(b => b.id === selectedBank);
-                      if (bank) {
-                        return bank.bank_typ === 'stripe' ? 'Stripe SEPA' : bank.bank_name;
-                      }
-                      return 'Keine Bank gewählt';
-                    })()}
+              {inVerarbeitungOpen && (
+                <>
+                  <p>
+                    Diese Beiträge stecken in einem laufenden Stripe-Einzug (<strong>processing</strong>).
+                    Sie tauchen <strong>nicht erneut</strong> im Lauf auf. Neue Monate (z.B. Mai)
+                    erscheinen weiterhin normal. Bei Ablehnung kommen sie automatisch zurück.
                   </p>
-                  <span className="stat-trend">
-                    {preview.count > 0 ? 'Export bereit' : 'Keine Mandate'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Rechte Seite: Warning Box oben */}
-        {missingMandates.length > 0 && (
-          <div className="right-section">
-            <div className="warning-box">
-              <AlertCircle size={24} />
-              <div>
-                <h3>⚠️ Fehlende SEPA-Mandate ({missingMandates.length})</h3>
-                <p>
-                  Die folgenden Mitglieder haben Verträge mit Zahlungsmethode "Lastschrift",
-                  aber <strong>kein aktives SEPA-Mandat</strong>.
-                  Lastschriften können für diese Mitglieder nicht durchgeführt werden:
-                </p>
-                <div className="missing-mandates-list">
-                  {missingMandates.slice(0, 5).map(member => (
-                    <div
-                      key={member.mitglied_id}
-                      className="missing-mandate-item ll-cursor-pointer"
-                      onClick={() => navigate(`/dashboard/mitglieder/${member.mitglied_id}`)}
-                    >
-                      <span className="member-name">
-                        {member.vorname} {member.nachname} (ID: {member.mitglied_id})
-                      </span>
-                      <span className="contract-count">
-                        {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege > 1 ? 'e' : ''}
-                      </span>
-                    </div>
-                  ))}
-                  {missingMandates.length > 5 && (
-                    <div className="more-info">
-                      ... und {missingMandates.length - 5} weitere
-                    </div>
-                  )}
-                </div>
-                <button
-                  className="logout-button ll-mt-1"
-                  onClick={() => navigate('/dashboard/sepa-mandate')}
-                >
-                  SEPA-Mandate verwalten
-                </button>
-              </div>
+                  <div className="in-verarbeitung-list">
+                    {inVerarbeitung.map(m => (
+                      <div
+                        key={m.mitglied_id}
+                        className="in-verarbeitung-item ll-cursor-pointer"
+                        onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}
+                      >
+                        <span className="in-verarb-name">{m.name}</span>
+                        <span className="in-verarb-meta">
+                          {m.transaktionen.map(t =>
+                            `${String(t.monat).padStart(2,'0')}/${t.jahr} · ${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(t.betrag)}`
+                          ).join(', ')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
+
+        {/* Ohne-Tarif Warning */}
+        {ohneTarif.length > 0 && (
+          <div className="ohne-tarif-warning" style={{ flex: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'none' : 1, minWidth: 0, width: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? '100%' : undefined }}>
+            <AlertCircle size={22} style={{ marginTop: ohneTarifOpen ? '0.15rem' : '0' }} />
+            <div style={{ flex: 1 }}>
+              <div className="warn-card-header" onClick={() => setOhneTarifOpen(o => !o)}>
+                <h3>Kein Tarif — nicht im Lauf ({ohneTarif.length})</h3>
+                {ohneTarifOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </div>
+              {ohneTarifOpen && (
+                <>
+                  <p>
+                    Diese Mitglieder haben ein aktives SEPA-Mandat und offene Beiträge,
+                    aber <strong>keinen aktiven Vertrag mit Tarif</strong>.
+                    Sie werden im Lastschriftlauf <strong>nicht berücksichtigt</strong>.
+                  </p>
+                  <div className="ohne-tarif-list">
+                    {ohneTarif.map(m => (
+                      <div
+                        key={m.mitglied_id}
+                        className="ohne-tarif-item ll-cursor-pointer"
+                        onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}
+                      >
+                        <span className="ohne-tarif-name">{m.name}</span>
+                        <span className="ohne-tarif-meta">
+                          {m.offene_monate} · {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(m.gesamt_betrag)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Fehlende Mandate */}
+        {missingMandates.length > 0 && (
+          <div className="warning-box" style={{ flex: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? 'none' : 1, minWidth: 0, width: (inVerarbeitungOpen || ohneTarifOpen || missingMandatesOpen) ? '100%' : undefined }}>
+            <AlertCircle size={24} style={{ marginTop: missingMandatesOpen ? '0.2rem' : '0' }} />
+            <div style={{ flex: 1 }}>
+              <div className="warn-card-header" onClick={() => setMissingMandatesOpen(o => !o)}>
+                <h3>⚠️ Fehlende SEPA-Mandate ({missingMandates.length})</h3>
+                {missingMandatesOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </div>
+              {missingMandatesOpen && (
+                <>
+                  <p>
+                    Die folgenden Mitglieder haben Verträge mit Zahlungsmethode "Lastschrift",
+                    aber <strong>kein aktives SEPA-Mandat</strong>.
+                    Lastschriften können für diese Mitglieder nicht durchgeführt werden:
+                  </p>
+                  <div className="missing-mandates-list">
+                    {missingMandates.slice(0, 5).map(member => (
+                      <div
+                        key={member.mitglied_id}
+                        className="missing-mandate-item ll-cursor-pointer"
+                        onClick={() => navigate(`/dashboard/mitglieder/${member.mitglied_id}`)}
+                      >
+                        <span className="member-name">
+                          {member.vorname} {member.nachname} (ID: {member.mitglied_id})
+                        </span>
+                        <span className="contract-count">
+                          {member.anzahl_vertraege} Vertrag{member.anzahl_vertraege > 1 ? 'e' : ''}
+                        </span>
+                      </div>
+                    ))}
+                    {missingMandates.length > 5 && (
+                      <div className="more-info">
+                        ... und {missingMandates.length - 5} weitere
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    className="logout-button ll-mt-1"
+                    onClick={() => navigate('/dashboard/sepa-mandate')}
+                  >
+                    SEPA-Mandate verwalten
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+          </div>
+        )}
+
+      {/* Zeitraum-Toolbar — schlanke Zeile ohne Karten-Wrapper */}
+      <div className="ll-period-toolbar">
+        <Calendar size={14} className="ll-period-icon" />
+        <select
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+          className="form-select-compact"
+        >
+          {[...Array(12)].map((_, i) => (
+            <option key={i + 1} value={i + 1}>{getMonthName(i + 1)}</option>
+          ))}
+        </select>
+        <select
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+          className="form-select-compact"
+        >
+          <option value={2024}>2024</option>
+          <option value={2025}>2025</option>
+          <option value={2026}>2026</option>
+        </select>
+        <button className="ll-period-btn" onClick={loadPreview} disabled={loading}>
+          <Eye size={14} />
+          {loading ? 'Lädt…' : 'Vorschau laden'}
+        </button>
       </div>
 
-      {/* Export Konfiguration */}
-      <div className="export-config-card">
-        <h2>Export Konfiguration</h2>
+      {/* Lauf Konfiguration */}
+      <div className="export-config-card ll-config-card-new">
 
-        <div className="config-single-row">
-          <div className="form-field-inline">
-            <label>
-              <FileText size={14} />
-              Export Format
-            </label>
-            <select
-              value={selectedFormat}
-              onChange={(e) => setSelectedFormat(e.target.value)}
-              className="form-select-compact"
-            >
-              <option value="csv">CSV</option>
-              <option value="xml">SEPA XML pain.008 (Standard)</option>
-            </select>
-          </div>
+        {/* Zwei Aktions-Spalten */}
+        <div className="ll-config-channels">
 
-          <div className="form-field-inline">
-            <label>
-              <Calendar size={14} />
-              Abrechnungsmonat
-            </label>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-              className="form-select-compact"
-            >
-              {[...Array(12)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>
-                  {getMonthName(i + 1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-field-inline">
-            <label>Jahr</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-              className="form-select-compact"
-            >
-              <option value={2024}>2024</option>
-              <option value={2025}>2025</option>
-              <option value={2026}>2026</option>
-            </select>
-          </div>
-
-          <div className="form-field-inline">
-            <label>
-              <CreditCard size={14} />
-              Einzugsbank
-            </label>
-            <select
-              value={selectedBank || ''}
-              onChange={(e) => setSelectedBank(parseInt(e.target.value))}
-              className="form-select-compact ll-select-wide"
-            >
-              {availableBanks.length === 0 ? (
-                <option value="">Keine Bankkonten verfügbar</option>
-              ) : (
-                availableBanks.map(bank => (
-                  <option key={bank.id} value={bank.id}>
-                    {bank.dojoname ? `[${bank.dojoname}] ` : ''}{bank.bank_name} ({bank.typ_label || bank.bank_typ}) {bank.iban_masked}
-                    {bank.ist_standard ? ' ★' : ''}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <button
-            className="logout-button ll-nowrap"
-            onClick={loadPreview}
-            disabled={loading}
-          >
-            <Eye size={16} />
-            {loading ? 'Lädt...' : 'Vorschau aktualisieren'}
-          </button>
-
-          <button
-            className="logout-button ll-nowrap ll-create-btn"
-            onClick={handleCreateZahllauf}
-            disabled={zahllaufCreating || !preview || preview.count === 0}
-          >
-            {zahllaufCreating ? <Loader size={16} className="spin" /> : <CheckCircle size={16} />}
-            {zahllaufCreated ? `✓ Lauf #${zahllaufCreated}` : 'Zahllauf erstellen'}
-          </button>
-
-          <button
-            className="logout-button ll-nowrap"
-            onClick={handleExport}
-            disabled={loading || !preview || preview.count === 0}
-          >
-            <Download size={16} />
-            Jetzt exportieren
-          </button>
-
-          {/* Stripe Buttons - nur anzeigen wenn Stripe konfiguriert */}
-          {stripeStatus?.stripe_configured && (
-            <>
-              <div className="ll-divider" />
-
-              {stripeStatus.needs_setup > 0 && (
+          {/* ── Kanal 1: Bankeinzug / Datei-Export ── */}
+          <div className="ll-channel ll-channel-bank">
+            <div className="ll-channel-header">
+              <CreditCard size={16} />
+              <span>Bankeinzug &amp; Datei-Export</span>
+            </div>
+            <div className="ll-channel-body">
+              <div className="ll-channel-fields">
+                <div className="form-field-inline">
+                  <label><FileText size={13} />Format</label>
+                  <select
+                    value={selectedFormat}
+                    onChange={(e) => setSelectedFormat(e.target.value)}
+                    className="form-select-compact"
+                  >
+                    <option value="csv">CSV</option>
+                    <option value="xml">SEPA XML pain.008</option>
+                  </select>
+                </div>
+                <div className="form-field-inline ll-bank-field">
+                  <label><CreditCard size={13} />Einzugsbank</label>
+                  <select
+                    value={selectedBank || ''}
+                    onChange={(e) => setSelectedBank(parseInt(e.target.value))}
+                    className="form-select-compact ll-select-wide"
+                  >
+                    {availableBanks.length === 0 ? (
+                      <option value="">Keine Bankkonten verfügbar</option>
+                    ) : (
+                      availableBanks.map(bank => (
+                        <option key={bank.id} value={bank.id}>
+                          {bank.dojoname ? `[${bank.dojoname}] ` : ''}{bank.bank_name} ({bank.typ_label || bank.bank_typ}) {bank.iban_masked}
+                          {bank.ist_standard ? ' ★' : ''}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+              </div>
+              <div className="ll-channel-actions">
                 <button
-                  className="logout-button ll-stripe-setup-btn"
-                  onClick={handleStripeSetupAll}
-                  disabled={stripeProcessing}
-                  title={`${stripeStatus.needs_setup} Mitglieder benötigen Stripe Setup`}
+                  className="logout-button ll-nowrap ll-create-btn"
+                  onClick={handleCreateZahllauf}
+                  disabled={zahllaufCreating || !preview || activeCount === 0}
                 >
-                  {stripeProcessing ? <Loader size={16} className="spin" /> : <Settings size={16} />}
-                  Stripe Setup ({stripeStatus.needs_setup})
+                  {zahllaufCreating ? <Loader size={16} className="spin" /> : <CheckCircle size={16} />}
+                  {zahllaufCreated ? `✓ Lauf #${zahllaufCreated}` : 'Zahllauf erstellen'}
                 </button>
-              )}
+                <button
+                  className="logout-button ll-nowrap"
+                  onClick={handleExport}
+                  disabled={loading || !preview || activeCount === 0}
+                >
+                  <Download size={16} />
+                  Exportieren
+                </button>
+              </div>
+              <p className="ll-channel-hint">Zahllauf speichern und/oder Datei für Hausbank generieren</p>
+            </div>
+          </div>
 
-              <button
-                className="logout-button ll-stripe-execute-btn"
-                onClick={handleStripeExecute}
-                disabled={stripeProcessing || !preview || preview.count === 0}
-              >
-                {stripeProcessing ? <Loader size={16} className="spin" /> : <Zap size={16} />}
-                Mit Stripe einziehen
-              </button>
-
-              <button
-                className="logout-button ll-stripe-sync-btn"
-                onClick={handleStripeSyncVormonat}
-                disabled={stripeSyncing}
-                title="Alle offenen Lastschriften bei Stripe abfragen und Beiträge automatisch auf bezahlt setzen"
-              >
-                {stripeSyncing ? <Loader size={16} className="spin" /> : <RefreshCw size={16} />}
-                Stripe Sync
-              </button>
-            </>
+          {/* ── Kanal 2: Stripe SEPA ── */}
+          {stripeStatus?.stripe_configured && (
+            <div className="ll-channel ll-channel-stripe">
+              <div className="ll-channel-header">
+                <Zap size={16} />
+                <span>Stripe SEPA — Direkteinzug</span>
+              </div>
+              <div className="ll-channel-body">
+                {stripeStatus.needs_setup > 0 && (
+                  <div className="ll-stripe-setup-hint">
+                    <AlertCircle size={13} />
+                    {stripeStatus.needs_setup} Mitglieder ohne Stripe-Setup
+                  </div>
+                )}
+                <div className="ll-stripe-row">
+                  <div className="ll-channel-actions">
+                    {stripeStatus.needs_setup > 0 && (
+                      <button
+                        className="logout-button ll-stripe-setup-btn"
+                        onClick={handleStripeSetupAll}
+                        disabled={stripeProcessing}
+                        title={`${stripeStatus.needs_setup} Mitglieder benötigen Stripe Setup`}
+                      >
+                        {stripeProcessing ? <Loader size={16} className="spin" /> : <Settings size={16} />}
+                        Setup ({stripeStatus.needs_setup})
+                      </button>
+                    )}
+                    <button
+                      className="logout-button ll-stripe-execute-btn"
+                      onClick={handleStripeExecute}
+                      disabled={stripeProcessing || !preview || activeCount === 0}
+                    >
+                      {stripeProcessing ? <Loader size={16} className="spin" /> : <Zap size={16} />}
+                      Jetzt einziehen
+                    </button>
+                    <button
+                      className="logout-button ll-stripe-sync-btn"
+                      onClick={handleStripeSyncVormonat}
+                      disabled={stripeSyncing}
+                      title="Stripe-Status abfragen und Beiträge aktualisieren"
+                    >
+                      {stripeSyncing ? <Loader size={16} className="spin" /> : <RefreshCw size={16} />}
+                      Stripe Sync
+                    </button>
+                  </div>
+                  <p className="ll-channel-hint">Direkteinzug ohne Datei-Export</p>
+                </div>
+              </div>
+            </div>
           )}
+
         </div>
+      </div>
 
         {/* Stripe Setup Fortschritt */}
         {stripeSetupProgress && (
@@ -872,13 +1007,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
             </div>
           </div>
         )}
-      </div>
 
       {/* Vorschau Tabelle */}
       {preview && preview.preview && preview.preview.length > 0 && (
         <div className="preview-card">
           <div className="ll-not-in-run-header" onClick={() => setPreviewOpen(o => !o)}>
-            <h2 style={{margin:0}}>Vorschau ({preview.count} Einträge) - Gesamtsumme: {formatCurrency(preview.total_amount)}</h2>
+            <h2 style={{margin:0}}>Vorschau ({activeCount} Einträge) - Gesamtsumme: {formatCurrency(activeTotal)}</h2>
             {previewOpen ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </div>
 
@@ -926,6 +1060,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                   </th>
                   <th>Mandatsreferenz</th>
                   <th>Tarif</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -968,12 +1103,21 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                         )}
                       </td>
                       <td>{item.tarif}</td>
+                      <td className="ll-td-action">
+                        <button
+                          className="ll-btn-exclude"
+                          onClick={() => toggleExclude(item.mitglied_id)}
+                          title="Aus diesem Lauf ausschließen (Beitrag bleibt offen)"
+                        >
+                          Ausschließen
+                        </button>
+                      </td>
                     </tr>
                     {/* Details-Zeile - nur anzeigen wenn expandiert */}
                     {expandedRows.has(item.mitglied_id) && item.beitraege && item.beitraege.length > 0 && (
                       <tr className="details-row">
                         <td></td>
-                        <td colSpan={6} className="ll-details-td">
+                        <td colSpan={7} className="ll-details-td">
                           <div className="ll-details-inner">
                             <strong className="ll-details-heading">Einzelne Beiträge:</strong>
                             <table className="ll-details-table">
@@ -1003,6 +1147,60 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
               </tbody>
             </table>
           </div>
+
+          {/* Ausgeschlossene Mitglieder */}
+          {excludedPreviewItems.length > 0 && (
+            <div className="ll-excluded-section">
+              <div className="ll-excluded-header" onClick={() => setExcludedOpen(o => !o)}>
+                <span className="ll-excluded-title">
+                  Manuell ausgeschlossen ({excludedPreviewItems.length})
+                </span>
+                {excludedOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+              </div>
+              {excludedOpen && (
+                <table className="preview-table ll-excluded-table">
+                  <thead>
+                    <tr>
+                      <th>Mitglied</th>
+                      <th>IBAN</th>
+                      <th>Offene Monate</th>
+                      <th>Gesamtbetrag</th>
+                      <th>Tarif</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {excludedPreviewItems.map((item, idx) => (
+                      <tr key={idx} className="ll-excluded-row">
+                        <td>
+                          <strong>{item.name}</strong>
+                          <br />
+                          <small>ID: {item.mitglied_id}</small>
+                        </td>
+                        <td><code>{item.iban}</code></td>
+                        <td>
+                          <span className="badge badge-neutral">
+                            {item.anzahl_monate} {item.anzahl_monate === 1 ? 'Monat' : 'Monate'}
+                          </span>
+                        </td>
+                        <td>{formatCurrency(item.betrag)}</td>
+                        <td>{item.tarif}</td>
+                        <td className="ll-td-action">
+                          <button
+                            className="ll-btn-include"
+                            onClick={() => toggleExclude(item.mitglied_id)}
+                            title="Wieder in den Lauf aufnehmen"
+                          >
+                            Einschließen
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
           </>}
         </div>
       )}
@@ -1050,27 +1248,6 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         </div>
       )}
 
-      {/* Hinweise */}
-      <div className="hints-card">
-        <h3>💡 Wichtige Hinweise</h3>
-        <ul>
-          <li>
-            <strong>SEPA-Mandat erforderlich:</strong> Es werden nur Mitglieder mit aktivem SEPA-Mandat exportiert.
-          </li>
-          <li>
-            <strong>Vorlaufzeit beachten:</strong> SEPA-Lastschriften benötigen mind. 5 Bankarbeitstage Vorlaufzeit.
-          </li>
-          <li>
-            <strong>Format wählen:</strong> CSV für deutsche Banken, XML für internationale Standards.
-          </li>
-          <li>
-            <strong>Prüfung durchführen:</strong> Kontrollieren Sie die Vorschau vor dem Export.
-          </li>
-          <li>
-            <strong>Datenschutz:</strong> Die exportierte Datei enthält sensible Kontodaten - sicher aufbewahren!
-          </li>
-        </ul>
-      </div>
 
       </>
       )}

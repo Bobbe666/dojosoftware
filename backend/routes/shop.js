@@ -110,7 +110,7 @@ async function getPublicEinstellungen(dojoId) {
   const [rows] = await db.promise().query(
     `SELECT shop_aktiv, shop_name, shop_beschreibung, shop_logo_url,
             versandkostenfrei_ab_cent, standard_versandkosten_cent,
-            rechnung_erlaubt, stripe_publishable_key
+            rechnung_erlaubt, stripe_publishable_key, feature_shop_premium
      FROM shop_einstellungen WHERE ${sql}`,
     params
   );
@@ -309,6 +309,9 @@ router.post('/public/:dojoRef/checkout', async (req, res) => {
     const zahlungsartNorm = zahlungsart || 'rechnung';
     if (zahlungsartNorm === 'rechnung' && !einstellungen.rechnung_erlaubt) {
       return res.status(400).json({ error: 'Kauf auf Rechnung nicht verfügbar' });
+    }
+    if (zahlungsartNorm === 'stripe' && !einstellungen.feature_shop_premium) {
+      return res.status(403).json({ error: 'Kartenzahlung erfordert Shop-Premium' });
     }
     if (zahlungsartNorm === 'stripe' && !einstellungen.stripe_publishable_key) {
       return res.status(400).json({ error: 'Kartenzahlung momentan nicht verfügbar' });
@@ -609,11 +612,22 @@ router.put('/admin/einstellungen', authenticateToken, requireAdmin, async (req, 
       rechnung_erlaubt,
       impressum_zusatz
     };
+    // Stripe-Keys nur bei Premium erlaubt
+    const [premiumCheck] = await db.promise().query(
+      `SELECT feature_shop_premium FROM shop_einstellungen WHERE ${sql}`, params
+    );
+    const isPremium = premiumCheck[0]?.feature_shop_premium || secureDojoId === null;
+
     if (stripe_secret_key && !stripe_secret_key.startsWith('****')) {
+      if (!isPremium) return res.status(403).json({ error: 'Stripe erfordert Shop-Premium' });
       updateFields.stripe_secret_key = stripe_secret_key;
     }
     if (stripe_webhook_secret && !stripe_webhook_secret.startsWith('****')) {
+      if (!isPremium) return res.status(403).json({ error: 'Stripe erfordert Shop-Premium' });
       updateFields.stripe_webhook_secret = stripe_webhook_secret;
+    }
+    if (stripe_publishable_key !== undefined) {
+      if (!isPremium) return res.status(403).json({ error: 'Stripe erfordert Shop-Premium' });
     }
 
     Object.keys(updateFields).forEach(k => updateFields[k] === undefined && delete updateFields[k]);

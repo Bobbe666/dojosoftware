@@ -697,7 +697,10 @@ const CategoryDetailView = ({
             name: m.name,
             betrag: m.betrag,
             beitraege: m.beitraege,
-            offene_monate: m.offene_monate
+            offene_monate: m.offene_monate,
+            ratenplan_id: m.ratenplan_id || null,
+            ratenplan_aufschlag: m.ratenplan_aufschlag || 0,
+            raten_ausstehend: m.raten_ausstehend || 0
           }))
         },
         { headers: { Authorization: `Bearer ${token}` } }

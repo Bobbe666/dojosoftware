@@ -191,10 +191,14 @@ module.exports = function initChatSocket(io) {
     // ── Raum beitreten ────────────────────────────────────────────────────────
     socket.on('chat:join', async (room_id) => {
       try {
-        // Zugriffsprüfung
+        // 🔒 Mitgliedschafts-Check + Dojo-Isolation
+        // Super-Admin (dojo_id=null) darf alle Räume betreten
         const [access] = await pool.query(
-          `SELECT id FROM chat_room_members WHERE room_id = ? AND member_id = ? AND member_type = ?`,
-          [room_id, sender_id, sender_type]
+          `SELECT crm.id FROM chat_room_members crm
+           JOIN chat_rooms r ON r.id = crm.room_id
+           WHERE crm.room_id = ? AND crm.member_id = ? AND crm.member_type = ?
+             AND (r.dojo_id = ? OR ? IS NULL)`,
+          [room_id, sender_id, sender_type, dojo_id, dojo_id]
         );
         if (!access[0]) return;
         socket.join(`chat:${room_id}`);
@@ -220,12 +224,14 @@ module.exports = function initChatSocket(io) {
       try {
         if (!content || !content.trim()) return;
 
-        // Zugriff und Raumtyp prüfen
+        // 🔒 Zugriff, Raumtyp + Dojo-Isolation prüfen
+        // Super-Admin (dojo_id=null) darf in alle Räume schreiben
         const [access] = await pool.query(
           `SELECT crm.id, r.type FROM chat_room_members crm
            JOIN chat_rooms r ON r.id = crm.room_id
-           WHERE crm.room_id = ? AND crm.member_id = ? AND crm.member_type = ?`,
-          [room_id, sender_id, sender_type]
+           WHERE crm.room_id = ? AND crm.member_id = ? AND crm.member_type = ?
+             AND (r.dojo_id = ? OR ? IS NULL)`,
+          [room_id, sender_id, sender_type, dojo_id, dojo_id]
         );
         if (!access[0]) return;
         if (access[0].type === 'announcement' && sender_type === 'mitglied') return;

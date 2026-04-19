@@ -17,6 +17,8 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [readSummary, setReadSummary] = useState({}); // { message_id: { read_count, reader_names, total_members } }
+  const [roomMemberCount, setRoomMemberCount] = useState(0);
   const isMessenger = room.source === 'messenger';
   const messengerWindowOpen = !isMessenger || room.window_open !== false;
   const [showSettings, setShowSettings] = useState(false);
@@ -32,6 +34,23 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
   const myRole = room.my_role; // 'owner', 'admin', 'member'
   const isAdminUser = user?.role === 'admin' || user?.role === 'super_admin';
   const canManageRoom = room.type === 'group' && (myRole === 'owner' || myRole === 'admin' || isAdminUser);
+
+  // Read-Summary laden (wer hat welche Nachrichten gelesen)
+  const loadReadSummary = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`/api/chat/rooms/${room.id}/reads-summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setReadSummary(data.summary || {});
+        // Mitgliederzahl aus erstem Eintrag holen
+        const first = Object.values(data.summary || {})[0];
+        if (first?.total_members) setRoomMemberCount(first.total_members);
+      }
+    } catch (_) {}
+  }, [room.id, token]);
 
   // Nachrichten laden
   const loadMessages = useCallback(async (beforeId = null) => {
@@ -65,6 +84,7 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
   // Raum beitreten, Nachrichten laden und Input fokussieren
   useEffect(() => {
     loadMessages();
+    loadReadSummary();
     joinRoom(room.id);
     markRoomAsRead(room.id);
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -96,14 +116,36 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
       ));
     };
 
+    // Read-Receipt Event: Jemand hat Nachrichten gelesen
+    const handleRead = ({ room_id, reader_id, reader_type, reader_name, message_ids }) => {
+      if (room_id !== room.id) return;
+      setReadSummary(prev => {
+        const updated = { ...prev };
+        for (const msgId of message_ids) {
+          const existing = updated[msgId] || { read_count: 0, reader_names: [], total_members: roomMemberCount };
+          if (!existing.reader_names.includes(reader_name)) {
+            updated[msgId] = {
+              ...existing,
+              read_count: existing.read_count + 1,
+              reader_names: [...existing.reader_names, reader_name],
+              total_members: existing.total_members
+            };
+          }
+        }
+        return updated;
+      });
+    };
+
     socket.on('chat:message', handleMessage);
     socket.on('chat:reaction', handleReaction);
+    socket.on('chat:read', handleRead);
 
     return () => {
       socket.off('chat:message', handleMessage);
       socket.off('chat:reaction', handleReaction);
+      socket.off('chat:read', handleRead);
     };
-  }, [socket, room.id, markRoomAsRead]);
+  }, [socket, room.id, markRoomAsRead, roomMemberCount]);
 
   // Nachricht senden
   const handleSend = async () => {
@@ -338,6 +380,8 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
               )}
               <ChatMessage
                 message={message}
+                readInfo={readSummary[message.id]}
+                totalMembers={roomMemberCount}
                 onReact={(messageId, emoji) => {
               // Optimistische UI-Aktualisierung
               setMessages(prev => prev.map(m => {

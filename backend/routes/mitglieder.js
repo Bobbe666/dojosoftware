@@ -2420,7 +2420,10 @@ router.post("/:id/stile", (req, res) => {
                 4: 'Kickboxen',    // Kickboxen
                 5: 'Karate',       // Enso Karate → wird als 'Karate' in ENUM gespeichert
                 7: 'Taekwon-Do',   // Taekwon-Do
-                8: 'BJJ'           // Brazilian Jiu-Jitsu → auch als BJJ
+                8: 'BJJ',          // Brazilian Jiu-Jitsu → auch als BJJ
+                20: 'MMA',         // MMA
+                21: 'Grappling',   // Grappling
+                22: 'Open Mat'     // Open Mat
             };
 
             // Filter ungültige Stil-IDs und konvertiere zu ENUM-Werten
@@ -2534,7 +2537,10 @@ router.get("/:id/stile", (req, res) => {
         'Kickboxen': { stil_id: 4, stil_name: 'Kickboxen', beschreibung: 'Moderne Kampfsportart kombiniert Boxing mit Fußtechniken' },
         'Karate': { stil_id: 5, stil_name: 'Enso Karate', beschreibung: 'Traditionelle japanische Kampfkunst mit Fokus auf Schlag- und Tritttechniken' },
         'Enso Karate': { stil_id: 5, stil_name: 'Enso Karate', beschreibung: 'Traditionelle japanische Kampfkunst mit Fokus auf Schlag- und Tritttechniken' },
-        'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do', beschreibung: 'Koreanische Kampfkunst mit Betonung auf Fußtechniken und hohe Tritte' }
+        'Taekwon-Do': { stil_id: 7, stil_name: 'Taekwon-Do', beschreibung: 'Koreanische Kampfkunst mit Betonung auf Fußtechniken und hohe Tritte' },
+        'MMA': { stil_id: 20, stil_name: 'MMA', beschreibung: 'Mixed Martial Arts' },
+        'Grappling': { stil_id: 21, stil_name: 'Grappling', beschreibung: 'Grappling' },
+        'Open Mat': { stil_id: 22, stil_name: 'Open Mat', beschreibung: 'Open Mat' }
     };
 
     const query = `
@@ -2895,6 +2901,45 @@ router.get("/:id/stil/:stil_id/training-analysis", (req, res) => {
         logger.error('Fehler bei der Trainingsstunden-Analyse:', err);
         res.status(500).json({ error: "Fehler bei der Analyse" });
     });
+});
+
+// PUT /:id/stil/:stil_id/guertellaenge – Gürtellänge eines Mitglieds für einen Stil setzen
+router.put("/:id/stil/:stil_id/guertellaenge", async (req, res) => {
+    const mitglied_id = parseInt(req.params.id, 10);
+    const stil_id = parseInt(req.params.stil_id, 10);
+    const { guertellaenge_cm } = req.body;
+
+    if (isNaN(mitglied_id) || isNaN(stil_id)) {
+        return res.status(400).json({ error: 'Ungültige Mitglieds- oder Stil-ID' });
+    }
+
+    const laenge = guertellaenge_cm ? parseInt(guertellaenge_cm, 10) : null;
+    if (laenge !== null && (laenge < 100 || laenge > 500)) {
+        return res.status(400).json({ error: 'Gürtellänge muss zwischen 100 und 500 cm liegen' });
+    }
+
+    const pool = db.promise();
+    try {
+        const [existing] = await pool.query(
+            'SELECT 1 FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?',
+            [mitglied_id, stil_id]
+        );
+        if (existing.length > 0) {
+            await pool.query(
+                'UPDATE mitglied_stil_data SET guertellaenge_cm = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE mitglied_id = ? AND stil_id = ?',
+                [laenge, mitglied_id, stil_id]
+            );
+        } else {
+            await pool.query(
+                'INSERT INTO mitglied_stil_data (mitglied_id, stil_id, guertellaenge_cm) VALUES (?, ?, ?)',
+                [mitglied_id, stil_id, laenge]
+            );
+        }
+        res.json({ success: true, guertellaenge_cm: laenge });
+    } catch (err) {
+        logger.error('Fehler beim Speichern der Gürtellänge:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+    }
 });
 
 // ✅ SEPA-Mandat abrufen + DOJO-FILTER (KRITISCH - Bankdaten!)
@@ -3590,6 +3635,8 @@ router.post("/",
 
                 // Beitrag erstellen, dann User-Account und Familienmitglieder
                 createFirstBeitrag(() => {
+                    // 🏦 SEPA-Mandat automatisch erstellen (fire-and-forget)
+                    autoCreateSepaMandate(newMemberId, memberData, memberData.dojo_id);
                     // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
                     createUserAccountIfNeeded(memberData, newMemberId, (userErr, userResult) => {
                         // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
@@ -3619,6 +3666,8 @@ router.post("/",
             }); // closes tarif-fetch db.query
         } else {
             // Kein Vertrag, nur Mitglied erstellt
+            // 🏦 SEPA-Mandat automatisch erstellen (fire-and-forget)
+            autoCreateSepaMandate(newMemberId, memberData, memberData.dojo_id);
             // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
             createUserAccountIfNeeded(memberData, newMemberId, (userErr, userResult) => {
                 // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
@@ -3644,6 +3693,42 @@ router.post("/",
         }
     });
 });
+
+// 🏦 HILFSFUNKTION: SEPA-Mandat automatisch anlegen (wenn IBAN + Lastschrift vorhanden)
+function autoCreateSepaMandate(mitgliedId, memberData, dojoId) {
+    // Prüfe Zahlungsmethode aus verschiedenen möglichen Feldern
+    const zahlungsart = (memberData.zahlungsmethode || memberData.vertrag_payment_method || memberData.payment_method || '').toLowerCase();
+    const iban = memberData.iban;
+    // Erstelle Mandat bei SEPA/Lastschrift ODER wenn IBAN vorhanden und kein Stripe
+    const isSepa = zahlungsart.includes('lastschrift') || zahlungsart.includes('sepa') || zahlungsart.includes('direct_debit');
+    if (!iban || (!isSepa && zahlungsart !== '')) {
+        return; // Kein SEPA nötig
+    }
+    // Prüfen ob bereits ein Mandat existiert
+    db.query('SELECT mandat_id FROM sepa_mandate WHERE mitglied_id = ? AND status = ? LIMIT 1', [mitgliedId, 'aktiv'], (checkErr, checkRows) => {
+        if (checkErr || (checkRows && checkRows.length > 0)) return; // Fehler oder bereits vorhanden
+        // Gläubiger-ID aus Dojo holen, Fallback auf Test-ID
+        db.query('SELECT sepa_glaeubiger_id FROM dojo WHERE id = ?', [dojoId], (dojoErr, dojoRows) => {
+            const glaeubigerRaw = dojoRows?.[0]?.sepa_glaeubiger_id || '';
+            const glaeubigerId = glaeubigerRaw.length >= 13 ? glaeubigerRaw : 'DE98ZZZ09999999999';
+            const mandatsreferenz = `DOJO${dojoId}-${mitgliedId}-${Date.now()}`;
+            const kontoinhaber = memberData.kontoinhaber || `${memberData.vorname} ${memberData.nachname}`;
+            const bic = (memberData.bic || '').length >= 8 ? memberData.bic : '';
+            db.query(
+                `INSERT INTO sepa_mandate (mitglied_id, mandatsreferenz, glaeubiger_id, iban, bic, kontoinhaber, status, mandat_typ, sequenz, provider)
+                 VALUES (?, ?, ?, ?, ?, ?, 'aktiv', 'CORE', 'FRST', 'manual_sepa')`,
+                [mitgliedId, mandatsreferenz, glaeubigerId, iban, bic, kontoinhaber],
+                (insertErr) => {
+                    if (insertErr) {
+                        logger.error('⚠️ Auto-SEPA-Mandat konnte nicht erstellt werden:', insertErr.message);
+                    } else {
+                        logger.info(`✅ SEPA-Mandat automatisch erstellt für Mitglied ${mitgliedId}: ${mandatsreferenz}`);
+                    }
+                }
+            );
+        });
+    });
+}
 
 // 👨‍👩‍👧 HILFSFUNKTION: Familienmitglieder erstellen
 async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callback) {
@@ -4346,6 +4431,40 @@ router.post("/:id/archivieren", async (req, res) => {
       [mitgliedId]
     );
 
+    // 11.5 Eintrag in ehemalige-Tabelle erstellen (für EhemaligenListe)
+    const letzterStil = stilData.length > 0 ? stilData[0] : null;
+    await db.promise().query(
+      `INSERT INTO ehemalige
+         (urspruengliches_mitglied_id, dojo_id, vorname, nachname, geburtsdatum,
+          geschlecht, email, telefon, telefon_mobil,
+          strasse, hausnummer, plz, ort,
+          urspruengliches_eintrittsdatum, austrittsdatum, austrittsgrund,
+          letzter_stil, letzter_guertel, wiederaufnahme_moeglich)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         austrittsdatum = NOW(),
+         austrittsgrund = VALUES(austrittsgrund)`,
+      [
+        mitglied.mitglied_id,
+        mitglied.dojo_id,
+        mitglied.vorname,
+        mitglied.nachname,
+        mitglied.geburtsdatum || null,
+        mitglied.geschlecht || null,
+        mitglied.email || null,
+        mitglied.telefon || null,
+        mitglied.telefon_mobil || null,
+        mitglied.strasse || null,
+        mitglied.hausnummer || null,
+        mitglied.plz || null,
+        mitglied.ort || null,
+        mitglied.eintrittsdatum || null,
+        grund || null,
+        letzterStil?.stil_name || null,
+        letzterStil?.graduierung_name || null,
+      ]
+    );
+
     // 12. Commit Transaction
     await db.promise().query('COMMIT');
 
@@ -4555,6 +4674,38 @@ router.post("/bulk-archivieren", async (req, res) => {
       await db.promise().query(
         'UPDATE mitglieder SET aktiv = 0, gekuendigt_am = NOW() WHERE mitglied_id = ?',
         [mitgliedId]
+      );
+
+      // 11.5 Eintrag in ehemalige-Tabelle erstellen (für EhemaligenListe)
+      const letzterStil = stilData.length > 0 ? stilData[0] : null;
+      await db.promise().query(
+        `INSERT INTO ehemalige
+           (urspruengliches_mitglied_id, dojo_id, vorname, nachname, geburtsdatum,
+            geschlecht, email, telefon, telefon_mobil,
+            strasse, hausnummer, plz, ort,
+            urspruengliches_eintrittsdatum, austrittsdatum, austrittsgrund,
+            letzter_stil, letzter_guertel, wiederaufnahme_moeglich)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, 1)
+         ON DUPLICATE KEY UPDATE austrittsdatum = NOW()`,
+        [
+          mitglied.mitglied_id,
+          mitglied.dojo_id,
+          mitglied.vorname,
+          mitglied.nachname,
+          mitglied.geburtsdatum || null,
+          mitglied.geschlecht || null,
+          mitglied.email || null,
+          mitglied.telefon || null,
+          mitglied.telefon_mobil || null,
+          mitglied.strasse || null,
+          mitglied.hausnummer || null,
+          mitglied.plz || null,
+          mitglied.ort || null,
+          mitglied.eintrittsdatum || null,
+          grund || null,
+          letzterStil?.stil_name || null,
+          letzterStil?.graduierung_name || null,
+        ]
       );
 
       // 12. Commit Transaction

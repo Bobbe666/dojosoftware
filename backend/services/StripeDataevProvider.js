@@ -319,6 +319,14 @@ class StripeDataevProvider {
                 `UPDATE beitraege SET bezahlt = 1 WHERE beitrag_id IN (${placeholders})`,
                 beitragIds
             );
+            // Verknüpfte Rechnungen als bezahlt markieren
+            await db.promise().query(
+                `UPDATE rechnungen r
+                 JOIN beitraege b ON b.rechnung_id = r.rechnung_id
+                 SET r.status = 'bezahlt', r.bezahlt_am = NOW(), r.zahlungsart = 'Stripe SEPA'
+                 WHERE b.beitrag_id IN (${placeholders}) AND r.status != 'bezahlt'`,
+                beitragIds
+            );
             logger.info(`✅ ${beitragIds.length} Beiträge als bezahlt markiert (PI: ${stripePaymentIntentId})`);
         }
 

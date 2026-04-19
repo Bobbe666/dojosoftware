@@ -1,11 +1,13 @@
 // =====================================================================================
-// HOMEPAGE BUILDER ROUTES — Enterprise Feature
+// HOMEPAGE BUILDER ROUTES — Premium Feature
 // =====================================================================================
 // GET  /api/homepage/config           → Homepage-Konfiguration des Dojos laden
 // PUT  /api/homepage/config           → Konfiguration speichern
 // POST /api/homepage/publish          → Publizieren / Depublizieren
 // GET  /api/homepage/slug-check/:slug → Slug-Verfügbarkeit prüfen
 // GET  /api/homepage/public/:slug     → Öffentlicher Endpunkt (kein Auth)
+// GET  /api/homepage/render/:slug     → Vollständiges HTML (für Subdomain-Routing)
+// GET  /api/homepage/templates        → Verfügbare Templates auflisten
 
 const express = require('express');
 const router = express.Router();
@@ -17,6 +19,7 @@ const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const multer = require('multer');
 const fs = require('fs');
 const pathModule = require('path');
+const { renderHomepage, getTemplateList } = require('../templates/homepage/index');
 
 // ─── Logo-Upload Konfiguration ───────────────────────────────────────────────
 const logoUploadDir = pathModule.join(__dirname, '../uploads/logos');
@@ -106,8 +109,9 @@ function generateSlug(text) {
 async function requireHomepageFeature(req, res, next) {
   try {
     const dojoId = req.user?.dojo_id;
-    if (!dojoId && req.user?.rolle !== 'super_admin' && req.user?.role !== 'super_admin') {
-      return next(); // Super-Admin darf immer
+    // Super-Admin darf immer
+    if (!dojoId && (req.user?.rolle === 'super_admin' || req.user?.role === 'super_admin')) {
+      return next();
     }
 
     if (dojoId) {
@@ -115,12 +119,14 @@ async function requireHomepageFeature(req, res, next) {
         'SELECT feature_homepage_builder, plan_type FROM dojo_subscriptions WHERE dojo_id = ?',
         [dojoId]
       );
-      if (rows.length === 0 || (!rows[0].feature_homepage_builder && rows[0].plan_type !== 'enterprise')) {
+      const sub = rows[0];
+      const allowedPlans = ['premium', 'enterprise', 'trial'];
+      if (!sub || (!sub.feature_homepage_builder && !allowedPlans.includes(sub.plan_type))) {
         return res.status(403).json({
           error: 'Feature nicht verfügbar',
-          message: 'Der Homepage Builder ist nur im Enterprise-Plan verfügbar.',
+          message: 'Der Homepage Builder ist im Premium-Plan enthalten.',
           feature: 'homepage_builder',
-          required_plan: 'enterprise',
+          required_plan: 'premium',
         });
       }
     }
@@ -170,6 +176,78 @@ router.get('/public/:slug', async (req, res) => {
   } catch (err) {
     logger.error('Öffentliche Homepage Fehler:', { error: err.message });
     res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+// ─── TEMPLATES AUFLISTEN ─────────────────────────────────────────────────────
+// GET /api/homepage/templates
+// Gibt alle verfügbaren Templates mit Metadaten zurück (kein Auth nötig)
+
+router.get('/templates', (req, res) => {
+  res.json({ templates: getTemplateList() });
+});
+
+// ─── HTML-RENDER ENDPUNKT ─────────────────────────────────────────────────────
+// GET /api/homepage/render/:slug
+// Rendert die vollständige Homepage als HTML (für Subdomain-Routing und Preview)
+// Kein Auth benötigt, aber nur publizierte Homepages (außer mit ?preview=1 + Auth)
+
+router.get('/render/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const isPreview = req.query.preview === '1';
+
+    if (!/^[a-z0-9-]+$/.test(slug)) {
+      return res.status(400).send('<h1>Ungültiger Slug</h1>');
+    }
+
+    const query = isPreview
+      ? `SELECT dh.config, dh.template_id, dh.slug, dh.dojo_id, d.dojoname
+         FROM dojo_homepage dh
+         JOIN dojo d ON dh.dojo_id = d.id
+         WHERE dh.slug = ?`
+      : `SELECT dh.config, dh.template_id, dh.slug, dh.dojo_id, d.dojoname
+         FROM dojo_homepage dh
+         JOIN dojo d ON dh.dojo_id = d.id
+         WHERE dh.slug = ? AND dh.is_published = 1`;
+
+    const [rows] = await pool.query(query, [slug]);
+
+    if (rows.length === 0) {
+      return res.status(404).send(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Nicht gefunden</title></head><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a0a;color:#fff;flex-direction:column;gap:16px"><h1 style="font-size:4rem;margin:0">404</h1><p>Diese Homepage existiert nicht oder ist noch nicht veröffentlicht.</p></body></html>`);
+    }
+
+    const row = rows[0];
+    const config = typeof row.config === 'string' ? JSON.parse(row.config) : (row.config || {});
+    const templateId = row.template_id || 'traditional';
+
+    // Stundenplan laden falls gewünscht
+    let schedule = [];
+    try {
+      const [schedRows] = await pool.query(
+        `SELECT se.wochentag, se.uhrzeit_start AS uhrzeit, k.kursname,
+                CONCAT(COALESCE(t.vorname,''), ' ', COALESCE(t.nachname,'')) AS trainer
+         FROM stundenplan_eintraege se
+         LEFT JOIN kurse k ON se.kurs_id = k.id
+         LEFT JOIN trainer t ON se.trainer_id = t.id
+         WHERE se.dojo_id = ? AND se.aktiv = 1
+         ORDER BY FIELD(se.wochentag,'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), se.uhrzeit_start
+         LIMIT 12`,
+        [row.dojo_id]
+      );
+      schedule = schedRows;
+    } catch (_) {
+      // Stundenplan-Fehler sind nicht kritisch — Homepage rendert trotzdem
+    }
+
+    const html = renderHomepage(templateId, config, schedule);
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', isPreview ? 'no-cache' : 'public, max-age=300');
+    res.send(html);
+  } catch (err) {
+    logger.error('Homepage Render Fehler:', { error: err.message });
+    res.status(500).send('<h1>Fehler beim Rendern der Homepage</h1>');
   }
 });
 
@@ -224,6 +302,7 @@ router.get('/config', authenticateToken, requireHomepageFeature, async (req, res
     res.json({
       exists: true,
       slug: row.slug,
+      template_id: row.template_id || 'traditional',
       is_published: !!row.is_published,
       config: { ...DEFAULT_CONFIG, ...config },
     });
@@ -242,7 +321,7 @@ router.put('/config', authenticateToken, requireHomepageFeature, async (req, res
       return res.status(400).json({ error: 'Keine Dojo-ID' });
     }
 
-    const { config, slug } = req.body;
+    const { config, slug, template_id } = req.body;
 
     if (!config || typeof config !== 'object') {
       return res.status(400).json({ error: 'Ungültige Konfiguration' });
@@ -273,20 +352,30 @@ router.put('/config', authenticateToken, requireHomepageFeature, async (req, res
       [dojoId]
     );
 
+    const cleanTemplateId = ['traditional', 'zen', 'combat', 'dynamic'].includes(template_id)
+      ? template_id : null;
+
     if (existing.length === 0) {
       // Neuen Eintrag erstellen
       const finalSlug = cleanSlug || generateSlug(config.school_name || '') || `dojo-${dojoId}`;
       await pool.query(
-        'INSERT INTO dojo_homepage (dojo_id, slug, config) VALUES (?, ?, ?)',
-        [dojoId, finalSlug, JSON.stringify(config)]
+        `INSERT INTO dojo_homepage (dojo_id, slug, template_id, config) VALUES (?, ?, ?, ?)`,
+        [dojoId, finalSlug, cleanTemplateId || 'traditional', JSON.stringify(config)]
       );
       res.json({ success: true, slug: finalSlug, message: 'Homepage erstellt' });
     } else {
       // Bestehenden Eintrag updaten
       const finalSlug = cleanSlug || existing[0].slug;
+      const updateParts = ['config = ?', 'slug = ?'];
+      const updateVals = [JSON.stringify(config), finalSlug];
+      if (cleanTemplateId) {
+        updateParts.push('template_id = ?');
+        updateVals.push(cleanTemplateId);
+      }
+      updateVals.push(dojoId);
       await pool.query(
-        'UPDATE dojo_homepage SET config = ?, slug = ? WHERE dojo_id = ?',
-        [JSON.stringify(config), finalSlug, dojoId]
+        `UPDATE dojo_homepage SET ${updateParts.join(', ')} WHERE dojo_id = ?`,
+        updateVals
       );
       res.json({ success: true, slug: finalSlug, message: 'Homepage gespeichert' });
     }

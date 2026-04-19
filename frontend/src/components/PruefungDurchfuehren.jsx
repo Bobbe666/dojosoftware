@@ -161,20 +161,19 @@ const PruefungDurchfuehren = () => {
         return updated;
       });
 
-      // Gürtel-Lagerbestand für diesen Tag laden (einmalig pro Datum)
-      if (!guertelBestandLoadedRef.current.has(datum)) {
-        guertelBestandLoadedRef.current.add(datum);
-        // Für jede Gürtellänge der Kandidaten separat laden
-        const laengen = [...new Set(pruefungenAmTag.map(p => p.guertellaenge_cm).filter(Boolean))];
-        const alleFarben = [...new Set(pruefungenAmTag.map(p => p.farbe_nachher).filter(Boolean))];
-        if (alleFarben.length > 0) {
-          // Lade für alle Längen in einem Call (zeigt Gesamtbestand wenn keine Länge)
-          const allLaengen = laengen.length > 0 ? laengen : [null];
-          allLaengen.forEach(l => loadGuertelBestand(pruefungenAmTag, l));
-        }
+      // Gürtel-Lagerbestand für diesen Tag laden
+      // farbe_nachher aus pruefung ODER aus ergebnisse (Fallback wenn graduierung_nachher_id fehlt)
+      const alleFarben = [...new Set([
+        ...pruefungenAmTag.map(p => p.farbe_nachher),
+        ...pruefungenAmTag.map(p => ergebnisse[p.pruefung_id]?.neuer_gurt_farbe),
+      ].filter(Boolean))];
+      const laengen = [...new Set(pruefungenAmTag.map(p => p.guertellaenge_cm).filter(Boolean))];
+      if (alleFarben.length > 0) {
+        const allLaengen = laengen.length > 0 ? laengen : [null];
+        allLaengen.forEach(l => loadGuertelBestand(pruefungenAmTag, l));
       }
     });
-  }, [expandedDates, gridModus, pruefungen, graduierungen]);
+  }, [expandedDates, gridModus, pruefungen, graduierungen, ergebnisse]);
 
   useEffect(() => { return () => { clearInterval(timerIntervalRef.current); clearTimeout(timerSaveRef.current); }; }, []);
 
@@ -1649,44 +1648,6 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                                 {autoSaveStatus[k.pruefung_id]==='saved' ? '✓ gespeichert' : '💾 …'}
                               </div>
                             )}
-
-                            {/* Gürtellänge + Lagerbestand */}
-                            {(() => {
-                              const laenge = k.guertellaenge_cm;
-                              const farbe = (k.farbe_nachher || '').replace('#', '').toUpperCase();
-                              const bestandKey = `${farbe}_${laenge || ''}`;
-                              const bestandInfo = farbe ? (guertelBestand[bestandKey] || guertelBestand[`${farbe}_`]) : null;
-                              const bestand = bestandInfo?.bestand ?? null;
-                              const bestandColor = bestand === null ? '#888'
-                                : bestand === 0 ? '#f87171'
-                                : bestand <= 2 ? '#fbbf24'
-                                : '#4ade80';
-                              if (!laenge && bestand === null) return null;
-                              return (
-                                <div style={{marginTop:'0.2rem',display:'flex',alignItems:'center',
-                                  justifyContent:'center',gap:'0.3rem',flexWrap:'wrap'}}>
-                                  {laenge && (
-                                    <span style={{
-                                      fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
-                                      background:'rgba(99,102,241,0.15)',color:'#a5b4fc',
-                                      border:'1px solid rgba(99,102,241,0.3)',
-                                    }}>
-                                      📏 {laenge} cm
-                                    </span>
-                                  )}
-                                  {bestand !== null && (
-                                    <span style={{
-                                      fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
-                                      background:`${bestandColor}22`,color:bestandColor,
-                                      border:`1px solid ${bestandColor}55`,
-                                    }}
-                                    title={bestandInfo?.name || 'Lagerbestand'}>
-                                      📦 {bestand}×
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })()}
                           </th>
                         );
                       })}
@@ -1816,9 +1777,19 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                 {kandidaten.map(k => {
                   const erg = ergebnisse[k.pruefung_id] || {};
                   const name = `${(k.vorname||'').charAt(0).toUpperCase()+(k.vorname||'').slice(1).toLowerCase()} ${(k.nachname||'').charAt(0).toUpperCase()+(k.nachname||'').slice(1).toLowerCase()}`;
+                  const laenge = k.guertellaenge_cm;
+                  const farbeRaw = k.farbe_nachher || erg.neuer_gurt_farbe || '';
+                  const farbe = farbeRaw.replace('#', '').toUpperCase();
+                  const bestandKey = `${farbe}_${laenge || ''}`;
+                  const bestandInfo = farbe ? (guertelBestand[bestandKey] || guertelBestand[`${farbe}_`]) : null;
+                  const bestand = bestandInfo?.bestand ?? null;
+                  const bestandColor = bestand === null ? '#888'
+                    : bestand === 0 ? '#f87171'
+                    : bestand <= 2 ? '#fbbf24'
+                    : '#4ade80';
                   return (
                     <div key={k.pruefung_id}
-                      style={{display:'flex',alignItems:'center',gap:'0.3rem',
+                      style={{display:'flex',alignItems:'center',gap:'0.3rem',flexWrap:'wrap',
                         padding:'0.25rem 0.5rem',borderRadius:'6px',
                         background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)'}}>
                       <span style={{fontSize:'0.78rem',color:'var(--text-2,#ccc)',fontWeight:600}}>
@@ -1827,6 +1798,28 @@ Wir sind sehr stolz auf alle, die diese Prüfung erfolgreich bestanden haben. He
                       <span style={{fontSize:'0.72rem',color:'var(--text-3,#888)'}}>
                         {erg.punktzahl != null && erg.punktzahl !== '' ? `${erg.punktzahl} Pkt` : ''}
                       </span>
+                      {(farbe || laenge) && (
+                        <>
+                          <span style={{
+                            fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
+                            background: laenge ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.06)',
+                            color: laenge ? '#a5b4fc' : '#888',
+                            border: laenge ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.12)',
+                          }}>
+                            📏 {laenge ? `${laenge} cm` : '—'}
+                          </span>
+                          {bestand !== null && (
+                            <span style={{
+                              fontSize:'0.65rem',fontWeight:700,padding:'1px 5px',borderRadius:'4px',
+                              background:`${bestandColor}22`,color:bestandColor,
+                              border:`1px solid ${bestandColor}55`,
+                            }}
+                            title={bestandInfo?.name || 'Lagerbestand'}>
+                              📦 {bestand}×
+                            </span>
+                          )}
+                        </>
+                      )}
                       <button
                         onClick={() => handleToggleEdit(k)}
                         style={{padding:'0.18rem 0.5rem',borderRadius:'5px',border:'1px solid rgba(255,215,0,0.3)',

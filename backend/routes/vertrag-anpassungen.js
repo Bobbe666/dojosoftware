@@ -239,6 +239,57 @@ router.get('/meine', authenticateToken, async (req, res) => {
   }
 });
 
+// ── PUT /:id  (Admin bearbeitet eine bestehende Anpassung) ──────────────
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { typ, neuer_betrag, gueltig_von, gueltig_bis, grund } = req.body;
+
+    const [[a]] = await pool.query(`SELECT * FROM vertrag_anpassungen WHERE id = ?`, [id]);
+    if (!a) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+
+    const updTyp = typ || a.typ;
+    const updBetrag = neuer_betrag != null ? parseFloat(neuer_betrag) : a.neuer_betrag;
+    const updVon = gueltig_von || a.gueltig_von;
+    const updBis = gueltig_bis || a.gueltig_bis;
+    const updGrund = grund !== undefined ? grund : a.grund;
+
+    await pool.query(
+      `UPDATE vertrag_anpassungen SET typ=?, neuer_betrag=?, gueltig_von=?, gueltig_bis=?, grund=? WHERE id=?`,
+      [updTyp, updBetrag, updVon, updBis, updGrund, id]
+    );
+
+    // Beiträge neu anwenden: altes Range zurücksetzen (alter_betrag), neuen Range setzen
+    if (a.alter_betrag > 0) {
+      await pool.query(
+        `UPDATE beitraege SET betrag = ? WHERE mitglied_id = ? AND zahlungsdatum BETWEEN ? AND ? AND bezahlt = 0`,
+        [a.alter_betrag, a.mitglied_id, a.gueltig_von, a.gueltig_bis]
+      );
+    }
+    const affected = await applyBeitraege(a.mitglied_id, updVon, updBis, updBetrag);
+
+    res.json({ success: true, angepasste_beitraege: affected });
+  } catch (err) {
+    console.error('[vertrag-anpassungen] PUT error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ── POST /:id/neu-anwenden  (Beiträge erneut mit Anpassung synchronisieren) ──
+router.post('/:id/neu-anwenden', authenticateToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [[a]] = await pool.query(`SELECT * FROM vertrag_anpassungen WHERE id = ?`, [id]);
+    if (!a) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    if (a.status !== 'genehmigt') return res.status(400).json({ success: false, error: 'Nur genehmigte Anpassungen können angewendet werden.' });
+
+    const affected = await applyBeitraege(a.mitglied_id, a.gueltig_von, a.gueltig_bis, a.neuer_betrag);
+    res.json({ success: true, angepasste_beitraege: affected });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ── PUT /:id/genehmigen  (Admin genehmigt Mitglied-Antrag) ───────────────
 router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
   try {

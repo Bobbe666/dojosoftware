@@ -10,6 +10,7 @@ const logger = require("../utils/logger");
 const { authenticateToken } = require("../middleware/auth");
 const { getSecureDojoId } = require("../middleware/tenantSecurity");
 const { sendEmail } = require("../services/emailService");
+const { syncPlanFeatures } = require("../middleware/featureAccess");
 
 // Helper: Get Stripe instance for dojo
 const getStripeForDojo = async (dojoId) => {
@@ -759,16 +760,11 @@ async function handlePlanUpgradeComplete(session) {
     const plan = planDetails[0];
     const price = billingInterval === 'yearly' ? plan.price_yearly : plan.price_monthly;
 
-    // Subscription aktualisieren
+    // Subscription aktualisieren (Limits + Status, feature_* via syncPlanFeatures)
     await db.promise().query(
       `UPDATE dojo_subscriptions SET
          plan_type = ?,
          status = 'active',
-         feature_verkauf = ?,
-         feature_buchfuehrung = ?,
-         feature_events = ?,
-         feature_multidojo = ?,
-         feature_api = ?,
          max_members = ?,
          max_dojos = ?,
          storage_limit_mb = ?,
@@ -781,11 +777,6 @@ async function handlePlanUpgradeComplete(session) {
        WHERE dojo_id = ?`,
       [
         newPlan,
-        plan.feature_verkauf,
-        plan.feature_buchfuehrung,
-        plan.feature_events,
-        plan.feature_multidojo,
-        plan.feature_api,
         plan.max_members,
         plan.max_dojos,
         plan.storage_limit_mb,
@@ -795,6 +786,9 @@ async function handlePlanUpgradeComplete(session) {
         dojoId
       ]
     );
+
+    // Feature-Flags aus plan_feature_mapping synchronisieren (Single Source of Truth)
+    await syncPlanFeatures(dojoId, newPlan);
 
     // Update dojo table
     await db.promise().query(

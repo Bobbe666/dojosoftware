@@ -21,6 +21,7 @@ import FinanzenTab from './FinanzenTab';
 import BuchhaltungTab from './BuchhaltungTab';
 import ZieleEntwicklung from './ZieleEntwicklung';
 import SupportTickets from './SupportTickets';
+import KampagnenDashboard from './KampagnenDashboard';
 import VerbandsMitglieder from './VerbandsMitglieder';
 import ArtikelVerwaltung from './ArtikelVerwaltung';
 import AutoLastschriftTab from './AutoLastschriftTab';
@@ -340,32 +341,57 @@ function AcademySection() {
 
       {subTab === 'uebersicht' && (
         <div>
-          {loading ? <div className="sad-hof-loading">Lade…</div> : stats && (
-            <div className="sad-sw-stats-grid">
-              {[
-                { label: 'Kurse aktiv',        val: stats.kurse_aktiv },
-                { label: 'Bevorstehend',        val: stats.kurse_upcoming },
-                { label: 'Buchungen gesamt',    val: stats.buchungen_gesamt },
-                { label: 'Buchungen offen',     val: stats.buchungen_offen },
-                { label: 'Teilnehmer',          val: stats.teilnehmer_gesamt },
-                { label: 'Zertifikate',         val: stats.zertifikate },
-                { label: 'Umsatz gesamt',       val: `${parseFloat(stats.umsatz_gesamt || 0).toFixed(2)} €` },
-              ].map(s => (
-                <div key={s.label} className="sad-sw-stat-box">
-                  <div className="sad-sw-stat-val">{s.val}</div>
-                  <div className="sad-sw-stat-lbl">{s.label}</div>
+          {loading ? <div className="sad-hof-loading">Lade…</div> : stats ? (
+            <>
+              {/* Stat-Karten */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 14, marginBottom: 24 }}>
+                {[
+                  { label: 'Kurse aktiv',     val: stats.kurse_aktiv,     icon: '📚', color: '#22c55e' },
+                  { label: 'Bevorstehend',    val: stats.kurse_upcoming,  icon: '🗓️', color: '#3b82f6' },
+                  { label: 'Buchungen ges.',  val: stats.buchungen_gesamt,icon: '📋', color: '#f59e0b' },
+                  { label: 'Buchungen offen', val: stats.buchungen_offen, icon: '⏳', color: '#ef4444' },
+                  { label: 'Teilnehmer',      val: stats.teilnehmer_gesamt,icon:'👥', color: '#8b5cf6' },
+                  { label: 'Zertifikate',     val: stats.zertifikate,     icon: '🎓', color: '#06b6d4' },
+                  { label: 'Umsatz gesamt',   val: `${parseFloat(stats.umsatz_gesamt || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €`, icon: '💶', color: '#f97316', wide: true },
+                ].map(s => (
+                  <div key={s.label} style={{
+                    background: `linear-gradient(145deg, ${s.color}22, ${s.color}0d)`,
+                    border: `1px solid ${s.color}44`,
+                    borderTop: `3px solid ${s.color}`,
+                    borderRadius: 12,
+                    padding: '16px 18px',
+                    gridColumn: s.wide ? 'span 2' : undefined,
+                  }}>
+                    <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
+                    <div style={{ fontSize: 28, fontWeight: 700, color: s.color, lineHeight: 1, marginBottom: 4 }}>{s.val ?? '—'}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Schnellzugriff */}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Schnellzugriff</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {SCHNELLZUGRIFF.map(item => (
+                    <a key={item.label} href={item.url} target="_blank" rel="noreferrer" style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', borderRadius: 8,
+                      background: 'var(--bg-card)', border: '1px solid var(--border)',
+                      color: 'var(--text)', fontSize: 13, fontWeight: 500,
+                      textDecoration: 'none', transition: 'border-color .15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = '#22c55e'}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}>
+                      <span>{item.icon}</span>{item.label}
+                    </a>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            </>
+          ) : (
+            <div className="sad-hof-loading">Keine Daten verfügbar</div>
           )}
-          <div className="sad-hof-nav-grid" style={{ marginTop: '1.5rem' }}>
-            {SCHNELLZUGRIFF.map(item => (
-              <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="sad-hof-nav-link">
-                <span className="sad2-fs-12">{item.icon}</span>
-                {item.label}
-              </a>
-            ))}
-          </div>
         </div>
       )}
 
@@ -2075,6 +2101,9 @@ const SuperAdminDashboard = () => {
               <button className={`sub-tab-btn ${kommunikationSubTab === 'besucher-chat' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('besucher-chat')}>
                 <Globe size={16} /><span>Besucher-Chat</span>
               </button>
+              <button className={`sub-tab-btn ${kommunikationSubTab === 'kampagnen' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('kampagnen')}>
+                <Send size={16} /><span>Kampagnen</span>
+              </button>
             </div>
 
             {kommunikationSubTab === 'pushnachrichten' && (
@@ -2182,6 +2211,10 @@ const SuperAdminDashboard = () => {
               <div style={{ height: 600 }}>
                 <BesucherChat />
               </div>
+            )}
+
+            {kommunikationSubTab === 'kampagnen' && (
+              <KampagnenDashboard />
             )}
           </div>
         )}

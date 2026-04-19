@@ -85,6 +85,8 @@ const TarifePreise = () => {
     aufnahmegebuehr_cents: 4999, // Standard: 49,99 EUR
     currency: "EUR",
     duration_months: "",
+    mindestlaufzeit_monate: "",
+    kuendigungsfrist_monate: 3,
     billing_cycle: "monthly",
     payment_method: "bank_transfer",
     active: true
@@ -1229,6 +1231,32 @@ const TarifePreise = () => {
                 </div>
               </div>
 
+              {/* Mindestlaufzeit & Kündigungsfrist */}
+              <div className="u-grid-2col" style={{marginTop: '12px'}}>
+                <div>
+                  <label className="u-form-label">Mindestlaufzeit (Monate)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newTarif.mindestlaufzeit_monate || ''}
+                    onChange={(e) => setNewTarif({...newTarif, mindestlaufzeit_monate: parseInt(e.target.value) || ''})}
+                    placeholder={newTarif.duration_months || '12'}
+                    className="u-input-sm"
+                  />
+                </div>
+                <div>
+                  <label className="u-form-label">Kündigungsfrist (Monate)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newTarif.kuendigungsfrist_monate ?? ''}
+                    onChange={(e) => setNewTarif({...newTarif, kuendigungsfrist_monate: parseInt(e.target.value) || ''})}
+                    placeholder="3"
+                    className="u-input-sm"
+                  />
+                </div>
+              </div>
+
               {/* Status */}
               <div className="tp-status-row">
                 <label className="tp-status-label">
@@ -1395,6 +1423,36 @@ const TarifePreise = () => {
                     <option value="USD">USD ($)</option>
                     <option value="CHF">CHF</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Mindestlaufzeit & Kündigungsfrist - 2 Spalten */}
+              <div className="u-grid-2col" style={{marginTop: '12px'}}>
+                <div>
+                  <label className="u-form-label">
+                    Mindestlaufzeit (Monate)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingTarif.mindestlaufzeit_monate || ''}
+                    onChange={(e) => setEditingTarif({...editingTarif, mindestlaufzeit_monate: parseInt(e.target.value) || ''})}
+                    placeholder={editingTarif.duration_months || '12'}
+                    className="u-input-sm"
+                  />
+                </div>
+                <div>
+                  <label className="u-form-label">
+                    Kündigungsfrist (Monate)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingTarif.kuendigungsfrist_monate ?? ''}
+                    onChange={(e) => setEditingTarif({...editingTarif, kuendigungsfrist_monate: parseInt(e.target.value) || ''})}
+                    placeholder="3"
+                    className="u-input-sm"
+                  />
                 </div>
               </div>
 

@@ -185,29 +185,35 @@ router.post('/', async (req, res) => {
         }
 
         const artikelQuery = `
-          SELECT 
-            artikel_id, name, artikel_nummer, verkaufspreis_cent, 
-            mwst_prozent, lagerbestand, lager_tracking
-          FROM artikel 
+          SELECT
+            artikel_id, name, artikel_nummer, verkaufspreis_cent,
+            mwst_prozent, lagerbestand, lager_tracking, hat_varianten, varianten_bestand
+          FROM artikel
           WHERE artikel_id = ? AND aktiv = TRUE
         `;
-        
+
         const artikelResult = await new Promise((resolve, reject) => {
           connection.query(artikelQuery, [item.artikel_id], (error, results) => {
             if (error) return reject(error);
             resolve(results);
           });
         });
-        
+
         if (artikelResult.length === 0) {
           throw new Error(`Artikel mit ID ${item.artikel_id} nicht gefunden`);
         }
-        
+
         const artikelData = artikelResult[0];
-        
-        // Lagerbestand prüfen
-        if (artikelData.lager_tracking && artikelData.lagerbestand < item.menge) {
-          throw new Error(`Nicht genügend Lagerbestand für "${artikelData.name}" (verfügbar: ${artikelData.lagerbestand}, benötigt: ${item.menge})`);
+
+        // Lagerbestand prüfen (Varianten-Artikel: Summe aller Varianten-Bestände)
+        let variantenBestand = {};
+        try { variantenBestand = JSON.parse(artikelData.varianten_bestand || '{}'); } catch (e) { variantenBestand = {}; }
+        const effectiveLagerbestand = (artikelData.hat_varianten && Object.keys(variantenBestand).length > 0)
+          ? Object.values(variantenBestand).reduce((sum, v) => sum + (v?.bestand || 0), 0)
+          : (artikelData.lagerbestand || 0);
+
+        if (artikelData.lager_tracking && effectiveLagerbestand < item.menge) {
+          throw new Error(`Nicht genügend Lagerbestand für "${artikelData.name}" (verfügbar: ${effectiveLagerbestand}, benötigt: ${item.menge})`);
         }
         
         // Preis übernehmen (aktueller Preis oder überschrieben)
@@ -316,8 +322,8 @@ router.post('/', async (req, res) => {
           connection.query(
             `INSERT INTO beitraege
              (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
-             VALUES (?, ?, CURDATE(), 'Lastschrift', 0, 1, ?)`,
-            [mitglied_id, brutto_gesamt_cent / 100, beschreibung],
+             VALUES (?, ?, CURDATE(), 'Lastschrift', 0, ?, ?)`,
+            [mitglied_id, brutto_gesamt_cent / 100, effectiveDojoId || null, beschreibung],
             (error, results) => {
               if (error) return reject(error);
               resolve(results);

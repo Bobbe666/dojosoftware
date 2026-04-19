@@ -169,12 +169,23 @@ router.put('/:id', async (req, res) => {
         const parsedDojoId = parseInt(dojoId, 10);
 
         const { id } = req.params;
-        const { name, price_cents, aufnahmegebuehr_cents, currency, duration_months, billing_cycle, payment_method, active } = req.body;
+        const { name, price_cents, aufnahmegebuehr_cents, currency, duration_months,
+                mindestlaufzeit_monate, kuendigungsfrist_monate,
+                billing_cycle, payment_method, active } = req.body;
         await queryAsync(`
             UPDATE tarife
-            SET name = ?, price_cents = ?, aufnahmegebuehr_cents = ?, currency = ?, duration_months = ?, mindestlaufzeit_monate = ?, billing_cycle = ?, payment_method = ?, active = ?
+            SET name = ?, price_cents = ?, aufnahmegebuehr_cents = ?, currency = ?,
+                duration_months = ?, mindestlaufzeit_monate = ?, kuendigungsfrist_monate = ?,
+                billing_cycle = ?, payment_method = ?, active = ?
             WHERE id = ? AND dojo_id = ?
-        `, [name, price_cents, aufnahmegebuehr_cents || 4999, currency, duration_months, duration_months, billing_cycle, payment_method, active, id, parsedDojoId]);
+        `, [
+            name, price_cents, aufnahmegebuehr_cents || 4999, currency,
+            duration_months,
+            mindestlaufzeit_monate || duration_months,
+            kuendigungsfrist_monate != null ? parseInt(kuendigungsfrist_monate) : 3,
+            billing_cycle, payment_method, active,
+            id, parsedDojoId
+        ]);
         res.json({ success: true, message: 'Tarif erfolgreich aktualisiert' });
     } catch (err) {
         logger.error('Fehler beim Aktualisieren des Tarifs:', { error: err });

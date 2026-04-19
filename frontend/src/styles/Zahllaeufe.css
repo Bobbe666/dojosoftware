@@ -6,6 +6,12 @@
   padding: var(--ui-page-padding);
 }
 
+.zahllaeufe-container.embedded {
+  min-height: unset;
+  background: none;
+  padding: 0;
+}
+
 /* ===== HEADER ===== */
 .zahllaeufe-header {
   display: flex;
@@ -137,11 +143,12 @@
   backdrop-filter: blur(10px);
   border-radius: var(--comp-radius-xl);
   border: 1px solid rgba(245, 158, 11, 0.2);
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .zahllaeufe-table {
   width: 100%;
+  min-width: 1100px;
   border-collapse: collapse;
 }
 

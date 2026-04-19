@@ -89,7 +89,7 @@ router.get("/", async (req, res) => {
             }
         }
 
-        // Query für alle aktiven Verträge mit SEPA-Mandat (inkl. offene Rechnungen)
+        // Query für alle aktiven Verträge mit SEPA-Mandat (inkl. offene Rechnungen + aktiver Ratenplan)
         const query = `
             SELECT
                 v.id as vertrag_id,
@@ -109,7 +109,11 @@ router.get("/", async (req, res) => {
                 t.price_cents,
                 sm.mandatsreferenz,
                 sm.glaeubiger_id,
-                sm.erstellungsdatum as mandat_datum
+                sm.erstellungsdatum as mandat_datum,
+                rp.id as ratenplan_id,
+                rp.monatlicher_aufschlag,
+                rp.ausstehender_betrag as raten_ausstehend,
+                rp.bereits_abgezahlt as raten_abgezahlt
             FROM vertraege v
             JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
             LEFT JOIN tarife t ON v.tarif_id = t.id
@@ -117,6 +121,7 @@ router.get("/", async (req, res) => {
             LEFT JOIN rechnungen r ON v.mitglied_id = r.mitglied_id
                 AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
                 AND r.archiviert = 0
+            LEFT JOIN mitglied_ratenplan rp ON v.mitglied_id = rp.mitglied_id AND rp.aktiv = 1
             WHERE v.status = 'aktiv'
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
@@ -124,7 +129,8 @@ router.get("/", async (req, res) => {
             GROUP BY v.id, v.mitglied_id, v.monatsbeitrag, v.billing_cycle, v.vertragsbeginn,
                      m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
                      sm.bankname, m.zahlungsmethode, t.name, t.price_cents,
-                     sm.mandatsreferenz, sm.glaeubiger_id, sm.erstellungsdatum
+                     sm.mandatsreferenz, sm.glaeubiger_id, sm.erstellungsdatum,
+                     rp.id, rp.monatlicher_aufschlag, rp.ausstehender_betrag, rp.bereits_abgezahlt
             ORDER BY m.nachname, m.vorname
         `;
 
@@ -459,13 +465,14 @@ router.get("/not-in-run", async (req, res) => {
         const dojoId = req.query.dojo_id || req.user?.dojo_id;
         const monat = parseInt(req.query.monat) || (new Date().getMonth() + 1);
         const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
-        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-31`;
+        const lastDayNIR = new Date(jahr, monat, 0).getDate();
+        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-${String(lastDayNIR).padStart(2, '0')}`;
 
-        // Schritt 1: Wer ist im Lauf (wie preview-Query)
+        // Schritt 1: Wer ist im Lauf (wie preview-Query — kumulativ bis Monatsende)
         const inRunQuery = `
             SELECT DISTINCT m2.mitglied_id
             FROM mitglieder m2
-            JOIN vertraege v2 ON m2.mitglied_id = v2.mitglied_id AND v2.status = 'aktiv'
+            LEFT JOIN vertraege v2 ON m2.mitglied_id = v2.mitglied_id AND v2.status = 'aktiv'
             JOIN beitraege b2 ON m2.mitglied_id = b2.mitglied_id
                 AND b2.bezahlt = 0 AND b2.zahlungsdatum <= ?
             INNER JOIN (
@@ -473,7 +480,6 @@ router.get("/not-in-run", async (req, res) => {
                 WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
             ) sm2 ON m2.mitglied_id = sm2.mitglied_id
             WHERE (m2.zahlungsmethode = 'SEPA-Lastschrift' OR m2.zahlungsmethode = 'Lastschrift')
-              AND (m2.vertragsfrei = 0 OR m2.vertragsfrei IS NULL)
               ${dojoId ? 'AND m2.dojo_id = ?' : ''}
         `;
         const inRunParams = dojoId ? [monatEnde, dojoId] : [monatEnde];
@@ -515,30 +521,30 @@ router.get("/not-in-run", async (req, res) => {
 
         const results = await queryAsync(query, queryParams);
 
-        const members = results.map(r => {
-            let grund = '';
-            if (!r.mandat_id) {
-                grund = 'Kein aktives SEPA-Mandat';
-            } else if (!r.vertrag_status) {
-                grund = 'Kein Vertrag';
-            } else if (r.vertrag_status === 'ruhepause') {
-                grund = `Ruhepause (bis ${r.ruhepause_bis ? new Date(r.ruhepause_bis).toLocaleDateString('de-DE') : '?'})`;
-            } else if (r.vertrag_status === 'gekuendigt') {
-                grund = `Gekündigt (Ende ${r.vertragsende ? new Date(r.vertragsende).toLocaleDateString('de-DE') : '?'})`;
-            } else if (r.offene_beitraege === 0) {
-                grund = 'Alle Beiträge bezahlt';
-            } else {
-                grund = 'Unbekannt';
-            }
-            return {
-                mitglied_id: r.mitglied_id,
-                name: `${r.vorname} ${r.nachname}`,
-                zahlungsmethode: r.zahlungsmethode,
-                vertrag_status: r.vertrag_status,
-                offene_beitraege: r.offene_beitraege,
-                grund
-            };
-        });
+        const members = results
+            .filter(r => r.offene_beitraege > 0)
+            .map(r => {
+                let grund = '';
+                if (!r.mandat_id) {
+                    grund = 'Kein aktives SEPA-Mandat';
+                } else if (!r.vertrag_status) {
+                    grund = 'Kein Vertrag';
+                } else if (r.vertrag_status === 'ruhepause') {
+                    grund = `Ruhepause (bis ${r.ruhepause_bis ? new Date(r.ruhepause_bis).toLocaleDateString('de-DE') : '?'})`;
+                } else if (r.vertrag_status === 'gekuendigt') {
+                    grund = `Gekündigt (Ende ${r.vertragsende ? new Date(r.vertragsende).toLocaleDateString('de-DE') : '?'})`;
+                } else {
+                    grund = 'Unbekannt';
+                }
+                return {
+                    mitglied_id: r.mitglied_id,
+                    name: `${r.vorname} ${r.nachname}`,
+                    zahlungsmethode: r.zahlungsmethode,
+                    vertrag_status: r.vertrag_status,
+                    offene_beitraege: r.offene_beitraege,
+                    grund
+                };
+            });
 
         res.json({ success: true, count: members.length, members });
     } catch (error) {
@@ -557,7 +563,7 @@ router.get("/not-in-run", async (req, res) => {
  * WICHTIG: Zeigt ALLE offenen Beiträge bis einschließlich dem ausgewählten Monat,
  * kumuliert pro Mitglied als Gesamtsumme.
  */
-router.get("/preview", (req, res) => {
+router.get("/preview", async (req, res) => {
     try {
         // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
         const secureDojoId = getSecureDojoId(req);
@@ -567,20 +573,24 @@ router.get("/preview", (req, res) => {
         const monat = parseInt(req.query.monat) || (now.getMonth() + 1);
         const jahr = parseInt(req.query.jahr) || now.getFullYear();
 
-        // Enddatum des ausgewählten Monats (alle offenen Beiträge BIS zu diesem Datum)
-        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-31`;
+        // Korrektes Monatsende berechnen
+        const lastDay = new Date(jahr, monat, 0).getDate();
+        const monatEnde = `${jahr}-${String(monat).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
         logger.debug('📢 Preview-Route aufgerufen', { monat, jahr, monatEnde, dojoId: secureDojoId });
 
-        // Dojo-Filter wenn vorhanden
-        let dojoFilter = '';
-        const params = [monatEnde];
-        if (secureDojoId) {
-            dojoFilter = 'AND m.dojo_id = ?';
-            params.push(secureDojoId);
-        }
+        const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
 
-        const query = `
+        const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+            db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+        });
+
+        // Hauptquery: nur Mitglieder MIT aktivem Vertrag + Tarif
+        // UND ohne laufende Stripe-Transaktion (processing)
+        const mainParams = [monatEnde];
+        if (secureDojoId) mainParams.push(secureDojoId);
+
+        const mainQuery = `
             SELECT
                 m.mitglied_id,
                 m.vorname,
@@ -592,113 +602,209 @@ router.get("/preview", (req, res) => {
                 sm.bankname,
                 sm.mandatsreferenz,
                 sm.glaeubiger_id,
-                -- Summe aller offenen Beiträge bis zum ausgewählten Monat
                 SUM(b.betrag) as gesamt_betrag,
                 COUNT(b.beitrag_id) as anzahl_offene_monate,
                 MIN(b.zahlungsdatum) as aeltester_beitrag,
                 MAX(b.zahlungsdatum) as neuester_beitrag,
                 GROUP_CONCAT(DISTINCT DATE_FORMAT(b.zahlungsdatum, '%m/%Y') ORDER BY b.zahlungsdatum SEPARATOR ', ') as offene_monate,
-                -- Details der einzelnen Beiträge (Format: betrag|datum|beitrag_id|beschreibung;...)
                 GROUP_CONCAT(CONCAT(b.betrag, '|', DATE_FORMAT(b.zahlungsdatum, '%Y-%m-%d'), '|', b.beitrag_id, '|', COALESCE(b.magicline_description, '')) ORDER BY b.zahlungsdatum SEPARATOR ';') as beitraege_details,
-                COALESCE(GROUP_CONCAT(DISTINCT t.name SEPARATOR ', '), 'Kein Tarif') as tarif_name,
-                'monatlich' as zahlungszyklus
+                GROUP_CONCAT(DISTINCT t.name SEPARATOR ', ') as tarif_name,
+                'monatlich' as zahlungszyklus,
+                rp.id as ratenplan_id,
+                rp.monatlicher_aufschlag,
+                rp.ausstehender_betrag as raten_ausstehend,
+                rp.bereits_abgezahlt as raten_abgezahlt
             FROM mitglieder m
-            JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
-            LEFT JOIN tarife t ON v.tarif_id = t.id
-            -- Alle offenen Beiträge BIS ZUM ausgewählten Monat (kumuliert)
+            -- Nur Mitglieder MIT aktivem Vertrag UND Tarif
+            INNER JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+            INNER JOIN tarife t ON v.tarif_id = t.id
+            LEFT JOIN mitglied_ratenplan rp ON m.mitglied_id = rp.mitglied_id AND rp.aktiv = 1
             JOIN beitraege b ON m.mitglied_id = b.mitglied_id
                 AND b.bezahlt = 0
                 AND b.zahlungsdatum <= ?
+                -- Bei aktivem Ratenplan: nur Beiträge ab dem Monat der Ratenplan-Erstellung (Rückstand läuft über Aufschlag)
+                AND (rp.id IS NULL OR DATE_FORMAT(b.zahlungsdatum, '%Y-%m') >= DATE_FORMAT(rp.erstellt_am, '%Y-%m'))
+                -- Beitrag nicht einziehen wenn er bereits in einer laufenden/abgeschlossenen Transaktion ist
+                -- Präzise Prüfung per beitrag_id; Monats-Fallback NUR für Monatsbeiträge (veraltete beitrag_id-Referenzen in Stripe)
+                AND NOT EXISTS (
+                    SELECT 1 FROM stripe_lastschrift_transaktion slt
+                    JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+                    WHERE slt.mitglied_id = m.mitglied_id
+                      AND slt.status IN ('processing', 'succeeded')
+                      AND (
+                          JSON_CONTAINS(slt.beitrag_ids, CAST(b.beitrag_id AS CHAR))
+                          OR (
+                              b.art = 'mitgliedsbeitrag'
+                              AND MONTH(b.zahlungsdatum + INTERVAL 2 HOUR) = slb.monat
+                              AND YEAR(b.zahlungsdatum + INTERVAL 2 HOUR) = slb.jahr
+                          )
+                      )
+                )
             INNER JOIN (
                 SELECT mitglied_id, bankname, mandatsreferenz, glaeubiger_id
                 FROM sepa_mandate
                 WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
             ) sm ON m.mitglied_id = sm.mitglied_id
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
-              AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
               ${dojoFilter}
             GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
-                     m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id
+                     m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id,
+                     rp.id, rp.monatlicher_aufschlag, rp.ausstehender_betrag, rp.bereits_abgezahlt
             ORDER BY m.nachname, m.vorname
         `;
 
-        db.query(query, params, (err, results) => {
-            if (err) {
-                logger.error('Database error in /preview:', err);
-                logger.error('SQL Query:', query);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Datenbankfehler',
-                    details: err.message,
-                    sqlState: err.sqlState,
-                    sqlMessage: err.sqlMessage
-                });
-            }
+        // Warnliste: SEPA-Mitglieder ohne aktiven Tarif aber mit offenen Beiträgen
+        const warnParams = [monatEnde];
+        if (secureDojoId) warnParams.push(secureDojoId);
 
-            try {
-                // Ermittle häufigste Bank
-                const mostCommonBank = getMostCommonBank(results);
+        const warnQuery = `
+            SELECT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                SUM(b.betrag) as gesamt_betrag,
+                COUNT(b.beitrag_id) as anzahl,
+                GROUP_CONCAT(DISTINCT DATE_FORMAT(b.zahlungsdatum, '%m/%Y') ORDER BY b.zahlungsdatum SEPARATOR ', ') as offene_monate
+            FROM mitglieder m
+            JOIN beitraege b ON m.mitglied_id = b.mitglied_id
+                AND b.bezahlt = 0
+                AND b.zahlungsdatum <= ?
+            INNER JOIN (
+                SELECT mitglied_id FROM sepa_mandate
+                WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
+            ) sm ON m.mitglied_id = sm.mitglied_id
+            WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              ${dojoFilter}
+              AND NOT EXISTS (
+                  SELECT 1 FROM vertraege v2
+                  INNER JOIN tarife t2 ON v2.tarif_id = t2.id
+                  WHERE v2.mitglied_id = m.mitglied_id AND v2.status = 'aktiv'
+              )
+            GROUP BY m.mitglied_id, m.vorname, m.nachname
+            ORDER BY m.nachname, m.vorname
+        `;
 
-                // Hilfsfunktion zum Parsen der Beiträge-Details
-                const parseBeitraegeDetails = (detailsStr) => {
-                    if (!detailsStr) return [];
-                    return detailsStr.split(';').map(item => {
-                        const [betrag, datum, beitrag_id, beschreibung] = item.split('|');
-                        const dateParts = datum.split('-');
-                        const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
-                        // Beschreibung oder Standard-Monatstext
-                        const displayText = beschreibung && beschreibung.trim()
-                            ? beschreibung.trim()
-                            : `Beitrag ${dateParts[1]}/${dateParts[0]}`;
-                        return {
-                            beitrag_id: parseInt(beitrag_id),
-                            betrag: parseFloat(betrag),
-                            datum: formattedDate,
-                            monat: `${dateParts[1]}/${dateParts[0]}`,
-                            beschreibung: displayText
-                        };
-                    });
+        // In-Verarbeitung-Liste: Mitglieder mit laufendem Stripe-Einzug (processing)
+        const processingParams = secureDojoId ? [secureDojoId] : [];
+        const processingQuery = `
+            SELECT
+                m.mitglied_id,
+                m.vorname,
+                m.nachname,
+                slt.betrag,
+                slt.batch_id,
+                slt.created_at,
+                slb.monat,
+                slb.jahr
+            FROM stripe_lastschrift_transaktion slt
+            JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+            JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+            WHERE slt.status = 'processing'
+              ${secureDojoId ? 'AND m.dojo_id = ?' : ''}
+            ORDER BY m.nachname, m.vorname
+        `;
+
+        const [results, warnResults, processingResults] = await Promise.all([
+            queryAsync(mainQuery, mainParams),
+            queryAsync(warnQuery, warnParams),
+            queryAsync(processingQuery, processingParams)
+        ]);
+
+        // Hilfsfunktion zum Parsen der Beiträge-Details
+        const parseBeitraegeDetails = (detailsStr) => {
+            if (!detailsStr) return [];
+            return detailsStr.split(';').map(item => {
+                const [betrag, datum, beitrag_id, beschreibung] = item.split('|');
+                const dateParts = datum.split('-');
+                const formattedDate = `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`;
+                const displayText = beschreibung && beschreibung.trim()
+                    ? beschreibung.trim()
+                    : `Beitrag ${dateParts[1]}/${dateParts[0]}`;
+                return {
+                    beitrag_id: parseInt(beitrag_id),
+                    betrag: parseFloat(betrag),
+                    datum: formattedDate,
+                    monat: `${dateParts[1]}/${dateParts[0]}`,
+                    beschreibung: displayText
                 };
+            });
+        };
 
-                const preview = results.map(r => ({
+        // Ermittle häufigste Bank
+        const mostCommonBank = getMostCommonBank(results);
+
+        const preview = results.map(r => {
+            const beitragsBetrag = parseFloat(r.gesamt_betrag || 0);
+            let ratenplanAufschlag = 0;
+            if (r.ratenplan_id) {
+                const aufschlag = parseFloat(r.monatlicher_aufschlag || 0);
+                const offen = parseFloat(r.raten_ausstehend || 0) - parseFloat(r.raten_abgezahlt || 0);
+                if (aufschlag > 0 && offen > 0) {
+                    ratenplanAufschlag = Math.min(aufschlag, offen);
+                }
+            }
+            return {
+                mitglied_id: r.mitglied_id,
+                name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
+                iban: maskIBAN(r.iban),
+                betrag: beitragsBetrag + ratenplanAufschlag,
+                beitraege_betrag: beitragsBetrag,
+                anzahl_monate: r.anzahl_offene_monate || 1,
+                offene_monate: r.offene_monate || '',
+                beitraege: parseBeitraegeDetails(r.beitraege_details),
+                mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
+                tarif: r.tarif_name || 'Kein Tarif',
+                zahlungszyklus: r.zahlungszyklus || 'monatlich',
+                bank: r.bankname || 'Unbekannt',
+                ratenplan_id: r.ratenplan_id || null,
+                ratenplan_aufschlag: ratenplanAufschlag,
+                raten_ausstehend: r.ratenplan_id ? parseFloat(r.raten_ausstehend || 0) - parseFloat(r.raten_abgezahlt || 0) : 0
+            };
+        });
+
+        const ohne_tarif = warnResults.map(r => ({
+            mitglied_id: r.mitglied_id,
+            name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
+            gesamt_betrag: parseFloat(r.gesamt_betrag || 0),
+            anzahl: r.anzahl || 0,
+            offene_monate: r.offene_monate || ''
+        }));
+
+        // Mitglieder mit laufendem Stripe-Einzug — gruppiert nach mitglied_id
+        const processingMap = {};
+        for (const r of processingResults) {
+            const key = r.mitglied_id;
+            if (!processingMap[key]) {
+                processingMap[key] = {
                     mitglied_id: r.mitglied_id,
                     name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
-                    iban: maskIBAN(r.iban),
-                    // Gesamtbetrag aller offenen Beiträge
-                    betrag: parseFloat(r.gesamt_betrag || 0),
-                    anzahl_monate: r.anzahl_offene_monate || 1,
-                    offene_monate: r.offene_monate || '',
-                    // Einzelne Beiträge als Array
-                    beitraege: parseBeitraegeDetails(r.beitraege_details),
-                    mandatsreferenz: r.mandatsreferenz || 'KEIN MANDAT',
-                    tarif: r.tarif_name || 'Kein Tarif',
-                    zahlungszyklus: r.zahlungszyklus || 'monatlich',
-                    bank: r.bankname || 'Unbekannt'
-                }));
-
-                // Berechne Gesamtsumme aller Beiträge
-                const totalAmount = results.reduce((sum, r) =>
-                    sum + parseFloat(r.gesamt_betrag || 0), 0
-                ).toFixed(2);
-
-                res.json({
-                    success: true,
-                    count: results.length,
-                    total_amount: totalAmount,
-                    monat: monat,
-                    jahr: jahr,
-                    primary_bank: mostCommonBank || 'Gemischte Banken',
-                    preview: preview
-                });
-            } catch (processingError) {
-                logger.error('Error processing preview results:', processingError);
-                return res.status(500).json({
-                    success: false,
-                    error: 'Fehler bei der Verarbeitung der Daten',
-                    details: processingError.message
-                });
+                    transaktionen: []
+                };
             }
+            processingMap[key].transaktionen.push({
+                betrag: parseFloat(r.betrag || 0),
+                batch_id: r.batch_id,
+                monat: r.monat,
+                jahr: r.jahr,
+                seit: r.created_at
+            });
+        }
+        const in_verarbeitung = Object.values(processingMap);
+
+        const totalAmount = results.reduce((sum, r) => sum + parseFloat(r.gesamt_betrag || 0), 0).toFixed(2);
+
+        res.json({
+            success: true,
+            count: results.length,
+            total_amount: totalAmount,
+            monat: monat,
+            jahr: jahr,
+            primary_bank: mostCommonBank || 'Gemischte Banken',
+            preview: preview,
+            ohne_tarif: ohne_tarif,
+            in_verarbeitung: in_verarbeitung
         });
+
     } catch (error) {
         logger.error('Error in /preview route:', error);
         return res.status(500).json({
@@ -787,8 +893,19 @@ function calculateAmount(contract) {
             }
         }
 
-        // 2. Offene Rechnungen hinzufügen
-        if (contract.offene_rechnungen != null && contract.offene_rechnungen !== undefined) {
+        // 2. Offene Rechnungen / Ratenplan-Aufschlag
+        if (contract.ratenplan_id) {
+            // Aktiver Ratenplan: nur monatlicher Aufschlag, NICHT alle offenen Rechnungen auf einmal
+            const aufschlag = parseFloat(contract.monatlicher_aufschlag || 0);
+            const ausstehend = parseFloat(contract.raten_ausstehend || 0);
+            const abgezahlt = parseFloat(contract.raten_abgezahlt || 0);
+            const offen = ausstehend - abgezahlt;
+            if (aufschlag > 0 && offen > 0) {
+                // Letzter Monat: nur noch den Restbetrag abbuchen
+                totalAmount += Math.min(aufschlag, offen);
+            }
+        } else if (contract.offene_rechnungen != null && contract.offene_rechnungen !== undefined) {
+            // Kein Ratenplan: offene Rechnungen normal einziehen
             const invoiceAmount = parseFloat(contract.offene_rechnungen);
             if (!isNaN(invoiceAmount) && invoiceAmount > 0) {
                 totalAmount += invoiceAmount;
@@ -855,6 +972,60 @@ function getMostCommonBank(contracts) {
     return mostCommonBank;
 }
 
+/**
+ * POST /api/lastschriftlauf/ratenplan-mark-collected
+ * Markiert Ratenplan-Aufschläge als eingezogen (für den Bankeinzug via CSV/XML).
+ * Wird nach erfolgreicher Bankverarbeitung durch den Admin aufgerufen.
+ * Body: { mitglieder: [{ mitglied_id, ratenplan_id, ratenplan_aufschlag }] }
+ */
+router.post("/ratenplan-mark-collected", async (req, res) => {
+    try {
+        const secureDojoId = getSecureDojoId(req);
+        const { mitglieder } = req.body;
+
+        if (!mitglieder || !Array.isArray(mitglieder) || mitglieder.length === 0) {
+            return res.status(400).json({ success: false, error: 'Keine Mitglieder angegeben' });
+        }
+
+        const queryAsync = (sql, params) => new Promise((resolve, reject) => {
+            db.query(sql, params, (err, results) => err ? reject(err) : resolve(results));
+        });
+
+        let updated = 0;
+        for (const m of mitglieder) {
+            if (!m.ratenplan_id || !m.ratenplan_aufschlag || m.ratenplan_aufschlag <= 0) continue;
+
+            // Sicherheitscheck: Ratenplan gehört zum richtigen Dojo
+            const dojoCheck = secureDojoId
+                ? `AND mi.dojo_id = ${db.escape(secureDojoId)}`
+                : '';
+
+            const rows = await queryAsync(
+                `SELECT rp.id FROM mitglied_ratenplan rp
+                 JOIN mitglieder mi ON rp.mitglied_id = mi.mitglied_id
+                 WHERE rp.id = ? AND rp.aktiv = 1 ${dojoCheck}`,
+                [m.ratenplan_id]
+            );
+            if (rows.length === 0) continue;
+
+            await queryAsync(
+                `UPDATE mitglied_ratenplan
+                 SET bereits_abgezahlt = LEAST(bereits_abgezahlt + ?, ausstehender_betrag)
+                 WHERE id = ? AND aktiv = 1`,
+                [parseFloat(m.ratenplan_aufschlag), m.ratenplan_id]
+            );
+            updated++;
+            logger.info(`✅ Ratenplan ${m.ratenplan_id} für Mitglied ${m.mitglied_id}: +${m.ratenplan_aufschlag}€ manuell als eingezogen markiert`);
+        }
+
+        res.json({ success: true, updated });
+
+    } catch (error) {
+        logger.error('Fehler in ratenplan-mark-collected:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 // ============================================================================
 // STRIPE SEPA LASTSCHRIFT ROUTES
 // ============================================================================
@@ -865,21 +1036,22 @@ function getMostCommonBank(contracts) {
  */
 router.get("/stripe/status", async (req, res) => {
     try {
-        // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
         const dojoId = req.query.dojo_id || req.user?.dojo_id;
 
-        // Prüfe Stripe-Konfiguration
-        const dojoQuery = 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?';
-        const dojoResult = await queryAsync(dojoQuery, [dojoId]);
+        // Prüfe Stripe-Konfiguration (mind. ein Dojo mit Stripe-Key)
+        const dojoQuery = dojoId
+            ? 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE id = ?'
+            : 'SELECT stripe_secret_key, stripe_publishable_key FROM dojo WHERE stripe_secret_key IS NOT NULL AND stripe_secret_key != "" LIMIT 1';
+        const dojoResult = await queryAsync(dojoQuery, dojoId ? [dojoId] : []);
 
         if (dojoResult.length === 0) {
-            return res.json({ stripe_configured: false, message: 'Dojo nicht gefunden oder Stripe nicht konfiguriert' });
+            return res.json({ stripe_configured: false, message: 'Stripe nicht konfiguriert' });
         }
 
         const stripeConfigured = !!(dojoResult[0].stripe_secret_key && dojoResult[0].stripe_publishable_key);
 
-        // Zähle Mitglieder mit/ohne Stripe Setup
-        const countQuery = `
+        // Zähle Mitglieder mit/ohne Stripe Setup (alle Dojos bei Super-Admin)
+        const countQuery = dojoId ? `
             SELECT
                 COUNT(DISTINCT m.mitglied_id) as total_mit_sepa,
                 COUNT(DISTINCT CASE WHEN m.stripe_customer_id IS NOT NULL AND sm.stripe_payment_method_id IS NOT NULL THEN m.mitglied_id END) as stripe_ready,
@@ -888,9 +1060,18 @@ router.get("/stripe/status", async (req, res) => {
             INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND m.dojo_id = ?
+        ` : `
+            SELECT
+                COUNT(DISTINCT m.mitglied_id) as total_mit_sepa,
+                COUNT(DISTINCT CASE WHEN m.stripe_customer_id IS NOT NULL AND sm.stripe_payment_method_id IS NOT NULL THEN m.mitglied_id END) as stripe_ready,
+                COUNT(DISTINCT CASE WHEN m.stripe_customer_id IS NULL OR sm.stripe_payment_method_id IS NULL THEN m.mitglied_id END) as needs_setup
+            FROM mitglieder m
+            INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            JOIN dojo d ON m.dojo_id = d.id AND d.stripe_secret_key IS NOT NULL AND d.stripe_secret_key != ''
+            WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
         `;
 
-        const countResult = await queryAsync(countQuery, [dojoId]);
+        const countResult = await queryAsync(countQuery, dojoId ? [dojoId] : []);
 
         res.json({
             stripe_configured: stripeConfigured,
@@ -974,10 +1155,10 @@ router.post("/stripe/setup-all", async (req, res) => {
     try {
         const dojoId = req.body.dojo_id || req.user?.dojo_id;
 
-        // Finde alle Mitglieder die Setup benötigen
-        const mitgliederQuery = `
+        // Finde alle Mitglieder die Setup benötigen (bei Super-Admin alle Dojos mit Stripe)
+        const mitgliederQuery = dojoId ? `
             SELECT
-                m.mitglied_id, m.vorname, m.nachname, m.email, m.stripe_customer_id,
+                m.mitglied_id, m.vorname, m.nachname, m.email, m.stripe_customer_id, m.dojo_id,
                 sm.iban, sm.kontoinhaber, sm.stripe_payment_method_id
             FROM mitglieder m
             INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
@@ -985,8 +1166,18 @@ router.post("/stripe/setup-all", async (req, res) => {
               AND sm.iban IS NOT NULL
               AND (m.stripe_customer_id IS NULL OR sm.stripe_payment_method_id IS NULL)
               AND m.dojo_id = ?
+        ` : `
+            SELECT
+                m.mitglied_id, m.vorname, m.nachname, m.email, m.stripe_customer_id, m.dojo_id,
+                sm.iban, sm.kontoinhaber, sm.stripe_payment_method_id
+            FROM mitglieder m
+            INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
+            JOIN dojo d ON m.dojo_id = d.id AND d.stripe_secret_key IS NOT NULL AND d.stripe_secret_key != ''
+            WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND sm.iban IS NOT NULL
+              AND (m.stripe_customer_id IS NULL OR sm.stripe_payment_method_id IS NULL)
         `;
-        const mitglieder = await queryAsync(mitgliederQuery, [dojoId]);
+        const mitglieder = await queryAsync(mitgliederQuery, dojoId ? [dojoId] : []);
 
         if (mitglieder.length === 0) {
             return res.json({
@@ -998,12 +1189,8 @@ router.post("/stripe/setup-all", async (req, res) => {
             });
         }
 
-        // Hole Stripe Provider
-        const provider = await PaymentProviderFactory.getProvider(dojoId);
-
-        if (!provider || !provider.createSepaCustomer) {
-            return res.status(400).json({ error: 'Stripe nicht konfiguriert' });
-        }
+        // Provider-Cache pro Dojo (vermeidet mehrfache DB-Abfragen)
+        const providerCache = {};
 
         const results = {
             processed: mitglieder.length,
@@ -1012,9 +1199,17 @@ router.post("/stripe/setup-all", async (req, res) => {
             details: []
         };
 
-        // Verarbeite jeden Mitglied
+        // Verarbeite jeden Mitglied mit dem richtigen Provider für sein Dojo
         for (const mitglied of mitglieder) {
             try {
+                const memberDojoId = mitglied.dojo_id || dojoId;
+                if (!providerCache[memberDojoId]) {
+                    providerCache[memberDojoId] = await PaymentProviderFactory.getProvider(memberDojoId);
+                }
+                const provider = providerCache[memberDojoId];
+                if (!provider || !provider.createSepaCustomer) {
+                    throw new Error(`Stripe nicht konfiguriert für Dojo ${memberDojoId}`);
+                }
                 await provider.createSepaCustomer(
                     mitglied,
                     mitglied.iban,
@@ -1055,7 +1250,6 @@ router.post("/stripe/setup-all", async (req, res) => {
 router.post("/stripe/execute", async (req, res) => {
     try {
         const { monat, jahr, mitglieder } = req.body;
-        const dojoId = req.body.dojo_id || req.user?.dojo_id;
 
         if (!monat || !jahr) {
             return res.status(400).json({ error: 'Monat und Jahr erforderlich' });
@@ -1063,6 +1257,17 @@ router.post("/stripe/execute", async (req, res) => {
 
         if (!mitglieder || mitglieder.length === 0) {
             return res.status(400).json({ error: 'Keine Mitglieder ausgewählt' });
+        }
+
+        // dojo_id aus den tatsächlichen Mitgliedern lesen (zuverlässiger als UI-Parameter,
+        // da Super-Admin ggf. falsche Bank-dojo_id übergibt)
+        let dojoId = req.user?.dojo_id;
+        if (!dojoId) {
+            const [memberRow] = await queryAsync(
+                'SELECT dojo_id FROM mitglieder WHERE mitglied_id = ?',
+                [mitglieder[0].mitglied_id]
+            );
+            dojoId = memberRow?.dojo_id || req.body.dojo_id || req.query.dojo_id;
         }
 
         // Prüfe ob Beiträge bereits bezahlt sind (verhindert Doppelabbuchung)
@@ -1079,10 +1284,16 @@ router.post("/stripe/execute", async (req, res) => {
                 if (unbezahlteBeitraege.length > 0) {
                     // Nur unbezahlte Beiträge einziehen
                     const neuerBetrag = unbezahlteBeitraege.reduce((sum, b) => sum + parseFloat(b.betrag), 0);
+                    // Ratenplan-Aufschlag dazurechnen (nicht in beitraege-Tabelle, kommt vom Frontend)
+                    const ratenplanAufschlag = parseFloat(mitglied.ratenplan_aufschlag || 0);
+                    const ratenOffen = parseFloat(mitglied.raten_ausstehend || 0);
+                    const effektiverAufschlag = ratenplanAufschlag > 0 && ratenOffen > 0
+                        ? Math.min(ratenplanAufschlag, ratenOffen) : 0;
                     filteredMitglieder.push({
                         ...mitglied,
                         beitraege: unbezahlteBeitraege.map(b => ({ beitrag_id: b.beitrag_id })),
-                        betrag: neuerBetrag
+                        betrag: neuerBetrag + effektiverAufschlag,
+                        ratenplan_aufschlag: effektiverAufschlag
                     });
                 } else {
                     logger.info(`⏭️ Mitglied ${mitglied.mitglied_id}: Alle Beiträge bereits bezahlt - übersprungen`);
@@ -1104,21 +1315,44 @@ router.post("/stripe/execute", async (req, res) => {
         // Führe Batch aus (nur mit unbezahlten Beiträgen)
         const result = await provider.processLastschriftBatch(filteredMitglieder, monat, jahr);
 
-        // Markiere erfolgreiche Beiträge als bezahlt
-        if (result.succeeded > 0 || result.processing > 0) {
+        // Markiere NUR sofort bestätigte (succeeded) Beiträge als bezahlt.
+        // processing-Transaktionen bleiben offen — Stripe Sync markiert sie
+        // wenn der Webhook (payment_intent.succeeded) eintrifft.
+        // Verhindert Doppelabbuchung bei erneutem Lauf während SEPA-Clearing läuft.
+        if (result.succeeded > 0) {
             for (const trans of result.transactions) {
-                if (trans.status === 'succeeded' || trans.status === 'processing') {
-                    // Finde die Beitrags-IDs für dieses Mitglied
-                    const mitgliedData = mitglieder.find(m => m.mitglied_id === trans.mitglied_id);
+                if (trans.status === 'succeeded') {
+                    const mitgliedData = filteredMitglieder.find(m => m.mitglied_id === trans.mitglied_id);
                     if (mitgliedData && mitgliedData.beitraege) {
                         for (const beitrag of mitgliedData.beitraege) {
                             await queryAsync(
                                 'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
                                 ['Stripe SEPA', beitrag.beitrag_id]
                             );
+                            // Verknüpfte Rechnung als bezahlt markieren
+                            if (beitrag.rechnung_id) {
+                                await queryAsync(
+                                    `UPDATE rechnungen SET status = 'bezahlt', bezahlt_am = CURDATE(), zahlungsart = 'Stripe SEPA'
+                                     WHERE rechnung_id = ?`,
+                                    [beitrag.rechnung_id]
+                                );
+                            }
+                        }
+                        // Ratenplan: bereits_abgezahlt um monatlichen Aufschlag erhöhen
+                        if (mitgliedData.ratenplan_id && mitgliedData.ratenplan_aufschlag > 0) {
+                            await queryAsync(
+                                `UPDATE mitglied_ratenplan
+                                 SET bereits_abgezahlt = LEAST(bereits_abgezahlt + ?, ausstehender_betrag)
+                                 WHERE id = ? AND aktiv = 1`,
+                                [mitgliedData.ratenplan_aufschlag, mitgliedData.ratenplan_id]
+                            );
+                            logger.info(`✅ Ratenplan ${mitgliedData.ratenplan_id} für Mitglied ${mitgliedData.mitglied_id}: +${mitgliedData.ratenplan_aufschlag}€ abgezahlt`);
                         }
                     }
                 }
+                // trans.status === 'processing': bleibt bezahlt=0
+                // Der bestehende NOT EXISTS-Guard in der Preview-Query verhindert,
+                // dass diese Beiträge nochmals im nächsten Lauf auftauchen.
             }
         }
 
@@ -1134,7 +1368,12 @@ router.post("/stripe/execute", async (req, res) => {
 
     } catch (error) {
         logger.error('Fehler beim Stripe Lastschriftlauf:', error);
-        res.status(500).json({ error: 'Fehler beim Lastschriftlauf', details: error.message });
+        const isConfigError = error.message?.includes('nicht konfiguriert') ||
+                              error.message?.includes('not configured');
+        res.status(isConfigError ? 400 : 500).json({
+            error: isConfigError ? `Stripe nicht konfiguriert für dieses Dojo: ${error.message}` : 'Fehler beim Lastschriftlauf',
+            details: error.message
+        });
     }
 });
 

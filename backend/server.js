@@ -2112,6 +2112,13 @@ app.get('/api/member-charset-test/:id', (req, res) => {
   });
 });
 
+// ── Frontend Error Reporting (kein Auth — ErrorBoundary sendet vor Login) ───
+app.post('/api/errors/report', (req, res) => {
+  const { message, stack, componentStack, url, timestamp } = req.body || {};
+  logger.warn('Frontend-Fehler', { message, url, timestamp, stack: stack?.slice(0, 500), componentStack: componentStack?.slice(0, 500) });
+  res.json({ received: true });
+});
+
 // =============================================
 // ERROR HANDLING & 404
 // =============================================

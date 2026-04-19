@@ -77,6 +77,7 @@ const AnwesenheitDashboard = lazyWithReload(() => import(/* webpackChunkName: "a
 const CheckinSystem = lazyWithReload(() => import(/* webpackChunkName: "checkin" */ "./components/CheckinSystem"));
 const PersonalCheckin = lazyWithReload(() => import(/* webpackChunkName: "checkin" */ "./components/PersonalCheckin"));
 const PublicCheckinDisplay = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/PublicCheckinDisplay"));
+const TimerExternDisplay = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/TimerExternDisplay"));
 
 // ============================================================================
 // LAZY LOADED - Kurse & Stundenplan
@@ -235,6 +236,7 @@ const VerbandMitgliedWerden = lazyWithReload(() => import(/* webpackChunkName: "
 const ProbetrainingBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/ProbetrainingBuchung"));
 const DemoBuchung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./pages/DemoBuchung"));
 const EventGastAnmeldung = lazyWithReload(() => import(/* webpackChunkName: "public" */ "./components/EventGastAnmeldung"));
+const GutscheinShop = lazyWithReload(() => import(/* webpackChunkName: "gutschein-shop" */ "./pages/GutscheinShop"));
 const PublicShop = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShop"));
 const PublicShopWarenkorb = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShopWarenkorb"));
 const PublicShopCheckout = lazyWithReload(() => import(/* webpackChunkName: "shop" */ "./pages/shop/PublicShopCheckout"));
@@ -511,6 +513,7 @@ const App = () => {
 
             {/* Public Check-in Display - No authentication required */}
             <Route path="/public-checkin" element={<Suspense fallback={<LazyLoadFallback />}><PublicCheckinDisplay /></Suspense>} />
+            <Route path="/timer-extern" element={<Suspense fallback={<div style={{background:'#0a0a0a',minHeight:'100vh'}} />}><TimerExternDisplay /></Suspense>} />
 
             {/* Public Timetable Display - No authentication required */}
             <Route path="/public-timetable" element={<Suspense fallback={<LazyLoadFallback />}><PublicTimetableDisplay /></Suspense>} />
@@ -534,6 +537,7 @@ const App = () => {
             <Route path="/event/:eventId/gast" element={<Suspense fallback={<LazyLoadFallback />}><EventGastAnmeldung /></Suspense>} />
 
             {/* Shop - Öffentlich zugänglich (kein Login erforderlich) */}
+            <Route path="/gutschein-shop/:dojoId" element={<Suspense fallback={<LazyLoadFallback />}><GutscheinShop /></Suspense>} />
             <Route path="/shop/:dojoId" element={<Suspense fallback={<LazyLoadFallback />}><PublicShop /></Suspense>} />
             <Route path="/shop/:dojoId/warenkorb" element={<Suspense fallback={<LazyLoadFallback />}><PublicShopWarenkorb /></Suspense>} />
             <Route path="/shop/:dojoId/checkout" element={<Suspense fallback={<LazyLoadFallback />}><PublicShopCheckout /></Suspense>} />

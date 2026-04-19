@@ -730,6 +730,22 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   }, [activeDojo]);
   
   // =====================================================================================
+  // MITGLIED WECHSELN
+  // =====================================================================================
+
+  const mitgliedWechseln = () => {
+    setSelectedMitglied(null);
+    setKundeName('');
+    setMitgliedId('');
+    setWarenkorb([]);
+    setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' });
+    setMitgliederSuche('');
+    setMitgliederResults([]);
+    setStartModus(null);
+    setShowStartDialog(true);
+  };
+
+  // =====================================================================================
   // RENDER FUNCTIONS
   // =====================================================================================
   
@@ -1112,25 +1128,39 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     </div>
   );
   
-  const renderErfolg = () => (
-    <div className="erfolg-modal">
-      <div className="erfolg-content">
-        <div className="erfolg-icon">✅</div>
-        <h3>Verkauf erfolgreich!</h3>
-        <p>Bon-Nummer: <strong>{letzterVerkauf?.bon_nummer}</strong></p>
-        <p>Betrag: <strong>{letzterVerkauf?.brutto_gesamt_euro?.toFixed(2)}€</strong></p>
-        {letzterVerkauf?.rueckgeld_euro > 0 && (
-          <p>Rückgeld: <strong>{letzterVerkauf.rueckgeld_euro.toFixed(2)}€</strong></p>
-        )}
-        <button
-          className="btn btn-primary"
-          onClick={() => setVerkaufErfolgreich(false)}
-        >
-          Weiter verkaufen
-        </button>
+  const renderErfolg = () => {
+    const personName = aktivePerson
+      ? (aktivePerson.full_name || `${aktivePerson.vorname || ''} ${aktivePerson.nachname || ''}`.trim())
+      : (kundeName || null);
+    return (
+      <div className="erfolg-modal">
+        <div className="erfolg-content">
+          <div className="erfolg-icon">✅</div>
+          <h3>Verkauf erfolgreich!</h3>
+          {personName && <p className="erfolg-person">{personName}</p>}
+          <p>Bon-Nummer: <strong>{letzterVerkauf?.bon_nummer}</strong></p>
+          <p>Betrag: <strong>{letzterVerkauf?.brutto_gesamt_euro?.toFixed(2)}€</strong></p>
+          {letzterVerkauf?.rueckgeld_euro > 0 && (
+            <p>Rückgeld: <strong>{letzterVerkauf.rueckgeld_euro.toFixed(2)}€</strong></p>
+          )}
+          <div className="erfolg-actions">
+            <button
+              className="btn btn-primary"
+              onClick={() => setVerkaufErfolgreich(false)}
+            >
+              Weiter {personName ? `(${personName})` : ''}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => { setVerkaufErfolgreich(false); mitgliedWechseln(); }}
+            >
+              Mitglied wechseln
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderVariantenModal = () => {
     if (!showVariantenModal || !selectedArtikelForVariant) return null;
@@ -1412,18 +1442,33 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
             <div>
               <h1 className="checkin-title">Kassensystem</h1>
               <div className="checkin-subtitle">
-                <span>Verkauf für {kundeName}</span>
-                <span>•</span>
-                <span>{new Date().toLocaleDateString('de-DE', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
+                <span>{new Date().toLocaleDateString('de-DE', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
                 })}</span>
               </div>
             </div>
           </div>
-          
+
+          {/* Aktuelles Mitglied / Modus Anzeige */}
+          <div className="vk-aktives-mitglied">
+            <User size={16} className="vk-icon-inline" />
+            <span className="vk-aktives-mitglied-name">
+              {aktivePerson
+                ? (aktivePerson.full_name || `${aktivePerson.vorname || ''} ${aktivePerson.nachname || ''}`.trim() || kundeName || 'Mitglied')
+                : (kundeName || 'Barkauf / Karte')}
+            </span>
+            <button
+              className="vk-mitglied-wechseln-btn"
+              onClick={mitgliedWechseln}
+              title="Mitglied oder Modus wechseln"
+            >
+              Wechseln
+            </button>
+          </div>
+
           {/* Schließen-Button */}
           <button
             className="close-kasse-button"

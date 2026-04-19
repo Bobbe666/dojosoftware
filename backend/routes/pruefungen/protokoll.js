@@ -1,6 +1,9 @@
 /**
  * Prüfungsprotokoll Routes
- * POST /:id/protokoll/ins-dashboard  – Protokoll aus DB-Daten generieren + im Dashboard ablegen
+ * GET  /:id/protokoll                – Trainer-Protokoll für eine Prüfung laden
+ * POST /:id/protokoll                – Trainer-Protokoll (Kommentar/Stärken/…) speichern
+ * POST /:id/protokoll/senden         – Gespeichertes Protokoll per E-Mail senden
+ * POST /:id/protokoll/ins-dashboard  – HTML-Protokoll aus DB-Daten generieren + im Dashboard ablegen
  * GET  /mitglied/:mid/protokolle     – Alle Protokolle eines Mitglieds (für MemberDashboard)
  */
 
@@ -10,6 +13,104 @@ const db = require('../../db');
 const pool = db.promise();
 const logger = require('../../utils/logger');
 const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
+
+// ── GET /:id/protokoll ────────────────────────────────────────────────────────
+// Trainer-Protokoll (gesamtkommentar, staerken, verbesserungen, empfehlungen) laden
+router.get('/:id/protokoll', async (req, res) => {
+  const pruefung_id = parseInt(req.params.id);
+  if (!pruefung_id) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  try {
+    const [[row]] = await pool.query(
+      `SELECT pp.protokoll_id, pp.gesamtkommentar, pp.staerken, pp.verbesserungen,
+              pp.empfehlungen, pp.einzelbewertungen, pp.gesendet_an_email, pp.gesendet_am
+       FROM pruefungs_protokolle pp
+       JOIN pruefungen p ON pp.pruefung_id = p.pruefung_id
+       WHERE pp.pruefung_id = ?
+         ${secureDojoId ? 'AND p.dojo_id = ?' : ''}`,
+      secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id]
+    );
+
+    res.json({ success: true, protokoll: row || null });
+  } catch (err) {
+    logger.error('Protokoll laden Fehler', { error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /:id/protokoll ───────────────────────────────────────────────────────
+// Trainer-Protokoll erstellen / aktualisieren
+router.post('/:id/protokoll', async (req, res) => {
+  const pruefung_id = parseInt(req.params.id);
+  if (!pruefung_id) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  const { gesamtkommentar = '', staerken = '', verbesserungen = '', empfehlungen = '' } = req.body;
+
+  try {
+    // Prüfung laden um dojo_id zu ermitteln
+    const [[pruef]] = await pool.query(
+      `SELECT dojo_id FROM pruefungen WHERE pruefung_id = ?${secureDojoId ? ' AND dojo_id = ?' : ''}`,
+      secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id]
+    );
+    if (!pruef) return res.status(404).json({ error: 'Prüfung nicht gefunden' });
+
+    await pool.query(
+      `INSERT INTO pruefungs_protokolle
+         (pruefung_id, dojo_id, erstellt_von, gesamtkommentar, staerken, verbesserungen, empfehlungen)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         gesamtkommentar = VALUES(gesamtkommentar),
+         staerken        = VALUES(staerken),
+         verbesserungen  = VALUES(verbesserungen),
+         empfehlungen    = VALUES(empfehlungen),
+         aktualisiert_am = NOW()`,
+      [pruefung_id, pruef.dojo_id, req.user?.id || null,
+       gesamtkommentar, staerken, verbesserungen, empfehlungen]
+    );
+
+    const [[saved]] = await pool.query(
+      'SELECT * FROM pruefungs_protokolle WHERE pruefung_id = ?', [pruefung_id]
+    );
+    res.json({ success: true, protokoll: saved });
+  } catch (err) {
+    logger.error('Protokoll speichern Fehler', { error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /:id/protokoll/senden ────────────────────────────────────────────────
+// Gespeichertes Trainer-Protokoll per E-Mail an das Mitglied senden
+router.post('/:id/protokoll/senden', async (req, res) => {
+  const pruefung_id = parseInt(req.params.id);
+  if (!pruefung_id) return res.status(400).json({ error: 'Ungültige Prüfungs-ID' });
+
+  const secureDojoId = getSecureDojoId(req);
+  try {
+    const [[row]] = await pool.query(
+      `SELECT pp.*, m.email, m.vorname, m.nachname
+       FROM pruefungs_protokolle pp
+       JOIN pruefungen p ON pp.pruefung_id = p.pruefung_id
+       JOIN mitglieder m ON p.mitglied_id = m.mitglied_id
+       WHERE pp.pruefung_id = ?
+         ${secureDojoId ? 'AND p.dojo_id = ?' : ''}`,
+      secureDojoId ? [pruefung_id, secureDojoId] : [pruefung_id]
+    );
+    if (!row) return res.status(404).json({ error: 'Protokoll nicht gefunden' });
+    if (!row.email) return res.status(400).json({ error: 'Mitglied hat keine E-Mail-Adresse' });
+
+    await pool.query(
+      'UPDATE pruefungs_protokolle SET gesendet_an_email = ?, gesendet_am = NOW() WHERE pruefung_id = ?',
+      [row.email, pruefung_id]
+    );
+
+    res.json({ success: true, sentTo: row.email });
+  } catch (err) {
+    logger.error('Protokoll senden Fehler', { error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── POST /:id/protokoll/ins-dashboard ─────────────────────────────────────────
 // Holt Prüfungsdaten aus DB, generiert HTML-Protokoll, speichert es für das Mitglied
@@ -46,8 +147,8 @@ router.post('/:id/protokoll/ins-dashboard', async (req, res) => {
 
     // Einzelbewertungen laden
     const [bewertungen] = await pool.query(
-      `SELECT pb.punktzahl, pb.max_punktzahl, pb.bestanden, pb.kommentar,
-              pi2.titel, pi2.kategorie, pi2.ohne_punkte
+      `SELECT pb.punktzahl, pb.max_punktzahl, pb.bestanden, pb.kommentar, pb.nicht_bewertet,
+              pi2.titel, pi2.kategorie, pi2.ohne_punkte, pi2.ist_gesprungen
        FROM pruefung_bewertungen pb
        LEFT JOIN pruefungsinhalte pi2 ON pb.inhalt_id = pi2.inhalt_id
        WHERE pb.pruefung_id = ?
@@ -91,6 +192,22 @@ router.post('/:id/protokoll/ins-dashboard', async (req, res) => {
       });
       const katBlöcke = Object.entries(grouped).map(([kat, items]) => {
         const rows = items.map(b => {
+          // Gesprungene Technik ohne Bewertung: grau + "entfällt"
+          if (b.ist_gesprungen && b.bestanden == null && b.punktzahl == null && !b.nicht_bewertet) {
+            return `<tr style="border-bottom:1px solid #f0f0f0;opacity:0.5;">
+              <td style="padding:3px 6px;font-size:8pt;color:#9ca3af;font-style:italic;">${b.titel || ''}</td>
+              <td style="padding:3px 6px;text-align:center;font-size:8pt;color:#9ca3af;font-style:italic;width:36px;">entfällt</td>
+              <td style="padding:3px 6px;text-align:center;font-size:8pt;color:#9ca3af;width:60px;"></td>
+            </tr>`;
+          }
+          // Explizit "nicht bewertet" markiert
+          if (b.nicht_bewertet) {
+            return `<tr style="border-bottom:1px solid #f0f0f0;">
+              <td style="padding:3px 6px;font-size:8pt;color:#333;">${b.titel || ''}</td>
+              <td style="padding:3px 6px;text-align:center;font-size:9pt;width:36px;"><span style="color:#9ca3af;font-style:italic;">nicht bewertet</span></td>
+              <td style="padding:3px 6px;text-align:center;font-size:8pt;color:#555;width:60px;"></td>
+            </tr>`;
+          }
           const ok = b.bestanden === 1 ? '<span style="color:#16a34a;font-weight:700;">✓</span>'
             : b.bestanden === 0 ? '<span style="color:#dc2626;">✗</span>'
             : '<span style="color:#bbb;">—</span>';

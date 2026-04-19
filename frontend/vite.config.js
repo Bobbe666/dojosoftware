@@ -34,6 +34,12 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     // CSS Minify auf esbuild umstellen (unterdrückt die Warnungen)
     cssMinify: 'esbuild',
     // Chunk Size Warnungslimit erhöhen (da wir bewusst größere Chunks haben)

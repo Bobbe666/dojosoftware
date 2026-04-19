@@ -1,12 +1,19 @@
 const express = require("express");
 const db = require("../db");
+const { authenticateToken } = require("../middleware/auth");
+const { getSecureDojoId } = require("../middleware/tenantSecurity");
+const logger = require("../utils/logger");
 
 const router = express.Router();
+router.use(authenticateToken);
 
 // Alle Personal-Einträge abrufen
 router.get("/", (req, res) => {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: "Dojo-ID fehlt" });
+
     const query = `
-        SELECT 
+        SELECT
             p.personal_id, p.personalnummer, p.vorname, p.nachname, p.titel,
             p.position, p.abteilung, p.beschaeftigungsart, p.arbeitszeit_stunden,
             p.email, p.telefon, p.handy,
@@ -17,15 +24,15 @@ router.get("/", (req, res) => {
             GROUP_CONCAT(pb.berechtigung SEPARATOR ', ') as berechtigungen
         FROM personal p
         LEFT JOIN personal_berechtigungen pb ON p.personal_id = pb.personal_id
-        WHERE p.status != 'gekuendigt'
+        WHERE p.status != 'gekuendigt' AND p.dojo_id = ?
         GROUP BY p.personal_id
         ORDER BY p.nachname, p.vorname
     `;
 
-    db.query(query, (err, results) => {
+    db.query(query, [dojoId], (err, results) => {
         if (err) {
             logger.error('SQL-Fehler:', { error: err });
-            return res.status(500).json({ error: err.message });
+            return res.status(500).json({ error: "Fehler beim Laden der Personal-Liste" });
         }
 
         if (results.length === 0) {
@@ -45,21 +52,24 @@ router.get("/", (req, res) => {
 // Einzelnen Personal-Eintrag abrufen
 router.get("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
+    const dojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Personal-ID" });
     }
+    if (!dojoId) return res.status(400).json({ error: "Dojo-ID fehlt" });
+
     const query = `
-        SELECT 
+        SELECT
             p.*,
             GROUP_CONCAT(pb.berechtigung SEPARATOR ', ') as berechtigungen
         FROM personal p
         LEFT JOIN personal_berechtigungen pb ON p.personal_id = pb.personal_id
-        WHERE p.personal_id = ?
+        WHERE p.personal_id = ? AND p.dojo_id = ?
         GROUP BY p.personal_id
     `;
 
-    db.query(query, [id], (err, results) => {
+    db.query(query, [id, dojoId], (err, results) => {
         if (err) {
             logger.error('Fehler beim Abrufen des Personal-Eintrags:', { error: err });
             return res.status(500).json({ error: "Fehler beim Laden des Personal-Eintrags" });
@@ -80,6 +90,9 @@ router.get("/:id", (req, res) => {
 
 // Neuen Personal-Eintrag hinzufügen
 router.post("/", (req, res) => {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: "Dojo-ID fehlt" });
+
     const {
         personalnummer, vorname, nachname, titel, geburtsdatum, geschlecht,
         email, telefon, handy, position, abteilung, beschaeftigungsart,
@@ -88,21 +101,21 @@ router.post("/", (req, res) => {
     } = req.body;
 
     if (!personalnummer || !vorname || !nachname || !position || !beschaeftigungsart || !einstellungsdatum) {
-        return res.status(400).json({ 
-            error: "Personalnummer, Vor-/Nachname, Position, Beschäftigungsart und Einstellungsdatum sind erforderlich" 
+        return res.status(400).json({
+            error: "Personalnummer, Vor-/Nachname, Position, Beschäftigungsart und Einstellungsdatum sind erforderlich"
         });
     }
     const query = `
         INSERT INTO personal (
-            personalnummer, vorname, nachname, titel, geburtsdatum, geschlecht,
+            dojo_id, personalnummer, vorname, nachname, titel, geburtsdatum, geschlecht,
             email, telefon, handy, position, abteilung, beschaeftigungsart,
             arbeitszeit_stunden, grundgehalt, stundenlohn, einstellungsdatum,
             kampfkunst_graduierung, notizen, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktiv')
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktiv')
     `;
 
     db.query(query, [
-        personalnummer, vorname, nachname, titel, geburtsdatum, geschlecht,
+        dojoId, personalnummer, vorname, nachname, titel, geburtsdatum, geschlecht,
         email, telefon, handy, position, abteilung, beschaeftigungsart,
         arbeitszeit_stunden, grundgehalt, stundenlohn, einstellungsdatum,
         kampfkunst_graduierung, notizen
@@ -141,6 +154,7 @@ router.post("/", (req, res) => {
 // Personal-Eintrag aktualisieren
 router.put("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
+    const dojoId = getSecureDojoId(req);
     const {
         personalnummer, vorname, nachname, titel, geburtsdatum, geschlecht,
         email, telefon, handy, position, abteilung, beschaeftigungsart,
@@ -151,14 +165,15 @@ router.put("/:id", (req, res) => {
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Personal-ID" });
     }
+    if (!dojoId) return res.status(400).json({ error: "Dojo-ID fehlt" });
 
     if (!vorname || !nachname || !position) {
-        return res.status(400).json({ 
-            error: "Vor-/Nachname und Position sind erforderlich" 
+        return res.status(400).json({
+            error: "Vor-/Nachname und Position sind erforderlich"
         });
     }
-    // Erst prüfen, ob der Eintrag existiert
-    db.query("SELECT personal_id FROM personal WHERE personal_id = ?", [id], (err, results) => {
+    // Erst prüfen, ob der Eintrag existiert und zum Dojo gehört
+    db.query("SELECT personal_id FROM personal WHERE personal_id = ? AND dojo_id = ?", [id, dojoId], (err, results) => {
         if (err) {
             logger.error('Fehler bei der ID-Überprüfung:', { error: err });
             return res.status(500).json({ error: "Fehler bei der ID-Überprüfung" });
@@ -203,17 +218,20 @@ router.put("/:id", (req, res) => {
 // Personal-Eintrag löschen (Status auf "gekündigt" setzen)
 router.delete("/:id", (req, res) => {
     const id = parseInt(req.params.id, 10);
+    const dojoId = getSecureDojoId(req);
 
     if (isNaN(id)) {
         return res.status(400).json({ error: "Ungültige Personal-ID" });
     }
+    if (!dojoId) return res.status(400).json({ error: "Dojo-ID fehlt" });
+
     const query = `
-        UPDATE personal 
+        UPDATE personal
         SET status = 'gekuendigt', kuendigungsdatum = CURDATE(), aktualisiert_am = CURRENT_TIMESTAMP
-        WHERE personal_id = ?
+        WHERE personal_id = ? AND dojo_id = ?
     `;
 
-    db.query(query, [id], (err, result) => {
+    db.query(query, [id, dojoId], (err, result) => {
         if (err) {
             logger.error('Fehler beim Kündigen des Personal-Eintrags:', { error: err });
             return res.status(500).json({ error: "Fehler beim Kündigen des Personal-Eintrags" });

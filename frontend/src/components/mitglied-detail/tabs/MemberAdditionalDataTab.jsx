@@ -14,13 +14,13 @@ import '../../../styles/MemberAdditionalDataTab.css';
  * - editMode: Ob Bearbeitung erlaubt ist (für Admin und eigenes Profil)
  * - onError: Optional - Callback für Fehlerbehandlung
  */
-const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
+const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError, filterArts }) => {
   // State
   const [zusatzdaten, setZusatzdaten] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({
-    art: 'Lehrgang',
+    art: (filterArts && filterArts.length === 1) ? filterArts[0] : 'Lehrgang',
     bezeichnung: '',
     datum: '',
     lizenz: ''
@@ -86,14 +86,14 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
 
   const openAddModal = () => {
     setEditingItem(null);
-    setFormData({ art: 'Lehrgang', bezeichnung: '', datum: '', lizenz: '' });
+    setFormData({ art: (filterArts && filterArts.length === 1) ? filterArts[0] : 'Lehrgang', bezeichnung: '', datum: '', lizenz: '' });
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditingItem(null);
-    setFormData({ art: 'Lehrgang', bezeichnung: '', datum: '', lizenz: '' });
+    setFormData({ art: (filterArts && filterArts.length === 1) ? filterArts[0] : 'Lehrgang', bezeichnung: '', datum: '', lizenz: '' });
   };
 
   // Art-Badge Farben
@@ -110,19 +110,34 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
     }
   };
 
+  // Filter by filterArts if provided
+  const displayed = filterArts
+    ? zusatzdaten.filter(z => filterArts.some(a => z.art?.toLowerCase() === a.toLowerCase()))
+    : zusatzdaten;
+
+  // Derive label for UI
+  const singleTypeLabel = filterArts && filterArts.length === 1 ? filterArts[0] : null;
+  const addButtonLabel = singleTypeLabel ? `+ Neue${singleTypeLabel === 'Ehrung' ? ' ' : 'r '}${singleTypeLabel}` : '+ Neuer Eintrag';
+  const emptyText = singleTypeLabel
+    ? `Noch keine ${singleTypeLabel}en erfasst.`
+    : 'Noch keine Lehrgänge oder Ehrungen erfasst.';
+  const emptyHint = singleTypeLabel
+    ? `Klicken Sie auf "${addButtonLabel}" um ${singleTypeLabel === 'Ehrung' ? 'eine' : 'einen'} hinzuzufügen.`
+    : 'Klicken Sie auf "Neuer Eintrag" um einen hinzuzufügen.';
+
   return (
     <div className="zusatzdaten-content mad-root">
       {/* Header */}
       <div className="mad-header">
         <h2 className="mad-heading">
-          Lehrgänge & Ehrungen
+          {singleTypeLabel ? `${singleTypeLabel}en` : 'Lehrgänge & Ehrungen'}
         </h2>
         {editMode && (
           <button
             onClick={openAddModal}
             className="mad-btn-add"
           >
-            + Neuer Eintrag
+            {addButtonLabel}
           </button>
         )}
       </div>
@@ -135,16 +150,16 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
       )}
 
       {/* Empty State */}
-      {!loading && zusatzdaten.length === 0 && (
+      {!loading && displayed.length === 0 && (
         <div className="mad-empty">
           <div className="u-emoji-xl">📋</div>
-          <p>Noch keine Lehrgänge oder Ehrungen erfasst.</p>
-          {editMode && <p className="mad-empty-hint">Klicken Sie auf "Neuer Eintrag" um einen hinzuzufügen.</p>}
+          <p>{emptyText}</p>
+          {editMode && <p className="mad-empty-hint">{emptyHint}</p>}
         </div>
       )}
 
       {/* Table */}
-      {!loading && zusatzdaten.length > 0 && (
+      {!loading && displayed.length > 0 && (
         <div className="mad-table-scroll">
           <table className="mad-table">
             <thead>
@@ -157,7 +172,7 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
               </tr>
             </thead>
             <tbody>
-              {zusatzdaten.map((item) => {
+              {displayed.map((item) => {
                 const artStyle = getArtStyle(item.art);
                 return (
                   <tr key={item.id} className="mad-tr">
@@ -222,20 +237,22 @@ const MemberAdditionalDataTab = ({ mitgliedId, dojoId, editMode, onError }) => {
                 />
               </div>
 
-              <div className="mad-mb-1">
-                <label className="u-form-label-secondary">
-                  Art *
-                </label>
-                <select
-                  value={formData.art}
-                  onChange={(e) => setFormData({ ...formData, art: e.target.value })}
-                  className="mad-form-input"
-                >
-                  <option value="Lehrgang">Lehrgang</option>
-                  <option value="Seminar">Seminar</option>
-                  <option value="Ehrung">Ehrung</option>
-                </select>
-              </div>
+              {!singleTypeLabel && (
+                <div className="mad-mb-1">
+                  <label className="u-form-label-secondary">
+                    Art *
+                  </label>
+                  <select
+                    value={formData.art}
+                    onChange={(e) => setFormData({ ...formData, art: e.target.value })}
+                    className="mad-form-input"
+                  >
+                    <option value="Lehrgang">Lehrgang</option>
+                    <option value="Seminar">Seminar</option>
+                    <option value="Ehrung">Ehrung</option>
+                  </select>
+                </div>
+              )}
 
               <div className="mad-mb-1">
                 <label className="u-form-label-secondary">

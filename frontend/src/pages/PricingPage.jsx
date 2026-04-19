@@ -55,30 +55,35 @@ function PricingPage() {
     navigate('/register', { state: { selectedPlan: planName, billingInterval } });
   };
 
-  // Dynamische Feature-Liste für jeden Plan erstellen
-  const getPlanFeatures = (plan) => {
-    if (!plan.features) return [];
+  // Alle Features mit included/not-included für eine Card
+  const getPlanFeatureRows = (plan) => {
+    if (!plan.features || plan.features.length === 0) return [];
+    return plan.features.map(f => ({
+      name: f.feature_name,
+      icon: f.feature_icon,
+      included: !!f.included,
+      category: f.feature_category,
+    }));
+  };
 
-    const includedFeatures = plan.features
-      .filter(f => f.included)
-      .map(f => `${f.feature_icon} ${f.feature_name}`);
-
-    // Zusätzliche Plan-spezifische Infos
-    const extras = [];
+  // Plan-Limits als Badge-Daten
+  const getPlanLimits = (plan) => {
+    const limits = [];
     if (plan.max_members >= 999999) {
-      extras.push('⭐ Unbegrenzt Mitglieder');
+      limits.push({ label: 'Unbegrenzt Mitglieder', highlight: true });
     } else {
-      extras.push(`Bis ${plan.max_members} aktive Mitglieder`);
+      limits.push({ label: `Bis ${plan.max_members} Mitglieder`, highlight: false });
     }
-
     if (plan.max_dojos > 1) {
-      extras.push(`🏢 Bis zu ${plan.max_dojos} Dojos`);
+      limits.push({ label: `Bis zu ${plan.max_dojos} Dojos`, highlight: true });
+    } else {
+      limits.push({ label: '1 Standort', highlight: false });
     }
-
-    const storageGB = Math.round(plan.storage_limit_mb / 1000);
-    extras.push(`📁 ${storageGB} GB Speicherplatz`);
-
-    return [...extras, ...includedFeatures.slice(0, 8)]; // Max 8 Features + Extras
+    const storageGB = plan.storage_limit_mb >= 1000
+      ? `${Math.round(plan.storage_limit_mb / 1000)} GB`
+      : `${plan.storage_limit_mb} MB`;
+    limits.push({ label: `${storageGB} Speicher`, highlight: false });
+    return limits;
   };
 
   if (loading) {
@@ -148,6 +153,15 @@ function PricingPage() {
                   <p className="card-description">{plan.description}</p>
                 </div>
 
+                {/* Limits-Badges */}
+                <div className="plan-limits">
+                  {getPlanLimits(plan).map((l, i) => (
+                    <span key={i} className={`limit-badge ${l.highlight ? 'limit-badge--highlight' : ''}`}>
+                      {l.label}
+                    </span>
+                  ))}
+                </div>
+
                 <div className="card-price">
                   <div className="price-amount">
                     €{(Number(getPrice(plan)) || 0).toFixed(0)}
@@ -169,15 +183,18 @@ function PricingPage() {
                   className="select-plan-btn"
                   onClick={() => handleSelectPlan(plan.plan_name)}
                 >
-                  Plan wählen
+                  Jetzt starten
                 </button>
 
                 <div className="card-features">
                   <ul>
-                    {getPlanFeatures(plan).map((feature, index) => (
-                      <li key={index}>
-                        <span className="feature-check">✓</span>
-                        {feature}
+                    {getPlanFeatureRows(plan).map((f, index) => (
+                      <li key={index} className={f.included ? 'feature-included' : 'feature-excluded'}>
+                        <span className={f.included ? 'feature-check' : 'feature-dash'}>
+                          {f.included ? '✓' : '—'}
+                        </span>
+                        <span className="feature-icon-label">{f.icon}</span>
+                        {f.name}
                       </li>
                     ))}
                   </ul>

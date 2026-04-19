@@ -3,6 +3,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const db = require('../db');
 const { authenticateToken } = require('../middleware/auth');
+const { syncPlanFeatures } = require('../middleware/featureAccess');
 
 /**
  * Subscription Management Routes
@@ -454,9 +455,12 @@ router.post('/change-plan', async (req, res) => {
 
     await connection.commit();
 
+    // Feature-Flags aus plan_feature_mapping synchronisieren (nach commit!)
+    await syncPlanFeatures(dojoId, new_plan);
+
     res.json({
       success: true,
-      message: `Plan erfolgreich ge\u00e4ndert von ${oldPlan} zu ${new_plan}`,
+      message: `Plan erfolgreich geändert von ${oldPlan} zu ${new_plan}`,
       action,
       new_plan,
       new_price: newPrice,

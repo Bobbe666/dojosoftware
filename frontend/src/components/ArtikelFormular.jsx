@@ -2,7 +2,7 @@
 // ARTIKEL-FORMULAR KOMPONENTE - Eigenständige Seite für Artikel erstellen/bearbeiten
 // =====================================================================================
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import '../styles/components.css';
 import '../styles/ArtikelVerwaltung.css';
 import '../styles/ArtikelVerwaltungOverrides.css';
@@ -14,6 +14,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 const ArtikelFormular = ({ mode }) => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [kategorien, setKategorien] = useState([]);
@@ -383,28 +384,31 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [isSuperAdmin, mode, id]);
 
-  // Im Edit-Modus: Hauptkategorie setzen wenn Artikelgruppen und Artikel geladen sind
+  // Create-Modus: Gruppenvorauswahl aus Navigation-State übernehmen
   useEffect(() => {
-    if (mode === 'edit' && formData.artikelgruppe_id && artikelgruppen.length > 0) {
-      // Finde die Hauptkategorie, die diese Unterkategorie enthält
+    if (mode === 'create' && location.state?.gruppeId && artikelgruppen.length > 0) {
+      const gruppeId = location.state.gruppeId;
+      setFormData(prev => ({ ...prev, artikelgruppe_id: gruppeId.toString() }));
+    }
+  }, [mode, location.state, artikelgruppen]);
+
+  // Hauptkategorie setzen wenn artikelgruppe_id und Gruppen geladen sind (Edit + Create)
+  useEffect(() => {
+    if (formData.artikelgruppe_id && artikelgruppen.length > 0) {
       for (const hauptkat of artikelgruppen) {
-        // Prüfe ob artikelgruppe_id direkt eine Hauptkategorie ist
         if (hauptkat.id == formData.artikelgruppe_id) {
           setSelectedHauptkategorieId(hauptkat.id.toString());
-          // Setze auch kategorie_id für Backend
           setFormData(prev => ({ ...prev, kategorie_id: hauptkat.id.toString() }));
           return;
         }
-        // Prüfe ob artikelgruppe_id eine Unterkategorie dieser Hauptkategorie ist
         if (hauptkat.unterkategorien?.some(u => u.id == formData.artikelgruppe_id)) {
           setSelectedHauptkategorieId(hauptkat.id.toString());
-          // Setze auch kategorie_id für Backend
           setFormData(prev => ({ ...prev, kategorie_id: hauptkat.id.toString() }));
           return;
         }
       }
     }
-  }, [mode, formData.artikelgruppe_id, artikelgruppen]);
+  }, [formData.artikelgruppe_id, artikelgruppen]);
 
   // Hilfsfunktion: Finde Gruppe in hierarchischer Struktur (Haupt- oder Unterkategorie)
   const findGruppeById = (gruppeId) => {

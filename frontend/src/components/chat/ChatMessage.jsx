@@ -7,8 +7,9 @@ import { useChatContext } from '../../context/ChatContext.jsx';
 
 const EMOJIS = ['🥋', '🤜', '🏆', '🎯', '💪', '⚡'];
 
-const ChatMessage = ({ message, onReact }) => {
+const ChatMessage = ({ message, onReact, readInfo, totalMembers }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showReaders, setShowReaders] = useState(false);
   const { sendReaction } = useChatContext();
 
   const handleReact = (emoji) => {
@@ -67,7 +68,30 @@ const ChatMessage = ({ message, onReact }) => {
           <span className={`chat-message-time${isToday(message.sent_at) ? ' chat-message-time--today' : ''}`}>
             {formatTime(message.sent_at)}
           </span>
+          {/* Read-Receipt: nur bei eigenen Nachrichten anzeigen */}
+          {message.is_own && !isDeleted && (
+            <span
+              className={`chat-read-receipt${readInfo?.read_count > 0 ? ' chat-read-receipt--read' : ''}`}
+              onClick={() => readInfo?.read_count > 0 && setShowReaders(v => !v)}
+              title={readInfo?.read_count > 0
+                ? `Gelesen von: ${readInfo.reader_names.join(', ')}`
+                : 'Noch nicht gelesen'}
+            >
+              {readInfo?.read_count > 0
+                ? `✓✓ ${readInfo.read_count}${totalMembers > 1 ? `/${totalMembers - 1}` : ''}`
+                : '✓'}
+            </span>
+          )}
         </div>
+        {/* Leser-Popup */}
+        {showReaders && readInfo?.reader_names?.length > 0 && (
+          <div className="chat-readers-popup" onClick={() => setShowReaders(false)}>
+            <div className="chat-readers-popup-title">Gelesen von</div>
+            {readInfo.reader_names.map((name, i) => (
+              <div key={i} className="chat-readers-popup-item">👁 {name}</div>
+            ))}
+          </div>
+        )}
 
         {/* Emoji-Picker (bei Hover/Doppelklick) */}
         {showEmojiPicker && !isDeleted && (

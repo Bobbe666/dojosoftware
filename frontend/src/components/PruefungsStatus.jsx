@@ -496,9 +496,18 @@ const PruefungsStatus = ({ mitgliedId, readOnly = false, mitglied = null }) => {
                 {selectedPruefung.pruefungsort && (<><span className="ps2-dl">Ort</span><span className="ps2-dv">📍 {selectedPruefung.pruefungsort}</span></>)}
                 {selectedPruefung.pruefungsgebuehr && (<><span className="ps2-dl">Gebühr</span><span className="ps2-dv">💰 {parseFloat(selectedPruefung.pruefungsgebuehr).toFixed(2)} €</span></>)}
               </div>
+              <div className="ps2-storno-hinweis">
+                <div className="ps2-storno-icon">📋</div>
+                <div className="ps2-storno-text">
+                  <strong>Hinweis zur Stornierung</strong>
+                  <p>
+                    Wir freuen uns riesig, dich bei deiner Prüfung begrüßen zu dürfen! 🎉 Damit alles reibungslos klappen kann, möchten wir dich herzlich auf Folgendes hinweisen: <strong>Eine Abmeldung ist bis 7 Tage vor dem Prüfungstermin kostenlos möglich.</strong> Ab diesem Zeitpunkt laufen alle Vorbereitungen auf Hochtouren — deine Urkunde wird gedruckt, Prüfer sind eingeplant und die gesamte Organisation steht. Der damit verbundene Aufwand ist dann bereits entstanden und kann leider nicht mehr rückgängig gemacht werden. <strong>Die Prüfungsgebühr bleibt in diesem Fall in voller Höhe fällig</strong> — auch bei Verhinderung. Wir danken dir für dein Verständnis und drücken dir schon jetzt ganz fest die Daumen! 🥋
+                  </p>
+                </div>
+              </div>
               <label className="ps2-checkbox-row">
                 <input type="checkbox" checked={teilnahmeBedingungAkzeptiert} onChange={e => setTeilnahmeBedingungAkzeptiert(e.target.checked)} />
-                <span>Ich bestätige meine Teilnahme und bin mir bewusst, dass die Prüfungsgebühr fällig wird.</span>
+                <span>Ich habe den Stornierungshinweis gelesen und bestätige meine Teilnahme. Mir ist bewusst, dass die Prüfungsgebühr bei Abmeldung innerhalb von 7 Tagen vor der Prüfung fällig bleibt.</span>
               </label>
               <div className="ps2-modal-actions">
                 <button className="ps2-btn-cancel" onClick={() => setShowTeilnahmeModal(false)}>Abbrechen</button>

@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const db = require('../db');
 const { sendWelcomeEmail } = require('../services/emailTemplates');
 const saasSettings = require('../services/saasSettingsService');
+const { syncPlanFeatures } = require('../middleware/featureAccess');
 
 /**
  * Dojo Onboarding Routes (SaaS Multi-Tenant Registration)
@@ -244,6 +245,10 @@ router.post('/register-dojo', async (req, res) => {
 
     // ===== COMMIT =====
     await connection.commit();
+
+    // Feature-Flags aus plan_feature_mapping für den gewählten Plan setzen.
+    // plan_type bleibt 'trial' — nur feature_* Spalten werden aktualisiert.
+    await syncPlanFeatures(dojo_id, planName, { updatePlanType: false });
 
     // ===== Early Bird Promo Registrierung (im Backend – zuverlässig) =====
     try {

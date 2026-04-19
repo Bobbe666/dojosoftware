@@ -124,15 +124,8 @@ const STANDARD_VORLAGEN = [
     typ: 'brief',
     kategorie: 'erstanschreiben',
     betreff: 'Einladung zur Mitgliedschaft im TDA International Verband',
-    html: `<p><strong>{{absender_name}}</strong><br>{{absender_inhaber}}<br>{{absender_email}}<br>{{absender_internet}}</p>
-<br>
-<p><strong>{{organisation}}</strong><br>z.H. {{ansprechpartner}}<br>{{strasse}}<br>{{plz}} {{ort}}</p>
-<br>
-<p>{{ort}}, den {{datum}}</p>
-<br>
-<p><strong>Betreff: Einladung zur Mitgliedschaft im TDA International Verband</strong></p>
-<br>
-<p>{{anrede_persoenlich}},</p>
+    // NUR Briefkörper — Absender/Empfänger/Datum/Betreff werden von buildLetterheadHtml generiert!
+    html: `<p>{{anrede_persoenlich}},</p>
 <p>als einer der dynamisch wachsenden Kampfkunst-Verbände in Deutschland möchten wir Sie herzlich einladen, Teil des TDA International Verbands zu werden.</p>
 <p>Die Vorteile einer Mitgliedschaft umfassen: offizielle Turnierteilnahme, Verwaltungssoftware, ein starkes Trainernetzwerk sowie Zugang zu Aus- und Weiterbildungsangeboten.</p>
 <p>Wir würden uns sehr über eine positive Rückmeldung freuen und stehen für ein Gespräch jederzeit zur Verfügung.</p>
@@ -683,6 +676,41 @@ router.delete('/kontakte/:id', async (req, res) => {
 });
 
 // ============================================================================
+// WIEDERVORLAGEN
+// ============================================================================
+
+// GET /api/admin/akquise/wiedervorlagen — Alle Kontakte mit gesetzter naechste_aktion
+router.get('/wiedervorlagen', async (req, res) => {
+  try {
+    const [rows] = await pool.query(`
+      SELECT id, organisation, typ, ansprechpartner, status, prioritaet,
+             naechste_aktion, naechste_aktion_info, ort, email
+      FROM akquise_kontakte
+      WHERE naechste_aktion IS NOT NULL
+        AND status NOT IN ('gewonnen','abgelehnt')
+      ORDER BY naechste_aktion ASC
+    `);
+    res.json({ success: true, wiedervorlagen: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Fehler beim Laden' });
+  }
+});
+
+// PATCH /api/admin/akquise/kontakte/:id/wiedervorlage — Wiedervorlage setzen oder löschen
+router.patch('/kontakte/:id/wiedervorlage', async (req, res) => {
+  const { naechste_aktion, naechste_aktion_info } = req.body;
+  try {
+    await pool.query(
+      'UPDATE akquise_kontakte SET naechste_aktion=?, naechste_aktion_info=?, aktualisiert_am=NOW() WHERE id=?',
+      [naechste_aktion || null, naechste_aktion_info || null, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Fehler beim Speichern' });
+  }
+});
+
+// ============================================================================
 // AKTIVITÄTEN
 // ============================================================================
 
@@ -845,11 +873,12 @@ router.post('/kontakte/:id/brief', async (req, res) => {
     const briefInhalt = ersetzePlatzhalter(html_raw, kontakt, absenderSimple);
     const betreff = ersetzePlatzhalter(betreff_raw || '', kontakt, absenderSimple);
 
-    // Empfänger-Block aus Kontakt
+    // Empfänger-Block aus Kontakt (DIN 5008: Adressfeld zeigt Organisation + Adresse,
+    // anrede = z.H.-Zeile für Ansprechpartner — KEIN Briefanredetext hier!)
     const empfaenger = {
-      anrede: kontakt.ansprechpartner ? `Sehr geehrte/r ${kontakt.ansprechpartner},` : 'Sehr geehrte Damen und Herren,',
+      anrede: kontakt.ansprechpartner ? `z.H. ${kontakt.ansprechpartner}` : '',
       vorname: '',
-      nachname: kontakt.ansprechpartner || kontakt.organisation,
+      nachname: kontakt.organisation,
       strasse: kontakt.strasse || '',
       hausnummer: '',
       plz: kontakt.plz || '',

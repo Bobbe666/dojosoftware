@@ -1,5 +1,5 @@
 // =====================================================================================
-// HOMEPAGE BUILDER — Enterprise Feature
+// HOMEPAGE BUILDER — Premium Feature
 // Drag & Drop Split-Pane Builder für Dojo-Homepages
 // =====================================================================================
 
@@ -41,19 +41,19 @@ function HomepageFeatureGate({ children }) {
       <div className="hpb-gate">
         <div className="hpb-gate-icon">🌐</div>
         <h2>Homepage Builder</h2>
-        <p className="hpb-gate-sub">Professionelle Homepage für Ihr Dojo — inklusive im Enterprise-Paket</p>
+        <p className="hpb-gate-sub">Professionelle Homepage für Ihr Dojo — ab dem Premium-Paket</p>
         <div className="hpb-gate-features">
-          <div className="hpb-gate-feature">✓ Vollständige Homepage im japanischen Martial-Arts-Design</div>
-          <div className="hpb-gate-feature">✓ Kampfkunststile, Stundenplan-Vorschau, Werte</div>
-          <div className="hpb-gate-feature">✓ Eigene Domain möglich (tda-vib.de → Ihr Dojo)</div>
+          <div className="hpb-gate-feature">✓ 4 professionelle Kampfsport-Designs zur Auswahl</div>
+          <div className="hpb-gate-feature">✓ Traditionell · Zen · Combat · Dynamic</div>
+          <div className="hpb-gate-feature">✓ Eigene Subdomain (mein-dojo.dojo-pages.de)</div>
           <div className="hpb-gate-feature">✓ Live-Stundenplan direkt auf der Homepage</div>
-          <div className="hpb-gate-feature">✓ Drag & Drop Editor mit Live-Vorschau</div>
+          <div className="hpb-gate-feature">✓ Farben & Bilder individuell anpassbar</div>
         </div>
         <div className="hpb-gate-current">
           Aktueller Plan: <strong>{plan.charAt(0).toUpperCase() + plan.slice(1)}</strong>
         </div>
         <a href="/dashboard/subscription" className="hpb-gate-btn">
-          Auf Enterprise upgraden →
+          Auf Premium upgraden →
         </a>
       </div>
     );
@@ -458,6 +458,84 @@ function NavEditor({ navItems, onChange }) {
   );
 }
 
+// ─── Template-Auswahl ─────────────────────────────────────────────────────────
+
+const TEMPLATE_META = [
+  {
+    id: 'traditional',
+    name: 'Traditionell',
+    emoji: '⛩️',
+    desc: 'Japanisches Martial-Arts-Design in Crimson & Gold',
+    style: 'Karate · TDA · Traditionell',
+    colors: ['#DC143C', '#c9a227', '#0a0a0a'],
+    preview: 'Elegantes dunkles Design, inspiriert von tda-vib.de',
+  },
+  {
+    id: 'zen',
+    name: 'Zen',
+    emoji: '🥋',
+    desc: 'Minimalistisch · Blau, Weiß & Gold',
+    style: 'Karate · Taekwondo · Judo',
+    colors: ['#1B2A4A', '#B8963E', '#f8f6f1'],
+    preview: 'Ruhiges, helles Design für traditionelle Stile',
+  },
+  {
+    id: 'combat',
+    name: 'Combat',
+    emoji: '🥊',
+    desc: 'Aggressiv · Schwarz, Rot & Chrome',
+    style: 'MMA · BJJ · Wrestling',
+    colors: ['#C41E3A', '#8B8B8B', '#0d0d0d'],
+    preview: 'Dunkles, kraftvolles Design für Combat Sports',
+  },
+  {
+    id: 'dynamic',
+    name: 'Dynamic',
+    emoji: '🔥',
+    desc: 'Energetisch · Anthrazit & Orange',
+    style: 'Kickboxen · Muay Thai · Fitness',
+    colors: ['#FF5722', '#12192C', '#1a2235'],
+    preview: 'Modernes, dynamisches Design für Kampfsport & Fitness',
+  },
+];
+
+function TemplateSelector({ templateId, onSelect }) {
+  return (
+    <div className="hpb-template-selector">
+      <p className="hpb-hint" style={{ marginBottom: '16px' }}>
+        Wähle das Design-Template das am besten zu deiner Schule passt.
+        Farben und Bilder kannst du danach individuell anpassen.
+      </p>
+      <div className="hpb-template-grid">
+        {TEMPLATE_META.map(tpl => (
+          <div
+            key={tpl.id}
+            className={`hpb-template-card ${templateId === tpl.id ? 'active' : ''}`}
+            onClick={() => onSelect(tpl.id)}
+          >
+            <div className="hpb-tpl-header" style={{ background: tpl.colors[2] }}>
+              <div className="hpb-tpl-dots">
+                {tpl.colors.map((c, i) => (
+                  <span key={i} style={{ background: c, width: 10, height: 10, borderRadius: '50%', display: 'inline-block', marginRight: 4 }} />
+                ))}
+              </div>
+              <div className="hpb-tpl-emoji">{tpl.emoji}</div>
+            </div>
+            <div className="hpb-tpl-body">
+              <div className="hpb-tpl-name-row">
+                <strong>{tpl.name}</strong>
+                {templateId === tpl.id && <span className="hpb-tpl-active-badge">Aktiv</span>}
+              </div>
+              <p className="hpb-tpl-style">{tpl.style}</p>
+              <p className="hpb-tpl-preview">{tpl.preview}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Design-Einstellungen ─────────────────────────────────────────────────────
 
 function DesignSettings({ config, onChange }) {
@@ -555,7 +633,7 @@ function SlugSettings({ slug, onSlugChange, slugAvailable, onSlugCheck }) {
       <div className="hpb-field">
         <label>URL-Name (Slug)</label>
         <div className="hpb-slug-row">
-          <span className="hpb-slug-prefix">dojo.tda-intl.org/site/</span>
+          <span className="hpb-slug-prefix" style={{ fontSize: '0.78rem' }}></span>
           <input
             type="text"
             value={inputVal}
@@ -564,6 +642,11 @@ function SlugSettings({ slug, onSlugChange, slugAvailable, onSlugCheck }) {
             placeholder="mein-dojo"
           />
         </div>
+        {inputVal && (
+          <div className="hpb-slug-preview-box">
+            <span className="hpb-slug-preview-url">{inputVal}.dojo-pages.de</span>
+          </div>
+        )}
         {checking && <p className="hpb-slug-status checking">Prüfe Verfügbarkeit…</p>}
         {!checking && slugAvailable === true && <p className="hpb-slug-status ok">✓ Verfügbar</p>}
         {!checking && slugAvailable === false && <p className="hpb-slug-status error">✗ Bereits vergeben</p>}
@@ -577,7 +660,10 @@ function SlugSettings({ slug, onSlugChange, slugAvailable, onSlugCheck }) {
       </div>
       <div className="hpb-info-box">
         <span>🔗</span>
-        <p>Kunden können später ihre eigene Domain (z.B. meinverein.de) per CNAME auf diese URL zeigen lassen.</p>
+        <p>
+          Deine Homepage ist unter <strong>{inputVal || 'dein-name'}.dojo-pages.de</strong> erreichbar.
+          Optional kann auch eine eigene Domain (z.B. meine-schule.de) eingerichtet werden.
+        </p>
       </div>
     </div>
   );
@@ -709,10 +795,10 @@ function ServerSettings({ slug, config, onChange }) {
 function LivePreview({ config, slug, isPublished, dojoId }) {
   const previewRef = useRef(null);
   const [previewKey, setPreviewKey] = useState(0);
-  const publicUrl = slug ? `https://dojo.tda-intl.org/site/${slug}` : null;
-  // dojo_id durch iframe-URL weiterreichen, damit getSecureDojoId() auf Server-Seite funktioniert
+  const publicUrl = slug ? `https://${slug}.dojo-pages.de` : null;
+  // Vorschau über den neuen Render-Endpunkt (preview=1 = auch unpublished Seiten)
   const previewSrc = slug
-    ? `/site/${slug}?preview=1${dojoId ? `&dojo_id=${dojoId}` : ''}`
+    ? `/api/homepage/render/${slug}?preview=1${dojoId ? `&dojo_id=${dojoId}` : ''}`
     : null;
 
   // Iframe neu laden wenn Seite gespeichert wurde (von außen trigger)
@@ -725,7 +811,7 @@ function LivePreview({ config, slug, isPublished, dojoId }) {
           <span /><span /><span />
         </div>
         <div className="hpb-preview-url">
-          {slug ? `dojo.tda-intl.org/site/${slug}` : '(noch kein URL-Name)'}
+          {slug ? `${slug}.dojo-pages.de` : '(noch kein URL-Name vergeben)'}
         </div>
         <div className="hpb-preview-bar-right">
           {slug && (
@@ -779,12 +865,13 @@ function HomepageBuilderInner() {
 
   const [config, setConfig] = useState(null);
   const [slug, setSlug] = useState('');
+  const [templateId, setTemplateId] = useState('traditional');
   const [isPublished, setIsPublished] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
-  const [activePanel, setActivePanel] = useState('sections'); // 'sections'|'nav'|'design'|'kontakt'|'url'
+  const [activePanel, setActivePanel] = useState('sections'); // 'sections'|'nav'|'template'|'design'|'kontakt'|'url'
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
   const [slugAvailable, setSlugAvailable] = useState(null);
@@ -804,6 +891,7 @@ function HomepageBuilderInner() {
       const res = await axios.get(withDojo('/homepage/config'));
       setConfig(res.data.config);
       setSlug(res.data.slug || '');
+      setTemplateId(res.data.template_id || 'traditional');
       setIsPublished(res.data.is_published || false);
     } catch (err) {
       setError('Fehler beim Laden der Homepage-Konfiguration.');
@@ -827,7 +915,7 @@ function HomepageBuilderInner() {
     setIsSaving(true);
     setError(null);
     try {
-      const res = await axios.put(withDojo('/homepage/config'), { config, slug });
+      const res = await axios.put(withDojo('/homepage/config'), { config, slug, template_id: templateId });
       setSlug(res.data.slug);
       setIsDirty(false);
       showSuccess('Gespeichert!');
@@ -943,12 +1031,12 @@ function HomepageBuilderInner() {
           </span>
           {isPublished && slug && (
             <a
-              href={`/site/${slug}`}
+              href={`/api/homepage/render/${slug}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hpb-toolbar-link"
             >
-              dojo.tda-intl.org/site/{slug} ↗
+              {slug}.dojo-pages.de ↗
             </a>
           )}
         </div>
@@ -980,6 +1068,7 @@ function HomepageBuilderInner() {
           <div className="hpb-panel-tabs">
             {[
               { key: 'sections', label: 'Sektionen' },
+              { key: 'template', label: 'Template' },
               { key: 'nav', label: 'Navigation' },
               { key: 'design', label: 'Design' },
               { key: 'kontakt', label: 'Kontakt' },
@@ -1046,6 +1135,18 @@ function HomepageBuilderInner() {
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {activePanel === 'template' && (
+            <div className="hpb-sections-panel">
+              <TemplateSelector
+                templateId={templateId}
+                onSelect={(id) => {
+                  setTemplateId(id);
+                  setIsDirty(true);
+                }}
+              />
             </div>
           )}
 

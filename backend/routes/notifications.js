@@ -292,16 +292,20 @@ router.post('/email/test', authenticateToken, async (req, res) => {
 router.post('/email/send', authenticateToken, async (req, res) => {
   try {
     const { recipients, subject, message, template_type } = req.body;
-    
+    const dojoId = req.user?.dojo_id || null;
+    const adminId = req.user?.user_id || req.user?.admin_id || null;
+
     if (!emailTransporter) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Email-Service nicht konfiguriert' 
+      return res.status(400).json({
+        success: false,
+        message: 'Email-Service nicht konfiguriert'
       });
     }
 
     const settings = await getNotificationSettings();
     const results = [];
+    // Gemeinsame Gruppen-ID für diesen Bulk-Versand (Audit-Trail)
+    const groupId = `email_${Date.now()}_${adminId || 'system'}`;
 
     for (const recipient of recipients) {
       try {
@@ -313,39 +317,31 @@ router.post('/email/send', authenticateToken, async (req, res) => {
         };
 
         await emailTransporter.sendMail(mailOptions);
-        
-        // Erfolgreiche Email loggen
-        await new Promise((resolve, reject) => {
-          db.query(`
-            INSERT INTO notifications (type, recipient, subject, message, status, created_at)
-            VALUES (?, ?, ?, ?, 'sent', NOW())
-          `, ['email', recipient, subject, message], (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          });
-        });
+
+        // Erfolgreiche Email loggen (mit Audit-Feldern)
+        await pool.query(
+          `INSERT INTO notifications (type, recipient, subject, message, status, dojo_id, sent_by_admin_id, notification_group_id, created_at)
+           VALUES ('email', ?, ?, ?, 'sent', ?, ?, ?, NOW())`,
+          [recipient, subject, message, dojoId, adminId, groupId]
+        );
 
         results.push({ recipient, status: 'sent' });
       } catch (error) {
         // Fehlgeschlagene Email loggen
-        await new Promise((resolve, reject) => {
-          db.query(`
-            INSERT INTO notifications (type, recipient, subject, message, status, error_message, created_at)
-            VALUES (?, ?, ?, ?, 'failed', ?, NOW())
-          `, ['email', recipient, subject, message, error.message], (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          });
-        });
+        await pool.query(
+          `INSERT INTO notifications (type, recipient, subject, message, status, error_message, dojo_id, sent_by_admin_id, notification_group_id, created_at)
+           VALUES ('email', ?, ?, ?, 'failed', ?, ?, ?, ?, NOW())`,
+          [recipient, subject, message, error.message, dojoId, adminId, groupId]
+        ).catch(() => {});
 
         results.push({ recipient, status: 'failed', error: error.message });
       }
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `${results.filter(r => r.status === 'sent').length} von ${results.length} Emails erfolgreich gesendet`,
-      results 
+      results
     });
   } catch (error) {
     logger.error('Email Send Fehler:', { error: error });
@@ -430,12 +426,15 @@ router.post('/push/send', authenticateToken, async (req, res) => {
     let sentCount = 0;
     let notificationDbId = null;
 
+    const adminId = req.user?.user_id || req.user?.admin_id || null;
+    const groupId = `push_${Date.now()}_${adminId || 'system'}`;
+
     // Zuerst in DB loggen (für send_to_chat Referenz)
     try {
       const [logResult] = await pool.query(
-        `INSERT INTO notifications (type, recipient, subject, message, status, created_at)
-         VALUES ('push', 'broadcast', ?, ?, 'sent', NOW())`,
-        [title, message]
+        `INSERT INTO notifications (type, recipient, subject, message, status, dojo_id, sent_by_admin_id, notification_group_id, created_at)
+         VALUES ('push', 'broadcast', ?, ?, 'sent', ?, ?, ?, NOW())`,
+        [title, message, dojo_id, adminId, groupId]
       );
       notificationDbId = logResult.insertId;
     } catch (e) {
@@ -559,8 +558,8 @@ router.post('/push/send', authenticateToken, async (req, res) => {
         const uniqueEmails = [...new Set(recipients.map(e => String(e).toLowerCase().trim()))];
         for (const email of uniqueEmails) {
           await pool.query(
-            "INSERT INTO notifications (type, recipient, subject, message, status, created_at) VALUES (?, ?, ?, ?, 'unread', NOW())",
-            ['push', email, title, message]
+            "INSERT INTO notifications (type, recipient, subject, message, status, dojo_id, sent_by_admin_id, notification_group_id, created_at) VALUES ('push', ?, ?, ?, 'unread', ?, ?, ?, NOW())",
+            [email, title, message, dojo_id, adminId, groupId]
           );
         }
       }
@@ -635,9 +634,17 @@ router.get('/history', authenticateToken, async (req, res) => {
   try {
     const { page = 1, limit = 20, type, status, recipient } = req.query;
     const offset = (page - 1) * limit;
+    const secureDojoId = getSecureDojoId(req);
 
-    let whereClause = '1=1';
+    // Nur Admin-Sends (sent/failed) anzeigen — keine member-seitigen unread-Notifications
+    let whereClause = "status IN ('sent', 'failed')";
     let params = [];
+
+    // Dojo-Filter: Super-Admin sieht alle, normaler Admin nur sein Dojo
+    if (secureDojoId) {
+      whereClause += ' AND dojo_id = ?';
+      params.push(secureDojoId);
+    }
 
     if (type) {
       whereClause += ' AND type = ?';
@@ -650,30 +657,27 @@ router.get('/history', authenticateToken, async (req, res) => {
     }
 
     if (recipient) {
-      whereClause += ' AND recipient = ?';
-      params.push(recipient);
+      whereClause += ' AND (recipient = ? OR notification_group_id IN (SELECT notification_group_id FROM notifications WHERE recipient = ? AND notification_group_id IS NOT NULL))';
+      params.push(recipient, recipient);
     }
-    
+
     // Gesamtanzahl
-    const totalCount = await new Promise((resolve, reject) => {
-      db.query(`SELECT COUNT(*) as count FROM notifications WHERE ${whereClause}`, params, (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0].count);
-      });
-    });
-    
+    const [countResult] = await pool.query(
+      `SELECT COUNT(*) as count FROM notifications WHERE ${whereClause}`, params
+    );
+    const totalCount = countResult[0].count;
+
     // Benachrichtigungen
-    const notifications = await new Promise((resolve, reject) => {
-      db.query(`
-        SELECT * FROM notifications 
-        WHERE ${whereClause}
-        ORDER BY created_at DESC 
-        LIMIT ? OFFSET ?
-      `, [...params, parseInt(limit), parseInt(offset)], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [notifications] = await pool.query(`
+      SELECT n.*,
+             (SELECT COUNT(*) FROM notifications n2 WHERE n2.notification_group_id = n.notification_group_id AND n2.status = 'sent') as total_sent,
+             (SELECT COUNT(*) FROM notifications n2 WHERE n2.notification_group_id = n.notification_group_id AND n2.status = 'read') as total_read
+      FROM notifications n
+      WHERE ${whereClause}
+      GROUP BY n.notification_group_id, n.id
+      ORDER BY n.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, parseInt(limit), parseInt(offset)]);
 
     res.json({
       success: true,
