@@ -203,7 +203,7 @@ function VorlagenPicker({ onApply, token }) {
     setLoadingTermine(true);
     try {
       const res = await axios.get('/pruefungen/termine', { headers: { Authorization: `Bearer ${token}` } });
-      const vergangen = (res.data || []).filter(t => new Date(t.pruefungsdatum) <= new Date())
+      const vergangen = (res.data.termine || []).filter(t => new Date(t.pruefungsdatum) <= new Date())
         .sort((a, b) => new Date(b.pruefungsdatum) - new Date(a.pruefungsdatum))
         .slice(0, 10);
       setTermine(vergangen);
