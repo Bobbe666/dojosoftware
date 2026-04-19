@@ -1080,33 +1080,35 @@
 }
 
 .vorlagen-toggle-btn {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius-sm);
+  background: rgba(212, 175, 55, 0.10);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  color: var(--primary);
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--comp-radius-md);
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: background 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 .vorlagen-toggle-btn:hover {
-  background: var(--card-hover);
+  background: rgba(212, 175, 55, 0.18);
+  border-color: rgba(212, 175, 55, 0.6);
 }
 
 .vorlagen-dropdown {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--border-radius);
+  background: #1a1a35;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: var(--comp-radius-md);
   padding: 0.5rem;
   z-index: 100;
   min-width: 300px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1115,9 +1117,9 @@
 .vorlage-btn {
   background: none;
   border: none;
-  color: var(--text-primary);
+  color: var(--text-1);
   padding: 0.6rem 0.75rem;
-  border-radius: var(--border-radius-sm);
+  border-radius: var(--comp-radius-sm);
   cursor: pointer;
   text-align: left;
   display: flex;
@@ -1127,7 +1129,7 @@
   transition: background 0.15s;
 }
 .vorlage-btn:hover {
-  background: var(--card-hover);
+  background: var(--surface-3);
 }
 .vorlage-hint {
   font-size: 0.75rem;
@@ -1147,9 +1149,9 @@
   padding: 60px 20px 20px;
 }
 .vorlage-modal {
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--border-radius);
+  background: #1a1a35;
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: var(--comp-radius-md);
   width: 100%;
   max-width: 520px;
   display: flex;
@@ -1161,7 +1163,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255,255,255,.1);
 }
 .vorlage-modal-header h3 {
   margin: 0;
@@ -1182,7 +1184,7 @@
 }
 .vorlage-modal-footer {
   padding: 1rem 1.25rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(255,255,255,.1);
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
@@ -1199,7 +1201,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0.5rem;
-  background: var(--input-bg);
-  border-radius: var(--border-radius-sm);
+  background: var(--surface-1);
+  border-radius: var(--comp-radius-sm);
   font-size: 0.875rem;
 }
