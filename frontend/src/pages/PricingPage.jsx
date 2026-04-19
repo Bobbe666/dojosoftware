@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import config from '../config/config.js';
 import '../styles/themes.css';
 import './PricingPage.css';
+import SEO from '../components/SEO';
 import PublicFooter from '../components/PublicFooter';
 
 const dojoLogo = '/dojo-logo.png';
@@ -92,6 +93,19 @@ function PricingPage() {
 
   return (
     <div className="pricing-page">
+      <SEO
+        title="Preise & Pakete – DojoSoftware"
+        description="DojoSoftware Preise: Flexible Pakete für Kampfsportschulen jeder Größe. Starter, Professional und Enterprise – inklusive 14 Tage kostenloser Testphase ohne Kreditkarte."
+        keywords="DojoSoftware Preise, Kampfsportschule Software Kosten, Dojo Verwaltung Preis, Vereinssoftware Pakete, TDA Systems Pricing"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'DojoSoftware', item: 'https://dojo.tda-intl.org/' },
+            { '@type': 'ListItem', position: 2, name: 'Preise', item: 'https://dojo.tda-intl.org/pricing' },
+          ],
+        }}
+      />
       {/* Navigation */}
       <nav className="pricing-nav">
         <div className="nav-container">

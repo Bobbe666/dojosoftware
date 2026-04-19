@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './LegalPage.css';
+import SEO from '../components/SEO';
 
 const DatenschutzPage = () => {
   return (
     <div className="legal-page">
+      <SEO title="Datenschutzerklärung" description="Datenschutzerklärung der TDA Systems gemäß DSGVO." noindex={true} />
       {/* Header */}
       <header className="legal-header">
         <div className="container">

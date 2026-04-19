@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './LegalPage.css';
+import SEO from '../components/SEO';
 
 const AGBPage = () => {
   return (
     <div className="legal-page">
+      <SEO title="AGB" description="Allgemeine Geschäftsbedingungen der TDA Systems." noindex={true} />
       {/* Header */}
       <header className="legal-header">
         <div className="container">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import config from '../config/config.js';
 import HeroSlider from '../components/HeroSlider';
 import TDAIntroPopup from '../components/TDAIntroPopup';
+import SEO from '../components/SEO';
 import '../styles/themes.css';
 import './LandingPage.css';
 const dojoLogo = '/dojo-logo.png';
@@ -205,6 +206,21 @@ function LandingPage() {
 
   return (
     <div className="landing-page">
+      <SEO
+        title="DojoSoftware – Die Verwaltungssoftware für Kampfsportschulen"
+        description="DojoSoftware: All-in-One Verwaltungssoftware für Kampfsportschulen und Dojos. Mitgliederverwaltung, SEPA-Lastschriften, Stundenplan, Check-In, Prüfungswesen & Online-Registrierung. 14 Tage kostenlos testen!"
+        keywords="DojoSoftware, Kampfsportschule Software, Dojo Verwaltung, Mitgliederverwaltung Kampfsport, SEPA Lastschrift, Karate Software, Kickboxen Software, BJJ Verwaltung, TDA Systems"
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: [
+            { '@type': 'Question', name: 'Für wen ist DojoSoftware geeignet?', acceptedAnswer: { '@type': 'Answer', text: 'DojoSoftware ist für alle Kampfsportschulen, Dojos und Vereine geeignet – unabhängig von Größe und Disziplin. Von Karate über Kickboxen bis BJJ und MMA.' } },
+            { '@type': 'Question', name: 'Gibt es eine kostenlose Testphase?', acceptedAnswer: { '@type': 'Answer', text: 'Ja, DojoSoftware kann 14 Tage kostenlos und ohne Kreditkarte getestet werden. Einfach registrieren und loslegen.' } },
+            { '@type': 'Question', name: 'Welche Zahlungsmethoden werden unterstützt?', acceptedAnswer: { '@type': 'Answer', text: 'DojoSoftware unterstützt SEPA-Lastschriften mit automatischem Einzug, Mandatsverwaltung und Mahnwesen. Außerdem Bar, Überweisung und PayPal.' } },
+            { '@type': 'Question', name: 'Kann ich die Software auf mehreren Geräten nutzen?', acceptedAnswer: { '@type': 'Answer', text: 'Ja, DojoSoftware ist vollständig webbasiert und auf allen Geräten nutzbar – PC, Tablet und Smartphone. Es ist keine Installation erforderlich.' } },
+          ],
+        }}
+      />
       {/* TDA Systems Intro - einmalig pro Session */}
       {showIntro && <TDAIntroPopup onComplete={handleIntroComplete} />}
 

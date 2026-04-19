@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './LegalPage.css';
+import SEO from '../components/SEO';
 
 const ImpressumPage = () => {
   return (
     <div className="legal-page">
+      <SEO title="Impressum" description="Impressum der TDA Systems gemäß § 5 TMG." noindex={true} />
       {/* Header */}
       <header className="legal-header">
         <div className="container">
