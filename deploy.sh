@@ -20,7 +20,7 @@ SSH_OPT="-p $SSH_PORT -i $SSH_KEY"
 
 FRONTEND_LOCAL="$HOME/dojosoftware/frontend"
 SOURCE_REMOTE="/var/www/dojosoftware-source"
-FRONTEND_REMOTE_1="/var/www/dojosoftware/"
+FRONTEND_REMOTE_1="/var/www/dojosoftware/frontend/"
 FRONTEND_REMOTE_2="/var/www/member-app/"
 PM2_APP="dojosoftware-backend"
 
