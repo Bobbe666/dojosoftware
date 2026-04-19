@@ -199,7 +199,6 @@ function VorlagenPicker({ onApply, token }) {
   const [loadingKandidaten, setLoadingKandidaten] = useState(false);
 
   const openPruefungModal = async () => {
-    setOpen(false);
     setPruefungModal(true);
     setLoadingTermine(true);
     try {
@@ -273,7 +272,6 @@ ${kandidatenListe || '<li>Teilnehmer werden hier eingetragen</li>'}
   };
 
   const applyStatischVorlage = (type) => {
-    setOpen(false);
     const vorlagen = {
       turnier: {
         titel: 'Turnierbericht: [Turniername]',
