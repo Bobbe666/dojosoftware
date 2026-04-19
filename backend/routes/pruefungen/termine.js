@@ -334,32 +334,52 @@ router.get('/:id/anmeldungen', async (req, res) => {
   }
 
   try {
-    const anmeldungen = await queryAsync(`
-      SELECT pa.id, pa.vorname, pa.nachname, pa.email, pa.telefon, pa.verein,
-             pa.aktueller_gurt, pa.angestrebter_gurt, pa.bemerkungen, pa.status, pa.erstellt_am,
+    // Erst Termindatum holen
+    const [ptv] = await queryAsync(
+      'SELECT pruefungsdatum, stil_id, dojo_id FROM pruefungstermin_vorlagen WHERE termin_id = ? LIMIT 1',
+      [termin_id]
+    );
+    if (!ptv) return res.status(404).json({ error: 'Termin nicht gefunden' });
+
+    // Externe Anmeldungen
+    const extern = await queryAsync(`
+      SELECT pa.id, pa.vorname, pa.nachname, pa.aktueller_gurt, pa.angestrebter_gurt,
              COALESCE(pa.stil_id, ptv.stil_id) AS stil_id,
-             s.name AS stil_name,
-             ptv.pruefungsdatum AS termin_datum,
-             p.pruefung_id,
-             p.graduierung_nachher_id,
-             g.name AS graduierung_nachher_name,
-             g.farbe_hex AS farbe_nachher,
-             p.bestanden,
-             p.punktzahl,
-             p.max_punktzahl,
-             p.prueferkommentar
+             s.name AS stil_name, ptv.pruefungsdatum AS termin_datum,
+             p.pruefung_id, p.graduierung_nachher_id,
+             g.name AS graduierung_nachher_name, g.farbe_hex AS farbe_nachher,
+             p.bestanden, 'extern' AS quelle
       FROM pruefungs_anmeldungen pa
       LEFT JOIN pruefungstermin_vorlagen ptv ON ptv.termin_id = pa.termin_id
       LEFT JOIN stile s ON COALESCE(pa.stil_id, ptv.stil_id) = s.stil_id
       LEFT JOIN pruefungen p ON p.is_extern = 1
-        AND p.extern_vorname = pa.vorname
-        AND p.extern_nachname = pa.nachname
+        AND p.extern_vorname = pa.vorname AND p.extern_nachname = pa.nachname
         AND DATE(p.pruefungsdatum) = DATE(ptv.pruefungsdatum)
       LEFT JOIN graduierungen g ON g.graduierung_id = p.graduierung_nachher_id
       WHERE pa.termin_id = ?
       ORDER BY pa.erstellt_am DESC
     `, [termin_id]);
 
+    // Interne Mitglieder-Prüfungen für dieses Datum
+    const intern = await queryAsync(`
+      SELECT p.pruefung_id, m.vorname, m.nachname, m.mitglied_id,
+             g_vor.name AS aktueller_gurt, g_nach.name AS angestrebter_gurt,
+             g_nach.name AS graduierung_nachher_name, g_nach.farbe_hex AS farbe_nachher,
+             p.graduierung_nachher_id, p.bestanden,
+             s.name AS stil_name, ? AS stil_id, 'intern' AS quelle
+      FROM pruefungen p
+      JOIN mitglieder m ON m.mitglied_id = p.mitglied_id
+      LEFT JOIN graduierungen g_vor ON g_vor.graduierung_id = p.graduierung_vorher_id
+      LEFT JOIN graduierungen g_nach ON g_nach.graduierung_id = p.graduierung_nachher_id
+      LEFT JOIN stile s ON s.stil_id = p.stil_id
+      WHERE DATE(p.pruefungsdatum) = DATE(?)
+        AND (p.stil_id = ? OR p.stil_id IS NULL)
+        AND p.is_extern = 0
+        AND m.dojo_id = ?
+      ORDER BY m.nachname ASC
+    `, [ptv.stil_id, ptv.pruefungsdatum, ptv.stil_id, ptv.dojo_id]);
+
+    const anmeldungen = [...intern, ...extern];
     res.json({ success: true, count: anmeldungen.length, anmeldungen });
   } catch (error) {
     logger.error('Fehler beim Laden der externen Anmeldungen', { error: error.message, stack: error.stack });
