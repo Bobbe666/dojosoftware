@@ -24,7 +24,7 @@ const RteSep = () => <span className="rte-separator" />;
 // ============================================================
 // WYSIWYG Rich Text Editor
 // ============================================================
-function RichTextEditor({ value, onChange, placeholder = 'Der vollständige News-Artikel...' }) {
+function RichTextEditor({ value, onChange, placeholder = 'Der vollständige News-Artikel...', forceValue }) {
   const editorRef = useRef(null);
   const initialized = useRef(false);
 
@@ -35,6 +35,14 @@ function RichTextEditor({ value, onChange, placeholder = 'Der vollständige News
       initialized.current = true;
     }
   }, [value]);
+
+  // forceValue: Vorlage wurde angewendet → Inhalt überschreiben
+  useEffect(() => {
+    if (forceValue !== undefined && editorRef.current) {
+      editorRef.current.innerHTML = forceValue || '';
+      onChange(forceValue || '');
+    }
+  }, [forceValue]); // eslint-disable-line
 
   const exec = (cmd, arg = null) => {
     editorRef.current?.focus();
@@ -164,6 +172,254 @@ function TagInput({ tags, onChange }) {
 }
 
 // ============================================================
+// Vorlagen-System
+// ============================================================
+
+// Gürtelfarbe → Emoji
+function guertelEmoji(gurt) {
+  if (!gurt) return '🥋';
+  const g = gurt.toLowerCase();
+  if (g.includes('weiß') || g.includes('weiss') || g.includes('white')) return '⬜';
+  if (g.includes('gelb') || g.includes('yellow')) return '🟡';
+  if (g.includes('orange')) return '🟠';
+  if (g.includes('grün') || g.includes('gruen') || g.includes('green')) return '🟢';
+  if (g.includes('blau') || g.includes('blue')) return '🔵';
+  if (g.includes('braun') || g.includes('brown')) return '🟤';
+  if (g.includes('schwarz') || g.includes('black')) return '⬛';
+  if (g.includes('rot') || g.includes('red')) return '🔴';
+  return '🥋';
+}
+
+function VorlagenPicker({ onApply, token }) {
+  const [open, setOpen] = useState(false);
+  const [pruefungModal, setPruefungModal] = useState(false);
+  const [termine, setTermine] = useState([]);
+  const [selectedTermin, setSelectedTermin] = useState('');
+  const [kandidaten, setKandidaten] = useState([]);
+  const [loadingTermine, setLoadingTermine] = useState(false);
+  const [loadingKandidaten, setLoadingKandidaten] = useState(false);
+
+  const openPruefungModal = async () => {
+    setOpen(false);
+    setPruefungModal(true);
+    setLoadingTermine(true);
+    try {
+      const res = await axios.get('/pruefungen/termine', { headers: { Authorization: `Bearer ${token}` } });
+      const vergangen = (res.data || []).filter(t => new Date(t.pruefungsdatum) <= new Date())
+        .sort((a, b) => new Date(b.pruefungsdatum) - new Date(a.pruefungsdatum))
+        .slice(0, 10);
+      setTermine(vergangen);
+      if (vergangen.length > 0) {
+        setSelectedTermin(String(vergangen[0].termin_id));
+        await ladeKandidaten(vergangen[0].termin_id);
+      }
+    } catch { setTermine([]); }
+    setLoadingTermine(false);
+  };
+
+  const ladeKandidaten = async (terminId) => {
+    setLoadingKandidaten(true);
+    setKandidaten([]);
+    try {
+      const res = await axios.get(`/pruefungen/termine/${terminId}/anmeldungen`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setKandidaten(res.data.anmeldungen || []);
+    } catch { setKandidaten([]); }
+    setLoadingKandidaten(false);
+  };
+
+  const handleTerminChange = async (e) => {
+    setSelectedTermin(e.target.value);
+    await ladeKandidaten(e.target.value);
+  };
+
+  const applyPruefungsVorlage = () => {
+    const termin = termine.find(t => String(t.termin_id) === selectedTermin);
+    const datum = termin ? new Date(termin.pruefungsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+    const stil = termin?.stil_name || '';
+
+    const bestanden = kandidaten.filter(k => k.bestanden === 1 || k.bestanden === true);
+    const nichtBestanden = kandidaten.filter(k => k.bestanden === 0 || k.bestanden === false);
+    const ohneErgebnis = kandidaten.filter(k => k.bestanden === null || k.bestanden === undefined);
+
+    const kandidatenListe = bestanden.length > 0
+      ? bestanden.map(k => {
+          const neuerGurt = k.graduierung_nachher_name || k.angestrebter_gurt || '';
+          return `<li><strong>${k.vorname} ${k.nachname}</strong>${neuerGurt ? ` – ${guertelEmoji(neuerGurt)} ${neuerGurt}` : ''}</li>`;
+        }).join('\n')
+      : ohneErgebnis.map(k => {
+          const gurt = k.angestrebter_gurt || '';
+          return `<li><strong>${k.vorname} ${k.nachname}</strong>${gurt ? ` – ${guertelEmoji(gurt)} ${gurt}` : ''}</li>`;
+        }).join('\n');
+
+    const inhalt = `<h2>🥋 Herzlichen Glückwunsch!</h2>
+<p>Am <strong>${datum}</strong> fand${stil ? ` im Bereich <strong>${stil}</strong>` : ''} unsere Gürtelprüfung statt. Wir freuen uns, folgende Erfolge bekannt geben zu dürfen:</p>
+
+<ul>
+${kandidatenListe || '<li>Teilnehmer werden hier eingetragen</li>'}
+</ul>
+
+<p>Wir gratulieren herzlich zu dieser großartigen Leistung! Jede bestandene Prüfung ist ein wichtiger Meilenstein auf dem Weg in der Kampfkunst – und ein Zeugnis von Ausdauer, Disziplin und Hingabe.</p>
+
+<p>Ein besonderer Dank gilt auch unseren Trainern und Kampfrichtern für die professionelle Durchführung der Prüfung.</p>
+
+<p>Weiter so! 💪</p>`;
+
+    const titel = `Gürtelprüfung${datum ? ' am ' + datum : ''}${bestanden.length > 0 ? ' – ' + bestanden.length + ' Erfolge' : ''}`;
+    const kurz = `${bestanden.length > 0 ? bestanden.length : kandidaten.length} Teilnehmer${bestanden.length > 0 ? ' haben erfolgreich ihre Gürtelprüfung bestanden' : ' haben an der Gürtelprüfung teilgenommen'}.`;
+
+    onApply({ titel, kurzbeschreibung: kurz, inhalt, kategorie: 'pruefungen', tags: ['Gürtelprüfung', stil].filter(Boolean) });
+    setPruefungModal(false);
+  };
+
+  const applyStatischVorlage = (type) => {
+    setOpen(false);
+    const vorlagen = {
+      turnier: {
+        titel: 'Turnierbericht: [Turniername]',
+        kurzbeschreibung: 'Unser Verein war beim [Turniername] vertreten und konnte großartige Ergebnisse erzielen.',
+        inhalt: `<h2>🏆 Turnierbericht</h2>
+<p>Am <strong>[Datum]</strong> nahmen wir am <strong>[Turniername]</strong> in <strong>[Ort]</strong> teil.</p>
+<h3>Unsere Ergebnisse</h3>
+<ul>
+<li><strong>[Name]</strong> – 🥇 1. Platz – [Kategorie]</li>
+<li><strong>[Name]</strong> – 🥈 2. Platz – [Kategorie]</li>
+<li><strong>[Name]</strong> – 🥉 3. Platz – [Kategorie]</li>
+</ul>
+<p>Wir sind stolz auf unsere Athleten und danken allen Trainern und Begleitern für ihren Einsatz!</p>`,
+        kategorie: 'turniere',
+        tags: ['Turnier', 'Wettkampf'],
+      },
+      ankuendigung: {
+        titel: '[Event-Name] – [Datum]',
+        kurzbeschreibung: 'Wir laden herzlich ein zu [Event]. Alle Infos hier.',
+        inhalt: `<h2>🎯 [Event-Name]</h2>
+<p>Wir freuen uns, euch zu folgendem Event einzuladen:</p>
+<ul>
+<li>📅 <strong>Datum:</strong> [Datum]</li>
+<li>🕐 <strong>Uhrzeit:</strong> [Uhrzeit] Uhr</li>
+<li>📍 <strong>Ort:</strong> [Ort]</li>
+</ul>
+<p>[Beschreibung des Events]</p>
+<p>Anmeldungen bitte bis <strong>[Anmeldeschluss]</strong> an [Kontakt].</p>`,
+        kategorie: 'events',
+        tags: ['Event', 'Ankündigung'],
+      },
+      training: {
+        titel: 'Trainingsinfo: [Thema]',
+        kurzbeschreibung: 'Aktuelle Informationen zum Training: [Kurzbeschreibung].',
+        inhalt: `<h2>💪 Trainingsinfo</h2>
+<p>[Freitext – z.B. Änderungen im Stundenplan, Sondertraining, Trainingslager-Ankündigung]</p>
+<h3>Details</h3>
+<ul>
+<li>📅 <strong>Datum:</strong> [Datum]</li>
+<li>🕐 <strong>Zeit:</strong> [Uhrzeit] Uhr</li>
+<li>📍 <strong>Ort:</strong> [Ort / Halle]</li>
+</ul>
+<p>Bei Fragen meldet euch beim Trainer. Bis dann!</p>`,
+        kategorie: 'training',
+        tags: ['Training'],
+      },
+    };
+    if (vorlagen[type]) onApply(vorlagen[type]);
+  };
+
+  return (
+    <>
+      <div className="vorlagen-picker">
+        <button type="button" className="vorlagen-toggle-btn" onClick={() => setOpen(o => !o)}>
+          📋 Vorlage verwenden {open ? '▲' : '▼'}
+        </button>
+        {open && (
+          <div className="vorlagen-dropdown">
+            <button type="button" className="vorlage-btn" onClick={openPruefungModal}>
+              🥋 Gürtelprüfung <span className="vorlage-hint">lädt Prüflingsdaten automatisch</span>
+            </button>
+            <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('turnier')}>
+              🏆 Turnierbericht <span className="vorlage-hint">mit Platzierungen</span>
+            </button>
+            <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('ankuendigung')}>
+              🎯 Event-Ankündigung <span className="vorlage-hint">Datum, Ort, Details</span>
+            </button>
+            <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('training')}>
+              💪 Training-Update <span className="vorlage-hint">Stundenplan, Sondertraining</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Prüfungs-Modal */}
+      {pruefungModal && (
+        <div className="vorlage-modal-overlay" onClick={() => setPruefungModal(false)}>
+          <div className="vorlage-modal" onClick={e => e.stopPropagation()}>
+            <div className="vorlage-modal-header">
+              <h3>🥋 Gürtelprüfung – Vorlage</h3>
+              <button type="button" onClick={() => setPruefungModal(false)} className="vorlage-modal-close">✕</button>
+            </div>
+
+            <div className="vorlage-modal-body">
+              {loadingTermine ? (
+                <p style={{ color: 'var(--text-4)' }}>⏳ Lade Prüfungstermine…</p>
+              ) : termine.length === 0 ? (
+                <p style={{ color: 'var(--text-4)' }}>Keine vergangenen Prüfungstermine gefunden.</p>
+              ) : (
+                <>
+                  <div className="form-group">
+                    <label>Prüfungstermin auswählen</label>
+                    <select className="form-select" value={selectedTermin} onChange={handleTerminChange}>
+                      {termine.map(t => (
+                        <option key={t.termin_id} value={t.termin_id}>
+                          {new Date(t.pruefungsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })} – {t.stil_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {loadingKandidaten ? (
+                    <p style={{ color: 'var(--text-4)', fontSize: '0.875rem' }}>⏳ Lade Kandidaten…</p>
+                  ) : kandidaten.length === 0 ? (
+                    <p style={{ color: 'var(--text-4)', fontSize: '0.875rem' }}>Keine Anmeldungen für diesen Termin.</p>
+                  ) : (
+                    <div className="vorlage-kandidaten-liste">
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-4)', marginBottom: '0.5rem' }}>
+                        {kandidaten.filter(k => k.bestanden).length > 0
+                          ? `${kandidaten.filter(k => k.bestanden).length} bestanden`
+                          : `${kandidaten.length} Teilnehmer`} werden in die Vorlage übernommen:
+                      </p>
+                      {kandidaten.map((k, i) => (
+                        <div key={i} className="vorlage-kandidat-item">
+                          <span>{k.bestanden === 1 ? '✅' : k.bestanden === 0 ? '❌' : '⏳'} {k.vorname} {k.nachname}</span>
+                          <span style={{ color: 'var(--text-4)', fontSize: '0.8rem' }}>
+                            {guertelEmoji(k.graduierung_nachher_name || k.angestrebter_gurt)} {k.graduierung_nachher_name || k.angestrebter_gurt || '–'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="vorlage-modal-footer">
+              <button type="button" className="btn-cancel" onClick={() => setPruefungModal(false)}>Abbrechen</button>
+              <button
+                type="button"
+                className="btn-save"
+                onClick={applyPruefungsVorlage}
+                disabled={!selectedTermin || loadingKandidaten}
+              >
+                ✓ Vorlage anwenden
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ============================================================
 // Main Component
 // ============================================================
 const KATEGORIEN = [
@@ -206,6 +462,21 @@ function NewsFormular({ mode = 'create' }) {
   const [error, setError]       = useState('');
   const [success, setSuccess]   = useState('');
   const [seoOpen, setSeoOpen]   = useState(false);
+  const [forceRteValue, setForceRteValue] = useState(undefined);
+
+  // Vorlage anwenden
+  const applyVorlage = useCallback(({ titel, kurzbeschreibung, inhalt, kategorie, tags }) => {
+    setFormData(prev => ({
+      ...prev,
+      titel: titel || prev.titel,
+      kurzbeschreibung: kurzbeschreibung || prev.kurzbeschreibung,
+      inhalt: inhalt || prev.inhalt,
+      kategorie: kategorie || prev.kategorie,
+      tags: tags || prev.tags,
+    }));
+    // RTE zwingen den neuen Inhalt zu rendern
+    if (inhalt) setForceRteValue(inhalt);
+  }, []);
 
   useEffect(() => {
     if (mode === 'edit' && id) loadNews();
@@ -387,6 +658,11 @@ function NewsFormular({ mode = 'create' }) {
       {error   && <div className="news-error">{error}</div>}
       {success && <div className="news-success">{success}</div>}
 
+      {/* Vorlagen-Picker — nur beim Erstellen */}
+      {mode === 'create' && (
+        <VorlagenPicker onApply={applyVorlage} token={token} />
+      )}
+
       <form onSubmit={handleSubmit}>
         <div className="news-form-grid">
 
@@ -420,7 +696,7 @@ function NewsFormular({ mode = 'create' }) {
             {/* WYSIWYG Inhalt */}
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Inhalt *</label>
-              <RichTextEditor value={formData.inhalt} onChange={handleInhaltChange} />
+              <RichTextEditor value={formData.inhalt} onChange={handleInhaltChange} forceValue={forceRteValue} />
             </div>
 
             {/* Tags */}

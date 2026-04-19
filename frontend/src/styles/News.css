@@ -1072,3 +1072,134 @@
 .news-read-more:hover {
   text-decoration: underline;
 }
+
+/* ── Vorlagen-Picker ───────────────────────────────────────────────────────── */
+.vorlagen-picker {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.vorlagen-toggle-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s;
+}
+.vorlagen-toggle-btn:hover {
+  background: var(--card-hover);
+}
+
+.vorlagen-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: 0.5rem;
+  z-index: 100;
+  min-width: 300px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.vorlage-btn {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+.vorlage-btn:hover {
+  background: var(--card-hover);
+}
+.vorlage-hint {
+  font-size: 0.75rem;
+  color: var(--text-4);
+  font-style: italic;
+}
+
+/* Modal */
+.vorlage-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 60px 20px 20px;
+}
+.vorlage-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+.vorlage-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+.vorlage-modal-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+.vorlage-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-4);
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.vorlage-modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.vorlage-modal-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.vorlage-kandidaten-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.vorlage-kandidat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  background: var(--input-bg);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
+}
