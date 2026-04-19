@@ -1075,64 +1075,53 @@
 
 /* ── Vorlagen-Picker ───────────────────────────────────────────────────────── */
 .vorlagen-picker {
-  position: relative;
-  margin-bottom: 1rem;
+  background: rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  border-radius: var(--comp-radius-md);
+  padding: 0.85rem 1rem;
+  margin-bottom: 0;
 }
 
-.vorlagen-toggle-btn {
-  background: rgba(212, 175, 55, 0.10);
-  border: 1px solid rgba(212, 175, 55, 0.4);
-  color: var(--primary);
-  padding: 0.6rem 1.1rem;
-  border-radius: var(--comp-radius-md);
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
+.vorlagen-picker-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  transition: background 0.15s, border-color 0.15s;
-}
-.vorlagen-toggle-btn:hover {
-  background: rgba(212, 175, 55, 0.18);
-  border-color: rgba(212, 175, 55, 0.6);
+  margin-bottom: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.vorlagen-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  background: #1a1a35;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: var(--comp-radius-md);
-  padding: 0.5rem;
-  z-index: 100;
-  min-width: 300px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+.vorlagen-picker-btns {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .vorlage-btn {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-1);
-  padding: 0.6rem 0.75rem;
+  padding: 0.45rem 0.8rem;
   border-radius: var(--comp-radius-sm);
   cursor: pointer;
-  text-align: left;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
-  transition: background 0.15s;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 .vorlage-btn:hover {
-  background: var(--surface-3);
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.4);
+  color: var(--primary);
 }
 .vorlage-hint {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-4);
   font-style: italic;
 }

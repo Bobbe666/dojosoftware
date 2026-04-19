@@ -191,7 +191,6 @@ function guertelEmoji(gurt) {
 }
 
 function VorlagenPicker({ onApply, token }) {
-  const [open, setOpen] = useState(false);
   const [pruefungModal, setPruefungModal] = useState(false);
   const [termine, setTermine] = useState([]);
   const [selectedTermin, setSelectedTermin] = useState('');
@@ -328,25 +327,21 @@ ${kandidatenListe || '<li>Teilnehmer werden hier eingetragen</li>'}
   return (
     <>
       <div className="vorlagen-picker">
-        <button type="button" className="vorlagen-toggle-btn" onClick={() => setOpen(o => !o)}>
-          📋 Vorlage verwenden {open ? '▲' : '▼'}
-        </button>
-        {open && (
-          <div className="vorlagen-dropdown">
-            <button type="button" className="vorlage-btn" onClick={openPruefungModal}>
-              🥋 Gürtelprüfung <span className="vorlage-hint">lädt Prüflingsdaten automatisch</span>
-            </button>
-            <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('turnier')}>
-              🏆 Turnierbericht <span className="vorlage-hint">mit Platzierungen</span>
-            </button>
-            <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('ankuendigung')}>
-              🎯 Event-Ankündigung <span className="vorlage-hint">Datum, Ort, Details</span>
-            </button>
-            <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('training')}>
-              💪 Training-Update <span className="vorlage-hint">Stundenplan, Sondertraining</span>
-            </button>
-          </div>
-        )}
+        <div className="vorlagen-picker-header">📋 Textvorlage verwenden</div>
+        <div className="vorlagen-picker-btns">
+          <button type="button" className="vorlage-btn" onClick={openPruefungModal}>
+            🥋 Gürtelprüfung
+          </button>
+          <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('turnier')}>
+            🏆 Turnierbericht
+          </button>
+          <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('ankuendigung')}>
+            🎯 Event-Ankündigung
+          </button>
+          <button type="button" className="vorlage-btn" onClick={() => applyStatischVorlage('training')}>
+            💪 Training-Update
+          </button>
+        </div>
       </div>
 
       {/* Prüfungs-Modal */}
@@ -658,16 +653,16 @@ function NewsFormular({ mode = 'create' }) {
       {error   && <div className="news-error">{error}</div>}
       {success && <div className="news-success">{success}</div>}
 
-      {/* Vorlagen-Picker — nur beim Erstellen */}
-      {mode === 'create' && (
-        <VorlagenPicker onApply={applyVorlage} token={token} />
-      )}
-
       <form onSubmit={handleSubmit}>
         <div className="news-form-grid">
 
           {/* ─── Hauptinhalt ─── */}
           <div className="news-form-card">
+
+            {/* Vorlagen — nur beim Erstellen */}
+            {mode === 'create' && (
+              <VorlagenPicker onApply={applyVorlage} token={token} />
+            )}
 
             {/* Titel */}
             <div className="form-group" style={{ marginBottom: 0 }}>
