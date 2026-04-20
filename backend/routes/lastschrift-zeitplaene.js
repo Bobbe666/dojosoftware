@@ -501,7 +501,7 @@ async function executeScheduledPaymentRun(zeitplan, dojoId) {
                         if (mitgliedData.verkaeufe) {
                             for (const verkauf of mitgliedData.verkaeufe) {
                                 await queryAsync(
-                                    "UPDATE verkaeufe SET status = 'bezahlt', bezahlt_am = CURDATE() WHERE verkauf_id = ?",
+                                    "UPDATE verkaeufe SET zahlungsstatus = 'bezahlt' WHERE verkauf_id = ?",
                                     [verkauf.verkauf_id]
                                 );
                             }
@@ -644,12 +644,13 @@ async function ladeVerkaeufeMitglieder(dojoId) {
             m.mitglied_id,
             m.vorname,
             m.nachname,
-            SUM(v.gesamt_preis) as betrag,
+            SUM(v.brutto_gesamt_cent / 100) as betrag,
             GROUP_CONCAT(v.verkauf_id) as verkauf_ids
         FROM mitglieder m
         INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
         INNER JOIN verkaeufe v ON m.mitglied_id = v.mitglied_id
-            AND v.bezahlt = 0
+            AND v.zahlungsart = 'lastschrift'
+            AND v.zahlungsstatus = 'offen'
         WHERE m.dojo_id = ?
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND m.stripe_customer_id IS NOT NULL
