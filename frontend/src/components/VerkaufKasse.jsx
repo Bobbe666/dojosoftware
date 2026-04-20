@@ -107,6 +107,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   // UI States
   const [selectedKategorie, setSelectedKategorie] = useState(null);
   const [showZahlung, setShowZahlung] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [verkaufErfolgreich, setVerkaufErfolgreich] = useState(false);
   const [letzterVerkauf, setLetzterVerkauf] = useState(null);
   const [checkinsHeute, setCheckinsHeute] = useState([]);
@@ -296,7 +297,9 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   
   // Verkauf durchführen
   const durchfuehrenVerkauf = async () => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
       if (warenkorb.length === 0) {
         setError('Warenkorb ist leer');
         return;
@@ -366,12 +369,16 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       }
     } catch (error) {
       setError('Fehler beim Verkauf: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   // Verkauf mit SumUp-Zahlung abschließen
   const durchfuehrenVerkaufMitSumUp = async (sumupResult) => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
       if (warenkorb.length === 0) {
         setError('Warenkorb ist leer');
         return;
@@ -422,6 +429,8 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
       }
     } catch (error) {
       setError('Fehler beim Verkauf: ' + error.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -1118,9 +1127,9 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
             <button
               className="btn btn-primary"
               onClick={durchfuehrenVerkauf}
-              disabled={zahlungsart === 'bar' && !!gegebenBetrag && parseFloat(gegebenBetrag) < effektivSumme}
+              disabled={isSubmitting || (zahlungsart === 'bar' && !!gegebenBetrag && parseFloat(gegebenBetrag) < effektivSumme)}
             >
-              Verkauf abschließen
+              {isSubmitting ? 'Wird gebucht…' : 'Verkauf abschließen'}
             </button>
           )}
         </div>
