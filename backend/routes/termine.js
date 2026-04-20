@@ -3,12 +3,12 @@
  * Prüfungstermin-Verwaltung
  */
 const express = require('express');
-const logger = require('../../utils/logger');
-const db = require('../../db');
+const logger = require('../utils/logger');
+const db = require('../db');
 const router = express.Router();
 const { formatDate } = require('./shared');
-const { sendToTdaEvents } = require('../../utils/tdaSync');
-const { getSecureDojoId } = require('../../utils/dojo-filter-helper');
+const { sendToTdaEvents } = require('../utils/tdaSync');
+const { getSecureDojoId } = require('../utils/dojo-filter-helper');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {

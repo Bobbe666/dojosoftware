@@ -649,12 +649,12 @@ router.get('/rooms/:id/reads-summary', async (req, res) => {
          ) AS reader_names,
          MAX(r.read_at) AS last_read_at
        FROM chat_message_reads r
+       JOIN (
+         SELECT id FROM chat_messages WHERE room_id = ? ORDER BY sent_at DESC LIMIT 100
+       ) recent ON r.message_id = recent.id
        LEFT JOIN mitglieder m ON r.member_type = 'mitglied' AND r.member_id = m.mitglied_id
        LEFT JOIN users u ON r.member_type != 'mitglied' AND r.member_id = u.id
        WHERE r.room_id = ?
-         AND r.message_id IN (
-           SELECT id FROM chat_messages WHERE room_id = ? ORDER BY sent_at DESC LIMIT 100
-         )
        GROUP BY r.message_id`,
       [room_id, room_id]
     );
