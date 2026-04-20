@@ -897,6 +897,34 @@
   cursor: pointer;
 }
 
+/* Fullscreen routes (Chat) — kein padding, kein card-wrapper, volle Höhe */
+.dashboard-fullscreen-route {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.dashboard-fullscreen-route .dashboard-content {
+  flex: 1;
+  padding: 0;
+  margin-top: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-fullscreen-route .dashboard-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Dashboard Content Area */
 .dashboard-content {
   background: var(--surface-3);

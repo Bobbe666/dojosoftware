@@ -300,6 +300,7 @@ function Dashboard() {
 
   // Prüfe ob wir auf der Dashboard-Hauptseite sind
   const isMainDashboard = location.pathname === '/dashboard';
+  const isFullscreenRoute = /\/dashboard\/(chat|besucher-chat)/.test(location.pathname);
   const headerTitle = role === 'admin' ? t('header.title') : t('header.memberTitle');
 
   // ✨ Mitgliederverwaltung - Fokus auf Member-Management ✨
@@ -856,7 +857,7 @@ function Dashboard() {
   if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'super-admin' && isMainDashboard) {
     console.log('✅ Zeige Super-Admin Dashboard für TDA Int\'l Org');
     return (
-      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
         <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
@@ -935,7 +936,7 @@ function Dashboard() {
   if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'verband' && isMainDashboard) {
     console.log('✅ Zeige Verband Dashboard für TDA Verband');
     return (
-      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
         <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
@@ -996,7 +997,7 @@ function Dashboard() {
   if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'support' && isMainDashboard) {
     console.log('✅ Zeige Support Dashboard für Support Center');
     return (
-      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
         <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
@@ -1056,7 +1057,7 @@ function Dashboard() {
   // 🛍️ Shop Dashboard: TDA Shop + Dojo-Shop Verwaltung (nur auf Haupt-Dashboard)
   if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'shop' && isMainDashboard) {
     return (
-      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
         <header className="dashboard-header">
           <div className="dashboard-header-left">
             <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
@@ -1097,7 +1098,7 @@ function Dashboard() {
   }
 
   return (
-    <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''}`}>
+    <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
       {(role === 'admin' || role === 'super_admin' || role === 'eingeschraenkt') && <VisitorChatAlerts />}
       <header className="dashboard-header">
         <div className="dashboard-header-left">
@@ -1856,6 +1857,8 @@ function Dashboard() {
                 )}
               </div>
             </div>
+          ) : isFullscreenRoute ? (
+            <Outlet />
           ) : (
             /* Outlet für Unterseiten wie /dashboard/mitglieder/:id */
             <div className="content-card">
