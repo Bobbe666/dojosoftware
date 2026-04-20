@@ -704,36 +704,10 @@ router.get("/preview", async (req, res) => {
             ORDER BY m.nachname, m.vorname
         `;
 
-        const verkaufParams = secureDojoId ? [secureDojoId] : [];
-        const verkaufQuery = `
-            SELECT
-                m.mitglied_id,
-                m.vorname,
-                m.nachname,
-                m.iban,
-                sm.bankname,
-                sm.mandatsreferenz,
-                SUM(v.brutto_gesamt_cent) / 100 AS verkauf_betrag,
-                GROUP_CONCAT(v.verkauf_id) AS verkauf_ids,
-                GROUP_CONCAT(CONCAT(v.brutto_gesamt_cent / 100, '|', DATE_FORMAT(v.verkauf_datum, '%Y-%m-%d'), '|', v.verkauf_id, '|', COALESCE(v.bon_nummer, '')) ORDER BY v.verkauf_datum SEPARATOR ';') AS verkauf_details
-            FROM verkaeufe v
-            JOIN mitglieder m ON v.mitglied_id = m.mitglied_id
-            INNER JOIN (
-                SELECT mitglied_id, bankname, mandatsreferenz
-                FROM sepa_mandate WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
-            ) sm ON m.mitglied_id = sm.mitglied_id
-            WHERE v.zahlungsart = 'lastschrift'
-              AND v.zahlungsstatus = 'offen'
-              AND v.storniert = 0
-              ${secureDojoId ? 'AND v.dojo_id = ?' : ''}
-            GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, sm.bankname, sm.mandatsreferenz
-        `;
-
-        const [results, warnResults, processingResults, verkaufResults] = await Promise.all([
+        const [results, warnResults, processingResults] = await Promise.all([
             queryAsync(mainQuery, mainParams),
             queryAsync(warnQuery, warnParams),
-            queryAsync(processingQuery, processingParams),
-            queryAsync(verkaufQuery, verkaufParams)
+            queryAsync(processingQuery, processingParams)
         ]);
 
         // Hilfsfunktion zum Parsen der Beiträge-Details
@@ -787,42 +761,6 @@ router.get("/preview", async (req, res) => {
                 raten_ausstehend: r.ratenplan_id ? parseFloat(r.raten_ausstehend || 0) - parseFloat(r.raten_abgezahlt || 0) : 0
             };
         });
-
-        // Verkäufe in Preview einmergen
-        for (const vr of verkaufResults) {
-            const verkaufBetrag = parseFloat(vr.verkauf_betrag || 0);
-            const verkaufDetails = (vr.verkauf_details || '').split(';').map(item => {
-                const [betrag, datum, vid, bon] = item.split('|');
-                const dp = datum.split('-');
-                return { verkauf_id: parseInt(vid), betrag: parseFloat(betrag), datum: `${dp[2]}.${dp[1]}.${dp[0]}`, beschreibung: `Verkauf Bon ${bon}` };
-            });
-            const existing = preview.find(p => p.mitglied_id === vr.mitglied_id);
-            if (existing) {
-                existing.betrag += verkaufBetrag;
-                existing.verkaeufe_betrag = verkaufBetrag;
-                existing.verkaeufe = verkaufDetails;
-            } else {
-                preview.push({
-                    mitglied_id: vr.mitglied_id,
-                    name: `${vr.vorname || ''} ${vr.nachname || ''}`.trim(),
-                    iban: maskIBAN(vr.iban),
-                    betrag: verkaufBetrag,
-                    beitraege_betrag: 0,
-                    anzahl_monate: 0,
-                    offene_monate: '',
-                    beitraege: [],
-                    verkaeufe_betrag: verkaufBetrag,
-                    verkaeufe: verkaufDetails,
-                    mandatsreferenz: vr.mandatsreferenz || 'KEIN MANDAT',
-                    tarif: '',
-                    zahlungszyklus: 'einmalig',
-                    bank: vr.bankname || 'Unbekannt',
-                    ratenplan_id: null,
-                    ratenplan_aufschlag: 0,
-                    raten_ausstehend: 0
-                });
-            }
-        }
 
         const ohne_tarif = warnResults.map(r => ({
             mitglied_id: r.mitglied_id,
