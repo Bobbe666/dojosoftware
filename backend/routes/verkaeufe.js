@@ -321,8 +321,8 @@ router.post('/', async (req, res) => {
         await new Promise((resolve, reject) => {
           connection.query(
             `INSERT INTO beitraege
-             (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description)
-             VALUES (?, ?, CURDATE(), 'Lastschrift', 0, ?, ?)`,
+             (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, magicline_description, art)
+             VALUES (?, ?, CURDATE(), 'Lastschrift', 0, ?, ?, 'artikel')`,
             [mitglied_id, brutto_gesamt_cent / 100, effectiveDojoId || null, beschreibung],
             (error, results) => {
               if (error) return reject(error);
