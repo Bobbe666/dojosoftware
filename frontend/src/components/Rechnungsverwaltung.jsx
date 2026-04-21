@@ -17,7 +17,10 @@ import {
   Trash2,
   Download,
   TrendingUp,
-  Calendar
+  Calendar,
+  Mail,
+  FileDown,
+  Printer
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -182,6 +185,48 @@ const Rechnungsverwaltung = () => {
     setModalRechnung(null);
     setModalActiveTab('details');
   };
+
+  const [emailSending, setEmailSending] = useState(null); // rechnung_id being sent
+
+  const handleEmailSenden = async (rechnung_id, mitglied_name) => {
+    if (!window.confirm(`Rechnung per E-Mail an ${mitglied_name} senden?`)) return;
+    setEmailSending(rechnung_id);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/email-senden`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || 'E-Mail erfolgreich gesendet');
+      } else {
+        alert(`Fehler: ${data.error || 'E-Mail konnte nicht gesendet werden'}`);
+      }
+    } catch (e) {
+      alert('Fehler beim E-Mail-Versand');
+    } finally {
+      setEmailSending(null);
+    }
+  };
+
+  const openVorschau = async (rechnung_id, doPrint = false) => {
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/vorschau`);
+      const html = await res.text();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, '_blank');
+      if (doPrint && w) {
+        w.addEventListener('load', () => { w.focus(); w.print(); });
+      }
+    } catch (e) {
+      alert('Fehler beim Laden der Vorschau');
+    }
+  };
+
+  const handlePdfOeffnen = (rechnung_id) => openVorschau(rechnung_id, false);
+  const handleDrucken = (rechnung_id) => openVorschau(rechnung_id, true);
 
   const getStatusBadge = (rechnung) => {
     const faellig = new Date(rechnung.faelligkeitsdatum);
@@ -396,6 +441,28 @@ const Rechnungsverwaltung = () => {
                       >
                         <Eye size={16} />
                       </button>
+                      <button
+                        className="btn-icon btn-primary"
+                        onClick={() => handleEmailSenden(rechnung.rechnung_id, rechnung.mitglied_name)}
+                        title="Per E-Mail senden"
+                        disabled={emailSending === rechnung.rechnung_id}
+                      >
+                        <Mail size={16} />
+                      </button>
+                      <button
+                        className="btn-icon btn-secondary"
+                        onClick={() => handlePdfOeffnen(rechnung.rechnung_id)}
+                        title="PDF öffnen"
+                      >
+                        <FileDown size={16} />
+                      </button>
+                      <button
+                        className="btn-icon btn-secondary"
+                        onClick={() => handleDrucken(rechnung.rechnung_id)}
+                        title="Drucken"
+                      >
+                        <Printer size={16} />
+                      </button>
                       {rechnung.archiviert === 0 ? (
                         <button
                           className="btn-icon btn-secondary"
@@ -576,6 +643,22 @@ const Rechnungsverwaltung = () => {
             </div>
 
             <div className="modal-footer">
+              <button
+                className="btn btn-primary"
+                onClick={() => handleEmailSenden(modalRechnung.rechnung_id, modalRechnung.mitglied_name)}
+                disabled={emailSending === modalRechnung.rechnung_id}
+              >
+                <Mail size={16} />
+                {emailSending === modalRechnung.rechnung_id ? 'Sendet…' : 'E-Mail senden'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => handlePdfOeffnen(modalRechnung.rechnung_id)}>
+                <FileDown size={16} />
+                PDF
+              </button>
+              <button className="btn btn-secondary" onClick={() => handleDrucken(modalRechnung.rechnung_id)}>
+                <Printer size={16} />
+                Drucken
+              </button>
               <button className="btn btn-secondary" onClick={closeModal}>
                 {t('common:buttons.close')}
               </button>
