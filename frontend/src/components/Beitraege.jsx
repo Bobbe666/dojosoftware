@@ -10,8 +10,6 @@ import {
   CheckCircle,
   PiggyBank,
   Receipt,
-  Settings,
-  Search,
   ArrowDownToDot,
   BarChart3
 } from "lucide-react";
@@ -242,25 +240,8 @@ const Beitraege = () => {
               <button className="btn btn-primary" onClick={() => navigate('/dashboard/rechnungen')}>
                 Rechnungen
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/berichte')}>
-                Berichte
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Zahlungsläufe — neu statt "Zahlungen verwalten" */}
-        <div className="standard-card">
-          <div className="card-icon"><ArrowDownToDot size={24} /></div>
-          <div className="card-content">
-            <h3>Zahlungsläufe</h3>
-            <p>SEPA- und Stripe-Zahlungsläufe einsehen, Transaktionen verwalten und Zahlungen buchen</p>
-            <div className="card-actions">
-              <button className="btn btn-primary" onClick={() => navigate('/dashboard/zahllaeufe')}>
+              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/zahllaeufe')}>
                 Zahlungsläufe
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/rechnungen')}>
-                Zahlung buchen
               </button>
             </div>
           </div>
@@ -326,43 +307,6 @@ const Beitraege = () => {
             <div className="card-actions">
               <button className="btn btn-primary" onClick={() => navigate('/dashboard/zahlungszyklen')}>
                 Zyklen verwalten
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/zahllaeufe')}>
-                Zahlungsläufe
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Suche & Filter */}
-        <div className="standard-card">
-          <div className="card-icon"><Search size={24} /></div>
-          <div className="card-content">
-            <h3>Suche & Filter</h3>
-            <p>Rechnungen und Zahlungen durchsuchen, filtern und Transaktionen analysieren</p>
-            <div className="card-actions">
-              <button className="btn btn-info" onClick={() => navigate('/dashboard/rechnungen')}>
-                Rechnungssuche
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/zahllaeufe')}>
-                Transaktionslog
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Einstellungen */}
-        <div className="standard-card">
-          <div className="card-icon"><Settings size={24} /></div>
-          <div className="card-content">
-            <h3>Einstellungen</h3>
-            <p>Zahlungsmethoden konfigurieren, Tarife verwalten und Rechnungsvorlagen anpassen</p>
-            <div className="card-actions">
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/tarife')}>
-                Tarif-Konfiguration
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/dashboard/rechnungen')}>
-                Rechnungsvorlagen
               </button>
             </div>
           </div>
