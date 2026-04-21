@@ -122,7 +122,7 @@ router.get("/", async (req, res) => {
                 AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
                 AND r.archiviert = 0
             LEFT JOIN mitglied_ratenplan rp ON v.mitglied_id = rp.mitglied_id AND rp.aktiv = 1
-            WHERE v.status = 'aktiv'
+            WHERE (v.status = 'aktiv' OR (v.status = 'gekuendigt' AND (v.vertragsende IS NULL OR v.vertragsende >= CURDATE())))
               AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND sm.mandatsreferenz IS NOT NULL
               AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
@@ -264,7 +264,7 @@ router.get("/xml", async (req, res) => {
                 LEFT JOIN rechnungen r ON v.mitglied_id = r.mitglied_id
                     AND r.status IN ('offen', 'teilweise_bezahlt', 'ueberfaellig')
                     AND r.archiviert = 0
-                WHERE v.status = 'aktiv'
+                WHERE (v.status = 'aktiv' OR (v.status = 'gekuendigt' AND (v.vertragsende IS NULL OR v.vertragsende >= CURDATE())))
                   AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
                   AND sm.mandatsreferenz IS NOT NULL
                   AND m.iban IS NOT NULL
@@ -428,7 +428,7 @@ router.get("/missing-mandates", (req, res) => {
         FROM mitglieder m
         JOIN vertraege v ON m.mitglied_id = v.mitglied_id
         LEFT JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
-        WHERE v.status = 'aktiv'
+        WHERE (v.status = 'aktiv' OR (v.status = 'gekuendigt' AND (v.vertragsende IS NULL OR v.vertragsende >= CURDATE())))
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND sm.mandat_id IS NULL
           AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
@@ -615,8 +615,20 @@ router.get("/preview", async (req, res) => {
                 rp.ausstehender_betrag as raten_ausstehend,
                 rp.bereits_abgezahlt as raten_abgezahlt
             FROM mitglieder m
-            -- Nur Mitglieder MIT aktivem Vertrag UND Tarif
-            INNER JOIN vertraege v ON m.mitglied_id = v.mitglied_id AND v.status = 'aktiv'
+            -- Mitglieder MIT aktivem Vertrag ODER gekündigtem Vertrag der noch nicht abgelaufen ist
+            -- Subquery verhindert Duplikate bei mehreren Verträgen (aktiv bevorzugt vor gekündigt)
+            INNER JOIN (
+                SELECT mitglied_id,
+                    COALESCE(
+                        MAX(CASE WHEN status = 'aktiv' THEN tarif_id END),
+                        MAX(CASE WHEN status = 'gekuendigt' AND (vertragsende IS NULL OR vertragsende >= CURDATE()) THEN tarif_id END)
+                    ) AS tarif_id
+                FROM vertraege
+                WHERE status = 'aktiv'
+                   OR (status = 'gekuendigt' AND (vertragsende IS NULL OR vertragsende >= CURDATE()))
+                GROUP BY mitglied_id
+                HAVING tarif_id IS NOT NULL
+            ) v ON m.mitglied_id = v.mitglied_id
             INNER JOIN tarife t ON v.tarif_id = t.id
             LEFT JOIN mitglied_ratenplan rp ON m.mitglied_id = rp.mitglied_id AND rp.aktiv = 1
             JOIN beitraege b ON m.mitglied_id = b.mitglied_id
@@ -677,8 +689,8 @@ router.get("/preview", async (req, res) => {
               ${dojoFilter}
               AND NOT EXISTS (
                   SELECT 1 FROM vertraege v2
-                  INNER JOIN tarife t2 ON v2.tarif_id = t2.id
-                  WHERE v2.mitglied_id = m.mitglied_id AND v2.status = 'aktiv'
+                  WHERE v2.mitglied_id = m.mitglied_id
+                    AND (v2.status = 'aktiv' OR (v2.status = 'gekuendigt' AND (v2.vertragsende IS NULL OR v2.vertragsende >= CURDATE())))
               )
             GROUP BY m.mitglied_id, m.vorname, m.nachname
             ORDER BY m.nachname, m.vorname
