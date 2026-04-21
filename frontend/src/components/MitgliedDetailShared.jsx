@@ -2790,7 +2790,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   className={`mdt-avatar-img ${avatarLoaded ? 'loaded' : ''}`}
                   onLoad={() => setAvatarLoaded(true)}
                   onError={(e) => {
-                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2020/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
+                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
                     setAvatarLoaded(true);
                   }}
                 />
