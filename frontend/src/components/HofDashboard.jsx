@@ -80,7 +80,7 @@ export default function HofDashboard() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await axios.post('/api/hof/sync-sportler');
+      const res = await axios.post('/hof/sync-sportler');
       const d = res.data;
       setToast(`🔄 Sync: ${d.added} neu, ${d.linked} verknüpft, ${d.skipped} vorhanden`);
       setTimeout(() => setToast(''), 5000);
