@@ -99,7 +99,7 @@ router.post('/:id/sepa-mandate',
       }
 
       const memberDojoId = checkResults[0].dojo_id;
-      const dojoQuery = `SELECT id, sepa_glaeubiger_id FROM dojo WHERE id = ? LIMIT 1`;
+      const dojoQuery = `SELECT id, sepa_glaeubiger_id, dojoname FROM dojo WHERE id = ? LIMIT 1`;
 
       db.query(dojoQuery, [memberDojoId], (dojoErr, dojoResults) => {
         if (dojoErr) {
@@ -111,8 +111,11 @@ router.post('/:id/sepa-mandate',
           ? dojoResults[0].sepa_glaeubiger_id
           : 'DE98ZZZ09999999999';
 
+        const rawName = (dojoResults.length > 0 && dojoResults[0].dojoname) ? dojoResults[0].dojoname : `DOJO${memberDojoId}`;
+        const dojoPrefix = rawName.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 12) || `DOJO${memberDojoId}`;
+
         const timestamp = Date.now();
-        const mandatsreferenz = `DOJO${memberDojoId}-${id}-${timestamp}`;
+        const mandatsreferenz = `${dojoPrefix}-${id}-${timestamp}`;
 
         const query = `
           INSERT INTO sepa_mandate (
