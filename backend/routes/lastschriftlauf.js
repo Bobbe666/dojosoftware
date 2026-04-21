@@ -432,6 +432,7 @@ router.get("/missing-mandates", (req, res) => {
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND sm.mandat_id IS NULL
           AND (m.vertragsfrei = 0 OR m.vertragsfrei IS NULL)
+          AND m.aktiv = 1
           ${whereClause}
         GROUP BY m.mitglied_id
         ORDER BY m.nachname, m.vorname
@@ -658,6 +659,7 @@ router.get("/preview", async (req, res) => {
                 WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
             ) sm ON m.mitglied_id = sm.mitglied_id
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND m.aktiv = 1
               ${dojoFilter}
             GROUP BY m.mitglied_id, m.vorname, m.nachname, m.iban, m.bic, m.kontoinhaber,
                      m.zahlungsmethode, sm.bankname, sm.mandatsreferenz, sm.glaeubiger_id,
@@ -686,6 +688,7 @@ router.get("/preview", async (req, res) => {
                 WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
             ) sm ON m.mitglied_id = sm.mitglied_id
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+              AND m.aktiv = 1
               ${dojoFilter}
               AND NOT EXISTS (
                   SELECT 1 FROM vertraege v2
