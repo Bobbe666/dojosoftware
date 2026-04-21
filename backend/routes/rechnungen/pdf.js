@@ -327,9 +327,10 @@ router.post('/:id/email-senden', async (req, res) => {
     const html = buildRechnungHTML(rechnung, positionen);
 
     // PDF mit Puppeteer generieren
+    // Wichtig: goto mit data:-URL statt setContent — einziger zuverlässiger UTF-8-Fix für Puppeteer
     const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.goto(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`, { waitUntil: 'networkidle0' });
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm', left: '10mm', right: '10mm' } });
     await browser.close();
 

@@ -197,7 +197,7 @@ const Rechnungsverwaltung = () => {
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/vorschau`);
       const html = await res.text();
-      const blob = new Blob([html], { type: 'text/html' });
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const w = window.open(url, '_blank');
       if (doPrint && w) {
