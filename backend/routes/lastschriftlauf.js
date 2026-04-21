@@ -616,9 +616,8 @@ router.get("/preview", async (req, res) => {
                 rp.ausstehender_betrag as raten_ausstehend,
                 rp.bereits_abgezahlt as raten_abgezahlt
             FROM mitglieder m
-            -- Mitglieder MIT aktivem Vertrag ODER gekündigtem Vertrag der noch nicht abgelaufen ist
-            -- Subquery verhindert Duplikate bei mehreren Verträgen (aktiv bevorzugt vor gekündigt)
-            INNER JOIN (
+            -- Vertrag optional: Trainer/Sondermitglieder ohne Vertrag können trotzdem per Lastschrift eingezogen werden
+            LEFT JOIN (
                 SELECT mitglied_id,
                     COALESCE(
                         MAX(CASE WHEN status = 'aktiv' THEN tarif_id END),
@@ -630,7 +629,7 @@ router.get("/preview", async (req, res) => {
                 GROUP BY mitglied_id
                 HAVING tarif_id IS NOT NULL
             ) v ON m.mitglied_id = v.mitglied_id
-            INNER JOIN tarife t ON v.tarif_id = t.id
+            LEFT JOIN tarife t ON v.tarif_id = t.id
             LEFT JOIN mitglied_ratenplan rp ON m.mitglied_id = rp.mitglied_id AND rp.aktiv = 1
             JOIN beitraege b ON m.mitglied_id = b.mitglied_id
                 AND b.bezahlt = 0
@@ -667,7 +666,7 @@ router.get("/preview", async (req, res) => {
             ORDER BY m.nachname, m.vorname
         `;
 
-        // Warnliste: SEPA-Mitglieder ohne aktiven Tarif aber mit offenen Beiträgen
+        // Warnliste: SEPA-Mitglieder mit offenen Beiträgen aber OHNE aktives SEPA-Mandat → können nicht eingezogen werden
         const warnParams = [monatEnde];
         if (secureDojoId) warnParams.push(secureDojoId);
 
@@ -683,17 +682,14 @@ router.get("/preview", async (req, res) => {
             JOIN beitraege b ON m.mitglied_id = b.mitglied_id
                 AND b.bezahlt = 0
                 AND b.zahlungsdatum <= ?
-            INNER JOIN (
-                SELECT mitglied_id FROM sepa_mandate
-                WHERE status = 'aktiv' AND mandatsreferenz IS NOT NULL
-            ) sm ON m.mitglied_id = sm.mitglied_id
             WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
               AND m.aktiv = 1
               ${dojoFilter}
               AND NOT EXISTS (
-                  SELECT 1 FROM vertraege v2
-                  WHERE v2.mitglied_id = m.mitglied_id
-                    AND (v2.status = 'aktiv' OR (v2.status = 'gekuendigt' AND (v2.vertragsende IS NULL OR v2.vertragsende >= CURDATE())))
+                  SELECT 1 FROM sepa_mandate sm2
+                  WHERE sm2.mitglied_id = m.mitglied_id
+                    AND sm2.status = 'aktiv'
+                    AND sm2.mandatsreferenz IS NOT NULL
               )
             GROUP BY m.mitglied_id, m.vorname, m.nachname
             ORDER BY m.nachname, m.vorname

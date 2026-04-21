@@ -704,14 +704,14 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
             <AlertCircle size={22} style={{ marginTop: ohneTarifOpen ? '0.15rem' : '0' }} />
             <div style={{ flex: 1 }}>
               <div className="warn-card-header" onClick={() => setOhneTarifOpen(o => !o)}>
-                <h3>Kein Tarif — nicht im Lauf ({ohneTarif.length})</h3>
+                <h3>Kein SEPA-Mandat — nicht im Lauf ({ohneTarif.length})</h3>
                 {ohneTarifOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
               </div>
               {ohneTarifOpen && (
                 <>
                   <p>
-                    Diese Mitglieder haben ein aktives SEPA-Mandat und offene Beiträge,
-                    aber <strong>keinen aktiven Vertrag mit Tarif</strong>.
+                    Diese Mitglieder haben Lastschrift als Zahlungsmethode und offene Beiträge,
+                    aber <strong>kein aktives SEPA-Mandat</strong>.
                     Sie werden im Lastschriftlauf <strong>nicht berücksichtigt</strong>.
                   </p>
                   <div className="ohne-tarif-list">
