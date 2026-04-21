@@ -38,15 +38,29 @@
 /* ── Horizontale Tab-Leiste ─────────────────────────────────────────── */
 .mitglied-tabs-header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1.5rem;
+  flex-direction: column;
   background: var(--surface-2, #12122a);
   border-bottom: 1px solid var(--primary-alpha-20);
   position: sticky;
   top: 0;
   z-index: 10;
-  flex-wrap: wrap;
+}
+
+/* Zeile 1: Name + Aktionen */
+.mdt-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 1.5rem;
+  border-bottom: 1px solid var(--primary-alpha-10);
+}
+
+.mdt-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .mdt-member-info {
@@ -54,8 +68,6 @@
   align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
-  padding-right: 1rem;
-  border-right: 1px solid var(--primary-alpha-20);
 }
 
 .mdt-avatar-wrap {
@@ -95,7 +107,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  flex: 1;
+  padding: 0 1.25rem;
   overflow-x: auto;
   scrollbar-width: none;
 }

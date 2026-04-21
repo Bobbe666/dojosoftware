@@ -2776,50 +2776,34 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
     <div className="mitglied-detail-container">
       <div className="mitglied-layout">
 
-        {/* Horizontale Tab-Leiste: Avatar + Name links, Tabs rechts */}
+        {/* Horizontale Tab-Leiste: 2 Zeilen */}
         <div className="mitglied-tabs-header">
-          <div className="mdt-member-info">
-            <div className={`mdt-avatar-wrap ${!avatarLoaded ? 'avatar-loading' : ''}`}>
-              <img
-                key={mitglied?.mitglied_id}
-                src={mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
-                alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
-                className={`mdt-avatar-img ${avatarLoaded ? 'loaded' : ''}`}
-                onLoad={() => setAvatarLoaded(true)}
-                onError={(e) => {
-                  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
-                  setAvatarLoaded(true);
-                }}
-              />
-            </div>
-            <div className="mdt-name-block">
-              <span className="mdt-name">{mitglied?.vorname} {mitglied?.nachname}</span>
-              {isAdmin && mitglied?.dojo_id && (
-                <span className="mdt-dojo">{getDojoName(mitglied.dojo_id)}</span>
-              )}
-            </div>
-          </div>
 
-          <nav className="mdt-tabs" aria-label="Mitglied Tabs">
-            {tabs.map((tab, index) => (
-              <button
-                key={tab.key}
-                className={`mdt-tab-btn ${activeTab === tab.key ? 'active' : ''}`}
-                onClick={() => handleTabClick(tab.key, index)}
-              >
-                <span className="mdt-tab-icon">{tab.icon}</span>
-                <span className="mdt-tab-label">{tab.label}</span>
-              </button>
-            ))}
-          </nav>
-        </div>
+          {/* Zeile 1: Avatar + Name + Zurück + Aktionen */}
+          <div className="mdt-top-row">
+            <div className="mdt-member-info">
+              <div className={`mdt-avatar-wrap ${!avatarLoaded ? 'avatar-loading' : ''}`}>
+                <img
+                  key={mitglied?.mitglied_id}
+                  src={mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
+                  alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
+                  className={`mdt-avatar-img ${avatarLoaded ? 'loaded' : ''}`}
+                  onLoad={() => setAvatarLoaded(true)}
+                  onError={(e) => {
+                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2020/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
+                    setAvatarLoaded(true);
+                  }}
+                />
+              </div>
+              <div className="mdt-name-block">
+                <span className="mdt-name">{mitglied?.vorname} {mitglied?.nachname}</span>
+                {isAdmin && mitglied?.dojo_id && (
+                  <span className="mdt-dojo">{getDojoName(mitglied.dojo_id)}</span>
+                )}
+              </div>
+            </div>
 
-        <div className="mitglied-content">
-          {/* Header mit Drei-Punkte-Menü */}
-          <div className="mds-content-header">
-            {/* Linke Seite: Zurück-Button und Status-Badges */}
-            <div className="mds-content-header-left">
-              {/* Zurück-Button - nur für Admin */}
+            <div className="mdt-header-actions">
               {isAdmin && (
                 <button
                   className="back-button mitglied-detail-back-btn"
@@ -2828,11 +2812,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   ← Zurück
                 </button>
               )}
-              
-            </div>
-
-            {/* Aktionen-Menü */}
-            {isAdmin && (
+              {isAdmin && (
               <div className="mds-actions-menu-wrapper">
                 <button
                   className="mitglied-detail-actions-btn mds-aktionen-btn"
@@ -2957,9 +2937,26 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                   </>
                 )}
               </div>
-            )}
-          </div>
+              )}
+            </div>{/* /mdt-header-actions */}
+          </div>{/* /mdt-top-row */}
 
+          {/* Zeile 2: Tabs */}
+          <nav className="mdt-tabs" aria-label="Mitglied Tabs">
+            {tabs.map((tab, index) => (
+              <button
+                key={tab.key}
+                className={`mdt-tab-btn ${activeTab === tab.key ? 'active' : ''}`}
+                onClick={() => handleTabClick(tab.key, index)}
+              >
+                <span className="mdt-tab-icon">{tab.icon}</span>
+                <span className="mdt-tab-label">{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>{/* /mitglied-tabs-header */}
+
+        <div className="mitglied-content">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
