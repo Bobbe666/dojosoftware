@@ -16,9 +16,9 @@
 
 /* === 🧱 Hauptcontainer – StilVerwaltung Theme === */
 .mitglied-detail-container {
-  width: calc(100% + 4rem);
-  min-height: calc(100vh + 4rem);
-  margin: -2rem;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
   padding: 0;
   background: var(--color-black) !important;
   color: var(--farbe-text);
@@ -43,6 +43,9 @@
   border-bottom: 1px solid var(--primary-alpha-20);
   position: sticky;
   top: 0;
+  /* Negativer Margin kompensiert das 2rem-Padding des dashboard-content,
+     damit der Header edge-to-edge klebt ohne overflow */
+  margin: 0 calc(-1 * var(--ui-page-padding));
   z-index: 10;
 }
 
@@ -52,7 +55,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.65rem 1.5rem;
+  padding: 0.65rem var(--ui-page-padding);
   border-bottom: 1px solid var(--primary-alpha-10);
 }
 
@@ -140,7 +143,7 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0 1.25rem;
+  padding: 0 calc(var(--ui-page-padding) - 0.25rem);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -290,7 +293,7 @@
 
 .mitglied-content {
   flex: 1;
-  padding: var(--ui-page-padding) 2.5rem var(--ui-page-padding) var(--ui-page-padding);
+  padding: 1.5rem;
   background: var(--color-black);
   overflow-x: hidden;
   width: 100%;
