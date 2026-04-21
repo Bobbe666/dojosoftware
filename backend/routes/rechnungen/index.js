@@ -18,6 +18,7 @@ const zahlungenRouter = require('./zahlungen');
 const pdfRouter = require('./pdf');
 const automationRouter = require('./automation');
 const ratenplanRouter = require('./ratenplan');
+const aktionenRouter = require('./aktionen');
 
 // Automation-Routes (MUSS VOR CRUD wegen /generate-monthly, /auto-create)
 router.use('/', automationRouter);
@@ -30,6 +31,9 @@ router.use('/', zahlungenRouter);
 
 // PDF-Router (/:id/vorschau, /:id/pdf)
 router.use('/', pdfRouter);
+
+// Aktionen-Router (/:id/aktion, /:id/aktionen)
+router.use('/', aktionenRouter);
 
 // Ratenplan-Router (/ratenplan/:mitglied_id, /ratenplan)
 router.use('/', ratenplanRouter);

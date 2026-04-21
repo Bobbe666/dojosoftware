@@ -27,7 +27,11 @@ router.get('/', (req, res) => {
         WHEN r.status = 'bezahlt' THEN 'Bezahlt'
         WHEN r.faelligkeitsdatum < CURDATE() AND r.status = 'offen' THEN 'Überfällig'
         ELSE 'Offen'
-      END as status_text
+      END as status_text,
+      (SELECT MAX(erstellt_am) FROM rechnung_aktionen WHERE rechnung_id = r.rechnung_id AND aktion_typ = 'email_gesendet') as email_gesendet_am,
+      (SELECT COUNT(*) FROM rechnung_aktionen WHERE rechnung_id = r.rechnung_id AND aktion_typ = 'email_gesendet') as email_gesendet_anzahl,
+      (SELECT MAX(erstellt_am) FROM rechnung_aktionen WHERE rechnung_id = r.rechnung_id AND aktion_typ = 'gedruckt') as gedruckt_am,
+      (SELECT MAX(erstellt_am) FROM rechnung_aktionen WHERE rechnung_id = r.rechnung_id AND aktion_typ = 'lastschrift_eingezogen') as lastschrift_am
     FROM rechnungen r
     LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
     WHERE 1=1

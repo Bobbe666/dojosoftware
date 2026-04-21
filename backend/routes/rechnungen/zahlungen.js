@@ -88,6 +88,15 @@ router.post('/:id/zahlung', (req, res) => {
           return res.status(500).json({ success: false, error: updateErr.message });
         }
 
+        // Lastschrift-Einzug protokollieren
+        if (zahlungsart === 'lastschrift') {
+          db.query(
+            'INSERT INTO rechnung_aktionen (rechnung_id, aktion_typ, erstellt_von) VALUES (?, "lastschrift_eingezogen", ?)',
+            [id, req.user?.id || null],
+            (logErr) => { if (logErr) logger.warn('Lastschrift-Aktion konnte nicht geloggt werden:', { error: logErr.message }); }
+          );
+        }
+
         res.json({ success: true, message: 'Zahlung erfasst', status: neuer_status });
       });
     });

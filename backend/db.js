@@ -48,6 +48,11 @@ function connectDatabase() {
     });
 
     // Fehlerhandling bei Verbindungsabbrüchen
+    // Charset für JEDE neue Pool-Verbindung setzen (nicht nur beim ersten Test)
+    db.on('connection', (connection) => {
+        connection.query("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci'");
+    });
+
     db.on("error", (err) => {
         // Verbindungs-Fehler (ETIMEDOUT, ECONNRESET, PROTOCOL_CONNECTION_LOST etc.)
         // sollen den Prozess NICHT crashen — mysql2 Pool erholt sich automatisch

@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   Plus,
   Search,
-  Filter,
   FileText,
   DollarSign,
   CheckCircle,
@@ -20,7 +19,10 @@ import {
   Calendar,
   Mail,
   FileDown,
-  Printer
+  Printer,
+  CreditCard,
+  Save,
+  X
 } from "lucide-react";
 import config from "../config/config";
 import "../styles/themes.css";
@@ -33,7 +35,7 @@ const Rechnungsverwaltung = () => {
   const { t } = useTranslation(['finance', 'common']);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [activeView, setActiveView] = useState('alle'); // alle, offen, bezahlt, ueberfaellig, archiv
+  const [activeView, setActiveView] = useState('alle');
   const [searchTerm, setSearchTerm] = useState('');
   const [rechnungen, setRechnungen] = useState([]);
   const [filteredRechnungen, setFilteredRechnungen] = useState([]);
@@ -50,6 +52,12 @@ const Rechnungsverwaltung = () => {
     ueberfaellige_summe: 0,
     gesamt_summe: 0
   });
+
+  // Edit-Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editRechnung, setEditRechnung] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -88,7 +96,6 @@ const Rechnungsverwaltung = () => {
   const filterRechnungen = () => {
     let filtered = [...rechnungen];
 
-    // Filter nach View
     switch (activeView) {
       case 'offen':
         filtered = filtered.filter(r => r.status === 'offen' && r.archiviert === 0);
@@ -110,7 +117,6 @@ const Rechnungsverwaltung = () => {
         filtered = filtered.filter(r => r.archiviert === 0);
     }
 
-    // Suchfilter
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(r =>
@@ -124,45 +130,23 @@ const Rechnungsverwaltung = () => {
   };
 
   const handleArchivieren = async (rechnung_id, archivieren) => {
-    if (!window.confirm(archivieren ? t('invoices.confirmArchive') : t('invoices.confirmUnarchive'))) {
-      return;
-    }
-
+    if (!window.confirm(archivieren ? t('invoices.confirmArchive') : t('invoices.confirmUnarchive'))) return;
     try {
       const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/archivieren`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ archiviert: archivieren })
       });
-
-      if (res.ok) {
-        alert(archivieren ? t('invoices.archived') : t('invoices.unarchived'));
-        loadData();
-      }
-    } catch (error) {
-      console.error('Fehler beim Archivieren:', error);
-      alert(t('errors.savingError'));
-    }
+      if (res.ok) { loadData(); }
+    } catch (error) { console.error('Fehler beim Archivieren:', error); }
   };
 
   const handleDelete = async (rechnung_id) => {
-    if (!window.confirm(t('invoices.confirmDelete'))) {
-      return;
-    }
-
+    if (!window.confirm(t('invoices.confirmDelete'))) return;
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`, {
-        method: 'DELETE'
-      });
-
-      if (res.ok) {
-        alert(t('invoices.deleted'));
-        loadData();
-      }
-    } catch (error) {
-      console.error('Fehler beim Löschen:', error);
-      alert(t('errors.savingError'));
-    }
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}`, { method: 'DELETE' });
+      if (res.ok) { loadData(); }
+    } catch (error) { console.error('Fehler beim Löschen:', error); }
   };
 
   const handleShowDetails = async (rechnung_id) => {
@@ -176,17 +160,15 @@ const Rechnungsverwaltung = () => {
       }
     } catch (error) {
       console.error('Fehler beim Laden der Rechnung:', error);
-      alert('Fehler beim Laden der Rechnung');
     }
   };
 
   const closeModal = () => {
     setShowModal(false);
     setModalRechnung(null);
-    setModalActiveTab('details');
   };
 
-  const [emailSending, setEmailSending] = useState(null); // rechnung_id being sent
+  const [emailSending, setEmailSending] = useState(null);
 
   const handleEmailSenden = async (rechnung_id, mitglied_name) => {
     if (!window.confirm(`Rechnung per E-Mail an ${mitglied_name} senden?`)) return;
@@ -200,6 +182,7 @@ const Rechnungsverwaltung = () => {
       const data = await res.json();
       if (res.ok) {
         alert(data.message || 'E-Mail erfolgreich gesendet');
+        loadData(); // Vermerke aktualisieren
       } else {
         alert(`Fehler: ${data.error || 'E-Mail konnte nicht gesendet werden'}`);
       }
@@ -226,34 +209,100 @@ const Rechnungsverwaltung = () => {
   };
 
   const handlePdfOeffnen = (rechnung_id) => openVorschau(rechnung_id, false);
-  const handleDrucken = (rechnung_id) => openVorschau(rechnung_id, true);
+
+  const handleDrucken = async (rechnung_id) => {
+    openVorschau(rechnung_id, true);
+    // Drucken protokollieren
+    try {
+      await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${rechnung_id}/aktion`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typ: 'gedruckt' })
+      });
+      loadData();
+    } catch (e) { /* non-critical */ }
+  };
+
+  // Edit-Modal öffnen
+  const handleBearbeiten = (rechnung) => {
+    setEditRechnung(rechnung);
+    setEditForm({
+      beschreibung: rechnung.beschreibung || '',
+      notizen: rechnung.notizen || '',
+      faelligkeitsdatum: rechnung.faelligkeitsdatum ? rechnung.faelligkeitsdatum.split('T')[0] : '',
+      zahlungsart: rechnung.zahlungsart || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSave = async () => {
+    if (!editRechnung) return;
+    setEditSaving(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/rechnungen/${editRechnung.rechnung_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: editRechnung.status,
+          beschreibung: editForm.beschreibung,
+          notizen: editForm.notizen,
+          bezahlt_am: editRechnung.bezahlt_am || null,
+          zahlungsart: editForm.zahlungsart || null
+        })
+      });
+      if (res.ok) {
+        setShowEditModal(false);
+        loadData();
+      } else {
+        const d = await res.json();
+        alert(d.error || 'Fehler beim Speichern');
+      }
+    } catch (e) {
+      alert('Fehler beim Speichern');
+    } finally {
+      setEditSaving(false);
+    }
+  };
 
   const getStatusBadge = (rechnung) => {
     const faellig = new Date(rechnung.faelligkeitsdatum);
     const heute = new Date();
-
-    if (rechnung.status === 'bezahlt') {
-      return <span className="badge badge-success">{t('invoices.status.paid')}</span>;
-    } else if (rechnung.status === 'teilweise_bezahlt') {
-      return <span className="badge badge-warning">{t('invoices.status.partiallyPaid')}</span>;
-    } else if (faellig < heute) {
-      return <span className="badge badge-danger">{t('invoices.status.overdue')}</span>;
-    } else {
-      return <span className="badge badge-info">{t('invoices.status.open')}</span>;
-    }
+    if (rechnung.status === 'bezahlt') return <span className="badge badge-success">{t('invoices.status.paid')}</span>;
+    if (rechnung.status === 'teilweise_bezahlt') return <span className="badge badge-warning">{t('invoices.status.partiallyPaid')}</span>;
+    if (faellig < heute) return <span className="badge badge-danger">{t('invoices.status.overdue')}</span>;
+    return <span className="badge badge-info">{t('invoices.status.open')}</span>;
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('de-DE', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount || 0);
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount || 0);
+
+  const formatDate = (date) => date ? new Date(date).toLocaleDateString('de-DE') : '-';
+
+  const formatDateShort = (ts) => {
+    if (!ts) return null;
+    const d = new Date(ts);
+    return `${d.toLocaleDateString('de-DE')} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
-  const formatDate = (date) => {
-    if (!date) return '-';
-    return new Date(date).toLocaleDateString('de-DE');
-  };
+  const VermerkeBadges = ({ rechnung }) => (
+    <div className="vermerke-badges">
+      {rechnung.email_gesendet_am && (
+        <span className="vermerk-chip vermerk-email" title={`E-Mail gesendet: ${formatDateShort(rechnung.email_gesendet_am)}${rechnung.email_gesendet_anzahl > 1 ? ` (${rechnung.email_gesendet_anzahl}x)` : ''}`}>
+          <Mail size={11} /> {rechnung.email_gesendet_anzahl > 1 ? `${rechnung.email_gesendet_anzahl}x` : '✓'}
+        </span>
+      )}
+      {rechnung.gedruckt_am && (
+        <span className="vermerk-chip vermerk-druck" title={`Gedruckt: ${formatDateShort(rechnung.gedruckt_am)}`}>
+          <Printer size={11} /> ✓
+        </span>
+      )}
+      {rechnung.lastschrift_am && (
+        <span className="vermerk-chip vermerk-lastschrift" title={`Lastschrift eingezogen: ${formatDateShort(rechnung.lastschrift_am)}`}>
+          <CreditCard size={11} /> ✓
+        </span>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -268,120 +317,80 @@ const Rechnungsverwaltung = () => {
 
   return (
     <div className="rechnungen-container">
-      {/* Header */}
-      <div className="rechnungen-header">
-        <button className="btn btn-secondary" onClick={() => navigate('/dashboard/beitraege')}>
-          <ArrowLeft size={20} />
+      {/* Kompakter Header */}
+      <div className="rechnungen-header-compact">
+        <button className="btn btn-secondary btn-sm" onClick={() => navigate('/dashboard/beitraege')}>
+          <ArrowLeft size={16} />
           {t('common:buttons.back')}
         </button>
-        <div>
+        <div className="header-title-area">
           <h1>📄 {t('invoices.title')}</h1>
           <p>{t('invoices.subtitle')}</p>
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate('/dashboard/rechnung-erstellen')}
-        >
-          <Plus size={20} />
-          {t('invoices.create')}
-        </button>
       </div>
 
-      {/* Statistiken */}
-      <div className="stats-grid">
-        <div className="stat-card info">
-          <div className="stat-icon">
-            <FileText size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>{t('cockpit.totalInvoices', 'Gesamt Rechnungen')}</h3>
-            <p className="stat-value">{statistiken.gesamt_rechnungen}</p>
-            <span className="stat-trend">{formatCurrency(statistiken.gesamt_summe)}</span>
-          </div>
+      {/* Kompakte Statistik-Chips */}
+      <div className="stats-chips-row">
+        <div className="stat-chip stat-chip-info">
+          <FileText size={14} />
+          <span className="stat-chip-label">Gesamt</span>
+          <span className="stat-chip-value">{statistiken.gesamt_rechnungen}</span>
+          <span className="stat-chip-amount">{formatCurrency(statistiken.gesamt_summe)}</span>
         </div>
-
-        <div className="stat-card warning">
-          <div className="stat-icon">
-            <Clock size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>{t('cockpit.openInvoices')}</h3>
-            <p className="stat-value">{statistiken.offene_rechnungen}</p>
-            <span className="stat-trend">{formatCurrency(statistiken.offene_summe)}</span>
-          </div>
+        <div className="stat-chip stat-chip-warning">
+          <Clock size={14} />
+          <span className="stat-chip-label">Offen</span>
+          <span className="stat-chip-value">{statistiken.offene_rechnungen}</span>
+          <span className="stat-chip-amount">{formatCurrency(statistiken.offene_summe)}</span>
         </div>
-
-        <div className="stat-card success">
-          <div className="stat-icon">
-            <CheckCircle size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>{t('cockpit.paidInvoices')}</h3>
-            <p className="stat-value">{statistiken.bezahlte_rechnungen}</p>
-            <span className="stat-trend">{formatCurrency(statistiken.bezahlte_summe)}</span>
-          </div>
+        <div className="stat-chip stat-chip-success">
+          <CheckCircle size={14} />
+          <span className="stat-chip-label">Bezahlt</span>
+          <span className="stat-chip-value">{statistiken.bezahlte_rechnungen}</span>
+          <span className="stat-chip-amount">{formatCurrency(statistiken.bezahlte_summe)}</span>
         </div>
-
-        <div className="stat-card danger">
-          <div className="stat-icon">
-            <AlertCircle size={32} />
-          </div>
-          <div className="stat-info">
-            <h3>{t('cockpit.overdueInvoices')}</h3>
-            <p className="stat-value">{statistiken.ueberfaellige_rechnungen}</p>
-            <span className="stat-trend">{formatCurrency(statistiken.ueberfaellige_summe)}</span>
-          </div>
+        <div className="stat-chip stat-chip-danger">
+          <AlertCircle size={14} />
+          <span className="stat-chip-label">Ueberfaellig</span>
+          <span className="stat-chip-value">{statistiken.ueberfaellige_rechnungen}</span>
+          <span className="stat-chip-amount">{formatCurrency(statistiken.ueberfaellige_summe)}</span>
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="view-tabs">
-        <button
-          className={`tab ${activeView === 'alle' ? 'active' : ''}`}
-          onClick={() => setActiveView('alle')}
-        >
-          <FileText size={18} />
-          {t('invoices.filters.all')}
-        </button>
-        <button
-          className={`tab ${activeView === 'offen' ? 'active' : ''}`}
-          onClick={() => setActiveView('offen')}
-        >
-          <Clock size={18} />
-          {t('invoices.filters.open')}
-        </button>
-        <button
-          className={`tab ${activeView === 'bezahlt' ? 'active' : ''}`}
-          onClick={() => setActiveView('bezahlt')}
-        >
-          <CheckCircle size={18} />
-          {t('invoices.filters.paid')}
-        </button>
-        <button
-          className={`tab ${activeView === 'ueberfaellig' ? 'active' : ''}`}
-          onClick={() => setActiveView('ueberfaellig')}
-        >
-          <AlertCircle size={18} />
-          {t('invoices.filters.overdue')}
-        </button>
-        <button
-          className={`tab ${activeView === 'archiv' ? 'active' : ''}`}
-          onClick={() => setActiveView('archiv')}
-        >
-          <Archive size={18} />
-          {t('invoices.filters.archive')}
-        </button>
-      </div>
-
-      {/* Suchfeld */}
-      <div className="search-bar">
-        <Search size={20} />
-        <input
-          type="text"
-          placeholder={t('invoices.searchPlaceholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+      {/* Kontroll-Leiste: Tabs + Suche + Neue Rechnung */}
+      <div className="control-bar">
+        <div className="view-tabs">
+          <button className={`tab ${activeView === 'alle' ? 'active' : ''}`} onClick={() => setActiveView('alle')}>
+            <FileText size={15} /> {t('invoices.filters.all')}
+          </button>
+          <button className={`tab ${activeView === 'offen' ? 'active' : ''}`} onClick={() => setActiveView('offen')}>
+            <Clock size={15} /> {t('invoices.filters.open')}
+          </button>
+          <button className={`tab ${activeView === 'bezahlt' ? 'active' : ''}`} onClick={() => setActiveView('bezahlt')}>
+            <CheckCircle size={15} /> {t('invoices.filters.paid')}
+          </button>
+          <button className={`tab ${activeView === 'ueberfaellig' ? 'active' : ''}`} onClick={() => setActiveView('ueberfaellig')}>
+            <AlertCircle size={15} /> {t('invoices.filters.overdue')}
+          </button>
+          <button className={`tab ${activeView === 'archiv' ? 'active' : ''}`} onClick={() => setActiveView('archiv')}>
+            <Archive size={15} /> {t('invoices.filters.archive')}
+          </button>
+        </div>
+        <div className="control-bar-right">
+          <div className="search-bar-inline">
+            <Search size={15} />
+            <input
+              type="text"
+              placeholder="Suche..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/dashboard/rechnung-erstellen')}>
+            <Plus size={15} />
+            {t('invoices.create')}
+          </button>
+        </div>
       </div>
 
       {/* Rechnungstabelle */}
@@ -409,15 +418,14 @@ const Rechnungsverwaltung = () => {
                 <th>{t('common:labels.type', 'Art')}</th>
                 <th>{t('invoices.columns.amount')}</th>
                 <th>{t('invoices.columns.status')}</th>
+                <th>Vermerke</th>
                 <th>{t('invoices.columns.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {filteredRechnungen.map(rechnung => (
                 <tr key={rechnung.rechnung_id}>
-                  <td>
-                    <strong>{rechnung.rechnungsnummer}</strong>
-                  </td>
+                  <td><strong>{rechnung.rechnungsnummer}</strong></td>
                   <td>{rechnung.mitglied_name}</td>
                   <td>{formatDate(rechnung.datum)}</td>
                   <td>{formatDate(rechnung.faelligkeitsdatum)}</td>
@@ -432,14 +440,14 @@ const Rechnungsverwaltung = () => {
                   </td>
                   <td><strong>{formatCurrency(rechnung.betrag)}</strong></td>
                   <td>{getStatusBadge(rechnung)}</td>
+                  <td><VermerkeBadges rechnung={rechnung} /></td>
                   <td>
                     <div className="action-buttons">
-                      <button
-                        className="btn-icon btn-info"
-                        onClick={() => handleShowDetails(rechnung.rechnung_id)}
-                        title={t('invoices.tooltips.viewDetails')}
-                      >
-                        <Eye size={16} />
+                      <button className="btn-icon btn-info" onClick={() => handleShowDetails(rechnung.rechnung_id)} title="Details">
+                        <Eye size={14} />
+                      </button>
+                      <button className="btn-icon" onClick={() => handleBearbeiten(rechnung)} title="Bearbeiten">
+                        <Edit size={14} />
                       </button>
                       <button
                         className="btn-icon btn-primary"
@@ -447,45 +455,25 @@ const Rechnungsverwaltung = () => {
                         title="Per E-Mail senden"
                         disabled={emailSending === rechnung.rechnung_id}
                       >
-                        <Mail size={16} />
+                        <Mail size={14} />
                       </button>
-                      <button
-                        className="btn-icon btn-secondary"
-                        onClick={() => handlePdfOeffnen(rechnung.rechnung_id)}
-                        title="PDF öffnen"
-                      >
-                        <FileDown size={16} />
+                      <button className="btn-icon btn-secondary" onClick={() => handlePdfOeffnen(rechnung.rechnung_id)} title="PDF öffnen">
+                        <FileDown size={14} />
                       </button>
-                      <button
-                        className="btn-icon btn-secondary"
-                        onClick={() => handleDrucken(rechnung.rechnung_id)}
-                        title="Drucken"
-                      >
-                        <Printer size={16} />
+                      <button className="btn-icon btn-secondary" onClick={() => handleDrucken(rechnung.rechnung_id)} title="Drucken">
+                        <Printer size={14} />
                       </button>
                       {rechnung.archiviert === 0 ? (
-                        <button
-                          className="btn-icon btn-secondary"
-                          onClick={() => handleArchivieren(rechnung.rechnung_id, true)}
-                          title={t('invoices.tooltips.archive')}
-                        >
-                          <Archive size={16} />
+                        <button className="btn-icon btn-secondary" onClick={() => handleArchivieren(rechnung.rechnung_id, true)} title={t('invoices.tooltips.archive')}>
+                          <Archive size={14} />
                         </button>
                       ) : (
-                        <button
-                          className="btn-icon btn-success"
-                          onClick={() => handleArchivieren(rechnung.rechnung_id, false)}
-                          title={t('invoices.tooltips.restore')}
-                        >
-                          <Archive size={16} />
+                        <button className="btn-icon btn-success" onClick={() => handleArchivieren(rechnung.rechnung_id, false)} title={t('invoices.tooltips.restore')}>
+                          <Archive size={14} />
                         </button>
                       )}
-                      <button
-                        className="btn-icon btn-danger"
-                        onClick={() => handleDelete(rechnung.rechnung_id)}
-                        title={t('invoices.tooltips.delete')}
-                      >
-                        <Trash2 size={16} />
+                      <button className="btn-icon btn-danger" onClick={() => handleDelete(rechnung.rechnung_id)} title={t('invoices.tooltips.delete')}>
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
@@ -496,43 +484,27 @@ const Rechnungsverwaltung = () => {
         )}
       </div>
 
-      {/* Modal für Rechnungsdetails */}
+      {/* Detail-Modal */}
       {showModal && modalRechnung && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content extra-large" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">{t('invoices.details')}</h2>
-              <button className="close-btn" onClick={closeModal} title={t('common:buttons.close')}>
-                ×
-              </button>
+              <button className="close-btn" onClick={closeModal}>×</button>
             </div>
 
-            {/* Modal Tabs */}
             <div className="tabs-container">
-              <button
-                className={`tab ${modalActiveTab === 'details' ? 'active' : ''}`}
-                onClick={() => setModalActiveTab('details')}
-              >
-                <FileText size={18} className="tab-icon" />
-                <span className="tab-label">{t('invoices.tabs.details')}</span>
+              <button className={`tab ${modalActiveTab === 'details' ? 'active' : ''}`} onClick={() => setModalActiveTab('details')}>
+                <FileText size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.details')}</span>
               </button>
-              <button
-                className={`tab ${modalActiveTab === 'positionen' ? 'active' : ''}`}
-                onClick={() => setModalActiveTab('positionen')}
-              >
-                <DollarSign size={18} className="tab-icon" />
-                <span className="tab-label">{t('invoices.tabs.positions')}</span>
+              <button className={`tab ${modalActiveTab === 'positionen' ? 'active' : ''}`} onClick={() => setModalActiveTab('positionen')}>
+                <DollarSign size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.positions')}</span>
               </button>
-              <button
-                className={`tab ${modalActiveTab === 'zahlungen' ? 'active' : ''}`}
-                onClick={() => setModalActiveTab('zahlungen')}
-              >
-                <CheckCircle size={18} className="tab-icon" />
-                <span className="tab-label">{t('invoices.tabs.payments')}</span>
+              <button className={`tab ${modalActiveTab === 'zahlungen' ? 'active' : ''}`} onClick={() => setModalActiveTab('zahlungen')}>
+                <CheckCircle size={16} className="tab-icon" /><span className="tab-label">{t('invoices.tabs.payments')}</span>
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="modal-body">
               {modalActiveTab === 'details' && (
                 <div className="detail-section">
@@ -574,6 +546,38 @@ const Rechnungsverwaltung = () => {
                     <div className="detail-item">
                       <label>{t('invoices.form.description')}</label>
                       <div className="detail-value">{modalRechnung.beschreibung || '-'}</div>
+                    </div>
+                  </div>
+
+                  {/* Vermerke im Modal */}
+                  <div className="vermerke-section">
+                    <h4 className="vermerke-title">Vermerke</h4>
+                    <div className="vermerke-list">
+                      {modalRechnung.email_gesendet_am ? (
+                        <div className="vermerk-item vermerk-email">
+                          <Mail size={14} />
+                          <span>E-Mail gesendet am {formatDateShort(modalRechnung.email_gesendet_am)}</span>
+                          {modalRechnung.email_gesendet_anzahl > 1 && <span className="vermerk-count">({modalRechnung.email_gesendet_anzahl}x)</span>}
+                        </div>
+                      ) : (
+                        <div className="vermerk-item vermerk-empty"><Mail size={14} /><span>Noch nicht per E-Mail versendet</span></div>
+                      )}
+                      {modalRechnung.gedruckt_am ? (
+                        <div className="vermerk-item vermerk-druck">
+                          <Printer size={14} />
+                          <span>Gedruckt am {formatDateShort(modalRechnung.gedruckt_am)}</span>
+                        </div>
+                      ) : (
+                        <div className="vermerk-item vermerk-empty"><Printer size={14} /><span>Noch nicht gedruckt</span></div>
+                      )}
+                      {modalRechnung.lastschrift_am ? (
+                        <div className="vermerk-item vermerk-lastschrift">
+                          <CreditCard size={14} />
+                          <span>Lastschrift eingezogen am {formatDateShort(modalRechnung.lastschrift_am)}</span>
+                        </div>
+                      ) : (
+                        <div className="vermerk-item vermerk-empty"><CreditCard size={14} /><span>Kein Lastschrift-Einzug</span></div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -643,24 +647,97 @@ const Rechnungsverwaltung = () => {
             </div>
 
             <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => { closeModal(); handleBearbeiten(modalRechnung); }}>
+                <Edit size={15} /> Bearbeiten
+              </button>
               <button
                 className="btn btn-primary"
                 onClick={() => handleEmailSenden(modalRechnung.rechnung_id, modalRechnung.mitglied_name)}
                 disabled={emailSending === modalRechnung.rechnung_id}
               >
-                <Mail size={16} />
+                <Mail size={15} />
                 {emailSending === modalRechnung.rechnung_id ? 'Sendet…' : 'E-Mail senden'}
               </button>
               <button className="btn btn-secondary" onClick={() => handlePdfOeffnen(modalRechnung.rechnung_id)}>
-                <FileDown size={16} />
-                PDF
+                <FileDown size={15} /> PDF
               </button>
               <button className="btn btn-secondary" onClick={() => handleDrucken(modalRechnung.rechnung_id)}>
-                <Printer size={16} />
-                Drucken
+                <Printer size={15} /> Drucken
               </button>
               <button className="btn btn-secondary" onClick={closeModal}>
                 {t('common:buttons.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bearbeiten-Modal */}
+      {showEditModal && editRechnung && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Rechnung bearbeiten</h2>
+              <button className="close-btn" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="detail-grid" style={{ gridTemplateColumns: '1fr' }}>
+                <div className="detail-item">
+                  <label>Rechnungsnummer</label>
+                  <div className="detail-value"><strong>{editRechnung.rechnungsnummer}</strong></div>
+                </div>
+                <div className="detail-item">
+                  <label>Beschreibung</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={editForm.beschreibung}
+                    onChange={(e) => setEditForm(p => ({ ...p, beschreibung: e.target.value }))}
+                    style={{ width: '100%', background: 'var(--surface-2)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 'var(--comp-radius-md)', padding: '0.5rem', resize: 'vertical' }}
+                  />
+                </div>
+                <div className="detail-item">
+                  <label>Notizen</label>
+                  <textarea
+                    className="form-control"
+                    rows={3}
+                    value={editForm.notizen}
+                    onChange={(e) => setEditForm(p => ({ ...p, notizen: e.target.value }))}
+                    style={{ width: '100%', background: 'var(--surface-2)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 'var(--comp-radius-md)', padding: '0.5rem', resize: 'vertical' }}
+                  />
+                </div>
+                <div className="detail-item">
+                  <label>Faelligkeitsdatum</label>
+                  <input
+                    type="date"
+                    value={editForm.faelligkeitsdatum}
+                    onChange={(e) => setEditForm(p => ({ ...p, faelligkeitsdatum: e.target.value }))}
+                    style={{ background: 'var(--surface-2)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 'var(--comp-radius-md)', padding: '0.5rem', width: '100%' }}
+                  />
+                </div>
+                <div className="detail-item">
+                  <label>Zahlungsart</label>
+                  <select
+                    value={editForm.zahlungsart}
+                    onChange={(e) => setEditForm(p => ({ ...p, zahlungsart: e.target.value }))}
+                    style={{ background: 'var(--surface-2)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 'var(--comp-radius-md)', padding: '0.5rem', width: '100%' }}
+                  >
+                    <option value="">-- keine --</option>
+                    <option value="bar">Bar</option>
+                    <option value="ueberweisung">Ueberweisung</option>
+                    <option value="lastschrift">Lastschrift</option>
+                    <option value="kreditkarte">Kreditkarte</option>
+                    <option value="paypal">PayPal</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={handleEditSave} disabled={editSaving}>
+                <Save size={15} /> {editSaving ? 'Speichert…' : 'Speichern'}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                <X size={15} /> Abbrechen
               </button>
             </div>
           </div>

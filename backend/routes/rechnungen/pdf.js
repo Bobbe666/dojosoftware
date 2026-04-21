@@ -11,6 +11,160 @@ const logger = require('../../utils/logger');
 const { queryAsync } = require('./shared');
 const { sendEmailForDojo } = require('../../services/emailService');
 
+function buildRechnungHTML(rechnung, positionen) {
+  const fmt = (n) => parseFloat(n || 0).toFixed(2).replace('.', ',');
+  const datumFmt = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '-';
+
+  return `<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>Rechnung ${rechnung.rechnungsnummer}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #1a1a1a; background: #fff; }
+
+    /* Roter Header-Banner */
+    .invoice-banner {
+      background: #c0392b;
+      color: #fff;
+      padding: 1.2rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .invoice-banner .company-name {
+      font-size: 14pt;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+    .invoice-banner .company-addr {
+      font-size: 8.5pt;
+      opacity: 0.9;
+      margin-top: 3px;
+    }
+    .invoice-banner .invoice-label {
+      font-size: 18pt;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    /* Inhalt */
+    .content { padding: 1.5rem 2rem; max-width: 210mm; margin: 0 auto; }
+
+    .addr-meta { display: flex; justify-content: space-between; margin-bottom: 2rem; }
+    .addr-line { font-size: 7.5pt; color: #666; border-bottom: 1px solid #c0392b; padding-bottom: 3px; margin-bottom: 8px; }
+    .recipient { font-size: 10pt; line-height: 1.7; }
+    .meta-block { text-align: right; font-size: 9pt; line-height: 1.8; }
+    .meta-block .meta-label { color: #666; font-size: 8pt; }
+
+    h2.rechnung-title { font-size: 16pt; color: #c0392b; margin: 1.5rem 0 1rem; border-left: 4px solid #c0392b; padding-left: 0.75rem; }
+
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 9pt; }
+    thead tr { background: #c0392b; color: #fff; }
+    th { padding: 0.5rem 0.4rem; text-align: left; font-weight: 600; font-size: 8.5pt; }
+    th:nth-child(3), th:nth-child(4), th:nth-child(5) { text-align: right; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    td { padding: 0.45rem 0.4rem; border-bottom: 1px solid #e5e7eb; }
+    td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: right; }
+
+    .totals { margin-left: auto; width: 48%; font-size: 9.5pt; margin-top: 0.5rem; }
+    .totals-row { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid #e5e7eb; }
+    .totals-row.final { font-weight: bold; font-size: 11pt; border-top: 2px solid #c0392b; border-bottom: 2px solid #c0392b; margin-top: 0.4rem; padding-top: 0.4rem; color: #c0392b; }
+
+    .payment-terms { margin-top: 1.5rem; padding: 0.75rem 1rem; background: #fff5f5; border-left: 3px solid #c0392b; font-size: 9pt; }
+    .payment-terms p + p { margin-top: 4px; }
+
+    .footer { margin-top: 2rem; padding-top: 0.75rem; border-top: 1px solid #eee; font-size: 8pt; color: #888; text-align: center; }
+
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-banner">
+    <div>
+      <div class="company-name">${rechnung.dojoname || ''}</div>
+      <div class="company-addr">${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''} &bull; ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}</div>
+    </div>
+    <div class="invoice-label">Rechnung</div>
+  </div>
+
+  <div class="content">
+    <div class="addr-meta">
+      <div>
+        <div class="addr-line">${rechnung.dojoname || ''} &bull; ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''} &bull; ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}</div>
+        <div class="recipient">
+          <div>${rechnung.mitglied_name || ''}</div>
+          <div>${rechnung.strasse || ''} ${rechnung.hausnummer || ''}</div>
+          <div>${rechnung.plz || ''} ${rechnung.ort || ''}</div>
+        </div>
+      </div>
+      <div class="meta-block">
+        <div><span class="meta-label">Rechnungs-Nr.:</span> <strong>${rechnung.rechnungsnummer}</strong></div>
+        ${rechnung.mitglied_id ? `<div><span class="meta-label">Kundennummer:</span> ${rechnung.mitglied_id}</div>` : ''}
+        <div><span class="meta-label">Datum:</span> ${datumFmt(rechnung.datum)}</div>
+        <div><span class="meta-label">Faellig bis:</span> ${datumFmt(rechnung.faelligkeitsdatum)}</div>
+      </div>
+    </div>
+
+    <h2 class="rechnung-title">Rechnung ${rechnung.rechnungsnummer}</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Pos.</th>
+          <th>Bezeichnung</th>
+          <th>Menge</th>
+          <th>Einzelpreis</th>
+          <th>Betrag EUR</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${positionen.map(pos => `
+          <tr>
+            <td>${pos.position_nr}</td>
+            <td>${pos.bezeichnung}</td>
+            <td>${pos.menge}</td>
+            <td>${fmt(pos.einzelpreis)}</td>
+            <td>${fmt(pos.gesamtpreis)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <div class="totals-row">
+        <span>Nettobetrag:</span>
+        <span>${fmt(rechnung.netto_betrag)} &euro;</span>
+      </div>
+      <div class="totals-row">
+        <span>${rechnung.mwst_satz || 19}% MwSt.:</span>
+        <span>${fmt(rechnung.mwst_betrag)} &euro;</span>
+      </div>
+      <div class="totals-row final">
+        <span>Gesamtbetrag:</span>
+        <span>${fmt(rechnung.brutto_betrag || rechnung.betrag)} &euro;</span>
+      </div>
+    </div>
+
+    <div class="payment-terms">
+      <p><strong>Zahlungsbedingung:</strong> Ohne Abzug bis zum ${datumFmt(rechnung.faelligkeitsdatum)}.</p>
+      ${rechnung.dojo_email ? `<p>Kontakt: ${rechnung.dojo_email}</p>` : ''}
+    </div>
+
+    <div class="footer">
+      ${rechnung.dojoname || ''} &bull; ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''}, ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 // GET /:id/vorschau - HTML-Vorschau für Rechnung (zum Anzeigen/Drucken)
 router.get('/:id/vorschau', (req, res) => {
   const { id } = req.params;
@@ -60,175 +214,9 @@ router.get('/:id/vorschau', (req, res) => {
         return res.status(500).send('Fehler beim Laden der Positionen');
       }
 
-      // Erstelle HTML für Rechnung
-      const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Rechnung ${rechnung.rechnungsnummer}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 10pt;
-      line-height: 1.4;
-      color: #000;
-      padding: 20mm;
-      max-width: 210mm;
-      margin: 0 auto;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 3rem;
-    }
-    .company-small {
-      font-size: 8pt;
-      color: #666;
-      margin-bottom: 1rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid #000;
-    }
-    .recipient {
-      margin-top: 1rem;
-      line-height: 1.6;
-    }
-    .meta {
-      text-align: right;
-      font-size: 9pt;
-      line-height: 1.8;
-    }
-    h1 {
-      font-size: 18pt;
-      margin: 2rem 0 1rem 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 2rem 0;
-      font-size: 9pt;
-    }
-    thead {
-      background: #f3f4f6;
-      border-top: 1px solid #000;
-      border-bottom: 1px solid #000;
-    }
-    th {
-      padding: 0.5rem 0.25rem;
-      text-align: left;
-      font-weight: bold;
-      font-size: 8pt;
-    }
-    th:nth-child(3), th:nth-child(4), th:nth-child(5) {
-      text-align: right;
-    }
-    td {
-      padding: 0.5rem 0.25rem;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    td:nth-child(3), td:nth-child(4), td:nth-child(5) {
-      text-align: right;
-    }
-    .totals {
-      margin-left: auto;
-      width: 50%;
-      font-size: 10pt;
-      margin-top: 2rem;
-    }
-    .totals-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.4rem 0;
-      border-bottom: 1px solid #e5e7eb;
-    }
-    .totals-row.final {
-      font-weight: bold;
-      font-size: 11pt;
-      border-top: 2px solid #000;
-      border-bottom: 2px solid #000;
-      margin-top: 0.5rem;
-      padding-top: 0.5rem;
-    }
-    .payment-terms {
-      margin-top: 2rem;
-      font-size: 9pt;
-    }
-    @media print {
-      body { padding: 0; }
-      @page { margin: 20mm; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="company-small">
-        ${rechnung.dojoname || ''} | ${rechnung.dojo_strasse || ''} ${rechnung.dojo_hausnummer || ''} | ${rechnung.dojo_plz || ''} ${rechnung.dojo_ort || ''}
-      </div>
-      <div class="recipient">
-        <div>Herrn/Frau</div>
-        <div>${rechnung.mitglied_name}</div>
-        <div>${rechnung.strasse || ''} ${rechnung.hausnummer || ''}</div>
-        <div>${rechnung.plz || ''} ${rechnung.ort || ''}</div>
-      </div>
-    </div>
-    <div class="meta">
-      <div>Rechnungs-Nr.: ${rechnung.rechnungsnummer}</div>
-      <div>Kundennummer: ${rechnung.mitglied_id}</div>
-      <div>Belegdatum: ${new Date(rechnung.datum).toLocaleDateString('de-DE')}</div>
-      <div>Fälligkeit: ${rechnung.faelligkeitsdatum ? new Date(rechnung.faelligkeitsdatum).toLocaleDateString('de-DE') : '-'}</div>
-    </div>
-  </div>
+      const html = buildRechnungHTML(rechnung, positionen);
 
-  <h1>Rechnung</h1>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Pos.</th>
-        <th>Bezeichnung</th>
-        <th>Menge</th>
-        <th>Preis</th>
-        <th>Betrag EUR</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${positionen.map(pos => `
-        <tr>
-          <td>${pos.position_nr}</td>
-          <td>${pos.bezeichnung}</td>
-          <td>${pos.menge}</td>
-          <td>${parseFloat(pos.einzelpreis || 0).toFixed(2)}</td>
-          <td>${parseFloat(pos.gesamtpreis || 0).toFixed(2)}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
-
-  <div class="totals">
-    <div class="totals-row">
-      <span>Nettobetrag:</span>
-      <span>${parseFloat(rechnung.netto_betrag || 0).toFixed(2)} €</span>
-    </div>
-    <div class="totals-row">
-      <span>${rechnung.mwst_satz || 19}% MwSt.:</span>
-      <span>${parseFloat(rechnung.mwst_betrag || 0).toFixed(2)} €</span>
-    </div>
-    <div class="totals-row final">
-      <span>Endbetrag:</span>
-      <span>${parseFloat(rechnung.brutto_betrag || rechnung.betrag || 0).toFixed(2)} €</span>
-    </div>
-  </div>
-
-  <div class="payment-terms">
-    <p>Bitte beachten Sie unsere Zahlungsbedingung:</p>
-    <p>Ohne Abzug bis zum ${rechnung.faelligkeitsdatum ? new Date(rechnung.faelligkeitsdatum).toLocaleDateString('de-DE') : '___________'}.</p>
-  </div>
-</body>
-</html>
-      `;
-
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.send(html);
     });
   });
@@ -336,57 +324,7 @@ router.post('/:id/email-senden', async (req, res) => {
     const zielEmail = an_email || rechnung.empfaenger_email;
     if (!zielEmail) return res.status(400).json({ error: 'Keine E-Mail-Adresse hinterlegt' });
 
-    // HTML-Template (identisch mit Vorschau)
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>Rechnung ${rechnung.rechnungsnummer}</title>
-<style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; font-size:10pt; line-height:1.4; color:#000; padding:20mm; max-width:210mm; margin:0 auto; }
-.header { display:flex; justify-content:space-between; margin-bottom:3rem; }
-.company-small { font-size:8pt; color:#666; margin-bottom:1rem; padding-bottom:.5rem; border-bottom:1px solid #000; }
-.recipient { margin-top:1rem; line-height:1.6; }
-.meta { text-align:right; font-size:9pt; line-height:1.8; }
-h1 { font-size:18pt; margin:2rem 0 1rem 0; }
-table { width:100%; border-collapse:collapse; margin:2rem 0; font-size:9pt; }
-thead { background:#f3f4f6; border-top:1px solid #000; border-bottom:1px solid #000; }
-th { padding:.5rem .25rem; text-align:left; font-weight:bold; font-size:8pt; }
-th:nth-child(3),th:nth-child(4),th:nth-child(5) { text-align:right; }
-td { padding:.5rem .25rem; border-bottom:1px solid #e5e7eb; }
-td:nth-child(3),td:nth-child(4),td:nth-child(5) { text-align:right; }
-.totals { margin-left:auto; width:50%; font-size:10pt; margin-top:2rem; }
-.totals-row { display:flex; justify-content:space-between; padding:.4rem 0; border-bottom:1px solid #e5e7eb; }
-.totals-row.final { font-weight:bold; font-size:11pt; border-top:2px solid #000; border-bottom:2px solid #000; margin-top:.5rem; padding-top:.5rem; }
-.payment-terms { margin-top:2rem; font-size:9pt; }
-</style></head><body>
-<div class="header">
-  <div>
-    <div class="company-small">${rechnung.dojoname||''} | ${rechnung.dojo_strasse||''} ${rechnung.dojo_hausnummer||''} | ${rechnung.dojo_plz||''} ${rechnung.dojo_ort||''}</div>
-    <div class="recipient">
-      <div>${rechnung.mitglied_name}</div>
-      <div>${rechnung.strasse||''} ${rechnung.hausnummer||''}</div>
-      <div>${rechnung.plz||''} ${rechnung.ort||''}</div>
-    </div>
-  </div>
-  <div class="meta">
-    <div>Rechnungs-Nr.: ${rechnung.rechnungsnummer}</div>
-    <div>Belegdatum: ${new Date(rechnung.datum).toLocaleDateString('de-DE')}</div>
-    <div>Fälligkeit: ${rechnung.faelligkeitsdatum ? new Date(rechnung.faelligkeitsdatum).toLocaleDateString('de-DE') : '-'}</div>
-  </div>
-</div>
-<h1>Rechnung</h1>
-<table>
-  <thead><tr><th>Pos.</th><th>Bezeichnung</th><th>Menge</th><th>Preis</th><th>Betrag EUR</th></tr></thead>
-  <tbody>${positionen.map(p=>`<tr><td>${p.position_nr}</td><td>${p.bezeichnung}</td><td>${p.menge}</td><td>${parseFloat(p.einzelpreis||0).toFixed(2)}</td><td>${parseFloat(p.gesamtpreis||0).toFixed(2)}</td></tr>`).join('')}</tbody>
-</table>
-<div class="totals">
-  <div class="totals-row"><span>Nettobetrag:</span><span>${parseFloat(rechnung.netto_betrag||0).toFixed(2)} €</span></div>
-  <div class="totals-row"><span>${rechnung.mwst_satz||19}% MwSt.:</span><span>${parseFloat(rechnung.mwst_betrag||0).toFixed(2)} €</span></div>
-  <div class="totals-row final"><span>Endbetrag:</span><span>${parseFloat(rechnung.brutto_betrag||rechnung.betrag||0).toFixed(2)} €</span></div>
-</div>
-<div class="payment-terms">
-  <p>Bitte überweisen Sie den Betrag bis zum ${rechnung.faelligkeitsdatum ? new Date(rechnung.faelligkeitsdatum).toLocaleDateString('de-DE') : '___________'}.</p>
-</div>
-</body></html>`;
+    const html = buildRechnungHTML(rechnung, positionen);
 
     // PDF mit Puppeteer generieren
     const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -413,6 +351,17 @@ td:nth-child(3),td:nth-child(4),td:nth-child(5) { text-align:right; }
         contentType: 'application/pdf'
       }]
     }, dojoId);
+
+    // E-Mail-Versand protokollieren
+    try {
+      const pool = db.promise();
+      await pool.execute(
+        'INSERT INTO rechnung_aktionen (rechnung_id, aktion_typ, erstellt_von) VALUES (?, "email_gesendet", ?)',
+        [id, req.user?.id || null]
+      );
+    } catch (logErr) {
+      logger.warn('E-Mail-Aktion konnte nicht geloggt werden:', { error: logErr.message });
+    }
 
     logger.info(`Rechnung ${rechnung.rechnungsnummer} per E-Mail an ${zielEmail} gesendet`);
     res.json({ success: true, message: `Rechnung erfolgreich an ${zielEmail} gesendet` });
