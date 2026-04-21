@@ -28,11 +28,132 @@
 /* === 📐 Layout-Struktur === */
 .mitglied-layout {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   min-height: 100vh;
   background: var(--color-black);
   border: none;
   box-shadow: none;
+}
+
+/* ── Horizontale Tab-Leiste ─────────────────────────────────────────── */
+.mitglied-tabs-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--surface-2, #12122a);
+  border-bottom: 1px solid var(--primary-alpha-20);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+
+.mdt-member-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding-right: 1rem;
+  border-right: 1px solid var(--primary-alpha-20);
+}
+
+.mdt-avatar-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid var(--primary-alpha-30);
+}
+
+.mdt-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mdt-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.mdt-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-white);
+  white-space: nowrap;
+}
+
+.mdt-dojo {
+  font-size: 0.7rem;
+  color: var(--primary-alpha-60, rgba(212,175,55,0.6));
+}
+
+.mdt-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.mdt-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mdt-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.875rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.mdt-tab-btn::after {
+  content: '';
+  position: absolute;
+  bottom: -0.75rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 2px;
+  background: var(--primary, #d4af37);
+  border-radius: 2px 2px 0 0;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.mdt-tab-btn:hover {
+  background: var(--primary-alpha-10, rgba(212,175,55,0.1));
+  color: rgba(255,255,255,0.85);
+}
+
+.mdt-tab-btn.active {
+  color: var(--primary, #d4af37);
+  background: var(--primary-alpha-10, rgba(212,175,55,0.1));
+}
+
+.mdt-tab-btn.active::after {
+  opacity: 1;
+}
+
+.mdt-tab-icon {
+  font-size: 0.9rem;
+}
+
+.mdt-tab-label {
+  font-size: 0.8rem;
 }
 
 .mitglied-sidebar {
@@ -126,12 +247,8 @@
   flex: 1;
   padding: var(--ui-page-padding) 2.5rem var(--ui-page-padding) var(--ui-page-padding);
   background: var(--color-black);
-  min-height: 100vh;
   overflow-x: hidden;
-}
-
-.mitglied-content.sidebar-collapsed {
-  /* Kein margin-left mehr nötig, da Sidebar im Flex-Layout ist */
+  width: 100%;
 }
 
 /* === 👤 Mitglied-Header === */

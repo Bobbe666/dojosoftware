@@ -2775,64 +2775,46 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
   return (
     <div className="mitglied-detail-container">
       <div className="mitglied-layout">
-        <aside className={`mitglied-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-          {/* Toggle Button - Tab Style (nur Icon, immer aktiv) */}
-          <button
-            className="tab-vertical-btn sidebar-toggle-btn active"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            title={sidebarCollapsed ? 'Sidebar öffnen' : 'Sidebar schließen'}
-          >
-            <span className="tab-icon">{sidebarCollapsed ? '»' : '«'}</span>
-          </button>
 
-          {/* Foto und Name oben */}
-          <div className="mitglied-header">
-            <div className={`mitglied-avatar mds-avatar-wrapper ${!avatarLoaded ? 'avatar-loading' : ''}`}>
+        {/* Horizontale Tab-Leiste: Avatar + Name links, Tabs rechts */}
+        <div className="mitglied-tabs-header">
+          <div className="mdt-member-info">
+            <div className={`mdt-avatar-wrap ${!avatarLoaded ? 'avatar-loading' : ''}`}>
               <img
                 key={mitglied?.mitglied_id}
                 src={mitglied?.foto_pfad ? `${config.imageBaseUrl}/${mitglied.foto_pfad}` : 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E'}
                 alt={`${mitglied?.vorname} ${mitglied?.nachname}`}
-                className={`avatar-image ${avatarLoaded ? 'mds-avatar-img--loaded' : 'mds-avatar-img--loading'}`}
-                onLoad={() => {
-                  console.log('🖼️ Avatar onLoad gefeuert für:', mitglied?.foto_pfad);
-                  setAvatarLoaded(true);
-                }}
+                className={`mdt-avatar-img ${avatarLoaded ? 'loaded' : ''}`}
+                onLoad={() => setAvatarLoaded(true)}
                 onError={(e) => {
-                  console.log('❌ Avatar onError gefeuert für:', mitglied?.foto_pfad, 'Event:', e);
                   e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%232a2a4e" width="100" height="100"/%3E%3Ctext fill="%23ffd700" font-family="sans-serif" font-size="50" dy=".35em" x="50%25" y="50%25" text-anchor="middle"%3E👤%3C/text%3E%3C/svg%3E';
                   setAvatarLoaded(true);
                 }}
               />
             </div>
-            {!sidebarCollapsed && (
-              <div className="mitglied-name">
-                {mitglied?.vorname} {mitglied?.nachname}
-                {isAdmin && mitglied?.dojo_id && (
-                  <div className="mitglied-dojo-name mds-dojo-name-sub">
-                    {getDojoName(mitglied.dojo_id)}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="mdt-name-block">
+              <span className="mdt-name">{mitglied?.vorname} {mitglied?.nachname}</span>
+              {isAdmin && mitglied?.dojo_id && (
+                <span className="mdt-dojo">{getDojoName(mitglied.dojo_id)}</span>
+              )}
+            </div>
           </div>
 
-          {/* Tabs darunter */}
-          <nav className="tabs-vertical" aria-label="Mitglied Tabs">
+          <nav className="mdt-tabs" aria-label="Mitglied Tabs">
             {tabs.map((tab, index) => (
               <button
                 key={tab.key}
-                className={`tab-vertical-btn ${activeTab === tab.key ? 'active' : ''}`}
+                className={`mdt-tab-btn ${activeTab === tab.key ? 'active' : ''}`}
                 onClick={() => handleTabClick(tab.key, index)}
-                title={sidebarCollapsed ? tab.label : ''}
               >
-                <span className="tab-icon">{tab.icon}</span>
-                {!sidebarCollapsed && <span className="tab-label">{tab.label}</span>}
+                <span className="mdt-tab-icon">{tab.icon}</span>
+                <span className="mdt-tab-label">{tab.label}</span>
               </button>
             ))}
           </nav>
-        </aside>
+        </div>
 
-        <div className={`mitglied-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        <div className="mitglied-content">
           {/* Header mit Drei-Punkte-Menü */}
           <div className="mds-content-header">
             {/* Linke Seite: Zurück-Button und Status-Badges */}
