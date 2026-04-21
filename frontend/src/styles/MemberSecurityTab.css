@@ -1,39 +1,202 @@
-/* MemberSecurityTab styles - mst-* prefix */
+/* MemberSecurityTab — mst-* prefix */
 
+/* Card-Override: kein Grid erben, eigenes Layout */
 .mst-card {
   border-radius: 16px;
   padding: 2rem;
 }
 
-.mst-field-group {
-  margin-bottom: 1.25rem;
+/* Alle mst-field-group Divs aus dem allgemeinen field-group Grid herauslösen */
+.mst-card > .mst-field-group,
+.mst-card > .mst-field-group-lg {
+  display: block !important;
+  grid-template-columns: unset !important;
+  gap: unset !important;
 }
 
+/* ── Zwei-Spalten-Raster für die Passwort-Felder ─────────── */
+.mst-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (max-width: 760px) {
+  .mst-form-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Einzelnes Feldgruppe ────────────────────────────────── */
+.mst-field-group,
 .mst-field-group-lg {
-  margin-bottom: 1.5rem;
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0;
 }
 
+/* Volle Breite (Sicherheitsfrage-Dropdown) */
+.mst-field-full {
+  grid-column: 1 / -1;
+}
+
+/* Button-Zeile: vertikal nach unten ausrichten */
+.mst-btn-align {
+  justify-content: flex-end;
+}
+
+/* ── Labels ──────────────────────────────────────────────── */
+.mst-field-group label,
+.mst-field-group-lg label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Inputs ──────────────────────────────────────────────── */
+.mst-field-group input,
+.mst-field-group-lg input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.55rem 0.875rem;
+  color: #fff;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease;
+}
+
+.mst-field-group input:focus,
+.mst-field-group-lg input:focus {
+  outline: none;
+  border-color: rgba(212, 175, 55, 0.5);
+  background: rgba(212, 175, 55, 0.04);
+}
+
+.mst-field-group input:disabled,
+.mst-field-group-lg input:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Password-Wrapper ────────────────────────────────────── */
 .mst-password-wrapper {
   position: relative;
-}
-
-.mst-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1.5rem;
-}
-
-.mst-message {
-  margin-top: 1.25rem;
-  padding: 1rem;
-  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  font-size: 0.95rem;
 }
 
-.mst-message-icon {
-  font-size: 1.2rem;
+.mst-password-wrapper input {
+  flex: 1;
+  padding-right: 3rem;
 }
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.625rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.85rem;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+
+.password-toggle-btn:hover { color: rgba(255, 255, 255, 0.75); }
+
+/* ── Hinweis-Text ────────────────────────────────────────── */
+.input-hint {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.35);
+  margin-top: 0.2rem;
+}
+
+.mitglied-detail-hint-warning {
+  color: #d4af37 !important;
+  font-style: italic;
+}
+
+/* ── Trennlinie zwischen Passwort- und Sicherheitsfrage-Teil ─ */
+.mst-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 1.5rem 0;
+}
+
+/* ── Aktionen ────────────────────────────────────────────── */
+.mst-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.mst-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mst-btn-primary {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #d4af37;
+}
+
+.mst-btn-primary:hover:not(:disabled) {
+  background: rgba(212, 175, 55, 0.25);
+  border-color: rgba(212, 175, 55, 0.65);
+}
+
+.mst-btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.mst-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.mst-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Status-Message ──────────────────────────────────────── */
+.mst-message {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.mst-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.mst-message.success {
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #86efac;
+}
+
+.mst-message-icon { font-size: 1rem; }

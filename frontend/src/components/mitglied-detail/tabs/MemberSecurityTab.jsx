@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import '../../../styles/MemberSecurityTab.css';
 
-// Security Questions (könnte auch aus Config kommen)
 const SECURITY_QUESTIONS = [
   { value: 'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?', label: 'Wie lautet der Mädchen- oder Jungenname Ihrer Mutter?' },
   { value: 'Wie heißt Ihr erstes Haustier?', label: 'Wie heißt Ihr erstes Haustier?' },
@@ -11,53 +10,26 @@ const SECURITY_QUESTIONS = [
   { value: 'Wie lautet der zweite Vorname Ihres Vaters?', label: 'Wie lautet der zweite Vorname Ihres Vaters?' }
 ];
 
-/**
- * Prüft, ob ein Passwort die Sicherheitsrichtlinien erfüllt
- * - Mindestens 8 Zeichen
- * - Mindestens 1 Ziffer
- * - Mindestens 1 Sonderzeichen
- */
 const passwordMeetsPolicy = (pwd) => {
   const hasDigit = /\d/.test(pwd);
   const hasSpecial = /[!@#$%^&*(),.?":{}|<>_+\-=/\\\[\];'`~]/.test(pwd);
   return pwd && pwd.length >= 8 && hasDigit && hasSpecial;
 };
 
-/**
- * MemberSecurityTab - Passwort und Sicherheitsfrage verwalten
- *
- * Diese Komponente wird sowohl von Admin als auch Member genutzt.
- * Der isAdmin-Prop wird hier nicht benötigt, da beide dieselbe
- * Funktionalität haben (eigenes Passwort ändern).
- *
- * Props:
- * - CustomSelect: Die CustomSelect-Komponente aus dem Parent
- * - onError: Optional - Callback für Fehlerbehandlung
- */
 const MemberSecurityTab = ({ CustomSelect, onError }) => {
-  // Passwort-State
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // Sicherheitsfrage-State
   const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0].value);
   const [securityAnswer, setSecurityAnswer] = useState('');
-
-  // UI-State
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
 
-  /**
-   * Passwort ändern
-   */
   const handleChangePassword = async () => {
     setMessage(null);
-
-    // Validierung
     if (!passwordMeetsPolicy(newPassword)) {
       setMessage({ type: 'error', text: 'Neues Passwort entspricht nicht der Richtlinie.' });
       return;
@@ -66,35 +38,24 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
       setMessage({ type: 'error', text: 'Die Passwörter stimmen nicht überein.' });
       return;
     }
-
     setLoading(true);
     try {
       const res = await axios.post('/auth/change-password', { currentPassword, newPassword });
       setMessage({ type: 'success', text: res.data?.message || 'Passwort geändert.' });
-      // Felder zurücksetzen
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
     } catch (e) {
       const errorMsg = e.response?.data?.message || 'Änderung fehlgeschlagen.';
       setMessage({ type: 'error', text: errorMsg });
       onError?.(errorMsg);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  /**
-   * Sicherheitsfrage speichern
-   */
   const handleSaveSecurity = async () => {
     setMessage(null);
-
     if (!securityAnswer.trim()) {
       setMessage({ type: 'error', text: 'Bitte eine Antwort auf die Sicherheitsfrage angeben.' });
       return;
     }
-
     setLoading(true);
     try {
       const res = await axios.post('/auth/security', { securityQuestion, securityAnswer });
@@ -103,150 +64,129 @@ const MemberSecurityTab = ({ CustomSelect, onError }) => {
       const errorMsg = e.response?.data?.message || 'Speichern fehlgeschlagen.';
       setMessage({ type: 'error', text: errorMsg });
       onError?.(errorMsg);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
-  // Select-Komponente (Fallback auf natives select wenn CustomSelect nicht verfügbar)
   const SelectComponent = CustomSelect || (({ value, onChange, options }) => (
-    <select
-      className="mitglied-detail-input"
-      value={value}
-      onChange={onChange}
-    >
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
+    <select value={value} onChange={onChange} style={{ width: '100%', padding: '0.55rem 0.875rem', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: '0.9rem' }}>
+      {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
     </select>
   ));
 
   return (
     <div className="grid-container">
-      <div className="field-group card mitglied-detail-card mst-card">
-        <h3>Passwort & Sicherheitsfrage</h3>
+      <div className="field-group card mst-card">
+        <h3>Passwort &amp; Sicherheitsfrage</h3>
 
-        {/* Aktuelles Passwort */}
-        <div className="mst-field-group">
-          <label>Aktuelles Passwort:</label>
-          <div className="password-wrapper mst-password-wrapper">
-            <input
-              className="mitglied-detail-input"
-              type={showCurrentPassword ? 'text' : 'password'}
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Aktuelles Passwort"
-              disabled={loading}
-            />
+        {/* Passwort-Bereich */}
+        <div className="mst-form-grid">
+          <div className="mst-field-group">
+            <label>Aktuelles Passwort</label>
+            <div className="mst-password-wrapper">
+              <input
+                type={showCurrentPassword ? 'text' : 'password'}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Aktuelles Passwort"
+                disabled={loading}
+              />
+              <button type="button" className="password-toggle-btn"
+                onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                {showCurrentPassword ? '👁️' : '•••••••'}
+              </button>
+            </div>
+          </div>
+
+          <div className="mst-field-group">
+            <label>Neues Passwort</label>
+            <div className="mst-password-wrapper">
+              <input
+                type={showNewPassword ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder={!currentPassword ? 'Zuerst aktuelles Passwort eingeben' : 'Min. 8 Zeichen, 1 Zahl, 1 Sonderzeichen'}
+                disabled={!currentPassword || loading}
+              />
+              <button type="button" className="password-toggle-btn"
+                onClick={() => setShowNewPassword(!showNewPassword)}>
+                {showNewPassword ? '👁️' : '•••••••'}
+              </button>
+            </div>
+            {!currentPassword && (
+              <small className="input-hint mitglied-detail-hint-warning">
+                ℹ️ Zuerst aktuelles Passwort eingeben
+              </small>
+            )}
+          </div>
+
+          <div className="mst-field-group">
+            <label>Passwort bestätigen</label>
+            <div className="mst-password-wrapper">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Passwort wiederholen"
+                disabled={!currentPassword || loading}
+              />
+              <button type="button" className="password-toggle-btn"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                {showConfirmPassword ? '👁️' : '•••••••'}
+              </button>
+            </div>
+          </div>
+
+          <div className="mst-field-group mst-btn-align">
+            <label style={{ visibility: 'hidden', userSelect: 'none' }}>—</label>
             <button
-              type="button"
-              className="password-toggle-btn"
-              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+              className="mst-btn mst-btn-primary"
+              onClick={handleChangePassword}
+              disabled={!currentPassword || !newPassword || !confirmPassword || loading}
             >
-              {showCurrentPassword ? '👁️' : '•••••••'}
+              {loading ? '⏳' : '🔒'} Passwort ändern
             </button>
           </div>
         </div>
 
-        {/* Neues Passwort */}
-        <div className="mst-field-group">
-          <label>Neues Passwort:</label>
-          <div className="password-wrapper mst-password-wrapper">
-            <input
-              className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
-              type={showNewPassword ? 'text' : 'password'}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Neues Passwort"
-              disabled={!currentPassword || loading}
-            />
-            <button
-              type="button"
-              className="password-toggle-btn"
-              onClick={() => setShowNewPassword(!showNewPassword)}
-            >
-              {showNewPassword ? '👁️' : '•••••••'}
-            </button>
-          </div>
-          {!currentPassword && (
-            <small className="input-hint mitglied-detail-hint-warning">
-              ℹ️ Bitte zuerst das aktuelle Passwort eingeben
-            </small>
-          )}
-          {currentPassword && (
-            <small className="input-hint">Mind. 8 Zeichen, mindestens 1 Zahl und 1 Sonderzeichen.</small>
-          )}
-        </div>
-
-        {/* Neues Passwort bestätigen */}
-        <div className="mst-field-group">
-          <label>Neues Passwort bestätigen:</label>
-          <div className="password-wrapper mst-password-wrapper">
-            <input
-              className={`mitglied-detail-input ${!currentPassword ? 'disabled' : ''}`}
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Passwort bestätigen"
-              disabled={!currentPassword || loading}
-            />
-            <button
-              type="button"
-              className="password-toggle-btn"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
-              {showConfirmPassword ? '👁️' : '•••••••'}
-            </button>
-          </div>
-        </div>
+        <hr className="mst-divider" />
 
         {/* Sicherheitsfrage */}
-        <div className="mst-field-group">
-          <label>Sicherheitsfrage:</label>
-          <SelectComponent
-            value={securityQuestion}
-            onChange={(e) => setSecurityQuestion(e.target.value)}
-            options={SECURITY_QUESTIONS}
-          />
+        <div className="mst-form-grid">
+          <div className="mst-field-group mst-field-full">
+            <label>Sicherheitsfrage</label>
+            <SelectComponent
+              value={securityQuestion}
+              onChange={(e) => setSecurityQuestion(e.target.value)}
+              options={SECURITY_QUESTIONS}
+            />
+          </div>
+
+          <div className="mst-field-group">
+            <label>Antwort</label>
+            <input
+              type="text"
+              value={securityAnswer}
+              onChange={(e) => setSecurityAnswer(e.target.value)}
+              placeholder="Antwort eingeben"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="mst-field-group mst-btn-align">
+            <label style={{ visibility: 'hidden', userSelect: 'none' }}>—</label>
+            <button
+              className="mst-btn mst-btn-secondary"
+              onClick={handleSaveSecurity}
+              disabled={loading}
+            >
+              {loading ? '⏳' : '💾'} Sicherheitsfrage speichern
+            </button>
+          </div>
         </div>
 
-        <div className="mst-field-group-lg">
-          <label>Antwort auf Sicherheitsfrage:</label>
-          <input
-            className="mitglied-detail-input"
-            type="text"
-            value={securityAnswer}
-            onChange={(e) => setSecurityAnswer(e.target.value)}
-            placeholder="Antwort"
-            disabled={loading}
-          />
-        </div>
-
-        {/* ACTION BUTTONS */}
-        <div className="mitglied-detail-actions mst-actions">
-          <button
-            className={`mitglied-detail-btn mitglied-detail-btn-primary ${(!currentPassword || !newPassword || !confirmPassword || loading) ? 'disabled' : ''}`}
-            onClick={handleChangePassword}
-            disabled={!currentPassword || !newPassword || !confirmPassword || loading}
-          >
-            {loading ? '⏳' : '🔒'} Passwort Ändern
-          </button>
-
-          <button
-            className={`mitglied-detail-btn mitglied-detail-btn-secondary ${loading ? 'disabled' : ''}`}
-            onClick={handleSaveSecurity}
-            disabled={loading}
-          >
-            👁️ Sicherheitsfrage speichern
-          </button>
-        </div>
-
-        {/* SUCCESS/ERROR MESSAGES */}
         {message && (
-          <div className={`mitglied-detail-message mst-message ${message.type === 'error' ? 'error' : 'success'}`}>
-            <span className="mst-message-icon">
-              {message.type === 'error' ? '❌' : '✅'}
-            </span>
+          <div className={`mst-message ${message.type}`}>
+            <span className="mst-message-icon">{message.type === 'error' ? '❌' : '✅'}</span>
             {message.text}
           </div>
         )}
