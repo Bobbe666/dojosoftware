@@ -19,8 +19,8 @@ router.get('/', (req, res) => {
   let query = `
     SELECT
       r.*,
-      CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
-      m.email,
+      COALESCE(CONCAT(m.vorname, ' ', m.nachname), r.extern_name) as mitglied_name,
+      COALESCE(m.email, r.extern_email) as email,
       (SELECT COUNT(*) FROM rechnungspositionen WHERE rechnung_id = r.rechnung_id) as anzahl_positionen,
       (SELECT COALESCE(SUM(betrag), 0) FROM zahlungen WHERE rechnung_id = r.rechnung_id) as bezahlter_betrag,
       CASE
@@ -29,16 +29,16 @@ router.get('/', (req, res) => {
         ELSE 'Offen'
       END as status_text
     FROM rechnungen r
-    JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+    LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
     WHERE 1=1
   `;
 
   const params = [];
 
-  // 🔒 Dojo-Isolation: Nur eigene Rechnungen
+  // 🔒 Dojo-Isolation: Nur eigene Rechnungen (Mitglieder oder Extern mit dojo_id)
   if (secureDojoId) {
-    query += ` AND m.dojo_id = ?`;
-    params.push(secureDojoId);
+    query += ` AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))`;
+    params.push(secureDojoId, secureDojoId);
   }
 
   if (status) {
@@ -108,10 +108,10 @@ router.get('/naechste-nummer', (req, res) => {
     checkQuery = `
       SELECT COUNT(*) AS count
       FROM rechnungen r
-      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-      WHERE YEAR(r.datum) = ? AND m.dojo_id = ?
+      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE YEAR(r.datum) = ? AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))
     `;
-    checkParams = [jahr, secureDojoId];
+    checkParams = [jahr, secureDojoId, secureDojoId];
   } else {
     // Super-Admin: Alle Rechnungen + Verband-Zahlungen (plattformweite Nummerierung)
     checkQuery = `
@@ -158,10 +158,10 @@ router.get('/statistiken', (req, res) => {
         COALESCE(SUM(CASE WHEN r.status = 'ueberfaellig' OR (r.faelligkeitsdatum < CURDATE() AND r.status = 'offen') THEN r.betrag ELSE 0 END), 0) as ueberfaellige_summe,
         COALESCE(SUM(r.betrag), 0) as gesamt_summe
       FROM rechnungen r
-      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-      WHERE r.archiviert = 0 AND m.dojo_id = ?
+      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE r.archiviert = 0 AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))
     `;
-    params = [secureDojoId];
+    params = [secureDojoId, secureDojoId];
   } else {
     query = `
       SELECT
@@ -197,20 +197,20 @@ router.get('/:id', (req, res) => {
   let rechnungQuery = `
     SELECT
       r.*,
-      CONCAT(m.vorname, ' ', m.nachname) as mitglied_name,
-      m.email,
+      COALESCE(CONCAT(m.vorname, ' ', m.nachname), r.extern_name) as mitglied_name,
+      COALESCE(m.email, r.extern_email) as email,
       m.telefon,
       m.plz,
       m.ort
     FROM rechnungen r
-    JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+    LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
     WHERE r.rechnung_id = ?
   `;
   const rechnungParams = [id];
 
   if (secureDojoId) {
-    rechnungQuery += ` AND m.dojo_id = ?`;
-    rechnungParams.push(secureDojoId);
+    rechnungQuery += ` AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))`;
+    rechnungParams.push(secureDojoId, secureDojoId);
   }
 
   db.query(rechnungQuery, rechnungParams, (err, rechnungResults) => {
@@ -312,10 +312,10 @@ router.post('/', (req, res) => {
     checkQuery = `
       SELECT COUNT(*) AS count
       FROM rechnungen r
-      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-      WHERE YEAR(r.datum) = ? AND m.dojo_id = ?
+      LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      WHERE YEAR(r.datum) = ? AND (m.dojo_id = ? OR (r.mitglied_id IS NULL AND r.dojo_id = ?))
     `;
-    checkParams = [jahr, secureDojoId];
+    checkParams = [jahr, secureDojoId, secureDojoId];
   } else {
     checkQuery = `
       SELECT
