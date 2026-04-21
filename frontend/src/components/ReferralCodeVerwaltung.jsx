@@ -50,20 +50,26 @@ const ReferralCodeVerwaltung = ({ mitgliedId }) => {
 
   const activeCode = data?.codes?.find(c => c.aktiv) || data?.codes?.[0];
   const stat = data?.statistik;
+  const hasActivity = stat && (stat.gesamt > 0 || parseFloat(stat.praemien_ausgezahlt || 0) > 0 || parseFloat(stat.praemien_offen || 0) > 0);
+  const hasReferrals = data?.werbungen?.length > 0;
+
+  // Kompakter Empty State wenn kein Code und keine Aktivität
+  if (!activeCode && !hasActivity && !hasReferrals) {
+    return (
+      <div className="rcv-empty-inline">
+        🎁 Noch kein aktiver Empfehlungscode. Kann im Admin-Bereich unter „Freunde werben Freunde" generiert werden.
+      </div>
+    );
+  }
 
   return (
     <div className="rcv-root">
-
       {/* Dein Code */}
       {activeCode ? (
         <div className="rcv-code-box">
-          <p className="rcv-section-label">
-            Dein Empfehlungscode
-          </p>
+          <p className="rcv-section-label">Dein Empfehlungscode</p>
           <div className="rcv-code-row">
-            <span className="rcv-code-value">
-              {activeCode.code}
-            </span>
+            <span className="rcv-code-value">{activeCode.code}</span>
             <button
               onClick={() => copyCode(activeCode.code)}
               className={`rcv-copy-btn ${copied ? 'rcv-copy-btn--copied' : 'rcv-copy-btn--default'}`}
@@ -72,19 +78,17 @@ const ReferralCodeVerwaltung = ({ mitgliedId }) => {
             </button>
           </div>
           {activeCode.aktion_titel && (
-            <p className="rcv-code-meta">
-              Aktion: {activeCode.aktion_titel}
-            </p>
+            <p className="rcv-code-meta">Aktion: {activeCode.aktion_titel}</p>
           )}
         </div>
       ) : (
         <div className="rcv-code-box-empty">
-          Du hast noch keinen aktiven Empfehlungscode. Frage dein Dojo-Team.
+          Kein aktiver Empfehlungscode. Frage dein Dojo-Team.
         </div>
       )}
 
-      {/* Statistik */}
-      {stat && (
+      {/* Statistik – nur wenn Aktivität vorhanden */}
+      {stat && hasActivity && (
         <div className="rcv-stats-grid">
           {[
             { label: 'Geworbene', value: stat.gesamt || 0, color: 'var(--text-primary)' },
@@ -100,36 +104,26 @@ const ReferralCodeVerwaltung = ({ mitgliedId }) => {
       )}
 
       {/* Werbungen */}
-      {data?.werbungen?.length > 0 ? (
+      {hasReferrals ? (
         <div>
-          <p className="rcv-list-label">
-            Meine Empfehlungen
-          </p>
+          <p className="rcv-list-label">Meine Empfehlungen</p>
           <div className="u-flex-col-sm">
             {data.werbungen.map(w => (
               <div key={w.id} className="rcv-list-item">
-                <span className="rcv-list-name">
-                  {w.geworbener_name}
-                </span>
-                <span
-                  className="rcv-status-badge"
-                  style={{ '--status-color': STATUS_COLOR[w.status] || '#6B7280' }}
-                >
+                <span className="rcv-list-name">{w.geworbener_name}</span>
+                <span className="rcv-status-badge"
+                  style={{ '--status-color': STATUS_COLOR[w.status] || '#6B7280' }}>
                   {STATUS_LABEL[w.status] || w.status}
                 </span>
                 {w.praemie_betrag && (
-                  <span className="rcv-praemie">
-                    {parseFloat(w.praemie_betrag).toFixed(0)} €
-                  </span>
+                  <span className="rcv-praemie">{parseFloat(w.praemie_betrag).toFixed(0)} €</span>
                 )}
               </div>
             ))}
           </div>
         </div>
-      ) : data && (
-        <p className="rcv-empty">
-          Noch keine Empfehlungen. Teile deinen Code und erhalte Prämien!
-        </p>
+      ) : activeCode && (
+        <p className="rcv-empty">Noch keine Empfehlungen. Teile deinen Code und erhalte Prämien!</p>
       )}
     </div>
   );

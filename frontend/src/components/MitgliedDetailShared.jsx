@@ -5727,8 +5727,8 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 </div>
               )}
 
-              {/* Marketing-Aktionen: Freunde werben Freunde */}
-              <div className="mds-marketing-section">
+              {/* Marketing-Aktionen: nur anzeigen wenn aktive Aktion vorhanden */}
+              {referralInfo && <div className="mds-marketing-section">
                 <h4 className="mds-marketing-title">
                   🎁 Marketing-Aktionen
                 </h4>
@@ -5814,7 +5814,7 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     </p>
                   </div>
                 )}
-              </div>
+              </div>}
             </div>
           )}
 

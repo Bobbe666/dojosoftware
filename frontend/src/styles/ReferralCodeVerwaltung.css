@@ -156,3 +156,10 @@
   text-align: center;
   padding: 1rem 0;
 }
+
+/* Einzeiliger Empty-State wenn gar keine Aktivität */
+.rcv-empty-inline {
+  color: rgba(255,255,255,0.35);
+  font-size: 0.82rem;
+  padding: 0.5rem 0;
+}
