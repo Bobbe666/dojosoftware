@@ -67,11 +67,16 @@
 .mdt-header-actions .mitglied-detail-back-btn,
 .mdt-header-actions .mitglied-detail-actions-btn {
   height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  min-width: 0 !important;
   padding: 0 12px !important;
   font-size: 0.78rem !important;
   border-radius: 6px !important;
   border-width: 1px !important;
   box-shadow: none !important;
+  white-space: nowrap;
+  line-height: 32px !important;
 }
 
 .mdt-header-actions .mitglied-detail-back-btn:hover,
@@ -85,8 +90,10 @@
 }
 
 .mdt-header-actions .mitglied-detail-actions-menu {
+  position: absolute !important;
   top: 36px !important;
-  z-index: 1000 !important;
+  right: 0 !important;
+  z-index: 1100 !important;
 }
 
 .mdt-member-info {
@@ -1995,8 +2002,8 @@ h1, h2, h3, h4, h5, h6,
 /* === 🖋️ Field-Group Daten-Rows === */
 .field-group > div:not(.stat-item):not(.stats-grid):not(.finance-stats):not(.attendance-stats):not(.field-row):not(.foto-upload-section):not(.foto-container) {
   display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 1rem;
+  grid-template-columns: minmax(110px, 140px) 1fr;
+  gap: 0.75rem;
   align-items: start;
   margin-bottom: 0.75rem;
   padding: 0.5rem 0;
