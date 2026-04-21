@@ -17,7 +17,8 @@ import '../styles/themes.css';         // Centralized theme system
 import '../styles/Dashboard.css';      // Dashboard-spezifische Styles (MUSS VOR components.css stehen!)
 import '../styles/components.css';     // Universal component styles
 import '../styles/BuddyVerwaltung.css'; // Buddy-Verwaltung Styles
-import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, MessageCircle, X, LogOut } from 'lucide-react';
+import { Users, Trophy, ClipboardList, Calendar, Menu, FileText, ChevronDown, Moon, Sun, MessageCircle, X, LogOut, Settings } from 'lucide-react';
+import DashboardSidebar from './DashboardSidebar';
 
 const logo = '/dojo-logo.png';
 import DojoSwitcher from './DojoSwitcher';
@@ -108,6 +109,18 @@ function Dashboard() {
   const [activeTab, setActiveTab] = useState('checkin');
   const [hilfeSupportView, setHilfeSupportView] = useState(null);
   const [einstellungenView, setEinstellungenView] = useState(null);
+
+  // Sidebar collapsed state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem('sidebar-collapsed') === 'true'
+  );
+  const toggleSidebar = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar-collapsed', String(next));
+      return next;
+    });
+  };
 
   // User-Modal State
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -271,7 +284,6 @@ function Dashboard() {
     { id: 'shop', label: 'Shop & Kasse', icon: '🛒' },
     { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
     { id: 'berichte', label: t('tabs.berichte'), icon: '📄' },
-    { id: 'einstellungen', label: t('tabs.einstellungen'), icon: '⚙️' },
     { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
     { id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }
   ];
@@ -1176,6 +1188,13 @@ function Dashboard() {
                 </div>
 
                 <div className="um-body">
+                  {isMainDashboard && (
+                    <button className="um-btn" onClick={() => { setActiveTab('einstellungen'); setShowUserMenu(false); }}>
+                      <Settings size={17} />
+                      <span>Einstellungen</span>
+                    </button>
+                  )}
+
                   <button className="um-btn" onClick={toggleDarkMode}>
                     {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
                     <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
@@ -1214,7 +1233,18 @@ function Dashboard() {
         </div>
       </header>
 
-      <div className="dashboard-content">
+      <div className="dashboard-body">
+        {isMainDashboard && role === 'admin' && (
+          <DashboardSidebar
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={(id) => { setActiveTab(id); setHilfeSupportView(null); setEinstellungenView(null); }}
+            collapsed={sidebarCollapsed}
+            onToggle={toggleSidebar}
+          />
+        )}
+
+        <div className="dashboard-content">
         <main className="dashboard-main">
           {isMainDashboard ? (
             <div className="content-card">
@@ -1235,25 +1265,6 @@ function Dashboard() {
 
               {/* 📊 Cockpit-Übersicht: Heute & diese Woche */}
               {(role === 'admin' || role === 'super_admin') && <CockpitUebersicht />}
-
-              {/* Navigation basierend auf Rolle */}
-              {role === 'admin' && (
-                <>
-                  {/* Tab Navigation */}
-                  <div className="dashboard-tabs">
-                    {tabs.map(tab => (
-                      <button
-                        key={tab.id}
-                        className={`dashboard-tab ${activeTab === tab.id ? 'active' : ''}`}
-                        onClick={() => { setActiveTab(tab.id); setHilfeSupportView(null); setEinstellungenView(null); }}
-                      >
-                        <span className="tab-icon">{tab.icon}</span>
-                        <span className="tab-label">{tab.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
 
               {/* Navigation basierend auf Rolle */}
               <div className="dashboard-navigation">
@@ -1867,6 +1878,7 @@ function Dashboard() {
           )}
         </main>
       </div>
+      </div>{/* end dashboard-body */}
 
       {/* Admin Registration Popup - Zeigt neue Mitglieder-Registrierungen */}
       {role === 'admin' && <AdminRegistrationPopup />}

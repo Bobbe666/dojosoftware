@@ -1,0 +1,146 @@
+/* ============================================================
+   DASHBOARD SIDEBAR
+   ============================================================ */
+
+.db-sidebar {
+  width: 220px;
+  min-width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-2, rgba(255,255,255,0.04));
+  border-right: 1px solid var(--border-accent, rgba(255,255,255,0.08));
+  transition: width 0.22s cubic-bezier(.4,0,.2,1), min-width 0.22s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 0px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.db-sidebar::-webkit-scrollbar { display: none; }
+
+.db-sidebar--collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+
+/* ── Nav items ── */
+
+.db-sidebar__nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 0.5rem;
+  gap: 0.15rem;
+}
+
+.db-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted, rgba(255,255,255,0.5));
+  font-size: 0.855rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
+  width: 100%;
+  min-height: 42px;
+}
+
+.db-sidebar__item:hover {
+  background: rgba(255,215,0,0.07);
+  color: var(--text-primary, #fff);
+}
+
+.db-sidebar__item--active {
+  background: rgba(255,215,0,0.12);
+  color: var(--primary, #ffd700);
+  font-weight: 600;
+}
+
+.db-sidebar__item--active .db-sidebar__icon {
+  filter: drop-shadow(0 0 6px rgba(255,215,0,0.4));
+}
+
+.db-sidebar__icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  width: 22px;
+  text-align: center;
+  line-height: 1;
+}
+
+.db-sidebar__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Toggle button ── */
+
+.db-sidebar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 0.75rem;
+  border: none;
+  border-top: 1px solid var(--border-accent, rgba(255,255,255,0.08));
+  background: transparent;
+  color: var(--text-muted, rgba(255,255,255,0.4));
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.db-sidebar__toggle:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary, #fff);
+}
+
+/* ── Collapsed: center icon ── */
+
+.db-sidebar--collapsed .db-sidebar__item {
+  justify-content: center;
+  padding: 0.65rem 0;
+}
+
+.db-sidebar--collapsed .db-sidebar__toggle {
+  justify-content: center;
+  padding: 0.8rem 0;
+}
+
+/* ── Light theme ── */
+
+[data-theme="light"] .db-sidebar,
+[data-theme="tda-vib"] .db-sidebar {
+  background: rgba(0,0,0,0.03);
+  border-right-color: rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .db-sidebar__item:hover,
+[data-theme="tda-vib"] .db-sidebar__item:hover {
+  background: rgba(0,0,0,0.05);
+}
+
+[data-theme="light"] .db-sidebar__item--active,
+[data-theme="tda-vib"] .db-sidebar__item--active {
+  background: rgba(255,215,0,0.15);
+}
+
+/* ── Responsive: hide sidebar on mobile, use bottom-like or overlay ── */
+
+@media (max-width: 768px) {
+  .db-sidebar {
+    display: none;
+  }
+}
