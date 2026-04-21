@@ -470,25 +470,10 @@ function Dashboard() {
       featured: true
     },
     {
-      icon: '📋',
-      title: 'SEPA-Mandate',
-      description: 'SEPA-Einzugsermächtigungen verwalten',
-      path: '/dashboard/sepa-mandate',
-      featured: true
-    },
-    {
-      icon: '✅',
-      title: 'Lastschrift-Einverständnis',
-      description: 'Zustimmung zum Einzug bei Einkäufen einholen',
-      path: '/dashboard/lastschrift-einverstaendnis',
-      featured: true
-    },
-    {
       icon: '🔴',
       title: 'Offene Zahlungen',
       description: 'Rücklastschriften & Chargebacks verwalten',
       path: '/dashboard/offene-zahlungen',
-      badge: 'NEU',
       featured: true
     },
     {
@@ -499,48 +484,30 @@ function Dashboard() {
       featured: true
     },
     {
-      icon: '🔄',
-      title: 'Zahlungszyklen',
-      description: 'Automatische Beitragszahlungen verwalten',
-      path: '/dashboard/zahlungszyklen',
-      badge: 'NEU',
+      icon: '📋',
+      title: 'SEPA & Lastschrift',
+      description: 'Mandate, Einzugsermächtigungen und Lastschrift-Einverständnis',
+      path: '/dashboard/sepa-mandate',
       featured: true
     },
     {
       icon: '⚙️',
       title: 'Zahlungseinstellungen',
-      description: 'Stripe & DATEV Integration',
+      description: 'Stripe & DATEV Integration, automatische Zahlungszyklen',
       path: '/dashboard/einstellungen/zahlungen',
-      badge: 'NEU',
-      featured: true
-    },
-    {
-      icon: '📊',
-      title: 'DATEV Export',
-      description: 'Buchungsdaten für Steuerberater exportieren',
-      path: '/dashboard/datev-export',
-      badge: 'NEU',
-      featured: true
-    },
-    {
-      icon: '🧾',
-      title: 'Steuer-Assistent',
-      description: 'UStVA & EÜR — ELSTER XML, Jahresabschluss, Steuerberater-Export',
-      path: '/dashboard/steuer',
-      badge: 'NEU',
       featured: true
     },
     ...(hasFeature('buchfuehrung') ? [{
       icon: '📒',
-      title: 'Buchhaltung & EÜR',
-      description: 'Belege, Bankimport, Jahresabschluss und GuV',
+      title: 'Buchhaltung & Steuern',
+      description: 'EÜR, Belege, Bankimport, DATEV-Export, UStVA & ELSTER',
       path: '/dashboard/buchhaltung',
       badge: 'PREMIUM',
       featured: true
     }] : [{
       icon: '📒',
-      title: 'Buchhaltung & EÜR',
-      description: 'Belege, Bankimport, Jahresabschluss und GuV',
+      title: 'Buchhaltung & Steuern',
+      description: 'EÜR, Belege, Bankimport, DATEV-Export, UStVA & ELSTER',
       path: '/dashboard/buchhaltung',
       badge: 'PREMIUM',
       featured: false,
