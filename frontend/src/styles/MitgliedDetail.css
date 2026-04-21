@@ -59,8 +59,34 @@
 .mdt-header-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex-shrink: 0;
+}
+
+/* Kompakt-Overrides für Buttons im Header */
+.mdt-header-actions .mitglied-detail-back-btn,
+.mdt-header-actions .mitglied-detail-actions-btn {
+  height: 32px !important;
+  padding: 0 12px !important;
+  font-size: 0.78rem !important;
+  border-radius: 6px !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+.mdt-header-actions .mitglied-detail-back-btn:hover,
+.mdt-header-actions .mitglied-detail-actions-btn:hover {
+  transform: none !important;
+}
+
+/* Dropdown unterhalb des Aktionen-Buttons, z-index über Sticky-Header */
+.mdt-header-actions .mds-actions-menu-wrapper {
+  position: relative;
+}
+
+.mdt-header-actions .mitglied-detail-actions-menu {
+  top: 36px !important;
+  z-index: 1000 !important;
 }
 
 .mdt-member-info {
