@@ -1201,11 +1201,11 @@ function Dashboard() {
       </header>
 
       <div className="dashboard-body">
-        {isMainDashboard && role === 'admin' && (
+        {role === 'admin' && (
           <DashboardSidebar
             tabs={tabs}
             activeTab={activeTab}
-            onTabChange={(id) => { setActiveTab(id); setHilfeSupportView(null); setEinstellungenView(null); }}
+            onTabChange={(id) => { setActiveTab(id); setHilfeSupportView(null); setEinstellungenView(null); navigate('/dashboard'); }}
             collapsed={sidebarCollapsed}
             onToggle={toggleSidebar}
           />
