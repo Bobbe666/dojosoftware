@@ -427,27 +427,40 @@ router.put('/:id', (req, res) => {
   // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
   const secureDojoId = getSecureDojoId(req);
   const { id } = req.params;
-  const { status, beschreibung, notizen, bezahlt_am, zahlungsart } = req.body;
+  const { status, beschreibung, notizen, bezahlt_am, zahlungsart, betrag, mwst_satz } = req.body;
+
+  // Betrag-Felder neu berechnen wenn betrag übergeben
+  let betragFields = '';
+  const betragParams = [];
+  if (betrag !== undefined && betrag !== null && betrag !== '') {
+    const bruttoNeu = parseFloat(betrag);
+    const mwstSatzNeu = parseFloat(mwst_satz || 19);
+    const nettoNeu = bruttoNeu / (1 + mwstSatzNeu / 100);
+    const mwstNeu = bruttoNeu - nettoNeu;
+    betragFields = ', betrag = ?, brutto_betrag = ?, netto_betrag = ?, mwst_betrag = ?';
+    betragParams.push(bruttoNeu, bruttoNeu, nettoNeu, mwstNeu);
+  }
 
   let updateQuery;
   let updateParams;
 
   if (secureDojoId) {
-    // Nur eigene Rechnung aktualisieren (via Mitglieder-Subquery)
+    // Eigene Rechnung: über Mitglieder ODER Extern-Rechnung mit dojo_id
     updateQuery = `
       UPDATE rechnungen
-      SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?
+      SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?${betragFields}
       WHERE rechnung_id = ?
-        AND mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+        AND (mitglied_id IN (SELECT mitglied_id FROM mitglieder WHERE dojo_id = ?)
+             OR (mitglied_id IS NULL AND dojo_id = ?))
     `;
-    updateParams = [status, beschreibung, notizen, bezahlt_am, zahlungsart, id, secureDojoId];
+    updateParams = [status, beschreibung, notizen, bezahlt_am, zahlungsart, ...betragParams, id, secureDojoId, secureDojoId];
   } else {
     updateQuery = `
       UPDATE rechnungen
-      SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?
+      SET status = ?, beschreibung = ?, notizen = ?, bezahlt_am = ?, zahlungsart = ?${betragFields}
       WHERE rechnung_id = ?
     `;
-    updateParams = [status, beschreibung, notizen, bezahlt_am, zahlungsart, id];
+    updateParams = [status, beschreibung, notizen, bezahlt_am, zahlungsart, ...betragParams, id];
   }
 
   db.query(updateQuery, updateParams, (err, result) => {

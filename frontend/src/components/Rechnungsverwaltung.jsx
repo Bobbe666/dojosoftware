@@ -230,7 +230,8 @@ const Rechnungsverwaltung = () => {
       beschreibung: rechnung.beschreibung || '',
       notizen: rechnung.notizen || '',
       faelligkeitsdatum: rechnung.faelligkeitsdatum ? rechnung.faelligkeitsdatum.split('T')[0] : '',
-      zahlungsart: rechnung.zahlungsart || ''
+      zahlungsart: rechnung.zahlungsart || '',
+      betrag: rechnung.betrag ? parseFloat(rechnung.betrag).toFixed(2) : ''
     });
     setShowEditModal(true);
   };
@@ -247,7 +248,8 @@ const Rechnungsverwaltung = () => {
           beschreibung: editForm.beschreibung,
           notizen: editForm.notizen,
           bezahlt_am: editRechnung.bezahlt_am || null,
-          zahlungsart: editForm.zahlungsart || null
+          zahlungsart: editForm.zahlungsart || null,
+          betrag: editForm.betrag || null
         })
       });
       if (res.ok) {
@@ -729,6 +731,17 @@ const Rechnungsverwaltung = () => {
                     <option value="kreditkarte">Kreditkarte</option>
                     <option value="paypal">PayPal</option>
                   </select>
+                </div>
+                <div className="detail-item">
+                  <label>Betrag (Brutto, inkl. MwSt.) — Netto/MwSt. wird neu berechnet</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editForm.betrag}
+                    onChange={(e) => setEditForm(p => ({ ...p, betrag: e.target.value }))}
+                    style={{ background: 'var(--surface-2)', color: 'var(--text-1)', border: '1px solid var(--primary-alpha-20)', borderRadius: 'var(--comp-radius-md)', padding: '0.5rem', width: '100%' }}
+                  />
                 </div>
               </div>
             </div>
