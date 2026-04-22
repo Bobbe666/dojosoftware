@@ -104,8 +104,7 @@ ${kontext.tarifeText || 'Informationen auf Anfrage'}
 - Probetraining: kostenlos und jederzeit möglich, einfach vorbeikommen
 - Trainingsort: Vilsbiburg (genaue Adresse auf der Website unter "Über uns")
 - Vertragsfragen: Mindestlaufzeit je nach Tarif, Kündigung schriftlich mit entsprechender Frist
-- Familientarif: Für Familien ab 2 Personen gibt es günstigere Konditionen
-- Schüler/Studenten-Rabatt: Günstigere Tarife mit Nachweis verfügbar
+- Es gibt weitere Möglichkeiten und Konditionen, die man gerne vor Ort besprechen kann – erwähne das kurz wenn es thematisch passt, ohne Details zu nennen
 - Bei komplexen Fragen oder Terminvereinbarungen: empfiehl direkt zu schreiben oder anzurufen
 
 ## Dein Verhalten
