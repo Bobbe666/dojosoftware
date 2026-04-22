@@ -517,6 +517,14 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'marketing-jahresplan', error: error.message, stack: error.stack });
 }
 
+try {
+  const marketingKiRoutes = require(path.join(__dirname, 'routes', 'marketing-ki.js'));
+  app.use('/api/marketing-ki', authenticateToken, (req, res, next) => { req.db = db.promise(); next(); }, marketingKiRoutes);
+  logger.success('Route gemountet', { path: '/api/marketing-ki' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'marketing-ki', error: error.message, stack: error.stack });
+}
+
 // 1.4 REFERRAL (Freunde werben Freunde)
 try {
   const referralRoutes = require(path.join(__dirname, 'routes', 'referral.js'));

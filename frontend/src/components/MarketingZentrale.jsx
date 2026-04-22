@@ -1,6 +1,5 @@
 /**
  * MarketingZentrale.jsx
- * =====================
  * Zentraler Hub für alle Marketing-Funktionen
  */
 
@@ -8,14 +7,18 @@ import React, { useState, lazy, Suspense } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, CalendarDays, Zap, Loader2, Users, Gift,
-  Megaphone, TrendingUp, Target
+  Megaphone, TrendingUp, Target, Sparkles, Mail, Share2, Facebook
 } from 'lucide-react';
 import '../styles/MarketingZentrale.css';
 
-const MarketingJahresplan   = lazy(() => import('./MarketingJahresplan'));
-const FreundeWerbenFreunde  = lazy(() => import('./FreundeWerbenFreunde'));
-const FreieAktionen         = lazy(() => import('./FreieAktionen'));
-const GutscheineVerwaltung  = lazy(() => import('./GutscheineVerwaltung'));
+const MarketingJahresplan     = lazy(() => import('./MarketingJahresplan'));
+const FreundeWerbenFreunde    = lazy(() => import('./FreundeWerbenFreunde'));
+const FreieAktionen           = lazy(() => import('./FreieAktionen'));
+const GutscheineVerwaltung    = lazy(() => import('./GutscheineVerwaltung'));
+const MarketingKiContent      = lazy(() => import('./MarketingKiContent'));
+const MarketingGeburtstage    = lazy(() => import('./MarketingGeburtstage'));
+const MarketingNewsletter     = lazy(() => import('./MarketingNewsletter'));
+const MarketingAktionen       = lazy(() => import('./MarketingAktionen'));
 
 const TABS = [
   {
@@ -23,6 +26,31 @@ const TABS = [
     label: 'Jahresplan',
     icon:  CalendarDays,
     desc:  'Geplante Aktionen & Kampagnen',
+  },
+  {
+    id:    'ki-content',
+    label: 'KI-Content',
+    icon:  Sparkles,
+    desc:  'Posts mit KI erstellen & Templates',
+    highlight: true,
+  },
+  {
+    id:    'social-media',
+    label: 'Social Media',
+    icon:  Share2,
+    desc:  'Facebook & Instagram Posts',
+  },
+  {
+    id:    'newsletter',
+    label: 'Newsletter',
+    icon:  Mail,
+    desc:  'E-Mails an Mitglieder senden',
+  },
+  {
+    id:    'geburtstage',
+    label: 'Geburtstage',
+    icon:  Gift,
+    desc:  'Posts für Mitglieder-Geburtstage',
   },
   {
     id:    'freunde-werben',
@@ -78,7 +106,7 @@ export default function MarketingZentrale({ embedded = false }) {
               <div>
                 <h1 className="mz-hero-title">Marketing-Zentrale</h1>
                 <p className="mz-hero-sub">
-                  Jahresplanung · Kampagnen · Gutscheine · Empfehlungen
+                  KI-Content · Social Media · Newsletter · Jahresplanung · Gutscheine
                 </p>
               </div>
             </div>
@@ -90,6 +118,10 @@ export default function MarketingZentrale({ embedded = false }) {
               <div className="mz-stat">
                 <Target size={15} />
                 <span>Zielgruppe erreichen</span>
+              </div>
+              <div className="mz-stat">
+                <Sparkles size={15} />
+                <span>KI-Unterstützung</span>
               </div>
             </div>
           </div>
@@ -105,7 +137,7 @@ export default function MarketingZentrale({ embedded = false }) {
             return (
               <button
                 key={tab.id}
-                className={`mz-tab ${isActive ? 'active' : ''}`}
+                className={`mz-tab ${isActive ? 'active' : ''} ${tab.highlight ? 'mz-tab--highlight' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 <span className="mz-tab-icon-wrap">
@@ -116,13 +148,14 @@ export default function MarketingZentrale({ embedded = false }) {
                   <span className="mz-tab-desc">{tab.desc}</span>
                 </span>
                 {tab.premium && <span className="mz-tab-badge">Premium</span>}
+                {tab.highlight && !isActive && <span className="mz-tab-badge mz-tab-badge--ki">KI</span>}
               </button>
             );
           })}
         </nav>
       </div>
 
-      {/* Aktiver Tab-Titel (mobil-freundlich) */}
+      {/* Aktiver Tab-Titel */}
       {activeTabData && (
         <div className="mz-active-header">
           <activeTabData.icon size={16} />
@@ -136,24 +169,28 @@ export default function MarketingZentrale({ embedded = false }) {
       {/* Inhalt */}
       <div className="mz-content">
         {activeTab === 'jahresplan' && (
-          <Suspense fallback={<LazyFallback />}>
-            <MarketingJahresplan />
-          </Suspense>
+          <Suspense fallback={<LazyFallback />}><MarketingJahresplan /></Suspense>
+        )}
+        {activeTab === 'ki-content' && (
+          <Suspense fallback={<LazyFallback />}><MarketingKiContent /></Suspense>
+        )}
+        {activeTab === 'social-media' && (
+          <Suspense fallback={<LazyFallback />}><MarketingAktionen /></Suspense>
+        )}
+        {activeTab === 'newsletter' && (
+          <Suspense fallback={<LazyFallback />}><MarketingNewsletter /></Suspense>
+        )}
+        {activeTab === 'geburtstage' && (
+          <Suspense fallback={<LazyFallback />}><MarketingGeburtstage /></Suspense>
         )}
         {activeTab === 'freunde-werben' && (
-          <Suspense fallback={<LazyFallback />}>
-            <FreundeWerbenFreunde />
-          </Suspense>
+          <Suspense fallback={<LazyFallback />}><FreundeWerbenFreunde /></Suspense>
         )}
         {activeTab === 'freie-aktionen' && (
-          <Suspense fallback={<LazyFallback />}>
-            <FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} />
-          </Suspense>
+          <Suspense fallback={<LazyFallback />}><FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} /></Suspense>
         )}
         {activeTab === 'gutscheine' && (
-          <Suspense fallback={<LazyFallback />}>
-            <GutscheineVerwaltung />
-          </Suspense>
+          <Suspense fallback={<LazyFallback />}><GutscheineVerwaltung /></Suspense>
         )}
       </div>
     </div>

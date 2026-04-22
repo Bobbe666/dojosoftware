@@ -189,6 +189,26 @@
   color: rgba(255, 215, 0, 0.55);
 }
 
+.mz-tab-badge--ki {
+  background: linear-gradient(135deg, #553c9a, #9f7aea) !important;
+  color: #fff !important;
+}
+
+.mz-tab--highlight {
+  border-color: rgba(159, 122, 234, 0.3) !important;
+}
+.mz-tab--highlight.active {
+  border-color: #9f7aea !important;
+  background: rgba(159, 122, 234, 0.08) !important;
+}
+
+.mz-card {
+  background: var(--bg-card, #141420);
+  border: 1px solid var(--border-default, #2a2a3a);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
 .mz-tab-badge {
   position: absolute;
   top: 0.3rem;
