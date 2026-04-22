@@ -15,6 +15,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const webpush = require('web-push');
 const { sendEmailForDojo } = require('../services/emailService');
+const Anthropic = require('@anthropic-ai/sdk');
 
 const pool = db.promise();
 
@@ -27,7 +28,134 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   );
 }
 
-// ─── Auto-Reply: kein Staff online ────────────────────────────────────────────
+// ─── Dojo-Kontext für AI laden ────────────────────────────────────────────────
+async function loadDojoKontext(dojoId) {
+  try {
+    const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+    const dojoName = dojo?.dojoname || 'Kampfkunstschule';
+
+    const [tarife] = await pool.query(`
+      SELECT name, price_cents, duration_months, billing_cycle, altersgruppe,
+             mindestlaufzeit_monate, kuendigungsfrist_monate, aufnahmegebuehr_cents
+      FROM tarife WHERE dojo_id = ? AND active = 1 AND ist_archiviert = 0
+      ORDER BY price_cents
+    `, [dojoId]);
+
+    const [stundenplan] = await pool.query(`
+      SELECT s.tag, s.uhrzeit_start, s.uhrzeit_ende, k.gruppenname, k.stil
+      FROM stundenplan s
+      LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
+      WHERE s.typ = 'regulaer' AND k.dojo_id = ?
+      ORDER BY FIELD(s.tag,'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'), s.uhrzeit_start
+    `, [dojoId]);
+
+    const [stile] = await pool.query(`SELECT name, beschreibung FROM stile WHERE aktiv = 1`);
+
+    // Tarife als lesbaren Text formatieren
+    const tarifeText = tarife
+      .filter(t => t.price_cents > 0 && !t.name.includes('Familienm'))
+      .map(t => {
+        const preis = (t.price_cents / 100).toFixed(2).replace('.', ',');
+        const aufnahme = t.aufnahmegebuehr_cents > 0
+          ? ` + einmalige Aufnahmegebühr ${(t.aufnahmegebuehr_cents / 100).toFixed(2).replace('.', ',')}€`
+          : '';
+        const laufzeit = t.mindestlaufzeit_monate ? `Mindestlaufzeit ${t.mindestlaufzeit_monate} Monate` : 'keine Mindestlaufzeit';
+        const kuendigung = `Kündigungsfrist ${t.kuendigungsfrist_monate || 3} Monate`;
+        return `- ${t.name}: ${preis}€/Monat (${laufzeit}, ${kuendigung}${aufnahme})`;
+      }).join('\n');
+
+    // Stundenplan als lesbaren Text formatieren
+    const stundenplanText = stundenplan
+      .map(s => {
+        const start = s.uhrzeit_start?.substring(0, 5) || '';
+        const ende = s.uhrzeit_ende?.substring(0, 5) || '';
+        return `- ${s.tag} ${start}–${ende}: ${s.gruppenname}${s.stil ? ` (${s.stil})` : ''}`;
+      }).join('\n');
+
+    const stileText = stile.map(s => `- ${s.name}${s.beschreibung ? ': ' + s.beschreibung : ''}`).join('\n');
+
+    return { dojoName, tarifeText, stundenplanText, stileText };
+  } catch (err) {
+    logger.warn('AI-Kontext konnte nicht geladen werden', { error: err.message });
+    return { dojoName: 'Kampfkunstschule', tarifeText: '', stundenplanText: '', stileText: '' };
+  }
+}
+
+// ─── AI-Reply: Claude antwortet auf Besuchernachrichten ──────────────────────
+async function sendAIReply(session, io, conversationHistory) {
+  const dojoId = session.dojo_id || null;
+  if (!process.env.ANTHROPIC_API_KEY) return sendAutoReply(session, io);
+
+  const kontext = dojoId ? await loadDojoKontext(dojoId) : { dojoName: 'TDA', tarifeText: '', stundenplanText: '', stileText: '' };
+
+  const systemPrompt = `Du bist der freundliche AI-Assistent der ${kontext.dojoName} in Vilsbiburg.
+Du beantwortest Fragen von Interessenten und Mitgliedern auf Deutsch – kurz, freundlich und konkret.
+
+## Unsere Kampfkünste
+${kontext.stileText || '- Kickboxen, Taekwondo, Karate, ShieldX Selbstverteidigung, MMA, Grappling'}
+
+## Trainingszeiten (Stundenplan)
+${kontext.stundenplanText || 'Informationen auf Anfrage'}
+
+## Mitgliedsbeiträge
+${kontext.tarifeText || 'Informationen auf Anfrage'}
+
+## Wichtige Infos
+- Probetraining: kostenlos und jederzeit möglich, einfach vorbeikommen
+- Trainingsort: Vilsbiburg (genaue Adresse auf der Website unter "Über uns")
+- Vertragsfragen: Mindestlaufzeit je nach Tarif, Kündigung schriftlich mit entsprechender Frist
+- Familientarif: Für Familien ab 2 Personen gibt es günstigere Konditionen
+- Schüler/Studenten-Rabatt: Günstigere Tarife mit Nachweis verfügbar
+- Bei komplexen Fragen oder Terminvereinbarungen: empfiehl direkt zu schreiben oder anzurufen
+
+## Dein Verhalten
+- Antworte immer auf Deutsch
+- Sei herzlich und motivierend – Kampfsport macht Spaß!
+- Gib konkrete Empfehlungen wenn nach dem passenden Tarif gefragt wird
+- Halte Antworten kurz (2-4 Sätze) außer bei komplexen Fragen
+- Wenn du etwas nicht weißt: sage es ehrlich und empfiehl den direkten Kontakt
+- Schreibe KEINE Markdown-Formatierung (kein **, keine #) – nur normalen Text`;
+
+  try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+    const messages = (conversationHistory || []).map(m => ({
+      role: m.sender_type === 'visitor' ? 'user' : 'assistant',
+      content: m.message
+    }));
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 400,
+      system: systemPrompt,
+      messages: messages.length > 0 ? messages : [{ role: 'user', content: 'Hallo' }]
+    });
+
+    const aiText = response.content[0]?.text || 'Danke für deine Nachricht! Ich helfe dir gerne weiter.';
+
+    const [insertResult] = await pool.query(
+      `INSERT INTO visitor_chat_messages (session_id, sender_type, sender_name, message)
+       VALUES (?, 'staff', ?, ?)`,
+      [session.id, kontext.dojoName + ' AI', aiText]
+    );
+
+    const [[aiMsg]] = await pool.query(
+      `SELECT id, sender_type, sender_name, message, created_at FROM visitor_chat_messages WHERE id = ?`,
+      [insertResult.insertId]
+    );
+
+    if (io) {
+      io.to(`visitor-session:${session.visitor_token}`).emit('visitor-chat:message', aiMsg);
+    }
+
+    logger.info('🤖 AI-Reply gesendet', { sessionId: session.id, dojoId, tokens: response.usage?.input_tokens });
+  } catch (err) {
+    logger.error('AI-Reply Fehler, fallback auf Auto-Reply', { error: err.message, sessionId: session.id });
+    await sendAutoReply(session, io);
+  }
+}
+
+// ─── Auto-Reply: kein Staff online (Fallback ohne AI) ────────────────────────
 async function sendAutoReply(session, io) {
   const visitorName = session.visitor_name || 'Besucher';
   const dojoId = session.dojo_id || null;
@@ -866,17 +994,22 @@ router.post('/sessions/:token/messages', async (req, res) => {
     };
     await pushToStaff(session.dojo_id, pushPayload);
 
-    // Auto-Reply wenn kein Staff online (nur bei erster Nachricht der Session)
-    if (isFirstMessage && io) {
+    // AI-Reply wenn kein Staff online — bei jeder Nachricht
+    if (io) {
       const staffRoomSockets = io.sockets.adapter.rooms.get(staffRoom);
       const staffOnline = staffRoomSockets && staffRoomSockets.size > 0;
       if (!staffOnline) {
-        // Kurze Verzögerung damit Visitor zuerst seine eigene Nachricht sieht
+        // Gesprächsverlauf für Kontext laden
+        const [history] = await pool.query(
+          `SELECT sender_type, message FROM visitor_chat_messages
+           WHERE session_id = ? ORDER BY id ASC LIMIT 20`,
+          [session.id]
+        );
         setTimeout(() => {
-          sendAutoReply(session, io).catch(err =>
-            logger.warn('Auto-Reply Fehler', { error: err.message, sessionId: session.id })
+          sendAIReply(session, io, history).catch(err =>
+            logger.warn('AI-Reply Fehler', { error: err.message, sessionId: session.id })
           );
-        }, 1500);
+        }, 1200);
       }
     }
 
