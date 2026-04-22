@@ -18,14 +18,14 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 router.post('/generate', async (req, res) => {
   const dojoId = getSecureDojoId(req);
-  const { thema, plattform, tonalitaet, anlass, zusatzinfos } = req.body;
+  const { thema, plattform, tonalitaet, anlass, zusatzinfos, orgName } = req.body;
 
   if (!thema) return res.status(400).json({ error: 'Thema ist erforderlich' });
 
   try {
     const db = req.db;
-    let dojoName = 'Kampfkunstschule';
-    if (dojoId && !isNaN(dojoId)) {
+    let dojoName = orgName || 'Kampfkunstschule';
+    if (!orgName && dojoId && !isNaN(dojoId)) {
       const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
       if (dojo?.dojoname) dojoName = dojo.dojoname;
     }
@@ -234,11 +234,14 @@ router.post('/newsletter/preview-empfaenger', async (req, res) => {
 
 router.post('/newsletter/ki-text', async (req, res) => {
   const dojoId = getSecureDojoId(req);
-  const { thema, tonalitaet } = req.body;
+  const { thema, tonalitaet, orgName } = req.body;
   try {
     const db = req.db;
-    const [[dojo]] = dojoId && !isNaN(dojoId) ? await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]) : [[null]];
-    const dojoName = dojo?.dojoname || 'Kampfkunstschule';
+    let dojoName = orgName || 'Kampfkunstschule';
+    if (!orgName && dojoId && !isNaN(dojoId)) {
+      const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+      if (dojo?.dojoname) dojoName = dojo.dojoname;
+    }
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',

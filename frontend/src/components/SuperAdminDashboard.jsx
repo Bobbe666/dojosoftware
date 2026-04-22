@@ -12,7 +12,7 @@ import {
   Building2, Users, TrendingUp, Globe, Plus, Edit, Trash2,
   CheckCircle, XCircle, BarChart3, Activity, Award, Calendar, HardDrive, Clock, AlertTriangle,
   ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro, Ticket,
-  Bell, Send, Archive, Eye, EyeOff, RefreshCw, UserPlus, Home, MessageCircle, MessageSquare, Search
+  Bell, Send, Archive, Eye, EyeOff, RefreshCw, UserPlus, Home, MessageCircle, MessageSquare, Search, Sparkles
 } from 'lucide-react';
 import StatisticsTab from './StatisticsTab';
 import ContractsTab from './ContractsTab';
@@ -32,6 +32,7 @@ import DojoLizenzverwaltung from './DojoLizenzverwaltung';
 import AdminChatPage from './chat/AdminChatPage';
 import BesucherChat from './chat/BesucherChat';
 import SecurityDashboard from './SecurityDashboard';
+import SuperAdminMarketing from './SuperAdminMarketing';
 import BackupEinstellungen from './BackupEinstellungen';
 import DokumentenZentrale from './DokumentenZentrale';
 import Auswertungen from './Auswertungen';
@@ -2104,6 +2105,9 @@ const SuperAdminDashboard = () => {
               <button className={`sub-tab-btn ${kommunikationSubTab === 'kampagnen' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('kampagnen')}>
                 <Send size={16} /><span>Kampagnen</span>
               </button>
+              <button className={`sub-tab-btn ${kommunikationSubTab === 'marketing-ki' ? 'active' : ''}`} onClick={() => setKommunikationSubTab('marketing-ki')}>
+                <Sparkles size={16} /><span>Marketing KI</span>
+              </button>
             </div>
 
             {kommunikationSubTab === 'pushnachrichten' && (
@@ -2215,6 +2219,10 @@ const SuperAdminDashboard = () => {
 
             {kommunikationSubTab === 'kampagnen' && (
               <KampagnenDashboard />
+            )}
+
+            {kommunikationSubTab === 'marketing-ki' && (
+              <SuperAdminMarketing />
             )}
           </div>
         )}

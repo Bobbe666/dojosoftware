@@ -904,9 +904,11 @@ function Dashboard() {
           </div>
         </header>
 
-        <main className="dashboard-main">
-          <SuperAdminDashboard />
-        </main>
+        <div className="dashboard-content">
+          <main className="dashboard-main">
+            <SuperAdminDashboard />
+          </main>
+        </div>
       </div>
     );
   }
@@ -965,9 +967,11 @@ function Dashboard() {
           </div>
         </header>
 
-        <main className="dashboard-main">
-          <VerbandDashboard />
-        </main>
+        <div className="dashboard-content">
+          <main className="dashboard-main">
+            <VerbandDashboard />
+          </main>
+        </div>
       </div>
     );
   }
@@ -1026,9 +1030,11 @@ function Dashboard() {
           </div>
         </header>
 
-        <main className="dashboard-main">
-          <SupportDashboard />
-        </main>
+        <div className="dashboard-content">
+          <main className="dashboard-main">
+            <SupportDashboard />
+          </main>
+        </div>
       </div>
     );
   }
@@ -1069,9 +1075,11 @@ function Dashboard() {
             </div>
           </div>
         </header>
-        <main className="dashboard-main">
-          <ShopDashboard />
-        </main>
+        <div className="dashboard-content">
+          <main className="dashboard-main">
+            <ShopDashboard />
+          </main>
+        </div>
       </div>
     );
   }

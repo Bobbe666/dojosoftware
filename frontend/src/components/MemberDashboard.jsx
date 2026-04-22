@@ -89,8 +89,9 @@ function MemberNewsModal({ artikel, onClose }) {
       document.body.style.overflow = '';
     };
   }, [onClose]);
-  const absätze = (artikel.inhalt || '').split(/\n\s*\n/).filter(Boolean);
   const formatDate = (d) => d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
+  const inhalt = artikel.inhalt || '';
+  const isHtml = /<[a-z][\s\S]*>/i.test(inhalt);
   return (
     <div className="member-news-modal-overlay" onClick={onClose}>
       <div className="member-news-modal-box" onClick={e => e.stopPropagation()}>
@@ -104,9 +105,9 @@ function MemberNewsModal({ artikel, onClose }) {
           <div className="member-news-modal-date">{formatDate(artikel.datum)}</div>
           <h2 className="member-news-modal-titel">{artikel.titel}</h2>
           <div className="member-news-modal-text">
-            {absätze.length > 0
-              ? absätze.map((p, i) => <p key={i}>{p}</p>)
-              : <p>{artikel.inhalt}</p>
+            {isHtml
+              ? <div dangerouslySetInnerHTML={{ __html: inhalt }} />
+              : inhalt.split(/\n\s*\n/).filter(Boolean).map((p, i) => <p key={i}>{p}</p>)
             }
           </div>
         </div>
