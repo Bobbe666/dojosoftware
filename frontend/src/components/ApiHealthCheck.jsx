@@ -53,7 +53,7 @@ const ApiHealthCheck = ({ children }) => {
         // Verbindung wiederhergestellt
         if (wasOfflineRef.current) {
           setJustReconnected(true);
-          setTimeout(() => setJustReconnected(false), 3000);
+          setTimeout(() => setJustReconnected(false), 15000);
         }
 
         setIsOnline(true);
@@ -152,15 +152,28 @@ const ApiHealthCheck = ({ children }) => {
     };
   }, [retryCountdown > 0]);
 
+  const kbdStyle = { background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, padding: '1px 5px', fontSize: 11, fontFamily: 'monospace' };
+
   // Reconnection-Banner
   if (justReconnected) {
     return (
       <>
         <div className="ahc-reconnect-banner">
           <CheckCircle size={20} />
-          <span className="ahc-reconnect-text">
-            Verbindung wiederhergestellt! Alles funktioniert wieder.
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span className="ahc-reconnect-text">
+              ✅ Verbindung wiederhergestellt! Bitte <strong>Seite neu laden</strong> damit alles korrekt angezeigt wird.
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.85 }}>
+              🖥 <strong>Safari:</strong> <kbd style={kbdStyle}>Opt ⌥ + Cmd ⌘ + R</kbd>
+              &nbsp;·&nbsp;
+              <strong>Chrome / Firefox / Edge (Mac):</strong> <kbd style={kbdStyle}>Cmd ⌘ + Shift + R</kbd>
+              &nbsp;·&nbsp;
+              <strong>Windows:</strong> <kbd style={kbdStyle}>Strg + Shift + R</kbd>
+              &nbsp;·&nbsp;
+              📱 <strong>Mobil:</strong> Seite schließen &amp; neu öffnen
+            </span>
+          </div>
         </div>
 
         {children}
