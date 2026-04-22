@@ -1018,7 +1018,9 @@ router.post('/sessions/:token/messages', async (req, res) => {
     // AI-Reply: wenn Staff offline ODER wenn AI-Modus (Abwesend) aktiv
     if (io) {
       const staffRoomSockets = io.sockets.adapter.rooms.get(staffRoom);
-      const staffOnline = staffRoomSockets && staffRoomSockets.size > 0;
+      const superAdminSockets = io.sockets.adapter.rooms.get('visitor-super-admin');
+      const staffOnline = (staffRoomSockets && staffRoomSockets.size > 0) ||
+                          (superAdminSockets && superAdminSockets.size > 0);
       const aiModeActive = dojoAiMode.get(String(session.dojo_id)) === true;
       if (!staffOnline || aiModeActive) {
         const [history] = await pool.query(
