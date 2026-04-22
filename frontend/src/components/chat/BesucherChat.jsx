@@ -92,6 +92,8 @@ const BesucherChat = () => {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [unreadSessions, setUnreadSessions] = useState(new Set());
+  const [aiMode, setAiMode] = useState(false);
+  const [aiModeLoading, setAiModeLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const textRef = useRef(null);
 
@@ -145,6 +147,29 @@ const BesucherChat = () => {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  // AI-Modus Status laden
+  useEffect(() => {
+    if (!token) return;
+    axios.get('/visitor-chat/ai-mode', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => setAiMode(res.data.enabled === true))
+      .catch(() => {});
+  }, [token]);
+
+  const toggleAiMode = async () => {
+    setAiModeLoading(true);
+    try {
+      const res = await axios.post('/visitor-chat/ai-mode',
+        { enabled: !aiMode },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setAiMode(res.data.enabled);
+    } catch (err) {
+      console.error('AI-Modus konnte nicht geändert werden', err);
+    } finally {
+      setAiModeLoading(false);
+    }
+  };
 
   // Auto-scroll zu letzter Nachricht
   useEffect(() => {
@@ -307,17 +332,37 @@ const BesucherChat = () => {
             borderBottom: '1px solid var(--chat-separator)',
             flexShrink: 0
           }}>
-            <h3 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-              💬 Besucher-Chat
-              {unreadSessions.size > 0 && (
-                <span style={{
-                  background: '#e53e3e', color: '#fff',
-                  borderRadius: '50%', width: 20, height: 20,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700
-                }}>{unreadSessions.size}</span>
-              )}
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+                💬 Besucher-Chat
+                {unreadSessions.size > 0 && (
+                  <span style={{
+                    background: '#e53e3e', color: '#fff',
+                    borderRadius: '50%', width: 20, height: 20,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700
+                  }}>{unreadSessions.size}</span>
+                )}
+              </h3>
+              {/* AI-Modus Toggle */}
+              <button
+                onClick={toggleAiMode}
+                disabled={aiModeLoading}
+                title={aiMode ? 'KI antwortet automatisch – klicken um zu deaktivieren' : 'Manuell antworten – klicken um KI zu aktivieren'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  padding: '4px 10px', borderRadius: 20,
+                  border: `1.5px solid ${aiMode ? '#d69e2e' : '#4a5568'}`,
+                  background: aiMode ? '#744210' : 'transparent',
+                  color: aiMode ? '#fefcbf' : '#a0aec0',
+                  fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                  transition: 'all 0.2s', whiteSpace: 'nowrap'
+                }}
+              >
+                <span>{aiMode ? '🤖' : '👤'}</span>
+                <span>{aiMode ? 'Abwesend' : 'Verfügbar'}</span>
+              </button>
+            </div>
             {/* Status-Filter */}
             <div style={{ display: 'flex', gap: 4 }}>
               {[

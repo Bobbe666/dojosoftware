@@ -277,6 +277,24 @@ async function sendVisitorReplyEmail(session, staffName, replyText) {
   logger.info('✅ Visitor-Chat E-Mail gesendet', { to: session.visitor_email, sessionId: session.id });
 }
 
+// ─── AI-Modus pro Dojo (in-memory, reset bei Neustart) ───────────────────────
+const dojoAiMode = new Map(); // dojoId (String) -> boolean
+
+// GET /api/visitor-chat/ai-mode
+router.get('/ai-mode', authenticateToken, (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  res.json({ enabled: dojoAiMode.get(String(dojoId)) === true });
+});
+
+// POST /api/visitor-chat/ai-mode
+router.post('/ai-mode', authenticateToken, (req, res) => {
+  const dojoId = getSecureDojoId(req);
+  const enabled = Boolean(req.body?.enabled);
+  dojoAiMode.set(String(dojoId), enabled);
+  logger.info(`🤖 AI-Modus für Dojo ${dojoId}: ${enabled ? 'EIN' : 'AUS'}`);
+  res.json({ success: true, enabled });
+});
+
 // ─── CORS-Helper (für eingebettetes Widget auf externen Sites) ─────────────────
 function setPublicCors(res) {
   res.header('Access-Control-Allow-Origin', '*');
@@ -994,12 +1012,12 @@ router.post('/sessions/:token/messages', async (req, res) => {
     };
     await pushToStaff(session.dojo_id, pushPayload);
 
-    // AI-Reply wenn kein Staff online — bei jeder Nachricht
+    // AI-Reply: wenn Staff offline ODER wenn AI-Modus (Abwesend) aktiv
     if (io) {
       const staffRoomSockets = io.sockets.adapter.rooms.get(staffRoom);
       const staffOnline = staffRoomSockets && staffRoomSockets.size > 0;
-      if (!staffOnline) {
-        // Gesprächsverlauf für Kontext laden
+      const aiModeActive = dojoAiMode.get(String(session.dojo_id)) === true;
+      if (!staffOnline || aiModeActive) {
         const [history] = await pool.query(
           `SELECT sender_type, message FROM visitor_chat_messages
            WHERE session_id = ? ORDER BY id ASC LIMIT 20`,
