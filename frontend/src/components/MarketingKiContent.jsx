@@ -228,7 +228,7 @@ export default function MarketingKiContent() {
           />
 
           {showSaveForm && (
-            <div style={{ marginTop: 14, padding: 14, background: 'var(--bg-secondary, #f8f9fa)', borderRadius: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <div style={{ marginTop: 14, padding: 14, background: 'var(--bg-secondary, #1a1a2e)', borderRadius: 8, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
               <div style={{ flex: 1, minWidth: 160 }}>
                 <label style={labelStyle}>Template-Name</label>
                 <input style={inputStyle} placeholder="z.B. Anfänger-Kurs Post" value={tplName} onChange={e => setTplName(e.target.value)} />
@@ -295,15 +295,15 @@ export default function MarketingKiContent() {
   );
 }
 
-const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5, color: 'var(--text-muted, #666)' };
+const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5, color: 'var(--text-muted, #aaa)' };
 const inputStyle = {
   width: '100%', padding: '8px 12px', borderRadius: 7, fontSize: 14, boxSizing: 'border-box',
-  border: '1px solid var(--border, #d1d5db)', background: 'var(--bg-input, #fff)', color: 'var(--text, #1a1a2e)',
+  border: '1px solid var(--border, #3a3a4a)', background: 'var(--bg-input, #1e1e2e)', color: 'var(--text-primary, #eee)',
   outline: 'none', fontFamily: 'inherit'
 };
 const pillStyle = {
-  padding: '4px 10px', borderRadius: 16, fontSize: 12, border: '1px solid var(--border, #d1d5db)',
-  background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #666)', transition: 'all 0.15s'
+  padding: '4px 10px', borderRadius: 16, fontSize: 12, border: '1px solid var(--border, #3a3a4a)',
+  background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #aaa)', transition: 'all 0.15s'
 };
 const pillActive = { background: '#d4a017', color: '#fff', borderColor: '#d4a017' };
 const btnPrimary = {
@@ -312,8 +312,8 @@ const btnPrimary = {
 };
 const btnSecondary = {
   display: 'flex', alignItems: 'center', gap: 5, padding: '7px 14px', borderRadius: 8,
-  border: '1px solid var(--border, #d1d5db)', background: 'transparent', fontSize: 13,
-  color: 'var(--text, #1a1a2e)', cursor: 'pointer'
+  border: '1px solid var(--border, #3a3a4a)', background: 'transparent', fontSize: 13,
+  color: 'var(--text-primary, #eee)', cursor: 'pointer'
 };
 const errStyle = { marginTop: 10, padding: '8px 12px', borderRadius: 7, background: '#fff5f5', color: '#e53e3e', fontSize: 13 };
-const tagStyle = { fontSize: 11, padding: '2px 7px', borderRadius: 10, background: 'var(--bg-secondary, #f0f4f8)', color: 'var(--text-muted, #666)' };
+const tagStyle = { fontSize: 11, padding: '2px 7px', borderRadius: 10, background: 'var(--bg-secondary, #1e1e2e)', color: 'var(--text-muted, #aaa)' };

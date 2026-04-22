@@ -112,7 +112,7 @@ export default function MarketingNewsletter() {
         </div>
 
         {/* KI-Hilfe */}
-        <div style={{ marginBottom: 14, padding: 14, background: 'var(--bg-secondary, #f8f9fa)', borderRadius: 10, border: '1px dashed var(--border, #d1d5db)' }}>
+        <div style={{ marginBottom: 14, padding: 14, background: 'var(--bg-secondary, #1a1a2e)', borderRadius: 10, border: '1px dashed var(--border, #3a3a4a)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 13, fontWeight: 600 }}>
             <Sparkles size={14} color="#d4a017" /> KI-Textgenerator
           </div>
@@ -224,13 +224,13 @@ export default function MarketingNewsletter() {
   );
 }
 
-const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5, color: 'var(--text-muted, #666)' };
+const labelStyle = { display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 5, color: 'var(--text-muted, #aaa)' };
 const inputStyle = {
   width: '100%', padding: '8px 12px', borderRadius: 7, fontSize: 14, boxSizing: 'border-box',
-  border: '1px solid var(--border, #d1d5db)', background: 'var(--bg-input, #fff)', color: 'var(--text, #1a1a2e)',
+  border: '1px solid var(--border, #3a3a4a)', background: 'var(--bg-input, #1e1e2e)', color: 'var(--text-primary, #eee)',
   outline: 'none', fontFamily: 'inherit'
 };
-const pillStyle = { padding: '5px 12px', borderRadius: 16, fontSize: 13, border: '1px solid var(--border, #d1d5db)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #666)', transition: 'all 0.15s' };
+const pillStyle = { padding: '5px 12px', borderRadius: 16, fontSize: 13, border: '1px solid var(--border, #3a3a4a)', background: 'transparent', cursor: 'pointer', color: 'var(--text-muted, #aaa)', transition: 'all 0.15s' };
 const pillActive = { background: '#d4a017', color: '#fff', borderColor: '#d4a017' };
 const btnPrimary = { display: 'flex', alignItems: 'center', gap: 6, padding: '9px 20px', borderRadius: 8, border: 'none', background: '#d4a017', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' };
 const btnKi = { display: 'flex', alignItems: 'center', gap: 5, padding: '8px 14px', borderRadius: 7, border: 'none', background: '#553c9a', color: '#fff', fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' };

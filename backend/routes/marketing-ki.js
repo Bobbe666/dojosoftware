@@ -24,8 +24,11 @@ router.post('/generate', async (req, res) => {
 
   try {
     const db = req.db;
-    const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
-    const dojoName = dojo?.dojoname || 'Kampfkunstschule';
+    let dojoName = 'Kampfkunstschule';
+    if (dojoId && !isNaN(dojoId)) {
+      const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+      if (dojo?.dojoname) dojoName = dojo.dojoname;
+    }
 
     const plattformHinweis = {
       facebook:  'Facebook-Post (längere Texte ok, persönlicher Ton, 1-3 Hashtags)',
@@ -165,7 +168,7 @@ router.post('/geburtstage/generate', async (req, res) => {
 
   try {
     const db = req.db;
-    const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+    const [[dojo]] = dojoId && !isNaN(dojoId) ? await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]) : [[null]];
     const dojoName = dojo?.dojoname || 'Kampfkunstschule';
 
     const plattformHint = plattform === 'story'
@@ -234,7 +237,7 @@ router.post('/newsletter/ki-text', async (req, res) => {
   const { thema, tonalitaet } = req.body;
   try {
     const db = req.db;
-    const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+    const [[dojo]] = dojoId && !isNaN(dojoId) ? await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]) : [[null]];
     const dojoName = dojo?.dojoname || 'Kampfkunstschule';
 
     const response = await anthropic.messages.create({
@@ -263,7 +266,7 @@ router.post('/newsletter/send', async (req, res) => {
 
   try {
     const db = req.db;
-    const [[dojo]] = await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+    const [[dojo]] = dojoId && !isNaN(dojoId) ? await db.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]) : [[null]];
     const dojoName = dojo?.dojoname || 'Kampfkunstschule';
 
     let where = 'dojo_id = ? AND aktiv = 1 AND email IS NOT NULL AND email != ""';

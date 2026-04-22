@@ -18,7 +18,7 @@ const PLATTFORMEN = [
 function TageBadge({ tage }) {
   if (tage === 0) return <span style={{ background: '#38a169', color: '#fff', borderRadius: 12, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>🎂 Heute!</span>;
   if (tage <= 3)  return <span style={{ background: '#d69e2e', color: '#fff', borderRadius: 12, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>in {tage} Tag{tage > 1 ? 'en' : ''}</span>;
-  return <span style={{ background: 'var(--bg-secondary, #f0f4f8)', color: 'var(--text-muted, #666)', borderRadius: 12, padding: '2px 9px', fontSize: 11 }}>in {tage} Tagen</span>;
+  return <span style={{ background: 'var(--bg-secondary, #1e1e2e)', color: 'var(--text-muted, #aaa)', borderRadius: 12, padding: '2px 9px', fontSize: 11 }}>in {tage} Tagen</span>;
 }
 
 export default function MarketingGeburtstage() {
@@ -70,18 +70,18 @@ export default function MarketingGeburtstage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Gift size={20} color="#d4a017" />
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>Geburtstage – nächste 30 Tage</h3>
-            <span style={{ background: 'var(--bg-secondary, #f0f4f8)', borderRadius: 12, padding: '2px 9px', fontSize: 12 }}>
+            <span style={{ background: 'var(--bg-secondary, #1e1e2e)', borderRadius: 12, padding: '2px 9px', fontSize: 12 }}>
               {geburtstage.length} Mitglieder
             </span>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <select
-              style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border, #d1d5db)', fontSize: 13, background: 'var(--bg-input, #fff)', color: 'var(--text, #1a1a2e)' }}
+              style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border, #3a3a4a)', fontSize: 13, background: 'var(--bg-input, #1e1e2e)', color: 'var(--text-primary, #eee)' }}
               value={plattform} onChange={e => setPlattform(e.target.value)}
             >
               {PLATTFORMEN.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
             </select>
-            <button onClick={load} style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border, #d1d5db)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
+            <button onClick={load} style={{ padding: '6px 10px', borderRadius: 7, border: '1px solid var(--border, #3a3a4a)', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13 }}>
               <RefreshCw size={13} /> Aktualisieren
             </button>
           </div>
@@ -123,18 +123,18 @@ export default function MarketingGeburtstage() {
                 </div>
 
                 {results[m.mitglied_id] && (
-                  <div style={{ borderTop: '1px solid var(--border, #e2e8f0)', padding: '12px 16px', background: 'var(--bg-secondary, #fafafa)' }}>
+                  <div style={{ borderTop: '1px solid var(--border, #e2e8f0)', padding: '12px 16px', background: 'var(--bg-secondary, #1a1a2e)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#888' }}>Generierter Post</span>
                       <button
                         onClick={() => copy(m.mitglied_id, results[m.mitglied_id])}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border, #d1d5db)', background: 'transparent', fontSize: 12, cursor: 'pointer' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border, #3a3a4a)', background: 'transparent', fontSize: 12, cursor: 'pointer' }}
                       >
                         {copied === m.mitglied_id ? <><Check size={12} /> Kopiert!</> : <><Copy size={12} /> Kopieren</>}
                       </button>
                     </div>
                     <textarea
-                      style={{ width: '100%', minHeight: 100, padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border, #d1d5db)', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box', background: 'var(--bg-input, #fff)', color: 'var(--text, #1a1a2e)' }}
+                      style={{ width: '100%', minHeight: 100, padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border, #3a3a4a)', fontSize: 13, fontFamily: 'inherit', lineHeight: 1.6, resize: 'vertical', boxSizing: 'border-box', background: 'var(--bg-input, #1e1e2e)', color: 'var(--text-primary, #eee)' }}
                       value={results[m.mitglied_id]}
                       onChange={e => setResults(prev => ({ ...prev, [m.mitglied_id]: e.target.value }))}
                     />
