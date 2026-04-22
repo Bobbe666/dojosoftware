@@ -198,7 +198,7 @@ export default function MarketingKiContent() {
             <div style={{ fontSize: 12, lineHeight: 1.6, opacity: 0.85 }}>
               Falls der Fehler bleibt, hilft oft ein <strong>Seiten-Neustart</strong> (nicht nur neu versuchen):
               <br />
-              🖥 <strong>Safari:</strong> <kbd style={kbdStyle}>Cmd ⌘ + R</kbd>
+              🖥 <strong>Safari:</strong> <kbd style={kbdStyle}>Opt ⌥ + Cmd ⌘ + R</kbd>
               &nbsp;&nbsp;·&nbsp;&nbsp;
               🌐 <strong>Chrome / Firefox / Edge:</strong> <kbd style={kbdStyle}>Strg + Shift + R</kbd> (Windows) oder <kbd style={kbdStyle}>Cmd ⌘ + Shift + R</kbd> (Mac)
               &nbsp;&nbsp;·&nbsp;&nbsp;

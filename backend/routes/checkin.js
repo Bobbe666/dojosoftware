@@ -662,17 +662,11 @@ router.get('/tresen/:datum', async (req, res) => {
         const datum = req.params.datum;
         const heute = new Date(datum);
         const wochentag = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'][heute.getDay()];
-        logger.debug('📢 Tresen-Query für Datum: ${datum} (${wochentag})');
 
-        // Sehr einfache Query: Finde aktive Check-ins für heute (nur eigenes Dojo)
-        logger.debug('Suche Check-ins für Datum: ${datum}');
+        // Für vergangene Tage alle Status zeigen (active + completed), nur für heute nur active
+        const isToday = datum === new Date().toISOString().split('T')[0];
+        const statusFilter = isToday ? `AND c.status = 'active'` : `AND c.status IN ('active', 'completed', 'checked_out')`;
 
-        // Zuerst: Prüfe ob überhaupt Check-ins existieren
-        const testQuery = `SELECT COUNT(*) as count FROM checkins WHERE DATE(checkin_time) = ? AND status = 'active'`;
-        const testResult = await queryAsync(testQuery, [datum]);
-        logger.debug('📊 Anzahl aktive Check-ins in DB: ${testResult[0]?.count || 0}');
-
-        // Dann: Hole alle Check-ins mit Mitglied-Daten (inkl. Gäste)
         const dojoFilter = secureDojoId ? 'AND (m.dojo_id = ? OR c.ist_gast = 1)' : '';
         const checkinsQuery = `
             SELECT
@@ -704,8 +698,8 @@ router.get('/tresen/:datum', async (req, res) => {
             LEFT JOIN stundenplan s ON c.stundenplan_id = s.stundenplan_id
             LEFT JOIN kurse k ON s.kurs_id = k.kurs_id
             WHERE DATE(c.checkin_time) = ?
-                AND c.status = 'active'
-                AND (m.aktiv = 1 OR c.ist_gast = 1)
+                ${statusFilter}
+                AND (m.aktiv = 1 OR c.ist_gast = 1 OR m.mitglied_id IS NULL)
                 ${dojoFilter}
             ORDER BY c.checkin_time DESC
         `;
