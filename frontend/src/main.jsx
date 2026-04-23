@@ -102,31 +102,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Kanji-Cursor via Canvas (Safari unterstützt kein SVG-Cursor)
-(function applyKanjiCursor() {
-  try {
-    const canvas = document.createElement('canvas');
-    canvas.width = 44;
-    canvas.height = 44;
-    const ctx = canvas.getContext('2d');
-    // Kanji 武 in Rot
-    ctx.font = '600 28px "Hiragino Mincho Pro", "Yu Mincho", "MS Mincho", serif';
-    ctx.fillStyle = '#dc2626';
-    ctx.globalAlpha = 0.92;
-    ctx.fillText('武', 10, 36);
-    // Kleiner Hotspot-Punkt oben links
-    ctx.globalAlpha = 1;
-    ctx.beginPath();
-    ctx.arc(4, 4, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#dc2626';
-    ctx.fill();
-    const dataUrl = canvas.toDataURL('image/png');
-    const style = document.createElement('style');
-    style.textContent = `*, *::before, *::after { cursor: url("${dataUrl}") 4 4, auto !important; } a, button, [role="button"], input, select, textarea, label { cursor: url("${dataUrl}") 4 4, pointer !important; }`;
-    document.head.appendChild(style);
-  } catch (e) { /* Kein Custom Cursor wenn Canvas nicht verfügbar */ }
-})();
-
 // Tab-Stil und Akzentfarbe sofort anwenden (vor erstem Render — kein Flash)
 const _savedTabStyle = localStorage.getItem('dojo-tab-style');
 if (_savedTabStyle && _savedTabStyle !== 'glass') {
