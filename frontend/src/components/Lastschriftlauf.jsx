@@ -284,6 +284,7 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       });
 
       const data = await response.json();
+      console.log('[StripeSetup] Response:', { status: response.status, data });
 
       if (data.success) {
         setStripeSetupProgress({
@@ -292,23 +293,22 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           details: data.details
         });
         await loadStripeStatus();
-      } else if (data.details && data.details.length > 0) {
-        // Teilerfolg oder alle fehlgeschlagen — zeige Details pro Mitglied
-        const errorLines = data.details
-          .filter(d => d.status === 'failed')
-          .map(d => `${d.name}: ${d.error || 'unbekannter Fehler'}`);
+      } else {
+        // details kann Array (Einzelfehler) oder String (Server-Fehler) sein
+        const detailsArray = Array.isArray(data.details) ? data.details : [];
+        const errorLines = detailsArray.length > 0
+          ? detailsArray.filter(d => d.status === 'failed').map(d => `${d.name}: ${d.error || 'unbekannter Fehler'}`)
+          : data.details && typeof data.details === 'string'
+            ? [`Serverfehler: ${data.details}`]
+            : [];
         setStripeSetupProgress({
           status: 'error',
-          message: `Setup fehlgeschlagen (${data.succeeded || 0}/${data.processed} erfolgreich)`,
-          details: data.details,
+          message: detailsArray.length > 0
+            ? `Setup fehlgeschlagen (${data.succeeded || 0}/${data.processed} erfolgreich)`
+            : data.error || `Setup fehlgeschlagen (HTTP ${response.status})`,
           errorLines
         });
-        if (data.succeeded > 0) await loadStripeStatus();
-      } else {
-        setStripeSetupProgress({
-          status: 'error',
-          message: data.error || 'Setup fehlgeschlagen'
-        });
+        if ((data.succeeded || 0) > 0) await loadStripeStatus();
       }
     } catch (error) {
       setStripeSetupProgress({
