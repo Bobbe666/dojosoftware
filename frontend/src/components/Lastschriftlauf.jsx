@@ -291,8 +291,19 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
           message: `Setup abgeschlossen: ${data.succeeded} erfolgreich, ${data.failed} fehlgeschlagen`,
           details: data.details
         });
-        // Status neu laden
         await loadStripeStatus();
+      } else if (data.details && data.details.length > 0) {
+        // Teilerfolg oder alle fehlgeschlagen — zeige Details pro Mitglied
+        const errorLines = data.details
+          .filter(d => d.status === 'failed')
+          .map(d => `${d.name}: ${d.error || 'unbekannter Fehler'}`);
+        setStripeSetupProgress({
+          status: 'error',
+          message: `Setup fehlgeschlagen (${data.succeeded || 0}/${data.processed} erfolgreich)`,
+          details: data.details,
+          errorLines
+        });
+        if (data.succeeded > 0) await loadStripeStatus();
       } else {
         setStripeSetupProgress({
           status: 'error',
@@ -950,6 +961,13 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                 </button>
               )}
             </div>
+            {stripeSetupProgress.errorLines?.length > 0 && (
+              <ul style={{ margin: '0.4rem 0 0 1.5rem', fontSize: '0.78rem', opacity: 0.85 }}>
+                {stripeSetupProgress.errorLines.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
