@@ -27,7 +27,9 @@ import {
 import '../styles/MarketingAktionen.css';
 
 const MarketingAktionen = () => {
-  const { activeDojo } = useDojoContext();
+  const { activeDojo: activeDojoRaw } = useDojoContext();
+  // activeDojo can be an object {id, dojoname} or a string ('super-admin') — always extract numeric id
+  const activeDojo = activeDojoRaw?.id || (typeof activeDojoRaw === 'number' ? activeDojoRaw : null);
 
   // State Management
   const [loading, setLoading] = useState(true);

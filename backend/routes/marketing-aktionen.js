@@ -106,11 +106,11 @@ router.get('/accounts/callback', async (req, res) => {
 
     if (oauthError) {
       logger.error('OAuth Fehler von Meta', { error: oauthError, description: error_description });
-      return res.redirect(`${process.env.FRONTEND_URL}/admin/buddy?error=oauth_denied`);
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard/marketingzentrale?error=oauth_denied`);
     }
 
     if (!code || !state) {
-      return res.redirect(`${process.env.FRONTEND_URL}/admin/buddy?error=invalid_callback`);
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard/marketingzentrale?error=invalid_callback`);
     }
 
     // State validieren
@@ -121,7 +121,7 @@ router.get('/accounts/callback', async (req, res) => {
     );
 
     if (stateRows.length === 0) {
-      return res.redirect(`${process.env.FRONTEND_URL}/admin/buddy?error=invalid_state`);
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard/marketingzentrale?error=invalid_state`);
     }
 
     const { dojo_id, user_id } = stateRows[0];
@@ -187,10 +187,10 @@ router.get('/accounts/callback', async (req, res) => {
       pagesCount: pages.length
     });
 
-    res.redirect(`${process.env.FRONTEND_URL}/admin/buddy?tab=aktionen&success=connected`);
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard/marketingzentrale?tab=social-media&success=connected`);
   } catch (error) {
     logger.error('OAuth Callback Fehler', { error: error.message, stack: error.stack });
-    res.redirect(`${process.env.FRONTEND_URL}/admin/buddy?error=connection_failed`);
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard/marketingzentrale?error=connection_failed`);
   }
 });
 
