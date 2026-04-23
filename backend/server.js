@@ -162,6 +162,8 @@ app.use(cors({
       'https://tda-vib.de',
       'https://www.tda-vib.de',
       'https://app.tda-vib.de',
+      'https://kampfkunstschule-schreiner.de',
+      'https://www.kampfkunstschule-schreiner.de',
     ];
     if (tdaDeDomains.includes(origin)) {
       return callback(null, true);
