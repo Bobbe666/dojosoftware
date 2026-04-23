@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useSubscription } from '../context/SubscriptionContext.jsx';
 import axios from 'axios';
 import {
   Bold, Italic, Underline, Strikethrough,
@@ -428,6 +429,8 @@ function NewsFormular({ mode = 'create' }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const { token } = useAuth();
+  const { hasFeature } = useSubscription();
+  const hasSocialMedia = hasFeature('social_media');
   const bildInputRef = useRef(null);
 
   const emptyForm = {
@@ -464,10 +467,11 @@ function NewsFormular({ mode = 'create' }) {
   const [socialMsg, setSocialMsg] = useState('');
 
   useEffect(() => {
+    if (!hasSocialMedia) return;
     axios.get('/marketing-aktionen/accounts', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => setSocialAccounts(r.data || []))
       .catch(() => {});
-  }, [token]);
+  }, [token, hasSocialMedia]);
 
   const openSocialModal = (platform) => {
     const account = socialAccounts.find(a => a.platform === platform);
@@ -861,8 +865,18 @@ function NewsFormular({ mode = 'create' }) {
             <div className="sidebar-section">
               <div className="sidebar-section-header">
                 <span className="sidebar-section-title">📱 Social Media</span>
+                {!hasSocialMedia && <span style={{ fontSize: '0.65rem', background: 'rgba(255,215,0,0.15)', border: '1px solid rgba(255,215,0,0.3)', color: 'var(--primary)', borderRadius: 4, padding: '1px 6px' }}>Enterprise</span>}
               </div>
               <div className="sidebar-section-body">
+                {!hasSocialMedia ? (
+                  <div style={{ textAlign: 'center', padding: '0.75rem 0', color: 'var(--text-secondary, #aaa)' }}>
+                    <div style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>📱</div>
+                    <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem' }}>Direkt auf Facebook &amp; Instagram posten</div>
+                    <a href="/dashboard/einstellungen/abonnement" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none' }}>
+                      Auf Enterprise upgraden →
+                    </a>
+                  </div>
+                ) : (
                 <div className="social-media-grid">
                   {[
                     { icon: <FaInstagram size={16} />, label: 'Instagram', color: '#E1306C', platform: 'instagram' },
@@ -894,6 +908,8 @@ function NewsFormular({ mode = 'create' }) {
                   <small className="form-hint" style={{ textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>
                     Accounts unter Marketing → Social Media verbinden
                   </small>
+                )}
+                </div>
                 )}
               </div>
             </div>

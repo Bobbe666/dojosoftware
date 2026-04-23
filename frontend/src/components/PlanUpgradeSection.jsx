@@ -66,6 +66,7 @@ const PLAN_FEATURES = {
       'Multi-Dojo Support',
       '🌐 Homepage Builder',
       '📘 Facebook Messenger Integration',
+      '📱 Social Media Posting (Facebook & Instagram)',
       'Dedizierter Support',
       'Custom Integrationen',
       '50 GB Speicherplatz'

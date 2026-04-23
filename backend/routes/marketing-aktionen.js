@@ -12,6 +12,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { requireFeature } = require('../middleware/featureAccess');
 
 // =============================================================================
 // MULTER CONFIGURATION für Media Uploads
@@ -52,6 +53,14 @@ const getDojoId = (req) => {
   // Nutze sichere Methode aus tenantSecurity, fallback auf alte Methode
   return getSecureDojoId(req) || req.user?.dojo_id || req.body?.dojo_id || req.query?.dojo_id;
 };
+
+// =============================================================================
+// FEATURE GUARD — Enterprise only (Callback is public, skip guard for it)
+// =============================================================================
+router.use((req, res, next) => {
+  if (req.path === '/accounts/callback') return next();
+  requireFeature('social_media')(req, res, next);
+});
 
 // =============================================================================
 // OAUTH ROUTES
