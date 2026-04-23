@@ -457,6 +457,51 @@ function NewsFormular({ mode = 'create' }) {
   const [seoOpen, setSeoOpen]   = useState(false);
   const [forceRteValue, setForceRteValue] = useState(undefined);
 
+  // Social Media Share
+  const [socialAccounts, setSocialAccounts] = useState([]);
+  const [socialModal, setSocialModal] = useState(null); // { platform, accountId, text }
+  const [socialPosting, setSocialPosting] = useState(false);
+  const [socialMsg, setSocialMsg] = useState('');
+
+  useEffect(() => {
+    axios.get('/marketing-aktionen/accounts', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setSocialAccounts(r.data || []))
+      .catch(() => {});
+  }, [token]);
+
+  const openSocialModal = (platform) => {
+    const account = socialAccounts.find(a => a.platform === platform);
+    if (!account) return;
+    const plain = formData.inhalt.replace(/<[^>]*>/g, '').slice(0, 300);
+    const text = [formData.titel, formData.kurzbeschreibung || plain].filter(Boolean).join('\n\n');
+    setSocialModal({ platform, accountId: account.id, text });
+    setSocialMsg('');
+  };
+
+  const postToSocial = async () => {
+    if (!socialModal) return;
+    setSocialPosting(true);
+    setSocialMsg('');
+    try {
+      const fd = new FormData();
+      fd.append('content', socialModal.text);
+      fd.append('social_account_id', socialModal.accountId);
+      fd.append('post_type', 'text');
+      const res = await axios.post('/marketing-aktionen/posts', fd, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      await axios.post(`/marketing-aktionen/posts/${res.data.postId}/publish`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSocialMsg('success');
+      setTimeout(() => setSocialModal(null), 2000);
+    } catch (err) {
+      setSocialMsg(err.response?.data?.details || err.response?.data?.error || 'Fehler beim Posten');
+    } finally {
+      setSocialPosting(false);
+    }
+  };
+
   // Vorlage anwenden
   const applyVorlage = useCallback(({ titel, kurzbeschreibung, inhalt, kategorie, tags }) => {
     setFormData(prev => ({
@@ -816,33 +861,40 @@ function NewsFormular({ mode = 'create' }) {
             <div className="sidebar-section">
               <div className="sidebar-section-header">
                 <span className="sidebar-section-title">📱 Social Media</span>
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-4)', fontStyle: 'italic' }}>Demnächst</span>
               </div>
               <div className="sidebar-section-body">
                 <div className="social-media-grid">
                   {[
-                    { icon: <FaInstagram size={16} />, label: 'Instagram', color: '#E1306C' },
-                    { icon: <FaFacebook  size={16} />, label: 'Facebook',  color: '#1877F2' },
-                    { icon: <FaTiktok    size={16} />, label: 'TikTok',    color: '#69C9D0' },
-                    { icon: <FaXTwitter  size={16} />, label: 'X / Twitter', color: '#aaa' },
-                    { icon: <FaWhatsapp  size={16} />, label: 'WhatsApp',  color: '#25D366' },
-                    { icon: <FaTelegram  size={16} />, label: 'Telegram',  color: '#2CA5E0' },
-                  ].map(({ icon, label, color }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className="social-btn"
-                      disabled
-                      title={`${label} – In Kürze verfügbar`}
-                    >
-                      <span style={{ color }}>{icon}</span>
-                      <span>{label}</span>
-                    </button>
-                  ))}
+                    { icon: <FaInstagram size={16} />, label: 'Instagram', color: '#E1306C', platform: 'instagram' },
+                    { icon: <FaFacebook  size={16} />, label: 'Facebook',  color: '#1877F2', platform: 'facebook' },
+                    { icon: <FaTiktok    size={16} />, label: 'TikTok',    color: '#69C9D0', platform: null },
+                    { icon: <FaXTwitter  size={16} />, label: 'X / Twitter', color: '#aaa', platform: null },
+                    { icon: <FaWhatsapp  size={16} />, label: 'WhatsApp',  color: '#25D366', platform: null },
+                    { icon: <FaTelegram  size={16} />, label: 'Telegram',  color: '#2CA5E0', platform: null },
+                  ].map(({ icon, label, color, platform }) => {
+                    const connected = platform && socialAccounts.some(a => a.platform === platform);
+                    return (
+                      <button
+                        key={label}
+                        type="button"
+                        className="social-btn"
+                        disabled={!connected}
+                        title={connected ? `Auf ${label} posten` : platform ? `${label} nicht verbunden` : `${label} – demnächst`}
+                        onClick={() => connected && openSocialModal(platform)}
+                        style={connected ? { opacity: 1, cursor: 'pointer' } : {}}
+                      >
+                        <span style={{ color }}>{icon}</span>
+                        <span>{label}</span>
+                        {connected && <span style={{ fontSize: '0.6rem', color: '#10b981', marginTop: 2 }}>✓</span>}
+                      </button>
+                    );
+                  })}
                 </div>
-                <small className="form-hint" style={{ textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>
-                  API-Integration folgt in einer späteren Version
-                </small>
+                {socialAccounts.length === 0 && (
+                  <small className="form-hint" style={{ textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>
+                    Accounts unter Marketing → Social Media verbinden
+                  </small>
+                )}
               </div>
             </div>
 
@@ -959,6 +1011,44 @@ function NewsFormular({ mode = 'create' }) {
           </div>
         </div>
       </form>
+
+      {/* Social Share Modal */}
+      {socialModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'var(--bg-primary, #1a1a2e)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 12, padding: '1.5rem', width: '100%', maxWidth: 480 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: 'var(--primary, #ffd700)', fontSize: '1rem' }}>
+                {socialModal.platform === 'facebook' ? <FaFacebook style={{ marginRight: 8, color: '#1877F2', verticalAlign: 'middle' }} /> : <FaInstagram style={{ marginRight: 8, color: '#E1306C', verticalAlign: 'middle' }} />}
+                Auf {socialModal.platform === 'facebook' ? 'Facebook' : 'Instagram'} posten
+              </h3>
+              <button type="button" onClick={() => setSocialModal(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary, #aaa)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <textarea
+              value={socialModal.text}
+              onChange={e => setSocialModal(m => ({ ...m, text: e.target.value }))}
+              rows={6}
+              style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,215,0,0.2)', borderRadius: 8, color: 'var(--text-primary, #fff)', padding: '0.75rem', fontSize: '0.9rem', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
+            />
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #aaa)', marginTop: '0.4rem', marginBottom: '1rem' }}>
+              {socialModal.text.length} Zeichen
+              {socialModal.platform === 'instagram' && ' · Instagram benötigt ein Bild für Feed-Posts (Story geht ohne)'}
+            </div>
+            {socialMsg === 'success' ? (
+              <div style={{ color: '#10b981', textAlign: 'center', padding: '0.5rem', fontWeight: 600 }}>✓ Erfolgreich gepostet!</div>
+            ) : socialMsg ? (
+              <div style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: '0.75rem' }}>{socialMsg}</div>
+            ) : null}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={() => setSocialModal(null)} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, color: 'var(--text-secondary, #aaa)', cursor: 'pointer' }}>
+                Abbrechen
+              </button>
+              <button type="button" onClick={postToSocial} disabled={socialPosting || !socialModal.text.trim()} style={{ padding: '0.5rem 1.25rem', background: 'rgba(255,215,0,0.12)', border: '1px solid rgba(255,215,0,0.5)', borderRadius: 6, color: 'var(--primary, #ffd700)', fontWeight: 600, cursor: 'pointer', opacity: socialPosting ? 0.6 : 1 }}>
+                {socialPosting ? 'Wird gepostet…' : 'Jetzt posten'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
