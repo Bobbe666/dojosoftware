@@ -59,10 +59,10 @@ function NewsVerwaltung({ embedded = false }) {
   // Status Badge
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'veroeffentlicht': return <span className="news-status-badge published">✅ Veröffentlicht</span>;
-      case 'entwurf':         return <span className="news-status-badge draft">📝 Entwurf</span>;
-      case 'archiviert':      return <span className="news-status-badge archived">📦 Archiviert</span>;
-      case 'geplant':         return <span className="news-status-badge scheduled">🕐 Geplant</span>;
+      case 'veroeffentlicht': return <span className="news-status-badge published">Veröffentlicht</span>;
+      case 'entwurf':         return <span className="news-status-badge draft">Entwurf</span>;
+      case 'archiviert':      return <span className="news-status-badge archived">Archiviert</span>;
+      case 'geplant':         return <span className="news-status-badge scheduled">Geplant</span>;
       default:                return <span className="news-status-badge">{status}</span>;
     }
   };
@@ -75,7 +75,7 @@ function NewsVerwaltung({ embedded = false }) {
   // Zielgruppen Badge
   const getZielgruppeBadge = (zielgruppe) => {
     if (zielgruppe === 'homepage') {
-      return <span className="news-zielgruppe-badge homepage">🌐 TDA-Websites</span>;
+      return <span className="news-zielgruppe-badge homepage">TDA-Websites</span>;
     }
     return <span className="news-zielgruppe-badge all-dojos">Alle Dojos</span>;
   };

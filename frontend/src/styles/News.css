@@ -38,6 +38,7 @@
   border-radius: var(--comp-radius-md);
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 0.85rem;
 }
 
 .btn-back:hover {
@@ -49,45 +50,48 @@
   background: var(--gradient-gold, linear-gradient(135deg, #FFD700, #FFA500));
   border: none;
   color: #1a1a1a;
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  padding: 0.5rem 1.1rem;
   border-radius: var(--comp-radius-md);
   font-weight: 600;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .btn-create-news:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px var(--primary-alpha-30);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(255,215,0,0.25);
 }
 
 /* Filter */
 .news-filter {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
 
 .filter-btn {
-  background: var(--surface-2);
+  background: transparent;
   border: 1px solid rgba(255,255,255,0.1);
-  color: var(--text-2);
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  color: var(--text-3, #94a3b8);
+  padding: 0.35rem 0.9rem;
   border-radius: var(--comp-radius-pill);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.15s;
+  font-size: 0.82rem;
+  font-family: inherit;
 }
 
 .filter-btn:hover {
-  background: var(--color-bg-secondary, #333);
-  color: var(--text-1);
+  border-color: rgba(255,215,0,0.3);
+  color: var(--text-2, #cbd5e0);
 }
 
 .filter-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #1a1a1a;
+  background: rgba(255,215,0,0.1);
+  border-color: rgba(255,215,0,0.5);
+  color: var(--primary, #FFD700);
   font-weight: 600;
 }
 
@@ -130,74 +134,82 @@
 
 .news-card {
   background: var(--surface-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.07);
   border-radius: var(--comp-radius-xl);
-  padding: var(--ui-card-padding);
-  transition: all 0.2s;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .news-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255,215,0,0.2);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
 
 .news-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: var(--ui-header-gap);
-  margin-bottom: 0.75rem;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .news-title {
   margin: 0;
-  color: var(--text-1);
-  font-size: 1.25rem;
+  color: #cbd5e0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 .news-badges {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .news-status-badge,
 .news-zielgruppe-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--comp-radius-xl);
-  font-size: var(--ui-badge-size);
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--comp-radius-pill);
+  font-size: 0.7rem;
   font-weight: 600;
-  text-transform: uppercase;
 }
 
 .news-status-badge.published {
-  background: var(--status-success-bg);
-  color: var(--status-success);
+  background: rgba(16,185,129,0.12);
+  color: #10b981;
 }
 
 .news-status-badge.draft {
-  background: var(--status-warning-bg);
-  color: var(--status-warning);
+  background: rgba(245,158,11,0.12);
+  color: #f59e0b;
 }
 
 .news-status-badge.archived {
-  background: var(--surface-3);
-  color: #6c757d;
+  background: rgba(255,255,255,0.06);
+  color: #64748b;
+}
+
+.news-status-badge.scheduled {
+  background: rgba(99,179,237,0.12);
+  color: #63b3ed;
 }
 
 .news-zielgruppe-badge.homepage {
-  background: var(--status-indigo-bg);
-  color: var(--status-indigo);
+  background: rgba(139,92,246,0.12);
+  color: #a78bfa;
 }
 
 .news-zielgruppe-badge.all-dojos {
-  background: var(--status-indigo-bg);
-  color: var(--status-indigo);
+  background: rgba(139,92,246,0.12);
+  color: #a78bfa;
 }
 
 .news-description {
-  color: var(--text-2);
-  margin: 0 0 1rem 0;
+  color: var(--text-3, #94a3b8);
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
 
@@ -206,71 +218,72 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--ui-header-gap);
-  padding-top: 1rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 
 .news-meta {
   display: flex;
-  gap: 1.5rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .news-date {
-  color: var(--text-4);
-  font-size: var(--ui-card-label);
+  color: var(--text-4, #475569);
+  font-size: 0.75rem;
 }
 
 .news-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .btn-edit,
 .btn-delete,
 .btn-delete-confirm,
 .btn-cancel {
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  padding: 0.3rem 0.75rem;
   border-radius: var(--comp-radius-sm);
-  font-size: var(--ui-btn-font);
+  font-size: 0.78rem;
+  font-family: inherit;
   cursor: pointer;
-  transition: all 0.2s;
-  border: none;
+  transition: all 0.15s;
+  border: 1px solid transparent;
 }
 
 .btn-edit {
-  background: var(--surface-2);
-  color: var(--text-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--text-2, #cbd5e0);
+  border-color: rgba(255,255,255,0.12);
 }
 
 .btn-edit:hover {
-  background: var(--primary);
-  color: #1a1a1a;
-  border-color: var(--primary);
+  border-color: rgba(255,215,0,0.4);
+  color: var(--primary, #FFD700);
 }
 
 .btn-delete {
-  background: var(--status-error-bg);
-  color: var(--status-error);
-  border: 1px solid var(--status-error);
+  background: transparent;
+  color: #f87171;
+  border-color: rgba(248,113,113,0.25);
 }
 
 .btn-delete:hover {
-  background: var(--status-error);
-  color: #fff;
+  background: rgba(248,113,113,0.1);
+  border-color: rgba(248,113,113,0.5);
 }
 
 .btn-delete-confirm {
-  background: var(--status-error);
-  color: #fff;
+  background: rgba(248,113,113,0.15);
+  color: #f87171;
+  border-color: rgba(248,113,113,0.4);
 }
 
 .btn-cancel {
-  background: var(--surface-2);
-  color: var(--text-2);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--text-3, #94a3b8);
+  border-color: rgba(255,255,255,0.1);
 }
 
 /* News Formular */
