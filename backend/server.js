@@ -502,9 +502,11 @@ try {
 // 1.2 MARKETING-AKTIONEN (Social Media Integration)
 try {
   const marketingAktionenRoutes = require(path.join(__dirname, 'routes', 'marketing-aktionen.js'));
-  // OAuth callback comes as browser redirect from Meta — no auth header, must be public
-  app.get('/api/marketing-aktionen/accounts/callback', (req, res, next) => { req.db = db.promise(); next(); }, marketingAktionenRoutes);
-  app.use('/api/marketing-aktionen', authenticateToken, (req, res, next) => { req.db = db.promise(); next(); }, marketingAktionenRoutes);
+  // OAuth callback is a browser redirect from Meta — no Bearer token, skip auth for this path only
+  app.use('/api/marketing-aktionen', (req, res, next) => {
+    if (req.path === '/accounts/callback') return next();
+    authenticateToken(req, res, next);
+  }, (req, res, next) => { req.db = db.promise(); next(); }, marketingAktionenRoutes);
   logger.success('Route gemountet', { path: '/api/marketing-aktionen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'marketing-aktionen', error: error.message, stack: error.stack });
