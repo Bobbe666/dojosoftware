@@ -255,10 +255,16 @@ body {
   line-height: var(--line-height-normal);
   color: var(--text-primary);
   background: var(--bg-body);
+  width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
   transition: background-color var(--duration-slow) var(--ease-in-out),
               color var(--duration-slow) var(--ease-in-out);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* ========== SCROLLBAR STYLING ========== */
