@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useSubscription } from '../context/SubscriptionContext.jsx';
+import { useDojoContext } from '../context/DojoContext';
 import axios from 'axios';
 import {
   Bold, Italic, Underline, Strikethrough,
@@ -431,6 +432,7 @@ function NewsFormular({ mode = 'create' }) {
   const { token } = useAuth();
   const { hasFeature } = useSubscription();
   const hasSocialMedia = hasFeature('social_media');
+  const { activeDojo } = useDojoContext();
   const bildInputRef = useRef(null);
 
   const emptyForm = {
@@ -468,10 +470,11 @@ function NewsFormular({ mode = 'create' }) {
 
   useEffect(() => {
     if (!hasSocialMedia) return;
-    axios.get('/marketing-aktionen/accounts', { headers: { Authorization: `Bearer ${token}` } })
+    const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+    axios.get(`/marketing-aktionen/accounts${dojoParam}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => setSocialAccounts(r.data || []))
       .catch(() => {});
-  }, [token, hasSocialMedia]);
+  }, [token, hasSocialMedia, activeDojo?.id]);
 
   const openSocialModal = (platform) => {
     const account = socialAccounts.find(a => a.platform === platform);
