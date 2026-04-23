@@ -112,7 +112,8 @@ export const SubscriptionProvider = ({ children }) => {
       multidojo: 'Multi-Dojo-Verwaltung',
       api: 'API-Zugang',
       messenger: 'Facebook Messenger',
-      homepage_builder: 'Homepage Builder'
+      homepage_builder: 'Homepage Builder',
+      social_media: 'Social Media Posting'
     };
     return featureNames[featureName] || featureName;
   };
@@ -126,7 +127,8 @@ export const SubscriptionProvider = ({ children }) => {
       api: 'premium',
       multidojo: 'enterprise',
       messenger: 'enterprise',
-      homepage_builder: 'enterprise'
+      homepage_builder: 'enterprise',
+      social_media: 'enterprise'
     };
     return featurePlans[featureName] || 'starter';
   };
