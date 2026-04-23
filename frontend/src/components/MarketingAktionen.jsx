@@ -355,24 +355,28 @@ const MarketingAktionen = () => {
           <div className="accounts-grid">
             {accounts.map(account => (
               <div key={account.id} className={`account-card ${account.platform}`}>
+                <div className="account-platform-bar" />
                 <div className="account-icon">
                   {getPlatformIcon(account.platform)}
                 </div>
                 <div className="account-info">
+                  <div className="account-platform-label">
+                    {account.platform === 'facebook' ? 'Facebook' : 'Instagram'}
+                  </div>
                   <strong>{account.account_name}</strong>
                   {account.page_name && <span className="page-name">{account.page_name}</span>}
                   <span className={`token-status ${account.token_valid ? 'valid' : 'expired'}`}>
                     {account.token_valid
-                      ? (account.token_expires_soon ? 'Token läuft bald ab' : 'Verbunden')
-                      : 'Token abgelaufen'}
+                      ? (account.token_expires_soon ? '⚠ Token läuft bald ab' : '✓ Verbunden')
+                      : '✗ Token abgelaufen'}
                   </span>
                 </div>
                 <button
-                  className="btn btn-icon btn-danger"
+                  className="btn-disconnect"
                   onClick={() => disconnectAccount(account.id)}
-                  title="Trennen"
+                  title="Account trennen"
                 >
-                  <Unlink size={16} />
+                  <Unlink size={14} />
                 </button>
               </div>
             ))}

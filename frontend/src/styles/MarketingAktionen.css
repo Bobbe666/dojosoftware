@@ -131,13 +131,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--primary-alpha-10);
 }
 
 .section-header h3 {
-  font-size: 1.1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-header h3 svg {
+  opacity: 0.8;
 }
 
 /* Empty States */
@@ -156,7 +168,7 @@
 /* Accounts Grid */
 .accounts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1rem;
 }
 
@@ -164,67 +176,132 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 0;
   background: var(--bg-secondary);
   border-radius: var(--comp-radius-md);
   border: 1px solid var(--primary-alpha-10);
+  overflow: hidden;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .account-card:hover {
   border-color: var(--primary-alpha-30);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Platform color bar on left edge */
+.account-platform-bar {
+  width: 4px;
+  align-self: stretch;
+  flex-shrink: 0;
+  border-radius: 0 2px 2px 0;
+}
+
+.account-card.facebook .account-platform-bar { background: #1877f2; }
+.account-card.instagram .account-platform-bar {
+  background: linear-gradient(180deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
 }
 
 .account-card.facebook .account-icon {
-  background: rgba(59, 89, 152, 0.2);
-  color: #3b5998;
+  background: rgba(24, 119, 242, 0.15);
+  color: #1877f2;
 }
 
 .account-card.instagram .account-icon {
-  background: linear-gradient(45deg, rgba(131, 58, 180, 0.2), rgba(253, 29, 29, 0.2));
+  background: linear-gradient(135deg, rgba(240, 148, 51, 0.15), rgba(188, 24, 136, 0.15));
   color: #e1306c;
 }
 
 .account-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--comp-radius-md);
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .account-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.account-platform-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 .account-info strong {
   color: var(--text-primary);
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .account-info .page-name {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .token-status {
-  font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: var(--comp-radius-xs);
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
   width: fit-content;
+  font-weight: 500;
 }
 
 .token-status.valid {
-  background: rgba(16, 185, 129, 0.2);
-  color: var(--status-success);
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
 }
 
 .token-status.expired {
-  background: rgba(239, 68, 68, 0.2);
+  background: rgba(239, 68, 68, 0.15);
   color: var(--status-error);
+}
+
+/* Subtle disconnect button */
+.btn-disconnect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  opacity: 0.4;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  margin-right: 0.25rem;
+}
+
+.account-card:hover .btn-disconnect {
+  opacity: 1;
+  border-color: rgba(239, 68, 68, 0.4);
+  color: var(--status-error);
+}
+
+.btn-disconnect:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.6) !important;
 }
 
 /* Post Form */
