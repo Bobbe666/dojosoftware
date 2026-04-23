@@ -877,39 +877,40 @@ function NewsFormular({ mode = 'create' }) {
                     </a>
                   </div>
                 ) : (
-                <div className="social-media-grid">
-                  {[
-                    { icon: <FaInstagram size={16} />, label: 'Instagram', color: '#E1306C', platform: 'instagram' },
-                    { icon: <FaFacebook  size={16} />, label: 'Facebook',  color: '#1877F2', platform: 'facebook' },
-                    { icon: <FaTiktok    size={16} />, label: 'TikTok',    color: '#69C9D0', platform: null },
-                    { icon: <FaXTwitter  size={16} />, label: 'X / Twitter', color: '#aaa', platform: null },
-                    { icon: <FaWhatsapp  size={16} />, label: 'WhatsApp',  color: '#25D366', platform: null },
-                    { icon: <FaTelegram  size={16} />, label: 'Telegram',  color: '#2CA5E0', platform: null },
-                  ].map(({ icon, label, color, platform }) => {
-                    const connected = platform && socialAccounts.some(a => a.platform === platform);
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        className="social-btn"
-                        disabled={!connected}
-                        title={connected ? `Auf ${label} posten` : platform ? `${label} nicht verbunden` : `${label} – demnächst`}
-                        onClick={() => connected && openSocialModal(platform)}
-                        style={connected ? { opacity: 1, cursor: 'pointer' } : {}}
-                      >
-                        <span style={{ color }}>{icon}</span>
-                        <span>{label}</span>
-                        {connected && <span style={{ fontSize: '0.6rem', color: '#10b981', marginTop: 2 }}>✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-                {socialAccounts.length === 0 && (
-                  <small className="form-hint" style={{ textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>
-                    Accounts unter Marketing → Social Media verbinden
-                  </small>
-                )}
-                </div>
+                  <>
+                    <div className="social-media-grid">
+                      {[
+                        { icon: <FaInstagram size={16} />, label: 'Instagram', color: '#E1306C', platform: 'instagram' },
+                        { icon: <FaFacebook  size={16} />, label: 'Facebook',  color: '#1877F2', platform: 'facebook' },
+                        { icon: <FaTiktok    size={16} />, label: 'TikTok',    color: '#69C9D0', platform: null },
+                        { icon: <FaXTwitter  size={16} />, label: 'X / Twitter', color: '#aaa', platform: null },
+                        { icon: <FaWhatsapp  size={16} />, label: 'WhatsApp',  color: '#25D366', platform: null },
+                        { icon: <FaTelegram  size={16} />, label: 'Telegram',  color: '#2CA5E0', platform: null },
+                      ].map(({ icon, label, color, platform }) => {
+                        const connected = platform && socialAccounts.some(a => a.platform === platform);
+                        return (
+                          <button
+                            key={label}
+                            type="button"
+                            className="social-btn"
+                            disabled={!connected}
+                            title={connected ? `Auf ${label} posten` : platform ? `${label} nicht verbunden` : `${label} – demnächst`}
+                            onClick={() => connected && openSocialModal(platform)}
+                            style={connected ? { opacity: 1, cursor: 'pointer' } : {}}
+                          >
+                            <span style={{ color }}>{icon}</span>
+                            <span>{label}</span>
+                            {connected && <span style={{ fontSize: '0.65rem', color: '#10b981', display: 'block', lineHeight: 1 }}>✓ verbunden</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {socialAccounts.length === 0 && (
+                      <small className="form-hint" style={{ textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>
+                        Accounts unter Marketing → Social Media verbinden
+                      </small>
+                    )}
+                  </>
                 )}
               </div>
             </div>
