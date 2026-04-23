@@ -64,7 +64,7 @@ const getDojoId = (req) => {
 router.get('/accounts/connect', async (req, res) => {
   try {
     const dojoId = getDojoId(req);
-    const userId = req.user?.user_id;
+    const userId = req.user?.id || req.user?.user_id;
 
     if (!dojoId) {
       return res.status(400).json({ error: 'Dojo ID erforderlich' });
@@ -319,7 +319,7 @@ router.get('/posts', async (req, res) => {
 router.post('/posts', upload.array('media', 10), async (req, res) => {
   try {
     const dojoId = getDojoId(req);
-    const userId = req.user?.user_id;
+    const userId = req.user?.id || req.user?.user_id;
     const { content, social_account_id, post_type = 'text', scheduled_at, campaign_id } = req.body;
 
     if (!content || !social_account_id) {
@@ -566,7 +566,7 @@ router.get('/campaigns', async (req, res) => {
 router.post('/campaigns', async (req, res) => {
   try {
     const dojoId = getDojoId(req);
-    const userId = req.user?.user_id;
+    const userId = req.user?.id || req.user?.user_id;
     const { name, description, start_date, end_date } = req.body;
 
     if (!name) {
