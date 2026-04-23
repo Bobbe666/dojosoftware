@@ -3818,8 +3818,10 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
             const newMemberId = result.insertId;
             logger.info(`✅ Familienmitglied erstellt: ID ${newMemberId}`);
 
-            // Vertrag für Familienmitglied erstellen (wenn tarif_id vorhanden)
-            if (fm.tarif_id) {
+            // Vertrag für Familienmitglied erstellen (fm.tarif_id oder Fallback auf Hauptmitglied-Tarif)
+            const effectiveTarifId = fm.tarif_id || mainMemberData.tarif_id;
+            if (effectiveTarifId) {
+                fm.tarif_id = effectiveTarifId; // normalisieren für den Block unten
                 // Erst Tarif-Details holen für korrekten Preis
                 db.query('SELECT * FROM tarife WHERE id = ?', [fm.tarif_id], (tarifErr, tarifResults) => {
                     if (tarifErr || tarifResults.length === 0) {
