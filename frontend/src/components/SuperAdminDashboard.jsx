@@ -3,7 +3,7 @@
 // =============================================
 // Nur sichtbar wenn Dojo-ID = 2 (TDA International) ausgewählt
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -14,31 +14,35 @@ import {
   ChevronDown, ChevronUp, LayoutDashboard, PieChart, DollarSign, FileText, UserCog, CreditCard, Save, ToggleLeft, ToggleRight, Euro, Ticket,
   Bell, Send, Archive, Eye, EyeOff, RefreshCw, UserPlus, Home, MessageCircle, MessageSquare, Search, Sparkles
 } from 'lucide-react';
-import StatisticsTab from './StatisticsTab';
-import ContractsTab from './ContractsTab';
-import UsersTab from './UsersTab';
-import FinanzenTab from './FinanzenTab';
-import BuchhaltungTab from './BuchhaltungTab';
-import ZieleEntwicklung from './ZieleEntwicklung';
-import SupportTickets from './SupportTickets';
-import KampagnenDashboard from './KampagnenDashboard';
-import VerbandsMitglieder from './VerbandsMitglieder';
-import ArtikelVerwaltung from './ArtikelVerwaltung';
-import AutoLastschriftTab from './AutoLastschriftTab';
-import Lastschriftlauf from './Lastschriftlauf';
-import Zahllaeufe from './Zahllaeufe';
-import PasswortVerwaltung from './PasswortVerwaltung';
-import DojoLizenzverwaltung from './DojoLizenzverwaltung';
-import AdminChatPage from './chat/AdminChatPage';
-import BesucherChat from './chat/BesucherChat';
-import SecurityDashboard from './SecurityDashboard';
-import SuperAdminMarketing from './SuperAdminMarketing';
-import BackupEinstellungen from './BackupEinstellungen';
-import DokumentenZentrale from './DokumentenZentrale';
-import Auswertungen from './Auswertungen';
-import PlattformZentrale from './PlattformZentrale';
-import PlattformZugangsdaten from './PlattformZugangsdaten';
 import '../styles/SuperAdminDashboard.css';
+
+// Lazy-load all tab-specific components so they don't block initial render
+const StatisticsTab       = lazy(() => import('./StatisticsTab'));
+const ContractsTab        = lazy(() => import('./ContractsTab'));
+const UsersTab            = lazy(() => import('./UsersTab'));
+const FinanzenTab         = lazy(() => import('./FinanzenTab'));
+const BuchhaltungTab      = lazy(() => import('./BuchhaltungTab'));
+const ZieleEntwicklung    = lazy(() => import('./ZieleEntwicklung'));
+const SupportTickets      = lazy(() => import('./SupportTickets'));
+const KampagnenDashboard  = lazy(() => import('./KampagnenDashboard'));
+const VerbandsMitglieder  = lazy(() => import('./VerbandsMitglieder'));
+const ArtikelVerwaltung   = lazy(() => import('./ArtikelVerwaltung'));
+const AutoLastschriftTab  = lazy(() => import('./AutoLastschriftTab'));
+const Lastschriftlauf     = lazy(() => import('./Lastschriftlauf'));
+const Zahllaeufe          = lazy(() => import('./Zahllaeufe'));
+const PasswortVerwaltung  = lazy(() => import('./PasswortVerwaltung'));
+const DojoLizenzverwaltung = lazy(() => import('./DojoLizenzverwaltung'));
+const AdminChatPage       = lazy(() => import('./chat/AdminChatPage'));
+const BesucherChat        = lazy(() => import('./chat/BesucherChat'));
+const SecurityDashboard   = lazy(() => import('./SecurityDashboard'));
+const SuperAdminMarketing = lazy(() => import('./SuperAdminMarketing'));
+const BackupEinstellungen = lazy(() => import('./BackupEinstellungen'));
+const DokumentenZentrale  = lazy(() => import('./DokumentenZentrale'));
+const Auswertungen        = lazy(() => import('./Auswertungen'));
+const PlattformZentrale   = lazy(() => import('./PlattformZentrale'));
+const PlattformZugangsdaten = lazy(() => import('./PlattformZugangsdaten'));
+
+const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
 // ── EventSoftware-Sektion ──────────────────────────────────────────────────
 function EventSoftwareSection({ token }) {
@@ -691,7 +695,7 @@ const SuperAdminDashboard = () => {
     }
   }, [token]);
 
-  // Daten laden beim Mount
+  // Daten laden beim Mount — nur kritische interne Calls
   useEffect(() => {
     loadAllData();
     loadSubscriptionPlans();
@@ -702,34 +706,22 @@ const SuperAdminDashboard = () => {
     setError('');
 
     try {
-      // Parallel alle Daten laden
-      const [tdaRes, globalRes, dojosRes, overviewRes] = await Promise.all([
-        axios.get('/admin/tda-stats', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get('/admin/global-stats', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get('/admin/dojos', {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get('/admin/overview-summary', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-
-      setTdaStats(tdaRes.data.stats);
-      setGlobalStats(globalRes.data.stats);
-      setDojos(dojosRes.data.dojos);
-      if (overviewRes.data.success) setOverviewSummary(overviewRes.data);
-
-      // Externe/optionale Calls parallel
-      const [hofResult, evResult, acResult, sslResult] = await Promise.allSettled([
+      // Alle Calls gleichzeitig starten — interne + externe parallel (kein Waterfall)
+      const [tdaRes, globalRes, dojosRes, overviewRes, hofResult, evResult, acResult, sslResult] = await Promise.allSettled([
+        axios.get('/admin/tda-stats',        { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/admin/global-stats',     { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/admin/dojos',            { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get('/admin/overview-summary', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('https://hof.tda-intl.org/api/stats/overview').then(r => r.json()),
         axios.get('/plattform-zentrale/turniere', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('https://academy.tda-intl.org/api/admin/public-stats').then(r => r.json()),
-        axios.get('/admin/ssl-status', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get('/admin/ssl-status',       { headers: { Authorization: `Bearer ${token}` } })
       ]);
+
+      if (tdaRes.status === 'fulfilled')     setTdaStats(tdaRes.value.data.stats);
+      if (globalRes.status === 'fulfilled')  setGlobalStats(globalRes.value.data.stats);
+      if (dojosRes.status === 'fulfilled')   setDojos(dojosRes.value.data.dojos);
+      if (overviewRes.status === 'fulfilled' && overviewRes.value.data.success) setOverviewSummary(overviewRes.value.data);
 
       if (hofResult.status === 'fulfilled' && hofResult.value?.success) setHofStats(hofResult.value.stats);
 
@@ -743,16 +735,12 @@ const SuperAdminDashboard = () => {
       }
 
       if (acResult.status === 'fulfilled' && acResult.value?.success) setAcademyStats(acResult.value.stats);
-
       if (sslResult.status === 'fulfilled' && sslResult.value?.data?.success) setSslWarnings(sslResult.value.data.warnings || []);
 
       // Daily Briefing: einmal pro Tag anzeigen
       const today = new Date().toDateString();
-      if (localStorage.getItem('sa-briefing-date') !== today) {
-        setShowDailyBriefing(true);
-      }
+      if (localStorage.getItem('sa-briefing-date') !== today) setShowDailyBriefing(true);
 
-      console.log('✅ Super-Admin Daten geladen');
     } catch (err) {
       console.error('❌ Fehler beim Laden der Super-Admin Daten:', err);
       const errMsg = err.response?.data?.message;
@@ -960,13 +948,11 @@ const SuperAdminDashboard = () => {
     }
   }, [activeTab, subActiveTab.system]);
 
-  // Lade Aktivitäten und Benachrichtigungen
+  // Lade Aktivitäten + Benachrichtigungen erst wenn relevante Tabs geöffnet werden
   useEffect(() => {
-    loadActivities();
-    loadNotifications();
-  }, []);
+    if (activeTab === 'overview') loadActivities();
+  }, [activeTab]);
 
-  // Lade Benachrichtigungen wenn Tab aktiv
   useEffect(() => {
     if (activeTab === 'kommunikation' && kommunikationSubTab === 'pushnachrichten') {
       loadNotifications();
@@ -1535,6 +1521,7 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Tab Content */}
+      <Suspense fallback={<TabLoader />}>
       <div className="tab-content">
         {activeTab === 'overview' && (
           <>
@@ -3065,6 +3052,7 @@ const SuperAdminDashboard = () => {
         )}
 
       </div>
+      </Suspense>
 
       {/* Modals für Create/Edit */}
       {showCreateModal && (
