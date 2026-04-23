@@ -76,7 +76,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    window.location.href = '/dashboard';
   };
 
   const handleSwitchToSuperAdmin = () => {
@@ -84,7 +84,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    window.location.href = '/dashboard';
   };
 
   const handleSwitchToVerband = () => {
@@ -92,7 +92,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    window.location.href = '/dashboard';
   };
 
   const handleSwitchToSupport = () => {
@@ -100,7 +100,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    window.location.href = '/dashboard';
   };
 
   const handleSwitchToShop = () => {
@@ -108,7 +108,7 @@ const DojoSwitcher = () => {
     setFilter('current');
     setIsOpen(false);
     setSearchQuery('');
-    navigate('/dashboard', { replace: true });
+    window.location.href = '/dashboard';
   };
 
   const handleShowAll = () => {
@@ -121,7 +121,7 @@ const DojoSwitcher = () => {
     setSearchQuery('');
     // Auf aktueller Seite bleiben — nur zum Dashboard wenn Seite nicht mehr passt
     if (!location.pathname.startsWith('/dashboard')) {
-      navigate('/dashboard', { replace: true });
+      window.location.href = '/dashboard';
     }
   };
 
