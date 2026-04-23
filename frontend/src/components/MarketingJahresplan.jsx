@@ -291,9 +291,13 @@ const MarketingJahresplan = () => {
     };
 
     const getAktionenForMonth = (month) => {
+        const monthStart = new Date(selectedYear, month, 1);
+        const monthEnd = new Date(selectedYear, month + 1, 0); // last day of month
         return aktionen.filter(a => {
             const startDate = new Date(a.start_datum);
-            return startDate.getMonth() === month && startDate.getFullYear() === selectedYear;
+            const endDate = a.end_datum ? new Date(a.end_datum) : startDate;
+            // show if campaign overlaps with this month
+            return startDate <= monthEnd && endDate >= monthStart;
         });
     };
 
