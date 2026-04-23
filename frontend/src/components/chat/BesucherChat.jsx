@@ -88,7 +88,7 @@ const BesucherChat = () => {
   const [activeSession, setActiveSession] = useState(null);
   const [messages, setMessages] = useState([]);
   const [reply, setReply] = useState('');
-  const [statusFilter, setStatusFilter] = useState('open');
+  const [statusFilter, setStatusFilter] = useState('active');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [unreadSessions, setUnreadSessions] = useState(new Set());
@@ -192,18 +192,17 @@ const BesucherChat = () => {
 
     socket.emit('visitor-chat:staff-join', { dojoId });
 
-    // Neue Session eingetroffen
+    // Neue Session eingetroffen — direkt in Liste einfügen (Aktiv-Filter zeigt sie nach erster Nachricht)
     const onNewSession = (data) => {
       setSessions(prev => {
-        // Nur hinzufügen wenn nicht schon vorhanden
         if (prev.find(s => s.id === data.sessionId)) return prev;
         const newSession = {
           id: data.sessionId,
           visitor_name: data.visitor_name,
           source_site: data.source_site,
           dojo_id: data.dojo_id,
-          status: 'open',
-          unread_count: 0,
+          status: 'active',
+          unread_count: 1,
           message_count: 0,
           last_message: null,
           created_at: new Date().toISOString(),
@@ -366,8 +365,8 @@ const BesucherChat = () => {
             {/* Status-Filter */}
             <div style={{ display: 'flex', gap: 4 }}>
               {[
-                { key: 'open',   label: 'Offen' },
                 { key: 'active', label: 'Aktiv' },
+                { key: 'open',   label: 'Offen' },
                 { key: 'closed', label: 'Geschl.' },
                 { key: 'all',    label: 'Alle' }
               ].map(f => (
