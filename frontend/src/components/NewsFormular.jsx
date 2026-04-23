@@ -883,34 +883,34 @@ function NewsFormular({ mode = 'create' }) {
                   <>
                     <div className="social-media-grid">
                       {[
-                        { icon: <FaInstagram size={16} />, label: 'Instagram', color: '#E1306C', platform: 'instagram' },
-                        { icon: <FaFacebook  size={16} />, label: 'Facebook',  color: '#1877F2', platform: 'facebook' },
-                        { icon: <FaTiktok    size={16} />, label: 'TikTok',    color: '#69C9D0', platform: null },
-                        { icon: <FaXTwitter  size={16} />, label: 'X / Twitter', color: '#aaa', platform: null },
-                        { icon: <FaWhatsapp  size={16} />, label: 'WhatsApp',  color: '#25D366', platform: null },
-                        { icon: <FaTelegram  size={16} />, label: 'Telegram',  color: '#2CA5E0', platform: null },
+                        { icon: <FaInstagram size={15} />, label: 'Instagram', color: '#E1306C', platform: 'instagram' },
+                        { icon: <FaFacebook  size={15} />, label: 'Facebook',  color: '#1877F2', platform: 'facebook' },
+                        { icon: <FaTiktok    size={15} />, label: 'TikTok',    color: '#69C9D0', platform: null },
+                        { icon: <FaWhatsapp  size={15} />, label: 'WhatsApp',  color: '#25D366', platform: null },
+                        { icon: <FaTelegram  size={15} />, label: 'Telegram',  color: '#2CA5E0', platform: null },
                       ].map(({ icon, label, color, platform }) => {
                         const connected = platform && socialAccounts.some(a => a.platform === platform);
+                        const soon = !platform;
                         return (
                           <button
                             key={label}
                             type="button"
-                            className="social-btn"
+                            className={`social-btn${connected ? ' social-btn--connected' : ''}`}
                             disabled={!connected}
-                            title={connected ? `Auf ${label} posten` : platform ? `${label} nicht verbunden` : `${label} – demnächst`}
+                            title={connected ? `Auf ${label} posten` : soon ? `${label} – demnächst` : `${label} nicht verbunden`}
                             onClick={() => connected && openSocialModal(platform)}
-                            style={connected ? { opacity: 1, cursor: 'pointer' } : {}}
                           >
-                            <span style={{ color }}>{icon}</span>
-                            <span>{label}</span>
-                            {connected && <span style={{ fontSize: '0.65rem', color: '#10b981', display: 'block', lineHeight: 1 }}>✓ verbunden</span>}
+                            <span style={{ color, flexShrink: 0 }}>{icon}</span>
+                            <span className="social-btn__label">{label}</span>
+                            {connected && <span className="social-btn__status">✓ verbunden</span>}
+                            {soon && <span className="social-btn__soon">bald</span>}
                           </button>
                         );
                       })}
                     </div>
                     {socialAccounts.length === 0 && (
                       <small className="form-hint" style={{ textAlign: 'center', display: 'block', marginTop: '0.25rem' }}>
-                        Accounts unter Marketing → Social Media verbinden
+                        Accounts unter <a href="/dashboard/marketingzentrale" style={{ color: 'var(--primary)' }}>Marketing → Social Media</a> verbinden
                       </small>
                     )}
                   </>

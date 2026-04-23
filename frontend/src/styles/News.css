@@ -949,26 +949,59 @@
 
 /* ========== Social Media ========== */
 .social-media-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .social-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.4rem;
+  gap: 0.55rem;
+  padding: 0.45rem 0.6rem;
   background: var(--surface-1);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: var(--comp-radius-md);
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.45;
   transition: all 0.15s;
   font-family: inherit;
+  width: 100%;
+  text-align: left;
+}
+
+.social-btn--connected {
+  opacity: 1;
+  cursor: pointer;
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.social-btn--connected:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.social-btn__label {
+  flex: 1;
+  font-weight: 500;
+}
+
+.social-btn__status {
+  font-size: 0.68rem;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+
+.social-btn__soon {
+  font-size: 0.65rem;
+  color: var(--text-3);
+  opacity: 0.6;
   white-space: nowrap;
 }
 
