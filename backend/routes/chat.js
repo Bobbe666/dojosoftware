@@ -129,15 +129,19 @@ router.get('/rooms', async (req, res) => {
          ORDER BY sent_at DESC LIMIT 1
        )`;
 
+    const statusFilter = req.query.status || 'active';
+    const showArchived = statusFilter === 'archived' ? 1 : 0;
+    const statusClause = ` AND crm.archived = ${showArchived}`;
+
     let rooms;
     if (isSuperAdmin) {
       [rooms] = await pool.query(
-        baseQuery + ` ORDER BY crm.pinned DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
+        baseQuery + statusClause + ` ORDER BY crm.pinned DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type]
       );
     } else {
       [rooms] = await pool.query(
-        baseQuery + ` WHERE r.dojo_id = ? ORDER BY crm.pinned DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
+        baseQuery + ` WHERE r.dojo_id = ?` + statusClause + ` ORDER BY crm.pinned DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type, dojo_id]
       );
     }

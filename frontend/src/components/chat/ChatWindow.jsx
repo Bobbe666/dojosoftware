@@ -200,11 +200,15 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
   const handleSetStatus = async (status) => {
     setShowDirectMenu(false);
     try {
-      const res = await fetch(`/api/chat/rooms/${room.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status })
-      });
+      // 'archived' nutzt den per-User Toggle-Endpoint (kein owner-Recht nötig)
+      const url = status === 'archived'
+        ? `/api/chat/rooms/${room.id}/archive`
+        : `/api/chat/rooms/${room.id}`;
+      const method = status === 'archived' ? 'PUT' : 'PUT';
+      const body = status === 'archived' ? undefined : JSON.stringify({ status });
+      const headers = { Authorization: `Bearer ${token}` };
+      if (body) headers['Content-Type'] = 'application/json';
+      const res = await fetch(url, { method, headers, body });
       const data = await res.json();
       if (data.success) {
         if (onRoomUpdated) onRoomUpdated(null, 'deleted'); // zurück zur Liste
