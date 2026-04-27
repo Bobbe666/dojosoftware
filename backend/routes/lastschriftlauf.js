@@ -1447,33 +1447,46 @@ router.get("/stripe/failed-transactions", async (req, res) => {
             JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
             JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
             WHERE slt.status = 'failed'
+              -- Nur wenn kein neuerer succeeded/processing Eintrag für dieses Mitglied+Monat existiert
+              AND NOT EXISTS (
+                  SELECT 1 FROM stripe_lastschrift_transaktion slt2
+                  JOIN stripe_lastschrift_batch slb2 ON slt2.batch_id = slb2.batch_id
+                  WHERE slt2.mitglied_id = slt.mitglied_id
+                    AND slt2.status IN ('succeeded', 'processing')
+                    AND slb2.monat = slb.monat
+                    AND slb2.jahr = slb.jahr
+                    AND slt2.created_at >= slt.created_at
+              )
               ${dojoFilter}
             ORDER BY slt.created_at DESC
             LIMIT 200
         `, params);
 
-        // Für jede Transaktion: offene Beiträge laden (zum Retry)
+        // Nur Transaktionen behalten deren Beiträge noch unbezahlt sind
+        const result = [];
         for (const row of rows) {
             let beitragIds = [];
             try { beitragIds = JSON.parse(row.beitrag_ids || '[]'); } catch {}
             if (beitragIds.length > 0) {
                 const placeholders = beitragIds.map(() => '?').join(',');
                 const beitraege = await queryAsync(
-                    `SELECT beitrag_id, betrag, zahlungsdatum, art FROM beitraege
+                    `SELECT beitrag_id, betrag FROM beitraege
                      WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
                     beitragIds
                 );
+                if (beitraege.length === 0) continue; // bereits bezahlt → überspringen
                 row.offene_beitraege = beitraege;
                 row.retry_betrag = beitraege.reduce((s, b) => s + parseFloat(b.betrag), 0);
-                row.can_retry = beitraege.length > 0;
+                row.can_retry = true;
             } else {
                 row.offene_beitraege = [];
                 row.retry_betrag = parseFloat(row.betrag);
                 row.can_retry = false;
             }
+            result.push(row);
         }
 
-        res.json({ success: true, transactions: rows, total: rows.length });
+        res.json({ success: true, transactions: result, total: result.length });
 
     } catch (error) {
         logger.error('Fehler beim Laden fehlgeschlagener Transaktionen:', error);
