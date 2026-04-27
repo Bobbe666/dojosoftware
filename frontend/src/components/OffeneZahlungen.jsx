@@ -106,8 +106,12 @@ const OffeneZahlungen = () => {
         monat: trans.monat,
         jahr: trans.jahr
       }, { headers: { Authorization: `Bearer ${token}` } });
-      const st = res.data.status;
-      alert(`✅ Einzug gestartet — Status: ${st === 'processing' ? 'In Bearbeitung (SEPA-Clearing läuft)' : st === 'succeeded' ? 'Sofort erfolgreich' : st}`);
+      const { status: st, error_detail } = res.data;
+      if (st === 'failed') {
+        alert(`❌ Einzug fehlgeschlagen\n\n${error_detail || 'Unbekannter Stripe-Fehler'}`);
+      } else {
+        alert(`✅ Einzug gestartet — Status: ${st === 'processing' ? 'In Bearbeitung (SEPA-Clearing läuft)' : st === 'succeeded' ? 'Sofort erfolgreich' : st}`);
+      }
       loadData();
     } catch (err) {
       alert(`❌ Fehler: ${err.response?.data?.error || err.message}`);

@@ -1742,11 +1742,12 @@ router.post("/stripe/retry-single", async (req, res) => {
             }
         }
 
-        logger.info(`🔄 Retry Transaktion ${transaktion_id}: ${trans?.status} — Mitglied ${mitglied_id}`);
+        logger.info(`🔄 Retry Transaktion ${transaktion_id}: ${trans?.status} — Mitglied ${mitglied_id}${trans?.error ? ' — ' + trans.error : ''}`);
 
         res.json({
             success: true,
             status: trans?.status,
+            error_detail: trans?.error || null,
             payment_intent_id: trans?.payment_intent_id,
             betrag,
             monat: useMonat,
