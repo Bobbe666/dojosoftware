@@ -636,6 +636,15 @@ router.get("/preview", async (req, res) => {
                 AND b.zahlungsdatum <= ?
                 -- Bei aktivem Ratenplan: nur Beiträge ab dem Monat der Ratenplan-Erstellung (Rückstand läuft über Aufschlag)
                 AND (rp.id IS NULL OR DATE_FORMAT(b.zahlungsdatum, '%Y-%m') >= DATE_FORMAT(rp.erstellt_am, '%Y-%m'))
+                -- Beitrag nicht einziehen wenn Mitglied in Ruhepause ist und der Beitrag in den Pausezeitraum fällt
+                AND NOT EXISTS (
+                    SELECT 1 FROM vertraege vr
+                    WHERE vr.mitglied_id = m.mitglied_id
+                      AND vr.status = 'ruhepause'
+                      AND vr.ruhepause_von IS NOT NULL
+                      AND vr.ruhepause_bis IS NOT NULL
+                      AND b.zahlungsdatum BETWEEN vr.ruhepause_von AND vr.ruhepause_bis
+                )
                 -- Beitrag nicht einziehen wenn er bereits in einer laufenden/abgeschlossenen Transaktion ist
                 -- Präzise Prüfung per beitrag_id; Monats-Fallback NUR für Monatsbeiträge (veraltete beitrag_id-Referenzen in Stripe)
                 AND NOT EXISTS (
