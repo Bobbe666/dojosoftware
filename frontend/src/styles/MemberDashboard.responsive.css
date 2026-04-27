@@ -44,7 +44,7 @@
   .logout-text { display: none !important; }
   .user-name   { display: none !important; }
 
-  /* --- Welcome: kompakter, kein riesiges Kanji-Heading --- */
+  /* --- Welcome: kompakter --- */
   .member-welcome-wrap {
     margin-bottom: 0.75rem !important;
   }
@@ -60,6 +60,51 @@
 
   .member-welcome-kanji {
     font-size: 1.1rem !important;
+  }
+
+  /* =============================================
+     PUSH-BENACHRICHTIGUNGS BANNER (oben)
+     ============================================= */
+
+  .md-push-banner {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    background: rgba(255, 215, 0, 0.08) !important;
+    border: 1px solid rgba(255, 215, 0, 0.25) !important;
+    border-radius: 12px !important;
+    padding: 0.65rem 0.85rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .md-push-banner-icon {
+    font-size: 1.1rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .md-push-banner-text {
+    flex: 1 !important;
+    font-size: 0.8rem !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-weight: 500 !important;
+  }
+
+  .md-push-banner-btn {
+    background: #ffd700 !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.35rem 0.75rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    flex-shrink: 0 !important;
+    font-family: inherit !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  .md-push-banner-btn:disabled {
+    opacity: 0.6 !important;
   }
 
   /* --- Mobile Hero Buttons (QR + Check-in) --- */
@@ -122,59 +167,123 @@
     font-weight: 400 !important;
   }
 
-  /* --- Nächste Trainings Widget: immer sichtbar --- */
+  /* --- Nächste Trainings Widget --- */
   .md-mobile-schedule-widget {
     display: block !important;
     margin-bottom: 0 !important;
   }
 
-  /* --- Stats-Grid: Ausweis oben (volle Breite), Stats 2-spaltig darunter --- */
+  /* =============================================
+     MITGLIEDSAUSWEIS — vollbreite responsive
+     ============================================= */
+
   .member-stats-grid {
     grid-template-columns: 1fr 1fr !important;
     gap: 0.6rem !important;
-    margin-bottom: 1rem !important;
+    margin-bottom: 0.75rem !important;
     align-items: start !important;
   }
 
   .member-stats-grid .mitgliedsausweis-container {
     grid-column: 1 / -1 !important;
     order: -1 !important;
+    width: 100% !important;
   }
 
-  /* Mitgliedsausweis: skaliert auf Handybreite */
-  .mitgliedsausweis {
+  /* Ausweis: volle Breite, alle fixen px überschreiben */
+  .mitgliedsausweis,
+  .md-stats-grid .mitgliedsausweis {
     width: 100% !important;
     max-width: 100% !important;
-    font-size: 0.82em !important;
-    padding: 0.75rem !important;
+    min-width: 0 !important;
+    font-size: 0.8em !important;
+    padding: 0.7rem 0.75rem !important;
+    box-sizing: border-box !important;
   }
 
-  .ausweis-body { gap: 10px !important; }
+  .ausweis-body {
+    gap: 8px !important;
+  }
 
   .ausweis-title .title-jp,
   .ausweis-title .title-de {
-    font-size: 0.65rem !important;
+    font-size: 0.62rem !important;
     letter-spacing: 1px !important;
   }
 
   .mitgliedsausweis .ausweis-foto {
-    width: 54px !important;
-    height: 66px !important;
+    width: 50px !important;
+    height: 62px !important;
   }
 
   .mitgliedsausweis .ausweis-qr svg {
-    width: 54px !important;
-    height: 54px !important;
+    width: 50px !important;
+    height: 50px !important;
   }
 
-  /* --- Navigations-Kacheln: auf Mobile komplett ersetzen durch Bottom-Nav ---
-       Die Grid-Kacheln werden auf Mobile ausgeblendet. */
+  /* =============================================
+     STAT-KARTEN — 2×2 Raster, horizontal layout
+     ============================================= */
+
+  /* Stat-Spalten: jede nimmt eine Grid-Cell ein */
+  .member-stat-column {
+    display: contents !important; /* Kinder direkt ins Grid hängen */
+  }
+
+  /* Jede Karte nimmt eine Zelle im 2×2 Grid */
+  .member-stat-card {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.6rem !important;
+    padding: 0.6rem 0.75rem !important;
+    text-align: left !important;
+    border-radius: 12px !important;
+  }
+
+  .member-stat-icon {
+    font-size: 1.4rem !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .member-stat-label {
+    font-size: 0.6rem !important;
+    margin-bottom: 0.1rem !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  .member-stat-value {
+    font-size: 1rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .member-stat-sublabel {
+    font-size: 0.6rem !important;
+    margin-top: 0 !important;
+  }
+
+  /* Gürtel-Liste kompakter */
+  .member-belt-list {
+    margin-top: 0 !important;
+  }
+
+  .member-belt-entry {
+    margin-bottom: 0.15rem !important;
+  }
+
+  .member-belt-stripe {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  /* --- Navigations-Kacheln: ausgeblendet (Bottom-Nav) --- */
   .member-navigation-grid,
   .md-navigation-grid {
     display: none !important;
   }
 
-  /* --- Schnellzugriff: NUR Chat + Benachrichtigungen anzeigen (QR + Checkin sind oben) --- */
+  /* --- Schnellzugriff: ausgeblendet --- */
   .member-quick-actions-grid {
     display: none !important;
   }
@@ -182,6 +291,27 @@
   /* --- Info-Cards: 1-spaltig --- */
   .md-info-list {
     grid-template-columns: 1fr !important;
+  }
+
+  /* =============================================
+     REFERRAL — Copy-Button unter den Code
+     ============================================= */
+
+  .md-referral-code-box {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0.6rem !important;
+  }
+
+  .md-referral-code-value {
+    font-size: 1.3rem !important;
+    letter-spacing: 4px !important;
+  }
+
+  .md-referral-copy-btn {
+    width: 100% !important;
+    justify-content: center !important;
   }
 
 }
@@ -206,24 +336,20 @@
   }
 
   /* Ausweis: noch kompakter */
-  .mitgliedsausweis {
-    font-size: 0.75em !important;
-    padding: 0.6rem !important;
+  .mitgliedsausweis,
+  .md-stats-grid .mitgliedsausweis {
+    font-size: 0.72em !important;
+    padding: 0.55rem 0.6rem !important;
   }
 
   .mitgliedsausweis .ausweis-foto {
-    width: 46px !important;
-    height: 56px !important;
+    width: 42px !important;
+    height: 52px !important;
   }
 
   .mitgliedsausweis .ausweis-qr svg {
-    width: 46px !important;
-    height: 46px !important;
-  }
-
-  /* Stats-Karten: kleinere Zahlen */
-  .member-stats-grid > div:not(.mitgliedsausweis-container) {
-    gap: 0.5rem !important;
+    width: 42px !important;
+    height: 42px !important;
   }
 
 }
@@ -233,11 +359,7 @@
    =============================================================== */
 
 @media (min-width: 768px) {
-  .md-mobile-hero {
-    display: none;
-  }
-
-  .md-mobile-schedule-widget {
-    display: none;
-  }
+  .md-mobile-hero        { display: none; }
+  .md-mobile-schedule-widget { display: none; }
+  .md-push-banner        { display: none; }
 }

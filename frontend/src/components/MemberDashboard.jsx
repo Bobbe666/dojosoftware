@@ -1353,6 +1353,21 @@ const MemberDashboard = () => {
             </div>
           </div>
 
+      {/* Push-Benachrichtigungen Banner — ganz oben, verschwindet nach Aktivierung */}
+      {pushStatus !== 'unsupported' && pushStatus !== 'granted' && pushStatus !== 'denied' && (
+        <div className="md-push-banner">
+          <span className="md-push-banner-icon">🔔</span>
+          <span className="md-push-banner-text">Trainings-Erinnerungen aktivieren</span>
+          <button
+            className="md-push-banner-btn"
+            onClick={handlePushSubscribe}
+            disabled={pushLoading}
+          >
+            {pushLoading ? '…' : 'Aktivieren'}
+          </button>
+        </div>
+      )}
+
       {/* Mobile Hero: QR + Check-in prominente Schnellbuttons */}
       <div className="md-mobile-hero">
         <button
