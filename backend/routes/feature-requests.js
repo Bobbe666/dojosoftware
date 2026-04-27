@@ -8,6 +8,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const logger = require('../utils/logger');
+const { sendPushToAllMitgliederOfDojo } = require('../utils/pushNotification');
 
 // Promise-Wrapper fuer db.query
 const queryAsync = (sql, params = []) => {
@@ -259,6 +260,32 @@ router.put('/:id/status', async (req, res) => {
     `, [status, admin_kommentar || null, user.user_id || user.id, id]);
 
     logger.info('Feature-Request Status geaendert', { id, status, user: user.username });
+
+    // Push-Notification an alle Mitglieder des Dojos
+    const statusMessages = {
+      geprueft:  { emoji: '✅', text: 'wurde geprüft' },
+      geplant:   { emoji: '📅', text: 'ist jetzt geplant' },
+      in_arbeit: { emoji: '🔧', text: 'wird gerade umgesetzt' },
+      umgesetzt: { emoji: '🎉', text: 'wurde erfolgreich umgesetzt' },
+      abgelehnt: { emoji: '📋', text: 'wurde bewertet' },
+      neu:       { emoji: '🆕', text: 'wurde eingereicht' },
+    };
+    const sm = statusMessages[status];
+    if (sm) {
+      const featureRow = await queryAsync('SELECT titel, dojo_id FROM feature_requests WHERE id = ?', [id]);
+      if (featureRow.length > 0) {
+        const { titel, dojo_id } = featureRow[0];
+        const shortTitel = titel.length > 45 ? titel.substring(0, 45) + '…' : titel;
+        sendPushToAllMitgliederOfDojo(
+          dojo_id,
+          `${sm.emoji} Feature-Update`,
+          `«${shortTitel}» ${sm.text}! Stimm ab & teile deine Ideen.`,
+          '/member/dashboard',
+          { type: 'feature_update', feature_id: id }
+        ).then(count => logger.info('Push Feature-Update gesendet', { id, status, count }))
+         .catch(err => logger.error('Push Feature-Update Fehler', { error: err.message }));
+      }
+    }
 
     res.json({ success: true, message: 'Status aktualisiert' });
 
