@@ -1009,7 +1009,11 @@ class StripeDataevProvider {
         } catch (error) {
             logger.error('❌ Stripe SEPA Lastschrift Fehler:', {
                 error: error.message,
+                type: error.type,
+                raw_type: error.raw?.type,
                 code: error.code,
+                decline_code: error.decline_code,
+                statusCode: error.statusCode,
                 mitglied_id: mitgliedId
             });
 
@@ -1018,6 +1022,11 @@ class StripeDataevProvider {
                 error.userMessage = 'Authentifizierung erforderlich - Kunde muss Zahlung bestätigen';
             } else if (error.code === 'payment_method_invalid') {
                 error.userMessage = 'Zahlungsmethode ungültig - SEPA-Mandat neu einrichten';
+            } else if (error.code === 'account_closed' || error.decline_code === 'account_closed') {
+                error.userMessage = 'Bankkonto geschlossen — Mitglied muss neue Bankverbindung angeben';
+            } else if (!error.code && error.statusCode === 402) {
+                // Stripe blockiert Einzug nach geschlossenem Konto (kein spezifischer Code)
+                error.userMessage = 'Einzug nicht möglich — Bankkonto möglicherweise geschlossen oder gesperrt. Mitglied muss neue Bankverbindung angeben.';
             }
 
             throw error;

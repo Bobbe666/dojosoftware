@@ -108,7 +108,12 @@ const OffeneZahlungen = () => {
       }, { headers: { Authorization: `Bearer ${token}` } });
       const { status: st, error_detail } = res.data;
       if (st === 'failed') {
-        alert(`❌ Einzug fehlgeschlagen\n\n${error_detail || 'Unbekannter Stripe-Fehler'}`);
+        const isClosed = error_detail && (error_detail.includes('geschlossen') || error_detail.includes('gesperrt') || error_detail.includes('account_closed'));
+        if (isClosed) {
+          alert(`❌ Bankkonto geschlossen\n\n${trans.vorname} ${trans.nachname} hat ein geschlossenes Konto.\n\nBitte neues SEPA-Mandat mit aktueller IBAN einholen, dann erneut einrichten.`);
+        } else {
+          alert(`❌ Einzug fehlgeschlagen\n\n${error_detail || 'Unbekannter Stripe-Fehler'}`);
+        }
       } else {
         alert(`✅ Einzug gestartet — Status: ${st === 'processing' ? 'In Bearbeitung (SEPA-Clearing läuft)' : st === 'succeeded' ? 'Sofort erfolgreich' : st}`);
       }

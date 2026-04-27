@@ -453,11 +453,15 @@ class StripeConnectProvider {
     getUserFriendlyError(error) {
         const code = error.code || error.decline_code;
 
+        if (!code && error.statusCode === 402) {
+            return 'Einzug nicht möglich — Bankkonto möglicherweise geschlossen oder gesperrt. Mitglied muss neue Bankverbindung angeben.';
+        }
+
         const errorMessages = {
             'card_declined': 'Zahlung wurde abgelehnt',
             'insufficient_funds': 'Nicht genügend Deckung auf dem Konto',
             'debit_not_authorized': 'Lastschrift nicht autorisiert',
-            'account_closed': 'Bankkonto geschlossen',
+            'account_closed': 'Bankkonto geschlossen — Mitglied muss neue Bankverbindung angeben',
             'bank_account_declined': 'Bank hat die Lastschrift abgelehnt',
             'invalid_bank_account_iban': 'Ungültige IBAN',
             'sepa_unsupported_bank': 'Bank unterstützt kein SEPA',
