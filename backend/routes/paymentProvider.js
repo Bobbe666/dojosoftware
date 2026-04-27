@@ -168,14 +168,18 @@ router.post('/stripe/webhook', express.raw({type: 'application/json'}), async (r
         const sig = req.headers['stripe-signature'];
         const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-        let event;
-
-        if (endpointSecret) {
-            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-            event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-        } else {
-            event = JSON.parse(req.body.toString());
+        if (!endpointSecret) {
+            logger.error('STRIPE_WEBHOOK_SECRET nicht konfiguriert — Webhook abgelehnt');
+            return res.status(400).json({ error: 'Webhook-Secret nicht konfiguriert' });
         }
+
+        if (!sig) {
+            logger.warn('Stripe Webhook ohne Signatur empfangen — abgelehnt');
+            return res.status(400).json({ error: 'Keine Stripe-Signatur' });
+        }
+
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        const event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
 
         // Get dojoId from metadata if available
         const dojoId = event.data?.object?.metadata?.dojo_id || 1;

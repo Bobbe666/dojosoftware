@@ -639,6 +639,23 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                 return res.status(400).json({ error: 'Mitglied hat keine E-Mail-Adresse' });
             }
 
+            // 24h-Cooldown: gleiche Mahnung nicht zweimal am selben Tag senden
+            if (mahnungData.versandt) {
+                const lastSent = mahnungData.versandt_am || mahnungData.updated_at;
+                if (lastSent) {
+                    const hoursSince = (Date.now() - new Date(lastSent).getTime()) / 3600000;
+                    if (hoursSince < 24) {
+                        return res.status(429).json({
+                            error: `Mahnung ${mahnung_id} wurde bereits vor weniger als 24h gesendet. Bitte warten.`
+                        });
+                    }
+                } else {
+                    return res.status(429).json({
+                        error: `Mahnung ${mahnung_id} wurde bereits gesendet (versandt = 1).`
+                    });
+                }
+            }
+
             // Hole Dojo und Mahnstufen-Einstellungen
             const dojoQuery = `SELECT * FROM dojo LIMIT 1`;
             const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ?`;

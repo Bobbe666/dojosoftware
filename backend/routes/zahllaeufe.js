@@ -294,6 +294,26 @@ router.post("/", async (req, res) => {
     });
 
     try {
+        // Betrag aus DB berechnen wenn beitrag_ids vorhanden (Frontend-Wert ignorieren)
+        let verifiedBetrag = parseFloat(betrag) || 0;
+        let verifiedAnzahl = parseInt(anzahl_buchungen) || 0;
+        if (Array.isArray(beitrag_ids) && beitrag_ids.length > 0) {
+            const validIds = beitrag_ids.filter(id => Number.isInteger(Number(id)));
+            if (validIds.length > 0) {
+                const placeholders = validIds.map(() => '?').join(',');
+                const sumSql = effectiveDojoId
+                    ? `SELECT COUNT(*) AS cnt, COALESCE(SUM(b.betrag),0) AS total
+                       FROM beitraege b JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                       WHERE b.beitrag_id IN (${placeholders}) AND b.bezahlt = 0 AND m.dojo_id = ?`
+                    : `SELECT COUNT(*) AS cnt, COALESCE(SUM(betrag),0) AS total
+                       FROM beitraege WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`;
+                const sumParams = effectiveDojoId ? [...validIds, effectiveDojoId] : validIds;
+                const [sumRow] = await queryAsync(sumSql, sumParams);
+                verifiedBetrag = parseFloat(sumRow.total) || 0;
+                verifiedAnzahl = sumRow.cnt || validIds.length;
+            }
+        }
+
         // 1. Zahllauf anlegen
         const insertResult = await queryAsync(`
             INSERT INTO zahllaeufe (
@@ -303,7 +323,7 @@ router.post("/", async (req, res) => {
             ) VALUES (?, ?, ?, ?, ?, 'abgeschlossen', ?, ?, ?, ?, ?, ?)
         `, [
             effectiveDojoId, buchungsnummer, forderungen_bis, geplanter_einzug,
-            zahlungsanbieter || 'SEPA (Lastschrift)', anzahl_buchungen, betrag,
+            zahlungsanbieter || 'SEPA (Lastschrift)', verifiedAnzahl, verifiedBetrag,
             csv_datei_pfad || null, xml_datei_pfad || null, ersteller_user_id || null, notizen || null
         ]);
 
