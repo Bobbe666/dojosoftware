@@ -1597,6 +1597,7 @@ router.get("/stripe/failed-transactions", async (req, res) => {
         const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
         const params = secureDojoId ? [secureDojoId] : [];
 
+        // Pro Mitglied+Monat nur den neuesten fehlgeschlagenen Eintrag
         const rows = await queryAsync(`
             SELECT
                 slt.id, slt.batch_id, slt.mitglied_id, slt.betrag, slt.status,
@@ -1607,7 +1608,19 @@ router.get("/stripe/failed-transactions", async (req, res) => {
             JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
             JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
             WHERE slt.status = 'failed'
-              -- Nur wenn kein neuerer succeeded/processing Eintrag für dieses Mitglied+Monat existiert
+              -- Nur der neueste Eintrag pro Mitglied+Monat+Jahr
+              AND slt.id = (
+                  SELECT slt3.id
+                  FROM stripe_lastschrift_transaktion slt3
+                  JOIN stripe_lastschrift_batch slb3 ON slt3.batch_id = slb3.batch_id
+                  WHERE slt3.mitglied_id = slt.mitglied_id
+                    AND slt3.status = 'failed'
+                    AND slb3.monat = slb.monat
+                    AND slb3.jahr = slb.jahr
+                  ORDER BY slt3.created_at DESC
+                  LIMIT 1
+              )
+              -- Kein neuerer succeeded/processing für denselben Monat
               AND NOT EXISTS (
                   SELECT 1 FROM stripe_lastschrift_transaktion slt2
                   JOIN stripe_lastschrift_batch slb2 ON slt2.batch_id = slb2.batch_id
@@ -1615,7 +1628,6 @@ router.get("/stripe/failed-transactions", async (req, res) => {
                     AND slt2.status IN ('succeeded', 'processing')
                     AND slb2.monat = slb.monat
                     AND slb2.jahr = slb.jahr
-                    AND slt2.created_at >= slt.created_at
               )
               ${dojoFilter}
             ORDER BY slt.created_at DESC
