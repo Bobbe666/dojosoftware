@@ -1634,7 +1634,7 @@ router.get("/stripe/failed-transactions", async (req, res) => {
             LIMIT 200
         `, params);
 
-        // Nur Transaktionen behalten deren Beiträge noch unbezahlt sind
+        // Prüfen ob Beiträge noch offen sind; bei fehlenden IDs Retry trotzdem erlauben
         const result = [];
         for (const row of rows) {
             let beitragIds = [];
@@ -1649,12 +1649,12 @@ router.get("/stripe/failed-transactions", async (req, res) => {
                 if (beitraege.length === 0) continue; // bereits bezahlt → überspringen
                 row.offene_beitraege = beitraege;
                 row.retry_betrag = beitraege.reduce((s, b) => s + parseFloat(b.betrag), 0);
-                row.can_retry = true;
             } else {
+                // Keine beitrag_ids gespeichert — Betrag aus Transaktion nehmen, Retry erlauben
                 row.offene_beitraege = [];
                 row.retry_betrag = parseFloat(row.betrag);
-                row.can_retry = false;
             }
+            row.can_retry = true;
             result.push(row);
         }
 
