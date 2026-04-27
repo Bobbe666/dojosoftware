@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   AlertTriangle, CreditCard, Building2, RefreshCw, Check, X,
   Mail, Eye, Filter, TrendingDown, Users, Clock, CheckCircle,
-  XCircle, AlertCircle, ChevronDown, ChevronUp, Search
+  XCircle, AlertCircle, ChevronDown, ChevronUp, Search, RotateCcw
 } from 'lucide-react';
 import '../styles/OffeneZahlungen.css';
 
@@ -19,6 +19,8 @@ const OffeneZahlungen = () => {
   const [stats, setStats] = useState({});
   const [disputes, setDisputes] = useState([]);
   const [mitgliederProbleme, setMitgliederProbleme] = useState([]);
+  const [failedTransaktionen, setFailedTransaktionen] = useState([]);
+  const [retryLoading, setRetryLoading] = useState({});
 
   // Filter
   const [filter, setFilter] = useState({
@@ -43,7 +45,7 @@ const OffeneZahlungen = () => {
       if (filter.status) params.append('status', filter.status);
       if (filter.typ) params.append('typ', filter.typ);
 
-      const [zahlungenRes, disputesRes, mitgliederRes] = await Promise.all([
+      const [zahlungenRes, disputesRes, mitgliederRes, failedRes] = await Promise.all([
         axios.get(`/admin/offene-zahlungen?${params}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
@@ -52,7 +54,10 @@ const OffeneZahlungen = () => {
         }).catch(() => ({ data: { disputes: [] } })),
         axios.get('/admin/mitglieder-mit-zahlungsproblemen', {
           headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { mitglieder: [] } }))
+        }).catch(() => ({ data: { mitglieder: [] } })),
+        axios.get('/lastschriftlauf/stripe/failed-transactions', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: { transactions: [] } }))
       ]);
 
       if (zahlungenRes.data.success) {
@@ -62,6 +67,7 @@ const OffeneZahlungen = () => {
 
       setDisputes(disputesRes.data.disputes || []);
       setMitgliederProbleme(mitgliederRes.data.mitglieder || []);
+      setFailedTransaktionen(failedRes.data.transactions || []);
 
     } catch (err) {
       console.error('Fehler beim Laden:', err);
@@ -81,6 +87,26 @@ const OffeneZahlungen = () => {
     } catch (err) {
       console.error('Fehler:', err);
       alert('Fehler beim Aktualisieren');
+    }
+  };
+
+  const handleRetry = async (trans) => {
+    if (!window.confirm(`Einzug für ${trans.vorname} ${trans.nachname} (${trans.retry_betrag?.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}) erneut starten?`)) return;
+    setRetryLoading(prev => ({ ...prev, [trans.id]: true }));
+    try {
+      const res = await axios.post('/lastschriftlauf/stripe/retry-single', {
+        transaktion_id: trans.id,
+        mitglied_id: trans.mitglied_id,
+        monat: trans.monat,
+        jahr: trans.jahr
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      const st = res.data.status;
+      alert(`✅ Einzug gestartet — Status: ${st === 'processing' ? 'In Bearbeitung (SEPA-Clearing läuft)' : st === 'succeeded' ? 'Sofort erfolgreich' : st}`);
+      loadData();
+    } catch (err) {
+      alert(`❌ Fehler: ${err.response?.data?.error || err.message}`);
+    } finally {
+      setRetryLoading(prev => ({ ...prev, [trans.id]: false }));
     }
   };
 
@@ -215,6 +241,14 @@ const OffeneZahlungen = () => {
           <Users size={16} />
           Problem-Mitglieder
           {mitgliederProbleme.length > 0 && <span className="tab-count">{mitgliederProbleme.length}</span>}
+        </button>
+        <button
+          className={`oz-tab ${activeTab === 'fehlgeschlagen' ? 'active' : ''}`}
+          onClick={() => setActiveTab('fehlgeschlagen')}
+        >
+          <XCircle size={16} />
+          Fehlgeschlagene Einzüge
+          {failedTransaktionen.length > 0 && <span className="tab-count">{failedTransaktionen.length}</span>}
         </button>
       </div>
 
@@ -382,6 +416,72 @@ const OffeneZahlungen = () => {
                       )}
                     </div>
                   </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Fehlgeschlagene Stripe-Einzüge Tab */}
+        {activeTab === 'fehlgeschlagen' && (
+          <div className="oz-list">
+            {failedTransaktionen.length === 0 ? (
+              <div className="oz-empty">
+                <CheckCircle size={48} />
+                <h3>Keine fehlgeschlagenen Einzüge</h3>
+                <p>Alle Stripe-Lastschriften wurden erfolgreich verarbeitet.</p>
+              </div>
+            ) : (
+              failedTransaktionen.map(t => (
+                <div key={t.id} className="oz-item failed-trans">
+                  <div className="oz-item-main">
+                    <div className="oz-item-member">
+                      <strong>{t.vorname} {t.nachname}</strong>
+                      <span className="oz-item-email">{t.email}</span>
+                      <span className="oz-item-dojo" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Batch: {t.batch_id}
+                      </span>
+                    </div>
+                    <div className="oz-item-details">
+                      <span className="typ-badge" style={{ '--typ-color': 'var(--error)' }}>
+                        <XCircle size={12} />
+                        Fehlgeschlagen
+                      </span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {String(t.monat).padStart(2,'0')}/{t.jahr}
+                      </span>
+                    </div>
+                    <div className="oz-item-amount">
+                      <strong>{parseFloat(t.retry_betrag || t.betrag).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</strong>
+                      <span className="oz-item-date">
+                        <Clock size={12} />
+                        {new Date(t.created_at).toLocaleDateString('de-DE')}
+                      </span>
+                    </div>
+                    <div className="oz-item-actions">
+                      {t.can_retry ? (
+                        <button
+                          className="btn-action success"
+                          onClick={() => handleRetry(t)}
+                          disabled={retryLoading[t.id]}
+                          title="Erneut einziehen"
+                        >
+                          {retryLoading[t.id]
+                            ? <RefreshCw size={16} className="spin" />
+                            : <RotateCcw size={16} />}
+                        </button>
+                      ) : (
+                        <span title="Beitrag bereits bezahlt" style={{ padding: '0.25rem', color: 'var(--success)' }}>
+                          <CheckCircle size={16} />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {t.error_message && (
+                    <div className="oz-item-description" style={{ color: 'var(--error)', fontSize: '0.8rem' }}>
+                      {t.error_message}
+                    </div>
+                  )}
                 </div>
               ))
             )}

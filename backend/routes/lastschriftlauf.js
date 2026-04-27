@@ -1427,6 +1427,153 @@ router.get("/stripe/batch/:batchId", async (req, res) => {
     }
 });
 
+/**
+ * GET /lastschriftlauf/stripe/failed-transactions
+ * Fehlgeschlagene Stripe-Transaktionen auflisten
+ */
+router.get("/stripe/failed-transactions", async (req, res) => {
+    try {
+        const secureDojoId = getSecureDojoId(req);
+        const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+        const params = secureDojoId ? [secureDojoId] : [];
+
+        const rows = await queryAsync(`
+            SELECT
+                slt.id, slt.batch_id, slt.mitglied_id, slt.betrag, slt.status,
+                slt.error_message, slt.created_at, slt.beitrag_ids,
+                slb.monat, slb.jahr,
+                m.vorname, m.nachname, m.email, m.dojo_id
+            FROM stripe_lastschrift_transaktion slt
+            JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+            JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+            WHERE slt.status = 'failed'
+              ${dojoFilter}
+            ORDER BY slt.created_at DESC
+            LIMIT 200
+        `, params);
+
+        // Für jede Transaktion: offene Beiträge laden (zum Retry)
+        for (const row of rows) {
+            let beitragIds = [];
+            try { beitragIds = JSON.parse(row.beitrag_ids || '[]'); } catch {}
+            if (beitragIds.length > 0) {
+                const placeholders = beitragIds.map(() => '?').join(',');
+                const beitraege = await queryAsync(
+                    `SELECT beitrag_id, betrag, zahlungsdatum, art FROM beitraege
+                     WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
+                    beitragIds
+                );
+                row.offene_beitraege = beitraege;
+                row.retry_betrag = beitraege.reduce((s, b) => s + parseFloat(b.betrag), 0);
+                row.can_retry = beitraege.length > 0;
+            } else {
+                row.offene_beitraege = [];
+                row.retry_betrag = parseFloat(row.betrag);
+                row.can_retry = false;
+            }
+        }
+
+        res.json({ success: true, transactions: rows, total: rows.length });
+
+    } catch (error) {
+        logger.error('Fehler beim Laden fehlgeschlagener Transaktionen:', error);
+        res.status(500).json({ error: 'Fehler beim Laden', details: error.message });
+    }
+});
+
+/**
+ * POST /lastschriftlauf/stripe/retry-single
+ * Einzelne fehlgeschlagene Transaktion erneut einziehen
+ */
+router.post("/stripe/retry-single", async (req, res) => {
+    try {
+        const { transaktion_id, mitglied_id, monat, jahr } = req.body;
+
+        if (!transaktion_id || !mitglied_id) {
+            return res.status(400).json({ error: 'transaktion_id und mitglied_id erforderlich' });
+        }
+
+        // Original-Transaktion laden
+        const [origTrans] = await queryAsync(
+            `SELECT slt.*, slb.monat as orig_monat, slb.jahr as orig_jahr, m.dojo_id
+             FROM stripe_lastschrift_transaktion slt
+             JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+             JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+             WHERE slt.id = ? AND slt.mitglied_id = ?`,
+            [transaktion_id, mitglied_id]
+        );
+
+        if (!origTrans) {
+            return res.status(404).json({ error: 'Transaktion nicht gefunden' });
+        }
+        if (origTrans.status !== 'failed') {
+            return res.status(400).json({ error: `Transaktion hat Status '${origTrans.status}' — nur fehlgeschlagene können wiederholt werden` });
+        }
+
+        // Offene Beiträge aus der ursprünglichen Transaktion
+        let beitragIds = [];
+        try { beitragIds = JSON.parse(origTrans.beitrag_ids || '[]'); } catch {}
+
+        let beitraege = [];
+        let betrag = parseFloat(origTrans.betrag);
+
+        if (beitragIds.length > 0) {
+            const placeholders = beitragIds.map(() => '?').join(',');
+            beitraege = await queryAsync(
+                `SELECT beitrag_id, betrag FROM beitraege WHERE beitrag_id IN (${placeholders}) AND bezahlt = 0`,
+                beitragIds
+            );
+            if (beitraege.length === 0) {
+                return res.status(400).json({ error: 'Alle Beiträge dieser Transaktion sind bereits bezahlt' });
+            }
+            betrag = beitraege.reduce((s, b) => s + parseFloat(b.betrag), 0);
+        }
+
+        const dojoId = origTrans.dojo_id;
+        const useMonat = monat || origTrans.orig_monat;
+        const useJahr = jahr || origTrans.orig_jahr;
+
+        const provider = await PaymentProviderFactory.getProvider(dojoId);
+        if (!provider || !provider.processLastschriftBatch) {
+            return res.status(400).json({ error: 'Stripe nicht konfiguriert für dieses Dojo' });
+        }
+
+        const mitgliedData = [{
+            mitglied_id,
+            betrag,
+            beitraege: beitraege.length > 0 ? beitraege.map(b => ({ beitrag_id: b.beitrag_id })) : []
+        }];
+
+        const result = await provider.processLastschriftBatch(mitgliedData, useMonat, useJahr);
+
+        // Erfolgreich bezahlte Beiträge markieren
+        const trans = result.transactions?.[0];
+        if (trans?.status === 'succeeded' && beitraege.length > 0) {
+            for (const b of beitraege) {
+                await queryAsync(
+                    'UPDATE beitraege SET bezahlt = 1, zahlungsart = ? WHERE beitrag_id = ?',
+                    ['Stripe SEPA', b.beitrag_id]
+                );
+            }
+        }
+
+        logger.info(`🔄 Retry Transaktion ${transaktion_id}: ${trans?.status} — Mitglied ${mitglied_id}`);
+
+        res.json({
+            success: true,
+            status: trans?.status,
+            payment_intent_id: trans?.payment_intent_id,
+            betrag,
+            monat: useMonat,
+            jahr: useJahr
+        });
+
+    } catch (error) {
+        logger.error('Fehler beim Retry:', error);
+        res.status(500).json({ error: 'Fehler beim erneuten Einzug', details: error.message });
+    }
+});
+
 // Helper: Promise-basierte DB-Query
 function queryAsync(sql, params) {
     return new Promise((resolve, reject) => {
