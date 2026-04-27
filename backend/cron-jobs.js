@@ -7,6 +7,7 @@ const { checkBirthdays } = require('./services/birthdayService');
 const { processExpiredTrials, sendTrialReminders } = require('./services/featureAccessService');
 const handlebars = require('handlebars');
 const nodemailer = require('nodemailer');
+const { generateInitialBeitraege } = require('./routes/vertraege/shared');
 
 // Helper: Promise-basierte DB-Query
 function queryAsync(sql, params = []) {
@@ -862,86 +863,98 @@ async function generateMonthlyBeitraege() {
         if (!v.monatsbeitrag) continue; // kein Betrag — überspringen
 
         // Automatische Vertragsverlängerung: Kündigungsfrist abgelaufen ohne Kündigung
+        let verlängert = false;
         if (v.automatische_verlaengerung && !v.kuendigung_eingegangen && v.vertragsende) {
             const ende = new Date(v.vertragsende);
             const kuenfristMonate = v.kuendigungsfrist_monate || 3;
             const kuenfristAbgelaufen = new Date(ende);
             kuenfristAbgelaufen.setMonth(kuenfristAbgelaufen.getMonth() - kuenfristMonate);
-            // Wenn Kündigungsfrist verstrichen ist → Verlängerung ist fix, Beiträge generieren
             if (now > kuenfristAbgelaufen) {
                 const monate = v.verlaengerung_monate || 12;
                 const neuesEnde = new Date(ende);
                 neuesEnde.setMonth(neuesEnde.getMonth() + monate);
+                const neuesEndeStr = neuesEnde.toISOString().split('T')[0];
                 await pool.query(
                     `UPDATE vertraege SET vertragsende = ? WHERE id = ?`,
-                    [neuesEnde.toISOString().split('T')[0], v.vertrag_id]
+                    [neuesEndeStr, v.vertrag_id]
                 );
-                v.vertragsende = neuesEnde.toISOString().split('T')[0];
-                logger.info(`🔄 Vertrag auto-verlängert (Kündigungsfrist abgelaufen): Mitglied ${v.mitglied_id} bis ${v.vertragsende}`);
-            }
-        }
+                v.vertragsende = neuesEndeStr;
+                verlängert = true;
+                logger.info(`🔄 Vertrag auto-verlängert: Mitglied ${v.mitglied_id} bis ${neuesEndeStr}`);
 
-        // Letzten vorhandenen Beitrag ermitteln
-        const [[lastRow]] = await pool.query(
-            `SELECT MAX(zahlungsdatum) as last_date FROM beitraege WHERE mitglied_id = ?`,
-            [v.mitglied_id]
-        );
-
-        // Startmonat: Monat nach letztem Beitrag, frühestens Vertragsbeginn
-        let startDate;
-        if (lastRow?.last_date) {
-            startDate = new Date(lastRow.last_date);
-            startDate.setMonth(startDate.getMonth() + 1);
-            startDate.setDate(1);
-        } else {
-            // Neues Mitglied — ab Vertragsbeginn oder aktuellem Monat
-            const begin = v.vertragsbeginn ? new Date(v.vertragsbeginn) : now;
-            startDate = new Date(begin.getFullYear(), begin.getMonth(), 1);
-        }
-
-        // Monatsweise generieren
-        let current = new Date(startDate);
-        while (current <= endDate) {
-            const currentYear = current.getFullYear();
-            const currentMonth = current.getMonth() + 1;
-
-            // Vertragsende bei Kündigung prüfen
-            if (v.vertragsende) {
-                const ende = new Date(v.vertragsende);
-                if (current > ende) break;
-            }
-
-            // Ruhepause prüfen — Monat überspringen
-            if (v.ruhepause_von && v.ruhepause_bis) {
-                const von = new Date(v.ruhepause_von);
-                const bis = new Date(v.ruhepause_bis);
-                const currentEnd = new Date(currentYear, currentMonth, 0); // letzter Tag des Monats
-                if (current <= bis && currentEnd >= von) {
-                    current.setMonth(current.getMonth() + 1);
-                    skipped++;
-                    continue;
+                // Sofort alle Beiträge für die neue volle Laufzeit anlegen
+                try {
+                    const result = await generateInitialBeitraege(
+                        v.mitglied_id, dojoId,
+                        ende.toISOString().split('T')[0], // neue Laufzeit startet ab altem Ende
+                        v.monatsbeitrag, 0, neuesEndeStr, monate
+                    );
+                    generated += result.insertedIds?.length || 0;
+                    logger.info(`💰 Verlängerungsbeiträge angelegt: Mitglied ${v.mitglied_id}, ${result.insertedIds?.length} Monate bis ${neuesEndeStr}`);
+                } catch (e) {
+                    logger.error(`❌ Fehler Verlängerungsbeiträge Mitglied ${v.mitglied_id}:`, e.message);
                 }
             }
+        }
 
-            // Prüfen ob Beitrag bereits existiert
-            const [[existing]] = await pool.query(
-                `SELECT beitrag_id FROM beitraege
-                 WHERE mitglied_id = ? AND YEAR(zahlungsdatum) = ? AND MONTH(zahlungsdatum) = ?
-                 LIMIT 1`,
-                [v.mitglied_id, currentYear, currentMonth]
+        // Bei Verlängerung bereits erledigt — sonst Rolling-Window für fehlende Monate
+        if (!verlängert) {
+            const [[lastRow]] = await pool.query(
+                `SELECT MAX(zahlungsdatum) as last_date FROM beitraege WHERE mitglied_id = ? AND art = 'mitgliedsbeitrag'`,
+                [v.mitglied_id]
             );
 
-            if (!existing) {
-                const zahlungsDatum = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-                await pool.query(
-                    `INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
-                     VALUES (?, ?, ?, 'SEPA', 0, ?)`,
-                    [v.mitglied_id, v.monatsbeitrag, zahlungsDatum, dojoId]
-                );
-                generated++;
+            let startDate;
+            if (lastRow?.last_date) {
+                startDate = new Date(lastRow.last_date);
+                startDate.setMonth(startDate.getMonth() + 1);
+                startDate.setDate(1);
+            } else {
+                const begin = v.vertragsbeginn ? new Date(v.vertragsbeginn) : now;
+                startDate = new Date(begin.getFullYear(), begin.getMonth(), 1);
             }
 
-            current.setMonth(current.getMonth() + 1);
+            let current = new Date(startDate);
+            while (current <= endDate) {
+                const currentYear = current.getFullYear();
+                const currentMonth = current.getMonth() + 1;
+
+                if (v.vertragsende) {
+                    const ende = new Date(v.vertragsende);
+                    if (current > ende) break;
+                }
+
+                // Ruhepause prüfen — Monat überspringen
+                if (v.ruhepause_von && v.ruhepause_bis) {
+                    const von = new Date(v.ruhepause_von);
+                    const bis = new Date(v.ruhepause_bis);
+                    const currentEnd = new Date(currentYear, currentMonth, 0);
+                    if (current <= bis && currentEnd >= von) {
+                        current.setMonth(current.getMonth() + 1);
+                        skipped++;
+                        continue;
+                    }
+                }
+
+                const [[existing]] = await pool.query(
+                    `SELECT beitrag_id FROM beitraege
+                     WHERE mitglied_id = ? AND YEAR(zahlungsdatum) = ? AND MONTH(zahlungsdatum) = ?
+                     LIMIT 1`,
+                    [v.mitglied_id, currentYear, currentMonth]
+                );
+
+                if (!existing) {
+                    const zahlungsDatum = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+                    await pool.query(
+                        `INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id, art)
+                         VALUES (?, ?, ?, 'SEPA', 0, ?, 'mitgliedsbeitrag')`,
+                        [v.mitglied_id, v.monatsbeitrag, zahlungsDatum, dojoId]
+                    );
+                    generated++;
+                }
+
+                current.setMonth(current.getMonth() + 1);
+            }
         }
     }
 
