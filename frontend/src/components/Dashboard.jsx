@@ -1805,7 +1805,7 @@ function Dashboard() {
                               </button>
                               {hilfeSupportView === 'hilfe' && <HilfeCenter />}
                               {hilfeSupportView === 'support' && <SupportTickets bereich="dojo" />}
-                              {hilfeSupportView === 'wunschliste' && <FeatureBoard />}
+                              {hilfeSupportView === 'wunschliste' && <FeatureBoard adminMode={true} />}
                             </>
                           )}
                         </div>

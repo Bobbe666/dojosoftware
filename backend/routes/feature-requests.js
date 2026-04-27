@@ -240,7 +240,7 @@ router.put('/:id/status', async (req, res) => {
   try {
     const user = req.user;
 
-    if (!isSuperAdmin(user)) {
+    if (!isAdmin(user)) {
       return res.status(403).json({ success: false, error: 'Keine Berechtigung' });
     }
 

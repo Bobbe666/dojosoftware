@@ -155,12 +155,12 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
   };
 
   const statusConfig = {
-    neu: { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', label: 'Neu', icon: Lightbulb },
-    geprueft: { color: 'var(--info)', bg: 'rgba(59, 130, 246, 0.15)', label: 'Geprueft', icon: CheckCircle },
-    geplant: { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)', label: 'Geplant', icon: Clock },
-    in_arbeit: { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', label: 'In Arbeit', icon: Clock },
-    umgesetzt: { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', label: 'Umgesetzt', icon: CheckCircle },
-    abgelehnt: { color: 'var(--text-muted)', bg: 'rgba(107, 114, 128, 0.15)', label: 'Abgelehnt', icon: X }
+    neu:       { color: 'var(--warning)',    bg: 'rgba(245, 158, 11, 0.15)',   label: 'Neu',          icon: Lightbulb },
+    geprueft:  { color: 'var(--info)',       bg: 'rgba(59, 130, 246, 0.15)',   label: 'Geprüft',      icon: CheckCircle },
+    geplant:   { color: '#8b5cf6',           bg: 'rgba(139, 92, 246, 0.15)',   label: 'Geplant',      icon: Clock },
+    in_arbeit: { color: '#ec4899',           bg: 'rgba(236, 72, 153, 0.15)',   label: 'In Bearbeitung', icon: Clock },
+    umgesetzt: { color: 'var(--success)',    bg: 'rgba(16, 185, 129, 0.15)',   label: 'Umgesetzt',    icon: CheckCircle },
+    abgelehnt: { color: 'var(--text-muted)', bg: 'rgba(107, 114, 128, 0.15)', label: 'Abgelehnt',    icon: X }
   };
 
   const kategorieLabels = {
@@ -422,12 +422,12 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
                             onChange={(e) => setEditStatus(e.target.value)}
                             className="fb-admin-input"
                           >
-                            <option value="neu">Neu</option>
-                            <option value="geprueft">Geprueft</option>
-                            <option value="geplant">Geplant</option>
-                            <option value="in_arbeit">In Arbeit</option>
-                            <option value="umgesetzt">Umgesetzt</option>
-                            <option value="abgelehnt">Abgelehnt</option>
+                            <option value="neu">🆕 Neu</option>
+                            <option value="geprueft">✅ Geprüft</option>
+                            <option value="geplant">📅 Geplant</option>
+                            <option value="in_arbeit">🔧 In Bearbeitung</option>
+                            <option value="umgesetzt">🎉 Umgesetzt</option>
+                            <option value="abgelehnt">❌ Abgelehnt</option>
                           </select>
                         </div>
                       </div>
