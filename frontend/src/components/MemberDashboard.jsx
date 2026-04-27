@@ -48,6 +48,7 @@ import EventNotificationPopup from './EventNotificationPopup.jsx';
 import PushNotificationPopup from './PushNotificationPopup.jsx';
 import ProfilWizard from './ProfilWizard.jsx';
 import AbwesenheitWidget from './AbwesenheitWidget.jsx';
+import NextTrainingsWidget from './NextTrainingsWidget.jsx';
 
 
 function MemberNewsSlideshow({ bilder, titel }) {
@@ -1351,6 +1352,31 @@ const MemberDashboard = () => {
               心技体 — Shin · Gi · Tai
             </div>
           </div>
+
+      {/* Mobile Hero: QR + Check-in prominente Schnellbuttons */}
+      <div className="md-mobile-hero">
+        <button
+          className="md-mobile-hero-btn md-mobile-hero-btn--primary"
+          onClick={() => setShowQRCode(true)}
+        >
+          <span className="md-mobile-hero-btn-icon">📱</span>
+          <span className="md-mobile-hero-btn-label">QR-Code</span>
+          <span className="md-mobile-hero-btn-sub">Mitgliedsausweis</span>
+        </button>
+        <button
+          className="md-mobile-hero-btn md-mobile-hero-btn--secondary"
+          onClick={() => handleQuickAction('checkin')}
+        >
+          <span className="md-mobile-hero-btn-icon">✅</span>
+          <span className="md-mobile-hero-btn-label">Check-in</span>
+          <span className="md-mobile-hero-btn-sub">Training erfassen</span>
+        </button>
+      </div>
+
+      {/* Nächste Trainings Widget — mobil prominent oben */}
+      <div className="md-mobile-schedule-widget">
+        <NextTrainingsWidget />
+      </div>
 
       {/* Ausweis + Stats: 2 Karten | Ausweis | 2 Karten */}
       {memberData && (

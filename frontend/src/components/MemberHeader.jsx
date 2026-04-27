@@ -10,6 +10,7 @@ import config from '../config/config.js';
 import '../styles/Dashboard.css';
 import '../styles/MemberHeader.css';
 import LanguageSwitcher from './LanguageSwitcher';
+import MobileBottomNav from './MobileBottomNav.jsx';
 
 const MemberHeader = () => {
   const { t } = useTranslation('member');
@@ -100,6 +101,8 @@ const MemberHeader = () => {
   };
 
   return (
+    <>
+    <MobileBottomNav />
     <header className="dashboard-header">
       <div className="dashboard-header-left">
         <img src={dojoLogo} alt={dojoName || 'Dojo Logo'} className="dashboard-logo" />
@@ -185,6 +188,7 @@ const MemberHeader = () => {
         </button>
       </div>
     </header>
+    </>
   );
 };
 

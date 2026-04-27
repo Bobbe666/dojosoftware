@@ -1,0 +1,164 @@
+/* ===================================================
+   NEXT TRAININGS WIDGET
+   =================================================== */
+
+.ntw-wrap {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 215, 0, 0.12);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.ntw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.ntw-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 215, 0, 0.75);
+}
+
+.ntw-link {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+.ntw-link:hover { color: #ffd700; }
+
+.ntw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ntw-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  transition: background 0.15s;
+}
+
+.ntw-card--today {
+  background: rgba(255, 215, 0, 0.07);
+  border-color: rgba(255, 215, 0, 0.25);
+}
+
+.ntw-date-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 38px;
+}
+
+.ntw-day-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffd700;
+  opacity: 0.8;
+}
+
+.ntw-day-num {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 1px;
+}
+
+.ntw-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.ntw-info-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.ntw-kurs {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ntw-meta {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.ntw-time,
+.ntw-trainer {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.ntw-today-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: #ffd700;
+  color: #000;
+  padding: 2px 7px;
+  border-radius: 20px;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+/* Skeleton */
+.ntw-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ntw-skeleton {
+  height: 52px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: ntw-shimmer 1.4s infinite;
+}
+
+@keyframes ntw-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.ntw-empty {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.35);
+  text-align: center;
+  padding: 0.75rem 0;
+}
+
+/* Auf Desktop: kompakter anzeigen (das Widget ist überall nützlich) */
+@media (min-width: 768px) {
+  .ntw-wrap {
+    max-width: 480px;
+  }
+}

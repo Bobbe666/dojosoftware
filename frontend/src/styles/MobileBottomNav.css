@@ -1,0 +1,58 @@
+/* ===================================================
+   MOBILE BOTTOM NAVIGATION
+   Nur sichtbar auf Handy (≤ 767px)
+   =================================================== */
+
+.mobile-bottom-nav {
+  display: none; /* Desktop: versteckt */
+}
+
+@media (max-width: 767px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(10, 10, 25, 0.97);
+    border-top: 1px solid rgba(255, 215, 0, 0.15);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .mobile-bottom-nav__tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 4px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transition: color 0.18s ease, transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 56px;
+  }
+
+  .mobile-bottom-nav__tab:active {
+    transform: scale(0.92);
+  }
+
+  .mobile-bottom-nav__tab--active {
+    color: #ffd700;
+  }
+
+  .mobile-bottom-nav__tab--active svg {
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
+  }
+}

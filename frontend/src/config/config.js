@@ -12,14 +12,14 @@ const isProduction = import.meta.env.MODE === 'production';
 // API-URLs für verschiedene Umgebungen
 // 🔒 MULTI-TENANT: Production uses relative path to support subdomains
 const API_URLS = {
-  development: 'http://localhost:5001/api',
+  development: '/api', // Vite-Proxy → kein CORS, Port 5001 bleibt intern
   production: '/api',
   testing: 'http://localhost:5001/api'
 };
 
 // Bild-URLs (ohne /api) für Uploads und statische Dateien
 const IMAGE_BASE_URLS = {
-  development: 'http://localhost:5001',
+  development: '', // Vite-Proxy leitet /uploads weiter
   production: '',  // Leer = relativ zur aktuellen Domain
   testing: 'http://localhost:5001'
 };

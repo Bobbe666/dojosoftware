@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const logger = require('../utils/logger');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {

@@ -1,7 +1,6 @@
 /* ================================================================
    MemberDashboard.responsive.css
-   Mobile-First Responsive für das Mitglieder-Dashboard
-   Desktop-Layout (≥768px) bleibt unverändert.
+   Mobile-First Responsive — Desktop (≥768px) bleibt unverändert.
    ================================================================ */
 
 /* ===============================================================
@@ -10,17 +9,18 @@
 
 @media (max-width: 767px) {
 
-  /* --- Hauptcontainer: kein Padding, kein Radius --- */
+  /* Padding-bottom damit Bottom-Nav den Content nicht überdeckt */
   .dashboard-container {
-    padding: 0.5rem !important;
+    padding: 0 !important;
     border-radius: 0 !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .dashboard-start {
-    padding: 0.5rem 0 !important;
+    padding: 0.5rem 0.75rem 0 !important;
   }
 
-  /* --- Header: kompakter, Button-Texte ausblenden --- */
+  /* --- Header: kompakter --- */
   .dashboard-header {
     padding: 0.5rem 0.75rem !important;
     min-height: auto !important;
@@ -41,20 +41,91 @@
     gap: 0.3rem !important;
   }
 
-  /* Text-Beschriftungen in Header-Buttons ausblenden */
-  .logout-text {
-    display: none !important;
+  .logout-text { display: none !important; }
+  .user-name   { display: none !important; }
+
+  /* --- Welcome: kompakter, kein riesiges Kanji-Heading --- */
+  .member-welcome-wrap {
+    margin-bottom: 0.75rem !important;
   }
 
-  /* User-Namen ausblenden, nur Icon anzeigen */
-  .user-name {
-    display: none !important;
-  }
-
-  /* --- Willkommens-Bereich: Schrift verkleinern --- */
-  .dashboard-start h1 {
-    font-size: 1.3rem !important;
+  .member-welcome-title {
+    font-size: 1.35rem !important;
     letter-spacing: 2px !important;
+  }
+
+  .member-welcome-subtitle {
+    font-size: 0.7rem !important;
+  }
+
+  .member-welcome-kanji {
+    font-size: 1.1rem !important;
+  }
+
+  /* --- Mobile Hero Buttons (QR + Check-in) --- */
+  .md-mobile-hero {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.6rem !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .md-mobile-hero-btn {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    padding: 1rem 0.5rem !important;
+    border-radius: 14px !important;
+    border: none !important;
+    cursor: pointer !important;
+    font-family: inherit !important;
+    -webkit-tap-highlight-color: transparent !important;
+    transition: transform 0.15s, opacity 0.15s !important;
+  }
+
+  .md-mobile-hero-btn:active {
+    transform: scale(0.95) !important;
+    opacity: 0.85 !important;
+  }
+
+  .md-mobile-hero-btn--primary {
+    background: linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(255,215,0,0.08) 100%) !important;
+    border: 1.5px solid rgba(255,215,0,0.4) !important;
+  }
+
+  .md-mobile-hero-btn--secondary {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1.5px solid rgba(255,255,255,0.12) !important;
+  }
+
+  .md-mobile-hero-btn-icon {
+    font-size: 1.5rem !important;
+    line-height: 1 !important;
+  }
+
+  .md-mobile-hero-btn-label {
+    font-size: 0.85rem !important;
+    font-weight: 700 !important;
+    color: #fff !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .md-mobile-hero-btn--primary .md-mobile-hero-btn-label {
+    color: #ffd700 !important;
+  }
+
+  .md-mobile-hero-btn-sub {
+    font-size: 0.62rem !important;
+    color: rgba(255,255,255,0.4) !important;
+    font-weight: 400 !important;
+  }
+
+  /* --- Nächste Trainings Widget: immer sichtbar --- */
+  .md-mobile-schedule-widget {
+    display: block !important;
+    margin-bottom: 0 !important;
   }
 
   /* --- Stats-Grid: Ausweis oben (volle Breite), Stats 2-spaltig darunter --- */
@@ -65,7 +136,6 @@
     align-items: start !important;
   }
 
-  /* Ausweis-Container: volle Breite, ganz oben */
   .member-stats-grid .mitgliedsausweis-container {
     grid-column: 1 / -1 !important;
     order: -1 !important;
@@ -79,14 +149,9 @@
     padding: 0.75rem !important;
   }
 
-  .ausweis-body {
-    gap: 10px !important;
-  }
+  .ausweis-body { gap: 10px !important; }
 
-  .ausweis-title .title-jp {
-    font-size: 0.65rem !important;
-  }
-
+  .ausweis-title .title-jp,
   .ausweis-title .title-de {
     font-size: 0.65rem !important;
     letter-spacing: 1px !important;
@@ -97,43 +162,26 @@
     height: 66px !important;
   }
 
-  /* QR auf Handy kleiner */
   .mitgliedsausweis .ausweis-qr svg {
     width: 54px !important;
     height: 54px !important;
   }
 
-  /* --- Navigations-Kacheln: 7er → 4er Grid mobil --- */
-  .member-navigation-grid, .md-navigation-grid {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.5rem !important;
-    margin-bottom: 0.75rem !important;
+  /* --- Navigations-Kacheln: auf Mobile komplett ersetzen durch Bottom-Nav ---
+       Die Grid-Kacheln werden auf Mobile ausgeblendet. */
+  .member-navigation-grid,
+  .md-navigation-grid {
+    display: none !important;
   }
 
-  .member-navigation-grid .cta-tile {
-    padding: 0.75rem 0.4rem !important;
-    min-height: 72px !important;
-    font-size: 0.8rem !important;
-    gap: 0.4rem !important;
+  /* --- Schnellzugriff: NUR Chat + Benachrichtigungen anzeigen (QR + Checkin sind oben) --- */
+  .member-quick-actions-grid {
+    display: none !important;
   }
 
-  /* --- Info-Cards: 2-spaltig → 1-spaltig auf Mobil --- */
+  /* --- Info-Cards: 1-spaltig --- */
   .md-info-list {
     grid-template-columns: 1fr !important;
-  }
-
-  /* --- Schnellzugriff: 5er → 3er Grid --- */
-  .member-quick-actions {
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 0.5rem !important;
-    margin-top: 0.75rem !important;
-  }
-
-  .member-quick-actions .cta-tile {
-    padding: 0.6rem 0.4rem !important;
-    min-height: 60px !important;
-    font-size: 0.8rem !important;
-    gap: 0.3rem !important;
   }
 
 }
@@ -144,13 +192,17 @@
 
 @media (max-width: 479px) {
 
-  .dashboard-container {
-    padding: 0.35rem !important;
+  .dashboard-start {
+    padding: 0.4rem 0.6rem 0 !important;
   }
 
-  /* Auf sehr kleinen Screens: Titel-Text ausblenden */
   .dashboard-header-left h2 {
     display: none !important;
+  }
+
+  .member-welcome-title {
+    font-size: 1.15rem !important;
+    letter-spacing: 1.5px !important;
   }
 
   /* Ausweis: noch kompakter */
@@ -169,29 +221,6 @@
     height: 46px !important;
   }
 
-  /* Kacheln noch kompakter */
-  .member-navigation-grid .cta-tile {
-    min-height: 62px !important;
-    padding: 0.55rem 0.3rem !important;
-    font-size: 0.72rem !important;
-  }
-
-  .member-navigation-grid .cta-tile svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-
-  .member-quick-actions .cta-tile {
-    min-height: 52px !important;
-    padding: 0.5rem 0.3rem !important;
-    font-size: 0.72rem !important;
-  }
-
-  .member-quick-actions .cta-tile svg {
-    width: 18px !important;
-    height: 18px !important;
-  }
-
   /* Stats-Karten: kleinere Zahlen */
   .member-stats-grid > div:not(.mitgliedsausweis-container) {
     gap: 0.5rem !important;
@@ -200,7 +229,15 @@
 }
 
 /* ===============================================================
-   DESKTOP (≥768px) — Info-Karten 2-spaltig
+   DESKTOP (≥768px) — Mobile-only Elemente ausblenden
    =============================================================== */
 
-/* Desktop: info-list is already 2-column via MemberDashboard.css */
+@media (min-width: 768px) {
+  .md-mobile-hero {
+    display: none;
+  }
+
+  .md-mobile-schedule-widget {
+    display: none;
+  }
+}

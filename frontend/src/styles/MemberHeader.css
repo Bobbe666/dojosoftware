@@ -45,3 +45,14 @@
   opacity: 0.6;
   cursor: wait;
 }
+
+/* Mobile: Support + Wunschliste Buttons ausblenden (kein Platz) */
+@media (max-width: 767px) {
+  .header-btn-mr {
+    display: none;
+  }
+  /* Chat-Button bleibt sichtbar */
+  .chat-header-badge-wrap {
+    display: flex !important;
+  }
+}
