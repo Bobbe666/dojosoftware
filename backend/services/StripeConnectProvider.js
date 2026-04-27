@@ -204,6 +204,41 @@ class StripeConnectProvider {
     }
 
     /**
+     * Alias für setup-customer Endpoint-Kompatibilität (gleiche Signatur wie StripeDataevProvider)
+     */
+    async createSepaCustomer(mitglied, iban, kontoinhaber) {
+        if (!this.stripe || !this.connectedAccountId) {
+            throw new Error('Stripe Connect nicht konfiguriert');
+        }
+
+        let customerId = mitglied.stripe_customer_id;
+        if (!customerId) {
+            const customer = await this.createCustomer(mitglied);
+            customerId = customer.id;
+        }
+
+        const paymentMethod = await this.createSepaPaymentMethod(
+            customerId,
+            iban.replace(/\s/g, ''),
+            kontoinhaber || `${mitglied.vorname} ${mitglied.nachname}`,
+            mitglied.email || `mitglied_${mitglied.mitglied_id}@placeholder.local`
+        );
+
+        await queryAsync(
+            'UPDATE sepa_mandate SET stripe_payment_method_id = ? WHERE mitglied_id = ? AND status = ?',
+            [paymentMethod.id, mitglied.mitglied_id, 'aktiv']
+        );
+
+        logger.info(`✅ Stripe Connect: SEPA Setup abgeschlossen für Mitglied ${mitglied.mitglied_id}`);
+
+        return {
+            success: true,
+            stripe_customer_id: customerId,
+            stripe_payment_method_id: paymentMethod.id
+        };
+    }
+
+    /**
      * Führt eine SEPA-Lastschrift durch (auf dem Connected Account)
      */
     async chargeSepaDirectDebit(mitgliedId, amount, description, beitragIds = []) {
