@@ -109,6 +109,76 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/feature-requests/debug/push
+ * Temporaerer Debug-Endpunkt: Push-Subscriptions pruefen und Test-Push senden (nur Admin)
+ */
+router.get('/debug/push', async (req, res) => {
+  try {
+    if (!isAdmin(req.user)) {
+      return res.status(403).json({ success: false, error: 'Keine Berechtigung' });
+    }
+
+    const user = req.user;
+    const dojoId = user.dojo_id || null;
+
+    const allSubs = await queryAsync(
+      'SELECT user_id, endpoint, is_active, updated_at FROM push_subscriptions WHERE is_active = TRUE'
+    );
+
+    let dojoSubs = [];
+    if (dojoId) {
+      dojoSubs = await queryAsync(
+        `SELECT ps.user_id, ps.endpoint, m.vorname, m.nachname, m.dojo_id
+         FROM push_subscriptions ps
+         INNER JOIN mitglieder m ON m.mitglied_id = ps.user_id
+         WHERE m.dojo_id = ? AND ps.is_active = TRUE`,
+        [dojoId]
+      );
+    } else {
+      dojoSubs = await queryAsync(
+        `SELECT ps.user_id, ps.endpoint, m.vorname, m.nachname, m.dojo_id
+         FROM push_subscriptions ps
+         INNER JOIN mitglieder m ON m.mitglied_id = ps.user_id
+         WHERE ps.is_active = TRUE`
+      );
+    }
+
+    const features = await queryAsync('SELECT id, titel, dojo_id, status FROM feature_requests ORDER BY id DESC LIMIT 5');
+    const vapidOk = !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+
+    const { sendPushToAllMitgliederOfDojo } = require('../utils/pushNotification');
+    const sent = await sendPushToAllMitgliederOfDojo(
+      dojoId,
+      '🔔 Push-Test',
+      'Push-Benachrichtigungen funktionieren! Feature-Wünsche sind ab sofort live.',
+      '/member/dashboard',
+      { type: 'push_test' }
+    );
+
+    res.json({
+      success: true,
+      debug: {
+        vapid_configured: vapidOk,
+        user_dojo_id: dojoId,
+        all_active_subs_total: allSubs.length,
+        dojo_matching_subs: dojoSubs.length,
+        dojo_subs_detail: dojoSubs.map(s => ({
+          user_id: s.user_id,
+          name: `${s.vorname} ${s.nachname}`,
+          dojo_id: s.dojo_id,
+          endpoint_short: s.endpoint?.substring(0, 60) + '...'
+        })),
+        recent_feature_requests: features,
+        test_push_sent_to: sent
+      }
+    });
+  } catch (error) {
+    logger.error('Push Debug Fehler', { error: error.message, stack: error.stack });
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/feature-requests/:id
  * Einzelnen Feature-Request abrufen
  */
