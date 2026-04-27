@@ -9,6 +9,7 @@ const bcrypt = require('bcryptjs');
 const auditLog = require('../../services/auditLogService');
 const { requireFields, sanitizeStrings } = require('../../middleware/validation');
 const { sendEmail, sendEmailForDojo } = require('../../services/emailService');
+const { generateInitialBeitraege } = require('../vertraege/shared');
 const router = express.Router();
 
 router.post("/",
@@ -250,33 +251,35 @@ router.post("/",
 
                 const vertragId = vertragResult.insertId;
 
-                // 💰 Ersten Beitrag automatisch erstellen
-                const createFirstBeitrag = (callback) => {
-                    // Tarif-Preis holen
-                    db.query('SELECT price_cents FROM tarife WHERE id = ?', [memberData.vertrag_tarif_id], (tarifErr, tarifResults) => {
-                        if (tarifErr || tarifResults.length === 0) {
-                            logger.warn('Tarif nicht gefunden für Beitragserstellung');
-                            return callback();
-                        }
-
-                        const tarifPreis = tarifResults[0].price_cents / 100;
-                        const beitragQuery = `
-                            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
-                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'SEPA', 0, ?)
-                        `;
-                        db.query(beitragQuery, [newMemberId, tarifPreis, memberData.dojo_id], (beitragErr, beitragResult) => {
-                            if (beitragErr) {
-                                logger.error('Fehler beim Erstellen des ersten Beitrags:', beitragErr);
-                            } else {
-                                logger.info(`💰 Erster Beitrag erstellt: ${tarifPreis}€ für Mitglied ${newMemberId}`);
+                // 💰 Beiträge für gesamte Vertragslaufzeit erstellen
+                const createAllBeitraege = async (callback) => {
+                    try {
+                        db.query('SELECT price_cents, mindestlaufzeit_monate, aufnahmegebuehr_cents FROM tarife WHERE id = ?', [memberData.vertrag_tarif_id], async (tarifErr, tarifResults) => {
+                            if (tarifErr || tarifResults.length === 0) {
+                                logger.warn('Tarif nicht gefunden für Beitragserstellung');
+                                return callback();
+                            }
+                            const tarif = tarifResults[0];
+                            const tarifPreis = tarif.price_cents / 100;
+                            const vertragsbeginn = memberData.vertragsbeginn || new Date().toISOString().split('T')[0];
+                            const vertragsende = memberData.vertragsende || null;
+                            const mindestlaufzeit = tarif.mindestlaufzeit_monate || 12;
+                            try {
+                                await generateInitialBeitraege(newMemberId, memberData.dojo_id, vertragsbeginn, tarifPreis, tarif.aufnahmegebuehr_cents || 0, vertragsende, mindestlaufzeit);
+                                logger.info(`💰 Beiträge für gesamte Laufzeit erstellt für Mitglied ${newMemberId}`);
+                            } catch (e) {
+                                logger.error('Fehler beim Erstellen der Beiträge:', e);
                             }
                             callback();
                         });
-                    });
+                    } catch (e) {
+                        logger.error('Fehler in createAllBeitraege:', e);
+                        callback();
+                    }
                 };
 
-                // Beitrag erstellen, dann User-Account und Familienmitglieder
-                createFirstBeitrag(() => {
+                // Beiträge erstellen, dann User-Account und Familienmitglieder
+                createAllBeitraege(() => {
                     // 🔐 User-Account erstellen (nur bei öffentlicher Registrierung mit Benutzername/Passwort)
                     createUserAccountIfNeeded(memberData, newMemberId, (userErr, userResult) => {
                         // 👨‍👩‍👧 Familienmitglieder erstellen (wenn vorhanden)
@@ -477,27 +480,22 @@ async function createFamilyMembers(familyMembers, mainMemberData, dojoId, callba
 
                         logger.info(`✅ Vertrag für Familienmitglied erstellt: ID ${vertragResult.insertId}`);
 
-                        // 💰 Ersten Beitrag automatisch erstellen
-                        const beitragQuery = `
-                            INSERT INTO beitraege (mitglied_id, betrag, zahlungsdatum, zahlungsart, bezahlt, dojo_id)
-                            VALUES (?, ?, DATE_FORMAT(NOW(), '%Y-%m-01'), 'SEPA', 0, ?)
-                        `;
-                        db.query(beitragQuery, [newMemberId, monatsbeitrag, dojoId], (beitragErr, beitragResult) => {
-                            if (beitragErr) {
-                                logger.error(`❌ Fehler beim Erstellen des ersten Beitrags:`, beitragErr);
-                            } else {
-                                logger.info(`💰 Erster Beitrag erstellt: ${monatsbeitrag}€ für Mitglied ${newMemberId}`);
-                            }
-
-                            createdMembers.push({
-                                mitglied_id: newMemberId,
-                                vorname: fm.vorname,
-                                nachname: fm.nachname,
-                                vertrag_id: vertragResult?.insertId,
-                                beitrag_id: beitragResult?.insertId
+                        // 💰 Beiträge für gesamte Vertragslaufzeit erstellen
+                        const vertragsbeginn = mainMemberData.vertragsbeginn || new Date().toISOString().split('T')[0];
+                        generateInitialBeitraege(newMemberId, dojoId, vertragsbeginn, monatsbeitrag, 0, mainMemberData.vertragsende || null, tarif.mindestlaufzeit_monate || 12)
+                            .then(() => {
+                                logger.info(`💰 Beiträge für gesamte Laufzeit erstellt für Familienmitglied ${newMemberId}`);
+                            })
+                            .catch(e => logger.error(`❌ Fehler Beitrags-Generierung Familienmitglied:`, e))
+                            .finally(() => {
+                                createdMembers.push({
+                                    mitglied_id: newMemberId,
+                                    vorname: fm.vorname,
+                                    nachname: fm.nachname,
+                                    vertrag_id: vertragResult?.insertId
+                                });
+                                createMember(index + 1);
                             });
-                            createMember(index + 1);
-                        });
                     });
                 });
             } else {
