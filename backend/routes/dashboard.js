@@ -691,23 +691,43 @@ router.get('/cockpit-uebersicht', async (req, res) => {
       neue_vertraege_unbestaetigt = Number(nv_count) || 0;
     } catch (_) { /* Spalte noch nicht migriert — ignorieren */ }
 
-    logger.debug('CockpitUebersicht geladen', {
-      dojo_id: secureDojoId,
-      geburtstage_heute,
-      geburtstage_woche,
-      ablaufende_vertraege,
-      offene_mahnungen,
-      anstehende_lastschriften,
-      neue_vertraege_unbestaetigt,
-    });
+    // ── 7. Fehlgeschlagene Lastschriften (offene, nicht bereits bezahlt) ──────
+    let fehlgeschlagene_lastschriften = 0;
+    try {
+      const [[{ fl_count }]] = await pool.query(
+        `SELECT COUNT(DISTINCT slt.mitglied_id, slb.monat, slb.jahr) AS fl_count
+         FROM stripe_lastschrift_transaktion slt
+         JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+         JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+         WHERE slt.status = 'failed'
+           AND slt.id = (
+             SELECT slt2.id FROM stripe_lastschrift_transaktion slt2
+             JOIN stripe_lastschrift_batch slb2 ON slt2.batch_id = slb2.batch_id
+             WHERE slt2.mitglied_id = slt.mitglied_id AND slt2.status = 'failed'
+               AND slb2.monat = slb.monat AND slb2.jahr = slb.jahr
+             ORDER BY slt2.created_at DESC LIMIT 1
+           )
+           AND NOT EXISTS (
+             SELECT 1 FROM stripe_lastschrift_transaktion slt3
+             JOIN stripe_lastschrift_batch slb3 ON slt3.batch_id = slb3.batch_id
+             WHERE slt3.mitglied_id = slt.mitglied_id
+               AND slt3.status IN ('succeeded','processing')
+               AND slb3.monat = slb.monat AND slb3.jahr = slb.jahr
+           )
+           ${dojoFilterM}`,
+        dojoParams
+      );
+      fehlgeschlagene_lastschriften = Number(fl_count) || 0;
+    } catch (_) { /* Tabelle existiert evtl. noch nicht — ignorieren */ }
 
     res.json({
-      geburtstage_heute:             Number(geburtstage_heute)             || 0,
-      geburtstage_woche:             Number(geburtstage_woche)             || 0,
-      ablaufende_vertraege:          Number(ablaufende_vertraege)          || 0,
-      offene_mahnungen:              Number(offene_mahnungen)              || 0,
-      anstehende_lastschriften:      Number(anstehende_lastschriften)      || 0,
+      geburtstage_heute:                Number(geburtstage_heute)             || 0,
+      geburtstage_woche:                Number(geburtstage_woche)             || 0,
+      ablaufende_vertraege:             Number(ablaufende_vertraege)          || 0,
+      offene_mahnungen:                 Number(offene_mahnungen)              || 0,
+      anstehende_lastschriften:         Number(anstehende_lastschriften)      || 0,
       neue_vertraege_unbestaetigt,
+      fehlgeschlagene_lastschriften,
     });
   } catch (error) {
     logger.error('CockpitUebersicht Fehler:', error);

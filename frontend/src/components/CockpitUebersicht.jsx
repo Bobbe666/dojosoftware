@@ -328,6 +328,15 @@ const CARDS = [
     urgent: false,
     color: '#22c55e',
   },
+  {
+    key: 'fehlgeschlagene_lastschriften',
+    icon: '❌',
+    label: 'Fehlgeschl. Einzüge',
+    path: '/dashboard/offene-zahlungen',
+    popup: null,
+    urgent: true,
+    color: '#ef4444',
+  },
 ];
 
 const CockpitUebersicht = () => {
@@ -354,6 +363,7 @@ const CockpitUebersicht = () => {
         geburtstage_heute: 0, geburtstage_woche: 0,
         ablaufende_vertraege: 0, offene_mahnungen: 0,
         anstehende_lastschriften: 0, neue_vertraege_unbestaetigt: 0,
+        fehlgeschlagene_lastschriften: 0,
       });
     } finally {
       setLoading(false);
