@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const logger = require("../utils/logger");
 const router = express.Router();
 
 // IBAN-Validierung und BIC-Lookup
@@ -195,18 +196,17 @@ router.get("/details/:blz", (req, res) => {
 
 // IBAN-Prüfziffer berechnen
 function calculateCheckDigits(bban) {
-    // BBAN + "DE" + "00" für Prüfziffer-Berechnung
-    const rearranged = bban + "1314"; // DE = 13, 14
-    
-    // Modulo 97 berechnen
+    // Standard IBAN Prüfziffer: BBAN + "DE00" → als Zahlen → mod 97 → 98 - remainder
+    // DE = 13, 14 → "1314", dann "00" als Platzhalter
+    const numeric = bban + "131400";
+
+    // Modulo 97 auf langer Zahl (chunk-weise um Overflow zu vermeiden)
     let remainder = 0;
-    for (let i = 0; i < rearranged.length; i++) {
-        remainder = (remainder * 10 + parseInt(rearranged[i])) % 97;
+    for (let i = 0; i < numeric.length; i++) {
+        remainder = (remainder * 10 + parseInt(numeric[i])) % 97;
     }
-    
-    // Prüfziffer berechnen
-    const checkDigits = (98 - remainder).toString().padStart(2, '0');
-    return checkDigits;
+
+    return String(98 - remainder).padStart(2, '0');
 }
 
 module.exports = router;

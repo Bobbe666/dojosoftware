@@ -207,8 +207,9 @@ class ManualSepaProvider {
                 throw new Error('No active SEPA mandate found for PDF generation');
             }
 
-            // Generate PDF using existing utility
-            const pdfBuffer = await SepaPdfGenerator.generatePdf(mandateData);
+            // Generate PDF using existing utility (Instanzmethode, kein static call)
+            const generator = new SepaPdfGenerator();
+            const pdfBuffer = await generator.generateSepaMandatePDF(mandateData);
 
             logger.info(`✅ Manual SEPA: PDF generated for mandate ${mandateData.mandatsreferenz}`);
 
@@ -235,7 +236,7 @@ class ManualSepaProvider {
                     d.plz as dojo_plz, d.ort as dojo_ort, d.sepa_glaeubiger_id
                 FROM sepa_mandate sm
                 JOIN mitglieder m ON sm.mitglied_id = m.mitglied_id
-                JOIN dojo d ON 1=1  -- Assuming single dojo
+                JOIN dojo d ON d.id = m.dojo_id
                 WHERE sm.mitglied_id = ? AND sm.status = 'aktiv' AND sm.provider = 'manual_sepa'
                 ORDER BY sm.erstellungsdatum DESC
                 LIMIT 1

@@ -1733,7 +1733,7 @@ try {
 // Mahnwesen Route
 try {
   const mahnwesenRouter = require(path.join(__dirname, "routes", "mahnwesen.js"));
-  app.use("/api/mahnwesen", mahnwesenRouter);
+  app.use("/api/mahnwesen", authenticateToken, mahnwesenRouter);
   logger.success('Route gemountet', { path: '/api/mahnwesen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1786,7 +1786,7 @@ try {
 // LASTSCHRIFTLAUF - SEPA Batch File Generation
 try {
   const lastschriftlaufRouter = require(path.join(__dirname, "routes", "lastschriftlauf.js"));
-  app.use("/api/lastschriftlauf", lastschriftlaufRouter);
+  app.use("/api/lastschriftlauf", authenticateToken, lastschriftlaufRouter);
   logger.success('Route gemountet', { path: '/api/lastschriftlauf' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {

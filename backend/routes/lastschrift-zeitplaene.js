@@ -111,13 +111,18 @@ router.get("/:id", async (req, res) => {
  */
 router.post("/", async (req, res) => {
     try {
-        let dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        let dojoId = getSecureDojoId(req);
 
-        if (!dojoId) {
+        // Super-Admin darf dojo_id aus Body setzen; normale Admins nicht
+        if (!dojoId && isSuperAdmin(req)) {
+            dojoId = req.body.dojo_id || null;
+        }
+
+        if (!dojoId && !isSuperAdmin(req)) {
             return res.status(400).json({ error: "Dojo ID erforderlich" });
         }
 
-        // "all" wird als NULL gespeichert (für alle Dojos)
+        // "all" wird als NULL gespeichert (für alle Dojos — nur Super-Admin)
         if (dojoId === "all") {
             dojoId = null;
         }
@@ -182,7 +187,8 @@ router.post("/", async (req, res) => {
 router.put("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        let dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        let dojoId = getSecureDojoId(req);
+        if (!dojoId && isSuperAdmin(req)) dojoId = req.body.dojo_id || null;
 
         // "all" wird als NULL gespeichert
         if (dojoId === "all") {
@@ -286,7 +292,8 @@ router.delete("/:id", async (req, res) => {
 router.post("/:id/execute", async (req, res) => {
     try {
         const { id } = req.params;
-        const dojoId = req.body.dojo_id || req.dojo_id || req.user?.dojo_id;
+        let dojoId = getSecureDojoId(req);
+        if (!dojoId && isSuperAdmin(req)) dojoId = req.body.dojo_id || null;
 
         // Lade Zeitplan
         const zeitplaene = await queryAsync(
