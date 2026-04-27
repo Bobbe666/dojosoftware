@@ -8,7 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import {
   AlertTriangle, CreditCard, Building2, RefreshCw, Check, X,
   Mail, Eye, Filter, TrendingDown, Users, Clock, CheckCircle,
-  XCircle, AlertCircle, ChevronDown, ChevronUp, Search, RotateCcw
+  XCircle, AlertCircle, Search, RotateCcw, TrendingUp, Euro,
+  Activity, ArrowUpRight
 } from 'lucide-react';
 import '../styles/OffeneZahlungen.css';
 
@@ -21,6 +22,7 @@ const OffeneZahlungen = () => {
   const [mitgliederProbleme, setMitgliederProbleme] = useState([]);
   const [failedTransaktionen, setFailedTransaktionen] = useState([]);
   const [retryLoading, setRetryLoading] = useState({});
+  const [auswertung, setAuswertung] = useState(null);
 
   // Filter
   const [filter, setFilter] = useState({
@@ -45,7 +47,7 @@ const OffeneZahlungen = () => {
       if (filter.status) params.append('status', filter.status);
       if (filter.typ) params.append('typ', filter.typ);
 
-      const [zahlungenRes, disputesRes, mitgliederRes, failedRes] = await Promise.all([
+      const [zahlungenRes, disputesRes, mitgliederRes, failedRes, auswertungRes] = await Promise.all([
         axios.get(`/admin/offene-zahlungen?${params}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
@@ -57,7 +59,10 @@ const OffeneZahlungen = () => {
         }).catch(() => ({ data: { mitglieder: [] } })),
         axios.get('/lastschriftlauf/stripe/failed-transactions', {
           headers: { Authorization: `Bearer ${token}` }
-        }).catch(() => ({ data: { transactions: [] } }))
+        }).catch(() => ({ data: { transactions: [] } })),
+        axios.get('/lastschriftlauf/zahlungsauswertung', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(() => ({ data: null }))
       ]);
 
       if (zahlungenRes.data.success) {
@@ -68,6 +73,7 @@ const OffeneZahlungen = () => {
       setDisputes(disputesRes.data.disputes || []);
       setMitgliederProbleme(mitgliederRes.data.mitglieder || []);
       setFailedTransaktionen(failedRes.data.transactions || []);
+      if (auswertungRes.data?.success) setAuswertung(auswertungRes.data);
 
     } catch (err) {
       console.error('Fehler beim Laden:', err);
@@ -182,37 +188,133 @@ const OffeneZahlungen = () => {
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="oz-stats">
-        <div className="stat-card warning">
-          <div className="stat-icon"><AlertTriangle size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.offen || 0}</span>
-            <span className="stat-label">Offen</span>
+      {/* Auswertung */}
+      {auswertung && (
+        <div className="oz-auswertung">
+          {/* Zeile 1: Hauptkennzahlen */}
+          <div className="oz-kpi-grid">
+            <div className="oz-kpi oz-kpi--danger">
+              <div className="oz-kpi-icon"><TrendingDown size={20} /></div>
+              <div className="oz-kpi-body">
+                <span className="oz-kpi-value">
+                  {auswertung.offene_beitraege.summe.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                </span>
+                <span className="oz-kpi-label">Überfällig gesamt</span>
+                <span className="oz-kpi-sub">{auswertung.offene_beitraege.anzahl} Beiträge · {auswertung.offene_beitraege.betroffene_mitglieder} Mitglieder</span>
+              </div>
+            </div>
+
+            <div className="oz-kpi oz-kpi--success">
+              <div className="oz-kpi-icon"><TrendingUp size={20} /></div>
+              <div className="oz-kpi-body">
+                <span className="oz-kpi-value">
+                  {auswertung.aktueller_monat.eingezogen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                </span>
+                <span className="oz-kpi-label">Dieser Monat eingezogen</span>
+                <span className="oz-kpi-sub">{auswertung.aktueller_monat.anzahl_bezahlt} von {auswertung.aktueller_monat.anzahl_bezahlt + auswertung.aktueller_monat.anzahl_offen} Beiträgen</span>
+              </div>
+            </div>
+
+            <div className="oz-kpi oz-kpi--warning">
+              <div className="oz-kpi-icon"><Euro size={20} /></div>
+              <div className="oz-kpi-body">
+                <span className="oz-kpi-value">
+                  {auswertung.aktueller_monat.noch_offen.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                </span>
+                <span className="oz-kpi-label">Dieser Monat noch offen</span>
+                <span className="oz-kpi-sub">{auswertung.aktueller_monat.anzahl_offen} ausstehende Beiträge</span>
+              </div>
+            </div>
+
+            <div className={`oz-kpi ${auswertung.failed_stripe.anzahl > 0 ? 'oz-kpi--danger' : 'oz-kpi--neutral'}`}>
+              <div className="oz-kpi-icon"><XCircle size={20} /></div>
+              <div className="oz-kpi-body">
+                <span className="oz-kpi-value">{auswertung.failed_stripe.anzahl}</span>
+                <span className="oz-kpi-label">Fehlgeschlagene Einzüge</span>
+                <span className="oz-kpi-sub">
+                  {auswertung.failed_stripe.summe > 0
+                    ? auswertung.failed_stripe.summe.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+                    : 'Alle erledigt'}
+                </span>
+              </div>
+            </div>
+
+            <div className={`oz-kpi ${auswertung.processing_stripe.anzahl > 0 ? 'oz-kpi--info' : 'oz-kpi--neutral'}`}>
+              <div className="oz-kpi-icon"><Activity size={20} /></div>
+              <div className="oz-kpi-body">
+                <span className="oz-kpi-value">{auswertung.processing_stripe.anzahl}</span>
+                <span className="oz-kpi-label">Im SEPA-Clearing</span>
+                <span className="oz-kpi-sub">
+                  {auswertung.processing_stripe.summe > 0
+                    ? auswertung.processing_stripe.summe.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+                    : 'Keine laufenden'}
+                </span>
+              </div>
+            </div>
+
+            <div className={`oz-kpi ${auswertung.ruecklastschriften.anzahl > 0 ? 'oz-kpi--warning' : 'oz-kpi--neutral'}`}>
+              <div className="oz-kpi-icon"><Building2 size={20} /></div>
+              <div className="oz-kpi-body">
+                <span className="oz-kpi-value">{auswertung.ruecklastschriften.anzahl}</span>
+                <span className="oz-kpi-label">Rücklastschriften offen</span>
+                <span className="oz-kpi-sub">
+                  {auswertung.ruecklastschriften.summe > 0
+                    ? auswertung.ruecklastschriften.summe.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+                    : 'Keine offenen'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Zeile 2: Monatsverlauf + letzte Erfolge */}
+          <div className="oz-detail-grid">
+            {auswertung.monatsverlauf?.length > 0 && (
+              <div className="oz-detail-card">
+                <h3><ArrowUpRight size={16} /> Monatsverlauf (letzte 6 Monate)</h3>
+                <div className="oz-monatsverlauf">
+                  {auswertung.monatsverlauf.map(m => {
+                    const maxVal = Math.max(...auswertung.monatsverlauf.map(x => parseFloat(x.summe)));
+                    const pct = maxVal > 0 ? (parseFloat(m.summe) / maxVal * 100) : 0;
+                    const [yr, mo] = m.monat.split('-');
+                    return (
+                      <div key={m.monat} className="oz-bar-item">
+                        <div className="oz-bar-fill" style={{ height: `${Math.max(pct, 4)}%` }} title={parseFloat(m.summe).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} />
+                        <span className="oz-bar-label">{mo}/{yr.slice(2)}</span>
+                        <span className="oz-bar-val">{(parseFloat(m.summe)/1000).toFixed(1)}k</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {auswertung.letzte_erfolge?.length > 0 && (
+              <div className="oz-detail-card">
+                <h3><CheckCircle size={16} /> Letzte erfolgreiche Einzüge</h3>
+                <div className="oz-erfolge-list">
+                  {auswertung.letzte_erfolge.map((e, i) => (
+                    <div key={i} className="oz-erfolg-item">
+                      <span className="oz-erfolg-name">{e.vorname} {e.nachname}</span>
+                      <span className="oz-erfolg-monat">{String(e.monat).padStart(2,'0')}/{e.jahr}</span>
+                      <span className="oz-erfolg-betrag">{parseFloat(e.betrag).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {auswertung.mitglieder_mit_problem > 0 && (
+              <div className="oz-detail-card oz-detail-card--alert">
+                <h3><Users size={16} /> Zahlungsprobleme</h3>
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'var(--error)' }}>{auswertung.mitglieder_mit_problem}</span>
+                  <p style={{ margin: '0.5rem 0 0', color: 'var(--text-2)', fontSize: '0.9rem' }}>Mitglieder mit aktivem Zahlungsproblem-Flag</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        <div className="stat-card danger">
-          <div className="stat-icon"><TrendingDown size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-value">{parseFloat(stats.summe_offen || 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}</span>
-            <span className="stat-label">Offener Betrag</span>
-          </div>
-        </div>
-        <div className="stat-card info">
-          <div className="stat-icon"><Building2 size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.ruecklastschriften || 0}</span>
-            <span className="stat-label">Rücklastschriften</span>
-          </div>
-        </div>
-        <div className="stat-card purple">
-          <div className="stat-icon"><CreditCard size={24} /></div>
-          <div className="stat-content">
-            <span className="stat-value">{stats.chargebacks || 0}</span>
-            <span className="stat-label">Chargebacks</span>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="oz-tabs">

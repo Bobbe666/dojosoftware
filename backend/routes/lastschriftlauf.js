@@ -1428,6 +1428,166 @@ router.get("/stripe/batch/:batchId", async (req, res) => {
 });
 
 /**
+ * GET /lastschriftlauf/zahlungsauswertung
+ * Echte Zahlungsstatistiken aus allen relevanten Quellen
+ */
+router.get("/zahlungsauswertung", async (req, res) => {
+    try {
+        const secureDojoId = getSecureDojoId(req);
+        const dojoFilter   = secureDojoId ? 'AND m.dojo_id = ?' : '';
+        const dojoFilterD  = secureDojoId ? 'AND dojo_id = ?' : '';
+        const p            = secureDojoId ? [secureDojoId] : [];
+        const today        = new Date().toISOString().split('T')[0];
+        const thisMonth    = new Date();
+        const monthStart   = `${thisMonth.getFullYear()}-${String(thisMonth.getMonth()+1).padStart(2,'0')}-01`;
+
+        const [
+            offeneBeitraege,
+            aktuellerMonat,
+            failedStripe,
+            processingStripe,
+            ruecklastschriften,
+            mitgliederMitProblem,
+            letzteErfolge,
+            monatsverlauf
+        ] = await Promise.all([
+            // 1. Überfällige offene Beiträge
+            queryAsync(`
+                SELECT COUNT(*) as anzahl, COALESCE(SUM(b.betrag),0) as summe,
+                       COUNT(DISTINCT m.mitglied_id) as betroffene_mitglieder
+                FROM beitraege b
+                JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                WHERE b.bezahlt = 0
+                  AND b.zahlungsdatum < ?
+                  AND b.art = 'mitgliedsbeitrag'
+                  AND m.aktiv = 1
+                  ${dojoFilter}
+            `, [today, ...p]),
+
+            // 2. Aktueller Monat: eingezogen vs. offen
+            queryAsync(`
+                SELECT
+                  SUM(CASE WHEN b.bezahlt=1 THEN b.betrag ELSE 0 END) as eingezogen,
+                  SUM(CASE WHEN b.bezahlt=0 THEN b.betrag ELSE 0 END) as noch_offen,
+                  COUNT(CASE WHEN b.bezahlt=1 THEN 1 END) as anzahl_bezahlt,
+                  COUNT(CASE WHEN b.bezahlt=0 THEN 1 END) as anzahl_offen
+                FROM beitraege b
+                JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                WHERE DATE_FORMAT(b.zahlungsdatum,'%Y-%m') = DATE_FORMAT(NOW(),'%Y-%m')
+                  AND b.art = 'mitgliedsbeitrag'
+                  AND m.aktiv = 1
+                  ${dojoFilter}
+            `, p),
+
+            // 3. Fehlgeschlagene Stripe-Transaktionen (noch offen)
+            queryAsync(`
+                SELECT COUNT(*) as anzahl, COALESCE(SUM(slt.betrag),0) as summe
+                FROM stripe_lastschrift_transaktion slt
+                JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+                JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+                WHERE slt.status = 'failed'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM stripe_lastschrift_transaktion slt2
+                      JOIN stripe_lastschrift_batch slb2 ON slt2.batch_id = slb2.batch_id
+                      WHERE slt2.mitglied_id = slt.mitglied_id
+                        AND slt2.status IN ('succeeded','processing')
+                        AND slb2.monat = slb.monat AND slb2.jahr = slb.jahr
+                        AND slt2.created_at >= slt.created_at
+                  )
+                  ${dojoFilter}
+            `, p),
+
+            // 4. Laufende (processing) Stripe-Transaktionen
+            queryAsync(`
+                SELECT COUNT(*) as anzahl, COALESCE(SUM(slt.betrag),0) as summe
+                FROM stripe_lastschrift_transaktion slt
+                JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+                WHERE slt.status = 'processing'
+                  ${dojoFilter}
+            `, p),
+
+            // 5. Rücklastschriften (offene_zahlungen Tabelle)
+            queryAsync(`
+                SELECT COUNT(*) as anzahl, COALESCE(SUM(betrag),0) as summe
+                FROM offene_zahlungen
+                WHERE status = 'offen'
+                  ${dojoFilterD}
+            `, p),
+
+            // 6. Mitglieder mit Zahlungsproblem-Flag
+            queryAsync(`
+                SELECT COUNT(*) as anzahl
+                FROM mitglieder
+                WHERE zahlungsproblem = 1 AND aktiv = 1
+                  ${dojoFilterD}
+            `, p),
+
+            // 7. Letzte 5 erfolgreiche Einzüge
+            queryAsync(`
+                SELECT m.vorname, m.nachname, slt.betrag, slt.created_at,
+                       slb.monat, slb.jahr
+                FROM stripe_lastschrift_transaktion slt
+                JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+                JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+                WHERE slt.status = 'succeeded'
+                  ${dojoFilter}
+                ORDER BY slt.created_at DESC LIMIT 5
+            `, p),
+
+            // 8. Monatsverlauf letzte 6 Monate (eingezogen)
+            queryAsync(`
+                SELECT DATE_FORMAT(b.zahlungsdatum,'%Y-%m') as monat,
+                       COALESCE(SUM(b.betrag),0) as summe,
+                       COUNT(*) as anzahl
+                FROM beitraege b
+                JOIN mitglieder m ON b.mitglied_id = m.mitglied_id
+                WHERE b.bezahlt = 1
+                  AND b.art = 'mitgliedsbeitrag'
+                  AND b.zahlungsdatum >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+                  AND m.aktiv = 1
+                  ${dojoFilter}
+                GROUP BY DATE_FORMAT(b.zahlungsdatum,'%Y-%m')
+                ORDER BY monat ASC
+            `, p)
+        ]);
+
+        res.json({
+            success: true,
+            offene_beitraege: {
+                anzahl: offeneBeitraege[0]?.anzahl || 0,
+                summe: parseFloat(offeneBeitraege[0]?.summe || 0),
+                betroffene_mitglieder: offeneBeitraege[0]?.betroffene_mitglieder || 0
+            },
+            aktueller_monat: {
+                eingezogen: parseFloat(aktuellerMonat[0]?.eingezogen || 0),
+                noch_offen: parseFloat(aktuellerMonat[0]?.noch_offen || 0),
+                anzahl_bezahlt: aktuellerMonat[0]?.anzahl_bezahlt || 0,
+                anzahl_offen: aktuellerMonat[0]?.anzahl_offen || 0
+            },
+            failed_stripe: {
+                anzahl: failedStripe[0]?.anzahl || 0,
+                summe: parseFloat(failedStripe[0]?.summe || 0)
+            },
+            processing_stripe: {
+                anzahl: processingStripe[0]?.anzahl || 0,
+                summe: parseFloat(processingStripe[0]?.summe || 0)
+            },
+            ruecklastschriften: {
+                anzahl: ruecklastschriften[0]?.anzahl || 0,
+                summe: parseFloat(ruecklastschriften[0]?.summe || 0)
+            },
+            mitglieder_mit_problem: mitgliederMitProblem[0]?.anzahl || 0,
+            letzte_erfolge: letzteErfolge,
+            monatsverlauf
+        });
+
+    } catch (error) {
+        logger.error('Fehler bei Zahlungsauswertung:', error);
+        res.status(500).json({ error: 'Fehler bei der Auswertung', details: error.message });
+    }
+});
+
+/**
  * GET /lastschriftlauf/stripe/failed-transactions
  * Fehlgeschlagene Stripe-Transaktionen auflisten
  */

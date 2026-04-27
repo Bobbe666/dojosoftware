@@ -72,25 +72,168 @@
   to { transform: rotate(360deg); }
 }
 
-/* ===== STATS ===== */
-.oz-stats {
-  display: grid;
-  grid-template-columns: var(--ui-stats-cols);
-  gap: var(--ui-stats-gap);
-  margin-bottom: var(--ui-stats-margin-b);
-}
+/* ===== STATS (legacy, kept for backwards compat) ===== */
+.oz-stats { display: none; }
 
-.stat-content {
+/* ===== AUSWERTUNG ===== */
+.oz-auswertung {
+  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 }
 
-.stat-label {
-  font-size: 0.85rem;
+/* KPI Grid */
+.oz-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 900px) {
+  .oz-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .oz-kpi-grid { grid-template-columns: 1fr; }
+}
+
+.oz-kpi {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--comp-radius-xl);
+  border: 1px solid;
+  transition: transform 0.15s;
+}
+.oz-kpi:hover { transform: translateY(-1px); }
+
+.oz-kpi--danger  { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.25);  }
+.oz-kpi--success { background: rgba(34,197,94,0.08);  border-color: rgba(34,197,94,0.25);  }
+.oz-kpi--warning { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.25); }
+.oz-kpi--info    { background: rgba(99,102,241,0.08); border-color: rgba(99,102,241,0.25); }
+.oz-kpi--neutral { background: var(--primary-alpha-05); border-color: var(--primary-alpha-15); }
+
+.oz-kpi-icon {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--comp-radius-md);
+  background: rgba(255,255,255,0.06);
+}
+.oz-kpi--danger  .oz-kpi-icon { color: #ef4444; }
+.oz-kpi--success .oz-kpi-icon { color: #22c55e; }
+.oz-kpi--warning .oz-kpi-icon { color: #f59e0b; }
+.oz-kpi--info    .oz-kpi-icon { color: #6366f1; }
+.oz-kpi--neutral .oz-kpi-icon { color: var(--text-3); }
+
+.oz-kpi-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.oz-kpi-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.oz-kpi-label {
+  font-size: 0.78rem;
   color: var(--text-2);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  font-weight: 600;
 }
+.oz-kpi-sub {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}
+
+/* Detail Grid */
+.oz-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.75rem;
+}
+
+.oz-detail-card {
+  background: var(--surface-3);
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: var(--comp-radius-xl);
+  padding: 1rem 1.25rem;
+}
+.oz-detail-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-2);
+}
+.oz-detail-card--alert {
+  border-color: rgba(239,68,68,0.3);
+  background: rgba(239,68,68,0.05);
+}
+.oz-detail-card--alert h3 { color: #ef4444; }
+
+/* Monatsverlauf Balken */
+.oz-monatsverlauf {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+  height: 80px;
+}
+.oz-bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+  gap: 0.2rem;
+}
+.oz-bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, var(--primary) 0%, rgba(var(--primary-rgb,212,175,55),0.4) 100%);
+  border-radius: 3px 3px 0 0;
+  min-height: 4px;
+  transition: height 0.3s ease;
+}
+.oz-bar-label {
+  font-size: 0.65rem;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.oz-bar-val {
+  font-size: 0.65rem;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Letzte Erfolge */
+.oz-erfolge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.oz-erfolg-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--primary-alpha-08);
+}
+.oz-erfolg-item:last-child { border-bottom: none; }
+.oz-erfolg-name { flex: 1; color: var(--text-1); font-weight: 500; }
+.oz-erfolg-monat { color: var(--text-3); font-size: 0.75rem; }
+.oz-erfolg-betrag { color: #22c55e; font-weight: 600; white-space: nowrap; }
 
 /* ===== TABS ===== */
 .oz-tabs {
