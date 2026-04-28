@@ -64,7 +64,7 @@
   justify-content: space-between !important;
   align-items: center !important;
   margin-bottom: 0 !important;
-  padding: var(--spacing-3) var(--spacing-4) !important;
+  padding: 8px var(--spacing-4) !important;
   background: var(--surface-3);
   backdrop-filter: var(--glass-blur) !important;
   border-radius: var(--radius-lg) !important;
@@ -74,7 +74,7 @@
   overflow: visible !important;
   animation: fadeInUp 0.8s ease-out !important;
   height: auto !important;
-  min-height: 52px !important;
+  min-height: 46px !important;
   z-index: 1000 !important;
 }
 
@@ -115,15 +115,15 @@
 }
 
 .dashboard-logo {
-  height: 50px !important;
+  height: 38px !important;
   width: auto !important;
-  filter: drop-shadow(0 0 10px rgba(255,215,0,0.5)) !important;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)) !important;
   flex-shrink: 0 !important;
 }
 
 .header-left h1,
 .dashboard-header h2 {
-  font-size: var(--font-size-xl);
+  font-size: 1rem;
   font-weight: var(--font-weight-bold);
   background: var(--gradient-gold);
   -webkit-background-clip: text;
@@ -139,7 +139,7 @@
 
 .header-left p,
 .verein-name {
-  font-size: var(--font-size-lg);
+  font-size: 0.8rem;
   color: var(--text-secondary);
   margin: 0;
   position: relative;

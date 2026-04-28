@@ -650,89 +650,99 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* ── Desktop-Optimierung (ab 800px) ────────────────────────────────── */
+/* ── Desktop: kompakt & elegant (ab 800px) ─────────────────────────── */
 @media (min-width: 800px) {
+
+  /* Header */
   .td-header {
-    padding: 20px 32px 16px;
+    padding: 13px 24px 11px;
   }
   .td-header-left h2 {
-    font-size: 1.65rem;
+    font-size: 1.15rem;
+    letter-spacing: 0.1em;
   }
   .td-header-left p {
-    font-size: 0.88rem;
-    margin-top: 4px;
+    font-size: 0.78rem;
+    margin-top: 2px;
   }
 
+  /* Category sidebar */
   .td-cats {
-    min-width: 175px;
-    padding: 20px 14px;
-    gap: 6px;
+    min-width: 150px;
+    padding: 14px 10px;
+    gap: 3px;
   }
   .td-cat-btn {
-    padding: 11px 14px;
-    font-size: 0.92rem;
-    gap: 10px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    gap: 7px;
   }
-  .td-cat-dot { width: 9px; height: 9px; }
-  .td-cat-count { font-size: 0.78rem; }
+  .td-cat-dot { width: 7px; height: 7px; }
+  .td-cat-count { font-size: 0.7rem; }
 
+  /* Preset content area */
   .td-content {
-    padding: 20px 28px;
-    gap: 20px;
+    padding: 14px 18px;
+    gap: 12px;
   }
   .td-content-title {
-    font-size: 1.1rem;
-    letter-spacing: 0.12em;
+    font-size: 0.88rem;
+    letter-spacing: 0.1em;
   }
   .td-btn-add {
-    padding: 9px 18px;
-    font-size: 0.86rem;
-  }
-
-  .td-preset-grid {
-    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-    gap: 12px;
-  }
-  .td-preset-card {
-    padding: 18px 20px;
-    gap: 8px;
-    border-radius: 14px;
-  }
-  .td-preset-id {
-    font-size: 1.65rem;
-  }
-  .td-preset-info {
-    font-size: 0.92rem;
-  }
-  .td-preset-detail {
-    font-size: 0.84rem;
-  }
-  .td-preset-edit {
-    width: 32px;
-    height: 32px;
-    font-size: 0.92rem;
-  }
-
-  .td-sync {
-    padding: 18px 32px;
-    gap: 12px;
-  }
-  .td-sync-title {
+    padding: 6px 14px;
     font-size: 0.78rem;
   }
-  .td-sync-token {
-    font-size: 0.84rem;
-    padding: 10px 16px;
+
+  /* Preset grid */
+  .td-preset-grid {
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 8px;
   }
-  .td-sync-btn {
-    padding: 9px 18px;
-    font-size: 0.84rem;
+  .td-preset-card {
+    padding: 11px 13px;
+    gap: 4px;
+    border-radius: 10px;
   }
-  .td-sync-info {
-    font-size: 0.82rem;
+  .td-preset-id {
+    font-size: 1.25rem;
+  }
+  .td-preset-info {
+    font-size: 0.8rem;
+  }
+  .td-preset-detail {
+    font-size: 0.72rem;
+  }
+  .td-preset-edit {
+    width: 26px;
+    height: 26px;
+    font-size: 0.78rem;
+    top: 8px;
+    right: 8px;
   }
 
-  /* Inline edit panel — replaces modal on desktop */
+  /* Sync section */
+  .td-sync {
+    padding: 11px 24px;
+    gap: 8px;
+  }
+  .td-sync-title {
+    font-size: 0.7rem;
+  }
+  .td-sync-token {
+    font-size: 0.78rem;
+    padding: 7px 12px;
+  }
+  .td-sync-btn {
+    padding: 7px 14px;
+    font-size: 0.78rem;
+  }
+  .td-sync-info {
+    font-size: 0.74rem;
+  }
+
+  /* ── Inline edit panel ─────────────────────────────────────────────── */
   .td-content--editing {
     flex-direction: row;
     overflow: hidden;
@@ -742,18 +752,18 @@
   .td-preset-area {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 20px 20px 28px;
+    padding: 14px 16px 14px 18px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     min-width: 0;
   }
   .td-inline-panel {
-    width: 400px;
+    width: 340px;
     flex-shrink: 0;
-    border-left: 1px solid #1e2940;
+    border-left: 1px solid #1a2535;
     overflow-y: auto;
-    background: #080f1a;
+    background: #070d18;
     animation: td-panel-in 0.16s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .td-modal--inline {
@@ -769,69 +779,100 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    background: #0d1825;
-    border-bottom: 1px solid #1e2940;
+    background: #0a1220;
+    border-bottom: 1px solid #1a2535;
+    padding: 11px 16px;
+  }
+  .td-modal--inline .td-modal-id {
+    font-size: 1.15rem;
+  }
+  .td-modal--inline .td-modal-title {
+    font-size: 0.72rem;
   }
   .td-modal--inline .td-modal-body {
     overflow-y: visible;
+    padding: 13px 16px;
+    gap: 11px;
   }
   .td-modal--inline .td-modal-footer {
     position: sticky;
     bottom: 0;
-    background: #080f1a;
-    border-top: 1px solid #1e2940;
+    background: #070d18;
+    border-top: 1px solid #1a2535;
     grid-template-columns: 1fr 2fr;
+    padding: 11px 16px;
+    gap: 8px;
+  }
+  .td-modal--inline .td-btn-cancel,
+  .td-modal--inline .td-btn-save {
+    padding: 9px;
+    font-size: 0.84rem;
+  }
+  .td-modal--inline .td-delete-row {
+    padding: 0 16px 10px;
   }
   .td-preset-card--active {
     border-color: #2a4060 !important;
     background: #111d2b;
   }
 
+  /* Shared form elements (modal + inline) */
   .td-modal-header {
-    padding: 16px 24px;
+    padding: 12px 18px;
   }
   .td-modal-id {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
   }
   .td-modal-title {
-    font-size: 0.86rem;
+    font-size: 0.76rem;
   }
   .td-modal-body {
-    padding: 20px 24px;
-    gap: 16px;
+    padding: 14px 18px;
+    gap: 12px;
   }
   .td-field > span {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
   }
   .td-field input[type="text"],
   .td-field input[type="number"] {
-    font-size: 1rem;
-    padding: 10px 14px;
+    font-size: 0.92rem;
+    padding: 7px 10px;
   }
-  .td-time-row input { width: 84px !important; }
+  .td-time-row input { width: 72px !important; }
   .td-modal-footer {
-    padding: 16px 24px;
-    gap: 12px;
+    padding: 12px 18px;
+    gap: 8px;
   }
   .td-btn-cancel, .td-btn-save {
-    padding: 13px;
-    font-size: 1rem;
+    padding: 10px;
+    font-size: 0.9rem;
   }
   .td-ex-row {
-    padding: 12px 12px 12px 14px;
+    padding: 9px 9px 9px 11px;
   }
   .td-ex-name {
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
   .td-ex-times input {
-    width: 68px;
-    font-size: 0.95rem;
+    width: 58px;
+    font-size: 0.88rem;
   }
   .td-station-row {
-    padding: 9px 12px;
+    padding: 6px 10px;
   }
   .td-station-name {
-    font-size: 0.98rem;
+    font-size: 0.9rem;
+  }
+  .td-section-label {
+    font-size: 0.68rem;
+  }
+  .td-mode-btn {
+    padding: 6px;
+    font-size: 0.76rem;
+  }
+  .td-summary {
+    font-size: 0.78rem;
+    padding: 5px;
   }
 }
 
