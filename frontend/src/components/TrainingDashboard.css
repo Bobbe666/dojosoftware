@@ -1543,6 +1543,8 @@
   color: #ef4444;
 }
 
-/* Own exercise cards are clickable */
+/* All exercise cards are clickable */
+.td-catalog-item--clickable { cursor: pointer; }
 .td-catalog-item--own { cursor: pointer; }
+.td-catalog-item--clickable:hover .td-catalog-item-name { color: #d0e8f8; }
 .td-catalog-item--own:hover .td-catalog-item-name { color: #d0e8f8; }

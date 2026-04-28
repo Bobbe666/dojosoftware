@@ -421,6 +421,8 @@ function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCan
     } finally { setUploading(false); }
   }
 
+  const isOwn = !!exercise.dojo_id;
+
   function save() {
     onSave({
       name: name.trim() || exercise.name,
@@ -435,7 +437,7 @@ function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCan
       <div className="td-modal" onClick={e => e.stopPropagation()}>
         <div className="td-modal-header">
           <span className="td-modal-id" style={{ color: accentColor }}>&#9998;</span>
-          <span className="td-modal-title">Übung bearbeiten</span>
+          <span className="td-modal-title">{isOwn ? 'Übung bearbeiten' : exercise.name}</span>
         </div>
         <div className="td-modal-body">
           {/* Image section */}
@@ -458,38 +460,48 @@ function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCan
             {imgErr && <span className="td-exercise-img-err">{imgErr}</span>}
             <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} onChange={handleFileSelect} />
           </div>
-          <div className="td-field">
-            <span>Name</span>
-            <input type="text" maxLength={100} value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div className="td-field">
-            <span>Hauptkategorie</span>
-            <select value={category} onChange={e => { setCategory(e.target.value); setSubcatId(''); }} className="td-select">
-              {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-            </select>
-          </div>
-          <div className="td-field">
-            <span>Unterkategorie</span>
-            <select value={subcatId} onChange={e => setSubcatId(e.target.value)} className="td-select">
-              <option value="">— Ohne —</option>
-              {availableSubcats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
-          </div>
-          <div className="td-field">
-            <span>Beschreibung</span>
-            <textarea
-              className="td-textarea"
-              value={desc}
-              onChange={e => setDesc(e.target.value)}
-              rows={3}
-              maxLength={500}
-              placeholder="Optional: Ausführung, Muskeln, Hinweise…"
-            />
-          </div>
+          {isOwn && (
+            <>
+              <div className="td-field">
+                <span>Name</span>
+                <input type="text" maxLength={100} value={name} onChange={e => setName(e.target.value)} />
+              </div>
+              <div className="td-field">
+                <span>Hauptkategorie</span>
+                <select value={category} onChange={e => { setCategory(e.target.value); setSubcatId(''); }} className="td-select">
+                  {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                </select>
+              </div>
+              <div className="td-field">
+                <span>Unterkategorie</span>
+                <select value={subcatId} onChange={e => setSubcatId(e.target.value)} className="td-select">
+                  <option value="">— Ohne —</option>
+                  {availableSubcats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div className="td-field">
+                <span>Beschreibung</span>
+                <textarea
+                  className="td-textarea"
+                  value={desc}
+                  onChange={e => setDesc(e.target.value)}
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Optional: Ausführung, Muskeln, Hinweise…"
+                />
+              </div>
+            </>
+          )}
         </div>
         <div className="td-modal-footer">
-          <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
-          <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
+          {isOwn ? (
+            <>
+              <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
+              <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
+            </>
+          ) : (
+            <button className="td-btn-cancel" style={{ gridColumn: '1 / -1' }} onClick={onCancel}>Schließen</button>
+          )}
         </div>
       </div>
     </div>
@@ -737,9 +749,9 @@ function CatalogView({ exercises, subcategories, onAdd, onDelete, onUpdate, onAd
               <div className="td-catalog-list">
                 {group.exercises.map(ex => (
                   <div key={ex.id}
-                    className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}${ex.image_url ? ' td-catalog-item--has-img' : ''}`}
-                    onClick={() => ex.dojo_id && setEditingEx(ex)}
-                    title={ex.dojo_id ? 'Klicken zum Bearbeiten' : ex.name}
+                    className={`td-catalog-item td-catalog-item--clickable${ex.dojo_id ? ' td-catalog-item--own' : ''}${ex.image_url ? ' td-catalog-item--has-img' : ''}`}
+                    onClick={() => setEditingEx(ex)}
+                    title={ex.dojo_id ? 'Klicken zum Bearbeiten' : 'Foto hinzufügen'}
                   >
                     {ex.image_url && <img src={ex.image_url} alt={ex.name} className="td-catalog-item-img" loading="lazy" />}
                     <div className="td-catalog-item-main">

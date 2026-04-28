@@ -524,19 +524,17 @@ router.delete('/exercises/:id', requireFeature('training'), async (req, res) => 
 // ── POST /api/training/exercises/:id/image ── Bild hochladen ─────────────────
 router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseImg.single('image'), async (req, res) => {
   try {
-    const dojoId = getSecureDojoId(req);
-    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
     if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' });
 
     const { id } = req.params;
 
     const [check] = await db.promise().query(
-      'SELECT id, image_url FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
-      [id, dojoId]
+      'SELECT id, image_url FROM exercise_catalog WHERE id = ?',
+      [id]
     );
     if (check.length === 0) {
       fs.unlink(req.file.path, () => {});
-      return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+      return res.status(404).json({ error: 'Übung nicht gefunden' });
     }
 
     // Delete old image file if exists
@@ -547,8 +545,8 @@ router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseIm
 
     const imageUrl = `/uploads/exercises/${req.file.filename}`;
     await db.promise().query(
-      'UPDATE exercise_catalog SET image_url = ? WHERE id = ? AND dojo_id = ?',
-      [imageUrl, id, dojoId]
+      'UPDATE exercise_catalog SET image_url = ? WHERE id = ?',
+      [imageUrl, id]
     );
 
     res.json({ image_url: imageUrl });
@@ -562,16 +560,13 @@ router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseIm
 // ── DELETE /api/training/exercises/:id/image ── Bild entfernen ───────────────
 router.delete('/exercises/:id/image', requireFeature('training'), async (req, res) => {
   try {
-    const dojoId = getSecureDojoId(req);
-    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
-
     const { id } = req.params;
 
     const [check] = await db.promise().query(
-      'SELECT id, image_url FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
-      [id, dojoId]
+      'SELECT id, image_url FROM exercise_catalog WHERE id = ?',
+      [id]
     );
-    if (check.length === 0) return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+    if (check.length === 0) return res.status(404).json({ error: 'Übung nicht gefunden' });
 
     if (check[0].image_url) {
       const filePath = path.join(__dirname, '..', check[0].image_url);
@@ -579,8 +574,8 @@ router.delete('/exercises/:id/image', requireFeature('training'), async (req, re
     }
 
     await db.promise().query(
-      'UPDATE exercise_catalog SET image_url = NULL WHERE id = ? AND dojo_id = ?',
-      [id, dojoId]
+      'UPDATE exercise_catalog SET image_url = NULL WHERE id = ?',
+      [id]
     );
 
     res.json({ success: true });
