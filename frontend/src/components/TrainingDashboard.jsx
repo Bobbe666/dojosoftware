@@ -26,6 +26,13 @@ const CATEGORIES = [
   { id: 'zirkel',  label: 'Zirkel',   short: 'ZK', color: '#3b82f6', dim: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.3)' },
 ];
 
+const CATALOG_CATS = [
+  { id: 'kampfsport', label: 'Kampfsport', color: '#d42b2b' },
+  { id: 'fitness',    label: 'Fitness',    color: '#e0701a' },
+  { id: 'core',       label: 'Core',       color: '#9333ea' },
+  { id: 'ausdauer',   label: 'Ausdauer',   color: '#10b981' },
+];
+
 const DEFAULT_PRESETS = {
   kickboxen: [
     { id: 'KB1', name: 'KB1', workTime: 120, restTime: 60,  rounds: 6  },
@@ -179,11 +186,11 @@ function EditRegularModal({ preset, accentColor, onSave, onDelete, onCancel, inl
 }
 
 // ── Edit-Modal: Zirkel Preset ─────────────────────────────────────────────────
-function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inline }) {
+function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inline, exercises }) {
   const [mode, setMode]                 = useState(preset.mode ?? 'sequence');
   const [name, setName]                 = useState(preset.name ?? '');
   const [seqParticipants, setSeqParticipants] = useState(preset.participants ?? 6);
-  const [exercises, setExercises]       = useState(
+  const [exList, setExList]       = useState(
     (preset.exercises ?? []).map(e =>
       typeof e === 'string' ? { id: uid(), name: e, workTime: 60, restTime: 20 }
                             : { id: e.id ?? uid(), name: e.name, workTime: e.workTime, restTime: e.restTime }
@@ -197,14 +204,17 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
   );
   const [confirmDel, setConfirmDel] = useState(false);
 
-  function updateEx(id, field, val) { setExercises(ex => ex.map(e => e.id === id ? { ...e, [field]: val } : e)); }
-  function addEx() { setExercises(ex => [...ex, { id: uid(), name: '', workTime: 60, restTime: 20 }]); }
-  function removeEx(id) { setExercises(ex => ex.filter(e => e.id !== id)); }
+  const datalistId = `ex-catalog-${preset.id}`;
+  const allExNames = [...new Set((exercises || []).map(e => e.name))].sort();
+
+  function updateEx(id, field, val) { setExList(ex => ex.map(e => e.id === id ? { ...e, [field]: val } : e)); }
+  function addEx() { setExList(ex => [...ex, { id: uid(), name: '', workTime: 60, restTime: 20 }]); }
+  function removeEx(id) { setExList(ex => ex.filter(e => e.id !== id)); }
   function updateStation(i, val) { setStations(s => { const a = [...s]; a[i] = val; return a; }); }
   function addStation() { setStations(s => [...s, `Station ${s.length + 1}`]); }
   function removeStation(i) { setStations(s => s.filter((_, j) => j !== i)); }
 
-  const seqTotal   = exercises.reduce((s, e) => s + Number(e.workTime) + Number(e.restTime), 0);
+  const seqTotal   = exList.reduce((s, e) => s + Number(e.workTime) + Number(e.restTime), 0);
   const circTotal  = stations.length * Number(rounds) * (Number(workTime) + Number(restTime));
 
   function save() {
@@ -212,7 +222,7 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
     if (mode === 'sequence') {
       onSave({ ...preset, name: trimName, type: 'zirkel', mode: 'sequence',
         participants: Math.max(1, Number(seqParticipants)),
-        exercises: exercises.map(e => ({
+        exercises: exList.map(e => ({
           id: e.id, name: e.name.trim() || 'Übung',
           workTime: Math.max(5, Number(e.workTime)),
           restTime: Math.max(0, Number(e.restTime)),
@@ -231,6 +241,11 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
 
   const panel = (
     <div className={`td-modal${inline ? ' td-modal--inline' : ''}`} onClick={inline ? undefined : e => e.stopPropagation()}>
+      {allExNames.length > 0 && (
+        <datalist id={datalistId}>
+          {allExNames.map(n => <option key={n} value={n} />)}
+        </datalist>
+      )}
       <div className="td-modal-header">
         <span className="td-modal-id" style={{ color: accentColor }}>{preset.id}</span>
         <span className="td-modal-title">Zirkel bearbeiten</span>
@@ -261,12 +276,13 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
               </div>
               <div className="td-section-label">Übungen</div>
               <div className="td-ex-list">
-                {exercises.map((ex, i) => (
+                {exList.map((ex, i) => (
                   <div key={ex.id} className="td-ex-row">
                     <div className="td-ex-num" style={{ color: accentColor }}>{i + 1}</div>
                     <div className="td-ex-body">
-                      <input type="text" className="td-ex-name" placeholder="Übungsname" maxLength={24}
-                        value={ex.name} onChange={e => updateEx(ex.id, 'name', e.target.value)} />
+                      <input type="text" className="td-ex-name" placeholder="Übungsname" maxLength={50}
+                        value={ex.name} onChange={e => updateEx(ex.id, 'name', e.target.value)}
+                        list={allExNames.length > 0 ? datalistId : undefined} />
                       <div className="td-ex-times">
                         <label><span>Arbeit</span>
                           <input type="number" min="5" max="600" step="5"
@@ -286,7 +302,7 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
                 + Übung
               </button>
               <div className="td-summary">
-                {exercises.length} Übungen · ~{Math.round(seqTotal / 60)} min
+                {exList.length} Übungen · ~{Math.round(seqTotal / 60)} min
               </div>
             </>
           )}
@@ -320,8 +336,9 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
                 {stations.map((st, i) => (
                   <div key={i} className="td-station-row">
                     <span className="td-station-num" style={{ color: accentColor }}>{i + 1}</span>
-                    <input type="text" className="td-station-name" placeholder={`Station ${i + 1}`} maxLength={20}
-                      value={st} onChange={e => updateStation(i, e.target.value)} />
+                    <input type="text" className="td-station-name" placeholder={`Station ${i + 1}`} maxLength={50}
+                      value={st} onChange={e => updateStation(i, e.target.value)}
+                      list={allExNames.length > 0 ? datalistId : undefined} />
                     <button className="td-ex-del" onClick={() => removeStation(i)}>✕</button>
                   </div>
                 ))}
@@ -359,6 +376,124 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
   return <div className="td-overlay" onClick={onCancel}>{panel}</div>;
 }
 
+// ── Catalog View ──────────────────────────────────────────────────────────────
+function CatalogView({ exercises, onAdd, onDelete, withDojo, authHeaders }) {
+  const [activeCat, setActiveCat] = useState('kampfsport');
+  const [newName, setNewName]     = useState('');
+  const [newCat, setNewCat]       = useState('kampfsport');
+  const [adding, setAdding]       = useState(false);
+  const [errMsg, setErrMsg]       = useState('');
+  const [search, setSearch]       = useState('');
+
+  const filtered = exercises.filter(e => {
+    const matchCat = e.category === activeCat;
+    const matchSearch = !search || e.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  async function handleAdd() {
+    const name = newName.trim();
+    if (name.length < 2) { setErrMsg('Name zu kurz'); return; }
+    setAdding(true);
+    setErrMsg('');
+    try {
+      const res = await axios.post(withDojo('/training/exercises'), { name, category: newCat }, authHeaders);
+      onAdd(res.data);
+      setNewName('');
+    } catch (err) {
+      setErrMsg(err.response?.data?.error || 'Fehler beim Hinzufügen');
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function handleDelete(ex) {
+    try {
+      await axios.delete(withDojo(`/training/exercises/${ex.id}`), authHeaders);
+      onDelete(ex.id);
+    } catch (err) {
+      setErrMsg(err.response?.data?.error || 'Fehler beim Löschen');
+    }
+  }
+
+  const catColor = CATALOG_CATS.find(c => c.id === activeCat)?.color ?? '#10b981';
+
+  return (
+    <div className="td-catalog">
+      <div className="td-catalog-header">
+        <h3 className="td-catalog-title">Übungskatalog</h3>
+        <p className="td-catalog-sub">Globale Übungen stehen in allen Dojos und der Trainer App zur Verfügung. Eigene Übungen sind nur für dieses Dojo sichtbar.</p>
+      </div>
+
+      <div className="td-catalog-cats">
+        {CATALOG_CATS.map(c => (
+          <button
+            key={c.id}
+            className={`td-catalog-cat-btn${activeCat === c.id ? ' active' : ''}`}
+            style={{ '--cc': c.color }}
+            onClick={() => setActiveCat(c.id)}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="td-catalog-search">
+        <input
+          type="text"
+          placeholder="Übung suchen…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="td-catalog-search-input"
+        />
+        {search && <button className="td-catalog-search-clear" onClick={() => setSearch('')}>✕</button>}
+      </div>
+
+      <div className="td-catalog-list">
+        {filtered.length === 0 && (
+          <div className="td-catalog-empty">Keine Übungen gefunden.</div>
+        )}
+        {filtered.map(ex => (
+          <div key={ex.id} className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}`}>
+            <span className="td-catalog-item-name">{ex.name}</span>
+            {ex.dojo_id ? (
+              <button className="td-catalog-item-del" onClick={() => handleDelete(ex)} title="Eigene Übung löschen">✕</button>
+            ) : (
+              <span className="td-catalog-item-global">global</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="td-catalog-add">
+        <div className="td-catalog-add-row">
+          <input
+            type="text"
+            placeholder="Neue Übung…"
+            maxLength={100}
+            value={newName}
+            onChange={e => { setNewName(e.target.value); setErrMsg(''); }}
+            className="td-catalog-add-name"
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
+          />
+          <select value={newCat} onChange={e => setNewCat(e.target.value)} className="td-catalog-add-cat">
+            {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+          <button
+            className="td-catalog-add-btn"
+            style={{ background: catColor }}
+            onClick={handleAdd}
+            disabled={adding}
+          >
+            {adding ? '…' : '+ Hinzufügen'}
+          </button>
+        </div>
+        {errMsg && <div className="td-catalog-err">{errMsg}</div>}
+      </div>
+    </div>
+  );
+}
+
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
 export default function TrainingDashboard() {
   const { token }       = useAuth();
@@ -374,6 +509,7 @@ export default function TrainingDashboard() {
   const [copied, setCopied]             = useState(false);
   const [saving, setSaving]             = useState(false);
   const [isDesktop, setIsDesktop]       = useState(() => window.matchMedia('(min-width: 800px)').matches);
+  const [exercises, setExercises]       = useState([]);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 800px)');
@@ -397,14 +533,16 @@ export default function TrainingDashboard() {
   async function loadData() {
     setLoading(true);
     try {
-      const [presetsRes, tokenRes] = await Promise.all([
+      const [presetsRes, tokenRes, exRes] = await Promise.all([
         axios.get(withDojo('/training/presets'), authHeaders),
         axios.get(withDojo('/training/token'), authHeaders),
+        axios.get(withDojo('/training/exercises'), authHeaders),
       ]);
       const fetched = presetsRes.data.presets || {};
       setAllPresets(Object.keys(fetched).length > 0 ? fetched : DEFAULT_PRESETS);
       setSyncToken(tokenRes.data.token);
       setLastSynced(tokenRes.data.lastSynced);
+      setExercises(exRes.data.exercises || []);
     } catch (err) {
       console.error('Training load error:', err);
     } finally {
@@ -555,6 +693,7 @@ export default function TrainingDashboard() {
 
   if (loading) return <div className="td-loading">Training Timer lädt …</div>;
 
+  const isCatalog = activeCategory === '__catalog__';
   const cat     = CATEGORIES.find(c => c.id === activeCategory);
   const presets = allPresets[activeCategory] || [];
   const isExisting = editingPreset && Object.keys(allPresets).some(k => allPresets[k].some(p => p.id === editingPreset.id));
@@ -588,17 +727,38 @@ export default function TrainingDashboard() {
               key={c.id}
               className={`td-cat-btn ${activeCategory === c.id ? 'active' : ''}`}
               style={{ '--cat-color': c.color, '--cat-dim': c.dim, '--cat-border': c.border }}
-              onClick={() => setActiveCat(c.id)}
+              onClick={() => { setActiveCat(c.id); setEditing(null); }}
             >
               <span className="td-cat-dot" style={{ '--cat-color': c.color }} />
               {c.label}
               <span className="td-cat-count">{(allPresets[c.id] || []).length}</span>
             </button>
           ))}
+          <div className="td-cats-divider" />
+          <button
+            className={`td-cat-btn td-cat-btn--catalog ${activeCategory === '__catalog__' ? 'active' : ''}`}
+            style={{ '--cat-color': '#10b981', '--cat-dim': 'rgba(16,185,129,0.12)', '--cat-border': 'rgba(16,185,129,0.3)' }}
+            onClick={() => { setActiveCat('__catalog__'); setEditing(null); }}
+          >
+            <span className="td-cat-dot" style={{ '--cat-color': '#10b981' }} />
+            Übungen
+            <span className="td-cat-count">{exercises.length}</span>
+          </button>
         </div>
 
-        {/* Preset content — desktop shows inline edit panel, mobile uses portal modal */}
-        {isDesktop && editingPreset ? (
+        {/* Catalog view */}
+        {isCatalog ? (
+          <div className="td-content td-content--catalog">
+            <CatalogView
+              exercises={exercises}
+              onAdd={ex => setExercises(prev => [...prev, ex])}
+              onDelete={id => setExercises(prev => prev.filter(e => e.id !== id))}
+              withDojo={withDojo}
+              authHeaders={authHeaders}
+            />
+          </div>
+        ) : isDesktop && editingPreset ? (
+          /* Desktop inline edit */
           <div className="td-content td-content--editing">
             <div className="td-preset-area">
               <div className="td-content-header">
@@ -647,12 +807,14 @@ export default function TrainingDashboard() {
                   onSave={handleSave}
                   onDelete={isExisting ? handleDelete : null}
                   onCancel={() => setEditing(null)}
+                  exercises={exercises}
                   inline
                 />
               )}
             </div>
           </div>
         ) : (
+          /* Normal preset list */
           <div className="td-content">
             <div className="td-content-header">
               <span className="td-content-title">{cat?.label}</span>
@@ -686,29 +848,31 @@ export default function TrainingDashboard() {
       </div>
 
       {/* ── Sync Section ── */}
-      <div className="td-sync">
-        <span className="td-sync-title">Trainer App verbinden</span>
-        <div className="td-sync-row">
-          <div className="td-sync-token">
-            {syncToken ? `${TRAINER_APP_URL}/?token=${syncToken.slice(0, 16)}…` : 'Wird geladen …'}
+      {!isCatalog && (
+        <div className="td-sync">
+          <span className="td-sync-title">Trainer App verbinden</span>
+          <div className="td-sync-row">
+            <div className="td-sync-token">
+              {syncToken ? `${TRAINER_APP_URL}/?token=${syncToken.slice(0, 16)}…` : 'Wird geladen …'}
+            </div>
+            <button className={`td-sync-btn ${copied ? 'copied' : ''}`} onClick={copyToken}>
+              {copied ? '✓ Kopiert' : 'URL kopieren'}
+            </button>
+            <button className="td-sync-btn" onClick={regenerateToken} title="Neuen Token generieren">
+              ↺ Neu
+            </button>
+            {syncToken && (
+              <a className="td-btn-open" href={trainerUrl} target="_blank" rel="noreferrer" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
+                Öffnen →
+              </a>
+            )}
           </div>
-          <button className={`td-sync-btn ${copied ? 'copied' : ''}`} onClick={copyToken}>
-            {copied ? '✓ Kopiert' : 'URL kopieren'}
-          </button>
-          <button className="td-sync-btn" onClick={regenerateToken} title="Neuen Token generieren">
-            ↺ Neu
-          </button>
-          {syncToken && (
-            <a className="td-btn-open" href={trainerUrl} target="_blank" rel="noreferrer" style={{ padding: '7px 14px', fontSize: '0.8rem' }}>
-              Öffnen →
-            </a>
-          )}
+          <span className="td-sync-info">
+            Kopiere die URL und öffne sie auf dem Trainer-Gerät (Tablet / Phone) — die App verbindet sich automatisch.
+            {lastSynced && ` · Zuletzt synchronisiert: ${new Date(lastSynced).toLocaleString('de-DE')}`}
+          </span>
         </div>
-        <span className="td-sync-info">
-          Kopiere die URL und öffne sie auf dem Trainer-Gerät (Tablet / Phone) — die App verbindet sich automatisch.
-          {lastSynced && ` · Zuletzt synchronisiert: ${new Date(lastSynced).toLocaleString('de-DE')}`}
-        </span>
-      </div>
+      )}
 
       {/* ── Edit Modal (mobile only) — Portal escapes container clipping ── */}
       {!isDesktop && editingPreset && editingPreset.type !== 'zirkel' && createPortal(
@@ -728,6 +892,7 @@ export default function TrainingDashboard() {
           onSave={handleSave}
           onDelete={isExisting ? handleDelete : null}
           onCancel={() => setEditing(null)}
+          exercises={exercises}
         />,
         document.body
       )}

@@ -57,7 +57,12 @@ router.get('/sync', async (req, res) => {
       ? JSON.parse(presetRows[0].presets_json || '{}')
       : {};
 
-    res.json({ presets });
+    const [exerciseRows] = await db.promise().query(
+      'SELECT name, category FROM exercise_catalog WHERE dojo_id IS NULL OR dojo_id = ? ORDER BY category, name',
+      [dojoId]
+    );
+
+    res.json({ presets, exercises: exerciseRows });
   } catch (err) {
     logger.error('Training sync error:', { error: err.message });
     res.status(500).json({ error: 'Serverfehler' });
@@ -361,6 +366,88 @@ router.post('/token/regenerate', requireFeature('training'), async (req, res) =>
     res.json({ token: newToken });
   } catch (err) {
     logger.error('Training token regenerate error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── GET /api/training/exercises ── Liste aller Übungen (global + dojo-eigene) ──
+router.get('/exercises', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+
+    const [rows] = await db.promise().query(
+      `SELECT id, dojo_id, name, category
+       FROM exercise_catalog
+       WHERE dojo_id IS NULL OR dojo_id = ?
+       ORDER BY category, name`,
+      [dojoId]
+    );
+
+    res.json({ exercises: rows });
+  } catch (err) {
+    logger.error('Exercise catalog load error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── POST /api/training/exercises ── Eigene Übung hinzufügen ───────────────────
+router.post('/exercises', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+
+    const { name, category } = req.body;
+    const validCategories = ['kampfsport', 'fitness', 'core', 'ausdauer'];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) {
+      return res.status(400).json({ error: 'Name zu kurz' });
+    }
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ error: 'Ungültige Kategorie' });
+    }
+
+    const trimmed = name.trim().substring(0, 100);
+
+    const [existing] = await db.promise().query(
+      'SELECT id FROM exercise_catalog WHERE name = ? AND (dojo_id IS NULL OR dojo_id = ?)',
+      [trimmed, dojoId]
+    );
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'Übung existiert bereits' });
+    }
+
+    const [result] = await db.promise().query(
+      'INSERT INTO exercise_catalog (dojo_id, name, category) VALUES (?, ?, ?)',
+      [dojoId, trimmed, category]
+    );
+
+    res.json({ id: result.insertId, dojo_id: dojoId, name: trimmed, category });
+  } catch (err) {
+    logger.error('Exercise catalog add error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── DELETE /api/training/exercises/:id ── Eigene Übung löschen ───────────────
+router.delete('/exercises/:id', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+
+    const { id } = req.params;
+
+    const [result] = await db.promise().query(
+      'DELETE FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Exercise catalog delete error:', { error: err.message });
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });

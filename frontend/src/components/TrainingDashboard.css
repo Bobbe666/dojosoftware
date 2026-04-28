@@ -981,3 +981,206 @@
   .td-cat-btn { flex: none; padding: 7px 10px; font-size: 0.8rem; }
   .td-preset-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 }
+
+/* ── Category sidebar divider + catalog button ──────────────────────────── */
+.td-cats-divider {
+  height: 1px;
+  background: #1e2940;
+  margin: 6px 8px;
+}
+.td-cat-btn--catalog .td-cat-dot {
+  background: #10b981;
+  box-shadow: 0 0 5px rgba(16,185,129,0.5);
+}
+
+/* ── Catalog View ────────────────────────────────────────────────────────── */
+.td-content--catalog {
+  padding: 0;
+  overflow: hidden;
+}
+.td-catalog {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.td-catalog-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #1e2940;
+  flex-shrink: 0;
+}
+.td-catalog-title {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #10b981;
+}
+.td-catalog-sub {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #507060;
+  line-height: 1.4;
+}
+.td-catalog-cats {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #1e2940;
+  flex-wrap: wrap;
+}
+.td-catalog-cat-btn {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #8090a8;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.td-catalog-cat-btn.active {
+  background: color-mix(in srgb, var(--cc) 18%, transparent);
+  border-color: color-mix(in srgb, var(--cc) 50%, transparent);
+  color: var(--cc);
+}
+.td-catalog-search {
+  position: relative;
+  padding: 8px 16px;
+  flex-shrink: 0;
+}
+.td-catalog-search-input {
+  width: 100%;
+  padding: 6px 30px 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #1e2940;
+  background: #060c18;
+  color: #c0d0e0;
+  font-family: inherit;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+  outline: none;
+}
+.td-catalog-search-input:focus { border-color: #10b981; }
+.td-catalog-search-clear {
+  position: absolute;
+  right: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #506070;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+}
+.td-catalog-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 16px 8px;
+}
+.td-catalog-empty {
+  padding: 20px 0;
+  color: #405060;
+  font-size: 0.82rem;
+  text-align: center;
+}
+.td-catalog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 6px;
+  border-radius: 4px;
+  transition: background 0.1s;
+}
+.td-catalog-item:hover { background: rgba(255,255,255,0.03); }
+.td-catalog-item-name {
+  font-size: 0.83rem;
+  color: #a0b8c8;
+  letter-spacing: 0.02em;
+}
+.td-catalog-item--own .td-catalog-item-name {
+  color: #c0d8e8;
+}
+.td-catalog-item-global {
+  font-size: 0.65rem;
+  color: #304050;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.03);
+}
+.td-catalog-item-del {
+  background: none;
+  border: none;
+  color: #506070;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: all 0.15s;
+  opacity: 0;
+}
+.td-catalog-item:hover .td-catalog-item-del { opacity: 1; }
+.td-catalog-item-del:hover { background: rgba(239,68,68,0.15); color: #ef4444; }
+.td-catalog-add {
+  padding: 10px 16px 14px;
+  border-top: 1px solid #1e2940;
+  flex-shrink: 0;
+}
+.td-catalog-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.td-catalog-add-name {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #1e2940;
+  background: #060c18;
+  color: #c0d0e0;
+  font-family: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  min-width: 0;
+}
+.td-catalog-add-name:focus { border-color: #10b981; }
+.td-catalog-add-cat {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #1e2940;
+  background: #060c18;
+  color: #8090a8;
+  font-family: inherit;
+  font-size: 0.78rem;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.td-catalog-add-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.td-catalog-add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.td-catalog-err {
+  margin-top: 5px;
+  font-size: 0.75rem;
+  color: #ef4444;
+}
