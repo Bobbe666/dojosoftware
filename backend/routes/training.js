@@ -1,6 +1,9 @@
 const express     = require('express');
 const crypto      = require('crypto');
 const jwt         = require('jsonwebtoken');
+const path        = require('path');
+const fs          = require('fs');
+const multer      = require('multer');
 const router      = express.Router();
 const db          = require('../db');
 const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
@@ -8,6 +11,24 @@ const { requireFeature }    = require('../middleware/featureAccess');
 const { getSecureDojoId }   = require('../middleware/tenantSecurity');
 const { verifyPassword }    = require('../services/passwordService');
 const logger      = require('../utils/logger');
+
+// ── Multer: Übungsfotos ───────────────────────────────────────────────────────
+const exerciseImgStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, '../uploads/exercises');
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const suffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `exercise-${req.params.id}-${suffix}${path.extname(file.originalname)}`);
+  },
+});
+const exerciseImgFilter = (req, file, cb) => {
+  const ok = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(file.mimetype);
+  ok ? cb(null, true) : cb(new Error('Nur PNG, JPG oder WebP erlaubt'), false);
+};
+const uploadExerciseImg = multer({ storage: exerciseImgStorage, fileFilter: exerciseImgFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
 // ── Trainer-App: Middleware für Trainer-JWT ──────────────────────────────────
 function authenticateTrainerToken(req, res, next) {
@@ -58,7 +79,7 @@ router.get('/sync', async (req, res) => {
       : {};
 
     const [exerciseRows] = await db.promise().query(
-      `SELECT ec.name, ec.description, ec.category, es.name AS subcategory_name
+      `SELECT ec.name, ec.description, ec.image_url, ec.category, es.name AS subcategory_name
        FROM exercise_catalog ec
        LEFT JOIN exercise_subcategories es ON es.id = ec.subcategory_id
        WHERE ec.dojo_id IS NULL OR ec.dojo_id = ?
@@ -381,7 +402,7 @@ router.get('/exercises', requireFeature('training'), async (req, res) => {
     if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
 
     const [rows] = await db.promise().query(
-      `SELECT ec.id, ec.dojo_id, ec.name, ec.description, ec.category,
+      `SELECT ec.id, ec.dojo_id, ec.name, ec.description, ec.image_url, ec.category,
               ec.subcategory_id, es.name AS subcategory_name
        FROM exercise_catalog ec
        LEFT JOIN exercise_subcategories es ON es.id = ec.subcategory_id
@@ -496,6 +517,75 @@ router.delete('/exercises/:id', requireFeature('training'), async (req, res) => 
     res.json({ success: true });
   } catch (err) {
     logger.error('Exercise catalog delete error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── POST /api/training/exercises/:id/image ── Bild hochladen ─────────────────
+router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseImg.single('image'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+    if (!req.file) return res.status(400).json({ error: 'Keine Datei hochgeladen' });
+
+    const { id } = req.params;
+
+    const [check] = await db.promise().query(
+      'SELECT id, image_url FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+    if (check.length === 0) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+    }
+
+    // Delete old image file if exists
+    if (check[0].image_url) {
+      const oldPath = path.join(__dirname, '..', check[0].image_url);
+      if (fs.existsSync(oldPath)) fs.unlink(oldPath, () => {});
+    }
+
+    const imageUrl = `/uploads/exercises/${req.file.filename}`;
+    await db.promise().query(
+      'UPDATE exercise_catalog SET image_url = ? WHERE id = ? AND dojo_id = ?',
+      [imageUrl, id, dojoId]
+    );
+
+    res.json({ image_url: imageUrl });
+  } catch (err) {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    logger.error('Exercise image upload error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── DELETE /api/training/exercises/:id/image ── Bild entfernen ───────────────
+router.delete('/exercises/:id/image', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+
+    const { id } = req.params;
+
+    const [check] = await db.promise().query(
+      'SELECT id, image_url FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+    if (check.length === 0) return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+
+    if (check[0].image_url) {
+      const filePath = path.join(__dirname, '..', check[0].image_url);
+      if (fs.existsSync(filePath)) fs.unlink(filePath, () => {});
+    }
+
+    await db.promise().query(
+      'UPDATE exercise_catalog SET image_url = NULL WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Exercise image delete error:', { error: err.message });
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });

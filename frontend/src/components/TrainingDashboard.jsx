@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -377,13 +377,49 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
 }
 
 // ── Edit Exercise Modal ───────────────────────────────────────────────────────
-function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCancel }) {
+function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCancel, onImageChange, withDojo, authHeaders }) {
   const [name, setName]         = useState(exercise.name);
   const [desc, setDesc]         = useState(exercise.description || '');
   const [category, setCategory] = useState(exercise.category);
   const [subcatId, setSubcatId] = useState(exercise.subcategory_id || '');
+  const [imageUrl, setImageUrl] = useState(exercise.image_url || null);
+  const [uploading, setUploading] = useState(false);
+  const [imgErr, setImgErr]     = useState('');
+  const fileRef = useRef(null);
 
   const availableSubcats = subcategories.filter(s => s.category === category);
+
+  async function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true); setImgErr('');
+    const fd = new FormData();
+    fd.append('image', file);
+    try {
+      const res = await axios.post(withDojo(`/training/exercises/${exercise.id}/image`), fd, {
+        ...authHeaders,
+        headers: { ...authHeaders?.headers, 'Content-Type': 'multipart/form-data' },
+      });
+      setImageUrl(res.data.image_url);
+      if (onImageChange) onImageChange(exercise.id, res.data.image_url);
+    } catch (err) {
+      setImgErr(err.response?.data?.error || 'Upload fehlgeschlagen');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  async function handleRemoveImage() {
+    setUploading(true); setImgErr('');
+    try {
+      await axios.delete(withDojo(`/training/exercises/${exercise.id}/image`), authHeaders);
+      setImageUrl(null);
+      if (onImageChange) onImageChange(exercise.id, null);
+    } catch (err) {
+      setImgErr(err.response?.data?.error || 'Fehler beim Löschen');
+    } finally { setUploading(false); }
+  }
 
   function save() {
     onSave({
@@ -402,6 +438,26 @@ function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCan
           <span className="td-modal-title">Übung bearbeiten</span>
         </div>
         <div className="td-modal-body">
+          {/* Image section */}
+          <div className="td-exercise-img-section">
+            {imageUrl ? (
+              <div className="td-exercise-img-preview">
+                <img src={imageUrl} alt={exercise.name} className="td-exercise-img" />
+                <button className="td-exercise-img-remove" onClick={handleRemoveImage} disabled={uploading} title="Foto entfernen">✕</button>
+              </div>
+            ) : (
+              <button className="td-exercise-img-upload-btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? '…' : '📷 Foto hochladen'}
+              </button>
+            )}
+            {imageUrl && (
+              <button className="td-exercise-img-replace-btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? '…' : 'Foto ersetzen'}
+              </button>
+            )}
+            {imgErr && <span className="td-exercise-img-err">{imgErr}</span>}
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }} onChange={handleFileSelect} />
+          </div>
           <div className="td-field">
             <span>Name</span>
             <input type="text" maxLength={100} value={name} onChange={e => setName(e.target.value)} />
@@ -510,6 +566,12 @@ function CatalogView({ exercises, subcategories, onAdd, onDelete, onUpdate, onAd
     } catch (err) { setErrMsg(err.response?.data?.error || 'Fehler beim Speichern'); }
   }
 
+  function handleImageChange(id, newUrl) {
+    onUpdate(id, { image_url: newUrl });
+    // Keep modal open with updated exercise data
+    setEditingEx(ex => ex && ex.id === id ? { ...ex, image_url: newUrl } : ex);
+  }
+
   async function handleAddSubcat() {
     const name = newSubcatName.trim();
     if (name.length < 2) return;
@@ -573,6 +635,9 @@ function CatalogView({ exercises, subcategories, onAdd, onDelete, onUpdate, onAd
           accentColor={catColor}
           onSave={handleSaveEdit}
           onCancel={() => setEditingEx(null)}
+          onImageChange={handleImageChange}
+          withDojo={withDojo}
+          authHeaders={authHeaders}
         />
       )}
       <div className="td-catalog">
@@ -672,10 +737,11 @@ function CatalogView({ exercises, subcategories, onAdd, onDelete, onUpdate, onAd
               <div className="td-catalog-list">
                 {group.exercises.map(ex => (
                   <div key={ex.id}
-                    className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}`}
+                    className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}${ex.image_url ? ' td-catalog-item--has-img' : ''}`}
                     onClick={() => ex.dojo_id && setEditingEx(ex)}
                     title={ex.dojo_id ? 'Klicken zum Bearbeiten' : ex.name}
                   >
+                    {ex.image_url && <img src={ex.image_url} alt={ex.name} className="td-catalog-item-img" loading="lazy" />}
                     <div className="td-catalog-item-main">
                       <span className="td-catalog-item-name">{ex.name}</span>
                       {ex.description && <span className="td-catalog-item-desc">{ex.description}</span>}
