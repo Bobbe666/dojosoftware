@@ -466,13 +466,12 @@ router.put('/exercises/:id', requireFeature('training'), async (req, res) => {
     const { id } = req.params;
     const { name, description, category, subcategory_id } = req.body;
 
-    // Check ownership
     const [check] = await db.promise().query(
-      'SELECT id FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
-      [id, dojoId]
+      'SELECT id FROM exercise_catalog WHERE id = ?',
+      [id]
     );
     if (check.length === 0) {
-      return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+      return res.status(404).json({ error: 'Übung nicht gefunden' });
     }
 
     const validCategories = ['kampfsport', 'fitness', 'core', 'ausdauer'];
@@ -486,8 +485,8 @@ router.put('/exercises/:id', requireFeature('training'), async (req, res) => {
 
     const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
     await db.promise().query(
-      `UPDATE exercise_catalog SET ${setClause} WHERE id = ? AND dojo_id = ?`,
-      [...Object.values(updates), id, dojoId]
+      `UPDATE exercise_catalog SET ${setClause} WHERE id = ?`,
+      [...Object.values(updates), id]
     );
 
     res.json({ success: true });
