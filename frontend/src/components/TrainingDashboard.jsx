@@ -128,24 +128,26 @@ function EditRegularModal({ preset, accentColor, onSave, onDelete, onCancel, inl
           <span>Name</span>
           <input type="text" maxLength={12} value={name} onChange={e => setName(e.target.value)} />
         </div>
-        <div className="td-field">
-          <span>Arbeitszeit</span>
-          <div className="td-time-row">
-            <input type="number" min="5" max="600" step="5" value={workTime} onChange={e => setWorkTime(e.target.value)} />
-            <span>Sekunden</span>
+        <div className="td-time-fields-row">
+          <div className="td-field">
+            <span>Arbeitszeit</span>
+            <div className="td-time-row">
+              <input type="number" min="5" max="600" step="5" value={workTime} onChange={e => setWorkTime(e.target.value)} />
+              <span className="td-unit">Sek</span>
+            </div>
           </div>
-        </div>
-        <div className="td-field">
-          <span>Pausenzeit</span>
-          <div className="td-time-row">
-            <input type="number" min="0" max="300" step="5" value={restTime} onChange={e => setRestTime(e.target.value)} />
-            <span>Sekunden</span>
+          <div className="td-field">
+            <span>Pause</span>
+            <div className="td-time-row">
+              <input type="number" min="0" max="300" step="5" value={restTime} onChange={e => setRestTime(e.target.value)} />
+              <span className="td-unit">Sek</span>
+            </div>
           </div>
-        </div>
-        <div className="td-field">
-          <span>Runden</span>
-          <div className="td-time-row">
-            <input type="number" min="1" max="50" value={rounds} onChange={e => setRounds(e.target.value)} />
+          <div className="td-field">
+            <span>Runden</span>
+            <div className="td-time-row">
+              <input type="number" min="1" max="50" value={rounds} onChange={e => setRounds(e.target.value)} />
+            </div>
           </div>
         </div>
         <div className="td-summary">
@@ -291,24 +293,26 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
 
           {mode === 'circuit' && (
             <>
-              <div className="td-field">
-                <span>Arbeitszeit / Station</span>
-                <div className="td-time-row">
-                  <input type="number" min="5" max="600" step="5" value={workTime} onChange={e => setWorkTime(e.target.value)} />
-                  <span>Sek</span>
+              <div className="td-time-fields-row">
+                <div className="td-field">
+                  <span>Arbeit/St.</span>
+                  <div className="td-time-row">
+                    <input type="number" min="5" max="600" step="5" value={workTime} onChange={e => setWorkTime(e.target.value)} />
+                    <span className="td-unit">Sek</span>
+                  </div>
                 </div>
-              </div>
-              <div className="td-field">
-                <span>Rotationspause</span>
-                <div className="td-time-row">
-                  <input type="number" min="0" max="120" step="5" value={restTime} onChange={e => setRestTime(e.target.value)} />
-                  <span>Sek</span>
+                <div className="td-field">
+                  <span>Rotationspause</span>
+                  <div className="td-time-row">
+                    <input type="number" min="0" max="120" step="5" value={restTime} onChange={e => setRestTime(e.target.value)} />
+                    <span className="td-unit">Sek</span>
+                  </div>
                 </div>
-              </div>
-              <div className="td-field">
-                <span>Runden</span>
-                <div className="td-time-row">
-                  <input type="number" min="1" max="10" value={rounds} onChange={e => setRounds(e.target.value)} />
+                <div className="td-field">
+                  <span>Runden</span>
+                  <div className="td-time-row">
+                    <input type="number" min="1" max="10" value={rounds} onChange={e => setRounds(e.target.value)} />
+                  </div>
                 </div>
               </div>
               <div className="td-section-label">Stationen ({stations.length} Teilnehmer)</div>

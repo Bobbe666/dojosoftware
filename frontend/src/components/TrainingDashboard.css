@@ -816,6 +816,105 @@
     background: #111d2b;
   }
 
+  /* ── Inline panel: kompakte Layout-Overrides ───────────────────────── */
+
+  /* 3 Zeitfelder nebeneinander */
+  .td-time-fields-row {
+    display: flex;
+    gap: 8px;
+  }
+  .td-time-fields-row .td-field {
+    flex: 1;
+    min-width: 0;
+  }
+  .td-time-fields-row .td-time-row {
+    gap: 3px;
+  }
+  .td-time-fields-row .td-time-row input {
+    width: 100% !important;
+  }
+  .td-unit {
+    font-size: 0.68rem;
+    color: #405060;
+    white-space: nowrap;
+  }
+
+  /* Inline: Übungszeilen horizontal (1 Zeile pro Übung) */
+  .td-modal--inline .td-ex-list {
+    gap: 4px;
+  }
+  .td-modal--inline .td-ex-row {
+    padding: 5px 7px 5px 9px;
+    align-items: center;
+    gap: 5px;
+    border-radius: 7px;
+  }
+  .td-modal--inline .td-ex-num {
+    font-size: 0.84rem;
+    min-width: 13px;
+    align-self: center;
+    padding-top: 0;
+  }
+  .td-modal--inline .td-ex-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+  .td-modal--inline .td-ex-name {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #1e2535;
+    border-bottom: 1px solid #1e2535;
+    border-radius: 5px;
+    padding: 4px 7px;
+    font-size: 0.82rem;
+  }
+  .td-modal--inline .td-ex-name:focus {
+    border-color: #3b82f6;
+  }
+  .td-modal--inline .td-ex-times {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .td-modal--inline .td-ex-times label {
+    flex-direction: column;
+    gap: 1px;
+    align-items: center;
+  }
+  .td-modal--inline .td-ex-times label > span {
+    font-size: 0.52rem;
+    letter-spacing: 0.05em;
+    color: #2a3a4a;
+  }
+  .td-modal--inline .td-ex-times input {
+    width: 40px !important;
+    font-size: 0.8rem;
+    padding: 3px 4px;
+    border-radius: 4px;
+  }
+  .td-modal--inline .td-ex-del {
+    align-self: center;
+    margin-top: 0;
+  }
+
+  /* Station rows */
+  .td-modal--inline .td-station-list {
+    gap: 3px;
+  }
+  .td-modal--inline .td-station-row {
+    padding: 5px 8px;
+    border-radius: 6px;
+  }
+  .td-modal--inline .td-station-name {
+    font-size: 0.84rem;
+  }
+
+  /* Übung/Station hinzufügen */
+  .td-modal--inline .td-add-ex {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+  }
+
   /* Shared form elements (modal + inline) */
   .td-modal-header {
     padding: 12px 18px;
