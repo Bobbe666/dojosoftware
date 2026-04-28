@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useDojoContext } from '../context/DojoContext';
@@ -640,24 +641,26 @@ export default function TrainingDashboard() {
         </span>
       </div>
 
-      {/* ── Edit Modals ── */}
-      {editingPreset && editingPreset.type !== 'zirkel' && (
+      {/* ── Edit Modals — via Portal damit position:fixed den Dashboard-Container ignoriert ── */}
+      {editingPreset && editingPreset.type !== 'zirkel' && createPortal(
         <EditRegularModal
           preset={editingPreset}
           accentColor={cat?.color ?? '#3b82f6'}
           onSave={handleSave}
           onDelete={isExisting ? handleDelete : null}
           onCancel={() => setEditing(null)}
-        />
+        />,
+        document.body
       )}
-      {editingPreset && editingPreset.type === 'zirkel' && (
+      {editingPreset && editingPreset.type === 'zirkel' && createPortal(
         <EditZirkelModal
           preset={editingPreset}
           accentColor={cat?.color ?? '#3b82f6'}
           onSave={handleSave}
           onDelete={isExisting ? handleDelete : null}
           onCancel={() => setEditing(null)}
-        />
+        />,
+        document.body
       )}
     </div>
   );
