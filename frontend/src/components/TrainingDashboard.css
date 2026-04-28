@@ -645,41 +645,6 @@
 /* Loading / Error */
 .td-loading { padding: 40px; text-align: center; color: #6080a0; font-size: 0.88rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
-/* ── Desktop: Edit-Form als Right-Drawer statt Modal ───────────────── */
-@media (min-width: 800px) {
-  .td-overlay {
-    background: rgba(2, 6, 14, 0.45);
-    backdrop-filter: blur(3px);
-    justify-content: flex-end;
-    align-items: stretch;
-    padding: 0;
-  }
-  .td-modal {
-    width: 460px;
-    max-width: 46vw;
-    min-width: 380px;
-    max-height: 100%;
-    height: 100%;
-    border-radius: 16px 0 0 16px;
-    border-right: none;
-    border-top: none;
-    border-bottom: none;
-    border-left: 1px solid #2a4060;
-    animation: td-drawer-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  @keyframes td-drawer-in {
-    from { transform: translateX(100%); opacity: 0.6; }
-    to   { transform: translateX(0);    opacity: 1; }
-  }
-  .td-modal-body {
-    flex: 1;
-    overflow-y: auto;
-  }
-  .td-modal-footer {
-    grid-template-columns: 1fr 2fr;
-  }
-}
-
 /* ── Desktop-Optimierung (ab 800px) ────────────────────────────────── */
 @media (min-width: 800px) {
   .td-header {
@@ -762,9 +727,65 @@
     font-size: 0.82rem;
   }
 
-  .td-modal {
-    max-width: 560px;
+  /* Inline edit panel — replaces modal on desktop */
+  .td-content--editing {
+    flex-direction: row;
+    overflow: hidden;
+    padding: 0;
+    gap: 0;
   }
+  .td-preset-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 20px 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .td-inline-panel {
+    width: 400px;
+    flex-shrink: 0;
+    border-left: 1px solid #1e2940;
+    overflow-y: auto;
+    background: #080f1a;
+    animation: td-panel-in 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes td-panel-in {
+    from { opacity: 0; transform: translateX(16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .td-modal--inline {
+    max-width: 100%;
+    max-height: none;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .td-modal--inline .td-modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #0d1825;
+    border-bottom: 1px solid #1e2940;
+  }
+  .td-modal--inline .td-modal-body {
+    overflow-y: visible;
+  }
+  .td-modal--inline .td-modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: #080f1a;
+    border-top: 1px solid #1e2940;
+    grid-template-columns: 1fr 2fr;
+  }
+  .td-preset-card--active {
+    border-color: #2a4060 !important;
+    background: #111d2b;
+  }
+
   .td-modal-header {
     padding: 16px 24px;
   }

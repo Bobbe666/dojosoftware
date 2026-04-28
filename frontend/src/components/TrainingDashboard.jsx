@@ -102,7 +102,7 @@ function presetCardInfo(p) {
 }
 
 // ── Edit-Modal: Reguläres Preset ──────────────────────────────────────────────
-function EditRegularModal({ preset, accentColor, onSave, onDelete, onCancel }) {
+function EditRegularModal({ preset, accentColor, onSave, onDelete, onCancel, inline }) {
   const [name, setName]         = useState(preset.name ?? '');
   const [workTime, setWorkTime] = useState(preset.workTime ?? 60);
   const [restTime, setRestTime] = useState(preset.restTime ?? 30);
@@ -117,66 +117,67 @@ function EditRegularModal({ preset, accentColor, onSave, onDelete, onCancel }) {
     });
   }
 
-  return (
-    <div className="td-overlay" onClick={onCancel}>
-      <div className="td-modal" onClick={e => e.stopPropagation()}>
-        <div className="td-modal-header">
-          <span className="td-modal-id" style={{ color: accentColor }}>{preset.id}</span>
-          <span className="td-modal-title">Preset bearbeiten</span>
-        </div>
-        <div className="td-modal-body">
-          <div className="td-field">
-            <span>Name</span>
-            <input type="text" maxLength={12} value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div className="td-field">
-            <span>Arbeitszeit</span>
-            <div className="td-time-row">
-              <input type="number" min="5" max="600" step="5" value={workTime} onChange={e => setWorkTime(e.target.value)} />
-              <span>Sekunden</span>
-            </div>
-          </div>
-          <div className="td-field">
-            <span>Pausenzeit</span>
-            <div className="td-time-row">
-              <input type="number" min="0" max="300" step="5" value={restTime} onChange={e => setRestTime(e.target.value)} />
-              <span>Sekunden</span>
-            </div>
-          </div>
-          <div className="td-field">
-            <span>Runden</span>
-            <div className="td-time-row">
-              <input type="number" min="1" max="50" value={rounds} onChange={e => setRounds(e.target.value)} />
-            </div>
-          </div>
-          <div className="td-summary">
-            Gesamtzeit: ~{Math.round((Number(workTime) + Number(restTime)) * Number(rounds) / 60)} min
-          </div>
-        </div>
-        <div className="td-modal-footer">
-          <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
-          <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
-        </div>
-        {onDelete && (
-          <div className="td-delete-row">
-            {confirmDel ? (
-              <>
-                <span className="td-del-text">Löschen?</span>
-                <button className="td-btn-del-confirm" onClick={onDelete}>Ja, löschen</button>
-                <button className="td-btn-del" onClick={() => setConfirmDel(false)}>Nein</button>
-              </>
-            ) : (
-              <button className="td-btn-del" onClick={() => setConfirmDel(true)}>🗑 Preset löschen</button>
-            )}
-          </div>
-        )}
+  const panel = (
+    <div className={`td-modal${inline ? ' td-modal--inline' : ''}`} onClick={inline ? undefined : e => e.stopPropagation()}>
+      <div className="td-modal-header">
+        <span className="td-modal-id" style={{ color: accentColor }}>{preset.id}</span>
+        <span className="td-modal-title">Preset bearbeiten</span>
       </div>
+      <div className="td-modal-body">
+        <div className="td-field">
+          <span>Name</span>
+          <input type="text" maxLength={12} value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <div className="td-field">
+          <span>Arbeitszeit</span>
+          <div className="td-time-row">
+            <input type="number" min="5" max="600" step="5" value={workTime} onChange={e => setWorkTime(e.target.value)} />
+            <span>Sekunden</span>
+          </div>
+        </div>
+        <div className="td-field">
+          <span>Pausenzeit</span>
+          <div className="td-time-row">
+            <input type="number" min="0" max="300" step="5" value={restTime} onChange={e => setRestTime(e.target.value)} />
+            <span>Sekunden</span>
+          </div>
+        </div>
+        <div className="td-field">
+          <span>Runden</span>
+          <div className="td-time-row">
+            <input type="number" min="1" max="50" value={rounds} onChange={e => setRounds(e.target.value)} />
+          </div>
+        </div>
+        <div className="td-summary">
+          Gesamtzeit: ~{Math.round((Number(workTime) + Number(restTime)) * Number(rounds) / 60)} min
+        </div>
+      </div>
+      <div className="td-modal-footer">
+        <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
+        <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
+      </div>
+      {onDelete && (
+        <div className="td-delete-row">
+          {confirmDel ? (
+            <>
+              <span className="td-del-text">Löschen?</span>
+              <button className="td-btn-del-confirm" onClick={onDelete}>Ja, löschen</button>
+              <button className="td-btn-del" onClick={() => setConfirmDel(false)}>Nein</button>
+            </>
+          ) : (
+            <button className="td-btn-del" onClick={() => setConfirmDel(true)}>🗑 Preset löschen</button>
+          )}
+        </div>
+      )}
     </div>
   );
+
+  if (inline) return panel;
+  return <div className="td-overlay" onClick={onCancel}>{panel}</div>;
 }
 
 // ── Edit-Modal: Zirkel Preset ─────────────────────────────────────────────────
-function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel }) {
+function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inline }) {
   const [mode, setMode]                 = useState(preset.mode ?? 'sequence');
   const [name, setName]                 = useState(preset.name ?? '');
   const [seqParticipants, setSeqParticipants] = useState(preset.participants ?? 6);
@@ -226,13 +227,12 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel }) {
     }
   }
 
-  return (
-    <div className="td-overlay" onClick={onCancel}>
-      <div className="td-modal" onClick={e => e.stopPropagation()}>
-        <div className="td-modal-header">
-          <span className="td-modal-id" style={{ color: accentColor }}>{preset.id}</span>
-          <span className="td-modal-title">Zirkel bearbeiten</span>
-        </div>
+  const panel = (
+    <div className={`td-modal${inline ? ' td-modal--inline' : ''}`} onClick={inline ? undefined : e => e.stopPropagation()}>
+      <div className="td-modal-header">
+        <span className="td-modal-id" style={{ color: accentColor }}>{preset.id}</span>
+        <span className="td-modal-title">Zirkel bearbeiten</span>
+      </div>
         <div className="td-modal-body">
           <div className="td-mode-row">
             <button className={`td-mode-btn ${mode === 'sequence' ? 'active' : ''}`} onClick={() => setMode('sequence')}>
@@ -330,27 +330,29 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel }) {
               </div>
             </>
           )}
-        </div>
-        <div className="td-modal-footer">
-          <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
-          <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
-        </div>
-        {onDelete && (
-          <div className="td-delete-row">
-            {confirmDel ? (
-              <>
-                <span className="td-del-text">Löschen?</span>
-                <button className="td-btn-del-confirm" onClick={onDelete}>Ja, löschen</button>
-                <button className="td-btn-del" onClick={() => setConfirmDel(false)}>Nein</button>
-              </>
-            ) : (
-              <button className="td-btn-del" onClick={() => setConfirmDel(true)}>🗑 Zirkel löschen</button>
-            )}
-          </div>
-        )}
       </div>
+      <div className="td-modal-footer">
+        <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
+        <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
+      </div>
+      {onDelete && (
+        <div className="td-delete-row">
+          {confirmDel ? (
+            <>
+              <span className="td-del-text">Löschen?</span>
+              <button className="td-btn-del-confirm" onClick={onDelete}>Ja, löschen</button>
+              <button className="td-btn-del" onClick={() => setConfirmDel(false)}>Nein</button>
+            </>
+          ) : (
+            <button className="td-btn-del" onClick={() => setConfirmDel(true)}>🗑 Zirkel löschen</button>
+          )}
+        </div>
+      )}
     </div>
   );
+
+  if (inline) return panel;
+  return <div className="td-overlay" onClick={onCancel}>{panel}</div>;
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
@@ -367,6 +369,14 @@ export default function TrainingDashboard() {
   const [lastSynced, setLastSynced]     = useState(null);
   const [copied, setCopied]             = useState(false);
   const [saving, setSaving]             = useState(false);
+  const [isDesktop, setIsDesktop]       = useState(() => window.matchMedia('(min-width: 800px)').matches);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 800px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   const withDojo = useCallback((url) =>
     activeDojo?.id ? `${url}?dojo_id=${activeDojo.id}` : url,
@@ -583,37 +593,92 @@ export default function TrainingDashboard() {
           ))}
         </div>
 
-        {/* Preset content */}
-        <div className="td-content">
-          <div className="td-content-header">
-            <span className="td-content-title">{cat?.label}</span>
-            <button className="td-btn-add"
-              style={{ borderColor: cat?.color, color: cat?.color }}
-              onClick={handleAdd}
-            >
-              + Neu
-            </button>
-          </div>
-
-          <div className="td-preset-grid">
-            {presets.map(p => {
-              const info = presetCardInfo(p);
-              return (
-                <div key={p.id} className="td-preset-card" style={{ borderLeftColor: cat?.color, borderLeftWidth: 3 }}>
-                  <span className="td-preset-id" style={{ color: cat?.color }}>{p.name || p.id}</span>
-                  <span className="td-preset-info">{info.line1}</span>
-                  <span className="td-preset-detail">{info.line2}</span>
-                  <button className="td-preset-edit" onClick={() => setEditing(p)}>✎</button>
-                </div>
-              );
-            })}
-            {presets.length === 0 && (
-              <div style={{ color: '#405060', fontSize: '0.85rem', gridColumn: '1/-1', padding: '20px 0' }}>
-                Noch keine Presets. Klick auf "+ Neu" um zu starten.
+        {/* Preset content — desktop shows inline edit panel, mobile uses portal modal */}
+        {isDesktop && editingPreset ? (
+          <div className="td-content td-content--editing">
+            <div className="td-preset-area">
+              <div className="td-content-header">
+                <span className="td-content-title">{cat?.label}</span>
+                <button className="td-btn-add"
+                  style={{ borderColor: cat?.color, color: cat?.color }}
+                  onClick={handleAdd}
+                >
+                  + Neu
+                </button>
               </div>
-            )}
+              <div className="td-preset-grid">
+                {presets.map(p => {
+                  const info = presetCardInfo(p);
+                  return (
+                    <div key={p.id} className={`td-preset-card${editingPreset?.id === p.id ? ' td-preset-card--active' : ''}`}
+                      style={{ borderLeftColor: cat?.color, borderLeftWidth: 3 }}>
+                      <span className="td-preset-id" style={{ color: cat?.color }}>{p.name || p.id}</span>
+                      <span className="td-preset-info">{info.line1}</span>
+                      <span className="td-preset-detail">{info.line2}</span>
+                      <button className="td-preset-edit" onClick={() => setEditing(p)}>✎</button>
+                    </div>
+                  );
+                })}
+                {presets.length === 0 && (
+                  <div style={{ color: '#405060', fontSize: '0.85rem', gridColumn: '1/-1', padding: '20px 0' }}>
+                    Noch keine Presets. Klick auf "+ Neu" um zu starten.
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="td-inline-panel">
+              {editingPreset.type !== 'zirkel' ? (
+                <EditRegularModal
+                  preset={editingPreset}
+                  accentColor={cat?.color ?? '#3b82f6'}
+                  onSave={handleSave}
+                  onDelete={isExisting ? handleDelete : null}
+                  onCancel={() => setEditing(null)}
+                  inline
+                />
+              ) : (
+                <EditZirkelModal
+                  preset={editingPreset}
+                  accentColor={cat?.color ?? '#3b82f6'}
+                  onSave={handleSave}
+                  onDelete={isExisting ? handleDelete : null}
+                  onCancel={() => setEditing(null)}
+                  inline
+                />
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="td-content">
+            <div className="td-content-header">
+              <span className="td-content-title">{cat?.label}</span>
+              <button className="td-btn-add"
+                style={{ borderColor: cat?.color, color: cat?.color }}
+                onClick={handleAdd}
+              >
+                + Neu
+              </button>
+            </div>
+            <div className="td-preset-grid">
+              {presets.map(p => {
+                const info = presetCardInfo(p);
+                return (
+                  <div key={p.id} className="td-preset-card" style={{ borderLeftColor: cat?.color, borderLeftWidth: 3 }}>
+                    <span className="td-preset-id" style={{ color: cat?.color }}>{p.name || p.id}</span>
+                    <span className="td-preset-info">{info.line1}</span>
+                    <span className="td-preset-detail">{info.line2}</span>
+                    <button className="td-preset-edit" onClick={() => setEditing(p)}>✎</button>
+                  </div>
+                );
+              })}
+              {presets.length === 0 && (
+                <div style={{ color: '#405060', fontSize: '0.85rem', gridColumn: '1/-1', padding: '20px 0' }}>
+                  Noch keine Presets. Klick auf "+ Neu" um zu starten.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Sync Section ── */}
@@ -641,8 +706,8 @@ export default function TrainingDashboard() {
         </span>
       </div>
 
-      {/* ── Edit Modals — via Portal damit position:fixed den Dashboard-Container ignoriert ── */}
-      {editingPreset && editingPreset.type !== 'zirkel' && createPortal(
+      {/* ── Edit Modal (mobile only) — Portal escapes container clipping ── */}
+      {!isDesktop && editingPreset && editingPreset.type !== 'zirkel' && createPortal(
         <EditRegularModal
           preset={editingPreset}
           accentColor={cat?.color ?? '#3b82f6'}
@@ -652,7 +717,7 @@ export default function TrainingDashboard() {
         />,
         document.body
       )}
-      {editingPreset && editingPreset.type === 'zirkel' && createPortal(
+      {!isDesktop && editingPreset && editingPreset.type === 'zirkel' && createPortal(
         <EditZirkelModal
           preset={editingPreset}
           accentColor={cat?.color ?? '#3b82f6'}
