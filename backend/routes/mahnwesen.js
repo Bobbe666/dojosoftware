@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("../db");
+const logger = require('../utils/logger');
 const router = express.Router();
 const { generateMahnungPDF, replacePlaceholders, formatCurrency, formatDate } = require('../utils/mahnungPdfGenerator');
 const nodemailer = require('nodemailer');
@@ -85,7 +86,8 @@ router.get("/offene-beitraege", (req, res) => {
 
 // API: Mahnungen abrufen
 router.get("/mahnungen", (req, res) => {
-    const { mitglied_id, beitrag_id, dojo_id } = req.query;
+    const { mitglied_id, beitrag_id } = req.query;
+    const secureDojoId = getSecureDojoId(req);
 
     let whereConditions = [];
     let queryParams = [];
@@ -100,9 +102,9 @@ router.get("/mahnungen", (req, res) => {
         queryParams.push(beitrag_id);
     }
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('b.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = whereConditions.length > 0
@@ -148,10 +150,15 @@ router.post("/mahnungen", (req, res) => {
         return res.status(400).json({ error: "Beitrag-ID und Mahnstufe sind erforderlich" });
     }
 
-    // Prüfe ob Beitrag existiert und nicht bezahlt ist
-    const checkQuery = `SELECT bezahlt FROM beitraege WHERE beitrag_id = ?`;
+    const secureDojoId = getSecureDojoId(req);
 
-    db.query(checkQuery, [beitrag_id], (checkErr, checkResults) => {
+    // Prüfe ob Beitrag existiert, nicht bezahlt ist und zum richtigen Dojo gehört
+    const checkQuery = secureDojoId
+        ? `SELECT bezahlt FROM beitraege WHERE beitrag_id = ? AND dojo_id = ?`
+        : `SELECT bezahlt FROM beitraege WHERE beitrag_id = ?`;
+    const checkParams = secureDojoId ? [beitrag_id, secureDojoId] : [beitrag_id];
+
+    db.query(checkQuery, checkParams, (checkErr, checkResults) => {
         if (checkErr) {
             logger.error('Fehler beim Prüfen des Beitrags:', checkErr);
             return res.status(500).json({ error: 'Datenbankfehler', details: checkErr.message });
@@ -278,14 +285,14 @@ router.get("/statistiken", (req, res) => {
 // API: Beitrag als bezahlt markieren
 router.put("/beitraege/:beitrag_id/bezahlt", (req, res) => {
     const { beitrag_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
-        UPDATE beitraege
-        SET bezahlt = 1
-        WHERE beitrag_id = ?
-    `;
+    const query = secureDojoId
+        ? `UPDATE beitraege SET bezahlt = 1 WHERE beitrag_id = ? AND dojo_id = ?`
+        : `UPDATE beitraege SET bezahlt = 1 WHERE beitrag_id = ?`;
+    const params = secureDojoId ? [beitrag_id, secureDojoId] : [beitrag_id];
 
-    db.query(query, [beitrag_id], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Markieren als bezahlt:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });
@@ -335,10 +342,15 @@ router.post("/mahnstufen-einstellungen", (req, res) => {
         return res.status(400).json({ error: "Mahnstufen-Daten sind erforderlich" });
     }
 
-    // Lösche alte Einstellungen und füge neue ein
-    const deleteQuery = 'DELETE FROM mahnstufen_einstellungen';
+    const secureDojoId = getSecureDojoId(req);
+    if (!secureDojoId) {
+        return res.status(400).json({ error: 'Dojo-ID erforderlich' });
+    }
 
-    db.query(deleteQuery, (deleteErr) => {
+    // Lösche alte Einstellungen nur für dieses Dojo
+    const deleteQuery = 'DELETE FROM mahnstufen_einstellungen WHERE dojo_id = ?';
+
+    db.query(deleteQuery, [secureDojoId], (deleteErr) => {
         if (deleteErr) {
             logger.error('Fehler beim Löschen alter Einstellungen:', deleteErr);
             return res.status(500).json({ error: 'Datenbankfehler', details: deleteErr.message });
@@ -353,7 +365,7 @@ router.post("/mahnstufen-einstellungen", (req, res) => {
             m.email_betreff,
             m.email_text,
             m.aktiv ? 1 : 0,
-            1 // dojo_id - später anpassen für Multi-Dojo
+            secureDojoId
         ]);
 
         const insertQuery = `
