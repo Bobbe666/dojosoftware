@@ -377,13 +377,16 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
 }
 
 // ── Catalog View ──────────────────────────────────────────────────────────────
-function CatalogView({ exercises, onAdd, onDelete, withDojo, authHeaders }) {
-  const [activeCat, setActiveCat] = useState('kampfsport');
-  const [newName, setNewName]     = useState('');
-  const [newCat, setNewCat]       = useState('kampfsport');
-  const [adding, setAdding]       = useState(false);
-  const [errMsg, setErrMsg]       = useState('');
-  const [search, setSearch]       = useState('');
+function CatalogView({ exercises, onAdd, onDelete, onUpdate, withDojo, authHeaders }) {
+  const [activeCat, setActiveCat]   = useState('kampfsport');
+  const [newName, setNewName]       = useState('');
+  const [newCat, setNewCat]         = useState('kampfsport');
+  const [newDesc, setNewDesc]       = useState('');
+  const [adding, setAdding]         = useState(false);
+  const [errMsg, setErrMsg]         = useState('');
+  const [search, setSearch]         = useState('');
+  const [editingId, setEditingId]   = useState(null);
+  const [editDesc, setEditDesc]     = useState('');
 
   const filtered = exercises.filter(e => {
     const matchCat = e.category === activeCat;
@@ -397,9 +400,10 @@ function CatalogView({ exercises, onAdd, onDelete, withDojo, authHeaders }) {
     setAdding(true);
     setErrMsg('');
     try {
-      const res = await axios.post(withDojo('/training/exercises'), { name, category: newCat }, authHeaders);
+      const res = await axios.post(withDojo('/training/exercises'), { name, category: newCat, description: newDesc.trim() || null }, authHeaders);
       onAdd(res.data);
       setNewName('');
+      setNewDesc('');
     } catch (err) {
       setErrMsg(err.response?.data?.error || 'Fehler beim Hinzufügen');
     } finally {
@@ -411,9 +415,25 @@ function CatalogView({ exercises, onAdd, onDelete, withDojo, authHeaders }) {
     try {
       await axios.delete(withDojo(`/training/exercises/${ex.id}`), authHeaders);
       onDelete(ex.id);
+      if (editingId === ex.id) setEditingId(null);
     } catch (err) {
       setErrMsg(err.response?.data?.error || 'Fehler beim Löschen');
     }
+  }
+
+  async function handleSaveDesc(ex) {
+    try {
+      await axios.put(withDojo(`/training/exercises/${ex.id}`), { description: editDesc.trim() || null }, authHeaders);
+      onUpdate(ex.id, editDesc.trim() || null);
+      setEditingId(null);
+    } catch (err) {
+      setErrMsg(err.response?.data?.error || 'Fehler beim Speichern');
+    }
+  }
+
+  function startEdit(ex) {
+    setEditingId(ex.id);
+    setEditDesc(ex.description || '');
   }
 
   const catColor = CATALOG_CATS.find(c => c.id === activeCat)?.color ?? '#10b981';
@@ -422,7 +442,7 @@ function CatalogView({ exercises, onAdd, onDelete, withDojo, authHeaders }) {
     <div className="td-catalog">
       <div className="td-catalog-header">
         <h3 className="td-catalog-title">Übungskatalog</h3>
-        <p className="td-catalog-sub">Globale Übungen stehen in allen Dojos und der Trainer App zur Verfügung. Eigene Übungen sind nur für dieses Dojo sichtbar.</p>
+        <p className="td-catalog-sub">Globaler Katalog — steht allen Trainern und der Trainer App per Autocomplete zur Verfügung. Eigene Übungen sind nur in diesem Dojo sichtbar.</p>
       </div>
 
       <div className="td-catalog-cats">
@@ -455,39 +475,71 @@ function CatalogView({ exercises, onAdd, onDelete, withDojo, authHeaders }) {
         )}
         {filtered.map(ex => (
           <div key={ex.id} className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}`}>
-            <span className="td-catalog-item-name">{ex.name}</span>
-            {ex.dojo_id ? (
-              <button className="td-catalog-item-del" onClick={() => handleDelete(ex)} title="Eigene Übung löschen">✕</button>
-            ) : (
-              <span className="td-catalog-item-global">global</span>
-            )}
+            <div className="td-catalog-item-main">
+              <span className="td-catalog-item-name">{ex.name}</span>
+              {ex.description && editingId !== ex.id && (
+                <span className="td-catalog-item-desc">{ex.description}</span>
+              )}
+              {editingId === ex.id && (
+                <div className="td-catalog-item-edit">
+                  <textarea
+                    className="td-catalog-desc-input"
+                    placeholder="Beschreibung (optional)…"
+                    value={editDesc}
+                    onChange={e => setEditDesc(e.target.value)}
+                    rows={2}
+                    maxLength={500}
+                  />
+                  <div className="td-catalog-desc-actions">
+                    <button className="td-catalog-desc-save" style={{ background: catColor }} onClick={() => handleSaveDesc(ex)}>Speichern</button>
+                    <button className="td-catalog-desc-cancel" onClick={() => setEditingId(null)}>Abbrechen</button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="td-catalog-item-btns">
+              {ex.dojo_id && editingId !== ex.id && (
+                <button className="td-catalog-item-edit-btn" onClick={() => startEdit(ex)} title="Beschreibung bearbeiten">✎</button>
+              )}
+              {ex.dojo_id && (
+                <button className="td-catalog-item-del" onClick={() => handleDelete(ex)} title="Eigene Übung löschen">✕</button>
+              )}
+            </div>
           </div>
         ))}
       </div>
 
       <div className="td-catalog-add">
+        <div className="td-catalog-add-title">Eigene Übung hinzufügen</div>
         <div className="td-catalog-add-row">
           <input
             type="text"
-            placeholder="Neue Übung…"
+            placeholder="Name…"
             maxLength={100}
             value={newName}
             onChange={e => { setNewName(e.target.value); setErrMsg(''); }}
             className="td-catalog-add-name"
-            onKeyDown={e => e.key === 'Enter' && handleAdd()}
           />
           <select value={newCat} onChange={e => setNewCat(e.target.value)} className="td-catalog-add-cat">
             {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
           </select>
-          <button
-            className="td-catalog-add-btn"
-            style={{ background: catColor }}
-            onClick={handleAdd}
-            disabled={adding}
-          >
-            {adding ? '…' : '+ Hinzufügen'}
-          </button>
         </div>
+        <textarea
+          placeholder="Beschreibung (optional) — z.B. Ausführung, Muskeln, Schwierigkeitsgrad…"
+          maxLength={500}
+          value={newDesc}
+          onChange={e => setNewDesc(e.target.value)}
+          className="td-catalog-add-desc"
+          rows={2}
+        />
+        <button
+          className="td-catalog-add-btn"
+          style={{ background: catColor }}
+          onClick={handleAdd}
+          disabled={adding}
+        >
+          {adding ? '…' : '+ Hinzufügen'}
+        </button>
         {errMsg && <div className="td-catalog-err">{errMsg}</div>}
       </div>
     </div>
@@ -753,6 +805,7 @@ export default function TrainingDashboard() {
               exercises={exercises}
               onAdd={ex => setExercises(prev => [...prev, ex])}
               onDelete={id => setExercises(prev => prev.filter(e => e.id !== id))}
+              onUpdate={(id, description) => setExercises(prev => prev.map(e => e.id === id ? { ...e, description } : e))}
               withDojo={withDojo}
               authHeaders={authHeaders}
             />
