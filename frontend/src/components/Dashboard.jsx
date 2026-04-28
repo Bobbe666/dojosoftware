@@ -40,6 +40,7 @@ import VisitorChatAlerts from './chat/VisitorChatAlerts';
 import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
+import TrainingDashboard from './TrainingDashboard';
 
 
 function Dashboard() {
@@ -279,6 +280,7 @@ function Dashboard() {
     { id: 'pruefungswesen', label: t('tabs.pruefungswesen'), icon: '🏆' },
     { id: 'hof', label: 'Hall of Fame', icon: '🏛️' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
+    { id: 'training', label: 'Training', icon: '⏱' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
     { id: 'shop', label: 'Shop & Kasse', icon: '🛒' },
@@ -1482,6 +1484,11 @@ function Dashboard() {
                           </div>
                         ))}
                         </div>
+                      )}
+
+                      {/* ⏱ Training Timer Tab (Enterprise) */}
+                      {activeTab === 'training' && (
+                        <TrainingDashboard />
                       )}
 
                       {/* ✨ Kommunikation & Marketing Tab ✨ */}

@@ -46,7 +46,7 @@ function requireFeature(featureName) {
         `SELECT s.plan_type, s.status,
                 s.feature_verkauf, s.feature_buchfuehrung,
                 s.feature_events, s.feature_multidojo, s.feature_api,
-                s.feature_kontoauszug, s.feature_social_media,
+                s.feature_kontoauszug, s.feature_social_media, s.feature_training,
                 s.trial_ends_at, s.subscription_ends_at,
                 d.dojoname as dojo_name, d.subdomain
          FROM dojo_subscriptions s
@@ -106,6 +106,7 @@ function requireFeature(featureName) {
         homepage_builder: 'feature_homepage_builder',
         gutscheine:       'feature_gutscheine',
         social_media:     'feature_social_media',
+        training:         'feature_training',
       };
 
       const featureColumn = featureColumnMap[featureName];

@@ -2238,6 +2238,15 @@ try {
   logger.warn('Messenger io-Setup nicht möglich', { error: error.message });
 }
 
+// TRAINING TIMER (Enterprise)
+try {
+  const trainingRouter = require(path.join(__dirname, 'routes', 'training.js'));
+  app.use('/api/training', trainingRouter);
+  logger.success('Route gemountet', { path: '/api/training' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'training', error: error.message });
+}
+
 // PLATTFORM-ZENTRALE
 try {
   const plattformZentraleRouter = require(path.join(__dirname, 'routes', 'plattform-zentrale.js'));
