@@ -645,6 +645,139 @@
 /* Loading / Error */
 .td-loading { padding: 40px; text-align: center; color: #6080a0; font-size: 0.88rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
+/* ── Desktop-Optimierung (ab 800px) ────────────────────────────────── */
+@media (min-width: 800px) {
+  .td-header {
+    padding: 20px 32px 16px;
+  }
+  .td-header-left h2 {
+    font-size: 1.65rem;
+  }
+  .td-header-left p {
+    font-size: 0.88rem;
+    margin-top: 4px;
+  }
+
+  .td-cats {
+    min-width: 175px;
+    padding: 20px 14px;
+    gap: 6px;
+  }
+  .td-cat-btn {
+    padding: 11px 14px;
+    font-size: 0.92rem;
+    gap: 10px;
+  }
+  .td-cat-dot { width: 9px; height: 9px; }
+  .td-cat-count { font-size: 0.78rem; }
+
+  .td-content {
+    padding: 20px 28px;
+    gap: 20px;
+  }
+  .td-content-title {
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+  }
+  .td-btn-add {
+    padding: 9px 18px;
+    font-size: 0.86rem;
+  }
+
+  .td-preset-grid {
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+  }
+  .td-preset-card {
+    padding: 18px 20px;
+    gap: 8px;
+    border-radius: 14px;
+  }
+  .td-preset-id {
+    font-size: 1.65rem;
+  }
+  .td-preset-info {
+    font-size: 0.92rem;
+  }
+  .td-preset-detail {
+    font-size: 0.84rem;
+  }
+  .td-preset-edit {
+    width: 32px;
+    height: 32px;
+    font-size: 0.92rem;
+  }
+
+  .td-sync {
+    padding: 18px 32px;
+    gap: 12px;
+  }
+  .td-sync-title {
+    font-size: 0.78rem;
+  }
+  .td-sync-token {
+    font-size: 0.84rem;
+    padding: 10px 16px;
+  }
+  .td-sync-btn {
+    padding: 9px 18px;
+    font-size: 0.84rem;
+  }
+  .td-sync-info {
+    font-size: 0.82rem;
+  }
+
+  .td-modal {
+    max-width: 560px;
+  }
+  .td-modal-header {
+    padding: 16px 24px;
+  }
+  .td-modal-id {
+    font-size: 1.5rem;
+  }
+  .td-modal-title {
+    font-size: 0.86rem;
+  }
+  .td-modal-body {
+    padding: 20px 24px;
+    gap: 16px;
+  }
+  .td-field > span {
+    font-size: 0.75rem;
+  }
+  .td-field input[type="text"],
+  .td-field input[type="number"] {
+    font-size: 1rem;
+    padding: 10px 14px;
+  }
+  .td-time-row input { width: 84px !important; }
+  .td-modal-footer {
+    padding: 16px 24px;
+    gap: 12px;
+  }
+  .td-btn-cancel, .td-btn-save {
+    padding: 13px;
+    font-size: 1rem;
+  }
+  .td-ex-row {
+    padding: 12px 12px 12px 14px;
+  }
+  .td-ex-name {
+    font-size: 1rem;
+  }
+  .td-ex-times input {
+    width: 68px;
+    font-size: 0.95rem;
+  }
+  .td-station-row {
+    padding: 9px 12px;
+  }
+  .td-station-name {
+    font-size: 0.98rem;
+  }
+}
+
 @media (max-width: 640px) {
   .td-body { flex-direction: column; }
   .td-cats { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid #1e2940; padding: 10px 12px; min-width: 0; }
