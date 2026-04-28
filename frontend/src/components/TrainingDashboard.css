@@ -645,6 +645,41 @@
 /* Loading / Error */
 .td-loading { padding: 40px; text-align: center; color: #6080a0; font-size: 0.88rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
+/* ── Desktop: Edit-Form als Right-Drawer statt Modal ───────────────── */
+@media (min-width: 800px) {
+  .td-overlay {
+    background: rgba(2, 6, 14, 0.45);
+    backdrop-filter: blur(3px);
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0;
+  }
+  .td-modal {
+    width: 460px;
+    max-width: 46vw;
+    min-width: 380px;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 16px 0 0 16px;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    border-left: 1px solid #2a4060;
+    animation: td-drawer-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes td-drawer-in {
+    from { transform: translateX(100%); opacity: 0.6; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+  .td-modal-body {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .td-modal-footer {
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
 /* ── Desktop-Optimierung (ab 800px) ────────────────────────────────── */
 @media (min-width: 800px) {
   .td-header {
