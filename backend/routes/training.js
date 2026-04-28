@@ -58,7 +58,11 @@ router.get('/sync', async (req, res) => {
       : {};
 
     const [exerciseRows] = await db.promise().query(
-      'SELECT name, description, category FROM exercise_catalog WHERE dojo_id IS NULL OR dojo_id = ? ORDER BY category, name',
+      `SELECT ec.name, ec.description, ec.category, es.name AS subcategory_name
+       FROM exercise_catalog ec
+       LEFT JOIN exercise_subcategories es ON es.id = ec.subcategory_id
+       WHERE ec.dojo_id IS NULL OR ec.dojo_id = ?
+       ORDER BY ec.category, COALESCE(es.sort_order, 999), ec.name`,
       [dojoId]
     );
 
@@ -377,10 +381,12 @@ router.get('/exercises', requireFeature('training'), async (req, res) => {
     if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
 
     const [rows] = await db.promise().query(
-      `SELECT id, dojo_id, name, description, category
-       FROM exercise_catalog
-       WHERE dojo_id IS NULL OR dojo_id = ?
-       ORDER BY category, name`,
+      `SELECT ec.id, ec.dojo_id, ec.name, ec.description, ec.category,
+              ec.subcategory_id, es.name AS subcategory_name
+       FROM exercise_catalog ec
+       LEFT JOIN exercise_subcategories es ON es.id = ec.subcategory_id
+       WHERE ec.dojo_id IS NULL OR ec.dojo_id = ?
+       ORDER BY ec.category, COALESCE(es.sort_order, 999), ec.name`,
       [dojoId]
     );
 
@@ -397,7 +403,7 @@ router.post('/exercises', requireFeature('training'), async (req, res) => {
     const dojoId = getSecureDojoId(req);
     if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
 
-    const { name, category, description } = req.body;
+    const { name, category, description, subcategory_id } = req.body;
     const validCategories = ['kampfsport', 'fitness', 'core', 'ausdauer'];
     if (!name || typeof name !== 'string' || name.trim().length < 2) {
       return res.status(400).json({ error: 'Name zu kurz' });
@@ -408,6 +414,7 @@ router.post('/exercises', requireFeature('training'), async (req, res) => {
 
     const trimmedName = name.trim().substring(0, 100);
     const trimmedDesc = description ? String(description).trim().substring(0, 500) : null;
+    const subcatId = subcategory_id || null;
 
     const [existing] = await db.promise().query(
       'SELECT id FROM exercise_catalog WHERE name = ? AND (dojo_id IS NULL OR dojo_id = ?)',
@@ -418,39 +425,53 @@ router.post('/exercises', requireFeature('training'), async (req, res) => {
     }
 
     const [result] = await db.promise().query(
-      'INSERT INTO exercise_catalog (dojo_id, name, description, category) VALUES (?, ?, ?, ?)',
-      [dojoId, trimmedName, trimmedDesc, category]
+      'INSERT INTO exercise_catalog (dojo_id, name, description, category, subcategory_id) VALUES (?, ?, ?, ?, ?)',
+      [dojoId, trimmedName, trimmedDesc, category, subcatId]
     );
 
-    res.json({ id: result.insertId, dojo_id: dojoId, name: trimmedName, description: trimmedDesc, category });
+    res.json({ id: result.insertId, dojo_id: dojoId, name: trimmedName, description: trimmedDesc, category, subcategory_id: subcatId });
   } catch (err) {
     logger.error('Exercise catalog add error:', { error: err.message });
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });
 
-// ── PUT /api/training/exercises/:id ── Beschreibung einer eigenen Übung ändern
+// ── PUT /api/training/exercises/:id ── Eigene Übung vollständig bearbeiten ────
 router.put('/exercises/:id', requireFeature('training'), async (req, res) => {
   try {
     const dojoId = getSecureDojoId(req);
     if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
 
     const { id } = req.params;
-    const { description } = req.body;
-    const trimmedDesc = description ? String(description).trim().substring(0, 500) : null;
+    const { name, description, category, subcategory_id } = req.body;
 
-    const [result] = await db.promise().query(
-      'UPDATE exercise_catalog SET description = ? WHERE id = ? AND dojo_id = ?',
-      [trimmedDesc, id, dojoId]
+    // Check ownership
+    const [check] = await db.promise().query(
+      'SELECT id FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
     );
-
-    if (result.affectedRows === 0) {
+    if (check.length === 0) {
       return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
     }
 
+    const validCategories = ['kampfsport', 'fitness', 'core', 'ausdauer'];
+    const updates = {};
+    if (description !== undefined) updates.description = description ? String(description).trim().substring(0, 500) : null;
+    if (name !== undefined && typeof name === 'string' && name.trim().length >= 2) updates.name = name.trim().substring(0, 100);
+    if (category !== undefined && validCategories.includes(category)) updates.category = category;
+    if (subcategory_id !== undefined) updates.subcategory_id = subcategory_id || null;
+
+    if (Object.keys(updates).length === 0) return res.json({ success: true });
+
+    const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
+    await db.promise().query(
+      `UPDATE exercise_catalog SET ${setClause} WHERE id = ? AND dojo_id = ?`,
+      [...Object.values(updates), id, dojoId]
+    );
+
     res.json({ success: true });
   } catch (err) {
-    logger.error('Exercise catalog update error:', { error: err.message });
+    logger.error('Exercise update error:', { error: err.message });
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });
@@ -475,6 +496,94 @@ router.delete('/exercises/:id', requireFeature('training'), async (req, res) => 
     res.json({ success: true });
   } catch (err) {
     logger.error('Exercise catalog delete error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── GET /api/training/subcategories ──────────────────────────────────────────
+router.get('/subcategories', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+    const [rows] = await db.promise().query(
+      `SELECT id, dojo_id, name, category, sort_order
+       FROM exercise_subcategories
+       WHERE dojo_id IS NULL OR dojo_id = ?
+       ORDER BY category, sort_order, name`,
+      [dojoId]
+    );
+    res.json({ subcategories: rows });
+  } catch (err) {
+    logger.error('Subcategories load error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── POST /api/training/subcategories ─────────────────────────────────────────
+router.post('/subcategories', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+    const { name, category } = req.body;
+    const validCategories = ['kampfsport', 'fitness', 'core', 'ausdauer'];
+    if (!name || typeof name !== 'string' || name.trim().length < 2) return res.status(400).json({ error: 'Name zu kurz' });
+    if (!validCategories.includes(category)) return res.status(400).json({ error: 'Ungültige Kategorie' });
+    const trimmed = name.trim().substring(0, 100);
+    const [existing] = await db.promise().query(
+      'SELECT id FROM exercise_subcategories WHERE name = ? AND category = ? AND (dojo_id IS NULL OR dojo_id = ?)',
+      [trimmed, category, dojoId]
+    );
+    if (existing.length > 0) return res.status(409).json({ error: 'Kategorie existiert bereits' });
+    const [result] = await db.promise().query(
+      'INSERT INTO exercise_subcategories (dojo_id, name, category, sort_order) VALUES (?, ?, ?, (SELECT COALESCE(MAX(sort_order),0)+1 FROM exercise_subcategories es2 WHERE es2.category = ? AND (es2.dojo_id IS NULL OR es2.dojo_id = ?)))',
+      [dojoId, trimmed, category, category, dojoId]
+    );
+    res.json({ id: result.insertId, dojo_id: dojoId, name: trimmed, category, sort_order: 99 });
+  } catch (err) {
+    logger.error('Subcategory add error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── PUT /api/training/subcategories/:id ── umbenennen ─────────────────────────
+router.put('/subcategories/:id', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+    const { id } = req.params;
+    const { name } = req.body;
+    if (!name || typeof name !== 'string' || name.trim().length < 2) return res.status(400).json({ error: 'Name zu kurz' });
+    const [result] = await db.promise().query(
+      'UPDATE exercise_subcategories SET name = ? WHERE id = ? AND dojo_id = ?',
+      [name.trim().substring(0, 100), id, dojoId]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Subcategory rename error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+// ── DELETE /api/training/subcategories/:id ────────────────────────────────────
+router.delete('/subcategories/:id', requireFeature('training'), async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+    const { id } = req.params;
+    // Unassign exercises from this subcategory first
+    await db.promise().query(
+      'UPDATE exercise_catalog SET subcategory_id = NULL WHERE subcategory_id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+    const [result] = await db.promise().query(
+      'DELETE FROM exercise_subcategories WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Nicht gefunden oder keine Berechtigung' });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Subcategory delete error:', { error: err.message });
     res.status(500).json({ error: 'Datenbankfehler' });
   }
 });

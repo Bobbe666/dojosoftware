@@ -376,173 +376,348 @@ function EditZirkelModal({ preset, accentColor, onSave, onDelete, onCancel, inli
   return <div className="td-overlay" onClick={onCancel}>{panel}</div>;
 }
 
+// ── Edit Exercise Modal ───────────────────────────────────────────────────────
+function EditExerciseModal({ exercise, subcategories, accentColor, onSave, onCancel }) {
+  const [name, setName]         = useState(exercise.name);
+  const [desc, setDesc]         = useState(exercise.description || '');
+  const [category, setCategory] = useState(exercise.category);
+  const [subcatId, setSubcatId] = useState(exercise.subcategory_id || '');
+
+  const availableSubcats = subcategories.filter(s => s.category === category);
+
+  function save() {
+    onSave({
+      name: name.trim() || exercise.name,
+      description: desc.trim() || null,
+      category,
+      subcategory_id: subcatId || null,
+    });
+  }
+
+  return (
+    <div className="td-overlay" onClick={onCancel}>
+      <div className="td-modal" onClick={e => e.stopPropagation()}>
+        <div className="td-modal-header">
+          <span className="td-modal-id" style={{ color: accentColor }}>&#9998;</span>
+          <span className="td-modal-title">Übung bearbeiten</span>
+        </div>
+        <div className="td-modal-body">
+          <div className="td-field">
+            <span>Name</span>
+            <input type="text" maxLength={100} value={name} onChange={e => setName(e.target.value)} />
+          </div>
+          <div className="td-field">
+            <span>Hauptkategorie</span>
+            <select value={category} onChange={e => { setCategory(e.target.value); setSubcatId(''); }} className="td-select">
+              {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          </div>
+          <div className="td-field">
+            <span>Unterkategorie</span>
+            <select value={subcatId} onChange={e => setSubcatId(e.target.value)} className="td-select">
+              <option value="">— Ohne —</option>
+              {availableSubcats.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="td-field">
+            <span>Beschreibung</span>
+            <textarea
+              className="td-textarea"
+              value={desc}
+              onChange={e => setDesc(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="Optional: Ausführung, Muskeln, Hinweise…"
+            />
+          </div>
+        </div>
+        <div className="td-modal-footer">
+          <button className="td-btn-cancel" onClick={onCancel}>Abbrechen</button>
+          <button className="td-btn-save" style={{ background: accentColor }} onClick={save}>Speichern</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Catalog View ──────────────────────────────────────────────────────────────
-function CatalogView({ exercises, onAdd, onDelete, onUpdate, withDojo, authHeaders }) {
-  const [activeCat, setActiveCat]   = useState('kampfsport');
-  const [newName, setNewName]       = useState('');
-  const [newCat, setNewCat]         = useState('kampfsport');
-  const [newDesc, setNewDesc]       = useState('');
-  const [adding, setAdding]         = useState(false);
-  const [errMsg, setErrMsg]         = useState('');
-  const [search, setSearch]         = useState('');
-  const [editingId, setEditingId]   = useState(null);
-  const [editDesc, setEditDesc]     = useState('');
+function CatalogView({ exercises, subcategories, onAdd, onDelete, onUpdate, onAddSubcat, onUpdateSubcat, onDeleteSubcat, withDojo, authHeaders }) {
+  const [activeCat, setActiveCat]       = useState('kampfsport');
+  const [activeSubcat, setActiveSubcat] = useState(null); // null = Alle
+  const [search, setSearch]             = useState('');
+  const [showSubcatMgmt, setShowSubcatMgmt] = useState(false);
+  const [editingEx, setEditingEx]       = useState(null); // exercise being edited
+  const [newName, setNewName]           = useState('');
+  const [newCat, setNewCat]             = useState('kampfsport');
+  const [newSubcat, setNewSubcat]       = useState('');
+  const [newDesc, setNewDesc]           = useState('');
+  const [adding, setAdding]             = useState(false);
+  const [errMsg, setErrMsg]             = useState('');
+  // Subcat management state
+  const [newSubcatName, setNewSubcatName] = useState('');
+  const [addingSubcat, setAddingSubcat]   = useState(false);
+  const [renamingId, setRenamingId]       = useState(null);
+  const [renameVal, setRenameVal]         = useState('');
+
+  const catColor = CATALOG_CATS.find(c => c.id === activeCat)?.color ?? '#10b981';
+  const visibleSubcats = subcategories.filter(s => s.category === activeCat);
+
+  // When switching main category, reset subcat filter
+  function switchCat(catId) {
+    setActiveCat(catId);
+    setActiveSubcat(null);
+    setNewCat(catId);
+    setNewSubcat('');
+  }
 
   const filtered = exercises.filter(e => {
-    const matchCat = e.category === activeCat;
-    const matchSearch = !search || e.name.toLowerCase().includes(search.toLowerCase());
-    return matchCat && matchSearch;
+    if (e.category !== activeCat) return false;
+    if (search && !e.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (activeSubcat !== null) return String(e.subcategory_id) === String(activeSubcat);
+    return true;
   });
 
   async function handleAdd() {
     const name = newName.trim();
     if (name.length < 2) { setErrMsg('Name zu kurz'); return; }
-    setAdding(true);
-    setErrMsg('');
+    setAdding(true); setErrMsg('');
     try {
-      const res = await axios.post(withDojo('/training/exercises'), { name, category: newCat, description: newDesc.trim() || null }, authHeaders);
+      const res = await axios.post(withDojo('/training/exercises'), {
+        name, category: newCat,
+        description: newDesc.trim() || null,
+        subcategory_id: newSubcat || null,
+      }, authHeaders);
       onAdd(res.data);
-      setNewName('');
-      setNewDesc('');
+      setNewName(''); setNewDesc(''); setNewSubcat('');
     } catch (err) {
-      setErrMsg(err.response?.data?.error || 'Fehler beim Hinzufügen');
-    } finally {
-      setAdding(false);
-    }
+      setErrMsg(err.response?.data?.error || 'Fehler');
+    } finally { setAdding(false); }
   }
 
   async function handleDelete(ex) {
     try {
       await axios.delete(withDojo(`/training/exercises/${ex.id}`), authHeaders);
       onDelete(ex.id);
-      if (editingId === ex.id) setEditingId(null);
-    } catch (err) {
-      setErrMsg(err.response?.data?.error || 'Fehler beim Löschen');
-    }
+    } catch (err) { setErrMsg(err.response?.data?.error || 'Fehler beim Löschen'); }
   }
 
-  async function handleSaveDesc(ex) {
+  async function handleSaveEdit(updates) {
+    if (!editingEx) return;
     try {
-      await axios.put(withDojo(`/training/exercises/${ex.id}`), { description: editDesc.trim() || null }, authHeaders);
-      onUpdate(ex.id, editDesc.trim() || null);
-      setEditingId(null);
-    } catch (err) {
-      setErrMsg(err.response?.data?.error || 'Fehler beim Speichern');
-    }
+      await axios.put(withDojo(`/training/exercises/${editingEx.id}`), updates, authHeaders);
+      onUpdate(editingEx.id, updates);
+      setEditingEx(null);
+    } catch (err) { setErrMsg(err.response?.data?.error || 'Fehler beim Speichern'); }
   }
 
-  function startEdit(ex) {
-    setEditingId(ex.id);
-    setEditDesc(ex.description || '');
+  async function handleAddSubcat() {
+    const name = newSubcatName.trim();
+    if (name.length < 2) return;
+    setAddingSubcat(true);
+    try {
+      const res = await axios.post(withDojo('/training/subcategories'), { name, category: activeCat }, authHeaders);
+      onAddSubcat(res.data);
+      setNewSubcatName('');
+    } catch (err) { setErrMsg(err.response?.data?.error || 'Fehler'); }
+    finally { setAddingSubcat(false); }
   }
 
-  const catColor = CATALOG_CATS.find(c => c.id === activeCat)?.color ?? '#10b981';
+  async function handleRenameSubcat(id) {
+    const name = renameVal.trim();
+    if (name.length < 2) return;
+    try {
+      await axios.put(withDojo(`/training/subcategories/${id}`), { name }, authHeaders);
+      onUpdateSubcat(id, name);
+      setRenamingId(null);
+    } catch (err) { setErrMsg(err.response?.data?.error || 'Fehler'); }
+  }
+
+  async function handleDeleteSubcat(id) {
+    try {
+      await axios.delete(withDojo(`/training/subcategories/${id}`), authHeaders);
+      onDeleteSubcat(id);
+      if (activeSubcat === id) setActiveSubcat(null);
+    } catch (err) { setErrMsg(err.response?.data?.error || 'Fehler'); }
+  }
+
+  // Group filtered exercises by subcategory
+  const grouped = [];
+  const subcatMap = {};
+  visibleSubcats.forEach(s => { subcatMap[s.id] = s.name; });
+
+  if (activeSubcat !== null) {
+    grouped.push({ subcatName: null, exercises: filtered });
+  } else {
+    const groups = {};
+    const noSubcat = [];
+    filtered.forEach(ex => {
+      if (ex.subcategory_id && subcatMap[ex.subcategory_id]) {
+        if (!groups[ex.subcategory_id]) groups[ex.subcategory_id] = { name: subcatMap[ex.subcategory_id], exercises: [] };
+        groups[ex.subcategory_id].exercises.push(ex);
+      } else {
+        noSubcat.push(ex);
+      }
+    });
+    visibleSubcats.forEach(s => {
+      if (groups[s.id]) grouped.push({ subcatId: s.id, subcatName: s.name, exercises: groups[s.id].exercises });
+    });
+    if (noSubcat.length > 0) grouped.push({ subcatName: 'Weitere', exercises: noSubcat });
+  }
 
   return (
-    <div className="td-catalog">
-      <div className="td-catalog-header">
-        <h3 className="td-catalog-title">Übungskatalog</h3>
-        <p className="td-catalog-sub">Globaler Katalog — steht allen Trainern und der Trainer App per Autocomplete zur Verfügung. Eigene Übungen sind nur in diesem Dojo sichtbar.</p>
-      </div>
-
-      <div className="td-catalog-cats">
-        {CATALOG_CATS.map(c => (
-          <button
-            key={c.id}
-            className={`td-catalog-cat-btn${activeCat === c.id ? ' active' : ''}`}
-            style={{ '--cc': c.color }}
-            onClick={() => setActiveCat(c.id)}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="td-catalog-search">
-        <input
-          type="text"
-          placeholder="Übung suchen…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="td-catalog-search-input"
+    <>
+      {editingEx && (
+        <EditExerciseModal
+          exercise={editingEx}
+          subcategories={subcategories}
+          accentColor={catColor}
+          onSave={handleSaveEdit}
+          onCancel={() => setEditingEx(null)}
         />
-        {search && <button className="td-catalog-search-clear" onClick={() => setSearch('')}>✕</button>}
-      </div>
+      )}
+      <div className="td-catalog">
+        <div className="td-catalog-header">
+          <h3 className="td-catalog-title">Übungskatalog</h3>
+          <p className="td-catalog-sub">Globaler Katalog — Autocomplete in der Trainer App. Eigene Übungen sind nur in diesem Dojo sichtbar.</p>
+        </div>
 
-      <div className="td-catalog-list">
-        {filtered.length === 0 && (
-          <div className="td-catalog-empty">Keine Übungen gefunden.</div>
-        )}
-        {filtered.map(ex => (
-          <div key={ex.id} className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}`}>
-            <div className="td-catalog-item-main">
-              <span className="td-catalog-item-name">{ex.name}</span>
-              {ex.description && editingId !== ex.id && (
-                <span className="td-catalog-item-desc">{ex.description}</span>
-              )}
-              {editingId === ex.id && (
-                <div className="td-catalog-item-edit">
-                  <textarea
-                    className="td-catalog-desc-input"
-                    placeholder="Beschreibung (optional)…"
-                    value={editDesc}
-                    onChange={e => setEditDesc(e.target.value)}
-                    rows={2}
-                    maxLength={500}
-                  />
-                  <div className="td-catalog-desc-actions">
-                    <button className="td-catalog-desc-save" style={{ background: catColor }} onClick={() => handleSaveDesc(ex)}>Speichern</button>
-                    <button className="td-catalog-desc-cancel" onClick={() => setEditingId(null)}>Abbrechen</button>
-                  </div>
+        {/* Main category pills */}
+        <div className="td-catalog-cats">
+          {CATALOG_CATS.map(c => (
+            <button key={c.id}
+              className={`td-catalog-cat-btn${activeCat === c.id ? ' active' : ''}`}
+              style={{ '--cc': c.color }}
+              onClick={() => switchCat(c.id)}
+            >{c.label}</button>
+          ))}
+        </div>
+
+        {/* Subcategory pills row */}
+        <div className="td-catalog-subcats">
+          <button
+            className={`td-catalog-subcat-btn${activeSubcat === null ? ' active' : ''}`}
+            style={{ '--cc': catColor }}
+            onClick={() => setActiveSubcat(null)}
+          >Alle</button>
+          {visibleSubcats.map(s => (
+            <button key={s.id}
+              className={`td-catalog-subcat-btn${activeSubcat === s.id ? ' active' : ''}`}
+              style={{ '--cc': catColor }}
+              onClick={() => setActiveSubcat(s.id === activeSubcat ? null : s.id)}
+            >{s.name}</button>
+          ))}
+          <button className="td-catalog-subcat-mgmt-btn" onClick={() => setShowSubcatMgmt(v => !v)} title="Kategorien verwalten">
+            {showSubcatMgmt ? '✕' : '⚙'}
+          </button>
+        </div>
+
+        {/* Subcategory management panel */}
+        {showSubcatMgmt && (
+          <div className="td-catalog-subcat-mgmt">
+            <div className="td-catalog-subcat-mgmt-title">Unterkategorien verwalten — {CATALOG_CATS.find(c=>c.id===activeCat)?.label}</div>
+            <div className="td-catalog-subcat-mgmt-list">
+              {visibleSubcats.length === 0 && <span className="td-catalog-empty" style={{padding:'6px 0'}}>Noch keine eigenen Kategorien.</span>}
+              {visibleSubcats.map(s => (
+                <div key={s.id} className="td-catalog-subcat-mgmt-item">
+                  {renamingId === s.id ? (
+                    <>
+                      <input className="td-catalog-subcat-rename" value={renameVal}
+                        onChange={e => setRenameVal(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleRenameSubcat(s.id)}
+                        autoFocus
+                      />
+                      <button className="td-catalog-subcat-save" style={{color: catColor}} onClick={() => handleRenameSubcat(s.id)}>&#10003;</button>
+                      <button className="td-catalog-subcat-cancel" onClick={() => setRenamingId(null)}>&#10005;</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className={`td-catalog-subcat-mgmt-name${s.dojo_id ? '' : ' global'}`}>{s.name}{!s.dojo_id && ' (global)'}</span>
+                      {s.dojo_id && <>
+                        <button className="td-catalog-subcat-edit-btn" onClick={() => { setRenamingId(s.id); setRenameVal(s.name); }}>&#9998;</button>
+                        <button className="td-catalog-subcat-del-btn" onClick={() => handleDeleteSubcat(s.id)}>&#128465;</button>
+                      </>}
+                    </>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-            <div className="td-catalog-item-btns">
-              {ex.dojo_id && editingId !== ex.id && (
-                <button className="td-catalog-item-edit-btn" onClick={() => startEdit(ex)} title="Beschreibung bearbeiten">✎</button>
-              )}
-              {ex.dojo_id && (
-                <button className="td-catalog-item-del" onClick={() => handleDelete(ex)} title="Eigene Übung löschen">✕</button>
-              )}
+            <div className="td-catalog-subcat-add-row">
+              <input className="td-catalog-subcat-add-input" placeholder="Neue Kategorie…" maxLength={100}
+                value={newSubcatName} onChange={e => setNewSubcatName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddSubcat()}
+              />
+              <button className="td-catalog-subcat-add-btn" style={{ background: catColor }}
+                onClick={handleAddSubcat} disabled={addingSubcat}>
+                {addingSubcat ? '…' : '+ Hinzufügen'}
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        )}
 
-      <div className="td-catalog-add">
-        <div className="td-catalog-add-title">Eigene Übung hinzufügen</div>
-        <div className="td-catalog-add-row">
-          <input
-            type="text"
-            placeholder="Name…"
-            maxLength={100}
-            value={newName}
-            onChange={e => { setNewName(e.target.value); setErrMsg(''); }}
-            className="td-catalog-add-name"
-          />
-          <select value={newCat} onChange={e => setNewCat(e.target.value)} className="td-catalog-add-cat">
-            {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-          </select>
+        {/* Search */}
+        <div className="td-catalog-search">
+          <input type="text" placeholder="Übung suchen…" value={search}
+            onChange={e => setSearch(e.target.value)} className="td-catalog-search-input" />
+          {search && <button className="td-catalog-search-clear" onClick={() => setSearch('')}>&#10005;</button>}
         </div>
-        <textarea
-          placeholder="Beschreibung (optional) — z.B. Ausführung, Muskeln, Schwierigkeitsgrad…"
-          maxLength={500}
-          value={newDesc}
-          onChange={e => setNewDesc(e.target.value)}
-          className="td-catalog-add-desc"
-          rows={2}
-        />
-        <button
-          className="td-catalog-add-btn"
-          style={{ background: catColor }}
-          onClick={handleAdd}
-          disabled={adding}
-        >
-          {adding ? '…' : '+ Hinzufügen'}
-        </button>
-        {errMsg && <div className="td-catalog-err">{errMsg}</div>}
+
+        {/* Exercise grid (grouped by subcat) */}
+        <div className="td-catalog-scroll">
+          {grouped.length === 0 && <div className="td-catalog-empty">Keine Übungen gefunden.</div>}
+          {grouped.map((group, gi) => (
+            <div key={gi} className="td-catalog-group">
+              {group.subcatName && (
+                <div className="td-catalog-group-label" style={{ '--cc': catColor }}>{group.subcatName}</div>
+              )}
+              <div className="td-catalog-list">
+                {group.exercises.map(ex => (
+                  <div key={ex.id}
+                    className={`td-catalog-item${ex.dojo_id ? ' td-catalog-item--own' : ''}`}
+                    onClick={() => ex.dojo_id && setEditingEx(ex)}
+                    title={ex.dojo_id ? 'Klicken zum Bearbeiten' : ex.name}
+                  >
+                    <div className="td-catalog-item-main">
+                      <span className="td-catalog-item-name">{ex.name}</span>
+                      {ex.description && <span className="td-catalog-item-desc">{ex.description}</span>}
+                    </div>
+                    <div className="td-catalog-item-btns">
+                      {ex.dojo_id && (
+                        <button className="td-catalog-item-del" onClick={e => { e.stopPropagation(); handleDelete(ex); }} title="Löschen">&#10005;</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Add form */}
+        <div className="td-catalog-add">
+          <div className="td-catalog-add-title">Eigene Übung hinzufügen</div>
+          <div className="td-catalog-add-row">
+            <input type="text" placeholder="Name…" maxLength={100} value={newName}
+              onChange={e => { setNewName(e.target.value); setErrMsg(''); }}
+              className="td-catalog-add-name"
+              onKeyDown={e => e.key === 'Enter' && handleAdd()}
+            />
+            <select value={newCat} onChange={e => { setNewCat(e.target.value); setNewSubcat(''); }} className="td-catalog-add-cat">
+              {CATALOG_CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+            <select value={newSubcat} onChange={e => setNewSubcat(e.target.value)} className="td-catalog-add-cat">
+              <option value="">Unterkategorie…</option>
+              {subcategories.filter(s => s.category === newCat).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <textarea placeholder="Beschreibung (optional)…" maxLength={500} value={newDesc}
+            onChange={e => setNewDesc(e.target.value)} className="td-catalog-add-desc" rows={2} />
+          <button className="td-catalog-add-btn" style={{ background: catColor }} onClick={handleAdd} disabled={adding}>
+            {adding ? '…' : '+ Hinzufügen'}
+          </button>
+          {errMsg && <div className="td-catalog-err">{errMsg}</div>}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -562,6 +737,7 @@ export default function TrainingDashboard() {
   const [saving, setSaving]             = useState(false);
   const [isDesktop, setIsDesktop]       = useState(() => window.matchMedia('(min-width: 800px)').matches);
   const [exercises, setExercises]       = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 800px)');
@@ -585,16 +761,18 @@ export default function TrainingDashboard() {
   async function loadData() {
     setLoading(true);
     try {
-      const [presetsRes, tokenRes, exRes] = await Promise.all([
+      const [presetsRes, tokenRes, exRes, subcatRes] = await Promise.all([
         axios.get(withDojo('/training/presets'), authHeaders),
         axios.get(withDojo('/training/token'), authHeaders),
         axios.get(withDojo('/training/exercises'), authHeaders),
+        axios.get(withDojo('/training/subcategories'), authHeaders),
       ]);
       const fetched = presetsRes.data.presets || {};
       setAllPresets(Object.keys(fetched).length > 0 ? fetched : DEFAULT_PRESETS);
       setSyncToken(tokenRes.data.token);
       setLastSynced(tokenRes.data.lastSynced);
       setExercises(exRes.data.exercises || []);
+      setSubcategories(subcatRes.data.subcategories || []);
     } catch (err) {
       console.error('Training load error:', err);
     } finally {
@@ -803,9 +981,13 @@ export default function TrainingDashboard() {
           <div className="td-content td-content--catalog">
             <CatalogView
               exercises={exercises}
+              subcategories={subcategories}
               onAdd={ex => setExercises(prev => [...prev, ex])}
               onDelete={id => setExercises(prev => prev.filter(e => e.id !== id))}
-              onUpdate={(id, description) => setExercises(prev => prev.map(e => e.id === id ? { ...e, description } : e))}
+              onUpdate={(id, updates) => setExercises(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e))}
+              onAddSubcat={s => setSubcategories(prev => [...prev, s])}
+              onUpdateSubcat={(id, name) => setSubcategories(prev => prev.map(s => s.id === id ? { ...s, name } : s))}
+              onDeleteSubcat={id => setSubcategories(prev => prev.filter(s => s.id !== id))}
               withDojo={withDojo}
               authHeaders={authHeaders}
             />
