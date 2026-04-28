@@ -98,16 +98,17 @@ router.post('/trainer-login', async (req, res) => {
       return res.status(401).json({ error: 'Ungültige Zugangsdaten' });
     }
 
-    // Trainer-ID via E-Mail-Match nachschlagen
+    // Trainer-ID via E-Mail-Match nachschlagen (NULL-sicher)
     let trainerId = null;
     if (user.email) {
-      const [trainerRows] = await db.promise().query(
-        'SELECT trainer_id FROM trainer WHERE email = ? AND dojo_id = ? LIMIT 1',
-        [user.email, user.dojo_id]
-      );
-      if (trainerRows.length > 0) {
-        trainerId = trainerRows[0].trainer_id;
-      }
+      const trainerQuery = user.dojo_id != null
+        ? 'SELECT trainer_id FROM trainer WHERE email = ? AND dojo_id = ? LIMIT 1'
+        : 'SELECT trainer_id FROM trainer WHERE email = ? LIMIT 1';
+      const trainerParams = user.dojo_id != null
+        ? [user.email, user.dojo_id]
+        : [user.email];
+      const [trainerRows] = await db.promise().query(trainerQuery, trainerParams);
+      if (trainerRows.length > 0) trainerId = trainerRows[0].trainer_id;
     }
 
     const tokenPayload = {
@@ -162,10 +163,11 @@ router.get('/trainer-presets', authenticateTrainerToken, async (req, res) => {
       });
     }
 
-    // Fallback: Dojo-Presets
+    // Fallback: Dojo-Presets (Super-Admin dojo_id=null → Dojo 3 als Default)
+    const fallbackDojoId = dojo_id ?? 3;
     const [dojoRows] = await db.promise().query(
       'SELECT presets_json FROM training_presets WHERE dojo_id = ? LIMIT 1',
-      [dojo_id]
+      [fallbackDojoId]
     );
 
     const presets = dojoRows.length > 0
