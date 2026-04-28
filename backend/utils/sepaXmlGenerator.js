@@ -244,8 +244,19 @@ class SepaXmlGenerator {
   static validateIBAN(iban) {
     if (!iban) return false;
     const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-    // Einfache Validierung: DE + 20 Zeichen
-    return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}$/.test(cleanIban);
+    if (cleanIban.length < 5 || cleanIban.length > 34) return false;
+    if (!/^[A-Z]{2}[0-9]{2}[A-Z0-9]+$/.test(cleanIban)) return false;
+    // MOD97-Prüfziffernverfahren (ISO 7064)
+    const rearranged = cleanIban.slice(4) + cleanIban.slice(0, 4);
+    const numeric = rearranged.split('').map(c => {
+      const code = c.charCodeAt(0);
+      return code >= 65 ? (code - 55).toString() : c;
+    }).join('');
+    let remainder = 0n;
+    for (const ch of numeric) {
+      remainder = (remainder * 10n + BigInt(parseInt(ch))) % 97n;
+    }
+    return remainder === 1n;
   }
 
   /**

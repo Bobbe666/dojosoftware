@@ -361,6 +361,10 @@ function calculateCollectionDate(businessDays) {
  */
 // Diagnose-Route: Zeige alle Mitglieder mit Lastschrift und ihren Status
 router.get("/diagnose", (req, res) => {
+    const secureDojoId = getSecureDojoId(req);
+    const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+    const params = secureDojoId ? [secureDojoId] : [];
+
     const query = `
         SELECT
             m.mitglied_id,
@@ -374,10 +378,11 @@ router.get("/diagnose", (req, res) => {
             (SELECT status FROM sepa_mandate WHERE mitglied_id = m.mitglied_id LIMIT 1) as mandate_status
         FROM mitglieder m
         WHERE (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
+          ${dojoFilter}
         ORDER BY m.nachname, m.vorname
     `;
 
-    db.query(query, (err, results) => {
+    db.query(query, params, (err, results) => {
         if (err) {
             logger.error('Database error:', err);
             return res.status(500).json({
@@ -407,13 +412,11 @@ router.get("/missing-mandates", (req, res) => {
     // 🔒 SICHERHEIT: Sichere Dojo-ID aus JWT Token
     const secureDojoId = getSecureDojoId(req);
 
-    const dojoId = req.query.dojo_id || req.user?.dojo_id;
-
     let whereClause = '';
     const params = [];
-    if (dojoId) {
+    if (secureDojoId) {
         whereClause = 'AND m.dojo_id = ?';
-        params.push(parseInt(dojoId));
+        params.push(secureDojoId);
     }
 
     const query = `
@@ -1113,7 +1116,7 @@ router.get("/stripe/status", async (req, res) => {
 router.post("/stripe/setup-customer", async (req, res) => {
     try {
         const { mitglied_id } = req.body;
-        const dojoId = req.body.dojo_id || req.user?.dojo_id;
+        const dojoId = getSecureDojoId(req);
 
         if (!mitglied_id) {
             return res.status(400).json({ error: 'mitglied_id erforderlich' });
@@ -1173,7 +1176,7 @@ router.post("/stripe/setup-customer", async (req, res) => {
  */
 router.post("/stripe/setup-all", async (req, res) => {
     try {
-        const dojoId = req.body.dojo_id || req.user?.dojo_id;
+        const dojoId = getSecureDojoId(req);
 
         // Finde alle Mitglieder die Setup benötigen (bei Super-Admin alle Dojos mit Stripe)
         const mitgliederQuery = dojoId ? `
@@ -1302,13 +1305,21 @@ router.post("/stripe/execute", async (req, res) => {
                 );
 
                 if (unbezahlteBeitraege.length > 0) {
-                    // Nur unbezahlte Beiträge einziehen
                     const neuerBetrag = unbezahlteBeitraege.reduce((sum, b) => sum + parseFloat(b.betrag), 0);
-                    // Ratenplan-Aufschlag dazurechnen (nicht in beitraege-Tabelle, kommt vom Frontend)
-                    const ratenplanAufschlag = parseFloat(mitglied.ratenplan_aufschlag || 0);
-                    const ratenOffen = parseFloat(mitglied.raten_ausstehend || 0);
-                    const effektiverAufschlag = ratenplanAufschlag > 0 && ratenOffen > 0
-                        ? Math.min(ratenplanAufschlag, ratenOffen) : 0;
+                    // Ratenplan-Aufschlag aus DB lesen — nicht dem Frontend-Wert vertrauen
+                    let effektiverAufschlag = 0;
+                    if (mitglied.ratenplan_id) {
+                        const [rp] = await queryAsync(
+                            `SELECT monatlicher_aufschlag, ausstehender_betrag, bereits_abgezahlt
+                             FROM mitglied_ratenplan WHERE id = ? AND aktiv = 1`,
+                            [mitglied.ratenplan_id]
+                        );
+                        if (rp) {
+                            const aufschlag = parseFloat(rp.monatlicher_aufschlag || 0);
+                            const offen = parseFloat(rp.ausstehender_betrag || 0) - parseFloat(rp.bereits_abgezahlt || 0);
+                            effektiverAufschlag = aufschlag > 0 && offen > 0 ? Math.min(aufschlag, offen) : 0;
+                        }
+                    }
                     filteredMitglieder.push({
                         ...mitglied,
                         beitraege: unbezahlteBeitraege.map(b => ({ beitrag_id: b.beitrag_id })),

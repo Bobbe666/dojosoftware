@@ -404,6 +404,7 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
                 b.betrag as beitrag_betrag,
                 b.beschreibung as beitrag_beschreibung,
                 b.zahlungsdatum as faelligkeitsdatum,
+                b.dojo_id,
                 m.mitglied_id,
                 m.vorname,
                 m.nachname,
@@ -433,8 +434,8 @@ router.get("/mahnungen/:mahnung_id/pdf", async (req, res) => {
             const mahnungData = mahnungResults[0];
 
             // Hole Dojo-Daten
-            const dojoQuery = `SELECT * FROM dojo LIMIT 1`;
-            db.query(dojoQuery, async (dojoErr, dojoResults) => {
+            const dojoQuery = `SELECT * FROM dojo WHERE id = ?`;
+            db.query(dojoQuery, [mahnungData.dojo_id || 1], async (dojoErr, dojoResults) => {
                 if (dojoErr) {
                     logger.error('Fehler beim Laden der Dojo-Daten:', { error: dojoErr });
                     return res.status(500).json({ error: 'Datenbankfehler' });
@@ -525,10 +526,10 @@ router.get("/beitraege/:beitrag_id/mahnung-vorschau/:mahnstufe", async (req, res
             const beitragData = beitragResults[0];
 
             // Hole Dojo und Mahnstufen-Einstellungen
-            const dojoQuery = `SELECT * FROM dojo LIMIT 1`;
+            const dojoQuery = `SELECT * FROM dojo WHERE id = ?`;
             const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ?`;
 
-            db.query(dojoQuery, (dojoErr, dojoResults) => {
+            db.query(dojoQuery, [beitragData.dojo_id || 1], (dojoErr, dojoResults) => {
                 const dojo = dojoResults?.[0] || {};
 
                 db.query(stufenQuery, [mahnstufe], async (stufenErr, stufenResults) => {
@@ -653,7 +654,7 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
 
             // 24h-Cooldown: gleiche Mahnung nicht zweimal am selben Tag senden
             if (mahnungData.versandt) {
-                const lastSent = mahnungData.versandt_am || mahnungData.updated_at;
+                const lastSent = mahnungData.versandt_am || mahnungData.mahndatum;
                 if (lastSent) {
                     const hoursSince = (Date.now() - new Date(lastSent).getTime()) / 3600000;
                     if (hoursSince < 24) {
@@ -661,18 +662,15 @@ router.post("/mahnungen/:mahnung_id/senden", async (req, res) => {
                             error: `Mahnung ${mahnung_id} wurde bereits vor weniger als 24h gesendet. Bitte warten.`
                         });
                     }
-                } else {
-                    return res.status(429).json({
-                        error: `Mahnung ${mahnung_id} wurde bereits gesendet (versandt = 1).`
-                    });
                 }
+                // Kein verwertbarer Zeitstempel: erneuten Versand erlauben
             }
 
             // Hole Dojo und Mahnstufen-Einstellungen
-            const dojoQuery = `SELECT * FROM dojo LIMIT 1`;
+            const dojoQuery = `SELECT * FROM dojo WHERE id = ?`;
             const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE stufe = ?`;
 
-            db.query(dojoQuery, async (dojoErr, dojoResults) => {
+            db.query(dojoQuery, [mahnungData.dojo_id || 1], async (dojoErr, dojoResults) => {
                 const dojo = dojoResults?.[0] || {};
 
                 db.query(stufenQuery, [mahnungData.mahnstufe], async (stufenErr, stufenResults) => {
@@ -829,13 +827,17 @@ Mit freundlichen Gruessen
 
 // API: Automatischen Mahnlauf durchfuehren
 router.post("/mahnlauf", async (req, res) => {
-    const { dojo_id, nurSimulation } = req.body;
+    const { nurSimulation } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
     try {
         // Hole Mahnstufen-Einstellungen
-        const stufenQuery = `SELECT * FROM mahnstufen_einstellungen WHERE aktiv = 1 ORDER BY stufe ASC`;
+        const stufenQuery = secureDojoId
+            ? `SELECT * FROM mahnstufen_einstellungen WHERE aktiv = 1 AND dojo_id = ? ORDER BY stufe ASC`
+            : `SELECT * FROM mahnstufen_einstellungen WHERE aktiv = 1 ORDER BY stufe ASC`;
+        const stufenParams = secureDojoId ? [secureDojoId] : [];
 
-        db.query(stufenQuery, async (stufenErr, mahnstufen) => {
+        db.query(stufenQuery, stufenParams, async (stufenErr, mahnstufen) => {
             if (stufenErr || mahnstufen.length === 0) {
                 return res.status(400).json({ error: 'Keine aktiven Mahnstufen konfiguriert' });
             }
@@ -844,9 +846,9 @@ router.post("/mahnlauf", async (req, res) => {
             let whereConditions = ['b.bezahlt = 0'];
             let queryParams = [];
 
-            if (dojo_id && dojo_id !== 'all') {
+            if (secureDojoId) {
                 whereConditions.push('b.dojo_id = ?');
-                queryParams.push(parseInt(dojo_id));
+                queryParams.push(secureDojoId);
             }
 
             const beitraegeQuery = `
