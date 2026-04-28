@@ -645,6 +645,11 @@
 /* Loading / Error */
 .td-loading { padding: 40px; text-align: center; color: #6080a0; font-size: 0.88rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
+@keyframes td-panel-in {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
 /* ── Desktop-Optimierung (ab 800px) ────────────────────────────────── */
 @media (min-width: 800px) {
   .td-header {
@@ -750,10 +755,6 @@
     overflow-y: auto;
     background: #080f1a;
     animation: td-panel-in 0.16s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  @keyframes td-panel-in {
-    from { opacity: 0; transform: translateX(16px); }
-    to   { opacity: 1; transform: translateX(0); }
   }
   .td-modal--inline {
     max-width: 100%;
