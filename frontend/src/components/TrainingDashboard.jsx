@@ -459,17 +459,81 @@ export default function TrainingDashboard() {
 
   // ── Enterprise Gate ──────────────────────────────────────────────────────────
   if (!hasFeature('training')) {
+    const previewCat = CATEGORIES[0];
     return (
-      <div className="td-gate">
-        <div className="td-gate-icon">⏱</div>
-        <h3>Training Timer</h3>
-        <p>
-          Der Training Timer ist ein Enterprise-Feature. Verwalte Interval-Timer-Presets
-          für alle Trainingsarten und verbinde den TDA Trainer App automatisch mit deinem Dojo.
-        </p>
-        <p style={{ color: '#304050', fontSize: '0.78rem' }}>
-          Upgrade auf Enterprise, um dieses Feature freizuschalten.
-        </p>
+      <div className="td-preview-wrapper">
+        {/* Blurred preview of the real UI */}
+        <div className="td-preview-content" aria-hidden="true">
+          <div className="td-header">
+            <div className="td-header-left">
+              <h2>⏱ Training Timer</h2>
+              <p>Presets verwalten · Trainer App verbinden</p>
+            </div>
+          </div>
+          <div className="td-body">
+            <div className="td-cats">
+              {CATEGORIES.map(c => (
+                <div key={c.id}
+                  className={`td-cat-btn ${c.id === 'kickboxen' ? 'active' : ''}`}
+                  style={{ '--cat-color': c.color, '--cat-dim': c.dim, '--cat-border': c.border }}
+                >
+                  <span className="td-cat-dot" style={{ '--cat-color': c.color }} />
+                  {c.label}
+                  <span className="td-cat-count">6</span>
+                </div>
+              ))}
+            </div>
+            <div className="td-content">
+              <div className="td-content-header">
+                <span className="td-content-title">Kickboxen</span>
+              </div>
+              <div className="td-preset-grid">
+                {DEFAULT_PRESETS.kickboxen.map(p => {
+                  const info = presetCardInfo(p);
+                  return (
+                    <div key={p.id} className="td-preset-card"
+                      style={{ borderLeftColor: previewCat.color, borderLeftWidth: 3 }}
+                    >
+                      <span className="td-preset-id" style={{ color: previewCat.color }}>{p.name || p.id}</span>
+                      <span className="td-preset-info">{info.line1}</span>
+                      <span className="td-preset-detail">{info.line2}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div className="td-sync">
+            <span className="td-sync-title">Trainer App verbinden</span>
+            <div className="td-sync-row">
+              <div className="td-sync-token">https://trainer.tda-intl.org/?token=••••••••••••••••</div>
+              <button className="td-sync-btn" disabled>URL kopieren</button>
+              <button className="td-sync-btn" disabled>↺ Neu</button>
+            </div>
+          </div>
+        </div>
+
+        {/* Overlay CTA */}
+        <div className="td-preview-overlay">
+          <div className="td-preview-badge">Enterprise Feature</div>
+          <div className="td-preview-title">⏱ Training Timer</div>
+          <div className="td-preview-desc">
+            Verwalte Interval-Timer-Presets für Kickboxen, Cardio, Core, Kraft und Zirkel.
+            Verbinde die TDA Trainer App auf jedem Gerät mit einem einzigen Link.
+          </div>
+          <div className="td-preview-features">
+            <span>✓ 5 Kategorien</span>
+            <span>✓ Anpassbare Presets</span>
+            <span>✓ Trainer App Sync</span>
+            <span>✓ Zirkel &amp; Rotation</span>
+          </div>
+          <a
+            className="td-preview-cta"
+            href="mailto:info@tda-intl.com?subject=Enterprise%20Upgrade%20anfragen"
+          >
+            Enterprise anfragen →
+          </a>
+        </div>
       </div>
     );
   }
