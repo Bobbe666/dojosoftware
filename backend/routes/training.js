@@ -1,11 +1,26 @@
 const express     = require('express');
 const crypto      = require('crypto');
+const jwt         = require('jsonwebtoken');
 const router      = express.Router();
 const db          = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 const { requireFeature }    = require('../middleware/featureAccess');
 const { getSecureDojoId }   = require('../middleware/tenantSecurity');
+const { verifyPassword }    = require('../services/passwordService');
 const logger      = require('../utils/logger');
+
+// ── Trainer-App: Middleware für Trainer-JWT ──────────────────────────────────
+function authenticateTrainerToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Kein Token vorhanden' });
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return res.status(403).json({ error: 'Token ungültig oder abgelaufen' });
+    if (!decoded.trainer_app) return res.status(403).json({ error: 'Kein Trainer-App-Token' });
+    req.trainerUser = decoded;
+    next();
+  });
+}
 
 // ── PUBLIC: Trainer App holt Presets via Token ────────────────────────────────
 router.get('/sync', async (req, res) => {
@@ -45,6 +60,207 @@ router.get('/sync', async (req, res) => {
     res.json({ presets });
   } catch (err) {
     logger.error('Training sync error:', { error: err.message });
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+// ── PUBLIC: Trainer-App Login ─────────────────────────────────────────────────
+router.post('/trainer-login', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+
+  const { email, username, password } = req.body;
+  const loginField = email || username;
+
+  if (!loginField || !password) {
+    return res.status(400).json({ error: 'E-Mail/Benutzername und Passwort sind erforderlich' });
+  }
+  if (password.length > 128) {
+    return res.status(400).json({ error: 'Passwort zu lang' });
+  }
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT id, username, email, password, rolle, dojo_id, vorname, nachname, aktiv
+       FROM admin_users
+       WHERE (email = ? OR username = ?) AND aktiv = 1
+       LIMIT 1`,
+      [loginField, loginField]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Ungültige Zugangsdaten' });
+    }
+
+    const user = rows[0];
+
+    const { valid } = await verifyPassword(password, user.password);
+    if (!valid) {
+      return res.status(401).json({ error: 'Ungültige Zugangsdaten' });
+    }
+
+    // Trainer-ID via E-Mail-Match nachschlagen
+    let trainerId = null;
+    if (user.email) {
+      const [trainerRows] = await db.promise().query(
+        'SELECT trainer_id FROM trainer WHERE email = ? AND dojo_id = ? LIMIT 1',
+        [user.email, user.dojo_id]
+      );
+      if (trainerRows.length > 0) {
+        trainerId = trainerRows[0].trainer_id;
+      }
+    }
+
+    const tokenPayload = {
+      id: user.id,
+      admin_user_id: user.id,
+      dojo_id: user.dojo_id,
+      username: user.username,
+      email: user.email,
+      vorname: user.vorname,
+      nachname: user.nachname,
+      trainer_id: trainerId,
+      trainer_app: true,
+      iat: Math.floor(Date.now() / 1000)
+    };
+
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '90d' });
+
+    logger.info(`Trainer-App Login: ${user.username} (Dojo ${user.dojo_id})`);
+
+    res.json({
+      token,
+      trainer: {
+        id: user.id,
+        vorname: user.vorname,
+        nachname: user.nachname,
+        email: user.email,
+        dojo_id: user.dojo_id,
+        trainer_id: trainerId
+      }
+    });
+  } catch (err) {
+    logger.error('Trainer-Login error:', { error: err.message });
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+// ── Trainer-App: Persönliche Presets laden ────────────────────────────────────
+router.get('/trainer-presets', authenticateTrainerToken, async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const { admin_user_id, dojo_id } = req.trainerUser;
+
+  try {
+    const [personal] = await db.promise().query(
+      'SELECT presets_json FROM trainer_personal_presets WHERE admin_user_id = ? LIMIT 1',
+      [admin_user_id]
+    );
+
+    if (personal.length > 0 && personal[0].presets_json) {
+      return res.json({
+        presets: JSON.parse(personal[0].presets_json || '{}'),
+        source: 'personal'
+      });
+    }
+
+    // Fallback: Dojo-Presets
+    const [dojoRows] = await db.promise().query(
+      'SELECT presets_json FROM training_presets WHERE dojo_id = ? LIMIT 1',
+      [dojo_id]
+    );
+
+    const presets = dojoRows.length > 0
+      ? JSON.parse(dojoRows[0].presets_json || '{}')
+      : {};
+
+    res.json({ presets, source: 'dojo' });
+  } catch (err) {
+    logger.error('Trainer-Presets load error:', { error: err.message });
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+// ── Trainer-App: Persönliche Presets speichern ────────────────────────────────
+router.put('/trainer-presets', authenticateTrainerToken, async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  const { admin_user_id, dojo_id } = req.trainerUser;
+
+  const { presets } = req.body;
+  if (!presets || typeof presets !== 'object') {
+    return res.status(400).json({ error: 'Ungültige Preset-Daten' });
+  }
+
+  const presetsJson = JSON.stringify(presets);
+  if (presetsJson.length > 500 * 1024) {
+    return res.status(400).json({ error: 'Preset-Daten zu groß (max. 500 KB)' });
+  }
+
+  try {
+    await db.promise().query(
+      `INSERT INTO trainer_personal_presets (admin_user_id, dojo_id, presets_json)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE presets_json = VALUES(presets_json), updated_at = NOW()`,
+      [admin_user_id, dojo_id, presetsJson]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Trainer-Presets save error:', { error: err.message });
+    res.status(500).json({ error: 'Serverfehler' });
+  }
+});
+
+// ── Dojosoftware Frontend: Preset-Info für einen Trainer (per trainer_id) ──────
+// GET /api/training/trainer-presets-info?trainer_id=X
+// Prüft ob ein admin_user mit gleicher Email persönliche Presets hat
+router.get('/trainer-presets-info', authenticateToken, async (req, res) => {
+  const { trainer_id } = req.query;
+  if (!trainer_id) return res.status(400).json({ error: 'trainer_id fehlt' });
+
+  try {
+    // Trainer-Email holen
+    const [trainerRows] = await db.promise().query(
+      'SELECT email FROM trainer WHERE trainer_id = ? LIMIT 1',
+      [trainer_id]
+    );
+    if (trainerRows.length === 0) {
+      return res.json({ hasAccount: false, hasPersonalPresets: false, adminUser: null });
+    }
+
+    const trainerEmail = trainerRows[0].email;
+    if (!trainerEmail) {
+      return res.json({ hasAccount: false, hasPersonalPresets: false, adminUser: null });
+    }
+
+    // Admin-User per E-Mail suchen
+    const [adminRows] = await db.promise().query(
+      'SELECT id, username, vorname, nachname FROM admin_users WHERE email = ? LIMIT 1',
+      [trainerEmail]
+    );
+
+    if (adminRows.length === 0) {
+      return res.json({ hasAccount: false, hasPersonalPresets: false, adminUser: null });
+    }
+
+    const adminUser = adminRows[0];
+
+    // Persönliche Presets prüfen
+    const [presetRows] = await db.promise().query(
+      'SELECT id, updated_at FROM trainer_personal_presets WHERE admin_user_id = ? LIMIT 1',
+      [adminUser.id]
+    );
+
+    res.json({
+      hasAccount: true,
+      hasPersonalPresets: presetRows.length > 0,
+      lastSaved: presetRows.length > 0 ? presetRows[0].updated_at : null,
+      adminUser: {
+        id: adminUser.id,
+        username: adminUser.username,
+        vorname: adminUser.vorname,
+        nachname: adminUser.nachname
+      }
+    });
+  } catch (err) {
+    logger.error('Trainer-Presets-Info error:', { error: err.message });
     res.status(500).json({ error: 'Serverfehler' });
   }
 });

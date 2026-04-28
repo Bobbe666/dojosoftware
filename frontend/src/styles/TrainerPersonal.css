@@ -526,3 +526,53 @@
   background: color-mix(in srgb, var(--ds-accent, #7c6ee0) 8%, transparent) !important;
   font-weight: 600;
 }
+
+/* ── Training Tab ── */
+.tp-training-block {
+  background: var(--ds-surface, #1a1a2e);
+  border: 1px solid var(--ds-border, #2a2a3e);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.tp-training-block-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-text-muted, #888);
+  margin: 0 0 0.75rem;
+}
+
+.tp-training-account {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tp-training-account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: var(--ds-text, #e0e0e0);
+  font-size: 0.9rem;
+}
+
+.tp-hint-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tp-training-link {
+  font-family: monospace;
+  font-size: 0.88rem;
+  background: var(--ds-bg, #0d0d1a);
+  border: 1px solid var(--ds-border, #2a2a3e);
+  border-radius: 6px;
+  padding: 5px 10px;
+  color: var(--ds-accent, #7c6ee0);
+  user-select: all;
+}

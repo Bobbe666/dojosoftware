@@ -55,6 +55,10 @@ export default function TrainerPersonal() {
   const [vergEdit, setVergEdit]     = useState(false);
   const [vergEditData, setVergEditData] = useState({});
 
+  // Training-Tab State
+  const [trainingInfo, setTrainingInfo]   = useState(null);
+  const [trainingLoading, setTrainingLoading] = useState(false);
+
   // Dokument-Generierung
   const [dokTyp, setDokTyp]     = useState('vereinbarung');
   const [dokParams, setDokParams] = useState({
@@ -125,11 +129,26 @@ export default function TrainerPersonal() {
     ladeDetails(t.trainer_id);
   };
 
+  const ladeTrainingInfo = useCallback(async (id) => {
+    setTrainingLoading(true);
+    try {
+      const res = await axios.get(`/training/trainer-presets-info?trainer_id=${id}`);
+      setTrainingInfo(res.data);
+    } catch {
+      setTrainingInfo(null);
+    } finally {
+      setTrainingLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'verguetung' && selected?.trainer_id) {
       ladeVerguetung(selected.trainer_id, vergMonat, vergJahr);
     }
-  }, [activeTab, selected?.trainer_id, vergMonat, vergJahr, ladeVerguetung]);
+    if (activeTab === 'training' && selected?.trainer_id) {
+      ladeTrainingInfo(selected.trainer_id);
+    }
+  }, [activeTab, selected?.trainer_id, vergMonat, vergJahr, ladeVerguetung, ladeTrainingInfo]);
 
   // Speichern
   const handleSave = async () => {
@@ -325,6 +344,7 @@ export default function TrainerPersonal() {
                 { id: 'kurse', label: `Kurse (${selected.kurse?.length || 0})` },
                 { id: 'verguetung', label: 'Vergütung' },
                 { id: 'dokumente', label: `Dokumente (${selected.dokumente?.length || 0})` },
+                { id: 'training', label: 'Training' },
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -779,6 +799,87 @@ export default function TrainerPersonal() {
                   <div className="tp-empty-state" style={{ marginTop: '1.5rem' }}>
                     <p>Noch keine Dokumente erstellt.</p>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* ── TAB: Training ──────────────────────────────────── */}
+            {activeTab === 'training' && (
+              <div className="tp-tab-content">
+                <h3 className="tp-section-title" style={{ marginBottom: '1rem' }}>Trainer-App &amp; Presets</h3>
+
+                {trainingLoading ? (
+                  <div className="tp-loading">Lade Training-Infos…</div>
+                ) : (
+                  <>
+                    {/* Login-Account Status */}
+                    <div className="tp-training-block">
+                      <h4 className="tp-training-block-title">Login-Account</h4>
+                      {trainingInfo?.hasAccount ? (
+                        <div className="tp-training-account">
+                          <span className="tp-badge tp-badge--aktiv">Verknüpft</span>
+                          <div className="tp-training-account-info">
+                            <div>
+                              Benutzer: <strong>{trainingInfo.adminUser?.vorname} {trainingInfo.adminUser?.nachname}</strong>
+                            </div>
+                            <div style={{ opacity: 0.65, fontSize: '0.85rem' }}>
+                              Login: {trainingInfo.adminUser?.username}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="tp-hint-block">
+                          <span className="tp-badge tp-badge--inaktiv">Nicht verknüpft</span>
+                          <p className="tp-hint" style={{ marginTop: '0.5rem' }}>
+                            Kein Login-Account verknüpft — gleiche E-Mail in Trainer-Profil und Admin-Benutzerverwaltung eintragen, damit sich der Trainer in der Trainer-App anmelden kann.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Persönliche Presets Status */}
+                    <div className="tp-training-block">
+                      <h4 className="tp-training-block-title">Persönliche Presets</h4>
+                      {trainingInfo?.hasPersonalPresets ? (
+                        <div className="tp-training-account">
+                          <span className="tp-badge tp-badge--aktiv">Vorhanden</span>
+                          <div className="tp-training-account-info" style={{ opacity: 0.65, fontSize: '0.85rem' }}>
+                            {trainingInfo.lastSaved
+                              ? `Zuletzt gespeichert: ${new Date(trainingInfo.lastSaved).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+                              : 'Datum unbekannt'}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="tp-hint-block">
+                          <span className="tp-badge tp-badge--pausiert">Keine persönlichen Presets</span>
+                          <p className="tp-hint" style={{ marginTop: '0.5rem' }}>
+                            Der Trainer nutzt noch keine persönlichen Presets. Nach dem Login in der Trainer-App werden eigene Presets hier angezeigt.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Trainer-App Link */}
+                    <div className="tp-training-block">
+                      <h4 className="tp-training-block-title">Trainer-App Link</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                        <code className="tp-training-link">https://trainer.tda-intl.org</code>
+                        <button
+                          className="tp-btn tp-btn--secondary tp-btn--sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText('https://trainer.tda-intl.org')
+                              .then(() => setMsg('Link kopiert.'))
+                              .catch(() => setMsg('Kopieren fehlgeschlagen.'));
+                          }}
+                        >
+                          Link kopieren
+                        </button>
+                      </div>
+                      <p className="tp-hint" style={{ marginTop: '0.5rem' }}>
+                        Der Trainer öffnet diesen Link im Browser und meldet sich mit seiner E-Mail-Adresse und seinem Passwort an.
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
             )}

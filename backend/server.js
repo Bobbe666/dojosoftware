@@ -157,6 +157,11 @@ app.use(cors({
       return callback(null, true);
     }
 
+    // Erlaube trainer.tda-intl.org (Trainer-App)
+    if (origin === 'https://trainer.tda-intl.org') {
+      return callback(null, true);
+    }
+
     // Erlaube bekannte tda-*.de Domains (explizite Whitelist — kein offener Regex)
     const tdaDeDomains = [
       'https://tda-vib.de',
