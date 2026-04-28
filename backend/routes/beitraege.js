@@ -4,7 +4,10 @@ const db = require("../db"); // MySQL-Datenbankanbindung importieren
 const auditLog = require("../services/auditLogService");
 const { generateInitialBeitraege, generateMissingBeitraege } = require('./vertraege/shared');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
+const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
+
+router.use(authenticateToken);
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
@@ -18,19 +21,19 @@ const queryAsync = (sql, params = []) => {
 
 // API: Beiträge für ein Mitglied abrufen
 router.get("/", (req, res) => {
-    const { mitglied_id, dojo_id } = req.query;
-    
+    const { mitglied_id } = req.query;
+    const secureDojoId = getSecureDojoId(req);
+
     if (!mitglied_id) {
         return res.status(400).json({ error: "Mitglied-ID ist erforderlich" });
     }
 
-    // 🔒 DOJO-FILTER: JOIN mit mitglieder für dojo_id Sicherheit
     let whereConditions = ['b.mitglied_id = ?'];
     let queryParams = [mitglied_id];
 
-    if (dojo_id && dojo_id !== 'all') {
+    if (secureDojoId) {
         whereConditions.push('m.dojo_id = ?');
-        queryParams.push(parseInt(dojo_id));
+        queryParams.push(secureDojoId);
     }
 
     const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
@@ -65,10 +68,14 @@ router.get("/", (req, res) => {
 
 // API: Neuen Beitrag erstellen
 router.post("/", (req, res) => {
-    const { mitglied_id, betrag, zahlungsart, zahlungsdatum, bezahlt, dojo_id } = req.body;
-    
+    const { mitglied_id, betrag, zahlungsart, zahlungsdatum, bezahlt } = req.body;
+    const secureDojoId = getSecureDojoId(req);
+
     if (!mitglied_id || !betrag) {
         return res.status(400).json({ error: "Mitglied-ID und Betrag sind erforderlich" });
+    }
+    if (!secureDojoId) {
+        return res.status(400).json({ error: "Dojo-ID erforderlich" });
     }
 
     const query = `
@@ -82,7 +89,7 @@ router.post("/", (req, res) => {
         zahlungsart || 'ueberweisung',
         zahlungsdatum || new Date().toISOString().split('T')[0],
         bezahlt ? 1 : 0,
-        dojo_id || 1
+        secureDojoId
     ];
 
     db.query(query, params, (err, result) => {
@@ -114,20 +121,15 @@ router.post("/", (req, res) => {
 router.put("/:beitrag_id", (req, res) => {
     const { beitrag_id } = req.params;
     const { betrag, zahlungsart, zahlungsdatum, bezahlt } = req.body;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `
-        UPDATE beitraege 
-        SET betrag = ?, zahlungsart = ?, zahlungsdatum = ?, bezahlt = ?
-        WHERE beitrag_id = ?
-    `;
+    const query = secureDojoId
+        ? `UPDATE beitraege SET betrag = ?, zahlungsart = ?, zahlungsdatum = ?, bezahlt = ? WHERE beitrag_id = ? AND dojo_id = ?`
+        : `UPDATE beitraege SET betrag = ?, zahlungsart = ?, zahlungsdatum = ?, bezahlt = ? WHERE beitrag_id = ?`;
 
-    const params = [
-        betrag,
-        zahlungsart,
-        zahlungsdatum,
-        bezahlt ? 1 : 0,
-        beitrag_id
-    ];
+    const params = secureDojoId
+        ? [betrag, zahlungsart, zahlungsdatum, bezahlt ? 1 : 0, beitrag_id, secureDojoId]
+        : [betrag, zahlungsart, zahlungsdatum, bezahlt ? 1 : 0, beitrag_id];
 
     db.query(query, params, (err, result) => {
         if (err) {
@@ -160,10 +162,14 @@ router.put("/:beitrag_id", (req, res) => {
 // API: Beitrag löschen
 router.delete("/:beitrag_id", (req, res) => {
     const { beitrag_id } = req.params;
+    const secureDojoId = getSecureDojoId(req);
 
-    const query = `DELETE FROM beitraege WHERE beitrag_id = ?`;
+    const query = secureDojoId
+        ? `DELETE FROM beitraege WHERE beitrag_id = ? AND dojo_id = ?`
+        : `DELETE FROM beitraege WHERE beitrag_id = ?`;
+    const params = secureDojoId ? [beitrag_id, secureDojoId] : [beitrag_id];
 
-    db.query(query, [beitrag_id], (err, result) => {
+    db.query(query, params, (err, result) => {
         if (err) {
             logger.error('Fehler beim Löschen des Beitrags:', err);
             return res.status(500).json({ error: 'Datenbankfehler', details: err.message });

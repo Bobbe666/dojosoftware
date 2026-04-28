@@ -263,7 +263,7 @@ router.put("/:id", authenticateToken, (req, res) => {
 });
 
 // API: Foto-Upload für Mitglied
-router.post("/:id/foto", upload.single('foto'), (req, res) => {
+router.post("/:id/foto", authenticateToken, upload.single('foto'), (req, res) => {
   const { id } = req.params;
 
   if (!req.file) {
@@ -304,7 +304,7 @@ router.post("/:id/foto", upload.single('foto'), (req, res) => {
 });
 
 // API: Foto löschen
-router.delete("/:id/foto", (req, res) => {
+router.delete("/:id/foto", authenticateToken, (req, res) => {
   const { id } = req.params;
 
   // Hole den aktuellen Foto-Pfad
@@ -351,7 +351,7 @@ router.delete("/:id/foto", (req, res) => {
 });
 
 // API: PDF-Export für Mitglied
-router.post("/:id/pdf", async (req, res) => {
+router.post("/:id/pdf", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { save_to_db = false } = req.body;
 
@@ -382,7 +382,7 @@ router.post("/:id/pdf", async (req, res) => {
 });
 
 // API: Allergie archivieren (soft delete)
-router.put("/:id/archive-allergie", (req, res) => {
+router.put("/:id/archive-allergie", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { allergieId } = req.body;
 
