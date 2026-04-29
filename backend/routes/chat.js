@@ -53,11 +53,21 @@ async function getSenderName(sender_id, sender_type) {
       );
       if (rows[0]) return `${rows[0].vorname} ${rows[0].nachname}`.trim();
     } else {
-      const [rows] = await pool.query(
+      // Admin/Trainer: erst in admin_users suchen (Vor- + Nachname), dann users
+      const [adminRows] = await pool.query(
+        'SELECT vorname, nachname, username FROM admin_users WHERE id = ?',
+        [sender_id]
+      );
+      if (adminRows[0]) {
+        const { vorname, nachname, username } = adminRows[0];
+        const fullName = `${vorname || ''} ${nachname || ''}`.trim();
+        return fullName || username;
+      }
+      const [userRows] = await pool.query(
         'SELECT username FROM users WHERE id = ?',
         [sender_id]
       );
-      if (rows[0]) return rows[0].username;
+      if (userRows[0]) return userRows[0].username;
     }
   } catch (e) {
     logger.error('getSenderName Fehler', { error: e.message });
