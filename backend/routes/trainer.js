@@ -816,7 +816,7 @@ router.put('/:id/zugaenge', async (req, res) => {
           const hashed = await hashPassword(passwort);
           const [insertResult] = await pool.query(
             `INSERT INTO admin_users (username, email, password, password_algorithm, vorname, nachname, rolle, dojo_id, aktiv)
-             VALUES (?, ?, ?, 'argon2id', ?, ?, 'eingeschraenkt', ?, 1)`,
+             VALUES (?, ?, ?, 'argon2id', ?, ?, 'admin', ?, 1)`,
             [username, msgEmail, hashed, t.vorname || '', t.nachname || '', msgDojoId]
           );
           // In alle Dojo-Räume aufnehmen
