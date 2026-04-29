@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, FileText, CreditCard, Calendar } from "lucide-react";
+import { ArrowLeft, FileText, CreditCard, Calendar, XCircle } from "lucide-react";
 import Lastschriftlauf from "./Lastschriftlauf";
 import Zahllaeufe from "./Zahllaeufe";
 import AutoLastschriftTab from "./AutoLastschriftTab";
+import StripeStornoVerwaltung from "./StripeStornoVerwaltung";
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/LastschriftManagement.css";
@@ -44,6 +45,13 @@ const LastschriftManagement = () => {
             <span className="tab-icon"><Calendar size={20} /></span>
             <span className="tab-label">Automatische Einzüge</span>
           </button>
+          <button
+            className={`tab-vertical-btn ${activeTab === 'storno' ? 'active' : ''}`}
+            onClick={() => setActiveTab('storno')}
+          >
+            <span className="tab-icon"><XCircle size={20} /></span>
+            <span className="tab-label">Storno-Verwaltung</span>
+          </button>
         </div>
       </div>
 
@@ -57,6 +65,9 @@ const LastschriftManagement = () => {
         )}
         {activeTab === 'automatisch' && (
           <AutoLastschriftTab embedded={true} />
+        )}
+        {activeTab === 'storno' && (
+          <StripeStornoVerwaltung />
         )}
       </div>
     </div>

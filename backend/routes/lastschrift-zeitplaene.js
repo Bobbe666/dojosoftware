@@ -575,6 +575,21 @@ async function ladeBeitraegeMitglieder(dojoId, monatEnde, zahlungszyklusFilter) 
         FROM mitglieder m
         INNER JOIN sepa_mandate sm ON m.mitglied_id = sm.mitglied_id AND sm.status = 'aktiv'
         INNER JOIN beitraege b ON m.mitglied_id = b.mitglied_id AND b.bezahlt = 0 AND b.zahlungsdatum <= ?
+            -- Nicht einziehen wenn bereits eine laufende/abgeschlossene Stripe-Transaktion für diesen Beitrag existiert
+            AND NOT EXISTS (
+                SELECT 1 FROM stripe_lastschrift_transaktion slt2
+                JOIN stripe_lastschrift_batch slb2 ON slt2.batch_id = slb2.batch_id
+                WHERE slt2.mitglied_id = m.mitglied_id
+                  AND slt2.status IN ('processing', 'succeeded')
+                  AND (
+                      JSON_CONTAINS(slt2.beitrag_ids, CAST(b.beitrag_id AS CHAR))
+                      OR (
+                          b.art = 'mitgliedsbeitrag'
+                          AND MONTH(b.zahlungsdatum) = slb2.monat
+                          AND YEAR(b.zahlungsdatum) = slb2.jahr
+                      )
+                  )
+            )
         WHERE m.dojo_id = ?
           AND (m.zahlungsmethode = 'SEPA-Lastschrift' OR m.zahlungsmethode = 'Lastschrift')
           AND m.stripe_customer_id IS NOT NULL

@@ -1346,13 +1346,12 @@ router.post("/stripe/execute", async (req, res) => {
         // Führe Batch aus (nur mit unbezahlten Beiträgen)
         const result = await provider.processLastschriftBatch(filteredMitglieder, monat, jahr);
 
-        // Markiere NUR sofort bestätigte (succeeded) Beiträge als bezahlt.
-        // processing-Transaktionen bleiben offen — Stripe Sync markiert sie
-        // wenn der Webhook (payment_intent.succeeded) eintrifft.
-        // Verhindert Doppelabbuchung bei erneutem Lauf während SEPA-Clearing läuft.
-        if (result.succeeded > 0) {
+        // Beiträge als bezahlt markieren sobald sie in einer Stripe-Transaktion sind
+        // (succeeded = sofort bestätigt; processing = SEPA läuft, Geld wird eingezogen)
+        // → verhindert Doppelabbuchung beim nächsten automatischen Lauf
+        if (result.succeeded > 0 || result.processing > 0) {
             for (const trans of result.transactions) {
-                if (trans.status === 'succeeded') {
+                if (trans.status === 'succeeded' || trans.status === 'processing') {
                     const mitgliedData = filteredMitglieder.find(m => m.mitglied_id === trans.mitglied_id);
                     if (mitgliedData && mitgliedData.beitraege) {
                         for (const beitrag of mitgliedData.beitraege) {
@@ -1768,6 +1767,127 @@ router.post("/stripe/retry-single", async (req, res) => {
     } catch (error) {
         logger.error('Fehler beim Retry:', error);
         res.status(500).json({ error: 'Fehler beim erneuten Einzug', details: error.message });
+    }
+});
+
+/**
+ * GET /lastschriftlauf/stripe/processing-transactions
+ * Laufende Stripe-Transaktionen (status=processing) auflisten — für Storno-Verwaltung
+ */
+router.get("/stripe/processing-transactions", async (req, res) => {
+    try {
+        const secureDojoId = getSecureDojoId(req);
+        const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
+        const params = secureDojoId ? [secureDojoId] : [];
+
+        const rows = await queryAsync(`
+            SELECT
+                slt.id, slt.batch_id, slt.mitglied_id, slt.betrag, slt.status,
+                slt.stripe_payment_intent_id, slt.beitrag_ids, slt.created_at,
+                slb.monat, slb.jahr,
+                m.vorname, m.nachname, m.email, m.dojo_id
+            FROM stripe_lastschrift_transaktion slt
+            JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+            JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+            WHERE slt.status = 'processing'
+              ${dojoFilter}
+            ORDER BY slt.created_at DESC
+            LIMIT 200
+        `, params);
+
+        res.json({ success: true, transactions: rows, total: rows.length });
+    } catch (error) {
+        logger.error('Fehler beim Laden der Processing-Transaktionen:', error);
+        res.status(500).json({ error: 'Fehler beim Laden', details: error.message });
+    }
+});
+
+/**
+ * POST /lastschriftlauf/stripe/storno/:id
+ * Storniert eine laufende Stripe-Transaktion (nur status=processing möglich)
+ */
+router.post("/stripe/storno/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { grund } = req.body;
+        const secureDojoId = getSecureDojoId(req);
+
+        // Transaktion laden
+        const [trans] = await queryAsync(
+            `SELECT slt.*, slb.monat, slb.jahr, m.dojo_id
+             FROM stripe_lastschrift_transaktion slt
+             JOIN stripe_lastschrift_batch slb ON slt.batch_id = slb.batch_id
+             JOIN mitglieder m ON slt.mitglied_id = m.mitglied_id
+             WHERE slt.id = ?`,
+            [id]
+        );
+
+        if (!trans) return res.status(404).json({ error: 'Transaktion nicht gefunden' });
+
+        // Dojo-Sicherheit
+        if (secureDojoId && trans.dojo_id !== secureDojoId) {
+            return res.status(403).json({ error: 'Kein Zugriff auf diese Transaktion' });
+        }
+
+        if (trans.status !== 'processing') {
+            return res.status(400).json({
+                error: `Transaktion hat Status '${trans.status}' — nur laufende (processing) können storniert werden`
+            });
+        }
+
+        // Stripe Payment Intent stornieren
+        let stripeResult = null;
+        let stripeError = null;
+        if (trans.stripe_payment_intent_id) {
+            try {
+                const provider = await PaymentProviderFactory.getProvider(trans.dojo_id);
+                if (provider?.stripe) {
+                    stripeResult = await provider.stripe.paymentIntents.cancel(trans.stripe_payment_intent_id);
+                }
+            } catch (stripeErr) {
+                stripeError = stripeErr.message;
+                // Stripe meldet: bereits abgeschlossen — PI kann nicht mehr storniert werden
+                if (stripeErr.code === 'payment_intent_unexpected_state') {
+                    return res.status(400).json({
+                        error: 'Stripe: Diese Zahlung kann nicht mehr storniert werden (bereits abgeschlossen oder eingezogen)',
+                        stripe_error: stripeErr.message
+                    });
+                }
+                logger.warn('Stripe-Storno Fehler (PI trotzdem in DB als canceled markieren):', stripeErr.message);
+            }
+        }
+
+        // Transaktion in DB als canceled markieren
+        await queryAsync(
+            `UPDATE stripe_lastschrift_transaktion
+             SET status = 'canceled', error_message = ?, updated_at = NOW()
+             WHERE id = ?`,
+            [grund ? `Manuell storniert: ${grund}${stripeError ? ` | Stripe: ${stripeError}` : ''}` : 'Manuell storniert', id]
+        );
+
+        // Verknüpfte Beiträge wieder als unbezahlt markieren
+        let beitragIds = [];
+        try { beitragIds = JSON.parse(trans.beitrag_ids || '[]'); } catch {}
+        if (beitragIds.length > 0) {
+            const placeholders = beitragIds.map(() => '?').join(',');
+            await queryAsync(
+                `UPDATE beitraege SET bezahlt = 0, zahlungsart = NULL WHERE beitrag_id IN (${placeholders})`,
+                beitragIds
+            );
+        }
+
+        logger.info(`🚫 Storno Transaktion ${id} (PI: ${trans.stripe_payment_intent_id}) — Mitglied ${trans.mitglied_id} — ${trans.betrag}€${grund ? ` — Grund: ${grund}` : ''}`);
+
+        res.json({
+            success: true,
+            message: `Transaktion erfolgreich storniert${stripeError ? ' (Stripe-Storno fehlgeschlagen, DB aktualisiert)' : ''}`,
+            stripe_canceled: !!stripeResult,
+            beitraege_zurueckgesetzt: beitragIds.length
+        });
+
+    } catch (error) {
+        logger.error('Fehler beim Storno:', error);
+        res.status(500).json({ error: 'Fehler beim Stornieren', details: error.message });
     }
 });
 

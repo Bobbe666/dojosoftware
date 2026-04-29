@@ -1,0 +1,211 @@
+.storno-verwaltung {
+  padding: 24px;
+  max-width: 1200px;
+}
+
+.storno-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.storno-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  color: var(--text-primary);
+}
+
+.storno-subtitle {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.storno-warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #b45309;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.storno-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+}
+
+.storno-search-input {
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  flex: 1;
+  outline: none;
+}
+
+.storno-loading,
+.storno-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.storno-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.storno-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.storno-table th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 10px 14px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.storno-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.storno-table tr:last-child td {
+  border-bottom: none;
+}
+
+.storno-table tr:hover td {
+  background: var(--bg-hover);
+}
+
+.storno-member-name {
+  font-weight: 500;
+}
+
+.storno-member-email {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.storno-amount {
+  color: #ef4444;
+  font-size: 1rem;
+}
+
+.storno-pi-id,
+.storno-batch-id {
+  font-family: monospace;
+  font-size: 0.78rem;
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+/* Storno Modal */
+.storno-modal {
+  max-width: 520px;
+}
+
+.storno-modal-info {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.storno-modal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  gap: 12px;
+}
+
+.storno-modal-row span:first-child {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.storno-modal-amount {
+  color: #ef4444;
+  font-size: 1.1rem;
+}
+
+.storno-modal-warning {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  color: #92400e;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.storno-success,
+.storno-error {
+  text-align: center;
+  padding: 24px;
+}
+
+.storno-success-icon,
+.storno-error-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.storno-success p,
+.storno-error p {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.storno-success-detail {
+  color: var(--text-secondary);
+  font-size: 0.85rem !important;
+}
+
+/* Spinner für Refresh */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinning {
+  animation: spin 0.8s linear infinite;
+}
