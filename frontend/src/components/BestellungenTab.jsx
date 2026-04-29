@@ -168,6 +168,8 @@ const BestellungenTab = () => {
       artikel_id: artikel.artikel_id,
       artikel_name: artikel.artikel_name,
       artikel_nummer: artikel.artikel_nummer,
+      beschreibung: artikel.beschreibung || '',
+      bild_url: artikel.bild_url || null,
       groessen_mengen: groessenMengen,
       stueckpreis_euro: artikel.einkaufspreis_euro || 0,
       bemerkung: ''
@@ -215,10 +217,16 @@ const BestellungenTab = () => {
       const sizeQtys = sorted.map(([, q]) => `<td><strong>${q}</strong></td>`).join('');
       const total = sorted.reduce((s, [, q]) => s + (parseInt(q) || 0), 0);
 
+      const imgSrc = pos.bild_url ? (window.location.origin + pos.bild_url) : null;
       return `
         <div class="article-block">
-          <div class="article-title">${idx + 1}. ${pos.artikel_name}${pos.artikel_nummer ? ` <span class="art-nr">Art.-Nr: ${pos.artikel_nummer}</span>` : ''}</div>
-          ${pos.beschreibung ? `<div class="article-desc">${pos.beschreibung}</div>` : ''}
+          <div class="article-header">
+            ${imgSrc ? `<img class="article-img" src="${imgSrc}" alt="${pos.artikel_name}" onerror="this.style.display='none'" />` : ''}
+            <div class="article-header-text">
+              <div class="article-title">${idx + 1}. ${pos.artikel_name}${pos.artikel_nummer ? ` <span class="art-nr">Art.-Nr: ${pos.artikel_nummer}</span>` : ''}</div>
+              ${pos.beschreibung ? `<div class="article-desc">${pos.beschreibung}</div>` : ''}
+            </div>
+          </div>
           <table class="size-table">
             <thead><tr>${sizeHeaders}<th class="total-col">Gesamt</th>${pos.stueckpreis_euro > 0 ? '<th>Stückpreis</th><th>Summe</th>' : ''}</tr></thead>
             <tbody><tr>${sizeQtys}<td class="total-col"><strong>${total}</strong></td>${pos.stueckpreis_euro > 0 ? `<td>${pos.stueckpreis_euro?.toFixed(2)} €</td><td><strong>${pos.positions_preis_euro?.toFixed(2)} €</strong></td>` : ''}</tr></tbody>
@@ -245,9 +253,12 @@ const BestellungenTab = () => {
   .header-grid p { font-size: 10pt; line-height: 1.5; }
   h2 { font-size: 13pt; border-bottom: 2px solid #000; padding-bottom: 4px; margin: 16px 0 10px; }
   .article-block { margin-bottom: 16px; page-break-inside: avoid; }
-  .article-title { font-size: 11pt; font-weight: bold; background: #f0f0f0; padding: 4px 8px; }
+  .article-header { display: flex; gap: 12px; align-items: flex-start; background: #f0f0f0; padding: 6px 8px; }
+  .article-img { width: 72px; height: 72px; object-fit: contain; border: 1px solid #ddd; background: #fff; flex-shrink: 0; }
+  .article-header-text { flex: 1; }
+  .article-title { font-size: 11pt; font-weight: bold; }
   .art-nr { font-weight: normal; font-size: 9pt; color: #666; margin-left: 8px; }
-  .article-desc { font-size: 9pt; color: #444; padding: 4px 8px; border-left: 3px solid #ccc; margin: 4px 0 6px; }
+  .article-desc { font-size: 9pt; color: #444; border-left: 3px solid #ccc; padding-left: 6px; margin-top: 4px; }
   .size-table { width: 100%; border-collapse: collapse; margin: 4px 0; }
   .size-table th { background: #222; color: #fff; padding: 4px 6px; font-size: 9pt; text-align: center; }
   .size-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 10pt; }
@@ -615,6 +626,14 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                   {orderForm.positionen.map((position, posIndex) => (
                     <div key={posIndex} className="position-card">
                       <div className="position-header">
+                        {position.bild_url && (
+                          <img
+                            src={position.bild_url}
+                            alt={position.artikel_name}
+                            style={{width:40,height:40,objectFit:'contain',border:'1px solid var(--border-color)',borderRadius:4,background:'var(--bg-secondary)',flexShrink:0}}
+                            onError={e => e.target.style.display='none'}
+                          />
+                        )}
                         <span className="position-name">{position.artikel_name}</span>
                         {position.artikel_nummer && (
                           <span className="position-number">#{position.artikel_nummer}</span>
@@ -768,9 +787,21 @@ ${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3>
                     {selectedBestellung.positionen?.map((pos, idx) => (
                       <tr key={idx}>
                         <td>
-                          <div>{pos.artikel_name}</div>
-                          {pos.artikel_nummer && <small style={{color:'var(--text-muted)'}}>#{pos.artikel_nummer}</small>}
-                          {pos.beschreibung && <div style={{fontSize:'0.8em',color:'var(--text-muted)',marginTop:3}}>{pos.beschreibung}</div>}
+                          <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+                            {pos.bild_url && (
+                              <img
+                                src={pos.bild_url}
+                                alt={pos.artikel_name}
+                                style={{width:52,height:52,objectFit:'contain',border:'1px solid var(--border-color)',borderRadius:4,background:'var(--bg-secondary)',flexShrink:0}}
+                                onError={e => e.target.style.display='none'}
+                              />
+                            )}
+                            <div>
+                              <div>{pos.artikel_name}</div>
+                              {pos.artikel_nummer && <small style={{color:'var(--text-muted)'}}>#{pos.artikel_nummer}</small>}
+                              {pos.beschreibung && <div style={{fontSize:'0.8em',color:'var(--text-muted)',marginTop:3}}>{pos.beschreibung}</div>}
+                            </div>
+                          </div>
                         </td>
                         <td>
                           <div className="size-list">
