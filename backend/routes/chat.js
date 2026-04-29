@@ -167,6 +167,7 @@ router.get('/rooms', async (req, res) => {
           `SELECT crm.member_id, crm.member_type
            FROM chat_room_members crm
            WHERE crm.room_id = ? AND NOT (crm.member_id = ? AND crm.member_type = ?)
+           ORDER BY (crm.member_type = 'mitglied') DESC
            LIMIT 1`,
           [room.id, sender_id, sender_type]
         );
@@ -398,8 +399,11 @@ router.delete('/rooms/:id/leave', async (req, res) => {
   try {
     const { sender_id, sender_type } = getSenderInfo(req);
     const room_id = parseInt(req.params.id);
+    // Statt DELETE: archived=1 setzen — damit taucht der Raum nicht wieder auf (LEFT JOIN + COALESCE)
     await pool.query(
-      `DELETE FROM chat_room_members WHERE room_id = ? AND member_id = ? AND member_type = ?`,
+      `INSERT INTO chat_room_members (room_id, member_id, member_type, archived)
+       VALUES (?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE archived = 1`,
       [room_id, sender_id, sender_type]
     );
     res.json({ success: true });
