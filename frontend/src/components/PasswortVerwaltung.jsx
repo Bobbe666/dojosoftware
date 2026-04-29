@@ -28,9 +28,12 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
 
   // Eigenes Profil
   const [ownProfile, setOwnProfile] = useState(null);
+  const [ownTrainer, setOwnTrainer] = useState(null);
+  const [trainerList, setTrainerList] = useState([]);
   const [profileEdit, setProfileEdit] = useState(false);
   const [profileForm, setProfileForm] = useState({ username: '', vorname: '', nachname: '', email: '' });
   const [profileSaving, setProfileSaving] = useState(false);
+  const [linkingTrainer, setLinkingTrainer] = useState(false);
 
   // Reset Modal
   const [showResetModal, setShowResetModal] = useState(false);
@@ -96,6 +99,7 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
       if (!r.ok) return;
       const data = await r.json();
       setOwnProfile(data.user);
+      setOwnTrainer(data.trainer || null);
       setProfileForm({
         username: data.user.username || '',
         vorname: data.user.vorname || '',
@@ -105,10 +109,36 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
     } catch { /* ignore */ }
   }, []);
 
+  const loadTrainerList = useCallback(async () => {
+    try {
+      const r = await fetch(`${config.apiBaseUrl}/admins/password-management/trainer-list`, { headers: authHeaders() });
+      if (!r.ok) return;
+      const data = await r.json();
+      setTrainerList(data.trainers || []);
+    } catch { /* ignore */ }
+  }, []);
+
+  const handleLinkTrainer = async (trainerId) => {
+    setLinkingTrainer(true);
+    try {
+      const r = await fetch(`${config.apiBaseUrl}/admins/password-management/me/link-trainer`, {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ trainer_id: trainerId || null })
+      });
+      if (!r.ok) throw new Error('Fehler beim Verknüpfen');
+      setMessage({ text: trainerId ? 'Trainer-Profil verknüpft — Änderungen werden jetzt synchronisiert' : 'Verknüpfung aufgehoben', type: 'success' });
+      loadOwnProfile();
+    } catch (err) {
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setLinkingTrainer(false);
+    }
+  };
+
   useEffect(() => {
     loadUsers();
     if (activeTab === 'dojo') loadMembersWithoutLogin();
-    if (activeTab === 'software') loadOwnProfile();
+    if (activeTab === 'software') { loadOwnProfile(); loadTrainerList(); }
     setSearchTerm('');
     setShowWithoutLogin(false);
   }, [activeTab, activeDojoId]);
@@ -440,12 +470,63 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
               </div>
               <div className="pv-form-note">
                 <AlertTriangle size={14} /> Benutzernamen-Änderung wirkt sich sofort auf alle Logins aus.
+                {ownTrainer && <span style={{ marginLeft: 8, color: '#22c55e' }}>· Name &amp; E-Mail werden mit Trainer-Profil synchronisiert</span>}
               </div>
               <button className="btn-save-profile" onClick={handleSaveProfile} disabled={profileSaving}>
                 <Save size={15} /> {profileSaving ? 'Speichern...' : 'Profil speichern'}
               </button>
             </div>
           )}
+
+          {/* ── Trainer-Verknüpfung ── */}
+          <div className="pv-trainer-link">
+            <div className="pv-trainer-link-header">
+              <Shield size={16} />
+              <span>Trainer-Profil verknüpfen</span>
+              {ownTrainer && <span className="pv-linked-badge">✓ Verknüpft: {ownTrainer.vorname} {ownTrainer.nachname}</span>}
+            </div>
+            <div className="pv-trainer-link-body">
+              <select
+                value={ownProfile?.trainer_id || ''}
+                onChange={e => handleLinkTrainer(e.target.value ? parseInt(e.target.value) : null)}
+                disabled={linkingTrainer}
+                className="pv-trainer-select"
+              >
+                <option value="">— Kein Trainer verknüpft —</option>
+                {trainerList.map(t => (
+                  <option key={t.trainer_id} value={t.trainer_id}>
+                    {t.vorname} {t.nachname}{t.email ? ` (${t.email})` : ''}
+                  </option>
+                ))}
+              </select>
+              {ownTrainer && (
+                <p className="pv-sync-note">
+                  Name &amp; E-Mail werden bei Änderungen automatisch synchronisiert. Passwort-Reset synct zu allen App-Zugängen.
+                </p>
+              )}
+            </div>
+
+            {/* App-Zugänge des verknüpften Trainers */}
+            {ownTrainer?.zugaenge && Object.keys(ownTrainer.zugaenge).length > 0 && (
+              <div className="pv-app-zugaenge">
+                <div className="pv-app-zugaenge-title">App-Zugänge (aus Trainer-Profil)</div>
+                <div className="pv-app-zugaenge-grid">
+                  {['dojo', 'trainer', 'checkin', 'messenger'].map(appType => {
+                    const z = ownTrainer.zugaenge[appType];
+                    if (!z?.username && !z?.passwort) return null;
+                    return (
+                      <div key={appType} className="pv-app-zugang-card">
+                        <div className="pv-app-zugang-type">{appType}</div>
+                        {z.username && <div className="pv-app-zugang-row"><span>Benutzer:</span><code>{z.username}</code></div>}
+                        {z.email && <div className="pv-app-zugang-row"><span>E-Mail:</span><code>{z.email}</code></div>}
+                        {z.passwort && <div className="pv-app-zugang-row"><span>Passwort:</span><code>{z.passwort}</code></div>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

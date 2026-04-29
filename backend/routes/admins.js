@@ -958,6 +958,15 @@ router.post('/password-management/software/:id/reset', async (req, res) => {
       [hashedPassword, id]
     );
 
+    // Sync Passwort zu trainer_zugaenge wenn Konto mit Trainer verknüpft
+    const [[linkedAdmin]] = await db.promise().query('SELECT trainer_id, username FROM admin_users WHERE id = ?', [id]);
+    if (linkedAdmin?.trainer_id) {
+      await db.promise().query(
+        `UPDATE trainer_zugaenge SET passwort = ? WHERE trainer_id = ? AND username = ?`,
+        [newPassword, linkedAdmin.trainer_id, linkedAdmin.username]
+      );
+    }
+
     res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
   } catch (error) {
     console.error('Fehler beim Zurücksetzen des Passworts:', error);
@@ -983,22 +992,72 @@ router.post('/password-management/software/:id/unlock', async (req, res) => {
   }
 });
 
-// GET eigenes Profil
+// GET eigenes Profil (inkl. verknüpftes Trainer-Profil)
 router.get('/password-management/me', async (req, res) => {
   try {
     const id = req.user?.id || req.user?.user_id || req.user?.admin_id;
     const [[user]] = await db.promise().query(
-      'SELECT id, username, email, vorname, nachname, rolle, dojo_id, last_login, password_algorithm FROM admin_users WHERE id = ?',
+      'SELECT id, username, email, vorname, nachname, rolle, dojo_id, last_login, password_algorithm, trainer_id FROM admin_users WHERE id = ?',
       [id]
     );
     if (!user) return res.status(404).json({ error: 'Konto nicht gefunden' });
-    res.json({ success: true, user });
+
+    let trainerData = null;
+    if (user.trainer_id) {
+      const [[trainer]] = await db.promise().query(
+        'SELECT trainer_id, vorname, nachname, email, telefon FROM trainer WHERE trainer_id = ?',
+        [user.trainer_id]
+      );
+      if (trainer) {
+        const [zugaenge] = await db.promise().query(
+          'SELECT app_type, username, email, passwort FROM trainer_zugaenge WHERE trainer_id = ?',
+          [user.trainer_id]
+        );
+        const zugaengeMap = {};
+        zugaenge.forEach(z => { zugaengeMap[z.app_type] = { username: z.username || '', email: z.email || '', passwort: z.passwort || '' }; });
+        trainerData = { ...trainer, zugaenge: zugaengeMap };
+      }
+    }
+
+    res.json({ success: true, user, trainer: trainerData });
   } catch (error) {
     res.status(500).json({ error: 'Fehler' });
   }
 });
 
-// PUT eigenes Profil (Username, Name)
+// POST Trainer verknüpfen / entknüpfen
+router.post('/password-management/me/link-trainer', async (req, res) => {
+  try {
+    const id = req.user?.id || req.user?.user_id || req.user?.admin_id;
+    const { trainer_id } = req.body;
+
+    if (trainer_id) {
+      const [[trainer]] = await db.promise().query('SELECT trainer_id FROM trainer WHERE trainer_id = ?', [trainer_id]);
+      if (!trainer) return res.status(404).json({ error: 'Trainer nicht gefunden' });
+    }
+
+    await db.promise().query('UPDATE admin_users SET trainer_id = ? WHERE id = ?', [trainer_id || null, id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Fehler beim Verknüpfen' });
+  }
+});
+
+// GET Trainer-Liste (für Dropdown im Profil-Widget)
+router.get('/password-management/trainer-list', async (req, res) => {
+  try {
+    const dojoId = req.user?.dojo_id || null;
+    const [trainers] = await db.promise().query(
+      `SELECT trainer_id, vorname, nachname, email FROM trainer ${dojoId ? 'WHERE dojo_id = ?' : ''} ORDER BY nachname, vorname`,
+      dojoId ? [dojoId] : []
+    );
+    res.json({ success: true, trainers });
+  } catch (error) {
+    res.status(500).json({ error: 'Fehler' });
+  }
+});
+
+// PUT eigenes Profil (Username, Name) — synct zu verknüpftem Trainer-Profil
 router.put('/password-management/me', async (req, res) => {
   try {
     const id = req.user?.id || req.user?.user_id || req.user?.admin_id;
@@ -1015,6 +1074,16 @@ router.put('/password-management/me', async (req, res) => {
       'UPDATE admin_users SET username = ?, vorname = ?, nachname = ?, email = ? WHERE id = ?',
       [username, vorname || null, nachname || null, email || null, id]
     );
+
+    // Sync zu verknüpftem Trainer-Profil (Name + Email)
+    const [[me]] = await db.promise().query('SELECT trainer_id FROM admin_users WHERE id = ?', [id]);
+    if (me?.trainer_id) {
+      await db.promise().query(
+        'UPDATE trainer SET vorname = ?, nachname = ?, email = ? WHERE trainer_id = ?',
+        [vorname || '', nachname || '', email || '', me.trainer_id]
+      );
+    }
+
     res.json({ success: true, message: 'Profil aktualisiert' });
   } catch (error) {
     res.status(500).json({ error: 'Fehler beim Aktualisieren' });

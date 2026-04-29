@@ -198,6 +198,11 @@ router.put("/:id", (req, res) => {
                                     }
                                     connection.release();
                                     res.json({ trainer_id: parseInt(trainerId), vorname, nachname, email, telefon, stile: stile || [] });
+                                    // Sync zu verknüpftem admin_users-Konto (Name + Email)
+                                    db.promise().query(
+                                      'UPDATE admin_users SET vorname = ?, nachname = ?, email = ? WHERE trainer_id = ?',
+                                      [vorname, nachname, email || '', trainerId]
+                                    ).catch(e => logger.warn('Trainer→Admin sync fehlgeschlagen:', e.message));
                                 });
                             };
 
