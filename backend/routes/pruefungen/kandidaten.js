@@ -189,6 +189,17 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
     if (dojoErr) return res.status(500).json({ error: 'Fehler beim Prüfen des Dojos', details: dojoErr.message });
     if (dojoResults.length === 0) return res.status(400).json({ error: `Dojo mit ID ${dojo_id} existiert nicht` });
 
+    // Doppelschutz: kein zweiter Eintrag für selbes Mitglied + Stil + Datum
+    const dupCheck = pruefungsdatum
+      ? `SELECT pruefung_id FROM pruefungen WHERE mitglied_id = ? AND stil_id = ? AND DATE(pruefungsdatum) = ? AND status = 'geplant' AND dojo_id = ? LIMIT 1`
+      : `SELECT pruefung_id FROM pruefungen WHERE mitglied_id = ? AND stil_id = ? AND DATE(pruefungsdatum) = DATE(NOW() + INTERVAL 30 DAY) AND status = 'geplant' AND dojo_id = ? LIMIT 1`;
+    const dupParams = [mitglied_id, stil_id, ...(pruefungsdatum ? [pruefungsdatum] : []), dojo_id];
+    db.query(dupCheck, dupParams, (dupErr, dupRows) => {
+      if (dupErr) return res.status(500).json({ error: 'Fehler bei Duplikatprüfung', details: dupErr.message });
+      if (dupRows.length > 0) {
+        return res.status(409).json({ error: 'Mitglied ist für diesen Prüfungstermin bereits zugelassen', pruefung_id: dupRows[0].pruefung_id });
+      }
+
     db.query('SELECT current_graduierung_id FROM mitglied_stil_data WHERE mitglied_id = ? AND stil_id = ?', [mitglied_id, stil_id], async (gradErr, gradResults) => {
       if (gradErr) return res.status(500).json({ error: 'Fehler beim Abrufen der aktuellen Graduierung', details: gradErr.message });
 
@@ -250,10 +261,16 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
 
             if (effektiv === 1 && finaleGebuehr && finaleGebuehr > 0) {
               const pool = db.promise();
-              const [[stilRow]] = await pool.query('SELECT name FROM stile WHERE stil_id = ? LIMIT 1', [stil_id]);
-              const rechnungId = await createPruefungsRechnung(mitglied_id, finaleGebuehr, finalPruefungsdatum, stilRow?.name || '', dojo_id);
-              await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefungId]);
-              logger.info('Auto-Rechnung für Prüfungsgebühr erstellt', { pruefungId, rechnungId, mitglied_id, betrag: finaleGebuehr });
+              // Idempotenz-Check: keine zweite Rechnung wenn bereits vorhanden
+              const [[existingPruefung]] = await pool.query('SELECT gebuehr_rechnung_id FROM pruefungen WHERE pruefung_id = ?', [pruefungId]);
+              if (existingPruefung?.gebuehr_rechnung_id) {
+                logger.warn('Auto-Rechnung übersprungen — bereits vorhanden', { pruefungId, rechnung_id: existingPruefung.gebuehr_rechnung_id });
+              } else {
+                const [[stilRow]] = await pool.query('SELECT name FROM stile WHERE stil_id = ? LIMIT 1', [stil_id]);
+                const rechnungId = await createPruefungsRechnung(mitglied_id, finaleGebuehr, finalPruefungsdatum, stilRow?.name || '', dojo_id);
+                await pool.query('UPDATE pruefungen SET gebuehr_rechnung_id = ? WHERE pruefung_id = ?', [rechnungId, pruefungId]);
+                logger.info('Auto-Rechnung für Prüfungsgebühr erstellt', { pruefungId, rechnungId, mitglied_id, betrag: finaleGebuehr });
+              }
             }
           } catch (autoErr) {
             logger.error('Fehler beim automatischen Erstellen der Prüfungsrechnung:', { error: autoErr.message });
@@ -299,6 +316,7 @@ router.post('/:mitglied_id/zulassen', (req, res) => {
         });
       });
     });
+    }); // end dupCheck
   });
 });
 
