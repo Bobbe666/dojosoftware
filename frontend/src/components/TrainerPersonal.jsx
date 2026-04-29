@@ -63,6 +63,7 @@ export default function TrainerPersonal() {
   const EMPTY_ZUGANG = { email: '', username: '', passwort: '' };
   const [zugaenge, setZugaenge]           = useState({ checkin: EMPTY_ZUGANG, dojo: EMPTY_ZUGANG, trainer: EMPTY_ZUGANG, messenger: EMPTY_ZUGANG });
   const [zugEdit, setZugEdit]             = useState({ checkin: false, dojo: false, trainer: false, messenger: false });
+  const [zugOpen, setZugOpen]             = useState({ checkin: false, dojo: false, trainer: false, messenger: false });
   const [zugSaving, setZugSaving]         = useState({});
   const [zugVisible, setZugVisible]       = useState({});
   const [zugLoading, setZugLoading]       = useState(false);
@@ -925,13 +926,27 @@ export default function TrainerPersonal() {
                   ].map(({ key, label, url, hint }) => {
                     const z = zugaenge[key];
                     const editing = zugEdit[key];
+                    const isOpen = zugOpen[key];
+                    const hasData = z.email || z.username || z.passwort;
                     return (
-                      <div key={key} className="tp-training-block">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                          <h4 className="tp-training-block-title" style={{ margin: 0 }}>{label}</h4>
+                      <div key={key} className="tp-training-block" style={{ padding: 0, overflow: 'hidden' }}>
+                        <button
+                          onClick={() => setZugOpen(p => ({ ...p, [key]: !p[key] }))}
+                          style={{
+                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '0.75rem 1rem', background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'inherit', textAlign: 'left',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{ fontSize: '0.6rem', opacity: 0.5, transition: 'transform 0.2s', transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}>▶</span>
+                            <h4 className="tp-training-block-title" style={{ margin: 0 }}>{label}</h4>
+                            {hasData && !isOpen && <span style={{ fontSize: '0.65rem', color: '#4caf50', opacity: 0.8 }}>● gespeichert</span>}
+                          </div>
                           <code style={{ fontSize: '0.72rem', opacity: 0.5 }}>{url}</code>
-                        </div>
+                        </button>
 
+                        {isOpen && <div style={{ padding: '0 1rem 1rem' }}>
                         {editing ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
@@ -1011,6 +1026,7 @@ export default function TrainerPersonal() {
                             </button>
                           </div>
                         )}
+                        </div>}
                       </div>
                     );
                   })
