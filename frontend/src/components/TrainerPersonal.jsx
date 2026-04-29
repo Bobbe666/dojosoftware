@@ -61,8 +61,8 @@ export default function TrainerPersonal() {
 
   // Zugänge-Tab State
   const EMPTY_ZUGANG = { email: '', username: '', passwort: '' };
-  const [zugaenge, setZugaenge]           = useState({ checkin: EMPTY_ZUGANG, dojo: EMPTY_ZUGANG, trainer: EMPTY_ZUGANG });
-  const [zugEdit, setZugEdit]             = useState({ checkin: false, dojo: false, trainer: false });
+  const [zugaenge, setZugaenge]           = useState({ checkin: EMPTY_ZUGANG, dojo: EMPTY_ZUGANG, trainer: EMPTY_ZUGANG, messenger: EMPTY_ZUGANG });
+  const [zugEdit, setZugEdit]             = useState({ checkin: false, dojo: false, trainer: false, messenger: false });
   const [zugSaving, setZugSaving]         = useState({});
   const [zugVisible, setZugVisible]       = useState({});
   const [zugLoading, setZugLoading]       = useState(false);
@@ -155,9 +155,10 @@ export default function TrainerPersonal() {
       const res = await axios.get(`/trainer/${id}/zugaenge`);
       const EMPTY = { email: '', username: '', passwort: '' };
       setZugaenge({
-        checkin: { ...EMPTY, ...res.data.checkin },
-        dojo:    { ...EMPTY, ...res.data.dojo    },
-        trainer: { ...EMPTY, ...res.data.trainer },
+        checkin:   { ...EMPTY, ...res.data.checkin   },
+        dojo:      { ...EMPTY, ...res.data.dojo      },
+        trainer:   { ...EMPTY, ...res.data.trainer   },
+        messenger: { ...EMPTY, ...res.data.messenger },
       });
     } catch { /* stille Fehler */ }
     finally { setZugLoading(false); }
@@ -917,9 +918,10 @@ export default function TrainerPersonal() {
                   <div className="tp-loading">Lade Zugänge…</div>
                 ) : (
                   [
-                    { key: 'checkin', label: 'Check-in App',  url: 'checkin.tda-intl.org',  hint: null },
-                    { key: 'dojo',    label: 'Dojo Software', url: 'dojo.tda-intl.org',     hint: null },
-                    { key: 'trainer', label: 'Trainer App',   url: 'trainer.tda-intl.org',  hint: 'Der Benutzername wird beim Speichern automatisch für den Login aktiviert.' },
+                    { key: 'checkin',   label: 'Check-in App',  url: 'checkin.tda-intl.org',   hint: null },
+                    { key: 'dojo',      label: 'Dojo Software', url: 'dojo.tda-intl.org',      hint: null },
+                    { key: 'trainer',   label: 'Trainer App',   url: 'trainer.tda-intl.org',   hint: 'Der Benutzername wird beim Speichern automatisch für den Login aktiviert.' },
+                    { key: 'messenger', label: 'Messenger',     url: 'messenger / WhatsApp',   hint: null },
                   ].map(({ key, label, url, hint }) => {
                     const z = zugaenge[key];
                     const editing = zugEdit[key];

@@ -751,7 +751,7 @@ router.get('/:id/zugaenge', async (req, res) => {
        WHERE trainer_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`,
       dojoId ? [id, dojoId] : [id]
     );
-    const result = { checkin: {}, dojo: {}, trainer: {} };
+    const result = { checkin: {}, dojo: {}, trainer: {}, messenger: {} };
     rows.forEach(r => { result[r.app_type] = { email: r.email || '', username: r.username || '', passwort: r.passwort || '' }; });
     res.json(result);
   } catch (err) {
@@ -763,7 +763,7 @@ router.put('/:id/zugaenge', async (req, res) => {
   const { id } = req.params;
   const dojoId = getSecureDojoId(req);
   const { app_type, email, username, passwort } = req.body;
-  if (!['checkin', 'dojo', 'trainer'].includes(app_type)) {
+  if (!['checkin', 'dojo', 'trainer', 'messenger'].includes(app_type)) {
     return res.status(400).json({ error: 'Ungültiger app_type' });
   }
   const pool = db.promise();
