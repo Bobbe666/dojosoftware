@@ -37,7 +37,9 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   background: var(--chat-main-bg);
+  overflow: hidden;
 }
 
 .chat-page--admin {
@@ -49,6 +51,7 @@
 .chat-layout {
   display: flex;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -475,6 +478,7 @@
   align-items: flex-end;
   gap: 0.6rem;
   padding: 0.8rem 1rem;
+  padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
   background: var(--chat-header-bg);
   border-top: 1px solid var(--chat-separator);
   flex-shrink: 0;
