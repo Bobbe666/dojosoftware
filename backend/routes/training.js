@@ -672,4 +672,45 @@ router.delete('/subcategories/:id', requireFeature('training'), async (req, res)
   }
 });
 
+// ── Trainer-Zugänge (Passwort-Tab) ───────────────────────────────────────────
+
+router.get('/trainer/:id/zugaenge', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const dojoId = getSecureDojoId(req);
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT app_type, email, username, passwort FROM trainer_zugaenge
+       WHERE trainer_id = ?${dojoId ? ' AND dojo_id = ?' : ''}`,
+      dojoId ? [id, dojoId] : [id]
+    );
+    const result = { checkin: {}, dojo: {}, trainer: {} };
+    rows.forEach(r => { result[r.app_type] = { email: r.email, username: r.username, passwort: r.passwort }; });
+    res.json(result);
+  } catch (err) {
+    logger.error('Zugaenge GET error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
+router.put('/trainer/:id/zugaenge', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const dojoId = getSecureDojoId(req);
+  const { app_type, email, username, passwort } = req.body;
+  if (!['checkin', 'dojo', 'trainer'].includes(app_type)) {
+    return res.status(400).json({ error: 'Ungültiger app_type' });
+  }
+  try {
+    await db.promise().query(
+      `INSERT INTO trainer_zugaenge (trainer_id, dojo_id, app_type, email, username, passwort)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE email = VALUES(email), username = VALUES(username), passwort = VALUES(passwort)`,
+      [id, dojoId || null, app_type, email || null, username || null, passwort || null]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('Zugaenge PUT error:', { error: err.message });
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+});
+
 module.exports = router;
