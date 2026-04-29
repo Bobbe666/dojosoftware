@@ -31,6 +31,7 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 import openApiBlob from '../utils/openApiBlob';
 import LastschriftAutomatik from './LastschriftAutomatik';
 import '../styles/LastschriftAutomatik.css';
+import '../styles/StripeStornoVerwaltung.css';
 import Zahllaeufe from './Zahllaeufe';
 
 
@@ -76,9 +77,47 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [ohneTarifOpen, setOhneTarifOpen] = useState(false);
   const [missingMandatesOpen, setMissingMandatesOpen] = useState(false);
 
+  // Inline Storno für "In Verarbeitung"-Einträge
+  const [stornoModal, setStornoModal] = useState(null); // { mitglied, transaktion }
+  const [stornoGrund, setStornoGrund] = useState('');
+  const [stornoLoading, setStornoLoading] = useState(false);
+  const [stornoResult, setStornoResult] = useState(null); // { success, message } | { error }
+
   // Aus aktuellem Lauf ausgeschlossene Mitglieder (nur frontend-seitig, beiträge bleiben offen)
   const [excludedMitglieder, setExcludedMitglieder] = useState(new Set());
   const [excludedOpen, setExcludedOpen] = useState(false);
+
+  const handleStornoInline = async () => {
+    if (!stornoModal) return;
+    setStornoLoading(true);
+    setStornoResult(null);
+    try {
+      const response = await fetchWithAuth(
+        `${config.apiBaseUrl}/lastschriftlauf/stripe/storno/${stornoModal.transaktion.id}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ grund: stornoGrund }) }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Fehler beim Stornieren');
+      setStornoResult({ success: true, message: data.message, beitraege: data.beitraege_zurueckgesetzt });
+      setInVerarbeitung(prev => {
+        const updated = prev.map(m => {
+          if (m.mitglied_id !== stornoModal.mitglied.mitglied_id) return m;
+          const remaining = m.transaktionen.filter(t => t.id !== stornoModal.transaktion.id);
+          return remaining.length > 0 ? { ...m, transaktionen: remaining } : null;
+        }).filter(Boolean);
+        return updated;
+      });
+    } catch (err) {
+      setStornoResult({ success: false, error: typeof err.message === 'string' ? err.message : 'Fehler beim Stornieren' });
+    }
+    setStornoLoading(false);
+  };
+
+  const closeStornoModal = () => {
+    setStornoModal(null);
+    setStornoGrund('');
+    setStornoResult(null);
+  };
 
   const loadNotInRun = async () => {
     setNotInRunLoading(true);
@@ -702,17 +741,31 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                   </p>
                   <div className="in-verarbeitung-list">
                     {inVerarbeitung.map(m => (
-                      <div
-                        key={m.mitglied_id}
-                        className="in-verarbeitung-item ll-cursor-pointer"
-                        onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}
-                      >
-                        <span className="in-verarb-name">{m.name}</span>
-                        <span className="in-verarb-meta">
-                          {m.transaktionen.map(t =>
-                            `${String(t.monat).padStart(2,'0')}/${t.jahr} · ${new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(t.betrag)}`
-                          ).join(', ')}
-                        </span>
+                      <div key={m.mitglied_id} className="in-verarbeitung-item-group">
+                        <div
+                          className="in-verarb-member-row ll-cursor-pointer"
+                          onClick={() => navigate(`/dashboard/mitglieder/${m.mitglied_id}`)}
+                        >
+                          <span className="in-verarb-name">{m.name}</span>
+                        </div>
+                        {m.transaktionen.map(t => (
+                          <div key={t.id} className="in-verarb-trans-row">
+                            <span className="in-verarb-meta">
+                              {String(t.monat).padStart(2,'0')}/{t.jahr} &nbsp;·&nbsp;
+                              <strong>{new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(t.betrag)}</strong>
+                              {t.stripe_payment_intent_id && (
+                                <code className="in-verarb-pi">{t.stripe_payment_intent_id.substring(0, 22)}…</code>
+                              )}
+                            </span>
+                            <button
+                              className="btn btn-danger btn-sm in-verarb-storno-btn"
+                              onClick={e => { e.stopPropagation(); setStornoModal({ mitglied: m, transaktion: t }); setStornoGrund(''); setStornoResult(null); }}
+                            >
+                              <XCircle size={13} />
+                              Stornieren
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -1281,6 +1334,85 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
 
       </>
+      )}
+
+      {/* Inline Storno-Modal */}
+      {stornoModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeStornoModal()}>
+          <div className="modal-container storno-modal">
+            <div className="modal-header">
+              <h3>Transaktion stornieren</h3>
+              <button className="modal-close" onClick={closeStornoModal}>✕</button>
+            </div>
+            <div className="modal-body">
+              {!stornoResult ? (
+                <>
+                  <div className="storno-modal-info">
+                    <div className="storno-modal-row">
+                      <span>Mitglied:</span>
+                      <strong>{stornoModal.mitglied.name}</strong>
+                    </div>
+                    <div className="storno-modal-row">
+                      <span>Betrag:</span>
+                      <strong className="storno-modal-amount">
+                        {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(stornoModal.transaktion.betrag)}
+                      </strong>
+                    </div>
+                    <div className="storno-modal-row">
+                      <span>Zeitraum:</span>
+                      <span>{String(stornoModal.transaktion.monat).padStart(2,'0')}/{stornoModal.transaktion.jahr}</span>
+                    </div>
+                    {stornoModal.transaktion.stripe_payment_intent_id && (
+                      <div className="storno-modal-row">
+                        <span>Payment Intent:</span>
+                        <code style={{ fontSize: '0.8rem' }}>{stornoModal.transaktion.stripe_payment_intent_id}</code>
+                      </div>
+                    )}
+                  </div>
+                  <div className="storno-modal-warning">
+                    <AlertCircle size={16} />
+                    <span>Diese Aktion storniert die Abbuchung bei Stripe und setzt die Beiträge wieder auf <em>unbezahlt</em>. SEPA-Abbuchungen können nur storniert werden, solange sie noch nicht eingezogen wurden (typisch 5–7 Werktage nach Erstellung).</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Storno-Grund (optional)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="z.B. Doppelabbuchung, Fehler im Batch…"
+                      value={stornoGrund}
+                      onChange={e => setStornoGrund(e.target.value)}
+                    />
+                  </div>
+                </>
+              ) : stornoResult.success ? (
+                <div className="storno-success">
+                  <div className="storno-success-icon">✅</div>
+                  <p>{stornoResult.message}</p>
+                  {stornoResult.beitraege > 0 && (
+                    <p className="storno-success-detail">{stornoResult.beitraege} Beitrag/Beiträge wieder auf "offen" gesetzt.</p>
+                  )}
+                </div>
+              ) : (
+                <div className="storno-error">
+                  <div className="storno-error-icon">❌</div>
+                  <p>{stornoResult.error}</p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              {!stornoResult ? (
+                <>
+                  <button className="btn btn-secondary" onClick={closeStornoModal}>Abbrechen</button>
+                  <button className="btn btn-danger" onClick={handleStornoInline} disabled={stornoLoading}>
+                    {stornoLoading ? 'Storniere…' : '🚫 Jetzt stornieren'}
+                  </button>
+                </>
+              ) : (
+                <button className="btn btn-primary" onClick={closeStornoModal}>Schließen</button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
