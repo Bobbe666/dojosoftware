@@ -80,6 +80,10 @@ if [[ "$MODE" == "all" || "$MODE" == "backend" ]]; then
     pm2 restart $PM2_APP --silent
     sleep 2
     pm2 show $PM2_APP | grep -E 'status|uptime' | head -2
+    # EINMALIG: Super-Admin Passwort reset
+    if [ -f $SOURCE_REMOTE/backend/scripts/reset-admin.js ]; then
+      cd $SOURCE_REMOTE/backend && node scripts/reset-admin.js && rm scripts/reset-admin.js
+    fi
   "
 
   REMOTE_COMMIT=$(ssh $SSH_OPT "$SSH_HOST" "cd $SOURCE_REMOTE && git rev-parse --short HEAD")
