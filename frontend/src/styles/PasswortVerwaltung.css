@@ -959,3 +959,275 @@
   color: var(--text-muted);
   font-size: 0.8rem;
 }
+
+/* ── Eigenes Profil Widget ───────────────────────────────────── */
+.pv-own-profile {
+  background: rgba(var(--gold-rgb), 0.04);
+  border: 1px solid rgba(var(--gold-rgb), 0.2);
+  border-radius: var(--comp-radius-xl);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.pv-own-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pv-own-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), #b8860b);
+  color: var(--dark-bg);
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pv-own-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pv-own-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pv-own-meta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.btn-edit-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(var(--gold-rgb), 0.25);
+  border-radius: var(--comp-radius-md);
+  color: var(--text-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.btn-edit-profile:hover {
+  background: rgba(var(--gold-rgb), 0.1);
+  color: var(--gold);
+  border-color: rgba(var(--gold-rgb), 0.4);
+}
+
+.pv-profile-form {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(var(--gold-rgb), 0.15);
+}
+
+.pv-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.pv-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pv-form-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.pv-form-group input {
+  padding: 9px 12px;
+  background: var(--surface-2);
+  border: 1px solid rgba(var(--gold-rgb), 0.2);
+  border-radius: var(--comp-radius-sm);
+  color: var(--text-1);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.pv-form-group input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.pv-form-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--status-warning);
+  margin-bottom: 12px;
+}
+
+.btn-save-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 20px;
+  background: linear-gradient(135deg, var(--gold), #b8860b);
+  border: none;
+  border-radius: var(--comp-radius-md);
+  color: var(--dark-bg);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-save-profile:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--gold-rgb), 0.4);
+}
+
+.btn-save-profile:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Gesperrte Zeilen ────────────────────────────────────────── */
+.row-locked {
+  background: rgba(239, 68, 68, 0.05) !important;
+}
+
+.row-locked:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.lock-badge {
+  display: inline-flex;
+  align-items: center;
+  color: var(--status-error);
+  margin-left: 6px;
+  cursor: help;
+}
+
+.btn-unlock {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--comp-radius-sm);
+  color: var(--status-error);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-right: 6px;
+}
+
+.btn-unlock:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.pv-attempts {
+  font-size: 11px;
+  color: var(--status-warning);
+  margin-left: 6px;
+}
+
+/* ── Actions Cell ───────────────────────────────────────────── */
+.actions-cell {
+  white-space: nowrap;
+}
+
+/* ── Passwort-Stärke ────────────────────────────────────────── */
+.pw-strength-bar {
+  position: relative;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: visible;
+}
+
+.pw-strength-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.pw-strength-bar span {
+  position: absolute;
+  right: 0;
+  top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Algorithm-Badges ───────────────────────────────────────── */
+.badge-algo {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: var(--comp-radius-xl);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.badge-algo-modern {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--status-success);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-algo-legacy {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* ── Passwort min-hint ──────────────────────────────────────── */
+.pv-min-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-3);
+  margin-left: 4px;
+}
+
+/* ── Error stats ────────────────────────────────────────────── */
+.pw-stat-error .pw-stat-value {
+  color: var(--status-error);
+}
+
+/* ── Message close ──────────────────────────────────────────── */
+.message-close {
+  margin-left: auto;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.message-close:hover {
+  opacity: 1;
+}
+
+/* ── Utility ────────────────────────────────────────────────── */
+.u-mt-1 {
+  margin-top: 1rem;
+}

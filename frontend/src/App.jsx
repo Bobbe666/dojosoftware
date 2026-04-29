@@ -941,7 +941,7 @@ const App = () => {
               <Route path="kalender-sync" element={<Suspense fallback={<LazyLoadFallback />}><KalenderAbo /></Suspense>} />
 
               {/* ======== SUPER ADMIN ======== */}
-              <Route path="passwoerter" element={<Suspense fallback={<LazyLoadFallback />}><PasswortVerwaltung dojoOnly={true} /></Suspense>} />
+              <Route path="passwoerter" element={<Suspense fallback={<LazyLoadFallback />}><PasswortVerwaltung dojoOnly={false} /></Suspense>} />
               <Route path="lizenzen" element={<Suspense fallback={<LazyLoadFallback />}><DojoLizenzverwaltung /></Suspense>} />
 
               {/* Chat für Admins / Trainer */}

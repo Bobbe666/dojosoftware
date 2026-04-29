@@ -591,14 +591,28 @@ router.get('/activity/log', (req, res) => {
 // GET alle Software-Benutzer (admin_users)
 router.get('/password-management/software', async (req, res) => {
   try {
+    const userRole = req.user?.rolle || req.user?.role;
+    const isSuperAdmin = userRole === 'super_admin' || (userRole === 'admin' && !req.user?.dojo_id);
+    const dojoId = isSuperAdmin ? null : (req.user?.dojo_id || null);
+
+    const dojoFilter = dojoId ? 'WHERE dojo_id = ?' : '';
+    const params = dojoId ? [dojoId] : [];
+
     const [rows] = await db.promise().query(`
       SELECT id, username, email, vorname, nachname, rolle, aktiv, erstellt_am,
+             last_login, failed_login_attempts, locked_until, password_algorithm,
              CASE WHEN password IS NOT NULL AND password != '' THEN 1 ELSE 0 END as has_password
       FROM admin_users
-      ORDER BY username
-    `);
-    // Convert has_password to boolean
-    const users = rows.map(u => ({ ...u, has_password: Boolean(Number(u.has_password)) }));
+      ${dojoFilter}
+      ORDER BY rolle, username
+    `, params);
+
+    const users = rows.map(u => ({
+      ...u,
+      has_password: Boolean(Number(u.has_password)),
+      is_locked: !!(u.locked_until && new Date(u.locked_until) > new Date()),
+      password_algorithm: u.password_algorithm || (u.has_password ? 'bcrypt' : null)
+    }));
     res.json({ success: true, users });
   } catch (error) {
     console.error('Fehler beim Laden der Software-Benutzer:', error);
@@ -868,18 +882,102 @@ router.post('/password-management/software/:id/reset', async (req, res) => {
   try {
     const { id } = req.params;
     const { newPassword } = req.body;
+    const requesterId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+    const requesterRole = req.user?.rolle || req.user?.role;
+    const isSuperAdmin = requesterRole === 'super_admin' || (requesterRole === 'admin' && !req.user?.dojo_id);
 
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben' });
+    if (!['admin', 'super_admin'].includes(requesterRole) && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Keine Berechtigung für diese Aktion' });
+    }
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben' });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await db.promise().query('UPDATE admin_users SET password = ? WHERE id = ?', [hashedPassword, id]);
+    // Zielkonto laden und Berechtigungen prüfen
+    const [[target]] = await db.promise().query(
+      'SELECT id, rolle, dojo_id FROM admin_users WHERE id = ?', [id]
+    );
+    if (!target) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+
+    // Dojo-Admin kann nur eigene Dojo-Konten resetten
+    if (!isSuperAdmin && target.dojo_id !== req.user?.dojo_id) {
+      return res.status(403).json({ error: 'Keine Berechtigung für dieses Konto' });
+    }
+    // Niemand kann ein Konto mit gleichwertiger/höherer Berechtigung resetten (außer sich selbst)
+    const roleRank = { 'super_admin': 99, 'admin': 80, 'trainer': 20, 'eingeschraenkt': 10, 'checkin': 5 };
+    if (String(target.id) !== String(requesterId) &&
+        (roleRank[target.rolle] || 0) >= (roleRank[requesterRole] || 0) && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Passwort-Reset für gleichwertige/höhere Rollen nicht erlaubt' });
+    }
+
+    const { hashPassword } = require('../services/passwordService');
+    const hashedPassword = await hashPassword(newPassword);
+    await db.promise().query(
+      `UPDATE admin_users SET password = ?, password_algorithm = 'argon2id',
+       failed_login_attempts = 0, locked_until = NULL WHERE id = ?`,
+      [hashedPassword, id]
+    );
 
     res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt' });
   } catch (error) {
     console.error('Fehler beim Zurücksetzen des Passworts:', error);
     res.status(500).json({ error: 'Fehler beim Zurücksetzen des Passworts' });
+  }
+});
+
+// POST Konto entsperren
+router.post('/password-management/software/:id/unlock', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const requesterRole = req.user?.rolle || req.user?.role;
+    if (!['admin', 'super_admin'].includes(requesterRole) && !(requesterRole === 'admin' && !req.user?.dojo_id)) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
+    }
+    await db.promise().query(
+      'UPDATE admin_users SET failed_login_attempts = 0, locked_until = NULL WHERE id = ?',
+      [id]
+    );
+    res.json({ success: true, message: 'Konto entsperrt' });
+  } catch (error) {
+    res.status(500).json({ error: 'Fehler beim Entsperren' });
+  }
+});
+
+// GET eigenes Profil
+router.get('/password-management/me', async (req, res) => {
+  try {
+    const id = req.user?.id || req.user?.user_id || req.user?.admin_id;
+    const [[user]] = await db.promise().query(
+      'SELECT id, username, email, vorname, nachname, rolle, dojo_id, last_login, password_algorithm FROM admin_users WHERE id = ?',
+      [id]
+    );
+    if (!user) return res.status(404).json({ error: 'Konto nicht gefunden' });
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ error: 'Fehler' });
+  }
+});
+
+// PUT eigenes Profil (Username, Name)
+router.put('/password-management/me', async (req, res) => {
+  try {
+    const id = req.user?.id || req.user?.user_id || req.user?.admin_id;
+    const { username, vorname, nachname, email } = req.body;
+    if (!username || username.length < 3) return res.status(400).json({ error: 'Benutzername muss mindestens 3 Zeichen haben' });
+
+    // Username-Kollision prüfen
+    const [[existing]] = await db.promise().query(
+      'SELECT id FROM admin_users WHERE username = ? AND id != ?', [username, id]
+    );
+    if (existing) return res.status(409).json({ error: 'Benutzername bereits vergeben' });
+
+    await db.promise().query(
+      'UPDATE admin_users SET username = ?, vorname = ?, nachname = ?, email = ? WHERE id = ?',
+      [username, vorname || null, nachname || null, email || null, id]
+    );
+    res.json({ success: true, message: 'Profil aktualisiert' });
+  } catch (error) {
+    res.status(500).json({ error: 'Fehler beim Aktualisieren' });
   }
 });
 
