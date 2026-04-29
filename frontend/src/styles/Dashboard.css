@@ -188,6 +188,7 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
   transition: left 0.5s;
+  pointer-events: none;
 }
 
 .logout-button:hover::before,
@@ -1609,6 +1610,7 @@
 .dashboard-chat-wrap {
   position: relative;
   overflow: visible !important;
+  padding: 8px 10px !important;
 }
 
 .chat-header-badge {
