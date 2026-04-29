@@ -83,6 +83,13 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
   const [stornoLoading, setStornoLoading] = useState(false);
   const [stornoResult, setStornoResult] = useState(null); // { success, message } | { error }
 
+  // Gutschrift-Modal
+  const [gutschriftModal, setGutschriftModal] = useState(null); // { mitglied, transaktion }
+  const [gutschriftBetrag, setGutschriftBetrag] = useState('');
+  const [gutschriftGrund, setGutschriftGrund] = useState('');
+  const [gutschriftLoading, setGutschriftLoading] = useState(false);
+  const [gutschriftResult, setGutschriftResult] = useState(null);
+
   // Aus aktuellem Lauf ausgeschlossene Mitglieder (nur frontend-seitig, beiträge bleiben offen)
   const [excludedMitglieder, setExcludedMitglieder] = useState(new Set());
   const [excludedOpen, setExcludedOpen] = useState(false);
@@ -117,6 +124,39 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
     setStornoModal(null);
     setStornoGrund('');
     setStornoResult(null);
+  };
+
+  const handleGutschriftSpeichern = async () => {
+    if (!gutschriftModal) return;
+    const betragNum = parseFloat(gutschriftBetrag.replace(',', '.'));
+    if (!betragNum || betragNum <= 0) return;
+    setGutschriftLoading(true);
+    setGutschriftResult(null);
+    try {
+      const response = await fetchWithAuth(`${config.apiBaseUrl}/lastschriftlauf/gutschrift`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mitglied_id: gutschriftModal.mitglied.mitglied_id,
+          betrag: betragNum,
+          grund: gutschriftGrund || null,
+          stripe_transaktion_id: gutschriftModal.transaktion?.id || null
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Fehler beim Anlegen');
+      setGutschriftResult({ success: true, message: data.message });
+    } catch (err) {
+      setGutschriftResult({ success: false, error: typeof err.message === 'string' ? err.message : 'Fehler' });
+    }
+    setGutschriftLoading(false);
+  };
+
+  const closeGutschriftModal = () => {
+    setGutschriftModal(null);
+    setGutschriftBetrag('');
+    setGutschriftGrund('');
+    setGutschriftResult(null);
   };
 
   const loadNotInRun = async () => {
@@ -757,13 +797,21 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                                 <code className="in-verarb-pi">{t.stripe_payment_intent_id.substring(0, 22)}…</code>
                               )}
                             </span>
-                            <button
-                              className="btn btn-danger btn-sm in-verarb-storno-btn"
-                              onClick={e => { e.stopPropagation(); setStornoModal({ mitglied: m, transaktion: t }); setStornoGrund(''); setStornoResult(null); }}
-                            >
-                              <XCircle size={13} />
-                              Stornieren
-                            </button>
+                            <div className="in-verarb-action-btns">
+                              <button
+                                className="btn btn-danger btn-sm in-verarb-storno-btn"
+                                onClick={e => { e.stopPropagation(); setStornoModal({ mitglied: m, transaktion: t }); setStornoGrund(''); setStornoResult(null); }}
+                              >
+                                <XCircle size={13} />
+                                Stornieren
+                              </button>
+                              <button
+                                className="btn btn-sm in-verarb-gutschrift-btn"
+                                onClick={e => { e.stopPropagation(); setGutschriftModal({ mitglied: m, transaktion: t }); setGutschriftBetrag(String(t.betrag)); setGutschriftGrund(`Doppelabbuchung ${String(t.monat).padStart(2,'0')}/${t.jahr}`); setGutschriftResult(null); }}
+                              >
+                                💳 Gutschrift
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1178,6 +1226,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
                         <strong className={`ll-betrag-value${item.anzahl_monate > 1 ? ' ll-betrag-value--warn' : ''}`}>
                           {formatCurrency(item.betrag)}
                         </strong>
+                        {item.gutschrift_betrag > 0 && (
+                          <div className="ll-gutschrift-hint">
+                            <span className="ll-gutschrift-original">{formatCurrency(item.brutto_betrag)}</span>
+                            <span className="ll-gutschrift-label">− {formatCurrency(item.gutschrift_betrag)} Gutschrift</span>
+                          </div>
+                        )}
                       </td>
                       <td>
                         {item.mandatsreferenz === 'KEIN MANDAT' ? (
@@ -1334,6 +1388,91 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
 
 
       </>
+      )}
+
+      {/* Gutschrift-Modal */}
+      {gutschriftModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && closeGutschriftModal()}>
+          <div className="modal-container storno-modal">
+            <div className="modal-header">
+              <h3>💳 Gutschrift anlegen</h3>
+              <button className="modal-close" onClick={closeGutschriftModal}>✕</button>
+            </div>
+            <div className="modal-body">
+              {!gutschriftResult ? (
+                <>
+                  <div className="storno-modal-info">
+                    <div className="storno-modal-row">
+                      <span>Mitglied:</span>
+                      <strong>{gutschriftModal.mitglied.name}</strong>
+                    </div>
+                    {gutschriftModal.transaktion && (
+                      <div className="storno-modal-row">
+                        <span>Bezug:</span>
+                        <span>
+                          {String(gutschriftModal.transaktion.monat).padStart(2,'0')}/{gutschriftModal.transaktion.jahr}
+                          &nbsp;· {new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(gutschriftModal.transaktion.betrag)} abgebucht
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="ll-gutschrift-info-box">
+                    <Info size={15} />
+                    <span>Die Gutschrift wird im <strong>nächsten Lastschriftlauf automatisch</strong> mit den offenen Beiträgen verrechnet — der Einzugsbetrag wird entsprechend reduziert.</span>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Gutschrift-Betrag (€)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      step="0.01"
+                      min="0.01"
+                      value={gutschriftBetrag}
+                      onChange={e => setGutschriftBetrag(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Grund</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="z.B. Doppelabbuchung April 2026"
+                      value={gutschriftGrund}
+                      onChange={e => setGutschriftGrund(e.target.value)}
+                    />
+                  </div>
+                </>
+              ) : gutschriftResult.success ? (
+                <div className="storno-success">
+                  <div className="storno-success-icon">✅</div>
+                  <p>{gutschriftResult.message}</p>
+                  <p className="storno-success-detail">Wird beim nächsten Lauf automatisch verrechnet.</p>
+                </div>
+              ) : (
+                <div className="storno-error">
+                  <div className="storno-error-icon">❌</div>
+                  <p>{gutschriftResult.error}</p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              {!gutschriftResult ? (
+                <>
+                  <button className="btn btn-secondary" onClick={closeGutschriftModal}>Abbrechen</button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleGutschriftSpeichern}
+                    disabled={gutschriftLoading || !parseFloat(gutschriftBetrag) > 0}
+                  >
+                    {gutschriftLoading ? 'Speichere…' : '💳 Gutschrift speichern'}
+                  </button>
+                </>
+              ) : (
+                <button className="btn btn-primary" onClick={closeGutschriftModal}>Schließen</button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Inline Storno-Modal */}

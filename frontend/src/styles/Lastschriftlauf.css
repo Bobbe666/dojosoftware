@@ -335,13 +335,65 @@
   color: var(--text-secondary, #94a3b8);
 }
 
-.in-verarb-storno-btn {
+.in-verarb-action-btns {
+  display: flex;
+  gap: 6px;
   flex-shrink: 0;
+}
+
+.in-verarb-storno-btn,
+.in-verarb-gutschrift-btn {
   font-size: 0.75rem !important;
   padding: 3px 8px !important;
   display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
+}
+
+.in-verarb-gutschrift-btn {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+  color: #10b981 !important;
+}
+
+.in-verarb-gutschrift-btn:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* Gutschrift-Hinweis in Preview-Tabelle */
+.ll-gutschrift-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: 3px;
+}
+
+.ll-gutschrift-original {
+  font-size: 0.72rem;
+  color: var(--text-secondary, #94a3b8);
+  text-decoration: line-through;
+}
+
+.ll-gutschrift-label {
+  font-size: 0.72rem;
+  color: #10b981;
+  font-weight: 500;
+}
+
+/* Info-Box im Gutschrift-Modal */
+.ll-gutschrift-info-box {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: #065f46;
+  margin-bottom: 16px;
+  line-height: 1.5;
 }
 
 /* ===== OHNE TARIF WARNING ===== */

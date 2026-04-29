@@ -756,6 +756,23 @@ router.get("/preview", async (req, res) => {
         // Ermittle häufigste Bank
         const mostCommonBank = getMostCommonBank(results);
 
+        // Offene Gutschriften für alle Mitglieder im Lauf laden
+        const mitgliedIds = results.map(r => r.mitglied_id);
+        let gutschriftMap = {};
+        if (mitgliedIds.length > 0) {
+            const placeholders = mitgliedIds.map(() => '?').join(',');
+            const gutschriften = await queryAsync(
+                `SELECT mitglied_id, SUM(restbetrag) AS gutschrift_gesamt
+                 FROM mitglied_gutschriften
+                 WHERE mitglied_id IN (${placeholders}) AND verrechnet = 0
+                 GROUP BY mitglied_id`,
+                mitgliedIds
+            );
+            for (const g of gutschriften) {
+                gutschriftMap[g.mitglied_id] = parseFloat(g.gutschrift_gesamt || 0);
+            }
+        }
+
         const preview = results.map(r => {
             const beitragsBetrag = parseFloat(r.gesamt_betrag || 0);
             let ratenplanAufschlag = 0;
@@ -766,11 +783,16 @@ router.get("/preview", async (req, res) => {
                     ratenplanAufschlag = Math.min(aufschlag, offen);
                 }
             }
+            const bruttoBetrag = beitragsBetrag + ratenplanAufschlag;
+            const gutschrift = gutschriftMap[r.mitglied_id] || 0;
+            const nettoBetrag = Math.max(0, bruttoBetrag - gutschrift);
             return {
                 mitglied_id: r.mitglied_id,
                 name: `${r.vorname || ''} ${r.nachname || ''}`.trim(),
                 iban: maskIBAN(r.iban),
-                betrag: beitragsBetrag + ratenplanAufschlag,
+                betrag: nettoBetrag,
+                brutto_betrag: bruttoBetrag,
+                gutschrift_betrag: gutschrift,
                 beitraege_betrag: beitragsBetrag,
                 anzahl_monate: r.anzahl_offene_monate || 1,
                 offene_monate: r.offene_monate || '',
@@ -1320,11 +1342,25 @@ router.post("/stripe/execute", async (req, res) => {
                             effektiverAufschlag = aufschlag > 0 && offen > 0 ? Math.min(aufschlag, offen) : 0;
                         }
                     }
+                    // Offene Gutschriften aus DB lesen und abziehen
+                    const offeneGutschriften = await queryAsync(
+                        `SELECT id, restbetrag FROM mitglied_gutschriften
+                         WHERE mitglied_id = ? AND verrechnet = 0
+                         ORDER BY erstellt_am ASC`,
+                        [mitglied.mitglied_id]
+                    );
+                    const gutschriftGesamt = offeneGutschriften.reduce((s, g) => s + parseFloat(g.restbetrag || 0), 0);
+                    const bruttoBetrag = neuerBetrag + effektiverAufschlag;
+                    const nettoBetrag = Math.max(0, bruttoBetrag - gutschriftGesamt);
+
                     filteredMitglieder.push({
                         ...mitglied,
                         beitraege: unbezahlteBeitraege.map(b => ({ beitrag_id: b.beitrag_id })),
-                        betrag: neuerBetrag + effektiverAufschlag,
-                        ratenplan_aufschlag: effektiverAufschlag
+                        betrag: nettoBetrag,
+                        brutto_betrag: bruttoBetrag,
+                        ratenplan_aufschlag: effektiverAufschlag,
+                        offene_gutschriften: offeneGutschriften,
+                        gutschrift_betrag: gutschriftGesamt
                     });
                 } else {
                     logger.info(`⏭️ Mitglied ${mitglied.mitglied_id}: Alle Beiträge bereits bezahlt - übersprungen`);
@@ -1377,6 +1413,23 @@ router.post("/stripe/execute", async (req, res) => {
                                 [mitgliedData.ratenplan_aufschlag, mitgliedData.ratenplan_id]
                             );
                             logger.info(`✅ Ratenplan ${mitgliedData.ratenplan_id} für Mitglied ${mitgliedData.mitglied_id}: +${mitgliedData.ratenplan_aufschlag}€ abgezahlt`);
+                        }
+                        // Gutschriften verrechnen — FIFO, Restbetrag reduzieren
+                        if (mitgliedData.offene_gutschriften?.length > 0 && mitgliedData.gutschrift_betrag > 0) {
+                            let restVerrechnung = mitgliedData.gutschrift_betrag;
+                            for (const g of mitgliedData.offene_gutschriften) {
+                                if (restVerrechnung <= 0) break;
+                                const verwendeter_rest = Math.min(parseFloat(g.restbetrag), restVerrechnung);
+                                const neuer_rest = parseFloat(g.restbetrag) - verwendeter_rest;
+                                await queryAsync(
+                                    `UPDATE mitglied_gutschriften
+                                     SET restbetrag = ?, verrechnet = ?, verrechnet_am = IF(? <= 0.001, NOW(), NULL)
+                                     WHERE id = ?`,
+                                    [neuer_rest, neuer_rest <= 0.001 ? 1 : 0, neuer_rest, g.id]
+                                );
+                                restVerrechnung -= verwendeter_rest;
+                                logger.info(`💳 Gutschrift ${g.id} verrechnet: ${verwendeter_rest.toFixed(2)}€ → Restbetrag ${neuer_rest.toFixed(2)}€`);
+                            }
                         }
                     }
                 }
@@ -1888,6 +1941,83 @@ router.post("/stripe/storno/:id", async (req, res) => {
     } catch (error) {
         logger.error('Fehler beim Storno:', error);
         res.status(500).json({ error: 'Fehler beim Stornieren', details: error.message });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GUTSCHRIFTEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/lastschriftlauf/gutschrift
+ * Gutschrift für ein Mitglied anlegen (z.B. nach Doppelabbuchung)
+ */
+router.post("/gutschrift", async (req, res) => {
+    try {
+        const { mitglied_id, betrag, grund, stripe_transaktion_id } = req.body;
+        const secureDojoId = getSecureDojoId(req);
+
+        if (!mitglied_id || !betrag || parseFloat(betrag) <= 0) {
+            return res.status(400).json({ error: 'mitglied_id und betrag (> 0) erforderlich' });
+        }
+
+        const [mitglied] = await queryAsync(
+            'SELECT mitglied_id, dojo_id, vorname, nachname FROM mitglieder WHERE mitglied_id = ?',
+            [mitglied_id]
+        );
+        if (!mitglied) return res.status(404).json({ error: 'Mitglied nicht gefunden' });
+        if (secureDojoId && mitglied.dojo_id !== secureDojoId) {
+            return res.status(403).json({ error: 'Kein Zugriff' });
+        }
+
+        const betragNum = parseFloat(betrag);
+        const result = await queryAsync(
+            `INSERT INTO mitglied_gutschriften
+             (mitglied_id, dojo_id, betrag, restbetrag, grund, erstellt_von, stripe_transaktion_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [mitglied_id, mitglied.dojo_id, betragNum, betragNum, grund || null, req.user?.id || null, stripe_transaktion_id || null]
+        );
+
+        logger.info(`💳 Gutschrift ${result.insertId}: ${betragNum}€ für Mitglied ${mitglied_id} — ${grund || 'kein Grund'}`);
+
+        res.json({
+            success: true,
+            id: result.insertId,
+            mitglied: `${mitglied.vorname} ${mitglied.nachname}`,
+            betrag: betragNum,
+            message: `Gutschrift über ${betragNum.toFixed(2)} € für ${mitglied.vorname} ${mitglied.nachname} angelegt`
+        });
+    } catch (error) {
+        logger.error('Fehler beim Anlegen der Gutschrift:', error);
+        res.status(500).json({ error: 'Fehler beim Anlegen der Gutschrift', details: error.message });
+    }
+});
+
+/**
+ * GET /api/lastschriftlauf/gutschriften?mitglied_id=X&alle=1
+ * Offene (oder alle) Gutschriften eines Mitglieds abrufen
+ */
+router.get("/gutschriften", async (req, res) => {
+    try {
+        const { mitglied_id, alle } = req.query;
+        const secureDojoId = getSecureDojoId(req);
+
+        if (!mitglied_id) return res.status(400).json({ error: 'mitglied_id erforderlich' });
+
+        let sql = `SELECT g.*, m.vorname, m.nachname, m.dojo_id
+                   FROM mitglied_gutschriften g
+                   JOIN mitglieder m ON g.mitglied_id = m.mitglied_id
+                   WHERE g.mitglied_id = ?`;
+        const params = [mitglied_id];
+
+        if (secureDojoId) { sql += ' AND m.dojo_id = ?'; params.push(secureDojoId); }
+        if (!alle) { sql += ' AND g.verrechnet = 0'; }
+        sql += ' ORDER BY g.erstellt_am DESC';
+
+        const rows = await queryAsync(sql, params);
+        res.json({ success: true, gutschriften: rows });
+    } catch (error) {
+        res.status(500).json({ error: 'Fehler beim Laden der Gutschriften', details: error.message });
     }
 });
 
