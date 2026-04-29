@@ -165,7 +165,7 @@ const ClubMemberLogin = () => {
       console.error('Login-Fehler:', err);
 
       if (err.response?.status === 401) {
-        setError('Ungültige Anmeldedaten. Bitte prüfen Sie Ihre E-Mail-Adresse und Passwort.');
+        setError('Ungültige Anmeldedaten. Bitte Benutzername/E-Mail und Passwort prüfen.');
       } else if (err.response?.status === 400) {
         setError('Bitte füllen Sie alle Felder korrekt aus.');
       } else if (err.response?.status === 500) {

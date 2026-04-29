@@ -25,13 +25,13 @@ const HTTP_STATUS = {
 const ERROR_MESSAGES = {
     // Authentifizierung
     AUTH: {
-        INVALID_CREDENTIALS: 'Ungültige E-Mail oder Passwort',
+        INVALID_CREDENTIALS: 'Ungültige Anmeldedaten — Benutzername/E-Mail oder Passwort falsch',
         NOT_AUTHENTICATED: 'Nicht authentifiziert',
         TOKEN_INVALID: 'Token ungültig oder abgelaufen',
         TOKEN_MISSING: 'Token fehlt',
         TOKEN_EXPIRED: 'Token abgelaufen',
         ACCESS_DENIED: 'Zugriff verweigert',
-        EMAIL_PASSWORD_REQUIRED: 'E-Mail und Passwort sind erforderlich',
+        EMAIL_PASSWORD_REQUIRED: 'Benutzername/E-Mail und Passwort sind erforderlich',
         PASSWORD_MIN_LENGTH: 'Passwort muss mindestens 8 Zeichen lang sein',
         SET_PASSWORD_FIRST: 'Bitte setze zuerst ein Passwort über "Passwort vergessen"',
         OLD_PASSWORD_WRONG: 'Altes Passwort ist falsch',

@@ -1173,7 +1173,7 @@ router.post('/family-login', async (req, res) => {
     if (!email || !passwort) {
       return res.status(400).json({
         success: false,
-        message: 'E-Mail und Passwort sind erforderlich'
+        message: 'Benutzername/E-Mail und Passwort sind erforderlich'
       });
     }
 
@@ -1188,7 +1188,7 @@ router.post('/family-login', async (req, res) => {
     if (benutzer.length === 0) {
       return res.status(401).json({
         success: false,
-        message: 'E-Mail oder Passwort ist falsch'
+        message: 'Ungültige Anmeldedaten'
       });
     }
 
@@ -1199,7 +1199,7 @@ router.post('/family-login', async (req, res) => {
     if (!passwordValid) {
       return res.status(401).json({
         success: false,
-        message: 'E-Mail oder Passwort ist falsch'
+        message: 'Ungültige Anmeldedaten'
       });
     }
 
