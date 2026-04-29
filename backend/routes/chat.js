@@ -100,11 +100,13 @@ router.get('/rooms', async (req, res) => {
     const isSuperAdmin = (req.user.dojo_id === null || req.user.dojo_id === undefined)
                       && (req.user.role === 'admin' || req.user.role === 'super_admin');
 
-    // Super-Admin: alle Räume ohne Dojo-Filter (nur eigene Mitgliedschaft)
     const baseQuery = `SELECT
          r.id, r.type, r.name, r.description, r.created_at, r.updated_at,
          r.dojo_id,
-         crm.role as my_role, crm.muted, crm.pinned, crm.archived,
+         COALESCE(crm.role, 'member') as my_role,
+         COALESCE(crm.muted, 0) as muted,
+         COALESCE(crm.pinned, 0) as pinned,
+         COALESCE(crm.archived, 0) as archived,
          lm.content as last_message,
          lm.sent_at as last_message_at,
          lm.sender_type as last_sender_type,
@@ -121,7 +123,7 @@ router.get('/rooms', async (req, res) => {
          ) as unread_count,
          (SELECT COUNT(*) FROM chat_room_members WHERE room_id = r.id) as member_count
        FROM chat_rooms r
-       JOIN chat_room_members crm ON crm.room_id = r.id
+       LEFT JOIN chat_room_members crm ON crm.room_id = r.id
          AND crm.member_id = ? AND crm.member_type = ?
        LEFT JOIN chat_messages lm ON lm.id = (
          SELECT id FROM chat_messages
@@ -131,17 +133,19 @@ router.get('/rooms', async (req, res) => {
 
     const statusFilter = req.query.status || 'active';
     const showArchived = statusFilter === 'archived' ? 1 : 0;
-    const statusClause = ` AND crm.archived = ${showArchived}`;
+    const statusClause = ` AND COALESCE(crm.archived, 0) = ${showArchived}`;
 
     let rooms;
     if (isSuperAdmin) {
+      // Super-Admin: alle Räume wo Mitglied (ohne Dojo-Filter)
       [rooms] = await pool.query(
-        baseQuery + statusClause + ` ORDER BY crm.pinned DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
+        baseQuery + ` WHERE crm.member_id IS NOT NULL` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type]
       );
     } else {
+      // Admin/Trainer: ALLE Räume des Dojos sehen (nicht nur eigene Mitgliedschaft)
       [rooms] = await pool.query(
-        baseQuery + ` WHERE r.dojo_id = ?` + statusClause + ` ORDER BY crm.pinned DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
+        baseQuery + ` WHERE r.dojo_id = ?` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type, dojo_id]
       );
     }

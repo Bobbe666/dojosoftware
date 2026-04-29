@@ -778,40 +778,55 @@ router.put('/:id/zugaenge', async (req, res) => {
     // Wenn Messenger-App: admin_users-Konto erstellen oder aktualisieren (für msg.tda-intl.org Login)
     if (app_type === 'messenger' && (username || passwort)) {
       const [trainerRows] = await pool.query(
-        'SELECT vorname, nachname, email FROM trainer WHERE trainer_id = ? LIMIT 1', [id]
+        'SELECT vorname, nachname, email, dojo_id FROM trainer WHERE trainer_id = ? LIMIT 1', [id]
       );
       if (trainerRows.length > 0) {
         const t = trainerRows[0];
+        // Dojo-ID immer vom Trainer nehmen (nicht vom JWT — Super-Admin hat dort NULL)
+        const msgDojoId = t.dojo_id || dojoId || null;
         const msgEmail = email || t.email;
-        if (!msgEmail) return res.status(400).json({ error: 'E-Mail fehlt — bitte im Messenger-Zugang eintragen.' });
 
+        // Konto anhand Username suchen (nicht Email — vermeidet Kollision mit Super-Admin-Konto)
         const [existing] = await pool.query(
-          'SELECT id FROM admin_users WHERE email = ? OR username = ? LIMIT 1',
-          [msgEmail, username || '']
+          'SELECT id FROM admin_users WHERE username = ? LIMIT 1', [username || '']
         );
 
         if (existing.length > 0) {
-          const updates = [];
-          const params = [];
-          if (username) { updates.push('username = ?'); params.push(username); }
+          const updates = ['dojo_id = ?'];
+          const params = [msgDojoId];
           if (email)    { updates.push('email = ?');    params.push(email); }
           if (passwort) {
             const hashed = await hashPassword(passwort);
             updates.push('password = ?'); params.push(hashed);
             updates.push('password_algorithm = ?'); params.push('argon2id');
           }
-          if (updates.length > 0) {
-            params.push(existing[0].id);
-            await pool.query(`UPDATE admin_users SET ${updates.join(', ')} WHERE id = ?`, params);
+          params.push(existing[0].id);
+          await pool.query(`UPDATE admin_users SET ${updates.join(', ')} WHERE id = ?`, params);
+          // In alle Dojo-Räume aufnehmen
+          if (msgDojoId) {
+            await pool.query(
+              `INSERT IGNORE INTO chat_room_members (room_id, member_id, member_type, role)
+               SELECT id, ?, 'admin', 'member' FROM chat_rooms WHERE dojo_id = ?`,
+              [existing[0].id, msgDojoId]
+            );
           }
         } else {
           if (!username || !passwort) return res.status(400).json({ error: 'Für ein neues MSG-Konto sind Benutzername und Passwort erforderlich.' });
+          if (!msgEmail) return res.status(400).json({ error: 'E-Mail fehlt — bitte im Messenger-Zugang eintragen.' });
           const hashed = await hashPassword(passwort);
-          await pool.query(
+          const [insertResult] = await pool.query(
             `INSERT INTO admin_users (username, email, password, password_algorithm, vorname, nachname, rolle, dojo_id, aktiv)
              VALUES (?, ?, ?, 'argon2id', ?, ?, 'eingeschraenkt', ?, 1)`,
-            [username, msgEmail, hashed, t.vorname || '', t.nachname || '', dojoId || null]
+            [username, msgEmail, hashed, t.vorname || '', t.nachname || '', msgDojoId]
           );
+          // In alle Dojo-Räume aufnehmen
+          if (msgDojoId && insertResult.insertId) {
+            await pool.query(
+              `INSERT IGNORE INTO chat_room_members (room_id, member_id, member_type, role)
+               SELECT id, ?, 'admin', 'member' FROM chat_rooms WHERE dojo_id = ?`,
+              [insertResult.insertId, msgDojoId]
+            );
+          }
         }
       }
     }
