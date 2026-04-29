@@ -775,6 +775,47 @@ router.put('/:id/zugaenge', async (req, res) => {
       [id, dojoId || null, app_type, email || null, username || null, passwort || null]
     );
 
+    // Wenn Messenger-App: admin_users-Konto erstellen oder aktualisieren (für msg.tda-intl.org Login)
+    if (app_type === 'messenger' && (username || passwort)) {
+      const [trainerRows] = await pool.query(
+        'SELECT vorname, nachname, email FROM trainer WHERE trainer_id = ? LIMIT 1', [id]
+      );
+      if (trainerRows.length > 0) {
+        const t = trainerRows[0];
+        const msgEmail = email || t.email;
+        if (!msgEmail) return res.status(400).json({ error: 'E-Mail fehlt — bitte im Messenger-Zugang eintragen.' });
+
+        const [existing] = await pool.query(
+          'SELECT id FROM admin_users WHERE email = ? OR username = ? LIMIT 1',
+          [msgEmail, username || '']
+        );
+
+        if (existing.length > 0) {
+          const updates = [];
+          const params = [];
+          if (username) { updates.push('username = ?'); params.push(username); }
+          if (email)    { updates.push('email = ?');    params.push(email); }
+          if (passwort) {
+            const hashed = await hashPassword(passwort);
+            updates.push('password = ?'); params.push(hashed);
+            updates.push('password_algorithm = ?'); params.push('argon2id');
+          }
+          if (updates.length > 0) {
+            params.push(existing[0].id);
+            await pool.query(`UPDATE admin_users SET ${updates.join(', ')} WHERE id = ?`, params);
+          }
+        } else {
+          if (!username || !passwort) return res.status(400).json({ error: 'Für ein neues MSG-Konto sind Benutzername und Passwort erforderlich.' });
+          const hashed = await hashPassword(passwort);
+          await pool.query(
+            `INSERT INTO admin_users (username, email, password, password_algorithm, vorname, nachname, rolle, dojo_id, aktiv)
+             VALUES (?, ?, ?, 'argon2id', ?, ?, 'eingeschraenkt', ?, 1)`,
+            [username, msgEmail, hashed, t.vorname || '', t.nachname || '', dojoId || null]
+          );
+        }
+      }
+    }
+
     // Wenn Trainer-App: admin_users-Konto erstellen oder aktualisieren
     if (app_type === 'trainer' && (username || passwort)) {
       const [trainerRows] = await pool.query(
