@@ -18,10 +18,12 @@ import {
   Settings,
   Loader,
   Clock,
-  Info
+  Info,
+  XCircle
 } from "lucide-react";
 import config from "../config/config";
 import { useDojoContext } from '../context/DojoContext';
+import StripeStornoVerwaltung from './StripeStornoVerwaltung';
 import "../styles/themes.css";
 import "../styles/components.css";
 import "../styles/Lastschriftlauf.css";
@@ -645,6 +647,12 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
         >
           <FileText size={15} /> Zahlläufe Übersicht
         </button>
+        <button
+          className={`ll-tab-btn${activeTab === 'storno' ? ' ll-tab-btn--active' : ''}`}
+          onClick={() => setActiveTab('storno')}
+        >
+          <XCircle size={15} /> Storno-Verwaltung
+        </button>
       </div>
 
       {/* Tab: Automatischer Einzug */}
@@ -655,6 +663,11 @@ const Lastschriftlauf = ({ embedded = false, dojoIdOverride = null }) => {
       {/* Tab: Zahlläufe Übersicht */}
       {activeTab === 'zahllaeufe' && (
         <Zahllaeufe embedded={true} />
+      )}
+
+      {/* Tab: Storno-Verwaltung */}
+      {activeTab === 'storno' && (
+        <StripeStornoVerwaltung />
       )}
 
       {/* Tab: Manueller Lauf — bestehender Inhalt */}
