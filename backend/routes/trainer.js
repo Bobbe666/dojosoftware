@@ -841,8 +841,14 @@ router.put('/:id/zugaenge', async (req, res) => {
         const trainerEmail = email || t.email;
         if (!trainerEmail) return res.status(400).json({ error: 'Trainer hat keine E-Mail — bitte zuerst E-Mail im Stammdaten-Tab eintragen.' });
 
+        // Lookup by dojo_id + (email oder username) — verhindert, dass ein anderes Konto
+        // mit gleicher E-Mail (z.B. Admin-Konto) fälschlicherweise gefunden wird
         const [existing] = await pool.query(
-          'SELECT id FROM admin_users WHERE email = ? LIMIT 1', [trainerEmail]
+          `SELECT id FROM admin_users
+           WHERE dojo_id = ? AND (email = ? OR username = ?)
+           AND rolle IN ('eingeschraenkt','trainer')
+           LIMIT 1`,
+          [dojoId, trainerEmail, username || '']
         );
 
         if (existing.length > 0) {
