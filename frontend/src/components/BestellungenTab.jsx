@@ -194,6 +194,104 @@ const BestellungenTab = () => {
     }));
   };
 
+  // Drucken (Browser-Druckdialog)
+  const handlePrint = (bestellung) => {
+    const formatDate = (d) => new Date(d).toLocaleDateString('de-DE');
+    const b = bestellung;
+
+    const itemRows = (b.positionen || []).map((pos, idx) => {
+      const gm = pos.groessen_mengen || {};
+      const sorted = Object.entries(gm)
+        .filter(([, q]) => (parseInt(q) || 0) > 0)
+        .sort((a, b) => {
+          const an = parseInt(a[0]), bn = parseInt(b[0]);
+          if (!isNaN(an) && !isNaN(bn)) return an - bn;
+          if (!isNaN(an)) return -1;
+          if (!isNaN(bn)) return 1;
+          return a[0].localeCompare(b[0]);
+        });
+
+      const sizeHeaders = sorted.map(([s]) => `<th>${s}</th>`).join('');
+      const sizeQtys = sorted.map(([, q]) => `<td><strong>${q}</strong></td>`).join('');
+      const total = sorted.reduce((s, [, q]) => s + (parseInt(q) || 0), 0);
+
+      return `
+        <div class="article-block">
+          <div class="article-title">${idx + 1}. ${pos.artikel_name}${pos.artikel_nummer ? ` <span class="art-nr">Art.-Nr: ${pos.artikel_nummer}</span>` : ''}</div>
+          ${pos.beschreibung ? `<div class="article-desc">${pos.beschreibung}</div>` : ''}
+          <table class="size-table">
+            <thead><tr>${sizeHeaders}<th class="total-col">Gesamt</th>${pos.stueckpreis_euro > 0 ? '<th>Stückpreis</th><th>Summe</th>' : ''}</tr></thead>
+            <tbody><tr>${sizeQtys}<td class="total-col"><strong>${total}</strong></td>${pos.stueckpreis_euro > 0 ? `<td>${pos.stueckpreis_euro?.toFixed(2)} €</td><td><strong>${pos.positions_preis_euro?.toFixed(2)} €</strong></td>` : ''}</tr></tbody>
+          </table>
+          ${pos.bemerkung ? `<div class="pos-note">Hinweis: ${pos.bemerkung}</div>` : ''}
+        </div>`;
+    }).join('');
+
+    const totalVal = (b.positionen || []).reduce((s, p) => s + (p.positions_preis_euro || 0), 0);
+    const totalPcs = (b.positionen || []).reduce((s, p) => {
+      const gm = p.groessen_mengen || {};
+      return s + Object.values(gm).reduce((a, q) => a + (parseInt(q) || 0), 0);
+    }, 0);
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bestellung ${b.bestellnummer}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 10pt; color: #000; background: #fff; padding: 20mm; }
+  h1 { font-size: 22pt; text-align: center; margin-bottom: 4px; }
+  .order-no { text-align: center; font-size: 11pt; color: #444; margin-bottom: 16px; }
+  .header-grid { display: flex; gap: 40px; margin-bottom: 20px; border-top: 2px solid #000; border-bottom: 1px solid #ccc; padding: 12px 0; }
+  .header-grid > div { flex: 1; }
+  .header-grid h3 { font-size: 8pt; text-transform: uppercase; color: #777; margin-bottom: 4px; }
+  .header-grid p { font-size: 10pt; line-height: 1.5; }
+  h2 { font-size: 13pt; border-bottom: 2px solid #000; padding-bottom: 4px; margin: 16px 0 10px; }
+  .article-block { margin-bottom: 16px; page-break-inside: avoid; }
+  .article-title { font-size: 11pt; font-weight: bold; background: #f0f0f0; padding: 4px 8px; }
+  .art-nr { font-weight: normal; font-size: 9pt; color: #666; margin-left: 8px; }
+  .article-desc { font-size: 9pt; color: #444; padding: 4px 8px; border-left: 3px solid #ccc; margin: 4px 0 6px; }
+  .size-table { width: 100%; border-collapse: collapse; margin: 4px 0; }
+  .size-table th { background: #222; color: #fff; padding: 4px 6px; font-size: 9pt; text-align: center; }
+  .size-table td { border: 1px solid #ddd; padding: 5px 6px; text-align: center; font-size: 10pt; }
+  .total-col { background: #f5f5f5; font-weight: bold; }
+  .pos-note { font-size: 8pt; color: #888; font-style: italic; padding: 2px 8px; }
+  .totals { text-align: right; border-top: 2px solid #000; padding-top: 10px; margin-top: 10px; }
+  .totals p { font-size: 12pt; }
+  .remarks { margin-top: 16px; border: 1px solid #ccc; padding: 10px; }
+  .remarks h3 { font-size: 10pt; margin-bottom: 4px; }
+  .signature-row { display: flex; justify-content: space-between; margin-top: 40px; }
+  .signature-box { width: 45%; border-top: 1px solid #000; padding-top: 4px; font-size: 9pt; color: #444; }
+  .footer { margin-top: 20px; font-size: 8pt; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 6px; }
+  @media print { body { padding: 10mm; } }
+</style></head><body>
+<h1>PURCHASE ORDER</h1>
+<div class="order-no">Order No: ${b.bestellnummer} &nbsp;|&nbsp; Date: ${formatDate(b.erstellt_am)}</div>
+<div class="header-grid">
+  <div><h3>From</h3><p><strong>${b.dojo_name || 'Martial Arts Academy'}</strong></p></div>
+  <div><h3>To (Supplier)</h3>
+    <p><strong>${b.lieferant_name || ''}</strong><br>${b.lieferant_land || ''}
+    ${b.lieferant_email ? `<br>${b.lieferant_email}` : ''}
+    ${b.lieferant_telefon ? `<br>${b.lieferant_telefon}` : ''}</p>
+  </div>
+</div>
+<h2>Order Items</h2>
+${itemRows}
+<div class="totals">
+  <p>Total Pieces: <strong>${totalPcs}</strong>${totalVal > 0 ? `&nbsp;&nbsp;|&nbsp;&nbsp;Total Value: <strong>${totalVal.toFixed(2)} EUR</strong>` : ''}</p>
+</div>
+${b.bemerkungen ? `<div class="remarks"><h3>Remarks / Special Instructions:</h3><p>${b.bemerkungen}</p></div>` : ''}
+<div class="signature-row">
+  <div class="signature-box">Authorized Signature</div>
+  <div class="signature-box">Date</div>
+</div>
+<div class="footer">Please confirm receipt and provide expected dispatch date &amp; tracking. Generated: ${new Date().toLocaleString('de-DE')}</div>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 400);
+  };
+
   // PDF generieren
   const handleGeneratePdf = async (bestellungId) => {
     try {
@@ -670,13 +768,21 @@ const BestellungenTab = () => {
                     {selectedBestellung.positionen?.map((pos, idx) => (
                       <tr key={idx}>
                         <td>
-                          {pos.artikel_name}
-                          {pos.artikel_nummer && <small> #{pos.artikel_nummer}</small>}
+                          <div>{pos.artikel_name}</div>
+                          {pos.artikel_nummer && <small style={{color:'var(--text-muted)'}}>#{pos.artikel_nummer}</small>}
+                          {pos.beschreibung && <div style={{fontSize:'0.8em',color:'var(--text-muted)',marginTop:3}}>{pos.beschreibung}</div>}
                         </td>
                         <td>
                           <div className="size-list">
                             {Object.entries(pos.groessen_mengen || {})
-                              .filter(([_, qty]) => qty > 0)
+                              .filter(([_, qty]) => (parseInt(qty)||0) > 0)
+                              .sort((a, b) => {
+                                const an = parseInt(a[0]), bn = parseInt(b[0]);
+                                if (!isNaN(an) && !isNaN(bn)) return an - bn;
+                                if (!isNaN(an)) return -1;
+                                if (!isNaN(bn)) return 1;
+                                return a[0].localeCompare(b[0]);
+                              })
                               .map(([size, qty]) => (
                                 <span key={size} className="size-badge">
                                   {size}: {qty}
@@ -722,14 +828,21 @@ const BestellungenTab = () => {
 
             <div className="modal-footer">
               <button className="close-btn-footer" onClick={() => setShowDetailModal(false)}>
-                Close
+                Schließen
+              </button>
+              <button
+                className="print-btn"
+                onClick={() => handlePrint(selectedBestellung)}
+                title="Druckansicht öffnen"
+              >
+                Drucken
               </button>
               <button
                 className="pdf-btn"
                 onClick={() => handleGeneratePdf(selectedBestellung.bestellung_id)}
                 disabled={pdfLoading}
               >
-                {pdfLoading ? 'Generating...' : 'Download PDF'}
+                {pdfLoading ? 'Generiere...' : 'PDF herunterladen'}
               </button>
             </div>
           </div>

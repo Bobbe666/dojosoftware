@@ -201,6 +201,8 @@ router.get('/:id', (req, res) => {
           p.*,
           a.name AS artikel_name,
           a.artikel_nummer,
+          a.beschreibung,
+          a.bild_url,
           a.varianten_groessen,
           a.groessen_kids,
           a.groessen_erwachsene
@@ -452,7 +454,10 @@ router.post('/:id/pdf', async (req, res) => {
         SELECT
           p.*,
           a.name AS artikel_name,
-          a.artikel_nummer
+          a.artikel_nummer,
+          a.beschreibung,
+          a.bild_url,
+          a.bild_base64
         FROM artikel_bestellung_positionen p
         JOIN artikel a ON p.artikel_id = a.artikel_id
         WHERE p.bestellung_id = ?
@@ -508,54 +513,61 @@ router.post('/:id/pdf', async (req, res) => {
     });
 
     // =====================================================================================
-    // PDF INHALT (in Englisch)
+    // PDF INHALT (in Englisch — für Pakistan-Lieferant)
     // =====================================================================================
 
-    // Header
-    doc.fontSize(24).font('Helvetica-Bold').text('PURCHASE ORDER', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fontSize(14).font('Helvetica').text(`Order No: ${bestellung.bestellnummer}`, { align: 'center' });
-    doc.fontSize(10).text(`Date: ${new Date().toLocaleDateString('en-GB')}`, { align: 'center' });
+    const pageWidth = 595 - 100; // A4 minus margins
+    const leftCol = 50;
+    const rightCol = 320;
 
-    doc.moveDown(1);
+    // ---- HEADER ----
+    // Farbiger Header-Balken
+    doc.rect(0, 0, 595, 80).fill('#1a1a2e');
+    doc.fillColor('#ffffff').fontSize(26).font('Helvetica-Bold').text('PURCHASE ORDER', 50, 22, { align: 'center', width: 495 });
+    doc.fontSize(11).font('Helvetica').text(`Order No: ${bestellung.bestellnummer}   |   Date: ${new Date().toLocaleDateString('en-GB')}`, 50, 54, { align: 'center', width: 495 });
+    doc.fillColor('#000000');
+
+    doc.moveDown(0.5);
+    doc.y = 95;
+
+    // ---- FROM / TO nebeneinander ----
+    const fromX = 50;
+    const toX = 310;
+    const addrY = doc.y;
+
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#555555').text('FROM:', fromX, addrY);
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#000000').text(dojo.dojoname || 'Martial Arts Academy', fromX, addrY + 14);
+    doc.fontSize(9).font('Helvetica').fillColor('#333333');
+    let fromY = addrY + 28;
+    if (dojo.strasse) { doc.text(dojo.strasse, fromX, fromY); fromY += 12; }
+    if (dojo.plz || dojo.ort) { doc.text(`${dojo.plz || ''} ${dojo.ort || ''}`.trim(), fromX, fromY); fromY += 12; }
+    if (dojo.land) { doc.text(dojo.land, fromX, fromY); fromY += 12; }
+    if (dojo.email) { doc.text(`Email: ${dojo.email}`, fromX, fromY); fromY += 12; }
+    if (dojo.telefon) { doc.text(`Phone: ${dojo.telefon}`, fromX, fromY); fromY += 12; }
+
+    doc.fontSize(9).font('Helvetica-Bold').fillColor('#555555').text('TO (SUPPLIER):', toX, addrY);
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#000000').text(bestellung.lieferant_name || 'Supplier', toX, addrY + 14);
+    doc.fontSize(9).font('Helvetica').fillColor('#333333');
+    let toY = addrY + 28;
+    doc.text(bestellung.lieferant_land || 'Pakistan', toX, toY); toY += 12;
+    if (bestellung.lieferant_email) { doc.text(`Email: ${bestellung.lieferant_email}`, toX, toY); toY += 12; }
+    if (bestellung.lieferant_telefon) { doc.text(`Phone: ${bestellung.lieferant_telefon}`, toX, toY); toY += 12; }
+
+    doc.y = Math.max(fromY, toY) + 12;
+    doc.fillColor('#000000');
 
     // Trennlinie
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#dddddd').lineWidth(1).stroke();
+    doc.strokeColor('#000000').lineWidth(1);
     doc.moveDown(1);
 
-    // FROM (Dojo Info)
-    doc.fontSize(12).font('Helvetica-Bold').text('FROM:');
-    doc.fontSize(10).font('Helvetica');
-    doc.text(dojo.dojoname || 'Martial Arts Academy');
-    if (dojo.strasse) doc.text(dojo.strasse);
-    if (dojo.plz || dojo.ort) doc.text(`${dojo.plz || ''} ${dojo.ort || ''}`);
-    if (dojo.land) doc.text(dojo.land);
-    if (dojo.email) doc.text(`Email: ${dojo.email}`);
-    if (dojo.telefon) doc.text(`Phone: ${dojo.telefon}`);
-
-    doc.moveDown(1);
-
-    // TO (Supplier)
-    doc.fontSize(12).font('Helvetica-Bold').text('TO (SUPPLIER):');
-    doc.fontSize(10).font('Helvetica');
-    doc.text(bestellung.lieferant_name || 'Supplier');
-    doc.text(bestellung.lieferant_land || 'Pakistan');
-    if (bestellung.lieferant_email) doc.text(`Email: ${bestellung.lieferant_email}`);
-    if (bestellung.lieferant_telefon) doc.text(`Phone: ${bestellung.lieferant_telefon}`);
-
-    doc.moveDown(1.5);
-
-    // Trennlinie
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-    doc.moveDown(1);
-
-    // ORDER ITEMS HEADER
-    doc.fontSize(12).font('Helvetica-Bold').text('ORDER ITEMS:', { underline: true });
+    // ---- ORDER ITEMS ----
+    doc.fontSize(13).font('Helvetica-Bold').text('ORDER ITEMS', 50);
     doc.moveDown(0.5);
 
-    // Für jeden Artikel
     let itemNumber = 1;
     let totalAmount = 0;
+    let totalPieces = 0;
 
     for (const position of positionen) {
       const groessenMengen = typeof position.groessen_mengen === 'string' ?
@@ -563,40 +575,13 @@ router.post('/:id/pdf', async (req, res) => {
 
       const stueckpreisEuro = (position.stueckpreis_cent || 0) / 100;
       const positionTotal = (position.positions_preis_cent || 0) / 100;
+      const gesamtMenge = position.gesamt_menge || Object.values(groessenMengen).reduce((s, q) => s + (parseInt(q) || 0), 0);
       totalAmount += positionTotal;
-
-      // Artikel Header
-      doc.moveDown(0.5);
-      doc.fontSize(11).font('Helvetica-Bold');
-      doc.text(`${itemNumber}. ${position.artikel_name}`, { continued: false });
-
-      if (position.artikel_nummer) {
-        doc.fontSize(9).font('Helvetica').text(`   Article No: ${position.artikel_nummer}`);
-      }
-
-      doc.moveDown(0.3);
-
-      // Größen-Tabelle Header
-      doc.fontSize(9).font('Helvetica-Bold');
-      const tableTop = doc.y;
-      const col1 = 70; // Size
-      const col2 = 170; // Quantity
-      const colWidth = 100;
-
-      doc.text('Size', col1, tableTop);
-      doc.text('Quantity', col2, tableTop);
-
-      // Linie unter Header
-      doc.moveTo(col1, tableTop + 12).lineTo(col2 + 80, tableTop + 12).stroke();
-
-      // Größen-Zeilen
-      doc.font('Helvetica').fontSize(9);
-      let rowY = tableTop + 18;
+      totalPieces += gesamtMenge;
 
       const sortedSizes = Object.entries(groessenMengen)
-        .filter(([_, qty]) => qty > 0)
+        .filter(([_, qty]) => (parseInt(qty) || 0) > 0)
         .sort((a, b) => {
-          // Numerische Größen zuerst, dann alphabetisch
           const aNum = parseInt(a[0]);
           const bNum = parseInt(b[0]);
           if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum;
@@ -605,72 +590,162 @@ router.post('/:id/pdf', async (req, res) => {
           return a[0].localeCompare(b[0]);
         });
 
-      for (const [size, qty] of sortedSizes) {
-        if (qty > 0) {
-          doc.text(size, col1, rowY);
-          doc.text(String(qty), col2, rowY);
-          rowY += 14;
+      // Seitenumbruch-Check: mindestens 120px Platz für Artikel
+      if (doc.y > 680) { doc.addPage(); }
+
+      const articleStartY = doc.y;
+
+      // Artikel-Box Hintergrund
+      doc.rect(50, articleStartY, 495, 16).fill('#f0f0f0');
+      doc.fillColor('#000000').fontSize(11).font('Helvetica-Bold')
+        .text(`${itemNumber}.  ${position.artikel_name}`, 56, articleStartY + 3, { width: 350 });
+
+      if (position.artikel_nummer) {
+        doc.fontSize(9).font('Helvetica').fillColor('#666666')
+          .text(`Art.-Nr: ${position.artikel_nummer}`, 420, articleStartY + 4, { width: 120, align: 'right' });
+      }
+
+      doc.fillColor('#000000');
+      doc.y = articleStartY + 20;
+
+      // Bild einbetten (falls vorhanden)
+      let imageInserted = false;
+      if (position.bild_url) {
+        try {
+          const absolutePath = path.join(__dirname, '../..', position.bild_url.replace(/^\//, ''));
+          if (fs.existsSync(absolutePath)) {
+            const imgY = doc.y;
+            doc.image(absolutePath, 50, imgY, { width: 70, height: 70, fit: [70, 70] });
+            imageInserted = true;
+            // Text rechts vom Bild beginnen
+            doc.y = imgY;
+          }
+        } catch (imgErr) {
+          // Bild-Fehler ignorieren
+        }
+      } else if (position.bild_base64) {
+        try {
+          const imgData = Buffer.from(position.bild_base64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+          const imgY = doc.y;
+          doc.image(imgData, 50, imgY, { width: 70, height: 70, fit: [70, 70] });
+          imageInserted = true;
+          doc.y = imgY;
+        } catch (imgErr) {
+          // Bild-Fehler ignorieren
         }
       }
 
-      // Gesamt für diesen Artikel
-      doc.moveDown(0.3);
-      doc.y = rowY + 5;
-      doc.font('Helvetica-Bold').fontSize(9);
-      doc.text(`Total Pieces: ${position.gesamt_menge}`, col1);
+      const textX = imageInserted ? 130 : 56;
+      const textWidth = imageInserted ? 415 : 489;
 
+      // Beschreibung
+      if (position.beschreibung) {
+        doc.fontSize(9).font('Helvetica').fillColor('#444444')
+          .text(position.beschreibung, textX, doc.y, { width: textWidth });
+        doc.moveDown(0.4);
+      }
+
+      // Mindest-Y nach Bild
+      if (imageInserted) {
+        doc.y = Math.max(doc.y, (doc.page.margins?.top || 50) + 70 + (articleStartY - (doc.page.margins?.top || 50) + 20) + 70);
+      }
+
+      doc.moveDown(0.2);
+
+      // Größen-Tabelle: alle Größen in Spalten nebeneinander
+      if (sortedSizes.length > 0) {
+        const tableY = doc.y;
+        const colW = Math.min(60, Math.floor(490 / sortedSizes.length));
+        const tableX = 56;
+
+        // Header-Zeile (grau)
+        doc.rect(tableX, tableY, colW * sortedSizes.length, 14).fill('#333333');
+        doc.fillColor('#ffffff').fontSize(8).font('Helvetica-Bold');
+        sortedSizes.forEach(([size], i) => {
+          doc.text(size, tableX + i * colW, tableY + 3, { width: colW, align: 'center' });
+        });
+
+        // Mengen-Zeile
+        const qtyY = tableY + 14;
+        doc.rect(tableX, qtyY, colW * sortedSizes.length, 16).fill('#ffffff').stroke();
+        doc.fillColor('#000000').fontSize(10).font('Helvetica-Bold');
+        sortedSizes.forEach(([, qty], i) => {
+          doc.text(String(qty), tableX + i * colW, qtyY + 3, { width: colW, align: 'center' });
+        });
+
+        doc.y = qtyY + 20;
+        doc.fillColor('#000000');
+      }
+
+      // Zusammenfassung
+      doc.fontSize(9).font('Helvetica-Bold').fillColor('#000000');
+      const summaryParts = [`Total Pieces: ${gesamtMenge}`];
       if (stueckpreisEuro > 0) {
-        doc.text(`Unit Price: ${stueckpreisEuro.toFixed(2)} EUR`, col1);
-        doc.text(`Subtotal: ${positionTotal.toFixed(2)} EUR`, col1);
+        summaryParts.push(`Unit Price: ${stueckpreisEuro.toFixed(2)} EUR`);
+        summaryParts.push(`Subtotal: ${positionTotal.toFixed(2)} EUR`);
       }
+      doc.text(summaryParts.join('   |   '), 56, doc.y);
 
-      // Bemerkung zur Position
       if (position.bemerkung) {
-        doc.moveDown(0.3);
-        doc.font('Helvetica-Oblique').fontSize(9);
-        doc.text(`Note: ${position.bemerkung}`, col1);
+        doc.moveDown(0.2);
+        doc.font('Helvetica-Oblique').fontSize(8).fillColor('#666666')
+          .text(`Note: ${position.bemerkung}`, 56);
       }
 
-      doc.moveDown(0.5);
-
-      // Trennlinie zwischen Artikeln
-      doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#cccccc').stroke();
+      doc.fillColor('#000000');
+      doc.moveDown(0.6);
+      doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#dddddd').stroke();
       doc.strokeColor('#000000');
+      doc.moveDown(0.5);
 
       itemNumber++;
     }
 
-    // TOTAL
-    doc.moveDown(1);
-    doc.fontSize(14).font('Helvetica-Bold');
-    doc.text(`TOTAL ORDER VALUE: ${totalAmount.toFixed(2)} EUR`, { align: 'right' });
+    // ---- TOTAL BOX ----
+    if (doc.y > 720) { doc.addPage(); }
+    doc.moveDown(0.5);
 
-    // Bemerkungen
-    if (bestellung.bemerkungen) {
-      doc.moveDown(1.5);
-      doc.fontSize(12).font('Helvetica-Bold').text('REMARKS:');
-      doc.fontSize(10).font('Helvetica').text(bestellung.bemerkungen);
+    const totalBoxY = doc.y;
+    doc.rect(320, totalBoxY, 225, totalAmount > 0 ? 44 : 24).fill('#1a1a2e');
+    doc.fillColor('#ffffff').fontSize(9).font('Helvetica').text('TOTAL PIECES:', 330, totalBoxY + 4);
+    doc.fontSize(11).font('Helvetica-Bold').text(String(totalPieces), 460, totalBoxY + 3, { width: 75, align: 'right' });
+
+    if (totalAmount > 0) {
+      doc.fontSize(9).font('Helvetica').text('TOTAL ORDER VALUE:', 330, totalBoxY + 20);
+      doc.fontSize(11).font('Helvetica-Bold').text(`${totalAmount.toFixed(2)} EUR`, 400, totalBoxY + 19, { width: 135, align: 'right' });
     }
 
-    // Footer
-    doc.moveDown(2);
-    doc.moveTo(50, doc.y).lineTo(545, doc.y).stroke();
-    doc.moveDown(0.5);
-    doc.fontSize(8).font('Helvetica').fillColor('#666666');
-    doc.text('This is an official purchase order. Please confirm receipt and expected shipping date.', { align: 'center' });
-    doc.text(`Generated on ${new Date().toLocaleString('en-GB')}`, { align: 'center' });
-
-    // Signatur-Bereich
-    doc.moveDown(2);
     doc.fillColor('#000000');
-    doc.fontSize(10).font('Helvetica');
+    doc.y = totalBoxY + (totalAmount > 0 ? 44 : 24) + 16;
 
-    const signatureY = doc.y;
-    doc.text('Authorized Signature:', 50, signatureY);
-    doc.moveTo(170, signatureY + 30).lineTo(300, signatureY + 30).stroke();
+    // ---- BEMERKUNGEN ----
+    if (bestellung.bemerkungen) {
+      doc.moveDown(0.5);
+      doc.fontSize(11).font('Helvetica-Bold').text('REMARKS / SPECIAL INSTRUCTIONS:');
+      doc.moveDown(0.3);
+      doc.fontSize(10).font('Helvetica').text(bestellung.bemerkungen);
+      doc.moveDown(1);
+    }
 
-    doc.text('Date:', 350, signatureY);
-    doc.moveTo(400, signatureY + 30).lineTo(530, signatureY + 30).stroke();
+    // ---- FOOTER ----
+    if (doc.y > 720) { doc.addPage(); }
+    doc.moveDown(1);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#cccccc').stroke();
+    doc.moveDown(0.8);
+
+    doc.fontSize(9).font('Helvetica').fillColor('#444444')
+      .text('Please confirm receipt of this order and provide expected dispatch date and tracking information.', 50, doc.y, { align: 'center', width: 495 });
+    doc.moveDown(0.4);
+    doc.fontSize(8).fillColor('#888888')
+      .text(`Generated: ${new Date().toLocaleString('en-GB')} — ${dojo.dojoname || ''}`, { align: 'center', width: 495 });
+
+    doc.moveDown(2);
+    doc.fillColor('#000000').fontSize(10).font('Helvetica');
+    const sigY = doc.y;
+    doc.text('Authorized Signature:', 50, sigY);
+    doc.moveTo(185, sigY + 28).lineTo(310, sigY + 28).strokeColor('#000000').stroke();
+    doc.text('Date:', 370, sigY);
+    doc.moveTo(410, sigY + 28).lineTo(545, sigY + 28).stroke();
 
     // PDF abschließen
     doc.end();
