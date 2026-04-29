@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { generateVereinbarungPdf, generateInfoblattPdf } = require('../utils/trainerPdfGenerator');
+const { hashPassword } = require('../services/passwordService');
 
 const DOKUMENTE_DIR = path.join(__dirname, '../../generated_documents/trainer');
 if (!fs.existsSync(DOKUMENTE_DIR)) fs.mkdirSync(DOKUMENTE_DIR, { recursive: true });
@@ -774,16 +775,44 @@ router.put('/:id/zugaenge', async (req, res) => {
       [id, dojoId || null, app_type, email || null, username || null, passwort || null]
     );
 
-    // Wenn Trainer-App: username in admin_users synchronisieren (über Email-Verknüpfung)
-    if (app_type === 'trainer' && username) {
+    // Wenn Trainer-App: admin_users-Konto erstellen oder aktualisieren
+    if (app_type === 'trainer' && (username || passwort)) {
       const [trainerRows] = await pool.query(
-        'SELECT email FROM trainer WHERE trainer_id = ? LIMIT 1', [id]
+        'SELECT vorname, nachname, email FROM trainer WHERE trainer_id = ? LIMIT 1', [id]
       );
-      if (trainerRows.length > 0 && trainerRows[0].email) {
-        await pool.query(
-          'UPDATE admin_users SET username = ? WHERE email = ?',
-          [username, trainerRows[0].email]
+      if (trainerRows.length > 0) {
+        const t = trainerRows[0];
+        const trainerEmail = email || t.email;
+        if (!trainerEmail) return res.status(400).json({ error: 'Trainer hat keine E-Mail — bitte zuerst E-Mail im Stammdaten-Tab eintragen.' });
+
+        const [existing] = await pool.query(
+          'SELECT id FROM admin_users WHERE email = ? LIMIT 1', [trainerEmail]
         );
+
+        if (existing.length > 0) {
+          // Konto existiert → username und/oder passwort aktualisieren
+          const updates = [];
+          const params = [];
+          if (username) { updates.push('username = ?'); params.push(username); }
+          if (passwort) {
+            const hashed = await hashPassword(passwort);
+            updates.push('password = ?'); params.push(hashed);
+            updates.push('password_algorithm = ?'); params.push('argon2id');
+          }
+          if (updates.length > 0) {
+            params.push(trainerEmail);
+            await pool.query(`UPDATE admin_users SET ${updates.join(', ')} WHERE email = ?`, params);
+          }
+        } else {
+          // Kein Konto → neu anlegen
+          if (!username || !passwort) return res.status(400).json({ error: 'Für ein neues Konto sind Benutzername und Passwort erforderlich.' });
+          const hashed = await hashPassword(passwort);
+          await pool.query(
+            `INSERT INTO admin_users (username, email, password, password_algorithm, vorname, nachname, rolle, dojo_id, aktiv)
+             VALUES (?, ?, ?, 'argon2id', ?, ?, 'eingeschraenkt', ?, 1)`,
+            [username, trainerEmail, hashed, t.vorname || '', t.nachname || '', dojoId || null]
+          );
+        }
       }
     }
 
