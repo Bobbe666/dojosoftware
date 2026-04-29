@@ -853,6 +853,7 @@ router.put('/:id/zugaenge', async (req, res) => {
 
         if (existing.length > 0) {
           // Konto existiert → username und/oder passwort aktualisieren
+          // WICHTIG: WHERE id = ? (nicht email = ?) — verhindert Kollision mit gleichnamigen Admin-Konten
           const updates = [];
           const params = [];
           if (username) { updates.push('username = ?'); params.push(username); }
@@ -862,8 +863,8 @@ router.put('/:id/zugaenge', async (req, res) => {
             updates.push('password_algorithm = ?'); params.push('argon2id');
           }
           if (updates.length > 0) {
-            params.push(trainerEmail);
-            await pool.query(`UPDATE admin_users SET ${updates.join(', ')} WHERE email = ?`, params);
+            params.push(existing[0].id);
+            await pool.query(`UPDATE admin_users SET ${updates.join(', ')} WHERE id = ?`, params);
           }
         } else {
           // Kein Konto → neu anlegen
