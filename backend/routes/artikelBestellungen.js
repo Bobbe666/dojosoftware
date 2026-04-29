@@ -51,7 +51,6 @@ const getLowStockArticles = async (dojoId) => {
         a.artikel_nummer,
         a.beschreibung,
         a.bild_url,
-        a.bild_base64,
         a.lagerbestand,
         a.mindestbestand,
         a.varianten_bestand,
@@ -459,8 +458,7 @@ router.post('/:id/pdf', async (req, res) => {
           a.name AS artikel_name,
           a.artikel_nummer,
           a.beschreibung,
-          a.bild_url,
-          a.bild_base64
+          a.bild_url
         FROM artikel_bestellung_positionen p
         JOIN artikel a ON p.artikel_id = a.artikel_id
         WHERE p.bestellung_id = ?
@@ -615,26 +613,17 @@ router.post('/:id/pdf', async (req, res) => {
       let imageInserted = false;
       if (position.bild_url) {
         try {
-          const absolutePath = path.join(__dirname, '../..', position.bild_url.replace(/^\//, ''));
+          // bild_url ist z.B. "/uploads/artikel/filename.jpg"
+          // Backend liegt in /var/www/dojosoftware-source/backend/routes → ../../ = dojosoftware-source/
+          const absolutePath = path.join(__dirname, '../..', position.bild_url.replace(/^\/+/, ''));
           if (fs.existsSync(absolutePath)) {
             const imgY = doc.y;
             doc.image(absolutePath, 50, imgY, { width: 70, height: 70, fit: [70, 70] });
             imageInserted = true;
-            // Text rechts vom Bild beginnen
             doc.y = imgY;
           }
         } catch (imgErr) {
-          // Bild-Fehler ignorieren
-        }
-      } else if (position.bild_base64) {
-        try {
-          const imgData = Buffer.from(position.bild_base64.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-          const imgY = doc.y;
-          doc.image(imgData, 50, imgY, { width: 70, height: 70, fit: [70, 70] });
-          imageInserted = true;
-          doc.y = imgY;
-        } catch (imgErr) {
-          // Bild-Fehler ignorieren
+          // Bild-Fehler ignorieren — PDF wird ohne Bild generiert
         }
       }
 
