@@ -59,6 +59,14 @@ export default function TrainerPersonal() {
   const [trainingInfo, setTrainingInfo]   = useState(null);
   const [trainingLoading, setTrainingLoading] = useState(false);
 
+  // Zugänge-Tab State
+  const EMPTY_ZUGANG = { email: '', username: '', passwort: '' };
+  const [zugaenge, setZugaenge]           = useState({ checkin: EMPTY_ZUGANG, dojo: EMPTY_ZUGANG, trainer: EMPTY_ZUGANG });
+  const [zugEdit, setZugEdit]             = useState({ checkin: false, dojo: false, trainer: false });
+  const [zugSaving, setZugSaving]         = useState({});
+  const [zugVisible, setZugVisible]       = useState({});
+  const [zugLoading, setZugLoading]       = useState(false);
+
   // Dokument-Generierung
   const [dokTyp, setDokTyp]     = useState('vereinbarung');
   const [dokParams, setDokParams] = useState({
@@ -141,6 +149,20 @@ export default function TrainerPersonal() {
     }
   }, []);
 
+  const ladeZugaenge = useCallback(async (id) => {
+    setZugLoading(true);
+    try {
+      const res = await axios.get(`/trainer/${id}/zugaenge`);
+      const EMPTY = { email: '', username: '', passwort: '' };
+      setZugaenge({
+        checkin: { ...EMPTY, ...res.data.checkin },
+        dojo:    { ...EMPTY, ...res.data.dojo    },
+        trainer: { ...EMPTY, ...res.data.trainer },
+      });
+    } catch { /* stille Fehler */ }
+    finally { setZugLoading(false); }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'verguetung' && selected?.trainer_id) {
       ladeVerguetung(selected.trainer_id, vergMonat, vergJahr);
@@ -148,7 +170,10 @@ export default function TrainerPersonal() {
     if (activeTab === 'training' && selected?.trainer_id) {
       ladeTrainingInfo(selected.trainer_id);
     }
-  }, [activeTab, selected?.trainer_id, vergMonat, vergJahr, ladeVerguetung, ladeTrainingInfo]);
+    if (activeTab === 'zugaenge' && selected?.trainer_id) {
+      ladeZugaenge(selected.trainer_id);
+    }
+  }, [activeTab, selected?.trainer_id, vergMonat, vergJahr, ladeVerguetung, ladeTrainingInfo, ladeZugaenge]);
 
   // Speichern
   const handleSave = async () => {
@@ -345,6 +370,7 @@ export default function TrainerPersonal() {
                 { id: 'verguetung', label: 'Vergütung' },
                 { id: 'dokumente', label: `Dokumente (${selected.dokumente?.length || 0})` },
                 { id: 'training', label: 'Training' },
+                { id: 'zugaenge', label: '🔑 Zugänge' },
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -883,6 +909,113 @@ export default function TrainerPersonal() {
                 )}
               </div>
             )}
+            {/* ── TAB: Zugänge ─────────────────────────────────── */}
+            {activeTab === 'zugaenge' && (
+              <div className="tp-tab-content">
+                <h3 className="tp-section-title" style={{ marginBottom: '1.25rem' }}>🔑 App-Zugänge</h3>
+                {zugLoading ? (
+                  <div className="tp-loading">Lade Zugänge…</div>
+                ) : (
+                  [
+                    { key: 'checkin', label: 'Check-in App',  url: 'checkin.tda-intl.org',  hint: null },
+                    { key: 'dojo',    label: 'Dojo Software', url: 'dojo.tda-intl.org',     hint: null },
+                    { key: 'trainer', label: 'Trainer App',   url: 'trainer.tda-intl.org',  hint: 'Der Benutzername wird beim Speichern automatisch für den Login aktiviert.' },
+                  ].map(({ key, label, url, hint }) => {
+                    const z = zugaenge[key];
+                    const editing = zugEdit[key];
+                    return (
+                      <div key={key} className="tp-training-block">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                          <h4 className="tp-training-block-title" style={{ margin: 0 }}>{label}</h4>
+                          <code style={{ fontSize: '0.72rem', opacity: 0.5 }}>{url}</code>
+                        </div>
+
+                        {editing ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                              <div className="tp-field">
+                                <label className="tp-field-label">E-Mail</label>
+                                <input className="tp-input" type="email" value={z.email || ''}
+                                  onChange={e => setZugaenge(p => ({ ...p, [key]: { ...p[key], email: e.target.value } }))} />
+                              </div>
+                              <div className="tp-field">
+                                <label className="tp-field-label">Benutzername</label>
+                                <input className="tp-input" type="text" value={z.username || ''}
+                                  onChange={e => setZugaenge(p => ({ ...p, [key]: { ...p[key], username: e.target.value } }))} />
+                              </div>
+                            </div>
+                            <div className="tp-field">
+                              <label className="tp-field-label">Passwort</label>
+                              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                <input className="tp-input" style={{ flex: 1 }}
+                                  type={zugVisible[key] ? 'text' : 'password'}
+                                  value={z.passwort || ''}
+                                  onChange={e => setZugaenge(p => ({ ...p, [key]: { ...p[key], passwort: e.target.value } }))} />
+                                <button className="tp-btn tp-btn--secondary tp-btn--sm"
+                                  onClick={() => setZugVisible(p => ({ ...p, [key]: !p[key] }))}>
+                                  {zugVisible[key] ? '🙈' : '👁'}
+                                </button>
+                              </div>
+                            </div>
+                            {hint && (
+                              <p className="tp-hint" style={{ marginTop: '0.25rem', marginBottom: '0.25rem' }}>ℹ️ {hint}</p>
+                            )}
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                              <button className="tp-btn tp-btn--primary tp-btn--sm"
+                                disabled={zugSaving[key]}
+                                onClick={async () => {
+                                  setZugSaving(p => ({ ...p, [key]: true }));
+                                  try {
+                                    await axios.put(`/trainer/${selected.trainer_id}/zugaenge`, { app_type: key, ...z });
+                                    setZugEdit(p => ({ ...p, [key]: false }));
+                                    setMsg('Zugangsdaten gespeichert.');
+                                  } catch (err) {
+                                    setMsg('Fehler: ' + (err.response?.data?.error || err.message));
+                                  } finally {
+                                    setZugSaving(p => ({ ...p, [key]: false }));
+                                  }
+                                }}>
+                                {zugSaving[key] ? 'Speichern…' : 'Speichern'}
+                              </button>
+                              <button className="tp-btn tp-btn--secondary tp-btn--sm"
+                                onClick={() => { setZugEdit(p => ({ ...p, [key]: false })); ladeZugaenge(selected.trainer_id); }}>
+                                Abbrechen
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.35rem 1.5rem', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
+                              <div><span style={{ opacity: 0.5, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>E-Mail</span><br />{z.email || <span style={{ opacity: 0.4 }}>—</span>}</div>
+                              <div><span style={{ opacity: 0.5, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Benutzername</span><br />{z.username || <span style={{ opacity: 0.4 }}>—</span>}</div>
+                              <div style={{ gridColumn: '1/-1' }}>
+                                <span style={{ opacity: 0.5, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Passwort</span><br />
+                                {z.passwort
+                                  ? (zugVisible[key]
+                                    ? <span style={{ fontFamily: 'monospace' }}>{z.passwort}</span>
+                                    : <span style={{ letterSpacing: '0.15em' }}>{'•'.repeat(Math.min(z.passwort.length, 12))}</span>)
+                                  : <span style={{ opacity: 0.4 }}>—</span>}
+                                {z.passwort && (
+                                  <button className="tp-btn tp-btn--secondary tp-btn--sm" style={{ marginLeft: '0.5rem' }}
+                                    onClick={() => setZugVisible(p => ({ ...p, [key]: !p[key] }))}>
+                                    {zugVisible[key] ? '🙈' : '👁'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            <button className="tp-btn tp-btn--secondary tp-btn--sm"
+                              onClick={() => setZugEdit(p => ({ ...p, [key]: true }))}>
+                              Bearbeiten
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+
           </>
         )}
       </main>

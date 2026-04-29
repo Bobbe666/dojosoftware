@@ -765,13 +765,28 @@ router.put('/:id/zugaenge', async (req, res) => {
   if (!['checkin', 'dojo', 'trainer'].includes(app_type)) {
     return res.status(400).json({ error: 'Ungültiger app_type' });
   }
+  const pool = db.promise();
   try {
-    await db.promise().query(
+    await pool.query(
       `INSERT INTO trainer_zugaenge (trainer_id, dojo_id, app_type, email, username, passwort)
        VALUES (?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE email = VALUES(email), username = VALUES(username), passwort = VALUES(passwort)`,
       [id, dojoId || null, app_type, email || null, username || null, passwort || null]
     );
+
+    // Wenn Trainer-App: username in admin_users synchronisieren (über Email-Verknüpfung)
+    if (app_type === 'trainer' && username) {
+      const [trainerRows] = await pool.query(
+        'SELECT email FROM trainer WHERE trainer_id = ? LIMIT 1', [id]
+      );
+      if (trainerRows.length > 0 && trainerRows[0].email) {
+        await pool.query(
+          'UPDATE admin_users SET username = ? WHERE email = ?',
+          [username, trainerRows[0].email]
+        );
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'Datenbankfehler' });
