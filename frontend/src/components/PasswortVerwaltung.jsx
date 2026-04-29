@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Key, Search, RefreshCw, Eye, EyeOff, CheckCircle, AlertCircle, Users, Building2,
-  Shield, UserPlus, Zap, RotateCcw, Clock, LockOpen, Lock, User, Save, AlertTriangle } from 'lucide-react';
+import { Key, Search, RefreshCw, Eye, EyeOff, CheckCircle, AlertCircle, Users,
+  Shield, UserPlus, Zap, RotateCcw, Clock, LockOpen, Lock, User, Save, AlertTriangle, Plus } from 'lucide-react';
 import config from '../config/config.js';
 import { getAuthToken } from '../utils/fetchWithAuth';
 import { useDojoContext } from '../context/DojoContext';
@@ -39,7 +39,7 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [resetting, setResetting] = useState(false);
 
-  // Create Account Modal
+  // Create Dojo-Member Account Modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [createPassword, setCreatePassword] = useState('');
@@ -47,9 +47,14 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
   const [creating, setCreating] = useState(false);
   const [createdUsername, setCreatedUsername] = useState('');
 
+  // Create Software Account Modal
+  const [showSoftwareCreateModal, setShowSoftwareCreateModal] = useState(false);
+  const [softwareForm, setSoftwareForm] = useState({ username: '', email: '', vorname: '', nachname: '', rolle: 'trainer', password: '' });
+  const [showSoftwarePassword, setShowSoftwarePassword] = useState(false);
+  const [creatingSoftware, setCreatingSoftware] = useState(false);
+
   const allTabs = [
-    { id: 'software', label: 'Software-Konten', icon: Shield, description: 'Admin-Konten der DojoSoftware' },
-    { id: 'verband', label: 'Verband', icon: Building2, description: 'TDA Verbandsmitglieder' },
+    { id: 'software', label: 'Admin & App Konten', icon: Shield, description: 'Admin- und App-Zugänge (Dojosoftware, Trainer-App, Check-in)' },
     { id: 'dojo', label: 'Dojo-Mitglieder', icon: Users, description: 'Mitglieder mit Login' }
   ];
   const tabs = dojoOnly ? allTabs.filter(t => t.id === 'dojo') : allTabs;
@@ -131,6 +136,41 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
       setMessage({ text: err.message, type: 'error' });
     } finally {
       setProfileSaving(false);
+    }
+  };
+
+  // ── Software-Konto anlegen ───────────────────────────────────────
+  const handleCreateSoftwareAccount = async () => {
+    const { username, password, rolle } = softwareForm;
+    if (!username || username.length < 3) {
+      setMessage({ text: 'Benutzername muss mindestens 3 Zeichen haben', type: 'error' });
+      return;
+    }
+    if (!password || password.length < 8) {
+      setMessage({ text: 'Passwort muss mindestens 8 Zeichen haben', type: 'error' });
+      return;
+    }
+    if (!rolle) {
+      setMessage({ text: 'Bitte eine Rolle auswählen', type: 'error' });
+      return;
+    }
+    setCreatingSoftware(true);
+    try {
+      const r = await fetch(`${config.apiBaseUrl}/admins/password-management/software/create`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(softwareForm)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Fehler beim Anlegen');
+      setMessage({ text: `Konto "${username}" erfolgreich angelegt`, type: 'success' });
+      setShowSoftwareCreateModal(false);
+      setSoftwareForm({ username: '', email: '', vorname: '', nachname: '', rolle: 'trainer', password: '' });
+      loadUsers();
+    } catch (err) {
+      setMessage({ text: err.message, type: 'error' });
+    } finally {
+      setCreatingSoftware(false);
     }
   };
 
@@ -285,7 +325,6 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
 
   const getUserDisplayName = (user) => {
     if (!user) return '—';
-    if (activeTab === 'verband') return user.benutzername || user.name || '—';
     return user.username || '—';
   };
 
@@ -315,12 +354,6 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
       users.forEach(u => { const r = u.rolle || 'unbekannt'; rollen[r] = (rollen[r] || 0) + 1; });
       return { type: 'software', total, gesperrt, bcryptCount, rollen };
     }
-    if (activeTab === 'verband') {
-      const total = users.length;
-      const ohnePasswort = users.filter(u => !u.has_password).length;
-      const aktiv = users.filter(u => (u.status || '').toLowerCase() === 'aktiv').length;
-      return { type: 'verband', total, ohnePasswort, aktiv, inaktiv: total - aktiv };
-    }
     return {};
   };
   const stats = getStats();
@@ -330,9 +363,6 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
     if (!s) return true;
     if (activeTab === 'software') {
       return ['username','email','vorname','nachname','rolle'].some(k => (user[k]||'').toLowerCase().includes(s));
-    }
-    if (activeTab === 'verband') {
-      return ['benutzername','email','name','typ'].some(k => (user[k]||'').toLowerCase().includes(s));
     }
     return ['username','email','vorname','nachname','dojo_name'].some(k => (user[k]||'').toLowerCase().includes(s));
   });
@@ -454,12 +484,10 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
             {stats.rollen && Object.entries(stats.rollen).map(([rolle, count]) => (
               <div className="pw-stat pw-stat-role" key={rolle}><span className="pw-stat-value">{count}</span><span className="pw-stat-label">{rolle}</span></div>
             ))}
-          </>)}
-          {activeTab === 'verband' && (<>
-            <div className="pw-stat"><span className="pw-stat-value">{stats.total}</span><span className="pw-stat-label">Gesamt</span></div>
-            <div className="pw-stat pw-stat-success"><span className="pw-stat-value">{stats.aktiv}</span><span className="pw-stat-label">Aktiv</span></div>
-            {stats.inaktiv > 0 && <div className="pw-stat pw-stat-warn"><span className="pw-stat-value">{stats.inaktiv}</span><span className="pw-stat-label">Inaktiv</span></div>}
-            {stats.ohnePasswort > 0 && <div className="pw-stat pw-stat-info"><span className="pw-stat-value">{stats.ohnePasswort}</span><span className="pw-stat-label">Ohne PW</span></div>}
+            <button className="btn-bulk-create" style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)' }}
+              onClick={() => { setSoftwareForm({ username: '', email: '', vorname: '', nachname: '', rolle: 'trainer', password: '' }); setShowSoftwareCreateModal(true); }}>
+              <Plus size={16} /> Neues Konto
+            </button>
           </>)}
         </div>
       )}
@@ -518,8 +546,6 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
             <thead>
               {activeTab === 'software' ? (
                 <tr><th>Benutzer</th><th>Name</th><th>E-Mail</th><th>Rolle</th><th><Clock size={14}/> Letzter Login</th><th>Sicherheit</th><th>Status</th><th>Aktion</th></tr>
-              ) : activeTab === 'verband' ? (
-                <tr><th>Benutzername</th><th>Name</th><th>E-Mail</th><th>Typ</th><th>Status</th><th>Passwort</th><th>Aktion</th></tr>
               ) : (
                 <tr><th>Benutzer</th><th>E-Mail</th><th>Dojo</th><th><Clock size={14}/> Letzter Login</th><th>Passwort</th><th>Aktion</th></tr>
               )}
@@ -555,19 +581,6 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
                           <Key size={14} /> PW setzen
                         </button>
                       </td>
-                    </tr>
-                  );
-                }
-                if (activeTab === 'verband') {
-                  return (
-                    <tr key={user.id}>
-                      <td className="user-name"><strong>{user.benutzername || '—'}</strong></td>
-                      <td>{user.name || '—'}</td>
-                      <td>{user.email || '—'}</td>
-                      <td>{user.typ || '—'}</td>
-                      <td><span className={`badge badge-${(user.status||'').toLowerCase() === 'aktiv' ? 'success' : 'warning'}`}>{user.status||'—'}</span></td>
-                      <td><span className={`badge badge-${user.has_password ? 'success' : 'warning'}`}>{user.has_password ? 'Ja' : 'Nein'}</span></td>
-                      <td><button className="btn-reset" onClick={() => handleResetClick(user)}><Key size={14} /> PW setzen</button></td>
                     </tr>
                   );
                 }
@@ -641,6 +654,82 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
               <button className="btn-cancel" onClick={() => setShowResetModal(false)}>Abbrechen</button>
               <button className="btn-confirm" onClick={handleResetPassword} disabled={resetting || !newPassword || newPassword.length < 8}>
                 {resetting ? 'Wird gespeichert...' : 'Passwort setzen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Software-Konto anlegen Modal ── */}
+      {showSoftwareCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowSoftwareCreateModal(false)}>
+          <div className="modal" style={{ maxWidth: 520 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2><Plus size={22} /> Admin / App Konto anlegen</h2>
+              <button className="modal-close" onClick={() => setShowSoftwareCreateModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <div className="pv-form-grid">
+                <div className="pv-form-group">
+                  <label>Benutzername *</label>
+                  <input value={softwareForm.username} onChange={e => setSoftwareForm(p => ({ ...p, username: e.target.value }))}
+                    placeholder="z.B. trainer.max" />
+                </div>
+                <div className="pv-form-group">
+                  <label>Rolle *</label>
+                  <select value={softwareForm.rolle} onChange={e => setSoftwareForm(p => ({ ...p, rolle: e.target.value }))}
+                    style={{ padding: '9px 12px', background: 'var(--surface-2)', border: '1px solid rgba(var(--gold-rgb),0.2)', borderRadius: 'var(--comp-radius-sm)', color: 'var(--text-1)', fontSize: 14 }}>
+                    <option value="trainer">Trainer</option>
+                    <option value="checkin">Check-in</option>
+                    <option value="eingeschraenkt">Eingeschränkt</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super-Admin</option>
+                  </select>
+                </div>
+                <div className="pv-form-group">
+                  <label>Vorname</label>
+                  <input value={softwareForm.vorname} onChange={e => setSoftwareForm(p => ({ ...p, vorname: e.target.value }))} />
+                </div>
+                <div className="pv-form-group">
+                  <label>Nachname</label>
+                  <input value={softwareForm.nachname} onChange={e => setSoftwareForm(p => ({ ...p, nachname: e.target.value }))} />
+                </div>
+                <div className="pv-form-group" style={{ gridColumn: '1 / -1' }}>
+                  <label>E-Mail (optional)</label>
+                  <input type="email" value={softwareForm.email} onChange={e => setSoftwareForm(p => ({ ...p, email: e.target.value }))}
+                    placeholder="Kann leer bleiben oder geteilt werden" />
+                </div>
+              </div>
+              <div className="password-input-group u-mt-1">
+                <label>Passwort * <span className="pv-min-hint">(min. 8 Zeichen)</span></label>
+                <div className="password-input-wrapper">
+                  <input type={showSoftwarePassword ? 'text' : 'password'} value={softwareForm.password}
+                    onChange={e => setSoftwareForm(p => ({ ...p, password: e.target.value }))}
+                    placeholder="Mindestens 8 Zeichen" />
+                  <button type="button" className="toggle-password" onClick={() => setShowSoftwarePassword(v => !v)}>
+                    {showSoftwarePassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+                {softwareForm.password && (() => {
+                  const s = getPasswordStrength(softwareForm.password);
+                  return (
+                    <div className="pw-strength-bar">
+                      <div className="pw-strength-fill" style={{ width: `${(s.level/5)*100}%`, background: s.color }} />
+                      <span style={{ color: s.color }}>{s.label}</span>
+                    </div>
+                  );
+                })()}
+                <button type="button" className="btn-generate"
+                  onClick={() => generatePassword(pw => setSoftwareForm(p => ({ ...p, password: pw })), setShowSoftwarePassword)}>
+                  Sicheres Passwort generieren
+                </button>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={() => setShowSoftwareCreateModal(false)}>Abbrechen</button>
+              <button className="btn-confirm" onClick={handleCreateSoftwareAccount}
+                disabled={creatingSoftware || !softwareForm.username || softwareForm.username.length < 3 || !softwareForm.password || softwareForm.password.length < 8}>
+                {creatingSoftware ? 'Wird angelegt...' : 'Konto anlegen'}
               </button>
             </div>
           </div>

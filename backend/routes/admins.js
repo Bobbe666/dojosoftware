@@ -877,6 +877,46 @@ router.post('/password-management/dojo/create', async (req, res) => {
   }
 });
 
+// POST Neues Software-Konto anlegen
+router.post('/password-management/software/create', async (req, res) => {
+  try {
+    const { username, email, vorname, nachname, rolle, password } = req.body;
+    const requesterRole = req.user?.rolle || req.user?.role;
+    const isSuperAdmin = requesterRole === 'super_admin' || (requesterRole === 'admin' && !req.user?.dojo_id);
+
+    if (!['admin', 'super_admin'].includes(requesterRole) && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Keine Berechtigung' });
+    }
+    if (!username || username.length < 3) return res.status(400).json({ error: 'Benutzername muss mindestens 3 Zeichen haben' });
+    if (!password || password.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben' });
+    if (!rolle) return res.status(400).json({ error: 'Rolle fehlt' });
+
+    // Nur Super-Admin darf super_admin anlegen
+    if (rolle === 'super_admin' && !isSuperAdmin) {
+      return res.status(403).json({ error: 'Nur Super-Admins können Super-Admin-Konten anlegen' });
+    }
+
+    // Benutzername-Kollision prüfen (Email darf geteilt werden)
+    const [[existing]] = await db.promise().query('SELECT id FROM admin_users WHERE username = ?', [username]);
+    if (existing) return res.status(409).json({ error: 'Benutzername bereits vergeben' });
+
+    const { hashPassword } = require('../services/passwordService');
+    const hash = await hashPassword(password);
+
+    const berechtigungen = getRollenBerechtigungen(rolle);
+    const [result] = await db.promise().query(
+      `INSERT INTO admin_users (username, email, vorname, nachname, rolle, password, password_algorithm, berechtigungen, aktiv)
+       VALUES (?, ?, ?, ?, ?, ?, 'argon2id', ?, 1)`,
+      [username, email || null, vorname || null, nachname || null, rolle, hash, JSON.stringify(berechtigungen)]
+    );
+
+    res.status(201).json({ success: true, id: result.insertId, username, rolle });
+  } catch (error) {
+    console.error('Fehler beim Anlegen des Software-Kontos:', error);
+    res.status(500).json({ error: 'Fehler beim Anlegen' });
+  }
+});
+
 // POST Passwort zurücksetzen - Software
 router.post('/password-management/software/:id/reset', async (req, res) => {
   try {
