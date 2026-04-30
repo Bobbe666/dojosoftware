@@ -61,15 +61,15 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
+// Pre-compiled regex für Compression-Filter (einmal, nicht per Request)
+const BINARY_EXT_RE = /\.(zip|gz|pdf|jpg|jpeg|png|gif|webp)$/i;
+
 // PERFORMANCE: Gzip Compression für alle Responses (außer Binärdateien)
 app.use(compression({
   threshold: 1024,  // Nur Responses > 1KB komprimieren
   level: 6,         // Gzip Level (1-9, 6 ist guter Kompromiss)
   filter: (req, res) => {
-    // Keine Kompression für bereits komprimierte Dateien
-    if (req.path.match(/\.(zip|gz|pdf|jpg|jpeg|png|gif|webp)$/i)) {
-      return false;
-    }
+    if (BINARY_EXT_RE.test(req.path)) return false;
     return compression.filter(req, res);
   }
 }));

@@ -651,36 +651,50 @@ router.get('/stil-statistiken/:mitglied_id', async (req, res) => {
       return Math.floor((today - first) / 86400000 / 7) + 1;
     }
 
-    const result = [];
-    for (const stil of stile) {
-      const [schedule] = await pool.query(
-        `SELECT sp.tag, COUNT(DISTINCT sp.stundenplan_id) AS sessions
+    const stilNamen = stile.map(s => s.stil_name);
+
+    // Beide Batch-Queries parallel ausführen
+    const [[scheduleRows], [anwesenheitRows]] = await Promise.all([
+      pool.query(
+        `SELECT k.stil, sp.tag, COUNT(DISTINCT sp.stundenplan_id) AS sessions
          FROM stundenplan sp
          JOIN kurse k ON sp.kurs_id = k.kurs_id
-         WHERE k.dojo_id = ? AND k.stil = ?
-         GROUP BY sp.tag`,
-        [dojoId, stil.stil_name]
-      );
-
-      let moeglich = 0;
-      for (const row of schedule) {
-        moeglich += countOccurrences(row.tag, eintrittsdatum) * row.sessions;
-      }
-
-      const [[{ anwesend }]] = await pool.query(
-        `SELECT COUNT(*) AS anwesend
+         WHERE k.dojo_id = ? AND k.stil IN (?)
+         GROUP BY k.stil, sp.tag`,
+        [dojoId, stilNamen]
+      ),
+      pool.query(
+        `SELECT k.stil, COUNT(*) AS anwesend
          FROM anwesenheit a
          JOIN stundenplan sp ON a.stundenplan_id = sp.stundenplan_id
          JOIN kurse k ON sp.kurs_id = k.kurs_id
-         WHERE a.mitglied_id = ? AND k.dojo_id = ? AND k.stil = ?
+         WHERE a.mitglied_id = ? AND k.dojo_id = ? AND k.stil IN (?)
            AND a.anwesend = 1
-           ${eintrittsdatum ? 'AND a.datum >= ?' : ''}`,
-        eintrittsdatum ? [mitglied_id, dojoId, stil.stil_name, eintrittsdatum] : [mitglied_id, dojoId, stil.stil_name]
-      );
+           ${eintrittsdatum ? 'AND a.datum >= ?' : ''}
+         GROUP BY k.stil`,
+        eintrittsdatum ? [mitglied_id, dojoId, stilNamen, eintrittsdatum] : [mitglied_id, dojoId, stilNamen]
+      )
+    ]);
 
-      const quote = moeglich > 0 ? Math.round((anwesend / moeglich) * 100) : null;
-      result.push({ stil_id: stil.stil_id, stil_name: stil.stil_name, anwesend, moeglich, quote, eintrittsdatum });
+    // In Maps umwandeln für O(1)-Zugriff
+    const scheduleByStil = {};
+    for (const row of scheduleRows) {
+      if (!scheduleByStil[row.stil]) scheduleByStil[row.stil] = [];
+      scheduleByStil[row.stil].push(row);
     }
+    const anwesenheitByStil = {};
+    for (const row of anwesenheitRows) {
+      anwesenheitByStil[row.stil] = row.anwesend;
+    }
+
+    const result = stile.map(stil => {
+      const schedule = scheduleByStil[stil.stil_name] || [];
+      const moeglich = schedule.reduce((sum, row) =>
+        sum + countOccurrences(row.tag, eintrittsdatum) * row.sessions, 0);
+      const anwesend = anwesenheitByStil[stil.stil_name] || 0;
+      const quote = moeglich > 0 ? Math.round((anwesend / moeglich) * 100) : null;
+      return { stil_id: stil.stil_id, stil_name: stil.stil_name, anwesend, moeglich, quote, eintrittsdatum };
+    });
 
     res.json(result);
   } catch (err) {

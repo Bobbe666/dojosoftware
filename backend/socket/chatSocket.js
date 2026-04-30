@@ -76,9 +76,8 @@ async function getSenderName(sender_id, sender_type) {
  */
 async function triggerOfflinePush(io, room_id, message, sender_id, sender_type) {
   try {
-    // Alle Raum-Mitglieder außer Absender laden
     const [members] = await pool.query(
-      `SELECT crm.member_id, crm.member_type, crm.muted
+      `SELECT crm.member_id, crm.member_type
        FROM chat_room_members crm
        WHERE crm.room_id = ?
          AND NOT (crm.member_id = ? AND crm.member_type = ?)
@@ -86,79 +85,93 @@ async function triggerOfflinePush(io, room_id, message, sender_id, sender_type) 
          AND (crm.archived = 0 OR crm.archived IS NULL)`,
       [room_id, sender_id, sender_type]
     );
+    if (!members.length) return;
 
-    for (const member of members) {
-      // Prüfen ob Empfänger via Socket verbunden ist
-      const socketRoom = `user:${member.member_id}:${member.member_type}`;
-      const sockets = await io.in(socketRoom).fetchSockets();
-      if (sockets.length > 0) continue; // Online → kein Push nötig
+    // Online-Status aller Mitglieder parallel prüfen
+    const onlineFlags = await Promise.all(
+      members.map(m =>
+        io.in(`user:${m.member_id}:${m.member_type}`).fetchSockets().then(s => s.length > 0)
+      )
+    );
+    const offlineMembers = members.filter((_, i) => !onlineFlags[i]);
+    if (!offlineMembers.length) return;
 
-      // Push-Subscriptions des Empfängers laden
-      // push_subscriptions.user_id kann mitglied_id oder user_id sein (je nach Typ)
-      const [subscriptions] = await pool.query(
-        `SELECT endpoint, p256dh_key, auth_key
+    const offlineIds = [...new Set(offlineMembers.map(m => m.member_id))];
+
+    // Subscriptions + Unread-Counts in je einer Batch-Query parallel holen
+    const [[allSubs], [unreadRows]] = await Promise.all([
+      pool.query(
+        `SELECT user_id, endpoint, p256dh_key, auth_key
          FROM push_subscriptions
-         WHERE user_id = ? AND is_active = TRUE`,
-        [member.member_id]
-      );
-
-      // Ungelesene Nachrichten des Empfängers zählen für Badge
-      let unreadCount = 0;
-      try {
-        const [unreadRows] = await pool.query(
-          `SELECT COUNT(*) as cnt FROM chat_messages cm
-           WHERE cm.room_id IN (
-             SELECT room_id FROM chat_room_members
-             WHERE member_id = ? AND member_type = ?
+         WHERE user_id IN (?) AND is_active = TRUE`,
+        [offlineIds]
+      ),
+      pool.query(
+        `SELECT crm2.member_id, crm2.member_type, COUNT(*) as cnt
+         FROM chat_messages cm
+         JOIN chat_room_members crm2 ON crm2.room_id = cm.room_id
+           AND crm2.member_id IN (?)
+         WHERE cm.deleted_at IS NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM chat_message_reads cmr
+             WHERE cmr.message_id = cm.id
+               AND cmr.member_id = crm2.member_id
+               AND cmr.member_type = crm2.member_type
            )
-           AND cm.deleted_at IS NULL
-           AND cm.id NOT IN (
-             SELECT message_id FROM chat_message_reads
-             WHERE member_id = ? AND member_type = ?
-           )`,
-          [member.member_id, member.member_type, member.member_id, member.member_type]
+         GROUP BY crm2.member_id, crm2.member_type`,
+        [offlineIds]
+      ).catch(() => [[]])
+    ]);
+
+    // In Maps umwandeln für O(1)-Zugriff
+    const subsByUser = {};
+    for (const sub of allSubs) {
+      if (!subsByUser[sub.user_id]) subsByUser[sub.user_id] = [];
+      subsByUser[sub.user_id].push(sub);
+    }
+    const unreadMap = {};
+    for (const row of unreadRows) {
+      unreadMap[`${row.member_id}:${row.member_type}`] = row.cnt || 1;
+    }
+
+    // Alle Push-Sends parallel ausführen
+    const expiredEndpoints = [];
+    await Promise.all(
+      offlineMembers.flatMap(member => {
+        const subs = subsByUser[member.member_id] || [];
+        if (!subs.length) return [];
+        const unreadCount = unreadMap[`${member.member_id}:${member.member_type}`] || 1;
+        const payload = JSON.stringify({
+          title: message.sender_name || 'Neue Nachricht',
+          body: message.content.length > 80
+            ? message.content.substring(0, 80) + '…'
+            : message.content,
+          icon: '/icons/icon-192x192.png',
+          badge: '/icons/badge-72x72.png',
+          tag: `chat-room-${room_id}`,
+          requireInteraction: false,
+          unreadCount,
+          data: { url: `/member/chat?room=${room_id}`, room_id }
+        });
+        return subs.map(sub =>
+          webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh_key, auth: sub.auth_key } },
+            payload
+          ).catch(err => {
+            if (err.statusCode === 410 || err.statusCode === 404) expiredEndpoints.push(sub.endpoint);
+            else logger.warn('Push-Senden fehlgeschlagen', { error: err.message });
+          })
         );
-        unreadCount = unreadRows[0]?.cnt || 1;
-      } catch (e) { unreadCount = 1; }
+      })
+    );
 
-      const pushPayload = JSON.stringify({
-        title: message.sender_name || 'Neue Nachricht',
-        body: message.content.length > 80
-          ? message.content.substring(0, 80) + '…'
-          : message.content,
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
-        tag: `chat-room-${room_id}`,
-        requireInteraction: false,
-        unreadCount,
-        data: {
-          url: `/member/chat?room=${room_id}`,
-          room_id
-        }
-      });
-
-      for (const sub of subscriptions) {
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: sub.endpoint,
-              keys: { p256dh: sub.p256dh_key, auth: sub.auth_key }
-            },
-            pushPayload
-          );
-        } catch (pushError) {
-          // Subscription abgelaufen → deaktivieren
-          if (pushError.statusCode === 410 || pushError.statusCode === 404) {
-            await pool.query(
-              `UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint = ?`,
-              [sub.endpoint]
-            );
-            logger.info('Push-Subscription deaktiviert (abgelaufen)', { endpoint: sub.endpoint });
-          } else {
-            logger.warn('Push-Senden fehlgeschlagen', { error: pushError.message });
-          }
-        }
-      }
+    // Abgelaufene Subscriptions in einer Batch-Query deaktivieren
+    if (expiredEndpoints.length) {
+      await pool.query(
+        `UPDATE push_subscriptions SET is_active = FALSE WHERE endpoint IN (?)`,
+        [expiredEndpoints]
+      );
+      logger.info(`${expiredEndpoints.length} Push-Subscriptions deaktiviert`);
     }
   } catch (error) {
     logger.error('triggerOfflinePush Fehler', { error: error.message });

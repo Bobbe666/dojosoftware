@@ -88,20 +88,20 @@ function MitgliedVersandhistorie({ mitgliedId, activeDojo }) {
 
 // ── Verkäufe-Summary-Card für Finanzübersicht ─────────────────────────────────
 function MitgliedVerkaufsCard({ mitgliedId, activeDojo }) {
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    if (!mitgliedId) return;
-    const dojoParam = activeDojo?.id ? `&dojo_id=${activeDojo.id}` : '';
-    axios.get(`/verkaeufe?mitglied_id=${mitgliedId}&limit=100${dojoParam}`)
-      .then(res => {
-        const list = Array.isArray(res.data) ? res.data : (res.data.data || []);
-        const total = list.reduce((s, v) => s + (v.brutto_gesamt_cent || 0), 0);
-        const offen = list.filter(v => v.zahlungsstatus === 'offen').reduce((s, v) => s + (v.brutto_gesamt_cent || 0), 0);
-        setData({ count: list.length, total, offen });
-      })
-      .catch(() => {});
-  }, [mitgliedId, activeDojo]);
+  const dojoId = activeDojo?.id || null;
+  const { data: list = [] } = useQuery({
+    queryKey: ['verkaeufe', mitgliedId, dojoId],
+    queryFn: async () => {
+      const dojoParam = dojoId ? `&dojo_id=${dojoId}` : '';
+      const res = await axios.get(`/verkaeufe?mitglied_id=${mitgliedId}&limit=100${dojoParam}`);
+      return Array.isArray(res.data) ? res.data : (res.data.data || res.data.verkaeufe || []);
+    },
+    enabled: !!mitgliedId,
+    staleTime: 5 * 60 * 1000,
+  });
+  const total = list.reduce((s, v) => s + (v.brutto_gesamt_cent || 0), 0);
+  const offen = list.filter(v => v.zahlungsstatus === 'offen').reduce((s, v) => s + (v.brutto_gesamt_cent || 0), 0);
+  const data = list.length > 0 ? { count: list.length, total, offen } : null;
 
   if (!data || data.count === 0) return null;
 
@@ -126,20 +126,20 @@ function MitgliedVerkaufsCard({ mitgliedId, activeDojo }) {
 
 // ── Einkäufe-Tab im Mitgliederprofil ──────────────────────────────────────────
 function MitgliedEinkäufeTab({ mitgliedId, activeDojo }) {
-  const [verkaeufe, setVerkaeufe] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dojoId = activeDojo?.id || null;
   const [expandedId, setExpandedId] = useState(null);
   const [positionen, setPositionen] = useState({});
 
-  useEffect(() => {
-    if (!mitgliedId) return;
-    setLoading(true);
-    const dojoParam = activeDojo?.id ? `&dojo_id=${activeDojo.id}` : '';
-    axios.get(`/verkaeufe?mitglied_id=${mitgliedId}&limit=50${dojoParam}`)
-      .then(res => setVerkaeufe(Array.isArray(res.data) ? res.data : (res.data.data || res.data.verkaeufe || [])))
-      .catch(err => console.error('Einkäufe-Fehler:', err.response?.status, err.response?.data))
-      .finally(() => setLoading(false));
-  }, [mitgliedId, activeDojo]);
+  const { data: verkaeufe = [], isLoading: loading } = useQuery({
+    queryKey: ['verkaeufe', mitgliedId, dojoId],
+    queryFn: async () => {
+      const dojoParam = dojoId ? `&dojo_id=${dojoId}` : '';
+      const res = await axios.get(`/verkaeufe?mitglied_id=${mitgliedId}&limit=100${dojoParam}`);
+      return Array.isArray(res.data) ? res.data : (res.data.data || res.data.verkaeufe || []);
+    },
+    enabled: !!mitgliedId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const toggleExpand = async (verkaufId) => {
     if (expandedId === verkaufId) { setExpandedId(null); return; }

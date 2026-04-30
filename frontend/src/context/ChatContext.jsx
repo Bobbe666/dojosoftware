@@ -116,7 +116,7 @@ export const ChatProvider = ({ children }) => {
   // Initiales Laden des Zählers
   useEffect(() => {
     if (token && user) loadUnreadCount();
-  }, [token, user]);
+  }, [token, user, loadUnreadCount]);
 
   // Popup anzeigen (mit Auto-dismiss)
   const showPopup = useCallback((data) => {

@@ -42,8 +42,7 @@ export default defineConfig({
     },
     // CSS Minify auf esbuild umstellen (unterdrückt die Warnungen)
     cssMinify: 'esbuild',
-    // Chunk Size Warnungslimit erhöhen (da wir bewusst größere Chunks haben)
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 400,
     rollupOptions: {
       output: {
         // Manuelle Chunks für große Libraries
