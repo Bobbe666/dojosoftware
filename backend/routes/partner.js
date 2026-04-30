@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 const db = require('../db');
 
 const pool = db.promise();
@@ -16,6 +17,14 @@ function isSuperAdmin(user) {
 }
 
 function requireSuperAdmin(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ success: false, error: 'Kein Token' });
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return res.status(403).json({ success: false, error: 'Token ungültig' });
+  }
   if (!isSuperAdmin(req.user)) return res.status(403).json({ success: false, error: 'Super-Admin erforderlich' });
   next();
 }
