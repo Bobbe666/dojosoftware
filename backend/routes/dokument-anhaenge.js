@@ -89,7 +89,9 @@ router.delete('/:id', async (req, res) => {
     );
     if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
 
-    const filePath = path.join(__dirname, '..', 'uploads', 'anhaenge', row.dateiname);
+    const uploadDir = path.resolve(path.join(__dirname, '..', 'uploads', 'anhaenge'));
+    const filePath = path.resolve(path.join(uploadDir, row.dateiname));
+    if (!filePath.startsWith(uploadDir + path.sep)) return res.status(400).json({ error: 'Ungültiger Dateipfad' });
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     await pool.query('DELETE FROM vorlage_anhaenge WHERE anhang_id = ?', [req.params.id]);
@@ -111,7 +113,9 @@ router.get('/:id/download', async (req, res) => {
       [req.params.id, dojoId]
     );
     if (!row) return res.status(404).json({ error: 'Nicht gefunden' });
-    const filePath = path.join(__dirname, '..', 'uploads', 'anhaenge', row.dateiname);
+    const uploadDir = path.resolve(path.join(__dirname, '..', 'uploads', 'anhaenge'));
+    const filePath = path.resolve(path.join(uploadDir, row.dateiname));
+    if (!filePath.startsWith(uploadDir + path.sep)) return res.status(400).json({ error: 'Ungültiger Dateipfad' });
     res.download(filePath, row.name + path.extname(row.dateiname));
   } catch (err) {
     res.status(500).json({ error: err.message });

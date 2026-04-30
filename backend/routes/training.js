@@ -10,6 +10,7 @@ const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 const { requireFeature }    = require('../middleware/featureAccess');
 const { getSecureDojoId }   = require('../middleware/tenantSecurity');
 const { verifyPassword }    = require('../services/passwordService');
+const { loginLimiter }      = require('../config/security');
 const logger      = require('../utils/logger');
 
 // ── Multer: Übungsfotos ───────────────────────────────────────────────────────
@@ -45,7 +46,6 @@ function authenticateTrainerToken(req, res, next) {
 
 // ── PUBLIC: Trainer App holt Presets via Token ────────────────────────────────
 router.get('/sync', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
 
   const { token } = req.query;
   if (!token || token.length !== 64) {
@@ -95,8 +95,7 @@ router.get('/sync', async (req, res) => {
 });
 
 // ── PUBLIC: Trainer-App Login ─────────────────────────────────────────────────
-router.post('/trainer-login', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
+router.post('/trainer-login', loginLimiter, async (req, res) => {
 
   const { email, username, password } = req.body;
   const loginField = email || username;
@@ -177,7 +176,6 @@ router.post('/trainer-login', async (req, res) => {
 
 // ── Trainer-App: Persönliche Presets laden ────────────────────────────────────
 router.get('/trainer-presets', authenticateTrainerToken, async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
   const { admin_user_id, dojo_id } = req.trainerUser;
 
   try {
@@ -213,7 +211,6 @@ router.get('/trainer-presets', authenticateTrainerToken, async (req, res) => {
 
 // ── Trainer-App: Persönliche Presets speichern ────────────────────────────────
 router.put('/trainer-presets', authenticateTrainerToken, async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
   const { admin_user_id, dojo_id } = req.trainerUser;
 
   const { presets } = req.body;
@@ -467,11 +464,11 @@ router.put('/exercises/:id', requireFeature('training'), async (req, res) => {
     const { name, description, category, subcategory_id } = req.body;
 
     const [check] = await db.promise().query(
-      'SELECT id FROM exercise_catalog WHERE id = ?',
-      [id]
+      'SELECT id FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
     );
     if (check.length === 0) {
-      return res.status(404).json({ error: 'Übung nicht gefunden' });
+      return res.status(404).json({ error: 'Übung nicht gefunden oder keine Berechtigung' });
     }
 
     const validCategories = ['kampfsport', 'fitness', 'core', 'ausdauer'];
@@ -485,8 +482,8 @@ router.put('/exercises/:id', requireFeature('training'), async (req, res) => {
 
     const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
     await db.promise().query(
-      `UPDATE exercise_catalog SET ${setClause} WHERE id = ?`,
-      [...Object.values(updates), id]
+      `UPDATE exercise_catalog SET ${setClause} WHERE id = ? AND dojo_id = ?`,
+      [...Object.values(updates), id, dojoId]
     );
 
     res.json({ success: true });
@@ -527,13 +524,16 @@ router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseIm
 
     const { id } = req.params;
 
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) { fs.unlink(req.file.path, () => {}); return res.status(400).json({ error: 'Dojo-ID fehlt' }); }
+
     const [check] = await db.promise().query(
-      'SELECT id, image_url FROM exercise_catalog WHERE id = ?',
-      [id]
+      'SELECT id, image_url FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
     );
     if (check.length === 0) {
       fs.unlink(req.file.path, () => {});
-      return res.status(404).json({ error: 'Übung nicht gefunden' });
+      return res.status(404).json({ error: 'Übung nicht gefunden oder keine Berechtigung' });
     }
 
     // Delete old image file if exists
@@ -544,8 +544,8 @@ router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseIm
 
     const imageUrl = `/uploads/exercises/${req.file.filename}`;
     await db.promise().query(
-      'UPDATE exercise_catalog SET image_url = ? WHERE id = ?',
-      [imageUrl, id]
+      'UPDATE exercise_catalog SET image_url = ? WHERE id = ? AND dojo_id = ?',
+      [imageUrl, id, dojoId]
     );
 
     res.json({ image_url: imageUrl });
@@ -559,13 +559,16 @@ router.post('/exercises/:id/image', requireFeature('training'), uploadExerciseIm
 // ── DELETE /api/training/exercises/:id/image ── Bild entfernen ───────────────
 router.delete('/exercises/:id/image', requireFeature('training'), async (req, res) => {
   try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Dojo-ID fehlt' });
+
     const { id } = req.params;
 
     const [check] = await db.promise().query(
-      'SELECT id, image_url FROM exercise_catalog WHERE id = ?',
-      [id]
+      'SELECT id, image_url FROM exercise_catalog WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
     );
-    if (check.length === 0) return res.status(404).json({ error: 'Übung nicht gefunden' });
+    if (check.length === 0) return res.status(404).json({ error: 'Übung nicht gefunden oder keine Berechtigung' });
 
     if (check[0].image_url) {
       const filePath = path.join(__dirname, '..', check[0].image_url);
@@ -573,8 +576,8 @@ router.delete('/exercises/:id/image', requireFeature('training'), async (req, re
     }
 
     await db.promise().query(
-      'UPDATE exercise_catalog SET image_url = NULL WHERE id = ?',
-      [id]
+      'UPDATE exercise_catalog SET image_url = NULL WHERE id = ? AND dojo_id = ?',
+      [id, dojoId]
     );
 
     res.json({ success: true });
