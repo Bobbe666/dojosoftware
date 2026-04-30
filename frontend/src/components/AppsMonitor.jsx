@@ -143,7 +143,7 @@ export default function AppsMonitor() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/admin/apps');
+      const res = await axios.get('/admin/apps');
       if (res.data?.success) {
         setApps(res.data.apps);
         setLastUpdate(new Date());
