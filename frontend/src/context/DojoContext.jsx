@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef, useMemo, useCallback } from 'react';
 import config from '../config/config.js';
 
 const DojoContext = createContext();
@@ -16,6 +16,8 @@ export const DojoProvider = ({ children }) => {
   const [activeDojo, setActiveDojo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // 'current', 'all', 'compare' - Standard: alle Dojos anzeigen
+  const retryCountRef = useRef(0);
+  const retryTimerRef = useRef(null);
 
   // loadDojos MUSS vor dem ersten useEffect deklariert sein (TDZ-Schutz: const in deps-Array)
   const loadDojos = useCallback(async () => {
@@ -104,11 +106,31 @@ export const DojoProvider = ({ children }) => {
 
   // Lade alle Dojos beim Start + nach Login (userLoggedIn Event)
   useEffect(() => {
+    retryCountRef.current = 0;
     loadDojos();
-    const handleUserLoggedIn = () => loadDojos();
+    const handleUserLoggedIn = () => { retryCountRef.current = 0; loadDojos(); };
     window.addEventListener('userLoggedIn', handleUserLoggedIn);
-    return () => window.removeEventListener('userLoggedIn', handleUserLoggedIn);
+    return () => {
+      window.removeEventListener('userLoggedIn', handleUserLoggedIn);
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
   }, [loadDojos]);
+
+  // Retry-Mechanismus: falls dojos leer nach dem Laden, bis zu 3x erneut versuchen
+  useEffect(() => {
+    if (!loading && dojos.length === 0) {
+      const token = localStorage.getItem('dojo_auth_token') || localStorage.getItem('authToken');
+      if (token && retryCountRef.current < 3) {
+        const delay = 4000 * Math.pow(2, retryCountRef.current); // 4s, 8s, 16s
+        console.log(`🔄 DojoContext: Retry #${retryCountRef.current + 1} in ${delay / 1000}s...`);
+        retryTimerRef.current = setTimeout(() => {
+          retryCountRef.current += 1;
+          loadDojos();
+        }, delay);
+        return () => clearTimeout(retryTimerRef.current);
+      }
+    }
+  }, [loading, dojos.length, loadDojos]);
 
   // Setze das aktive Dojo aus LocalStorage oder wähle das erste/Haupt-Dojo
   useEffect(() => {

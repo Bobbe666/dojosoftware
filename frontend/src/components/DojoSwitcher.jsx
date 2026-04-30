@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/DojoSwitcher.css';
 
 const DojoSwitcher = () => {
-  const { dojos, activeDojo, switchDojo, loading, filter, setFilter } = useDojoContext();
+  const { dojos, activeDojo, switchDojo, loading, filter, setFilter, refreshDojos } = useDojoContext();
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,22 +44,16 @@ const DojoSwitcher = () => {
     );
   }
 
-  if (!activeDojo) {
+  if (!activeDojo || !dojos || dojos.length === 0) {
     return (
       <div className="dojo-switcher loading">
-        <div className="dojo-switcher-message">
-          Kein Dojo gefunden
-        </div>
-      </div>
-    );
-  }
-
-  if (!dojos || dojos.length === 0) {
-    return (
-      <div className="dojo-switcher loading">
-        <div className="dojo-switcher-message">
-          Keine Dojos verfügbar
-        </div>
+        <button
+          className="dojo-switcher-message dojo-switcher-retry"
+          onClick={refreshDojos}
+          title="Dojos neu laden"
+        >
+          ↻ Workspace laden
+        </button>
       </div>
     );
   }
