@@ -8,12 +8,27 @@ import {
 } from 'react-simple-maps';
 import '../styles/PartnerAdmin.css';
 
-const GEO_URL = '/countries-110m.json';
+const GEO_URL     = '/countries-110m.json';
+const US_GEO_URL  = '/us-states-10m.json';
+const DE_GEO_URL  = '/de-bundeslaender.json';
 
 const codeToFlag = (code) =>
   code.toUpperCase().split('').map(c => String.fromCodePoint(c.codePointAt(0) + 127397)).join('');
 
-const NUMERIC_TO_ALPHA2 = {
+const FIPS_TO_STATE = {
+  '01':'US-AL','02':'US-AK','04':'US-AZ','05':'US-AR','06':'US-CA',
+  '08':'US-CO','09':'US-CT','10':'US-DE','12':'US-FL','13':'US-GA',
+  '15':'US-HI','16':'US-ID','17':'US-IL','18':'US-IN','19':'US-IA',
+  '20':'US-KS','21':'US-KY','22':'US-LA','23':'US-ME','24':'US-MD',
+  '25':'US-MA','26':'US-MI','27':'US-MN','28':'US-MS','29':'US-MO',
+  '30':'US-MT','31':'US-NE','32':'US-NV','33':'US-NH','34':'US-NJ',
+  '35':'US-NM','36':'US-NY','37':'US-NC','38':'US-ND','39':'US-OH',
+  '40':'US-OK','41':'US-OR','42':'US-PA','44':'US-RI','45':'US-SC',
+  '46':'US-SD','47':'US-TN','48':'US-TX','49':'US-UT','50':'US-VT',
+  '51':'US-VA','53':'US-WA','54':'US-WV','55':'US-WI','56':'US-WY',
+};
+
+const NUMERIC_TO_ALPHA2 = { // numeric ISO 3166-1 → alpha-2
   '276': 'DE', '40': 'AT', '756': 'CH', '380': 'IT', '250': 'FR',
   '724': 'ES', '620': 'PT', '528': 'NL', '56': 'BE', '616': 'PL',
   '203': 'CZ', '703': 'SK', '348': 'HU', '191': 'HR', '642': 'RO',
@@ -22,6 +37,9 @@ const NUMERIC_TO_ALPHA2 = {
   '840': 'US', '124': 'CA', '484': 'MX', '76': 'BR', '32': 'AR',
   '36': 'AU', '554': 'NZ', '392': 'JP', '410': 'KR', '156': 'CN',
   '356': 'IN', '710': 'ZA',
+  '288': 'GH', '566': 'NG', '404': 'KE', '231': 'ET', '834': 'TZ',
+  '800': 'UG', '686': 'SN', '384': 'CI', '120': 'CM', '504': 'MA',
+  '12':  'DZ', '818': 'EG', '788': 'TN',
 };
 
 const STATUS_COLOR = { occupied: '#ef4444', pending: '#f59e0b', free: '#22c55e' };
@@ -215,9 +233,13 @@ export default function PartnerAdmin() {
   const showFlash = (msg) => { setFlash(msg); setTimeout(() => setFlash(null), 2000); };
 
   const countryMap = {};
-  reps.filter(r => r.type === 'country').forEach(r => { countryMap[r.code] = r; });
   const bundeslandMap = {};
-  reps.filter(r => r.type === 'bundesland').forEach(r => { bundeslandMap[r.code] = r; });
+  const usStateMap = {};
+  reps.forEach(r => {
+    if (r.type === 'country')    countryMap[r.code]    = r;
+    if (r.type === 'bundesland') bundeslandMap[r.code] = r;
+    if (r.type === 'us_state')   usStateMap[r.code]    = r;
+  });
 
   const getCountryColor = (geo) => {
     const numId = String(geo.id);
@@ -267,11 +289,13 @@ export default function PartnerAdmin() {
   });
 
   const stats = {
-    free: reps.filter(r => r.type === 'country' && r.status === 'free').length,
-    occupied: reps.filter(r => r.type === 'country' && r.status === 'occupied').length,
-    pending: reps.filter(r => r.type === 'country' && r.status === 'pending').length,
-    blFree: reps.filter(r => r.type === 'bundesland' && r.status === 'free').length,
-    blOccupied: reps.filter(r => r.type === 'bundesland' && r.status === 'occupied').length,
+    free:      reps.filter(r => r.type === 'country'    && r.status === 'free').length,
+    occupied:  reps.filter(r => r.type === 'country'    && r.status === 'occupied').length,
+    pending:   reps.filter(r => r.type === 'country'    && r.status === 'pending').length,
+    blFree:    reps.filter(r => r.type === 'bundesland' && r.status === 'free').length,
+    blOccupied:reps.filter(r => r.type === 'bundesland' && r.status === 'occupied').length,
+    usFree:    reps.filter(r => r.type === 'us_state'   && r.status === 'free').length,
+    usOccupied:reps.filter(r => r.type === 'us_state'   && r.status === 'occupied').length,
   };
 
   if (loading) return <div className="pa-loading"><div className="pa-spinner" />Lade Partner-Daten…</div>;
@@ -285,16 +309,19 @@ export default function PartnerAdmin() {
         {stats.pending > 0 && <div className="pa-stat"><span className="pa-stat-num pa-stat--gold">{stats.pending}</span><span className="pa-stat-lbl">In Bearbeitung</span></div>}
         <div className="pa-stat"><span className="pa-stat-num pa-stat--green">{stats.blFree}</span><span className="pa-stat-lbl">Bundesländer frei</span></div>
         <div className="pa-stat"><span className="pa-stat-num pa-stat--red">{stats.blOccupied}</span><span className="pa-stat-lbl">Bundesländer besetzt</span></div>
+        <div className="pa-stat"><span className="pa-stat-num pa-stat--green">{stats.usFree}</span><span className="pa-stat-lbl">US-States frei</span></div>
+        <div className="pa-stat"><span className="pa-stat-num pa-stat--red">{stats.usOccupied}</span><span className="pa-stat-lbl">US-States besetzt</span></div>
         <div className="pa-stat"><span className="pa-stat-num">{docs.length}</span><span className="pa-stat-lbl">Dokumente</span></div>
       </div>
 
       {/* Tab bar */}
       <div className="pa-tabs">
         {[
-          { id: 'map',   label: '🗺 Weltkarte' },
-          { id: 'list',  label: '📋 Liste' },
-          { id: 'bl',    label: '🇩🇪 Bundesländer' },
-          { id: 'docs',  label: '📄 Dokumente' },
+          { id: 'map',      label: '🗺 Weltkarte' },
+          { id: 'list',     label: '📋 Liste' },
+          { id: 'us_states',label: '🇺🇸 US-Bundesstaaten' },
+          { id: 'bl',       label: '🇩🇪 Bundesländer' },
+          { id: 'docs',     label: '📄 Dokumente' },
         ].map(t => (
           <button key={t.id} className={`pa-tab${tab === t.id ? ' pa-tab--active' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>
         ))}
@@ -391,9 +418,102 @@ export default function PartnerAdmin() {
         </div>
       )}
 
+      {/* ── US STATES TAB ────────────────────────────────────────── */}
+      {tab === 'us_states' && (
+        <div>
+          <p className="pa-map-hint">Klicke auf einen Bundesstaat um ihn zu bearbeiten.</p>
+          <div className="pa-map-wrap pa-map-wrap--us">
+            <ComposableMap projection="geoAlbersUsa" style={{ width: '100%', height: 'auto' }}>
+              <Geographies geography={US_GEO_URL}>
+                {({ geographies }) => geographies.map((geo) => {
+                  const code = FIPS_TO_STATE[geo.id];
+                  const rep  = code ? usStateMap[code] : null;
+                  const fill = rep ? STATUS_COLOR[rep.status] : 'rgba(255,255,255,0.18)';
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={fill}
+                      stroke="rgba(0,0,0,0.3)"
+                      strokeWidth={0.5}
+                      style={{
+                        default: { outline: 'none', fillOpacity: 1 },
+                        hover:   { outline: 'none', fillOpacity: 0.75, cursor: rep ? 'pointer' : 'default' },
+                        pressed: { outline: 'none' },
+                      }}
+                      onClick={() => rep && setEditRep(rep)}
+                      onMouseEnter={(evt) => rep && setTooltip({ name: rep.name_de, status: rep.status, rep, x: evt.clientX, y: evt.clientY })}
+                      onMouseLeave={() => setTooltip(null)}
+                      onMouseMove={(evt) => setTooltip(t => t ? { ...t, x: evt.clientX, y: evt.clientY } : null)}
+                    />
+                  );
+                })}
+              </Geographies>
+            </ComposableMap>
+          </div>
+          <div className="pa-rep-grid">
+            {Object.values(usStateMap).sort((a, b) => a.sort_order - b.sort_order).map(rep => (
+              <div key={rep.id} className={`pa-rep-card pa-rep-card--${rep.status}`} onClick={() => setEditRep(rep)}>
+                <div className="pa-rep-info">
+                  <span className="pa-rep-name">{rep.name_de}</span>
+                  {rep.rep_name && <span className="pa-rep-person">{rep.rep_name}</span>}
+                </div>
+                <span className={`pa-rep-badge pa-rep-badge--${rep.status}`}>
+                  {rep.status === 'occupied' ? 'Besetzt' : rep.status === 'pending' ? 'Ausstehend' : 'Frei'}
+                </span>
+                <span className="pa-rep-edit-hint">✏</span>
+              </div>
+            ))}
+          </div>
+          {tooltip && (
+            <div className="pa-tooltip" style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}>
+              <span className="pa-tooltip-name">{tooltip.name}</span>
+              <span className={`pa-tooltip-status pa-tooltip-status--${tooltip.status}`}>
+                {tooltip.status === 'occupied' ? 'Besetzt' : tooltip.status === 'pending' ? 'In Bearbeitung' : 'Verfügbar'}
+              </span>
+              {tooltip.rep?.rep_name && <span className="pa-tooltip-rep">{tooltip.rep.rep_name}</span>}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── BUNDESLAENDER TAB ────────────────────────────────────── */}
       {tab === 'bl' && (
         <div>
+          <p className="pa-map-hint">Klicke auf ein Bundesland um es zu bearbeiten.</p>
+          <div className="pa-map-wrap pa-map-wrap--de">
+            <ComposableMap
+              projection="geoMercator"
+              projectionConfig={{ scale: 2600, center: [10.45, 51.15] }}
+              style={{ width: '100%', height: 'auto' }}
+            >
+              <Geographies geography={DE_GEO_URL}>
+                {({ geographies }) => geographies.map((geo) => {
+                  const code = geo.properties?.id;
+                  const rep  = code ? bundeslandMap[code] : null;
+                  const fill = rep ? STATUS_COLOR[rep.status] : 'rgba(255,255,255,0.18)';
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={fill}
+                      stroke="rgba(0,0,0,0.35)"
+                      strokeWidth={0.8}
+                      style={{
+                        default: { outline: 'none', fillOpacity: 1 },
+                        hover:   { outline: 'none', fillOpacity: 0.75, cursor: rep ? 'pointer' : 'default' },
+                        pressed: { outline: 'none' },
+                      }}
+                      onClick={() => rep && setEditRep(rep)}
+                      onMouseEnter={(evt) => rep && setTooltip({ name: rep.name_de, status: rep.status, rep, x: evt.clientX, y: evt.clientY })}
+                      onMouseLeave={() => setTooltip(null)}
+                      onMouseMove={(evt) => setTooltip(t => t ? { ...t, x: evt.clientX, y: evt.clientY } : null)}
+                    />
+                  );
+                })}
+              </Geographies>
+            </ComposableMap>
+          </div>
           <div className="pa-rep-grid">
             {BUNDESLAENDER.map(bl => {
               const rep = bundeslandMap[bl.code];
@@ -413,6 +533,15 @@ export default function PartnerAdmin() {
               );
             })}
           </div>
+          {tooltip && (
+            <div className="pa-tooltip" style={{ left: tooltip.x + 12, top: tooltip.y - 40 }}>
+              <span className="pa-tooltip-name">{tooltip.name}</span>
+              <span className={`pa-tooltip-status pa-tooltip-status--${tooltip.status}`}>
+                {tooltip.status === 'occupied' ? 'Besetzt' : tooltip.status === 'pending' ? 'In Bearbeitung' : 'Verfügbar'}
+              </span>
+              {tooltip.rep?.rep_name && <span className="pa-tooltip-rep">{tooltip.rep.rep_name}</span>}
+            </div>
+          )}
         </div>
       )}
 
