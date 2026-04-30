@@ -5,7 +5,9 @@ import {
   Geographies,
   Geography,
   ZoomableGroup,
+  Annotation,
 } from 'react-simple-maps';
+import { geoCentroid } from 'd3-geo';
 import '../styles/PartnerAdmin.css';
 
 const GEO_URL     = '/countries-110m.json';
@@ -439,26 +441,38 @@ export default function PartnerAdmin() {
             <ComposableMap projection="geoAlbersUsa" style={{ width: '100%', height: 'auto' }}>
               <Geographies geography={US_GEO_URL}>
                 {({ geographies }) => geographies.map((geo) => {
-                  const code = FIPS_TO_STATE[geo.id];
-                  const rep  = code ? usStateMap[code] : null;
-                  const fill = rep ? STATUS_COLOR[rep.status] : 'rgba(255,255,255,0.18)';
+                  const code  = FIPS_TO_STATE[geo.id];
+                  const rep   = code ? usStateMap[code] : null;
+                  const fill  = rep ? STATUS_COLOR[rep.status] : 'rgba(255,255,255,0.18)';
+                  const abbr  = code ? code.replace('US-', '') : '';
+                  const centroid = geoCentroid(geo);
                   return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={fill}
-                      stroke="rgba(0,0,0,0.3)"
-                      strokeWidth={0.5}
-                      style={{
-                        default: { outline: 'none', fillOpacity: 1 },
-                        hover:   { outline: 'none', fillOpacity: 0.75, cursor: rep ? 'pointer' : 'default' },
-                        pressed: { outline: 'none' },
-                      }}
-                      onClick={() => rep && setEditRep(rep)}
-                      onMouseEnter={(evt) => rep && setTooltip({ name: rep.name_de, status: rep.status, rep, x: evt.clientX, y: evt.clientY })}
-                      onMouseLeave={() => setTooltip(null)}
-                      onMouseMove={(evt) => setTooltip(t => t ? { ...t, x: evt.clientX, y: evt.clientY } : null)}
-                    />
+                    <g key={geo.rsmKey}>
+                      <Geography
+                        geography={geo}
+                        fill={fill}
+                        stroke="rgba(0,0,0,0.3)"
+                        strokeWidth={0.5}
+                        style={{
+                          default: { outline: 'none', fillOpacity: 1 },
+                          hover:   { outline: 'none', fillOpacity: 0.75, cursor: rep ? 'pointer' : 'default' },
+                          pressed: { outline: 'none' },
+                        }}
+                        onClick={() => rep && setEditRep(rep)}
+                        onMouseEnter={(evt) => rep && setTooltip({ name: rep.name_de, status: rep.status, rep, x: evt.clientX, y: evt.clientY })}
+                        onMouseLeave={() => setTooltip(null)}
+                        onMouseMove={(evt) => setTooltip(t => t ? { ...t, x: evt.clientX, y: evt.clientY } : null)}
+                      />
+                      {abbr && (
+                        <Annotation subject={centroid} dx={0} dy={0} connectorProps={{}}>
+                          <text
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            style={{ fontSize: 7, fontWeight: 700, fill: '#000', pointerEvents: 'none', userSelect: 'none' }}
+                          >{abbr}</text>
+                        </Annotation>
+                      )}
+                    </g>
                   );
                 })}
               </Geographies>
@@ -502,26 +516,38 @@ export default function PartnerAdmin() {
             >
               <Geographies geography={DE_GEO_URL}>
                 {({ geographies }) => geographies.map((geo) => {
-                  const code = geo.properties?.id;
-                  const rep  = code ? bundeslandMap[code] : null;
-                  const fill = rep ? STATUS_COLOR[rep.status] : 'rgba(255,255,255,0.18)';
+                  const code     = geo.properties?.id;
+                  const rep      = code ? bundeslandMap[code] : null;
+                  const fill     = rep ? STATUS_COLOR[rep.status] : 'rgba(255,255,255,0.18)';
+                  const abbr     = code ? code.replace('DE-', '') : '';
+                  const centroid = geoCentroid(geo);
                   return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      fill={fill}
-                      stroke="rgba(0,0,0,0.35)"
-                      strokeWidth={0.8}
-                      style={{
-                        default: { outline: 'none', fillOpacity: 1 },
-                        hover:   { outline: 'none', fillOpacity: 0.75, cursor: rep ? 'pointer' : 'default' },
-                        pressed: { outline: 'none' },
-                      }}
-                      onClick={() => rep && setEditRep(rep)}
-                      onMouseEnter={(evt) => rep && setTooltip({ name: rep.name_de, status: rep.status, rep, x: evt.clientX, y: evt.clientY })}
-                      onMouseLeave={() => setTooltip(null)}
-                      onMouseMove={(evt) => setTooltip(t => t ? { ...t, x: evt.clientX, y: evt.clientY } : null)}
-                    />
+                    <g key={geo.rsmKey}>
+                      <Geography
+                        geography={geo}
+                        fill={fill}
+                        stroke="rgba(0,0,0,0.35)"
+                        strokeWidth={0.8}
+                        style={{
+                          default: { outline: 'none', fillOpacity: 1 },
+                          hover:   { outline: 'none', fillOpacity: 0.75, cursor: rep ? 'pointer' : 'default' },
+                          pressed: { outline: 'none' },
+                        }}
+                        onClick={() => rep && setEditRep(rep)}
+                        onMouseEnter={(evt) => rep && setTooltip({ name: rep.name_de, status: rep.status, rep, x: evt.clientX, y: evt.clientY })}
+                        onMouseLeave={() => setTooltip(null)}
+                        onMouseMove={(evt) => setTooltip(t => t ? { ...t, x: evt.clientX, y: evt.clientY } : null)}
+                      />
+                      {abbr && (
+                        <Annotation subject={centroid} dx={0} dy={0} connectorProps={{}}>
+                          <text
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            style={{ fontSize: 9, fontWeight: 700, fill: '#000', pointerEvents: 'none', userSelect: 'none' }}
+                          >{abbr}</text>
+                        </Annotation>
+                      )}
+                    </g>
                   );
                 })}
               </Geographies>
