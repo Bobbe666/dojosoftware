@@ -110,7 +110,10 @@ router.get('/mitglied/:id', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   try {
     const { mitglied_id, typ, alter_betrag, neuer_betrag, gueltig_von, gueltig_bis, grund } = req.body;
-    const dojoId = getSecureDojoId(req) || req.body.dojo_id;
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId && !(req.user?.rolle === 'super_admin' || req.user?.role === 'super_admin')) {
+      return res.status(403).json({ success: false, error: 'Keine Dojo-Zuordnung' });
+    }
 
     if (!mitglied_id || !typ || !neuer_betrag || !gueltig_von || !gueltig_bis) {
       return res.status(400).json({ success: false, error: 'Pflichtfelder fehlen' });

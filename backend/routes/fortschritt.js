@@ -6,8 +6,12 @@ const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const pool = db.promise();
 const router = express.Router();
 
-// Hilfsfunktion: Prüfen ob mitglied_id zum anfragenden Dojo gehört
-async function verifyMitgliedAccess(mitglied_id, dojoId) {
+// Hilfsfunktion: Prüfen ob mitglied_id zum anfragenden Dojo gehört + Ownership für Members
+async function verifyMitgliedAccess(mitglied_id, dojoId, req) {
+    // 🔒 Member darf nur eigene Daten lesen/schreiben
+    if (req?.user?.role === 'member') {
+        return String(req.user.mitglied_id) === String(mitglied_id);
+    }
     if (!dojoId) return true; // Super-Admin: alle erlaubt
     const [rows] = await pool.query(
         'SELECT 1 FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?',
@@ -25,7 +29,7 @@ router.get('/mitglied/:mitglied_id', async (req, res) => {
   const { mitglied_id } = req.params;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
 
@@ -49,7 +53,7 @@ router.post('/mitglied/:mitglied_id', async (req, res) => {
   const { kategorie_id, skill_name, beschreibung, fortschritt_prozent, status, prioritaet, schwierigkeit, ziel_datum } = req.body;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
 
@@ -176,7 +180,7 @@ router.get('/mitglied/:mitglied_id/ziele', async (req, res) => {
   const { status } = req.query;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     let query = 'SELECT * FROM mitglieder_ziele WHERE mitglied_id = ?';
@@ -196,7 +200,7 @@ router.post('/mitglied/:mitglied_id/ziele', async (req, res) => {
   const { titel, beschreibung, start_datum, ziel_datum, prioritaet, messbar, einheit, ziel_wert } = req.body;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     const [result] = await pool.query(`
@@ -268,7 +272,7 @@ router.get('/mitglied/:mitglied_id/meilensteine', async (req, res) => {
   const { mitglied_id } = req.params;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     const [results] = await pool.query(
@@ -287,7 +291,7 @@ router.post('/mitglied/:mitglied_id/meilensteine', async (req, res) => {
   const { titel, beschreibung, typ, ziel_datum, belohnung, oeffentlich } = req.body;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     const [result] = await pool.query(`
@@ -356,7 +360,7 @@ router.get('/mitglied/:mitglied_id/notizen', async (req, res) => {
   const { mitglied_id } = req.params;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     const [results] = await pool.query(
@@ -375,7 +379,7 @@ router.post('/mitglied/:mitglied_id/notizen', async (req, res) => {
   const { titel, notiz, typ, datum, privat, trainer_id } = req.body;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     const [result] = await pool.query(`
@@ -436,7 +440,7 @@ router.get('/mitglied/:mitglied_id/overview', async (req, res) => {
   const { mitglied_id } = req.params;
   try {
     const dojoId = getSecureDojoId(req);
-    if (!(await verifyMitgliedAccess(mitglied_id, dojoId))) {
+    if (!(await verifyMitgliedAccess(mitglied_id, dojoId, req))) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
     }
     const [results] = await pool.query(

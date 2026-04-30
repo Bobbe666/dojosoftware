@@ -46,11 +46,21 @@ async function getSenderName(sender_id, sender_type) {
       );
       if (rows[0]) return `${rows[0].vorname} ${rows[0].nachname}`.trim();
     } else {
-      const [rows] = await pool.query(
+      // 🔒 Admins/Trainer sind in admin_users, NICHT in users — daher zuerst dort suchen.
+      // Sonst trifft sender_id zufällig eine andere User-ID → falscher Name in Notifications.
+      const [adminRows] = await pool.query(
+        'SELECT vorname, nachname, username FROM admin_users WHERE id = ?',
+        [sender_id]
+      );
+      if (adminRows[0]) {
+        const { vorname, nachname, username } = adminRows[0];
+        return `${vorname || ''} ${nachname || ''}`.trim() || username;
+      }
+      const [userRows] = await pool.query(
         'SELECT username FROM users WHERE id = ?',
         [sender_id]
       );
-      if (rows[0]) return rows[0].username;
+      if (userRows[0]) return userRows[0].username;
     }
   } catch (e) {
     logger.error('getSenderName Socket Fehler', { error: e.message });

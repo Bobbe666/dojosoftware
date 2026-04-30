@@ -145,6 +145,10 @@ router.post('/massen-erstellung', authenticateToken, async (req, res) => {
 // API: SEPA-Mandate für ein Mitglied abrufen
 router.get("/:mitglied_id/sepa-mandate", authenticateToken, (req, res) => {
     const { mitglied_id } = req.params;
+    // 🔒 Member darf nur eigene SEPA-Daten sehen (IBAN-Schutz)
+    if (req.user?.role === 'member' && String(req.user.mitglied_id) !== String(mitglied_id)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+    }
     const secureDojoId = getSecureDojoId(req);
     const dojoFilter = secureDojoId ? 'AND m.dojo_id = ?' : '';
     const params = secureDojoId ? [mitglied_id, secureDojoId] : [mitglied_id];

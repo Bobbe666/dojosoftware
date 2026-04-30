@@ -417,6 +417,10 @@ router.get('/:id/preview-html', async (req, res) => {
     // ── Standard Briefkopf ────────────────────────────────────────────────────
     let mitglied = BEISPIEL_MITGLIED;
     if (req.query.mitglied_id) {
+      // 🔒 Member darf nur eigene Daten als Vorschau laden
+      if (req.user?.role === 'member' && String(req.user.mitglied_id) !== String(req.query.mitglied_id)) {
+        return res.status(403).json({ error: 'Zugriff verweigert' });
+      }
       const [[gefunden]] = await pool.query('SELECT * FROM mitglieder WHERE mitglied_id = ? AND dojo_id = ?', [req.query.mitglied_id, dojoId]);
       if (gefunden) mitglied = gefunden;
     }
