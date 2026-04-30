@@ -2295,6 +2295,15 @@ try {
   logger.error("Fehler beim Laden der Route", { route: "hof", error: error.message });
 }
 
+// ─── PARTNER REPRÄSENTANTEN ───────────────────────────────────────────────────
+try {
+  const partnerRouter = require('./routes/partner');
+  app.use('/api/partner', partnerRouter);
+  logger.success('Route gemountet', { path: '/api/partner' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'partner', error: error.message });
+}
+
 // ─── HOMEPAGE BUILDER ─────────────────────────────────────────────────────────
 // Premium Feature: Dojo-Homepages unter *.dojo-pages.de
 // Routen: /api/homepage/** (API) + /site/:slug (HTML-Render via Pfad)

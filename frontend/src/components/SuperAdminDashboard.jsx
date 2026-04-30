@@ -42,6 +42,7 @@ const Auswertungen        = lazy(() => import('./Auswertungen'));
 const PlattformZentrale   = lazy(() => import('./PlattformZentrale'));
 const PlattformZugangsdaten = lazy(() => import('./PlattformZugangsdaten'));
 const AppsMonitor           = lazy(() => import('./AppsMonitor'));
+const PartnerAdmin          = lazy(() => import('./PartnerAdmin'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -1998,7 +1999,8 @@ const SuperAdminDashboard = () => {
                    softwareSection === 'halloffame' ? '🌟 Hall of Fame' :
                    softwareSection === 'academy' ? '🎓 TDA Academy' :
                    softwareSection === 'dojos' ? '🏯 TDA-Dojos' :
-                   softwareSection === 'apps' ? '🖥 Apps & Dienste' : ''}
+                   softwareSection === 'apps' ? '🖥 Apps & Dienste' :
+                   softwareSection === 'partner' ? '🌍 Partner-Repräsentanten' : ''}
                 </span>
               </div>
             )}
@@ -2015,6 +2017,7 @@ const SuperAdminDashboard = () => {
                     { id: 'halloffame',    icon: '🌟', title: 'Hall of Fame',        subtitle: 'Nominierungen, Sportler, Veranstaltungen', color: '#eab308' },
                     { id: 'dojos',         icon: '🏯', title: 'TDA-Dojos',          subtitle: 'Eigene Standorte & Trainer',            color: '#10b981' },
                     { id: 'apps',          icon: '🖥', title: 'Apps & Dienste',      subtitle: 'Live-Status, PM2, Deploy-Info',          color: '#06b6d4' },
+                    { id: 'partner',       icon: '🌍', title: 'Partner',             subtitle: 'Länder-/Bundesland-Repräsentanten',      color: '#d4af37' },
                   ].map(card => (
                     <div key={card.id} className="sad-software-card" onClick={() => setSoftwareSection(card.id)} style={{ borderTopColor: card.color }}>
                       <div className="sad-software-card-icon" style={{ color: card.color }}>{card.icon}</div>
@@ -2077,6 +2080,13 @@ const SuperAdminDashboard = () => {
             {softwareSection === 'apps' && (
               <Suspense fallback={<TabLoader />}>
                 <AppsMonitor />
+              </Suspense>
+            )}
+
+            {/* ── Partner-Repräsentanten ─────────────────────────────── */}
+            {softwareSection === 'partner' && (
+              <Suspense fallback={<TabLoader />}>
+                <PartnerAdmin />
               </Suspense>
             )}
 
