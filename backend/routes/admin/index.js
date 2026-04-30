@@ -18,6 +18,7 @@ const comparisonRouter    = require('./comparison');
 const lizenzvertragRouter = require('./lizenzvertrag');
 const akquiseRouter       = require('./akquise');
 const kampagnenRouter     = require('./kampagnen');
+const appsRouter          = require('./apps');
 
 // Sub-Router einbinden
 // Reihenfolge: spezifischere Routen zuerst
@@ -26,6 +27,7 @@ router.use('/comparison', comparisonRouter);        // /comparison
 router.use('/lizenzvertrag', lizenzvertragRouter);  // /lizenzvertrag/*
 router.use('/akquise',      akquiseRouter);         // /akquise/*
 router.use('/kampagnen',    kampagnenRouter);       // /kampagnen/*
+router.use('/',             appsRouter);            // /apps, /apps/pm2
 router.use('/', dojosRouter);           // /dojos, /dojos/:id
 router.use('/', statsRouter);           // /global-stats, /tda-stats, /statistics
 router.use('/', subscriptionsRouter);   // /dojos/:id/extend-trial, /subscription-plans
