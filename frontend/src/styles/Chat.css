@@ -773,6 +773,38 @@
   transform: scale(1.2);
 }
 
+/* ─── Löschen-Button ────────────────────────────────────────────────────────── */
+
+.chat-message-delete-btn {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + 6px);
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  padding: 0.2rem;
+  border-radius: 4px;
+  color: var(--text-muted, #888);
+  white-space: nowrap;
+}
+
+.chat-message-bubble-wrap:hover .chat-message-delete-btn {
+  opacity: 1;
+}
+
+.chat-message-delete-btn--confirm {
+  opacity: 1 !important;
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid #fca5a5;
+}
+
 /* ─── Reaktionen ─────────────────────────────────────────────────────────────── */
 
 .chat-reactions {

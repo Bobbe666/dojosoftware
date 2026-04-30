@@ -49,9 +49,16 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "wss:", "ws:"],
     },
   },
   crossOriginEmbedderPolicy: false, // Für Uploads
+  hsts: {
+    maxAge: 31536000, // 1 Jahr
+    includeSubDomains: true,
+    preload: true
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
 // PERFORMANCE: Gzip Compression für alle Responses (außer Binärdateien)

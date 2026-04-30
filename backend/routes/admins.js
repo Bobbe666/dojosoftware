@@ -755,7 +755,8 @@ router.post('/password-management/dojo/bulk-create', async (req, res) => {
         counter++;
       }
 
-      const hash = await bcrypt.hash(password, 10);
+      const { hashPassword } = require('../services/passwordService');
+      const hash = await hashPassword(password);
       await db.promise().query(
         `INSERT IGNORE INTO users (username, email, password, mitglied_id, role, created_at) VALUES (?, ?, ?, ?, 'member', NOW())`,
         [username, m.email || null, hash, m.mitglied_id]
@@ -790,7 +791,8 @@ router.post('/password-management/dojo/:id/reset-to-default', async (req, res) =
     const yyyy = d.getFullYear();
     const defaultPassword = `${dd}/${mm}/${yyyy}`;
 
-    const hash = await bcrypt.hash(defaultPassword, 10);
+    const { hashPassword } = require('../services/passwordService');
+    const hash = await hashPassword(defaultPassword);
     await db.promise().query('UPDATE users SET password = ? WHERE id = ?', [hash, id]);
 
     res.json({ success: true, message: `Passwort auf ${defaultPassword} zurückgesetzt`, defaultPassword });

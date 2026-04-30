@@ -10,12 +10,19 @@ const EMOJIS = ['🥋', '🤜', '🏆', '🎯', '💪', '⚡'];
 const ChatMessage = ({ message, onReact, readInfo, totalMembers }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showReaders, setShowReaders] = useState(false);
-  const { sendReaction } = useChatContext();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const { sendReaction, deleteMessage } = useChatContext();
 
   const handleReact = (emoji) => {
     sendReaction(message.id, emoji);
     if (onReact) onReact(message.id, emoji);
     setShowEmojiPicker(false);
+  };
+
+  const handleDelete = () => {
+    if (!showDeleteConfirm) { setShowDeleteConfirm(true); return; }
+    deleteMessage(message.id);
+    setShowDeleteConfirm(false);
   };
 
   const isToday = (dateStr) => {
@@ -48,6 +55,17 @@ const ChatMessage = ({ message, onReact, readInfo, totalMembers }) => {
 
       {/* Nachrichten-Bubble */}
       <div className="chat-message-bubble-wrap">
+        {/* Löschen-Button (nur eigene, nicht bereits gelöschte) */}
+        {message.is_own && !isDeleted && (
+          <button
+            className={`chat-message-delete-btn${showDeleteConfirm ? ' chat-message-delete-btn--confirm' : ''}`}
+            onClick={handleDelete}
+            onBlur={() => setShowDeleteConfirm(false)}
+            title={showDeleteConfirm ? 'Nochmal klicken zum Bestätigen' : 'Nachricht löschen'}
+          >
+            {showDeleteConfirm ? '✓ Löschen?' : '🗑'}
+          </button>
+        )}
         <div
           className="chat-message-bubble"
           onDoubleClick={() => !isDeleted && setShowEmojiPicker(v => !v)}

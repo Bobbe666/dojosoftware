@@ -1072,6 +1072,55 @@ router.get('/rooms/:id/members', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/chat/messages/:id — Nachricht löschen (Soft-Delete)
+// Mitglieder dürfen nur eigene löschen, Admins alle im Dojo
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.delete('/messages/:id', async (req, res) => {
+  try {
+    const { sender_id, sender_type } = getSenderInfo(req);
+    const message_id = parseInt(req.params.id);
+    const isAdmin = req.user.role === 'admin' || req.user.role === 'super_admin';
+    const isSuperAdmin = req.user.dojo_id === null || req.user.dojo_id === undefined;
+
+    const [msgs] = await pool.query(
+      `SELECT m.id, m.room_id, m.sender_id, m.sender_type, m.deleted_at, r.dojo_id AS room_dojo
+       FROM chat_messages m
+       JOIN chat_rooms r ON r.id = m.room_id
+       WHERE m.id = ?`,
+      [message_id]
+    );
+    if (!msgs[0]) return res.status(404).json({ message: 'Nachricht nicht gefunden' });
+    if (msgs[0].deleted_at) return res.status(400).json({ message: 'Bereits gelöscht' });
+
+    const msg = msgs[0];
+    if (!isSuperAdmin && msg.room_dojo !== req.user.dojo_id) {
+      return res.status(403).json({ message: 'Keine Berechtigung' });
+    }
+
+    const isOwn = String(msg.sender_id) === String(sender_id) && msg.sender_type === sender_type;
+    if (!isOwn && !isAdmin) {
+      return res.status(403).json({ message: 'Keine Berechtigung' });
+    }
+
+    await pool.query(
+      `UPDATE chat_messages SET deleted_at = NOW(), content = '[Nachricht gelöscht]' WHERE id = ?`,
+      [message_id]
+    );
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`chat:${msg.room_id}`).emit('chat:deleted', { message_id, room_id: msg.room_id });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Chat message löschen Fehler', { error: error.message });
+    res.status(500).json({ success: false });
+  }
+});
+
 // ─── SUPER-ADMIN: Alle Räume aller Dojos ─────────────────────────────────────
 // Nur für Super-Admins (dojo_id = null im JWT)
 router.get('/admin/all-rooms', async (req, res) => {

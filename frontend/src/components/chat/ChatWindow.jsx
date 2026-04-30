@@ -136,14 +136,25 @@ const ChatWindow = ({ room, onBack, onRoomUpdated }) => {
       });
     };
 
+    const handleDeleted = ({ message_id, room_id }) => {
+      if (room_id !== room.id) return;
+      setMessages(prev => prev.map(m =>
+        m.id === message_id
+          ? { ...m, deleted_at: new Date().toISOString(), content: '[Nachricht gelöscht]' }
+          : m
+      ));
+    };
+
     socket.on('chat:message', handleMessage);
     socket.on('chat:reaction', handleReaction);
     socket.on('chat:read', handleRead);
+    socket.on('chat:deleted', handleDeleted);
 
     return () => {
       socket.off('chat:message', handleMessage);
       socket.off('chat:reaction', handleReaction);
       socket.off('chat:read', handleRead);
+      socket.off('chat:deleted', handleDeleted);
     };
   }, [socket, room.id, markRoomAsRead, roomMemberCount]);
 

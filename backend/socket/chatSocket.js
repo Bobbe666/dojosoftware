@@ -82,7 +82,8 @@ async function triggerOfflinePush(io, room_id, message, sender_id, sender_type) 
        FROM chat_room_members crm
        WHERE crm.room_id = ?
          AND NOT (crm.member_id = ? AND crm.member_type = ?)
-         AND crm.muted = FALSE`,
+         AND crm.muted = FALSE
+         AND (crm.archived = 0 OR crm.archived IS NULL)`,
       [room_id, sender_id, sender_type]
     );
 
@@ -336,9 +337,51 @@ module.exports = function initChatSocket(io) {
       }
     });
 
+    // ── Nachricht löschen ─────────────────────────────────────────────────────
+    socket.on('chat:delete', async ({ message_id }) => {
+      try {
+        const isAdmin = sender_type === 'admin' || sender_type === 'trainer';
+
+        // Nachricht + Dojo-Zugehörigkeit laden
+        const [msgs] = await pool.query(
+          `SELECT m.id, m.room_id, m.sender_id, m.sender_type, m.deleted_at
+           FROM chat_messages m
+           JOIN chat_rooms r ON r.id = m.room_id
+           WHERE m.id = ? AND (r.dojo_id = ? OR ? IS NULL)`,
+          [message_id, dojo_id, dojo_id]
+        );
+        if (!msgs[0] || msgs[0].deleted_at) return;
+
+        const isOwn = String(msgs[0].sender_id) === String(sender_id) && msgs[0].sender_type === sender_type;
+        if (!isOwn && !isAdmin) return;
+
+        await pool.query(
+          `UPDATE chat_messages SET deleted_at = NOW(), content = '[Nachricht gelöscht]' WHERE id = ?`,
+          [message_id]
+        );
+
+        io.to(`chat:${msgs[0].room_id}`).emit('chat:deleted', {
+          message_id,
+          room_id: msgs[0].room_id
+        });
+      } catch (error) {
+        logger.error('chat:delete Socket Fehler', { error: error.message });
+      }
+    });
+
     // ── Gelesen-Status senden ─────────────────────────────────────────────────
     socket.on('chat:read', async ({ room_id }) => {
       try {
+        // 🔒 Mitgliedschafts-Check + Dojo-Isolation
+        const [access] = await pool.query(
+          `SELECT crm.id FROM chat_room_members crm
+           JOIN chat_rooms r ON r.id = crm.room_id
+           WHERE crm.room_id = ? AND crm.member_id = ? AND crm.member_type = ?
+             AND (r.dojo_id = ? OR ? IS NULL)`,
+          [room_id, sender_id, sender_type, dojo_id, dojo_id]
+        );
+        if (!access[0]) return;
+
         // Alle ungelesenen Nachrichten im Raum als gelesen markieren
         const [unread] = await pool.query(
           `SELECT id FROM chat_messages

@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { io } from 'socket.io-client';
+import axios from 'axios';
 import { useAuth } from './AuthContext.jsx';
 
 const ChatContext = createContext(null);
@@ -23,6 +24,7 @@ export const ChatProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [popup, setPopup] = useState(null); // { senderName, preview, roomId }
   const [isConnected, setIsConnected] = useState(false);
+  const [deletedMessageIds, setDeletedMessageIds] = useState(new Set());
   const popupTimeoutRef = useRef(null);
 
   // Ungelesen-Zähler beim Start laden
@@ -73,6 +75,11 @@ export const ChatProvider = ({ children }) => {
 
     s.on('connect_error', (err) => {
       console.warn('[Chat] Socket-Verbindungsfehler:', err.message);
+    });
+
+    // Nachricht gelöscht (von irgendjemandem im Raum)
+    s.on('chat:deleted', ({ message_id }) => {
+      setDeletedMessageIds(prev => new Set(prev).add(message_id));
     });
 
     // Neue Nachricht empfangen → Badge erhöhen + Popup zeigen
@@ -161,6 +168,19 @@ export const ChatProvider = ({ children }) => {
     socket.emit('chat:react', { message_id: messageId, emoji });
   }, [socket]);
 
+  // Nachricht löschen (Socket + REST-Fallback)
+  const deleteMessage = useCallback((messageId) => {
+    if (socket && socket.connected) {
+      socket.emit('chat:delete', { message_id: messageId });
+    } else {
+      axios.delete(`/chat/messages/${messageId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(() => {
+        setDeletedMessageIds(prev => new Set(prev).add(messageId));
+      }).catch(() => {});
+    }
+  }, [socket, token]);
+
   // Raum via Socket beitreten
   const joinRoom = useCallback((roomId) => {
     if (!socket) return;
@@ -182,6 +202,8 @@ export const ChatProvider = ({ children }) => {
     markRoomAsRead,
     sendMessage,
     sendReaction,
+    deleteMessage,
+    deletedMessageIds,
     joinRoom,
     leaveRoom,
     loadUnreadCount
