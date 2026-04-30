@@ -145,6 +145,8 @@ router.get('/rooms', async (req, res) => {
     const showArchived = statusFilter === 'archived' ? 1 : 0;
     const statusClause = ` AND COALESCE(crm.archived, 0) = ${showArchived}`;
 
+    const isMember = req.user.role === 'member';
+
     let rooms;
     if (isSuperAdmin) {
       // Super-Admin: alle Räume wo Mitglied (ohne Dojo-Filter)
@@ -152,8 +154,14 @@ router.get('/rooms', async (req, res) => {
         baseQuery + ` WHERE crm.member_id IS NOT NULL` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type]
       );
+    } else if (isMember) {
+      // 🔒 Mitglieder: NUR Räume in denen sie explizit Mitglied sind
+      [rooms] = await pool.query(
+        baseQuery + ` WHERE crm.member_id IS NOT NULL AND r.dojo_id = ?` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
+        [sender_id, sender_type, sender_id, sender_type, dojo_id]
+      );
     } else {
-      // Admin/Trainer: ALLE Räume des Dojos sehen (nicht nur eigene Mitgliedschaft)
+      // Admin/Trainer: ALLE Räume des Dojos sehen
       [rooms] = await pool.query(
         baseQuery + ` WHERE r.dojo_id = ?` + statusClause + ` ORDER BY COALESCE(crm.pinned,0) DESC, COALESCE(lm.sent_at, r.created_at) DESC`,
         [sender_id, sender_type, sender_id, sender_type, dojo_id]
