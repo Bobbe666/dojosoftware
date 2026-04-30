@@ -8,7 +8,10 @@ import {
 } from 'react-simple-maps';
 import '../styles/PartnerAdmin.css';
 
-const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+const GEO_URL = '/countries-110m.json';
+
+const codeToFlag = (code) =>
+  code.toUpperCase().split('').map(c => String.fromCodePoint(c.codePointAt(0) + 127397)).join('');
 
 const NUMERIC_TO_ALPHA2 = {
   '276': 'DE', '40': 'AT', '756': 'CH', '380': 'IT', '250': 'FR',
@@ -70,7 +73,7 @@ function EditRepModal({ rep, onSave, onClose }) {
     <div className="pa-modal-overlay" onClick={onClose}>
       <div className="pa-modal" onClick={e => e.stopPropagation()}>
         <div className="pa-modal-head">
-          <span className="pa-modal-flag">{rep.flag_emoji}</span>
+          <span className="pa-modal-flag">{rep.type === 'country' ? codeToFlag(rep.code) : '🗺'}</span>
           <div>
             <div className="pa-modal-title">{rep.name_de}</div>
             <div className="pa-modal-sub">{rep.name_en} · {rep.code}</div>
@@ -372,7 +375,7 @@ export default function PartnerAdmin() {
           <div className="pa-rep-grid">
             {filteredReps.map(rep => (
               <div key={rep.id} className={`pa-rep-card pa-rep-card--${rep.status}`} onClick={() => setEditRep(rep)}>
-                <span className="pa-rep-flag">{rep.flag_emoji || (rep.type === 'bundesland' ? '🗺' : '🌍')}</span>
+                <span className="pa-rep-flag">{rep.type === 'country' ? codeToFlag(rep.code) : '🗺'}</span>
                 <div className="pa-rep-info">
                   <span className="pa-rep-name">{rep.name_de}</span>
                   {rep.rep_name && <span className="pa-rep-person">{rep.rep_name}</span>}
