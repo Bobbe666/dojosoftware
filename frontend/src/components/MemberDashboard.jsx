@@ -339,6 +339,15 @@ const MemberDashboard = () => {
   const [ruhepauseInfo, setRuhepauseInfo] = useState(null);
   const [ruhepauseMaxMonate, setRuhepauseMaxMonate] = useState(3);
 
+  // Kündigung
+  const [showKuendigungForm, setShowKuendigungForm] = useState(false);
+  const [kuendigungGrund, setKuendigungGrund] = useState('');
+  const [kuendigungBestaetigt, setKuendigungBestaetigt] = useState(false);
+  const [kuendigungLoading, setKuendigungLoading] = useState(false);
+  const [kuendigungError, setKuendigungError] = useState('');
+  const [kuendigungSuccess, setKuendigungSuccess] = useState('');
+  const [kuendigungInfo, setKuendigungInfo] = useState(null);
+
   // Abwärtskompatibilität: Destrukturierte Werte für bestehenden Code
   const showMemberCheckin = modals.checkin;
   const showQRCode = modals.qrCode;
@@ -1018,9 +1027,16 @@ const MemberDashboard = () => {
         if (resp.ok) { const data = await resp.json(); if (data.success) setRuhepauseMaxMonate(data.max_monate || 3); }
       } catch (_) {}
     };
+    const loadKuendigungInfo = async () => {
+      try {
+        const resp = await fetch('/api/vertrag-anpassungen/kuendigung-info', { headers });
+        if (resp.ok) { const data = await resp.json(); if (data.success) setKuendigungInfo(data); }
+      } catch (_) {}
+    };
     loadAnpassungen();
     loadRuhepause();
     loadRuhepauseMax();
+    loadKuendigungInfo();
   }, [user?.mitglied_id]);
 
   // Zahlungshinweise / Mahnungen laden
@@ -1878,6 +1894,14 @@ const MemberDashboard = () => {
             >
               {showAnpassungForm ? '↑ Schließen' : '+ Anpassung beantragen'}
             </button>
+            {!kuendigungInfo?.bereits_gekuendigt && !kuendigungInfo?.keinVertrag && (
+              <button
+                onClick={() => { setShowKuendigungForm(f => !f); setShowRuhepauseForm(false); setShowAnpassungForm(false); setKuendigungError(''); setKuendigungSuccess(''); setKuendigungBestaetigt(false); }}
+                style={{ background: showKuendigungForm ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${showKuendigungForm ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, padding: '0.35rem 0.75rem', color: showKuendigungForm ? '#f87171' : 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.82rem' }}
+              >
+                {showKuendigungForm ? '↑ Schließen' : '✕ Kündigung beantragen'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -1995,6 +2019,74 @@ const MemberDashboard = () => {
               style={{ width: '100%', padding: '0.6rem', borderRadius: 8, background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', border: 'none', color: '#fff', fontWeight: 600, cursor: ruhepauseLoading ? 'not-allowed' : 'pointer', opacity: ruhepauseLoading ? 0.7 : 1 }}
             >
               {ruhepauseLoading ? '⏳ Senden…' : '⏸ Ruhepause beantragen'}
+            </button>
+          </div>
+        )}
+
+        {/* Bestehende Kündigung anzeigen */}
+        {kuendigungInfo?.bereits_gekuendigt && (
+          <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '0.75rem 1rem', marginBottom: '0.75rem' }}>
+            <span style={{ color: '#f87171', fontWeight: 600 }}>✕ Kündigung aktiv</span>
+            {kuendigungInfo.kuendigungsdatum && (
+              <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginLeft: 8 }}>
+                zum {new Date(kuendigungInfo.kuendigungsdatum + 'T00:00').toLocaleDateString('de-DE')}
+              </span>
+            )}
+          </div>
+        )}
+        {kuendigungInfo?.offener_antrag && !kuendigungInfo?.bereits_gekuendigt && (
+          <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 10, padding: '0.65rem 1rem', marginBottom: '0.75rem', fontSize: '0.85rem', color: '#f87171' }}>
+            ⏳ Kündigung beantragt — wartet auf Bestätigung durch den Administrator.
+          </div>
+        )}
+
+        {/* Kündigung-Formular */}
+        {showKuendigungForm && (
+          <div style={{ background: 'rgba(239,68,68,0.06)', borderRadius: 10, padding: '1rem', border: '1px solid rgba(239,68,68,0.25)', marginBottom: '0.75rem' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.5 }}>
+              Deine Kündigungsfrist beträgt <strong style={{ color: 'var(--text-primary)' }}>{kuendigungInfo?.kuendigungsfrist_monate || 3} Monate</strong>.
+              {kuendigungInfo?.fruehestens_datum && (
+                <> Frühestmögliches Vertragsende: <strong style={{ color: '#f87171' }}>{new Date(kuendigungInfo.fruehestens_datum + 'T00:00').toLocaleDateString('de-DE')}</strong>.</>
+              )}
+            </p>
+            <div style={{ marginBottom: '0.65rem' }}>
+              <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 3 }}>Kündigungsgrund (optional)</label>
+              <textarea
+                value={kuendigungGrund}
+                onChange={e => setKuendigungGrund(e.target.value)}
+                placeholder="Grund für die Kündigung…"
+                rows={3}
+                style={{ width: '100%', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)', padding: '0.5rem 0.65rem', fontSize: '0.85rem', resize: 'vertical', boxSizing: 'border-box' }}
+              />
+            </div>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.83rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', cursor: 'pointer' }}>
+              <input type="checkbox" checked={kuendigungBestaetigt} onChange={e => setKuendigungBestaetigt(e.target.checked)} style={{ marginTop: 2, flexShrink: 0 }} />
+              Ich bestätige, dass ich meinen Vertrag kündigen möchte. Die Kündigung wird nach Prüfung durch den Administrator wirksam.
+            </label>
+            {kuendigungError && <p style={{ color: '#f87171', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungError}</p>}
+            {kuendigungSuccess && <p style={{ color: '#4ade80', fontSize: '0.82rem', marginBottom: '0.5rem' }}>{kuendigungSuccess}</p>}
+            <button
+              disabled={!kuendigungBestaetigt || kuendigungLoading}
+              onClick={async () => {
+                setKuendigungLoading(true); setKuendigungError(''); setKuendigungSuccess('');
+                try {
+                  const token = localStorage.getItem('memberToken') || localStorage.getItem('token');
+                  const resp = await fetch('/api/vertrag-anpassungen/beantragen', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ typ: 'kuendigung', gueltig_bis: kuendigungInfo?.fruehestens_datum, grund: kuendigungGrund || null }),
+                  });
+                  const data = await resp.json();
+                  if (!resp.ok) throw new Error(data.error || 'Fehler');
+                  setKuendigungSuccess('Deine Kündigung wurde übermittelt und wird geprüft.');
+                  setShowKuendigungForm(false);
+                  setKuendigungInfo(prev => ({ ...prev, offener_antrag: { id: data.id } }));
+                } catch (e) { setKuendigungError(e.message); }
+                finally { setKuendigungLoading(false); }
+              }}
+              style={{ background: kuendigungBestaetigt ? 'rgba(239,68,68,0.8)' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 8, padding: '0.5rem 1.25rem', fontWeight: 600, cursor: kuendigungBestaetigt ? 'pointer' : 'not-allowed', fontSize: '0.85rem', opacity: kuendigungBestaetigt ? 1 : 0.5 }}
+            >
+              {kuendigungLoading ? '⏳ Senden…' : '✕ Kündigung beantragen'}
             </button>
           </div>
         )}

@@ -38,7 +38,7 @@ async function getMitgliedId(user) {
 
 const TYP_LABELS = {
   schueler: 'Schüler', student: 'Student', azubi: 'Azubi',
-  rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause'
+  rentner: 'Rentner', sonstiges: 'Sonstiges', ruhepause: 'Ruhepause', kuendigung: 'Kündigung'
 };
 
 async function sendMemberNotification(email, subject, message) {
@@ -176,33 +176,65 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
       }
     }
 
+    if (typ === 'kuendigung') {
+      // Aktiven Vertrag laden um Kündigungsfrist zu prüfen
+      const [[vertrag]] = await pool.query(
+        `SELECT kuendigungsfrist_monate, kuendigungsdatum FROM vertraege
+         WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause') ORDER BY vertragsbeginn DESC LIMIT 1`,
+        [mitglied_id]
+      );
+      if (!vertrag) return res.status(400).json({ success: false, error: 'Kein aktiver Vertrag gefunden.' });
+      if (vertrag.kuendigungsdatum) return res.status(400).json({ success: false, error: 'Eine Kündigung liegt bereits vor.' });
+
+      // Frühestmögliches Kündigungsdatum berechnen
+      const frist = parseInt(vertrag.kuendigungsfrist_monate) || 3;
+      const fruehestens = new Date();
+      fruehestens.setMonth(fruehestens.getMonth() + frist);
+      fruehestens.setDate(1); // immer zum Monatsende — letzter Tag des Monats
+      fruehestens.setMonth(fruehestens.getMonth() + 1);
+      fruehestens.setDate(0);
+      const fruehestensStr = fruehestens.toISOString().slice(0, 10);
+
+      if (gueltig_bis && gueltig_bis < fruehestensStr) {
+        return res.status(400).json({ success: false, error: `Frühestmögliches Kündigungsdatum: ${new Date(fruehestensStr).toLocaleDateString('de-DE')}` });
+      }
+    }
+
     const [ins] = await pool.query(
       `INSERT INTO vertrag_anpassungen
        (mitglied_id, dojo_id, typ, alter_betrag, neuer_betrag, gueltig_von, gueltig_bis, status, grund, erstellt_von)
        VALUES (?, ?, ?, ?, 0, ?, ?, 'beantragt', ?, 'mitglied')`,
-      [mitglied_id, mem.dojo_id, typ, lb?.betrag || 0, gueltig_von, gueltig_bis, grund || null]
+      [mitglied_id, mem.dojo_id, typ, lb?.betrag || 0, gueltig_von || new Date().toISOString().slice(0,10), gueltig_bis || null, grund || null]
     );
 
-    // Admin-Benachrichtigung für Ruhepause-Anträge
-    if (typ === 'ruhepause' && mem.dojo_id) {
+    // Admin-Benachrichtigung für Ruhepause- und Kündigungs-Anträge
+    if ((typ === 'ruhepause' || typ === 'kuendigung') && mem.dojo_id) {
       try {
         const [[memInfo]] = await pool.query('SELECT vorname, nachname FROM mitglieder WHERE mitglied_id = ?', [mitglied_id]);
         const name = memInfo ? `${memInfo.vorname} ${memInfo.nachname}` : `Mitglied #${mitglied_id}`;
         const vonStr = new Date(gueltig_von).toLocaleDateString('de-DE');
         const bisStr = new Date(gueltig_bis).toLocaleDateString('de-DE');
 
+        const isKuendigung = typ === 'kuendigung';
+        const notifSubject = isKuendigung ? 'Kündigung beantragt' : 'Ruhepause beantragt';
+        const notifMsg = isKuendigung
+          ? `${name} hat eine Kündigung beantragt${bisStr ? ' zum ' + bisStr : ''}.`
+          : `${name} hat eine Ruhepause beantragt (${vonStr} – ${bisStr})`;
+        const notifType = isKuendigung ? 'kuendigung_antrag' : 'ruhepause_antrag';
+
         await pool.query(
           `INSERT INTO notifications (type, recipient, subject, message, status, requires_confirmation, metadata, created_at)
-           VALUES ('admin_alert', 'admin', 'Ruhepause beantragt', ?, 'unread', 1, ?, NOW())`,
+           VALUES ('admin_alert', 'admin', ?, ?, 'unread', 1, ?, NOW())`,
           [
-            `${name} hat eine Ruhepause beantragt (${vonStr} – ${bisStr})`,
+            notifSubject,
+            notifMsg,
             JSON.stringify({
-              type: 'ruhepause_antrag',
+              type: notifType,
               antrag_id: ins.insertId,
               mitglied_id,
               dojo_id: mem.dojo_id,
-              gueltig_von,
-              gueltig_bis,
+              gueltig_von: gueltig_von || null,
+              gueltig_bis: gueltig_bis || null,
               vorname: memInfo?.vorname,
               nachname: memInfo?.nachname,
               grund: grund || null
@@ -212,8 +244,8 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
 
         await sendAdminPushNotifications(
           mem.dojo_id,
-          '⏸️ Ruhepause beantragt',
-          `${name} hat eine Ruhepause für ${vonStr} – ${bisStr} beantragt.`,
+          isKuendigung ? '❌ Kündigung beantragt' : '⏸️ Ruhepause beantragt',
+          notifMsg,
           { url: '/dashboard/mitglieder' }
         );
       } catch (notifErr) {
@@ -323,6 +355,17 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
           [a.mitglied_id]
         );
       }
+    } else if (a.typ === 'kuendigung') {
+      const kuendigungsdatum = a.gueltig_bis || a.gueltig_von;
+      await pool.query(
+        `UPDATE vertraege SET status = 'gekuendigt', kuendigungsdatum = ?, vertragsende = ?, kuendigung_eingegangen = ?
+         WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause') ORDER BY vertragsbeginn DESC LIMIT 1`,
+        [kuendigungsdatum, kuendigungsdatum, a.erstellt_am, a.mitglied_id]
+      );
+      await pool.query(
+        `UPDATE mitglieder SET gekuendigt = 1, gekuendigt_am = ? WHERE mitglied_id = ?`,
+        [kuendigungsdatum, a.mitglied_id]
+      );
     } else {
       affected = await applyBeitraege(a.mitglied_id, a.gueltig_von, a.gueltig_bis, betrag);
       await pool.query(`UPDATE mitglieder SET schueler_student = 1 WHERE mitglied_id = ?`, [a.mitglied_id]);
@@ -415,6 +458,46 @@ router.get('/aktive-ruhepause', authenticateToken, async (req, res) => {
   } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
+
+// GET /kuendigung-info  (Mitglied: Kündigungsfrist + frühestmögliches Datum)
+router.get('/kuendigung-info', authenticateToken, async (req, res) => {
+  try {
+    const mitglied_id = await getMitgliedId(req.user);
+    if (!mitglied_id) return res.status(403).json({ success: false });
+
+    const [[vertrag]] = await pool.query(
+      `SELECT kuendigungsfrist_monate, kuendigungsdatum, status, vertragsbeginn
+       FROM vertraege WHERE mitglied_id = ? AND status IN ('aktiv','ruhepause','gekuendigt')
+       ORDER BY vertragsbeginn DESC LIMIT 1`,
+      [mitglied_id]
+    );
+
+    if (!vertrag) return res.json({ success: true, keinVertrag: true });
+
+    const frist = parseInt(vertrag.kuendigungsfrist_monate) || 3;
+    const fruehestens = new Date();
+    fruehestens.setMonth(fruehestens.getMonth() + frist);
+    fruehestens.setMonth(fruehestens.getMonth() + 1);
+    fruehestens.setDate(0); // letzter Tag des Monats
+    const fruehestensStr = fruehestens.toISOString().slice(0, 10);
+
+    // Offener Antrag?
+    const [[offenerAntrag]] = await pool.query(
+      `SELECT id, gueltig_bis, erstellt_am FROM vertrag_anpassungen
+       WHERE mitglied_id = ? AND typ = 'kuendigung' AND status = 'beantragt' ORDER BY erstellt_am DESC LIMIT 1`,
+      [mitglied_id]
+    );
+
+    res.json({
+      success: true,
+      kuendigungsfrist_monate: frist,
+      fruehestens_datum: fruehestensStr,
+      bereits_gekuendigt: !!vertrag.kuendigungsdatum || vertrag.status === 'gekuendigt',
+      kuendigungsdatum: vertrag.kuendigungsdatum || null,
+      offener_antrag: offenerAntrag || null,
+    });
+  } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+});
 
 // GET /ruhepause-einstellungen  (Mitglied: max. Ruhepause-Dauer des Dojos)
 router.get('/ruhepause-einstellungen', authenticateToken, async (req, res) => {
