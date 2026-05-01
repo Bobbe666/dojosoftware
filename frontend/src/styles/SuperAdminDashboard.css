@@ -5319,3 +5319,8 @@ details[open] .sad-ssl-alert-summary::before { transform: rotate(90deg); }
   word-break: break-all;
   white-space: pre-wrap;
 }
+
+/* ── To-Do Tab ── */
+.sad-todo-tab {
+  padding: 0;
+}

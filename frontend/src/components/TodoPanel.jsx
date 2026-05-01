@@ -405,7 +405,11 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
         </div>
       ) : filtered.length === 0 ? (
         <div className="todo-empty">
-          {statusFilter === 'erledigt' ? '✓ Keine erledigten Tickets.' : '🎉 Keine offenen Tickets — alles erledigt!'}
+          {statusFilter === 'erledigt'
+            ? '✓ Keine erledigten Tickets.'
+            : todos.length > 0
+              ? '✓ Alle Tickets erledigt — super!'
+              : '✅ Noch keine Tickets. Erstell das erste mit "+ Neues Ticket".'}
         </div>
       ) : (
         <div className="todo-list">

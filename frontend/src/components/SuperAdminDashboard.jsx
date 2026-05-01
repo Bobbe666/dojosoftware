@@ -1333,15 +1333,15 @@ const SuperAdminDashboard = () => {
 
   // Tab Definitions — produkt-basierte Hauptnavigation
   const tabs = [
-    { id: 'overview',      label: 'Cockpit',            icon: '🎛️' },
-    { id: 'software',      label: 'Software',           icon: '💻' },
-    { id: 'verband',       label: 'Verband',            icon: '🏆' },
-    { id: 'kommunikation', label: 'Kommunikation',      icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
-    { id: 'entwicklung',   label: 'Entwicklung',        icon: '🎯' },
-    { id: 'finanzen',      label: 'Finanzen',           icon: '💰' },
-    { id: 'plattform',     label: 'Plattform-Zentrale', icon: '🌐' },
-    { id: 'system',        label: 'System',             icon: '⚙️' },
-    { id: 'todos',         label: 'To Do',              icon: '✅' }
+    { id: 'overview',      label: 'Cockpit',        icon: '🎛️' },
+    { id: 'todos',         label: 'To Do',          icon: '✅' },
+    { id: 'software',      label: 'Software',       icon: '💻' },
+    { id: 'kommunikation', label: 'Komm.',          icon: '📣', badge: unreadCount > 0 ? unreadCount : null },
+    { id: 'verband',       label: 'Verband',        icon: '🏆' },
+    { id: 'entwicklung',   label: 'Entwicklung',    icon: '🎯' },
+    { id: 'finanzen',      label: 'Finanzen',       icon: '💰' },
+    { id: 'plattform',     label: 'Plattform',      icon: '🌐' },
+    { id: 'system',        label: 'System',         icon: '⚙️' },
   ];
 
   // Sub-Tab-Navigation rendern
@@ -3097,7 +3097,7 @@ const SuperAdminDashboard = () => {
         )}
 
         {activeTab === 'todos' && (
-          <div className="tab-content">
+          <div className="tab-content sad-todo-tab">
             <TodoPanel />
           </div>
         )}
