@@ -41,17 +41,17 @@ const FREE_PLANS = ['trial', 'basic', 'free'];
 // Default Plan-Feature Zuordnung
 const DEFAULT_PLAN_FEATURES = {
   // Trial: Alle Features außer Multi-Dojo + White-Label (volle 14-Tage-Erfahrung)
-  trial: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'buchfuehrung', 'api', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats', 'homepage_builder'],
+  trial: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'buchfuehrung', 'api', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats', 'homepage_builder', 'gutscheine', 'ki_chat', 'kontoauszug', 'social_media', 'training'],
   basic: ['mitgliederverwaltung', 'checkin', 'dashboard', 'sicherheit'],
   free: ['mitgliederverwaltung', 'checkin', 'dashboard', 'sicherheit'],
-  // Starter: Kern-Operations — alles was ein kleines Dojo von Tag 1 braucht inkl. Stundenplan
+  // Starter: Kern-Operations
   starter: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'dashboard', 'benachrichtigungen', 'sicherheit', 'interessenten', 'probetraining', 'mahnwesen', 'badges', 'wallet_pass', 'freunde_werben', 'stundenplan', 'kalender_abo'],
-  // Professional: Wachstums-Tools — Kommunikation, Events, Familie, Verkauf; ohne Spezialfeatures
+  // Professional: Wachstums-Tools
   professional: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo'],
-  // Premium: Vollausstattung — inkl. Lernplattform, Eltern-Portal, Trainer-Stunden, externe Chats
+  // Premium: Vollausstattung
   premium: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'dokumente', 'sicherheit', 'buchfuehrung', 'api', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats'],
-  // Enterprise: Franchise & Multi-Standort — alles inkl. Multi-Dojo, White-Label, Homepage Builder, externe Chats
-  enterprise: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'multidojo', 'dokumente', 'api', 'sicherheit', 'buchfuehrung', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'whitelabel', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats', 'homepage_builder', 'ki_chat']
+  // Enterprise: Franchise & Multi-Standort — alle Features inkl. exklusive Enterprise-Features
+  enterprise: ['mitgliederverwaltung', 'online_registrierung', 'mitglieder_portal', 'checkin', 'sepa', 'pruefungen', 'vertraege', 'familien', 'verkauf', 'dashboard', 'stundenplan', 'kommunikation', 'benachrichtigungen', 'multidojo', 'dokumente', 'api', 'sicherheit', 'buchfuehrung', 'kontoauszug', 'interessenten', 'probetraining', 'events', 'ruhepause', 'mahnwesen', 'auswertungen', 'wettbewerb', 'whitelabel', 'badges', 'wallet_pass', 'freunde_werben', 'chat', 'lernplattform', 'eltern_portal', 'trainer_stunden', 'marketing', 'social_media', 'ausruestung', 'entwicklungsziele', 'kalender_abo', 'externe_chats', 'homepage_builder', 'gutscheine', 'ki_chat', 'training']
 };
 
 const PLAN_NAMES = {
@@ -409,6 +409,41 @@ const DEFAULT_FEATURES = [
     description: 'Kostenlose professionelle Homepage im japanischen Martial-Arts-Design — Drag & Drop Editor mit Live-Vorschau, Logo-Upload, Custom Domain möglich',
     emoji: '🌐',
     files: ['HomepageDashboard.jsx', 'DojoSite.jsx', 'backend/routes/homepage.js']
+  },
+  {
+    id: 'gutscheine',
+    label: 'Gutschein-System',
+    description: 'Gutscheine erstellen, an Mitglieder verknüpfen, direkt an der Kasse einlösen — inkl. Teileinlösung und Homepage-Widget',
+    emoji: '🎁',
+    files: ['GutscheineVerwaltung.jsx', 'VerkaufKasse.jsx', 'MemberDashboard.jsx', 'backend/routes/gutscheine.js']
+  },
+  {
+    id: 'ki_chat',
+    label: 'KI-Chat Widget',
+    description: 'Intelligenter KI-Assistent für die eigene Homepage — kennt Tarife, Trainingszeiten und Kampfkünste, antwortet automatisch auf Besucher-Anfragen',
+    emoji: '🤖',
+    files: ['KiChatEinstellungen.jsx', 'backend/routes/visitor-chat.js']
+  },
+  {
+    id: 'kontoauszug',
+    label: 'Bank-Import & Kontoabgleich',
+    description: 'Kontoauszüge importieren, Zahlungseingänge automatisch zuordnen, offene Posten abgleichen',
+    emoji: '🏦',
+    files: ['KontoauszugImport.jsx', 'backend/routes/kontoauszug.js']
+  },
+  {
+    id: 'social_media',
+    label: 'Social Media Hub',
+    description: 'KI-generierte Posts für Instagram, Facebook & TikTok direkt aus der Software erstellen und planen',
+    emoji: '📱',
+    files: ['MarketingKiContent.jsx', 'MarketingHub.jsx', 'backend/routes/marketing.js']
+  },
+  {
+    id: 'training',
+    label: 'Trainings-Dashboard',
+    description: 'Trainingseinheiten erfassen, Auslastung messen, Kurs-Statistiken und Anwesenheitsanalysen',
+    emoji: '🥋',
+    files: ['TrainingDashboard.jsx', 'backend/routes/training.js']
   },
 ];
 
