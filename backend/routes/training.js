@@ -237,6 +237,49 @@ router.put('/trainer-presets', authenticateTrainerToken, async (req, res) => {
   }
 });
 
+// ── Trainer-App: Live Check-in Anzahl (via Trainer-JWT) ──────────────────────
+router.get('/trainer-live-count', authenticateTrainerToken, async (req, res) => {
+  const { dojo_id } = req.trainerUser;
+  if (!dojo_id) return res.json({ count: 0 });
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT COUNT(DISTINCT c.mitglied_id) AS count
+       FROM checkins c
+       JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+       WHERE m.dojo_id = ? AND DATE(c.checkin_time) = CURDATE() AND c.status = 'active'`,
+      [dojo_id]
+    );
+    res.json({ count: rows[0].count || 0 });
+  } catch (err) {
+    logger.error('Trainer live-count error:', { error: err.message });
+    res.json({ count: 0 });
+  }
+});
+
+// ── Trainer-App: Live Check-in Anzahl (via Dojo-Sync-Token) ──────────────────
+router.get('/live-count', async (req, res) => {
+  const { token } = req.query;
+  if (!token || token.length !== 64) return res.status(400).json({ error: 'Token fehlt' });
+  try {
+    const [tokenRows] = await db.promise().query(
+      'SELECT dojo_id FROM training_sync_tokens WHERE sync_token = ? LIMIT 1', [token]
+    );
+    if (tokenRows.length === 0) return res.status(401).json({ error: 'Ungültiger Token' });
+    const dojoId = tokenRows[0].dojo_id;
+    const [rows] = await db.promise().query(
+      `SELECT COUNT(DISTINCT c.mitglied_id) AS count
+       FROM checkins c
+       JOIN mitglieder m ON c.mitglied_id = m.mitglied_id
+       WHERE m.dojo_id = ? AND DATE(c.checkin_time) = CURDATE() AND c.status = 'active'`,
+      [dojoId]
+    );
+    res.json({ count: rows[0].count || 0 });
+  } catch (err) {
+    logger.error('Live-count error:', { error: err.message });
+    res.json({ count: 0 });
+  }
+});
+
 // ── Dojosoftware Frontend: Preset-Info für einen Trainer (per trainer_id) ──────
 // GET /api/training/trainer-presets-info?trainer_id=X
 // Prüft ob ein admin_user mit gleicher Email persönliche Presets hat
