@@ -128,6 +128,7 @@ const ArtikelgruppenVerwaltung = lazyWithReload(() => import(/* webpackChunkName
 const ShopBestellungenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/shop/ShopBestellungenVerwaltung"));
 const OffeneArtikelEinzuege = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/OffeneArtikelEinzuege"));
 const GutscheineVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/GutscheineVerwaltung"));
+const KiChatEinstellungen = lazyWithReload(() => import(/* webpackChunkName: "integrations" */ "./components/KiChatEinstellungen"));
 
 // ============================================================================
 // LAZY LOADED - Member-Bereich
@@ -813,6 +814,9 @@ const App = () => {
 
               {/* Gutscheine */}
               <Route path="gutscheine" element={<Suspense fallback={<LazyLoadFallback />}><GutscheineVerwaltung /></Suspense>} />
+
+              {/* KI-Chat Widget Einstellungen */}
+              <Route path="ki-chat" element={<Suspense fallback={<LazyLoadFallback />}><KiChatEinstellungen /></Suspense>} />
 
               {/* ======== STIL-VERWALTUNG (ERWEITERT) ======== */}
               <Route path="stile" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />

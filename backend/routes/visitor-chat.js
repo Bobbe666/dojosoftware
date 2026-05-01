@@ -33,6 +33,7 @@ async function loadDojoKontext(dojoId) {
   try {
     const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
     const dojoName = dojo?.dojoname || 'Kampfkunstschule';
+    const [[chatConfig]] = await pool.query('SELECT * FROM visitor_chat_config WHERE dojo_id = ?', [dojoId]);
 
     const [tarife] = await pool.query(`
       SELECT name, price_cents, duration_months, billing_cycle, altersgruppe,
@@ -74,10 +75,17 @@ async function loadDojoKontext(dojoId) {
 
     const stileText = stile.map(s => `- ${s.name}${s.beschreibung ? ': ' + s.beschreibung : ''}`).join('\n');
 
-    return { dojoName, tarifeText, stundenplanText, stileText };
+    return {
+      dojoName,
+      tarifeText,
+      stundenplanText,
+      stileText,
+      assistentName: chatConfig?.assistent_name || 'Assistent',
+      zusatzKontext: chatConfig?.zusatz_kontext || '',
+    };
   } catch (err) {
     logger.warn('AI-Kontext konnte nicht geladen werden', { error: err.message });
-    return { dojoName: 'Kampfkunstschule', tarifeText: '', stundenplanText: '', stileText: '' };
+    return { dojoName: 'Kampfkunstschule', tarifeText: '', stundenplanText: '', stileText: '', assistentName: 'Assistent', zusatzKontext: '' };
   }
 }
 
@@ -86,9 +94,9 @@ async function sendAIReply(session, io, conversationHistory) {
   const dojoId = session.dojo_id || null;
   if (!process.env.ANTHROPIC_API_KEY) return sendAutoReply(session, io);
 
-  const kontext = dojoId ? await loadDojoKontext(dojoId) : { dojoName: 'TDA', tarifeText: '', stundenplanText: '', stileText: '' };
+  const kontext = dojoId ? await loadDojoKontext(dojoId) : { dojoName: 'TDA', tarifeText: '', stundenplanText: '', stileText: '', assistentName: 'Assistent', zusatzKontext: '' };
 
-  const systemPrompt = `Du bist der freundliche AI-Assistent der ${kontext.dojoName} in Vilsbiburg.
+  const systemPrompt = `Du bist ${kontext.assistentName}, der freundliche AI-Assistent der ${kontext.dojoName}.
 Du beantwortest Fragen von Interessenten und Mitgliedern auf Deutsch – kurz, freundlich und konkret.
 
 ## Unsere Kampfkünste
@@ -113,6 +121,7 @@ ${kontext.tarifeText || 'Informationen auf Anfrage'}
 - Halte Antworten kurz (2-4 Sätze) außer bei komplexen Fragen
 - Wenn du etwas nicht weißt: sage es ehrlich und empfiehl den direkten Kontakt
 - Schreibe KEINE Markdown-Formatierung (kein **, keine #) – nur normalen Text
+${kontext.zusatzKontext ? `\n## Weitere Infos vom Dojo\n${kontext.zusatzKontext}` : ''}
 
 ## Preise und Tarife
 - Nenne NIEMALS proaktiv Preise, Beiträge oder Tarifdetails – auch nicht als Empfehlung oder Beispiel
@@ -1321,6 +1330,65 @@ router.get('/unread-count', authenticateToken, async (req, res) => {
   } catch (err) {
     logger.error('Fehler beim Zählen der ungelesenen Sessions', { error: err.message });
     res.status(500).json({ success: false, error: 'Interner Fehler', count: 0 });
+  }
+});
+
+// ─── KI-Chat Config (Enterprise) ─────────────────────────────────────────────
+
+// GET /api/visitor-chat/config — eigene Dojo-Config lesen
+router.get('/config', authenticateToken, async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ success: false, error: 'Dojo-ID fehlt' });
+
+    const [[feature]] = await pool.query(
+      'SELECT feature_ki_chat, plan_type FROM dojo_subscriptions WHERE dojo_id = ?', [dojoId]
+    );
+    const [[config]] = await pool.query(
+      'SELECT * FROM visitor_chat_config WHERE dojo_id = ?', [dojoId]
+    );
+    const [[dojo]] = await pool.query('SELECT dojoname FROM dojo WHERE id = ?', [dojoId]);
+
+    res.json({
+      success: true,
+      feature_aktiv: !!(feature?.feature_ki_chat),
+      plan_type: feature?.plan_type || 'trial',
+      config: config || null,
+      dojo_name: dojo?.dojoname || '',
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PUT /api/visitor-chat/config — Config speichern
+router.put('/config', authenticateToken, async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ success: false, error: 'Dojo-ID fehlt' });
+
+    const [[feature]] = await pool.query(
+      'SELECT feature_ki_chat FROM dojo_subscriptions WHERE dojo_id = ?', [dojoId]
+    );
+    if (!feature?.feature_ki_chat) return res.status(403).json({ success: false, error: 'KI-Chat nicht freigeschaltet' });
+
+    const { assistent_name, begruessung, akzentfarbe, ki_aktiv, zusatz_kontext } = req.body;
+
+    await pool.query(`
+      INSERT INTO visitor_chat_config (dojo_id, assistent_name, begruessung, akzentfarbe, ki_aktiv, zusatz_kontext)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        assistent_name = VALUES(assistent_name),
+        begruessung    = VALUES(begruessung),
+        akzentfarbe    = VALUES(akzentfarbe),
+        ki_aktiv       = VALUES(ki_aktiv),
+        zusatz_kontext = VALUES(zusatz_kontext)
+    `, [dojoId, assistent_name || 'Assistent', begruessung || null,
+        akzentfarbe || '#ef4444', ki_aktiv ? 1 : 0, zusatz_kontext || null]);
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

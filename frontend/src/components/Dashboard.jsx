@@ -705,6 +705,14 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '🤖',
+      title: 'KI-Chat Widget',
+      description: 'Intelligenter Chat-Assistent für eure Homepage',
+      path: '/dashboard/ki-chat',
+      badge: 'Enterprise',
+      featured: true
+    },
+    {
       icon: '📋',
       title: 'Umfragen',
       description: 'Mitglieder-Umfragen zur Veranstaltungsteilnahme und Feedback',
