@@ -1502,7 +1502,7 @@ const SuperAdminDashboard = () => {
       <div className="tab-content">
         {activeTab === 'overview' && (
           <>
-            {/* ── KPI-Leiste ─────────────────────────────────────────── */}
+            {/* ── Zone 1: KPI-Leiste ──────────────────────────────────── */}
             <div className="compact-stats-bar sad2-mb-15">
               <div className="compact-stat">
                 <Building2 size={18} />
@@ -1529,7 +1529,11 @@ const SuperAdminDashboard = () => {
                 <span className="compact-stat-value">{globalStats?.payments?.open_payments || 0}</span>
                 <span className="compact-stat-label">Offene Zahlungen</span>
               </div>
-              <div className={`compact-stat ${unreadCount > 0 ? 'compact-stat--danger' : ''}`}>
+              <div
+                className={`compact-stat compact-stat--clickable ${unreadCount > 0 ? 'compact-stat--danger' : ''}`}
+                onClick={() => { setActiveTab('kommunikation'); setKommunikationSubTab('pushnachrichten'); }}
+                title="Zu Benachrichtigungen"
+              >
                 <Bell size={18} />
                 <span className="compact-stat-value">{unreadCount}</span>
                 <span className="compact-stat-label">Ungelesen</span>
@@ -1541,7 +1545,7 @@ const SuperAdminDashboard = () => {
               </div>
             </div>
 
-            {/* ── SSL-Zertifikat-Warnungen ────────────────────────────── */}
+            {/* ── Zone 2: Alerts (SSL + Trial) ────────────────────────── */}
             {sslWarnings.length > 0 && (
               <div className="sad-ssl-alert-bar">
                 <div className="sad-ssl-alert-bar-header">
@@ -1593,7 +1597,143 @@ const SuperAdminDashboard = () => {
               </div>
             )}
 
-            {/* ── Jahres-Ziele Soll/Ist ───────────────────────────────── */}
+            {/* Trial-Monitor — kompakter Alert, nur wenn Trials ablaufen */}
+            {(overviewSummary?.trial_expiring || []).length > 0 && (
+              <div className="sad-trial-alert-bar">
+                <div className="sad-trial-alert-header">
+                  <span>
+                    <Clock size={14} style={{verticalAlign:'middle', marginRight:4}} />
+                    Trial läuft bald ab — {overviewSummary.trial_expiring.length} Dojo{overviewSummary.trial_expiring.length !== 1 ? 's' : ''}
+                  </span>
+                  <button
+                    className="sad-trial-alert-btn"
+                    onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }}
+                  >
+                    Verwalten →
+                  </button>
+                </div>
+                <div className="sad-trial-alert-list">
+                  {overviewSummary.trial_expiring.map((d, i) => (
+                    <span key={i} className={`sad-trial-alert-chip ${d.tage_noch <= 3 ? 'sad-trial-alert-chip--urgent' : 'sad-trial-alert-chip--warning'}`}>
+                      {d.dojoname} · noch {d.tage_noch} Tag{d.tage_noch !== 1 ? 'e' : ''}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── Zone 3: Produkt-Karten ───────────────────────────────── */}
+            <div className="sad-product-cards-grid">
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }} className="sad2-clickable-card">
+                <div className="sad2-icon-15">🥋</div>
+                <div className="sad-gold-heading">DojoSoftware</div>
+                <div className="sad-product-card-sub">
+                  <div className="sad2-flex-between-mb03">
+                    <span>Aktive Dojos</span><strong className="mds-info-value">{globalStats?.dojos?.active_dojos || 0}</strong>
+                  </div>
+                  <div className="sad2-flex-between-mb03">
+                    <span>Neu diese Woche</span><strong className={(overviewSummary?.new_registrations?.dojos?.week || 0) > 0 ? 'sad-new-count--positive' : 'sad-new-count--neutral'}>+{overviewSummary?.new_registrations?.dojos?.week || 0}</strong>
+                  </div>
+                  <div className="u-flex-between">
+                    <span>Neu diesen Monat</span><strong className="mds-info-value">+{overviewSummary?.new_registrations?.dojos?.month || 0}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div onClick={() => setActiveTab('verband')} className="sad2-clickable-card">
+                <div className="sad2-icon-15">🏆</div>
+                <div className="sad-gold-heading">Verband</div>
+                <div className="sad-text-secondary-sm">
+                  <div className="sad2-flex-between-mb03">
+                    <span>Aktive Mitglieder</span><strong className="mds-info-value">{overviewSummary?.goals?.find(g => g.typ === 'verband_mitglieder')?.ist_wert || 0}</strong>
+                  </div>
+                  <div className="sad2-flex-between-mb03">
+                    <span>Neu diese Woche</span><strong className={(overviewSummary?.new_registrations?.verband?.week || 0) > 0 ? 'sad-new-count--positive' : 'sad-new-count--neutral'}>+{overviewSummary?.new_registrations?.verband?.week || 0}</strong>
+                  </div>
+                  <div className="u-flex-between">
+                    <span>Neu diesen Monat</span><strong className="mds-info-value">+{overviewSummary?.new_registrations?.verband?.month || 0}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('eventsoftware'); }} className="sad2-clickable-card">
+                <div className="sad2-icon-15">🗓️</div>
+                <div className="sad-gold-heading">EventSoftware</div>
+                <div className="sad-text-secondary-sm">
+                  {eventStats ? (
+                    <div className="sad2-flex-col-04">
+                      <div className="sad2-flex-between-mb03">
+                        <span>Events gesamt</span><strong className="mds-info-value">{eventStats.gesamt}</strong>
+                      </div>
+                      <div className="sad2-flex-between-mb03">
+                        <span>Bevorstehend</span><strong className={eventStats.upcoming > 0 ? 'sad-new-count--positive' : 'mds-info-value'}>{eventStats.upcoming}</strong>
+                      </div>
+                      <div className="u-flex-between">
+                        <span>Anmeldung offen</span><strong className="mds-info-value">{eventStats.offen}</strong>
+                      </div>
+                      {eventStats.naechstes && (
+                        <div className="sad-hof-next-event">
+                          <div className="sad-hof-next-event-title">Nächstes Event</div>
+                          <div className="sad-hof-next-event-name">{eventStats.naechstes.name}</div>
+                          <div className="u-text-secondary">
+                            {new Date(eventStats.naechstes.start_datum || eventStats.naechstes.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : <div className="sad-hof-loading">Lade…</div>}
+                </div>
+              </div>
+
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('academy'); }} className="sad2-clickable-card">
+                <div className="sad2-icon-15">🎓</div>
+                <div className="sad-gold-heading">TDA Academy</div>
+                <div className="sad-text-secondary-sm">
+                  {academyStats ? (
+                    <div className="sad2-flex-col-04">
+                      <div className="sad2-flex-between-mb03">
+                        <span>Kurse aktiv</span><strong className="mds-info-value">{academyStats.kurse_aktiv}</strong>
+                      </div>
+                      <div className="sad2-flex-between-mb03">
+                        <span>Buchungen</span><strong className="mds-info-value">{academyStats.buchungen_gesamt}</strong>
+                      </div>
+                      <div className="u-flex-between">
+                        <span>Umsatz</span><strong className="mds-info-value">{parseFloat(academyStats.umsatz_gesamt || 0).toFixed(0)} €</strong>
+                      </div>
+                    </div>
+                  ) : <div className="sad-hof-loading">Lade…</div>}
+                </div>
+              </div>
+
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('halloffame'); }} className="sad2-clickable-card">
+                <div className="sad2-icon-15">🌟</div>
+                <div className="sad-gold-heading">Hall of Fame</div>
+                <div className="sad-text-secondary-sm">
+                  {hofStats ? (
+                    <div className="sad2-flex-col-04">
+                      <div className="u-flex-between">
+                        <span>Sportler</span><strong className="mds-info-value">{hofStats.total_sportler}</strong>
+                      </div>
+                      <div className="u-flex-between">
+                        <span>Nominierungen</span><strong className="mds-info-value">{hofStats.nominierungen_gesamt}</strong>
+                      </div>
+                      <div className="u-flex-between">
+                        <span>Veranstaltungen</span><strong className="mds-info-value">{hofStats.veranstaltungen_gesamt}</strong>
+                      </div>
+                      {hofStats.naechste_veranstaltung && (
+                        <div className="sad-hof-next-event">
+                          <div className="sad-hof-next-event-title">Nächste Veranstaltung</div>
+                          <div className="sad-hof-next-event-name">{hofStats.naechste_veranstaltung.titel}</div>
+                          <div className="u-text-secondary">{new Date(hofStats.naechste_veranstaltung.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+                        </div>
+                      )}
+                    </div>
+                  ) : <div className="sad-hof-loading">Lade…</div>}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Zone 4: Jahresziele ─────────────────────────────────── */}
             {overviewSummary?.goals?.length > 0 && (
               <section className="sad-goals-section">
                 <div className="sad-goals-section-header">
@@ -1608,7 +1748,6 @@ const SuperAdminDashboard = () => {
                   {overviewSummary.goals.map(goal => {
                     const label = goal.typ === 'dojos' ? '🏯 Dojos' : goal.typ === 'verband_mitglieder' ? '🏆 Verbandsmitglieder' : goal.typ === 'software_nutzer' ? '🥋 Software-Nutzer' : goal.typ === 'umsatz' ? '💰 Umsatz' : goal.typ;
                     const pct = Math.min(goal.prozent, 100);
-                    const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#f59e0b' : '#ef4444';
                     return (
                       <div key={goal.typ}>
                         <div className="sad-goals-goal-header">
@@ -1626,151 +1765,24 @@ const SuperAdminDashboard = () => {
               </section>
             )}
 
-            {/* ── Produkt-Status / Neuanmeldungen ────────────────────── */}
-            <div className="sad-product-cards-grid">
-              {/* DojoSoftware */}
-              <div onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }} className="sad2-clickable-card">
-                <div className="sad2-icon-15">🥋</div>
-                <div className="sad-gold-heading">DojoSoftware</div>
-                <div className="sad-product-card-sub">
-                  <div className="sad2-flex-between-mb03">
-                    <span>Aktive Dojos</span><strong className="mds-info-value">{globalStats?.dojos?.active_dojos || 0}</strong>
-                  </div>
-                  <div className="sad2-flex-between-mb03">
-                    <span>Neu diese Woche</span><strong className={(overviewSummary?.new_registrations?.dojos?.week || 0) > 0 ? 'sad-new-count--positive' : 'sad-new-count--neutral'}>+{overviewSummary?.new_registrations?.dojos?.week || 0}</strong>
-                  </div>
-                  <div className="u-flex-between">
-                    <span>Neu diesen Monat</span><strong className="mds-info-value">+{overviewSummary?.new_registrations?.dojos?.month || 0}</strong>
-                  </div>
-                </div>
-                {overviewSummary?.trial_expiring?.length > 0 && (
-                  <div className="sad-trial-expiring-mini">
-                    ⚠️ {overviewSummary.trial_expiring.length} Trial läuft bald ab
-                  </div>
-                )}
-              </div>
+            {/* ── Zone 5: Activity Feed (2-col) ───────────────────────── */}
+            <div className="u-grid-2col">
 
-              {/* Verband */}
-              <div onClick={() => setActiveTab('verband')} className="sad2-clickable-card">
-                <div className="sad2-icon-15">🏆</div>
-                <div className="sad-gold-heading">Verband</div>
-                <div className="sad-text-secondary-sm">
-                  <div className="sad2-flex-between-mb03">
-                    <span>Aktive Mitglieder</span><strong className="mds-info-value">{overviewSummary?.goals?.find(g => g.typ === 'verband_mitglieder')?.ist_wert || 0}</strong>
-                  </div>
-                  <div className="sad2-flex-between-mb03">
-                    <span>Neu diese Woche</span><strong className={(overviewSummary?.new_registrations?.verband?.week || 0) > 0 ? 'sad-new-count--positive' : 'sad-new-count--neutral'}>+{overviewSummary?.new_registrations?.verband?.week || 0}</strong>
-                  </div>
-                  <div className="u-flex-between">
-                    <span>Neu diesen Monat</span><strong className="mds-info-value">+{overviewSummary?.new_registrations?.verband?.month || 0}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* EventSoftware */}
-              <div onClick={() => { setActiveTab('software'); setSoftwareSection('eventsoftware'); }} className="sad2-clickable-card">
-                <div className="sad2-icon-15">🗓️</div>
-                <div className="sad-gold-heading">EventSoftware</div>
-                <div className="sad-text-secondary-sm">
-                  {eventStats ? (
-                    <div className="sad2-flex-col-04">
-                      <div className="sad2-flex-between-mb03">
-                        <span>Events gesamt</span><strong className="mds-info-value">{eventStats.gesamt}</strong>
-                      </div>
-                      <div className="sad2-flex-between-mb03">
-                        <span>Bevorstehend</span><strong className={(eventStats.upcoming > 0) ? 'sad-new-count--positive' : 'mds-info-value'}>{eventStats.upcoming}</strong>
-                      </div>
-                      <div className="u-flex-between">
-                        <span>Anmeldung offen</span><strong className="mds-info-value">{eventStats.offen}</strong>
-                      </div>
-                      {eventStats.naechstes && (
-                        <div className="sad-hof-next-event">
-                          <div className="sad-hof-next-event-title">Nächstes Event</div>
-                          <div className="sad-hof-next-event-name">{eventStats.naechstes.name}</div>
-                          <div className="u-text-secondary">
-                            {new Date(eventStats.naechstes.start_datum || eventStats.naechstes.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long' })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="sad-hof-loading">Lade…</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Academy */}
-              <div onClick={() => { setActiveTab('software'); setSoftwareSection('academy'); }} className="sad2-clickable-card">
-                <div className="sad2-icon-15">🎓</div>
-                <div className="sad-gold-heading">TDA Academy</div>
-                <div className="sad-text-secondary-sm">
-                  {academyStats ? (
-                    <div className="sad2-flex-col-04">
-                      <div className="sad2-flex-between-mb03">
-                        <span>Kurse aktiv</span><strong className="mds-info-value">{academyStats.kurse_aktiv}</strong>
-                      </div>
-                      <div className="sad2-flex-between-mb03">
-                        <span>Buchungen</span><strong className="mds-info-value">{academyStats.buchungen_gesamt}</strong>
-                      </div>
-                      <div className="u-flex-between">
-                        <span>Umsatz</span><strong className="mds-info-value">{parseFloat(academyStats.umsatz_gesamt || 0).toFixed(0)} €</strong>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="sad-hof-loading">Lade…</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Hall of Fame */}
-              <div onClick={() => { setActiveTab('software'); setSoftwareSection('halloffame'); }} className="sad2-clickable-card">
-                <div className="sad2-icon-15">🌟</div>
-                <div className="sad-gold-heading">Hall of Fame</div>
-                <div className="sad-text-secondary-sm">
-                  {hofStats ? (
-                    <div className="sad2-flex-col-04">
-                      <div className="u-flex-between">
-                        <span>Sportler</span>
-                        <strong className="mds-info-value">{hofStats.total_sportler}</strong>
-                      </div>
-                      <div className="u-flex-between">
-                        <span>Nominierungen</span>
-                        <strong className="mds-info-value">{hofStats.nominierungen_gesamt}</strong>
-                      </div>
-                      <div className="u-flex-between">
-                        <span>Veranstaltungen</span>
-                        <strong className="mds-info-value">{hofStats.veranstaltungen_gesamt}</strong>
-                      </div>
-                      {hofStats.naechste_veranstaltung && (
-                        <div className="sad-hof-next-event">
-                          <div className="sad-hof-next-event-title">Nächste Veranstaltung</div>
-                          <div className="sad-hof-next-event-name">{hofStats.naechste_veranstaltung.titel}</div>
-                          <div className="u-text-secondary">{new Date(hofStats.naechste_veranstaltung.datum).toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="sad-hof-loading">Lade…</div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ── Neueste Anmeldungen + Benachrichtigungen ── */}
-            <div className="sad-widgets-4col">
-
-              {/* Neueste Dojos */}
+              {/* Neueste Anmeldungen — Dojos + Verbandsmitglieder zusammen */}
               <section className="dashboard-widget">
                 <div className="widget-header">
-                  <h3><Building2 size={16} /> Neue Dojos</h3>
-                  <button onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }} className="widget-action-btn">Alle →</button>
+                  <h3><UserPlus size={16} /> Neueste Anmeldungen</h3>
                 </div>
                 <div className="widget-content">
-                  {overviewSummary?.neueste_dojos?.length === 0 ? (
-                    <div className="widget-empty">Keine Daten</div>
+                  <div className="sad-widget-sublabel">
+                    🏯 Neue Dojos
+                    <button onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }} className="sad-widget-sublabel-link">Alle →</button>
+                  </div>
+                  {(overviewSummary?.neueste_dojos || []).length === 0 ? (
+                    <div className="widget-empty widget-empty--sm">Keine Daten</div>
                   ) : (
                     <div className="sad-flex-col-sm">
-                      {(overviewSummary?.neueste_dojos || []).map((dojo, i) => (
+                      {(overviewSummary.neueste_dojos).map((dojo, i) => (
                         <div key={i} className="sad-list-row">
                           <div>
                             <div className="sad2-fw600">{dojo.dojoname}</div>
@@ -1783,21 +1795,18 @@ const SuperAdminDashboard = () => {
                       ))}
                     </div>
                   )}
-                </div>
-              </section>
 
-              {/* Neueste Verbandsmitglieder */}
-              <section className="dashboard-widget">
-                <div className="widget-header">
-                  <h3><Award size={16} /> Neue Verbandsmitglieder</h3>
-                  <button onClick={() => setActiveTab('verband')} className="widget-action-btn">Alle →</button>
-                </div>
-                <div className="widget-content">
-                  {overviewSummary?.neueste_verbandsmitglieder?.length === 0 ? (
-                    <div className="widget-empty">Keine Daten</div>
+                  <div className="sad-widget-divider" />
+
+                  <div className="sad-widget-sublabel">
+                    🏆 Neue Verbandsmitglieder
+                    <button onClick={() => setActiveTab('verband')} className="sad-widget-sublabel-link">Alle →</button>
+                  </div>
+                  {(overviewSummary?.neueste_verbandsmitglieder || []).length === 0 ? (
+                    <div className="widget-empty widget-empty--sm">Keine Daten</div>
                   ) : (
                     <div className="sad-flex-col-sm">
-                      {(overviewSummary?.neueste_verbandsmitglieder || []).map((m, i) => (
+                      {(overviewSummary.neueste_verbandsmitglieder).map((m, i) => (
                         <div key={i} className="sad-list-row">
                           <div>
                             <div className="sad2-fw600">{m.name}</div>
@@ -1805,101 +1814,6 @@ const SuperAdminDashboard = () => {
                           </div>
                           <span className={`sad-member-status ${m.status === 'aktiv' ? 'sad-member-status--aktiv' : 'sad-member-status--inaktiv'}`}>
                             {m.status}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Neueste Dojo-Mitglieder */}
-              <section className="dashboard-widget">
-                <div className="widget-header">
-                  <h3><Users size={16} /> Neue Dojo-Mitglieder</h3>
-                </div>
-                <div className="widget-content">
-                  {!overviewSummary?.neueste_mitglieder?.length ? (
-                    <div className="widget-empty">Keine Daten</div>
-                  ) : (
-                    <div className="sad-flex-col-sm">
-                      {overviewSummary.neueste_mitglieder.map((m, i) => (
-                        <div key={i} className="sad-list-row">
-                          <div>
-                            <div className="sad2-fw600">{m.vorname} {m.nachname}</div>
-                            <div className="sad2-text-secondary-xs">{m.dojoname}</div>
-                          </div>
-                          <span className="sad-date-span">
-                            {new Date(m.eintrittsdatum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-
-              {/* Benachrichtigungen */}
-              <section className="dashboard-widget">
-                <div className="widget-header">
-                  <h3>
-                    <Bell size={16} /> Benachrichtigungen
-                    {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
-                  </h3>
-                  <button onClick={() => { setActiveTab('kommunikation'); setKommunikationSubTab('pushnachrichten'); }} className="widget-action-btn">
-                    Alle anzeigen
-                  </button>
-                </div>
-                <div className="widget-content">
-                  {notificationsLoading ? (
-                    <div className="widget-empty">Lade...</div>
-                  ) : notifications.filter(n => !n.gelesen).length === 0 ? (
-                    <div className="widget-empty">
-                      <CheckCircle size={20} className="sad2-opacity-04" /><br />Keine ungelesenen
-                    </div>
-                  ) : (
-                    <div className="notification-list">
-                      {notifications.filter(n => !n.gelesen).slice(0, 5).map((notification) => (
-                        <div key={notification.id} className="notification-item">
-                          <span className="notification-icon">
-                            {notification.typ === 'mitglied_registriert' ? '👤' :
-                             notification.typ === 'dojo_registriert' ? '🏠' :
-                             notification.typ === 'verbandsmitglied_registriert' ? '🏆' : '🔔'}
-                          </span>
-                          <div className="notification-content">
-                            <div className="notification-title">{notification.titel}</div>
-                            <div className="notification-desc">{notification.nachricht}</div>
-                          </div>
-                          <div className="notification-actions">
-                            <button onClick={() => markNotificationAsRead(notification.id)} title="Gelesen"><Eye size={14} /></button>
-                            <button onClick={() => archiveNotification(notification.id)} title="Archivieren"><Archive size={14} /></button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
-
-            {/* ── Trial-Monitor + Aktivitäten ─────────────────────────── */}
-            <div className="u-grid-2col">
-
-              {/* Trial läuft ab */}
-              <section className="dashboard-widget">
-                <div className="widget-header">
-                  <h3><Clock size={16} /> Trial-Monitor</h3>
-                </div>
-                <div className="widget-content">
-                  {(overviewSummary?.trial_expiring || []).length === 0 ? (
-                    <div className="widget-empty"><CheckCircle size={20} className="sad2-opacity-04" /><br />Kein Trial läuft bald ab</div>
-                  ) : (
-                    <div className="sad-flex-col-sm">
-                      {overviewSummary.trial_expiring.map((d, i) => (
-                        <div key={i} className={`sad-trial-item ${d.tage_noch <= 3 ? 'sad-trial-item--urgent' : 'sad-trial-item--warning'}`}>
-                          <span className="sad2-fw600">{d.dojoname}</span>
-                          <span className={d.tage_noch <= 3 ? 'sad-trial-days--urgent' : 'sad-trial-days--warning'}>
-                            noch {d.tage_noch} Tag{d.tage_noch !== 1 ? 'e' : ''}
                           </span>
                         </div>
                       ))}
@@ -1921,7 +1835,7 @@ const SuperAdminDashboard = () => {
                     <div className="widget-empty">Keine aktuellen Aktivitäten</div>
                   ) : (
                     <div className="activity-list">
-                      {activities.slice(0, 6).map((activity, index) => (
+                      {activities.slice(0, 8).map((activity, index) => (
                         <div key={activity.id || index} className="activity-item">
                           <span className="activity-icon">{activity.icon || '📋'}</span>
                           <div className="activity-content">
@@ -1938,19 +1852,6 @@ const SuperAdminDashboard = () => {
                 </div>
               </section>
             </div>
-
-            {/* ── Dojo-Auswertungen ── */}
-            <div className="sad-auswertungen-section">
-              <div className="sad-auswertungen-header">
-                <h2 className="sad-auswertungen-title">📈 Dojo-Auswertungen</h2>
-                <p className="sad-auswertungen-hint">Aktualisiert sich automatisch bei Dojo-Wechsel</p>
-              </div>
-              <div className="sad-auswertungen-embed">
-                <Auswertungen />
-              </div>
-            </div>
-
-
           </>
         )}
 
