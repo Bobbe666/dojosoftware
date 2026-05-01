@@ -31,6 +31,7 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
   const [todos, setTodos]         = useState([]);
   const [users, setUsers]         = useState([]);
   const [loading, setLoading]     = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [statusFilter, setStatusFilter] = useState('aktiv'); // aktiv | alle | erledigt
   const [prioFilter, setPrioFilter]     = useState('alle');
   const [kontextFilter, setKontextFilter] = useState(fixedKontext || 'alle');
@@ -41,6 +42,7 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const params = {};
       if (kontextFilter !== 'alle') params.kontext = kontextFilter;
@@ -51,7 +53,9 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
       ]);
       setTodos(todosRes.data.todos || []);
       setUsers(usersRes.data.users || []);
-    } catch { /* ignore */ }
+    } catch (err) {
+      setLoadError(err?.response?.data?.error || err?.message || 'Fehler beim Laden');
+    }
     finally { setLoading(false); }
   }, [kontextFilter, prioFilter]);
 
@@ -149,6 +153,11 @@ export default function TodoPanel({ compact = false, fixedKontext = null }) {
       {/* List */}
       {loading ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#888' }}>Lädt…</div>
+      ) : loadError ? (
+        <div style={{ padding: '1.5rem', color: '#ef4444', background: 'rgba(239,68,68,0.1)', borderRadius: 8, margin: '1rem 0' }}>
+          ⚠️ Fehler beim Laden: {loadError}
+          <button onClick={load} style={{ marginLeft: 12, color: '#ffd700', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Erneut versuchen</button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="todo-empty">
           {statusFilter === 'erledigt' ? '✓ Keine erledigten Todos.' : '🎉 Alles erledigt – keine offenen Todos!'}

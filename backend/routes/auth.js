@@ -395,6 +395,10 @@ router.post('/login',
           vorname: user.vorname || null,
           nachname: user.nachname || null,
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
+          todo_app_access:   isAdmin ? (user.todo_app_access !== 0)   : true,
+          events_app_access: isAdmin ? (user.events_app_access !== 0) : true,
+          kids_app_access:   isAdmin ? (user.kids_app_access !== 0)   : true,
+          hof_app_access:    isAdmin ? (user.hof_app_access !== 0)    : true,
           loginTime: new Date().toISOString()
         };
 
