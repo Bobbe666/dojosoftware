@@ -51,6 +51,7 @@ import ClubMemberLogin from "./components/ClubMemberLogin";
 import CheckinLogin from "./components/CheckinLogin";
 import SSOLogin from "./components/SSOLogin";
 import LandingPage from "./pages/LandingPage";
+import SupportPortal from "./components/SupportPortal";
 
 // ============================================================================
 // LAZY LOADED - Dashboard & Hauptbereiche
@@ -474,9 +475,26 @@ function useSafariDateFix() {
   }, []);
 }
 
+// ── Support-Portal Branch (support.tda-intl.org) ──────────────────────────
+const SupportPortalBranch = () => (
+  <ThemeProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <SupportPortal />
+      </BrowserRouter>
+    </AuthProvider>
+  </ThemeProvider>
+);
+
 // Haupt-App Komponente
 const App = () => {
   useSafariDateFix();
+
+  // Support-Portal auf dedizierter Subdomain
+  if (window.location.hostname === 'support.tda-intl.org') {
+    return <SupportPortalBranch />;
+  }
+
   return (
     <ThemeProvider>
       <UpdateBanner />

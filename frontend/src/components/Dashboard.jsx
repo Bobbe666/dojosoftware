@@ -292,7 +292,7 @@ function Dashboard() {
     { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
     { id: 'berichte', label: t('tabs.berichte'), icon: '📄' },
     { id: 'schnellaktionen', label: t('tabs.schnellaktionen'), icon: '⚡' },
-    { id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }
+    ...(hasFeature('support') ? [{ id: 'hilfe-support', label: t('tabs.hilfeSupport'), icon: '❓' }] : [])
   ];
 
   const tabs = baseTabs;

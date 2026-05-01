@@ -108,6 +108,7 @@ function requireFeature(featureName) {
         social_media:     'feature_social_media',
         training:         'feature_training',
         todos:            'feature_todos',
+        support:          'feature_support',
       };
 
       const featureColumn = featureColumnMap[featureName];
