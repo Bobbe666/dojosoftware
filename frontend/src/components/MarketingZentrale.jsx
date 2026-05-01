@@ -14,7 +14,6 @@ import '../styles/MarketingZentrale.css';
 const MarketingJahresplan     = lazy(() => import('./MarketingJahresplan'));
 const FreundeWerbenFreunde    = lazy(() => import('./FreundeWerbenFreunde'));
 const FreieAktionen           = lazy(() => import('./FreieAktionen'));
-const GutscheineVerwaltung    = lazy(() => import('./GutscheineVerwaltung'));
 const MarketingKiContent      = lazy(() => import('./MarketingKiContent'));
 const MarketingGeburtstage    = lazy(() => import('./MarketingGeburtstage'));
 const MarketingNewsletter     = lazy(() => import('./MarketingNewsletter'));
@@ -63,13 +62,6 @@ const TABS = [
     label: 'Freie Aktionen',
     icon:  Zap,
     desc:  'Spontane Kampagnen',
-  },
-  {
-    id:    'gutscheine',
-    label: 'Gutscheine',
-    icon:  Gift,
-    desc:  'Gutschein-Generator',
-    premium: true,
   },
 ];
 
@@ -189,9 +181,7 @@ export default function MarketingZentrale({ embedded = false }) {
         {activeTab === 'freie-aktionen' && (
           <Suspense fallback={<LazyFallback />}><FreieAktionen onSwitchToJahresplan={() => setActiveTab('jahresplan')} /></Suspense>
         )}
-        {activeTab === 'gutscheine' && (
-          <Suspense fallback={<LazyFallback />}><GutscheineVerwaltung /></Suspense>
-        )}
+
       </div>
     </div>
   );

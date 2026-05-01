@@ -127,6 +127,7 @@ const VerkaufKasse = lazyWithReload(() => import(/* webpackChunkName: "sales" */
 const ArtikelgruppenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/ArtikelgruppenVerwaltung"));
 const ShopBestellungenVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/shop/ShopBestellungenVerwaltung"));
 const OffeneArtikelEinzuege = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/OffeneArtikelEinzuege"));
+const GutscheineVerwaltung = lazyWithReload(() => import(/* webpackChunkName: "sales" */ "./components/GutscheineVerwaltung"));
 
 // ============================================================================
 // LAZY LOADED - Member-Bereich
@@ -809,6 +810,9 @@ const App = () => {
 
               {/* Offene Artikel-Einzüge */}
               <Route path="offene-einzuege" element={<Suspense fallback={<LazyLoadFallback />}><OffeneArtikelEinzuege /></Suspense>} />
+
+              {/* Gutscheine */}
+              <Route path="gutscheine" element={<Suspense fallback={<LazyLoadFallback />}><GutscheineVerwaltung /></Suspense>} />
 
               {/* ======== STIL-VERWALTUNG (ERWEITERT) ======== */}
               <Route path="stile" element={<Suspense fallback={<LazyLoadFallback />}><Stilverwaltung /></Suspense>} />

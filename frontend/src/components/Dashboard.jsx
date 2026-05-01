@@ -448,6 +448,7 @@ function Dashboard() {
     { icon: '🗂️', title: 'Artikelgruppen', description: 'Kategorien & Gruppen', path: '/dashboard/artikelgruppen' },
     { icon: '📋', title: 'Bestellungen', description: 'Online-Shop Bestellungen', path: '/dashboard/shop-bestellungen', featured: true },
     { icon: '💳', title: 'Offene Artikel-Einzüge', description: 'Lastschrift & Stripe Einzüge für Artikelverkäufe', path: '/dashboard/offene-einzuege', featured: true },
+    { icon: '🎁', title: 'Gutscheine', description: 'Gutscheine erstellen und verwalten', path: '/dashboard/gutscheine', featured: true },
   ];
 
   // ✨ Finanzen - Zahlungen, Beiträge, Rechnungen ✨
