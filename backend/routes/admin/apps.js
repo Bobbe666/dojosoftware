@@ -320,7 +320,7 @@ router.delete('/todo-access/:id', requireSuperAdmin, async (req, res) => {
 router.get('/todo-dojos', requireSuperAdmin, async (req, res) => {
   try {
     const [rows] = await db.promise().query(
-      'SELECT id, dojoname FROM dojo WHERE aktiv = 1 ORDER BY dojoname'
+      'SELECT id, dojoname FROM dojo WHERE ist_aktiv = 1 ORDER BY dojoname'
     );
     res.json({ dojos: rows });
   } catch (err) {
