@@ -238,9 +238,8 @@ router.post('/:id/stile', (req, res) => {
   const pool = db.promise();
 
   const run = async () => {
-    // Alte Einträge löschen
+    // Nur mitglied_stile (Text-Tabelle) löschen — mitglied_stil_data (Graduierungen) NIEMALS löschen!
     await pool.query('DELETE FROM mitglied_stile WHERE mitglied_id = ?', [mitglied_id]);
-    await pool.query('DELETE FROM mitglied_stil_data WHERE mitglied_id = ?', [mitglied_id]);
 
     if (stile.length === 0) return;
 
@@ -264,7 +263,7 @@ router.post('/:id/stile', (req, res) => {
       }
     }
 
-    // mitglied_stil_data für ALLE Stile (alt + neu)
+    // mitglied_stil_data: nur für NEUE Stile anlegen (INSERT IGNORE bewahrt bestehende Graduierungen)
     for (const sid of stile) {
       const [grads] = await pool.query(
         'SELECT graduierung_id FROM graduierungen WHERE stil_id = ? AND aktiv = 1 ORDER BY reihenfolge ASC LIMIT 1',

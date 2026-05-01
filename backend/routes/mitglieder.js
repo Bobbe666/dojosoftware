@@ -2477,25 +2477,15 @@ router.post("/:id/stile", (req, res) => {
         return res.status(400).json({ error: "Stile müssen als Array übergeben werden" });
     }
 
-    // Vereinfache ohne Transaction für jetzt
-
-    // Zuerst alle bestehenden Stile für dieses Mitglied löschen (beide Tabellen)
+    // Nur mitglied_stile (Text-Tabelle) löschen und neu setzen.
+    // mitglied_stil_data (Graduierungen) wird NIEMALS gelöscht — sonst gehen erarbeitete Gürtel verloren!
     const deleteMitgliedStileQuery = "DELETE FROM mitglied_stile WHERE mitglied_id = ?";
-    const deleteMitgliedStilDataQuery = "DELETE FROM mitglied_stil_data WHERE mitglied_id = ?";
 
-    // Lösche aus mitglied_stile
     db.query(deleteMitgliedStileQuery, [mitglied_id], (deleteErr) => {
         if (deleteErr) {
             logger.error('Fehler beim Löschen bestehender Stile:', deleteErr);
             return res.status(500).json({ error: "Fehler beim Löschen bestehender Stile" });
         }
-
-        // Lösche auch aus mitglied_stil_data
-        db.query(deleteMitgliedStilDataQuery, [mitglied_id], (deleteDataErr) => {
-            if (deleteDataErr) {
-                logger.error('Fehler beim Löschen von mitglied_stil_data:', deleteDataErr);
-                // Nicht abbrechen, da mitglied_stile bereits gelöscht wurde
-            }
 
             // Wenn keine neuen Stile hinzugefügt werden sollen
             if (stile.length === 0) {
@@ -2533,8 +2523,7 @@ router.post("/:id/stile", (req, res) => {
                     return res.status(500).json({ error: "Fehler beim Hinzufügen neuer Stile" });
                 }
 
-                // WICHTIG: Auch Einträge in mitglied_stil_data erstellen für Statistiken
-                // Erstelle für jeden Stil einen Eintrag (falls noch nicht vorhanden)
+                // mitglied_stil_data: nur für NEUE Stile anlegen (bestehende Einträge mit erarbeiteten Graduierungen bleiben erhalten!)
                 const stilDataPromises = stile.map(stil_id => {
                     return new Promise((resolve, reject) => {
                         // Prüfe ob bereits vorhanden
@@ -2546,7 +2535,7 @@ router.post("/:id/stile", (req, res) => {
                             }
 
                             if (checkResults.length > 0) {
-                                // Bereits vorhanden
+                                // Bereits vorhanden → Graduierung erhalten, nichts tun
                                 return resolve();
                             }
 
@@ -2566,7 +2555,7 @@ router.post("/:id/stile", (req, res) => {
 
                                 const firstGraduierungId = gradResults.length > 0 ? gradResults[0].graduierung_id : null;
 
-                                // Neu erstellen mit erster Graduierung
+                                // Neu erstellen mit erster Graduierung (nur für brandneue Stile)
                                 const insertDataQuery = `
                                     INSERT INTO mitglied_stil_data
                                     (mitglied_id, stil_id, current_graduierung_id, erstellt_am)
@@ -2577,7 +2566,7 @@ router.post("/:id/stile", (req, res) => {
                                         logger.error('Fehler beim Erstellen mitglied_stil_data:', { error: insertDataErr });
                                         return reject(insertDataErr);
                                     }
-                                    logger.info('mitglied_stil_data erstellt für Mitglied ${mitglied_id}, Stil ${stil_id}, Graduierung ${firstGraduierungId}');
+                                    logger.info(`mitglied_stil_data erstellt für Mitglied ${mitglied_id}, Stil ${stil_id}, Graduierung ${firstGraduierungId}`);
                                     resolve();
                                 });
                             });
@@ -2606,7 +2595,6 @@ router.post("/:id/stile", (req, res) => {
                         });
                     });
             });
-        });
     });
 });
 
