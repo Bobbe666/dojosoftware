@@ -165,7 +165,8 @@ export default function GutscheineVerwaltung() {
 
     setSaving(true);
     try {
-      const res = await fetchWithAuth(`${config.apiBaseUrl}/gutscheine`, {
+      const dojoParam = activeDojo?.id ? `?dojo_id=${activeDojo.id}` : '';
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/gutscheine${dojoParam}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
