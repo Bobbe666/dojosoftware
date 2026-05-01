@@ -238,6 +238,61 @@ function MitgliedEinkäufeTab({ mitgliedId, activeDojo }) {
   );
 }
 
+// ── Gutscheine-Tab im Mitgliederprofil ────────────────────────────────────────
+function MitgliedGutscheineTab({ mitgliedId, activeDojo }) {
+  const dojoId = activeDojo?.id || null;
+  const [gutscheine, setGutscheine] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!mitgliedId) return;
+    const dojoParam = dojoId ? `?dojo_id=${dojoId}` : '';
+    axios.get(`/gutscheine/mitglied/${mitgliedId}${dojoParam}`)
+      .then(r => setGutscheine(r.data.gutscheine || []))
+      .catch(() => setGutscheine([]))
+      .finally(() => setLoading(false));
+  }, [mitgliedId, dojoId]);
+
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('de-DE') : '—';
+
+  return (
+    <div style={{ padding: '4px 0' }}>
+      <h3 className="mds2-section-heading" style={{ marginBottom: '1rem' }}>🎁 Gutscheine</h3>
+      {loading ? (
+        <div className="info-box"><p>Lade...</p></div>
+      ) : gutscheine.length === 0 ? (
+        <div className="info-box"><p>ℹ️ Keine Gutscheine vorhanden.</p></div>
+      ) : gutscheine.map(g => {
+        const wert_cent = Math.round(parseFloat(g.wert) * 100);
+        const restbetrag_cent = Math.max(0, wert_cent - (g.verbraucht_cent || 0));
+        const abgelaufen = g.gueltig_bis && new Date(g.gueltig_bis) < new Date();
+        const prozent = Math.round((restbetrag_cent / wert_cent) * 100);
+        return (
+          <div key={g.id} style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', marginBottom: 10, padding: '14px 16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 16, fontWeight: 700, color: '#f97316', letterSpacing: 2 }}>{g.code}</span>
+              <span style={{ fontSize: 13, color: g.eingeloest ? 'rgba(255,255,255,0.4)' : abgelaufen ? '#f87171' : '#4ade80', fontWeight: 600 }}>
+                {g.eingeloest ? 'Eingelöst' : abgelaufen ? 'Abgelaufen' : 'Aktiv'}
+              </span>
+            </div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>{g.titel}</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>Restwert</span>
+              <span style={{ fontWeight: 700, color: '#4ade80' }}>{(restbetrag_cent / 100).toFixed(2)} € / {(wert_cent / 100).toFixed(2)} €</span>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: 999, height: 6, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${prozent}%`, background: g.eingeloest ? 'rgba(255,255,255,0.2)' : '#4ade80', borderRadius: 999, transition: 'width 0.4s' }} />
+            </div>
+            {g.gueltig_bis && (
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>Gültig bis {fmtDate(g.gueltig_bis)}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Hilfsfunktion: Wandelt einen ISO-Datumsstring in "yyyy-MM-dd" um.
 function toMySqlDate(dateString) {
   if (!dateString) return "";
@@ -4533,6 +4588,12 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                 >
                   📋 Ratenzahlung
                 </button>
+                <button
+                  className={`finance-sub-tab-btn ${financeSubTab === "gutscheine" ? "active" : ""}`}
+                  onClick={() => setFinanceSubTab("gutscheine")}
+                >
+                  🎁 Gutscheine
+                </button>
               </div>
 
               {financeSubTab === "finanzübersicht" && (
@@ -5637,6 +5698,10 @@ const MitgliedDetailShared = ({ isAdmin = false, memberIdProp = null }) => {
                     0
                   )}
                 />
+              )}
+
+              {financeSubTab === "gutscheine" && (
+                <MitgliedGutscheineTab mitgliedId={id} activeDojo={activeDojo} />
               )}
             </div>
           )}
