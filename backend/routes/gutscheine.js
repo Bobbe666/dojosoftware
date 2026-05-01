@@ -475,7 +475,7 @@ router.get('/meine', async (req, res) => {
              g.gueltig_bis, g.eingeloest, g.eingeloest_am, g.erstellt_am,
              v.bild_url, v.anlass
       FROM gutscheine g
-      JOIN gutschein_vorlagen v ON g.vorlage_id = v.id
+      LEFT JOIN gutschein_vorlagen v ON g.vorlage_id = v.id
       WHERE bezahlt = 1 AND (${conditions.join(' OR ')})
       ORDER BY g.eingeloest ASC, g.gueltig_bis ASC, g.erstellt_am DESC
     `, params);
