@@ -1344,6 +1344,91 @@ router.post('/family-switch', authenticateToken, async (req, res) => {
 });
 
 // ===================================================================
+// E-MAIL-BASIERTER PASSWORT-RESET
+// ===================================================================
+
+const crypto = require('crypto');
+const { sendEmailForDojo } = require('../services/emailService');
+
+// POST /auth/forgot-password — Token generieren + E-Mail senden
+router.post('/forgot-password', passwordResetLimiter, async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: 'E-Mail erforderlich' });
+
+  try {
+    const pool = db.promise();
+    const [[user]] = await pool.query(
+      'SELECT id, email, dojo_id FROM users WHERE email = ? AND role IN ("member","admin","eingeschraenkt") LIMIT 1',
+      [email.trim().toLowerCase()]
+    );
+
+    // Immer OK zurückgeben (verhindert User-Enumeration)
+    if (!user) return res.json({ success: true });
+
+    // Alten Token löschen + neuen generieren
+    await pool.query('DELETE FROM password_reset_tokens WHERE user_id = ?', [user.id]);
+    const token = crypto.randomBytes(32).toString('hex');
+    await pool.query(
+      'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))',
+      [user.id, token]
+    );
+
+    const resetUrl = `https://app.tda-vib.de/password-reset?token=${token}`;
+
+    const html = `
+      <div style="font-family:sans-serif;max-width:560px;margin:0 auto;background:#1a1a2e;color:#e2e8f0;padding:32px;border-radius:12px">
+        <h2 style="color:#f97316;margin-bottom:8px">Passwort zurücksetzen</h2>
+        <p>Du hast eine Anfrage zum Zurücksetzen deines Passworts gestellt.</p>
+        <p>Klicke auf den Button, um ein neues Passwort zu setzen. Der Link ist <strong>1 Stunde</strong> gültig.</p>
+        <a href="${resetUrl}" style="display:inline-block;margin:24px 0;padding:12px 28px;background:#f97316;color:#fff;border-radius:8px;text-decoration:none;font-weight:700">
+          Passwort zurücksetzen
+        </a>
+        <p style="font-size:13px;color:#94a3b8">Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail ignorieren.</p>
+        <p style="font-size:12px;color:#64748b;margin-top:16px">Link: ${resetUrl}</p>
+      </div>`;
+
+    await sendEmailForDojo(user.dojo_id || 3, {
+      to: user.email,
+      subject: 'Passwort zurücksetzen',
+      html,
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    logger.error('forgot-password Fehler', { error: err.message });
+    res.status(500).json({ message: 'Serverfehler' });
+  }
+});
+
+// POST /auth/reset-password-token — Neues Passwort mit Token setzen
+router.post('/reset-password-token', async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ message: 'Token und Passwort erforderlich' });
+
+  const validation = validatePasswordPolicy(newPassword);
+  if (!validation.valid) return res.status(400).json({ message: validation.errors[0] });
+
+  try {
+    const pool = db.promise();
+    const [[row]] = await pool.query(
+      'SELECT user_id FROM password_reset_tokens WHERE token = ? AND used = 0 AND expires_at > NOW()',
+      [token]
+    );
+
+    if (!row) return res.status(400).json({ message: 'Link ungültig oder abgelaufen. Bitte fordere einen neuen an.' });
+
+    const newHash = await hashPassword(newPassword);
+    await pool.query('UPDATE users SET password = ? WHERE id = ?', [newHash, row.user_id]);
+    await pool.query('UPDATE password_reset_tokens SET used = 1 WHERE token = ?', [token]);
+
+    res.json({ success: true, message: 'Passwort erfolgreich zurückgesetzt.' });
+  } catch (err) {
+    logger.error('reset-password-token Fehler', { error: err.message });
+    res.status(500).json({ message: 'Serverfehler' });
+  }
+});
+
+// ===================================================================
 // ERROR HANDLING
 // ===================================================================
 
