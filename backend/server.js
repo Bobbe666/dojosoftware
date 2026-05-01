@@ -551,7 +551,16 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'marketing-hub', error: error.message });
 }
 
-// 1.4 REFERRAL (Freunde werben Freunde)
+// 1.4 COMMUNITY (Schwarzes Brett, Marktplatz, Trainingspartner, Events)
+try {
+  const communityRoutes = require('./routes/community');
+  app.use('/api/community', communityRoutes);
+  logger.success('Route gemountet', { path: '/api/community' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'community', error: error.message });
+}
+
+// 1.5 REFERRAL (Freunde werben Freunde)
 try {
   const referralRoutes = require(path.join(__dirname, 'routes', 'referral.js'));
   app.use('/api/referral', authenticateToken, (req, res, next) => { req.db = db.promise(); next(); }, referralRoutes);

@@ -34,6 +34,7 @@ import MemberQRCode from './MemberQRCode.jsx';
 import MotivationQuotes from './MotivationQuotes.jsx';
 import TrainingReminders from './TrainingReminders.jsx';
 import BuddyGruppenWidget from './BuddyGruppenWidget.jsx';
+import CommunityBoard from './CommunityBoard.jsx';
 import '../styles/themes.css';
 import '../styles/Dashboard.css';
 import '../styles/DashboardStart.css';
@@ -2093,6 +2094,21 @@ const MemberDashboard = () => {
 
             {/* Buddy-Gruppen Widget */}
             <BuddyGruppenWidget compact={true} />
+
+            {/* Community Board */}
+            {memberData?.dojo_id && (
+              <div className="md-community-section">
+                <CommunityBoard
+                  dojoId={memberData.dojo_id}
+                  currentMitgliedId={memberData.mitglied_id}
+                  isAdmin={user?.rolle === 'admin' || user?.role === 'admin'}
+                  onOpenChat={(userId, mitgliedId, name) => {
+                    /* Chat öffnen mit diesem Mitglied — navigiere zum Chat-Tab */
+                    window.dispatchEvent(new CustomEvent('open-chat-with', { detail: { userId, mitgliedId, name } }));
+                  }}
+                />
+              </div>
+            )}
 
 
             {/* Trainings-Erinnerungen */}
