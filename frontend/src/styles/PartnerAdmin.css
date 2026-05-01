@@ -56,7 +56,7 @@
   margin-bottom: 20px;
 }
 .pa-map-wrap--us { /* full width, good for Albers USA */ }
-.pa-map-wrap--de { max-width: 480px; margin-left: auto; margin-right: auto; }
+.pa-map-wrap--de { max-width: 680px; margin-left: auto; margin-right: auto; }
 
 .pa-tooltip {
   position: fixed;
