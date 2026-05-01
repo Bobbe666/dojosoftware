@@ -6,6 +6,7 @@ const express = require('express');
 const https = require('https');
 const http = require('http');
 const { exec } = require('child_process');
+const bcrypt = require('bcrypt');
 const router = express.Router();
 const { requireSuperAdmin } = require('./shared');
 const db = require('../../db');
@@ -301,7 +302,7 @@ router.patch('/todo-access/:id', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// DELETE /api/admin/todo-access/:id — Nutzer aus admin_users entfernen (deaktivieren)
+// DELETE /api/admin/todo-access/:id — Nutzer deaktivieren
 router.delete('/todo-access/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   try {
@@ -311,6 +312,43 @@ router.delete('/todo-access/:id', requireSuperAdmin, async (req, res) => {
     );
     res.json({ success: true });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/todo-dojos — Alle aktiven Dojos (für Nutzer-Erstellung)
+router.get('/todo-dojos', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT id, dojoname FROM dojo WHERE aktiv = 1 ORDER BY dojoname'
+    );
+    res.json({ dojos: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/todo-access — Neuen Nutzer für To Do anlegen
+router.post('/todo-access', requireSuperAdmin, async (req, res) => {
+  const { vorname, nachname, username, email, password, rolle, dojo_id } = req.body;
+  if (!username || !password || !vorname || !nachname) {
+    return res.status(400).json({ error: 'Vorname, Nachname, Benutzername und Passwort sind Pflichtfelder.' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben.' });
+  }
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await db.promise().query(
+      `INSERT INTO admin_users (username, email, vorname, nachname, rolle, password, password_algorithm, dojo_id, aktiv, todo_app_access)
+       VALUES (?, ?, ?, ?, ?, ?, 'bcrypt', ?, 1, 1)`,
+      [username, email || null, vorname, nachname, rolle || 'eingeschraenkt', hashedPassword, dojo_id || null]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Benutzername oder E-Mail bereits vergeben.' });
+    }
     res.status(500).json({ error: err.message });
   }
 });
