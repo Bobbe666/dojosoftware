@@ -254,28 +254,69 @@ router.get('/member/:mitgliedId/:token', async (req, res) => {
 
     const member = memberRows[0];
 
-    // Kurse des Mitglieds laden
-    const [scheduleRows] = await db.promise().query(`
-      SELECT
-        s.stundenplan_id AS id,
-        s.tag,
-        s.uhrzeit_start,
-        s.uhrzeit_ende,
-        CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
-        k.stil,
-        t.vorname AS trainer_vorname,
-        t.nachname AS trainer_nachname,
-        r.name AS raumname,
-        st.name AS standort_name
-      FROM stundenplan s
-      JOIN kurse k ON s.kurs_id = k.kurs_id
-      JOIN kurs_mitglieder km ON k.kurs_id = km.kurs_id
-      LEFT JOIN trainer t ON k.trainer_id = t.trainer_id
-      LEFT JOIN raeume r ON s.raum_id = r.id
-      LEFT JOIN standorte st ON s.standort_id = st.standort_id
-      WHERE km.mitglied_id = ?
-      ORDER BY FIELD(s.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag')
+    // Stile des Mitglieds laden (über mitglied_stil_data → stile)
+    const [stilRows] = await db.promise().query(`
+      SELECT DISTINCT sti.name AS stil_name
+      FROM mitglied_stil_data msd
+      JOIN stile sti ON msd.stil_id = sti.stil_id
+      WHERE msd.mitglied_id = ?
     `, [mitgliedId]);
+
+    const memberStile = stilRows.map(r => r.stil_name);
+
+    // Kurse des Mitglieds: alle Stundenplan-Einträge des Dojos für die Stile des Mitglieds.
+    // Fallback: alle Kurse des Dojos wenn keine Stil-Zuordnung vorhanden.
+    let scheduleQuery;
+    let scheduleParams;
+
+    if (memberStile.length > 0) {
+      const placeholders = memberStile.map(() => '?').join(',');
+      scheduleQuery = `
+        SELECT
+          s.stundenplan_id AS id,
+          s.tag,
+          s.uhrzeit_start,
+          s.uhrzeit_ende,
+          CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
+          k.stil,
+          t.vorname AS trainer_vorname,
+          t.nachname AS trainer_nachname,
+          r.name AS raumname,
+          st2.name AS standort_name
+        FROM stundenplan s
+        JOIN kurse k ON s.kurs_id = k.kurs_id
+        LEFT JOIN trainer t ON s.trainer_id = t.trainer_id OR (s.trainer_id IS NULL AND k.trainer_id = t.trainer_id)
+        LEFT JOIN raeume r ON s.raum_id = r.id
+        LEFT JOIN standorte st2 ON s.standort_id = st2.standort_id
+        WHERE k.dojo_id = ? AND k.stil IN (${placeholders}) AND s.typ = 'regulaer'
+        ORDER BY FIELD(s.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag')
+      `;
+      scheduleParams = [member.dojo_id, ...memberStile];
+    } else {
+      scheduleQuery = `
+        SELECT
+          s.stundenplan_id AS id,
+          s.tag,
+          s.uhrzeit_start,
+          s.uhrzeit_ende,
+          CONCAT_WS(' – ', k.stil, k.gruppenname) AS kursname,
+          k.stil,
+          t.vorname AS trainer_vorname,
+          t.nachname AS trainer_nachname,
+          r.name AS raumname,
+          st2.name AS standort_name
+        FROM stundenplan s
+        JOIN kurse k ON s.kurs_id = k.kurs_id
+        LEFT JOIN trainer t ON s.trainer_id = t.trainer_id OR (s.trainer_id IS NULL AND k.trainer_id = t.trainer_id)
+        LEFT JOIN raeume r ON s.raum_id = r.id
+        LEFT JOIN standorte st2 ON s.standort_id = st2.standort_id
+        WHERE k.dojo_id = ? AND s.typ = 'regulaer'
+        ORDER BY FIELD(s.tag, 'Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag')
+      `;
+      scheduleParams = [member.dojo_id];
+    }
+
+    const [scheduleRows] = await db.promise().query(scheduleQuery, scheduleParams);
 
     // Angemeldete Events laden
     const [eventRows] = await db.promise().query(`
