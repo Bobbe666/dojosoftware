@@ -122,33 +122,35 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 );
 
-// Service Worker: Push-Notifications + App-Auto-Update
+// ── Service Worker: Push-Notifications + Auto-Update (event-getriggert, kein Polling) ──
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      // Nur registrieren wenn noch kein aktiver SW läuft der Probleme macht
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      const reg = await navigator.serviceWorker.register('/sw.js', {
         scope: '/',
-        updateViaCache: 'none'
+        updateViaCache: 'none', // sw.js nie aus Browser-Cache lesen
       });
 
-      // Alle 5 Minuten auf neue Version prüfen
-      setInterval(() => registration.update().catch(() => {}), 5 * 60 * 1000);
+      // Merken ob schon ein aktiver SW vorhanden war (= Update, nicht Erstinstall)
+      const hadController = !!navigator.serviceWorker.controller;
 
-      // Neue Version erkannt → Banner-Event auslösen (kein Auto-Reload → verhindert Loop)
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            // Update ist bereit — App informieren
-            window.dispatchEvent(new CustomEvent('sw-update-available'));
-          }
-        });
+      // Neuer SW übernimmt Kontrolle → Seite neu laden
+      // skipWaiting() in sw.js sorgt dafür dass das sofort passiert
+      // hadController-Check verhindert Reload beim allerersten Start
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (hadController) window.location.reload();
       });
+
+      // SW-Update nur prüfen wenn User zum Tab zurückkehrt — kein Polling!
+      // Browser macht ohnehin einen bedingten GET (304 wenn unverändert = quasi kein Traffic)
+      const checkForUpdate = () => {
+        if (!document.hidden) reg.update().catch(() => {});
+      };
+      document.addEventListener('visibilitychange', checkForUpdate);
+      window.addEventListener('focus', checkForUpdate);
 
     } catch (err) {
-      console.warn('Service Worker Registrierung fehlgeschlagen:', err.message);
+      console.warn('[SW] Registrierung fehlgeschlagen:', err.message);
     }
   });
 }

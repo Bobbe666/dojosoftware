@@ -92,6 +92,14 @@ if [[ "$MODE" == "all" || "$MODE" == "frontend" ]]; then
   echo -e "${YELLOW}▶ [2/2] Frontend bauen...${NC}"
   cd "$FRONTEND_LOCAL"
   CI=false npm run build 2>&1 | grep -E '✓|error|built in' | head -5
+
+  # Version-Stamping: Git-Hash in sw.js schreiben damit Browser neue Version erkennt
+  VERSION=$(git -C "$HOME/dojosoftware" rev-parse --short HEAD)
+  node -e "
+    const fs = require('fs'), p = 'dist/sw.js', v = '$VERSION';
+    fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/Version: [^\n]+/, 'Version: ' + v));
+  "
+  echo -e "  ${GREEN}✓ SW-Version gestempelt: $VERSION${NC}"
   echo ""
 
   echo -e "${YELLOW}  Frontend deployen (2 Webroots)...${NC}"
