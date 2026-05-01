@@ -11,7 +11,7 @@ const FeatureBoard = ({ compact = false, adminMode = false }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
-  const [filter, setFilter] = useState({ status: 'alle', kategorie: 'alle', sortBy: 'votes' });
+  const [filter, setFilter] = useState({ status: 'alle', kategorie: 'alle', sortBy: 'status' });
 
   // Neuer Request Form
   const [newRequest, setNewRequest] = useState({ titel: '', beschreibung: '', kategorie: 'funktion' });

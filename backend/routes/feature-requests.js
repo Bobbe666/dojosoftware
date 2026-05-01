@@ -40,7 +40,7 @@ const isSuperAdmin = (user) => {
  */
 router.get('/', async (req, res) => {
   try {
-    const { status, kategorie, sortBy = 'votes', limit = 50, offset = 0 } = req.query;
+    const { status, kategorie, sortBy = 'status', limit = 50, offset = 0 } = req.query;
     const user = req.user;
 
     let query = `
@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
     } else if (sortBy === 'newest') {
       query += ' ORDER BY fr.created_at DESC';
     } else if (sortBy === 'status') {
-      query += ' ORDER BY FIELD(fr.status, "in_arbeit", "geplant", "geprueft", "neu", "umgesetzt", "abgelehnt"), fr.created_at DESC';
+      query += ' ORDER BY FIELD(fr.status, "neu", "geprueft", "geplant", "in_arbeit", "umgesetzt", "abgelehnt"), fr.created_at DESC';
     }
 
     query += ' LIMIT ? OFFSET ?';
