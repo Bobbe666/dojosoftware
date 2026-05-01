@@ -160,7 +160,6 @@ export default function GutscheineVerwaltung() {
   // ── Gutschein erstellen ───────────────────────────────────────────────────────
 
   const handleCreate = async () => {
-    if (!selectedVorlage) return showMsg('error', 'Bitte ein Bild auswählen');
     if (!finalWert || finalWert <= 0) return showMsg('error', 'Bitte einen Wert eingeben');
     if (!form.titel.trim()) return showMsg('error', 'Bitte einen Titel eingeben');
 
@@ -170,7 +169,7 @@ export default function GutscheineVerwaltung() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          vorlage_id: selectedVorlage.id,
+          vorlage_id: selectedVorlage?.id || null,
           wert: finalWert,
           ...form,
         }),
@@ -288,13 +287,15 @@ export default function GutscheineVerwaltung() {
                   {copied === 'new' ? 'Kopiert!' : 'Kopieren'}
                 </button>
               </div>
-              <div className="gv-success-img">
-                <img src={neuerCode.bild_url} alt="Gutschein" />
-                <div className="gv-success-overlay">
-                  <div className="gv-success-wert">{parseFloat(neuerCode.wert).toFixed(0)} €</div>
-                  <div className="gv-success-titel">{neuerCode.titel}</div>
+              {neuerCode.bild_url && (
+                <div className="gv-success-img">
+                  <img src={neuerCode.bild_url} alt="Gutschein" />
+                  <div className="gv-success-overlay">
+                    <div className="gv-success-wert">{parseFloat(neuerCode.wert).toFixed(0)} €</div>
+                    <div className="gv-success-titel">{neuerCode.titel}</div>
+                  </div>
                 </div>
-              </div>
+              )}
               <button className="gv-btn gv-btn-primary" onClick={resetForm}>
                 <Plus size={16}/> Weiteren Gutschein erstellen
               </button>
@@ -319,7 +320,7 @@ export default function GutscheineVerwaltung() {
 
               {/* Schritt 2: Bild wählen */}
               <div className="gv-section">
-                <h3 className="gv-section-title">2. Bild auswählen</h3>
+                <h3 className="gv-section-title">2. Bild auswählen <span style={{fontWeight:400,fontSize:'0.8em',opacity:0.6}}>(optional)</span></h3>
                 {filteredVorlagen.length === 0 ? (
                   <div className="gv-empty">Keine Bilder für diesen Anlass verfügbar</div>
                 ) : (

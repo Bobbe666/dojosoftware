@@ -560,32 +560,36 @@ router.post('/', async (req, res) => {
     const dojoId = getSecureDojoId(req);
     if (!dojoId) return res.status(400).json({ success: false, error: 'Dojo-ID fehlt' });
 
-    const { vorlage_id, wert, titel, nachricht, gueltig_bis, empfaenger_name, empfaenger_email } = req.body;
-    if (!vorlage_id || !wert || !titel) {
-      return res.status(400).json({ success: false, error: 'vorlage_id, wert und titel sind Pflicht' });
+    const { vorlage_id, wert, titel, nachricht, gueltig_bis, empfaenger_name, empfaenger_email, mitglied_id } = req.body;
+    if (!wert || !titel) {
+      return res.status(400).json({ success: false, error: 'wert und titel sind Pflicht' });
     }
     if (isNaN(parseFloat(wert)) || parseFloat(wert) <= 0) {
       return res.status(400).json({ success: false, error: 'Ungültiger Wert' });
     }
 
-    // Vorlage existiert?
-    const [[vorlage]] = await pool.query('SELECT id FROM gutschein_vorlagen WHERE id = ? AND aktiv = 1', [vorlage_id]);
-    if (!vorlage) return res.status(404).json({ success: false, error: 'Vorlage nicht gefunden' });
+    // Vorlage optional — nur prüfen wenn angegeben
+    if (vorlage_id) {
+      const [[vorlage]] = await pool.query('SELECT id FROM gutschein_vorlagen WHERE id = ? AND aktiv = 1', [vorlage_id]);
+      if (!vorlage) return res.status(404).json({ success: false, error: 'Vorlage nicht gefunden' });
+    }
 
     const code = await uniqueCode();
     const userId = req.user?.id || req.user?.user_id || null;
 
     const [result] = await pool.query(`
       INSERT INTO gutscheine
-        (dojo_id, vorlage_id, code, wert, titel, nachricht, gueltig_bis, empfaenger_name, empfaenger_email, erstellt_von)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [dojoId, vorlage_id, code, parseFloat(wert), titel.trim(),
+        (dojo_id, vorlage_id, code, wert, titel, nachricht, gueltig_bis, empfaenger_name, empfaenger_email, mitglied_id, bezahlt, zahlungsart, erstellt_von)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 'intern', ?)
+    `, [dojoId, vorlage_id || null, code, parseFloat(wert), titel.trim(),
         nachricht || null, gueltig_bis || null,
-        empfaenger_name || null, empfaenger_email || null, userId]);
+        empfaenger_name || null, empfaenger_email || null,
+        mitglied_id || null, userId]);
 
     const [[neu]] = await pool.query(`
-      SELECT g.*, v.bild_url, v.anlass
-      FROM gutscheine g JOIN gutschein_vorlagen v ON g.vorlage_id = v.id
+      SELECT g.*, COALESCE(v.bild_url, NULL) AS bild_url, COALESCE(v.anlass, NULL) AS anlass
+      FROM gutscheine g
+      LEFT JOIN gutschein_vorlagen v ON g.vorlage_id = v.id
       WHERE g.id = ?
     `, [result.insertId]);
 
