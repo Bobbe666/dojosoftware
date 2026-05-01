@@ -15,6 +15,7 @@ import {
   Bell, Send, Archive, Eye, EyeOff, RefreshCw, UserPlus, Home, MessageCircle, MessageSquare, Search, Sparkles
 } from 'lucide-react';
 import '../styles/SuperAdminDashboard.css';
+import TodoPanel from './TodoPanel';
 
 // Lazy-load all tab-specific components so they don't block initial render
 const StatisticsTab       = lazy(() => import('./StatisticsTab'));
@@ -51,6 +52,24 @@ function EventSoftwareSection({ token }) {
   const [turniere, setTurniere] = useState([]);
   const [loading, setLoading] = useState(true);
   const [suchbegriff, setSuchbegriff] = useState('');
+  const [ssoLoading, setSsoLoading] = useState(false);
+
+  const openEventsSSO = async () => {
+    setSsoLoading(true);
+    try {
+      const res = await axios.post('/auth/generate-events-token', {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data?.token) {
+        window.open(`https://events.tda-intl.org/sso?dojo_token=${res.data.token}`, '_blank');
+      }
+    } catch (e) {
+      console.error('SSO fehlgeschlagen', e);
+      window.open('https://events.tda-intl.org/login', '_blank');
+    } finally {
+      setSsoLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -93,8 +112,17 @@ function EventSoftwareSection({ token }) {
       <div className="sad-hof-header">
         <h2 className="sad-hof-title">🗓️ EventSoftware — events.tda-intl.org</h2>
         <div className="sad-hof-btn-row">
+          <button
+            onClick={openEventsSSO}
+            disabled={ssoLoading}
+            className="sad-hof-admin-link"
+            style={{ cursor: ssoLoading ? 'wait' : 'pointer', border: 'none' }}
+            title="Automatisch mit deinem DojoSoftware-Account einloggen"
+          >
+            {ssoLoading ? '…' : '🔗 Direkt öffnen'}
+          </button>
           <a href="https://events.tda-intl.org/login" target="_blank" rel="noreferrer" className="sad-hof-admin-link">
-            🔐 Admin Login
+            🔐 Login
           </a>
           <a href="https://events.tda-intl.org" target="_blank" rel="noreferrer" className="sad-hof-public-link">
             ↗ Öffentlich
@@ -1312,7 +1340,8 @@ const SuperAdminDashboard = () => {
     { id: 'entwicklung',   label: 'Entwicklung',        icon: '🎯' },
     { id: 'finanzen',      label: 'Finanzen',           icon: '💰' },
     { id: 'plattform',     label: 'Plattform-Zentrale', icon: '🌐' },
-    { id: 'system',        label: 'System',             icon: '⚙️' }
+    { id: 'system',        label: 'System',             icon: '⚙️' },
+    { id: 'todos',         label: 'To Do',              icon: '✅' }
   ];
 
   // Sub-Tab-Navigation rendern
@@ -2032,7 +2061,8 @@ const SuperAdminDashboard = () => {
               <div>
             {renderSubTabs('dojosoftware', [
               { id: 'lizenzen', icon: '📜', label: 'Lizenzen' },
-              { id: 'dokumente', icon: '📂', label: 'Dokumente' }
+              { id: 'dokumente', icon: '📂', label: 'Dokumente' },
+              { id: 'todos',    icon: '✅', label: 'To Do' },
             ])}
 
             {subActiveTab.dojosoftware === 'lizenzen' && (
@@ -2041,6 +2071,10 @@ const SuperAdminDashboard = () => {
 
             {subActiveTab.dojosoftware === 'dokumente' && (
               <DokumentenZentrale embedded />
+            )}
+
+            {subActiveTab.dojosoftware === 'todos' && (
+              <TodoPanel fixedKontext="lizenzen" />
             )}
 
               </div>
@@ -3840,6 +3874,13 @@ const SuperAdminChatZentrale = ({ token }) => {
             );
           })()}
         </div>
+
+        {activeTab === 'todos' && (
+          <div className="tab-content">
+            <TodoPanel />
+          </div>
+        )}
+
       </div>
     </div>
   );

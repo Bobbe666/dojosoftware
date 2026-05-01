@@ -8,6 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useDojoContext } from '../context/DojoContext';
 import HofNominierungModal from './HofNominierungModal';
+import TodoPanel from './TodoPanel';
 
 const S = {
   wrap: { padding: '8px 0' },
@@ -220,6 +221,11 @@ export default function HofDashboard() {
 
       {/* Toast */}
       {toast && <div style={S.successToast}>{toast}</div>}
+
+      {/* To-Do */}
+      <div style={{ marginTop: '2rem' }}>
+        <TodoPanel fixedKontext="hof" compact />
+      </div>
     </div>
   );
 }

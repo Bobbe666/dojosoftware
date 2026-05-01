@@ -269,12 +269,15 @@ router.get('/apps/pm2', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/todo-access — Alle Nutzer mit todo_app_access Status
-router.get('/todo-access', requireSuperAdmin, async (req, res) => {
+// GET /api/admin/app-access — Alle Nutzer mit allen App-Zugriffsflags
+router.get('/app-access', requireSuperAdmin, async (req, res) => {
   try {
     const [rows] = await db.promise().query(`
       SELECT au.id, au.vorname, au.nachname, au.email, au.username, au.rolle, au.dojo_id,
-             COALESCE(au.todo_app_access, 1) AS todo_app_access,
+             COALESCE(au.todo_app_access, 1)   AS todo_app_access,
+             COALESCE(au.events_app_access, 1) AS events_app_access,
+             COALESCE(au.kids_app_access, 1)   AS kids_app_access,
+             COALESCE(au.hof_app_access, 1)    AS hof_app_access,
              d.dojoname
       FROM admin_users au
       LEFT JOIN dojo d ON d.id = au.dojo_id
@@ -287,15 +290,38 @@ router.get('/todo-access', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/todo-access/:id — Zugriff für einen Nutzer setzen
+// Backward-compat alias
+router.get('/todo-access', requireSuperAdmin, async (req, res) => {
+  res.redirect(307, '/api/admin/app-access');
+});
+
+// PATCH /api/admin/app-access/:id — App-Zugriff für einen Nutzer setzen
+// Body: { app: 'todo'|'events'|'kids'|'hof', access: 0|1 }
+const ALLOWED_APP_COLS = {
+  todo:   'todo_app_access',
+  events: 'events_app_access',
+  kids:   'kids_app_access',
+  hof:    'hof_app_access',
+};
+router.patch('/app-access/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { app, access } = req.body;
+  const col = ALLOWED_APP_COLS[app];
+  if (!col) return res.status(400).json({ error: 'Unbekannte App.' });
+  try {
+    await db.promise().query(`UPDATE admin_users SET ${col} = ? WHERE id = ?`, [access ? 1 : 0, id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Backward-compat alias
 router.patch('/todo-access/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
   const { access } = req.body;
   try {
-    await db.promise().query(
-      'UPDATE admin_users SET todo_app_access = ? WHERE id = ?',
-      [access ? 1 : 0, id]
-    );
+    await db.promise().query('UPDATE admin_users SET todo_app_access = ? WHERE id = ?', [access ? 1 : 0, id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

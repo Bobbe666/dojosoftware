@@ -17,8 +17,9 @@ import {
   Globe, Award, ChevronRight, Activity, BarChart3,
   CreditCard, FileText, PieChart, RefreshCw, AlertTriangle,
   CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket,
-  Banknote, Scroll, MapPin
+  Banknote, Scroll, MapPin, ClipboardList
 } from 'lucide-react';
+import TodoPanel from './TodoPanel';
 import VerbandsMitglieder from './VerbandsMitglieder';
 import ArtikelVerwaltung from './ArtikelVerwaltung';
 import ZieleEntwicklung from './ZieleEntwicklung';
@@ -131,6 +132,7 @@ const VerbandDashboard = () => {
     { id: 'lastschrift', label: 'Lastschrift', icon: Banknote },
     { id: 'urkunden', label: 'Urkunden', icon: Scroll },
     { id: 'partner', label: 'Partner', icon: MapPin },
+    { id: 'todos',   label: 'To Do',  icon: ClipboardList },
   ];
 
   // Status-Badge Component
@@ -577,6 +579,7 @@ const VerbandDashboard = () => {
             <PartnerAdmin />
           </Suspense>
         )}
+        {activeTab === 'todos' && <TodoPanel fixedKontext="verband" />}
       </div>
     </div>
   );

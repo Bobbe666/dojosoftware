@@ -490,6 +490,112 @@
 }
 .am-pw-save:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── Wide modal variant ─────────────────────────────────────── */
+.am-fullmodal--wide { max-width: 1100px; }
+
+/* ── App-Legende ─────────────────────────────────────────────── */
+.am-access-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.am-legend-item {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+.am-legend-sep { font-size: 0.68rem; color: rgba(255,255,255,0.3); }
+
+/* ── Table column layout ─────────────────────────────────────── */
+.am-access-col-header {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.9rem;
+  gap: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 0.3rem;
+  position: sticky;
+  top: 0;
+  background: #13151f;
+  z-index: 2;
+}
+.am-access-col-user {
+  flex: 1;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: rgba(255,255,255,0.35);
+}
+.am-access-col-app {
+  width: 80px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.35);
+}
+.am-access-col-actions {
+  width: 76px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.35);
+}
+
+.am-access-row--table {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.9rem;
+  gap: 0;
+}
+.am-access-row--table .am-access-info { flex: 1; }
+
+/* ── App toggle (compact square) ─────────────────────────────── */
+.am-app-toggle {
+  width: 34px;
+  height: 28px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.am-app-toggle--on  { background: rgba(34,197,94,0.12); border-color: rgba(34,197,94,0.4); color: #4ade80; }
+.am-app-toggle--off { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.25); color: rgba(239,68,68,0.6); }
+.am-app-toggle:hover:not(:disabled) { opacity: 0.75; transform: scale(1.05); }
+.am-app-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Zugänge-Button in Toolbar ─────────────────────────────── */
+.am-zugaenge-btn {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+}
+
 /* ── Sort select ────────────────────────────────────────────── */
 .am-sort-select {
   background: rgba(255,255,255,0.05);

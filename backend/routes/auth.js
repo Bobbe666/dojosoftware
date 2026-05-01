@@ -178,7 +178,10 @@ router.post('/login',
     const adminQuery = `
       SELECT id, username, email, password, password_algorithm, rolle as role, dojo_id,
              vorname, nachname, berechtigungen, aktiv, erstellt_am,
-             failed_login_attempts, locked_until, todo_app_access
+             failed_login_attempts, locked_until, todo_app_access,
+             COALESCE(events_app_access, 1) AS events_app_access,
+             COALESCE(kids_app_access, 1)   AS kids_app_access,
+             COALESCE(hof_app_access, 1)    AS hof_app_access
       FROM admin_users
       WHERE email = ? OR username = ?
       LIMIT 1
@@ -362,8 +365,11 @@ router.post('/login',
           vorname: user.vorname || null,
           nachname: user.nachname || null,
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
-          msg_app_enabled: isAdmin ? true : (user.msg_app_enabled !== 0),
-          todo_app_access: isAdmin ? (user.todo_app_access !== 0) : true,
+          msg_app_enabled:    isAdmin ? true : (user.msg_app_enabled !== 0),
+          todo_app_access:   isAdmin ? (user.todo_app_access !== 0)   : true,
+          events_app_access: isAdmin ? (user.events_app_access !== 0) : true,
+          kids_app_access:   isAdmin ? (user.kids_app_access !== 0)   : true,
+          hof_app_access:    isAdmin ? (user.hof_app_access !== 0)    : true,
           iat: Math.floor(Date.now() / 1000)
         };
 
@@ -1224,6 +1230,72 @@ router.post('/sso-login', async (req, res) => {
   } catch (error) {
     logger.error('SSO-Login-Fehler:', error);
     res.status(500).json({ success: false, error: 'SSO-Login fehlgeschlagen' });
+  }
+});
+
+// ===================================================================
+// CROSS-APP SSO: Einmal-Token für Events-Auto-Login
+// ===================================================================
+
+// POST /api/auth/generate-events-token — erzeugt einen Einmal-OTP für Events-SSO
+router.post('/generate-events-token', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ success: false, error: 'Kein Token' });
+    const token = authHeader.split(' ')[1];
+    let decoded;
+    try { decoded = jwt.verify(token, JWT_SECRET); } catch {
+      return res.status(401).json({ success: false, error: 'Ungültiger Token' });
+    }
+    if (!['super_admin', 'admin'].includes(decoded.role || decoded.rolle)) {
+      return res.status(403).json({ success: false, error: 'Nur für Admins' });
+    }
+
+    const crypto = require('crypto');
+    const otp = crypto.randomBytes(32).toString('hex');
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 Minuten
+
+    await db.promise().query(
+      'UPDATE admin_users SET session_token = ?, session_ablauf = ? WHERE id = ?',
+      [otp, expiry, decoded.id]
+    );
+
+    res.json({ success: true, token: otp, expiresIn: 300 });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// POST /api/auth/validate-events-token — Events-Backend validiert den OTP
+// Öffentlich (kein Auth), aber Token muss gültig und unverbraucht sein
+router.post('/validate-events-token', async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json({ valid: false });
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT au.id, au.vorname, au.nachname, au.email, au.username, au.rolle
+       FROM admin_users au
+       WHERE au.session_token = ? AND au.session_ablauf > NOW() AND au.aktiv = 1`,
+      [token]
+    );
+    if (rows.length === 0) return res.status(401).json({ valid: false, error: 'Token ungültig oder abgelaufen' });
+
+    const user = rows[0];
+    // Token einmalig verbrauchen
+    await db.promise().query('UPDATE admin_users SET session_token = NULL, session_ablauf = NULL WHERE id = ?', [user.id]);
+
+    res.json({
+      valid: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: `${user.vorname} ${user.nachname}`,
+        role: user.rolle,
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ valid: false, error: err.message });
   }
 });
 

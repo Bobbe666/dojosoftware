@@ -43,6 +43,7 @@ import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
 import TrainingDashboard from './TrainingDashboard';
 import CommunityBoard from './CommunityBoard';
+import TodoPanel from './TodoPanel';
 
 
 function Dashboard() {
@@ -283,6 +284,7 @@ function Dashboard() {
     { id: 'hof', label: 'Hall of Fame', icon: '🏛️' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
+    { id: 'todos', label: 'To Do', icon: '✅' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -1517,34 +1519,46 @@ function Dashboard() {
 
                       {/* ✨ Events Tab ✨ */}
                       {activeTab === 'events' && (
-                        <div className="nav-cards">
-                        {eventsCards.map((card, index) => (
-                          <div
-                            key={index}
-                            onClick={() => handleNavigation(card.path)}
-                            className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
-                          >
-                            {card.badge && (
-                              <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
-                                {card.badge}
+                        <>
+                          <div className="nav-cards">
+                          {eventsCards.map((card, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handleNavigation(card.path)}
+                              className={`nav-card clickable ${card.featured ? 'featured' : ''}`}
+                            >
+                              {card.badge && (
+                                <div className={`nav-badge ${card.badge === 'NEU' ? 'new' : card.badge === 'LIVE' ? 'live' : 'admin'}`}>
+                                  {card.badge}
+                                </div>
+                              )}
+                              <div className="nav-content">
+                                <div className="nav-card-header">
+                                  <span className="nav-icon">{card.icon}</span>
+                                  <h3>{card.title}</h3>
+                                </div>
+                                <p>{card.description}</p>
                               </div>
-                            )}
-                            <div className="nav-content">
-                              <div className="nav-card-header">
-                                <span className="nav-icon">{card.icon}</span>
-                                <h3>{card.title}</h3>
-                              </div>
-                              <p>{card.description}</p>
+                              <div className="nav-arrow">→</div>
                             </div>
-                            <div className="nav-arrow">→</div>
+                          ))}
                           </div>
-                        ))}
-                        </div>
+                          <div className="content-card" style={{ marginTop: '1rem' }}>
+                            <TodoPanel fixedKontext="events" />
+                          </div>
+                        </>
                       )}
 
                       {/* ⏱ Training Timer Tab (Enterprise) */}
                       {activeTab === 'training' && (
                         <TrainingDashboard />
+                      )}
+
+                      {/* ✅ To-Do Tab (Enterprise) */}
+                      {activeTab === 'todos' && (
+                        <div className="content-card">
+                          <TodoPanel />
+                        </div>
                       )}
 
                       {/* ✨ Kommunikation & Marketing Tab ✨ */}

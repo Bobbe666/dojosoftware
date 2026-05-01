@@ -10,12 +10,19 @@ const ROLES = [
   { value: 'admin',          label: 'Admin' },
 ];
 
-// ── Vollbild-Modal für App-Zugriff & Passwörter ──────────────────────────────
-function TodoAccessModal({ onClose }) {
+const APP_FLAGS = [
+  { key: 'todo',   label: '✅ To Do',   app: 'todo'   },
+  { key: 'events', label: '🏆 Events',  app: 'events' },
+  { key: 'kids',   label: '⭐ Kids',    app: 'kids'   },
+  { key: 'hof',    label: '🏅 HOF',     app: 'hof'    },
+];
+
+// ── Unified App-Zugänge Modal ─────────────────────────────────────────────────
+function AppAccessModal({ onClose }) {
   const [users, setUsers]         = useState([]);
   const [dojos, setDojos]         = useState([]);
   const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(null);
+  const [saving, setSaving]       = useState(null); // "userId-app"
   const [deleting, setDeleting]   = useState(null);
   const [search, setSearch]       = useState('');
   const [pwUser, setPwUser]       = useState(null);
@@ -25,17 +32,15 @@ function TodoAccessModal({ onClose }) {
   const [pwMsg, setPwMsg]         = useState('');
   const [confirmDel, setConfirmDel] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-
-  // Add-user form state
-  const [newUser, setNewUser] = useState({ vorname: '', nachname: '', username: '', email: '', password: '', rolle: 'trainer', dojo_id: '' });
-  const [addMsg, setAddMsg]   = useState('');
+  const [newUser, setNewUser]     = useState({ vorname: '', nachname: '', username: '', email: '', password: '', rolle: 'trainer', dojo_id: '' });
+  const [addMsg, setAddMsg]       = useState('');
   const [addSaving, setAddSaving] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
-      axios.get('/admin/todo-access'),
+      axios.get('/admin/app-access'),
       axios.get('/admin/todo-dojos'),
     ]).then(([uRes, dRes]) => {
       setUsers(uRes.data.users || []);
@@ -45,12 +50,14 @@ function TodoAccessModal({ onClose }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const toggle = async (user) => {
-    const newVal = !user.todo_app_access;
-    setSaving(user.id);
+  const toggleApp = async (user, app) => {
+    const flagKey = `${app}_app_access`;
+    const newVal = !user[flagKey];
+    const saveKey = `${user.id}-${app}`;
+    setSaving(saveKey);
     try {
-      await axios.patch(`/admin/todo-access/${user.id}`, { access: newVal });
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, todo_app_access: newVal ? 1 : 0 } : u));
+      await axios.patch(`/admin/app-access/${user.id}`, { app, access: newVal ? 1 : 0 });
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, [flagKey]: newVal ? 1 : 0 } : u));
     } catch {}
     finally { setSaving(null); }
   };
@@ -105,24 +112,33 @@ function TodoAccessModal({ onClose }) {
     return acc;
   }, {});
 
-  const enabledCount  = users.filter(u => u.todo_app_access).length;
-  const disabledCount = users.length - enabledCount;
+  const totalEnabled = APP_FLAGS.reduce((sum, f) => sum + users.filter(u => u[`${f.key}_app_access`]).length, 0);
 
   return createPortal(
     <div className="am-fullmodal-overlay" onClick={onClose}>
-      <div className="am-fullmodal" onClick={e => e.stopPropagation()}>
+      <div className="am-fullmodal am-fullmodal--wide" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="am-fullmodal-header">
           <div className="am-fullmodal-title">
-            <span>🔐 Zugriff & Passwörter — TDA To Do</span>
+            <span>🔐 App-Zugänge verwalten</span>
             <div className="am-fullmodal-stats">
-              <span className="am-access-pill am-access-pill--on">✓ {enabledCount} aktiv</span>
-              {disabledCount > 0 && <span className="am-access-pill am-access-pill--off">✗ {disabledCount} gesperrt</span>}
-              <span className="am-access-pill">{users.length} gesamt</span>
+              {APP_FLAGS.map(f => {
+                const cnt = users.filter(u => u[`${f.key}_app_access`]).length;
+                return <span key={f.key} className="am-access-pill">{f.label} <strong>{cnt}</strong></span>;
+              })}
+              <span className="am-access-pill">{users.length} Nutzer</span>
             </div>
           </div>
           <button className="am-fullmodal-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* App-Legende */}
+        <div className="am-access-legend">
+          {APP_FLAGS.map(f => (
+            <span key={f.key} className="am-legend-item">{f.label}</span>
+          ))}
+          <span className="am-legend-sep">— Toggle pro Spalte = Zugriff an/aus</span>
         </div>
 
         {/* Search + Actions */}
@@ -136,7 +152,7 @@ function TodoAccessModal({ onClose }) {
             autoFocus
           />
           <button className="am-add-user-btn" onClick={() => { setShowAddForm(s => !s); setAddMsg(''); }}>
-            {showAddForm ? '✕ Schließen' : '➕ Benutzer hinzufügen'}
+            {showAddForm ? '✕ Schließen' : '➕ Nutzer hinzufügen'}
           </button>
           <button className="am-refresh-btn" onClick={load} style={{ flexShrink: 0 }}>↻</button>
         </div>
@@ -168,16 +184,10 @@ function TodoAccessModal({ onClose }) {
                 {dojos.map(d => <option key={d.id} value={d.id}>{d.dojoname}</option>)}
               </select>
             </div>
-            {addMsg && (
-              <div className={`am-pw-msg ${addMsg.startsWith('✓') ? 'am-pw-msg--ok' : 'am-pw-msg--err'}`}>{addMsg}</div>
-            )}
+            {addMsg && <div className={`am-pw-msg ${addMsg.startsWith('✓') ? 'am-pw-msg--ok' : 'am-pw-msg--err'}`}>{addMsg}</div>}
             <div className="am-add-form-actions">
               <button className="am-pw-cancel" onClick={() => { setShowAddForm(false); setAddMsg(''); }}>Abbrechen</button>
-              <button
-                className="am-pw-save"
-                onClick={addUser}
-                disabled={addSaving || !newUser.vorname || !newUser.nachname || !newUser.username || newUser.password.length < 6}
-              >
+              <button className="am-pw-save" onClick={addUser} disabled={addSaving || !newUser.vorname || !newUser.nachname || !newUser.username || newUser.password.length < 6}>
                 {addSaving ? '…' : '✓ Anlegen'}
               </button>
             </div>
@@ -186,6 +196,15 @@ function TodoAccessModal({ onClose }) {
 
         {/* User list */}
         <div className="am-fullmodal-body">
+          {/* Column header */}
+          <div className="am-access-col-header">
+            <div className="am-access-col-user">Nutzer</div>
+            {APP_FLAGS.map(f => (
+              <div key={f.key} className="am-access-col-app">{f.label}</div>
+            ))}
+            <div className="am-access-col-actions">Aktionen</div>
+          </div>
+
           {loading ? (
             <div className="am-access-loading">Lade Nutzer…</div>
           ) : filtered.length === 0 ? (
@@ -197,7 +216,8 @@ function TodoAccessModal({ onClose }) {
                   {dojoName} <span className="am-access-group-count">{dojoUsers.length}</span>
                 </div>
                 {dojoUsers.map(u => (
-                  <div key={u.id} className="am-access-row am-access-row--wide">
+                  <div key={u.id} className="am-access-row am-access-row--table">
+                    {/* User info */}
                     <div className="am-access-info">
                       <div className="am-access-name-row">
                         <span className="am-access-name">{u.vorname} {u.nachname}</span>
@@ -206,16 +226,29 @@ function TodoAccessModal({ onClose }) {
                       </div>
                       {u.email && <div className="am-access-email">{u.email}</div>}
                     </div>
-                    <div className="am-access-actions">
-                      <button className="am-pw-btn" onClick={() => openPw(u)} title="Passwort setzen">🔑 Passwort</button>
-                      <button
-                        className={`am-access-toggle ${u.todo_app_access ? 'am-access-toggle--on' : 'am-access-toggle--off'}`}
-                        onClick={() => toggle(u)}
-                        disabled={saving === u.id}
-                        title={u.todo_app_access ? 'Zugriff entziehen' : 'Zugriff gewähren'}
-                      >
-                        {saving === u.id ? '…' : u.todo_app_access ? '✓ Zugriff' : '✗ Gesperrt'}
-                      </button>
+
+                    {/* App toggles */}
+                    {APP_FLAGS.map(f => {
+                      const flagKey = `${f.key}_app_access`;
+                      const isOn = !!u[flagKey];
+                      const saveKey = `${u.id}-${f.key}`;
+                      return (
+                        <div key={f.key} className="am-access-col-app">
+                          <button
+                            className={`am-app-toggle ${isOn ? 'am-app-toggle--on' : 'am-app-toggle--off'}`}
+                            onClick={() => toggleApp(u, f.key)}
+                            disabled={saving === saveKey}
+                            title={isOn ? 'Zugriff entziehen' : 'Zugriff gewähren'}
+                          >
+                            {saving === saveKey ? '…' : isOn ? '✓' : '✗'}
+                          </button>
+                        </div>
+                      );
+                    })}
+
+                    {/* Actions */}
+                    <div className="am-access-actions am-access-col-actions">
+                      <button className="am-pw-btn" onClick={() => openPw(u)} title="Passwort setzen">🔑</button>
                       <button className="am-delete-btn" onClick={() => setConfirmDel(u)} title="Nutzer deaktivieren" disabled={deleting === u.id}>🗑</button>
                     </div>
                   </div>
@@ -240,25 +273,14 @@ function TodoAccessModal({ onClose }) {
                 </div>
               )}
               <div className="am-pw-input-wrap">
-                <input
-                  className="am-pw-input"
-                  type={showPw ? 'text' : 'password'}
-                  placeholder="Neues Passwort (min. 6 Zeichen)"
-                  value={pw}
-                  onChange={e => setPw(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && savePw()}
-                  autoFocus
-                />
+                <input className="am-pw-input" type={showPw ? 'text' : 'password'} placeholder="Neues Passwort (min. 6 Zeichen)"
+                  value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === 'Enter' && savePw()} autoFocus />
                 <button className="am-pw-eye" onClick={() => setShowPw(s => !s)}>{showPw ? '🙈' : '👁'}</button>
               </div>
-              {pwMsg && (
-                <div className={`am-pw-msg ${pwMsg.startsWith('✓') ? 'am-pw-msg--ok' : 'am-pw-msg--err'}`}>{pwMsg}</div>
-              )}
+              {pwMsg && <div className={`am-pw-msg ${pwMsg.startsWith('✓') ? 'am-pw-msg--ok' : 'am-pw-msg--err'}`}>{pwMsg}</div>}
               <div className="am-pw-modal-actions">
                 <button className="am-pw-cancel" onClick={closePw}>Abbrechen</button>
-                <button className="am-pw-save" onClick={savePw} disabled={pwSaving || pw.length < 6}>
-                  {pwSaving ? '…' : 'Speichern'}
-                </button>
+                <button className="am-pw-save" onClick={savePw} disabled={pwSaving || pw.length < 6}>{pwSaving ? '…' : 'Speichern'}</button>
               </div>
             </div>
           </div>
@@ -270,7 +292,7 @@ function TodoAccessModal({ onClose }) {
             <div className="am-pw-modal" onClick={e => e.stopPropagation()}>
               <div className="am-pw-modal-title">🗑 Nutzer deaktivieren?</div>
               <div className="am-pw-info">
-                <strong>{confirmDel.vorname} {confirmDel.nachname}</strong> wird deaktiviert und kann sich nicht mehr einloggen.
+                <strong>{confirmDel.vorname} {confirmDel.nachname}</strong> wird deaktiviert.
               </div>
               <div className="am-pw-modal-actions">
                 <button className="am-pw-cancel" onClick={() => setConfirmDel(null)}>Abbrechen</button>
@@ -298,7 +320,7 @@ const SORT_OPTIONS = [
   { value: 'name',     label: 'Name A–Z' },
   { value: 'online',   label: 'Online zuerst' },
   { value: 'offline',  label: 'Offline zuerst' },
-  { value: 'response', label: 'Schnellste zuerst' },
+  { value: 'response', label: 'Schnellste' },
 ];
 
 function formatUptime(ms) {
@@ -316,8 +338,7 @@ function formatBytes(b) {
 }
 
 function AppCard({ app, onCopy }) {
-  const [expanded, setExpanded]           = useState(false);
-  const [showAccessModal, setShowAccessModal] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const loading   = app.httpStatus === undefined;
   const statusCls = loading ? 'loading' : app.online ? 'online' : 'offline';
   const respMs    = app.responseMs;
@@ -326,7 +347,6 @@ function AppCard({ app, onCopy }) {
   return (
     <div className={`am-card am-card--${statusCls}`}>
       <div className={`am-stripe am-stripe--${statusCls}`} />
-
       <div className="am-card-body">
         <div className="am-card-head">
           <span className="am-icon">{app.icon}</span>
@@ -343,9 +363,7 @@ function AppCard({ app, onCopy }) {
             <span className={`am-dot am-dot--${statusCls}`} />
             {loading ? '…' : app.online ? `${app.httpStatus}` : `Offline${app.httpStatus ? ` · ${app.httpStatus}` : ''}`}
           </span>
-          {!loading && respMs && (
-            <span className={`am-resp am-resp--${respCls}`}>{respMs}ms</span>
-          )}
+          {!loading && respMs && <span className={`am-resp am-resp--${respCls}`}>{respMs}ms</span>}
           {app.pm2 && (
             <span className={`am-pm2-pill am-pm2-pill--${app.pm2.status === 'online' ? 'on' : 'off'}`}>
               PM2 {app.pm2.status === 'online' ? `↑ ${formatUptime(app.pm2.uptime)}` : app.pm2.status}
@@ -360,7 +378,6 @@ function AppCard({ app, onCopy }) {
         {expanded && (
           <div className="am-details">
             <a href={app.url} target="_blank" rel="noopener noreferrer" className="am-url">{app.url}</a>
-
             <div className="am-info-grid">
               {app.tech && (
                 <div className="am-info-row">
@@ -378,29 +395,18 @@ function AppCard({ app, onCopy }) {
                 </div>
               )}
             </div>
-
             {app.notes && <div className="am-notes">{app.notes}</div>}
-
             <div className="am-actions">
               <a href={app.url} target="_blank" rel="noopener noreferrer" className="am-btn am-btn--primary">↗ Öffnen</a>
               {app.adminUrl && app.adminUrl !== app.url && (
                 <a href={app.adminUrl} target="_blank" rel="noopener noreferrer" className="am-btn">⚙ Admin</a>
               )}
               <button className="am-btn" onClick={() => onCopy(app.url)}>📋 URL</button>
-              {app.localPath && (
-                <button className="am-btn" onClick={() => onCopy(`cd ${app.localPath}`)}>📁 Pfad</button>
-              )}
-              {app.hasAccessManagement && (
-                <button className="am-btn am-btn--access" onClick={() => setShowAccessModal(true)}>
-                  🔐 Zugriff verwalten
-                </button>
-              )}
+              {app.localPath && <button className="am-btn" onClick={() => onCopy(`cd ${app.localPath}`)}>📁 Pfad</button>}
             </div>
           </div>
         )}
       </div>
-
-      {showAccessModal && <TodoAccessModal onClose={() => setShowAccessModal(false)} />}
     </div>
   );
 }
@@ -414,6 +420,7 @@ export default function AppsMonitor() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [sortBy, setSortBy]               = useState('default');
   const [copyFlash, setCopyFlash]         = useState(null);
+  const [showAccessModal, setShowAccessModal] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -470,11 +477,10 @@ export default function AppsMonitor() {
           ))}
         </div>
         <div className="am-toolbar-right">
-          <select
-            className="am-sort-select"
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-          >
+          <button className="am-btn--access am-btn am-zugaenge-btn" onClick={() => setShowAccessModal(true)}>
+            🔐 App-Zugänge
+          </button>
+          <select className="am-sort-select" value={sortBy} onChange={e => setSortBy(e.target.value)}>
             {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           {lastUpdate && (
@@ -511,6 +517,7 @@ export default function AppsMonitor() {
         </div>
       )}
 
+      {showAccessModal && <AppAccessModal onClose={() => setShowAccessModal(false)} />}
       {copyFlash && <div className="am-copy-flash">✓ {copyFlash}</div>}
     </div>
   );
