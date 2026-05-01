@@ -178,7 +178,7 @@ router.post('/login',
     const adminQuery = `
       SELECT id, username, email, password, password_algorithm, rolle as role, dojo_id,
              vorname, nachname, berechtigungen, aktiv, erstellt_am,
-             failed_login_attempts, locked_until
+             failed_login_attempts, locked_until, todo_app_access
       FROM admin_users
       WHERE email = ? OR username = ?
       LIMIT 1
@@ -363,6 +363,7 @@ router.post('/login',
           nachname: user.nachname || null,
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
           msg_app_enabled: isAdmin ? true : (user.msg_app_enabled !== 0),
+          todo_app_access: isAdmin ? (user.todo_app_access !== 0) : true,
           iat: Math.floor(Date.now() / 1000)
         };
 

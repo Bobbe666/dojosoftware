@@ -8,6 +8,7 @@ const http = require('http');
 const { exec } = require('child_process');
 const router = express.Router();
 const { requireSuperAdmin } = require('./shared');
+const db = require('../../db');
 
 // Registry aller TDA-Apps — statisch gepflegt
 const APP_REGISTRY = [
@@ -164,6 +165,22 @@ const APP_REGISTRY = [
     deploy: null,
     notes: 'Externe Lernplattform — nicht in diesem Repo',
   },
+  {
+    id: 'todo',
+    name: 'TDA To Do',
+    short: 'Aufgaben für Trainer, Büro & Team',
+    url: 'https://todo.tda-intl.org',
+    icon: '✅',
+    category: 'pwa',
+    tech: { frontend: 'React/Vite PWA', backend: '— (nutzt Dojo API)' },
+    pm2: null,
+    port: null,
+    localPath: '/Users/schreinersascha/todo-app',
+    serverPath: '/var/www/todo-app',
+    deploy: './deploy.sh',
+    notes: 'Standalone PWA — Apple Notes Integration via Web Share Target. Zugriffsrechte pro Nutzer verwaltbar.',
+    hasAccessManagement: true,
+  },
 ];
 
 // Hilfsfunktion: HTTP/HTTPS HEAD-Request mit Timeout
@@ -248,6 +265,39 @@ router.get('/apps/pm2', requireSuperAdmin, async (req, res) => {
     res.json({ success: true, pm2: pm2List });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// GET /api/admin/todo-access — Alle Nutzer mit todo_app_access Status
+router.get('/todo-access', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.promise().query(`
+      SELECT au.id, au.vorname, au.nachname, au.email, au.rolle, au.dojo_id,
+             COALESCE(au.todo_app_access, 1) AS todo_app_access,
+             d.dojoname
+      FROM admin_users au
+      LEFT JOIN dojo d ON d.id = au.dojo_id
+      WHERE au.aktiv = 1
+      ORDER BY d.dojoname, au.nachname, au.vorname
+    `);
+    res.json({ users: rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/todo-access/:id — Zugriff für einen Nutzer setzen
+router.patch('/todo-access/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { access } = req.body;
+  try {
+    await db.promise().query(
+      'UPDATE admin_users SET todo_app_access = ? WHERE id = ?',
+      [access ? 1 : 0, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
