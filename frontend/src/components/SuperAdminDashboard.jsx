@@ -3,7 +3,7 @@
 // =============================================
 // Nur sichtbar wenn Dojo-ID = 2 (TDA International) ausgewählt
 
-import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -961,16 +961,16 @@ const SuperAdminDashboard = () => {
   // Lade Aktivitäten + Benachrichtigungen erst wenn relevante Tabs geöffnet werden
   useEffect(() => {
     if (activeTab === 'overview') loadActivities();
-  }, [activeTab, loadActivities]);
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (activeTab === 'kommunikation' && kommunikationSubTab === 'pushnachrichten') {
       loadNotifications();
     }
-  }, [activeTab, kommunikationSubTab, loadNotifications]);
+  }, [activeTab, kommunikationSubTab, notificationFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Aktivitäten laden (letzte Registrierungen, etc.)
-  const loadActivities = useCallback(async () => {
+  const loadActivities = async () => {
     try {
       setActivitiesLoading(true);
       const response = await axios.get('/admin/activities', {
@@ -985,7 +985,7 @@ const SuperAdminDashboard = () => {
     } finally {
       setActivitiesLoading(false);
     }
-  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  };
 
   // Fallback: Aktivitäten aus vorhandenen Daten generieren
   const generateActivitiesFromData = () => {
@@ -1015,7 +1015,7 @@ const SuperAdminDashboard = () => {
   };
 
   // Benachrichtigungen laden
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = async () => {
     try {
       setNotificationsLoading(true);
       const response = await axios.get(`/admin/notifications?filter=${notificationFilter}`, {
@@ -1031,7 +1031,7 @@ const SuperAdminDashboard = () => {
     } finally {
       setNotificationsLoading(false);
     }
-  }, [token, notificationFilter]);
+  };
 
   // Benachrichtigung als gelesen markieren
   const markNotificationAsRead = async (notificationId) => {
