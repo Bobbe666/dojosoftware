@@ -3,7 +3,7 @@
  * Premium-Feature in der Marketing-Zentrale
  * Gutscheine erstellen, verwalten und als Link auf die Homepage einbetten
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Gift, Plus, Copy, CheckCircle, XCircle, Search, Eye, Trash2,
   Link, ExternalLink, QrCode, RefreshCw, Tag, AlertCircle
@@ -48,6 +48,45 @@ export default function GutscheineVerwaltung() {
   });
   const [saving, setSaving]             = useState(false);
   const [neuerCode, setNeuerCode]       = useState(null);    // frisch erstellter Gutschein
+
+  // Mitglieder-Suche
+  const [mitgliedSuche, setMitgliedSuche]       = useState('');
+  const [mitgliedResults, setMitgliedResults]   = useState([]);
+  const [mitgliedSuchend, setMitgliedSuchend]   = useState(false);
+  const [selectedMitglied, setSelectedMitglied] = useState(null);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (mitgliedSuche.length < 2) { setMitgliedResults([]); return; }
+    const t = setTimeout(async () => {
+      setMitgliedSuchend(true);
+      try {
+        const dojoParam = activeDojo?.id ? `&dojo_id=${activeDojo.id}` : '';
+        const res = await fetchWithAuth(`${config.apiBaseUrl}/mitglieder?search=${encodeURIComponent(mitgliedSuche)}&limit=8${dojoParam}`);
+        const data = await res.json();
+        setMitgliedResults(data.mitglieder || data || []);
+      } catch { setMitgliedResults([]); }
+      finally { setMitgliedSuchend(false); }
+    }, 280);
+    return () => clearTimeout(t);
+  }, [mitgliedSuche]);
+
+  const selectMitglied = (m) => {
+    setSelectedMitglied(m);
+    setForm(f => ({
+      ...f,
+      empfaenger_name: `${m.vorname} ${m.nachname}`.trim(),
+      empfaenger_email: m.email || f.empfaenger_email,
+      mitglied_id: m.mitglied_id,
+    }));
+    setMitgliedSuche('');
+    setMitgliedResults([]);
+  };
+
+  const clearMitglied = () => {
+    setSelectedMitglied(null);
+    setForm(f => ({ ...f, empfaenger_name: '', empfaenger_email: '', mitglied_id: null }));
+  };
 
   // Liste-Filter
   const [filterEingeloest, setFilterEingeloest] = useState('offen');
@@ -152,7 +191,10 @@ export default function GutscheineVerwaltung() {
     setSelectedVorlage(null);
     setWertPreset(null);
     setWertCustom('');
-    setForm({ titel: '', nachricht: '', gueltig_bis: '', empfaenger_name: '', empfaenger_email: '' });
+    setForm({ titel: '', nachricht: '', gueltig_bis: '', empfaenger_name: '', empfaenger_email: '', mitglied_id: null });
+    setSelectedMitglied(null);
+    setMitgliedSuche('');
+    setMitgliedResults([]);
     setNeuerCode(null);
   };
 
@@ -361,6 +403,49 @@ export default function GutscheineVerwaltung() {
                       onChange={e => setForm(f => ({ ...f, nachricht: e.target.value }))}
                     />
                   </div>
+                  {/* Mitglieder-Suche */}
+                  <div className="gv-form-field">
+                    <label>Mitglied verknüpfen <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional)</span></label>
+                    {selectedMitglied ? (
+                      <div className="gv-mitglied-badge">
+                        <span className="gv-mitglied-badge-icon">👤</span>
+                        <span className="gv-mitglied-badge-name">
+                          {selectedMitglied.vorname} {selectedMitglied.nachname}
+                          {selectedMitglied.mitgliedsnummer && <span className="gv-mitglied-badge-nr"> #{selectedMitglied.mitgliedsnummer}</span>}
+                        </span>
+                        <button className="gv-mitglied-badge-clear" onClick={clearMitglied} title="Entfernen">×</button>
+                      </div>
+                    ) : (
+                      <div className="gv-mitglied-search-wrap" ref={searchRef}>
+                        <div className="gv-mitglied-search-row">
+                          <Search size={14} className="gv-mitglied-search-icon" />
+                          <input
+                            className="gv-input gv-mitglied-input"
+                            placeholder="Name oder Mitgliedsnummer suchen…"
+                            value={mitgliedSuche}
+                            onChange={e => setMitgliedSuche(e.target.value)}
+                          />
+                          {mitgliedSuchend && <span className="gv-mitglied-loading">…</span>}
+                        </div>
+                        {mitgliedResults.length > 0 && (
+                          <div className="gv-mitglied-dropdown">
+                            {mitgliedResults.map(m => (
+                              <button key={m.mitglied_id} className="gv-mitglied-result" onClick={() => selectMitglied(m)}>
+                                <span className="gv-mitglied-result-name">{m.vorname} {m.nachname}</span>
+                                <span className="gv-mitglied-result-sub">
+                                  {m.mitgliedsnummer && `#${m.mitgliedsnummer} · `}{m.email || ''}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {mitgliedSuche.length >= 2 && !mitgliedSuchend && mitgliedResults.length === 0 && (
+                          <div className="gv-mitglied-empty">Kein Mitglied gefunden</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="gv-form-field">
                     <label>Empfänger Name</label>
                     <input
