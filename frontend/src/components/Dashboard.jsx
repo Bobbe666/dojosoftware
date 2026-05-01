@@ -675,6 +675,23 @@ function Dashboard() {
   // ✨ Kommunikation & Marketing ✨
   const kommunikationCards = [
     {
+      icon: '💬',
+      title: 'Team-Chat',
+      description: 'Interner Chat mit Mitgliedern, Trainern & dem Team',
+      path: '/dashboard/chat',
+      badge: 'NEU',
+      featured: true
+    },
+    {
+      icon: '🌐',
+      title: 'Besucher-Chat',
+      description: 'Eingehende Anfragen von der Homepage & Facebook Messenger beantworten',
+      path: '/dashboard/besucher-chat',
+      badge: 'NEU',
+      featured: true,
+      adminOnly: true
+    },
+    {
       icon: '📱',
       title: 'Msg-App öffnen',
       description: 'WhatsApp-Style Messaging für Admin, Trainer & Mitglieder',
@@ -1564,7 +1581,7 @@ function Dashboard() {
                       {/* ✨ Kommunikation & Marketing Tab ✨ */}
                       {activeTab === 'kommunikation' && (
                         <div className="nav-cards">
-                        {kommunikationCards.map((card, index) => (
+                        {kommunikationCards.filter(card => !card.adminOnly || role === 'admin' || role === 'super_admin' || role === 'eingeschraenkt').map((card, index) => (
                           <div
                             key={index}
                             onClick={() => {
