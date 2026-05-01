@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const db = require('../db');
+const { generatePartnerPdf } = require('../utils/partnerPdfGenerator');
 
 const pool = db.promise();
 
@@ -176,15 +177,75 @@ router.post('/admin/documents', requireSuperAdmin, upload.single('file'), async 
   }
 });
 
+// ── ADMIN: CREATE document via editor ────────────────────────────────────────
+
+router.post('/admin/documents/editor', requireSuperAdmin, async (req, res) => {
+  const { name_de, name_en, description_de, description_en, content_html, primary_color, category, is_public, sort_order } = req.body;
+  if (!name_de || !name_en) return res.status(400).json({ success: false, error: 'name_de und name_en erforderlich' });
+  try {
+    const [result] = await pool.query(
+      'INSERT INTO partner_documents (name_de, name_en, description_de, description_en, content_html, primary_color, source, filename, file_path, category, is_public, sort_order) VALUES (?,?,?,?,?,?,\'editor\',\'\',\'\',?,?,?)',
+      [name_de, name_en, description_de || null, description_en || null, content_html || '', primary_color || '#c9a227', category || 'info', is_public === false || is_public === '0' ? 0 : 1, sort_order ?? 0]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'DB-Fehler' });
+  }
+});
+
+// ── ADMIN: UPDATE document via editor ────────────────────────────────────────
+
+router.put('/admin/documents/:id/editor', requireSuperAdmin, async (req, res) => {
+  const { name_de, name_en, description_de, description_en, content_html, primary_color, category, is_public } = req.body;
+  try {
+    await pool.query(
+      'UPDATE partner_documents SET name_de=?, name_en=?, description_de=?, description_en=?, content_html=?, primary_color=?, category=?, is_public=? WHERE id=?',
+      [name_de, name_en, description_de || null, description_en || null, content_html || '', primary_color || '#c9a227', category || 'info', is_public === false || is_public === '0' ? 0 : 1, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'DB-Fehler' });
+  }
+});
+
+// ── ADMIN: Generate PDF from editor document ──────────────────────────────────
+
+router.get('/admin/documents/:id/pdf', requireSuperAdmin, async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT * FROM partner_documents WHERE id = ?', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
+    const doc = rows[0];
+    if (doc.source !== 'editor') return res.status(400).json({ success: false, error: 'Nur Editor-Dokumente können als PDF generiert werden' });
+
+    const pdfBuffer = await generatePartnerPdf({
+      title: doc.name_de,
+      contentHtml: doc.content_html || '',
+      primaryColor: doc.primary_color || '#c9a227',
+    });
+
+    const filename = `${doc.name_de.replace(/[^a-zA-Z0-9äöüÄÖÜß\s-]/g, '').trim().replace(/\s+/g, '_')}.pdf`;
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+      'Content-Length': pdfBuffer.length,
+    });
+    res.send(pdfBuffer);
+  } catch (err) {
+    res.status(500).json({ success: false, error: 'PDF-Generierung fehlgeschlagen: ' + err.message });
+  }
+});
+
 // ── ADMIN: DELETE a document ──────────────────────────────────────────────────
 
 router.delete('/admin/documents/:id', requireSuperAdmin, async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT file_path FROM partner_documents WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query('SELECT file_path, source FROM partner_documents WHERE id = ?', [req.params.id]);
     if (!rows.length) return res.status(404).json({ success: false, error: 'Nicht gefunden' });
     await pool.query('DELETE FROM partner_documents WHERE id = ?', [req.params.id]);
-    const fullPath = path.join(__dirname, '..', rows[0].file_path);
-    fs.unlink(fullPath, () => {});
+    if (rows[0].source !== 'editor' && rows[0].file_path) {
+      const fullPath = path.join(__dirname, '..', rows[0].file_path);
+      fs.unlink(fullPath, () => {});
+    }
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: 'DB-Fehler' });

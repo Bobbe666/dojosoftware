@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import axios from 'axios';
+const PartnerDokumentEditor = lazy(() => import('./PartnerDokumentEditor'));
 import {
   ComposableMap,
   Geographies,
@@ -221,6 +222,8 @@ export default function PartnerAdmin() {
   const [loading, setLoading] = useState(true);
   const [editRep, setEditRep] = useState(null);
   const [showUpload, setShowUpload] = useState(false);
+  const [editDoc, setEditDoc] = useState(null);
+  const [showDocEditor, setShowDocEditor] = useState(false);
   const [tooltip, setTooltip] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -587,22 +590,40 @@ export default function PartnerAdmin() {
       {/* ── DOCS TAB ──────────────────────────────────────────────── */}
       {tab === 'docs' && (
         <div>
-          <div className="pa-docs-toolbar">
-            <button className="pa-btn pa-btn--primary" onClick={() => setShowUpload(true)}>+ Dokument hochladen</button>
+          <div className="pa-docs-toolbar" style={{ display: 'flex', gap: 8 }}>
+            <button className="pa-btn pa-btn--primary" onClick={() => { setEditDoc(null); setShowDocEditor(true); }}>✏️ Dokument erstellen</button>
+            <button className="pa-btn pa-btn--ghost" onClick={() => setShowUpload(true)}>↑ Datei hochladen</button>
           </div>
           {docs.length === 0 ? (
-            <div className="pa-empty">Noch keine Dokumente hochgeladen.</div>
+            <div className="pa-empty">Noch keine Dokumente vorhanden.</div>
           ) : (
             <div className="pa-docs-list">
               {docs.map(doc => (
                 <div key={doc.id} className="pa-doc-row">
-                  <span className="pa-doc-icon">📄</span>
+                  <span className="pa-doc-icon">{doc.source === 'editor' ? '🖊️' : '📄'}</span>
                   <div className="pa-doc-info">
                     <span className="pa-doc-name">{doc.name_de}</span>
-                    <span className="pa-doc-meta">{doc.name_en} · {CATEGORY_LABELS[doc.category] || doc.category} · {doc.is_public ? 'Öffentlich' : 'Intern'}</span>
-                    {doc.file_size && <span className="pa-doc-size">{doc.file_size < 1048576 ? `${Math.round(doc.file_size / 1024)} KB` : `${(doc.file_size / 1048576).toFixed(1)} MB`}</span>}
+                    <span className="pa-doc-meta">
+                      {doc.name_en} · {CATEGORY_LABELS[doc.category] || doc.category} · {doc.is_public ? 'Öffentlich' : 'Intern'}
+                      {doc.source === 'editor' && <span style={{ marginLeft: 6, fontSize: '0.65rem', color: 'var(--color-gold, #ffd700)' }}>● Editor</span>}
+                    </span>
+                    {doc.file_size > 0 && <span className="pa-doc-size">{doc.file_size < 1048576 ? `${Math.round(doc.file_size / 1024)} KB` : `${(doc.file_size / 1048576).toFixed(1)} MB`}</span>}
                   </div>
-                  <a href={`/api/partner/documents/${doc.id}/download`} target="_blank" rel="noopener noreferrer" className="pa-btn pa-btn--ghost pa-btn--sm">↓ Download</a>
+                  {doc.source === 'editor' ? (
+                    <>
+                      <button className="pa-btn pa-btn--ghost pa-btn--sm" onClick={() => { setEditDoc(doc); setShowDocEditor(true); }}>✏️ Bearbeiten</button>
+                      <button className="pa-btn pa-btn--ghost pa-btn--sm" onClick={async () => {
+                        try {
+                          const res = await axios.get(`/partner/admin/documents/${doc.id}/pdf`, { responseType: 'blob' });
+                          const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                          const a = document.createElement('a'); a.href = url; a.download = `${doc.name_de}.pdf`; a.click();
+                          URL.revokeObjectURL(url);
+                        } catch { alert('PDF-Fehler'); }
+                      }}>↓ PDF</button>
+                    </>
+                  ) : (
+                    <a href={`/api/partner/documents/${doc.id}/download`} target="_blank" rel="noopener noreferrer" className="pa-btn pa-btn--ghost pa-btn--sm">↓ Download</a>
+                  )}
                   <button className="pa-btn pa-btn--danger pa-btn--sm" onClick={() => handleDeleteDoc(doc)} disabled={deleting === doc.id}>
                     {deleting === doc.id ? '…' : '🗑'}
                   </button>
@@ -616,6 +637,15 @@ export default function PartnerAdmin() {
       {/* Modals */}
       {editRep && <EditRepModal rep={editRep} onSave={handleRepSave} onClose={() => setEditRep(null)} />}
       {showUpload && <UploadDocModal onUploaded={load} onClose={() => setShowUpload(false)} />}
+      {showDocEditor && (
+        <Suspense fallback={null}>
+          <PartnerDokumentEditor
+            doc={editDoc}
+            onSaved={load}
+            onClose={() => { setShowDocEditor(false); setEditDoc(null); }}
+          />
+        </Suspense>
+      )}
 
       {/* Flash */}
       {flash && <div className="pa-flash">{flash}</div>}
