@@ -1,6 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, UserCog, Activity, Shield, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Users, UserCog, Activity, Shield, Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
+const UserAvatar = ({ vorname, nachname, role }) => {
+  const initials = `${(vorname?.[0] || '?').toUpperCase()}${(nachname?.[0] || '?').toUpperCase()}`;
+  const colorClass = role === 'super_admin' ? 'avatar-gold' : role === 'admin' ? 'avatar-teal' : 'avatar-default';
+  return <span className={`user-table-avatar ${colorClass}`}>{initials}</span>;
+};
+
+const RelativeTime = ({ dateStr }) => {
+  if (!dateStr) return <span className="no-data">Noch nie</span>;
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+  let relative;
+  if (diffDays === 0) relative = 'Heute';
+  else if (diffDays === 1) relative = 'Gestern';
+  else if (diffDays < 7) relative = `Vor ${diffDays} Tagen`;
+  else if (diffDays < 30) relative = `Vor ${Math.floor(diffDays / 7)} Wo.`;
+  else relative = date.toLocaleDateString('de-DE');
+  return (
+    <div>
+      <span className="relative-time-label">{relative}</span>
+      <span className="time-cell">{date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+    </div>
+  );
+};
 
 const UsersTab = ({ token }) => {
   const [loading, setLoading] = useState(true);
@@ -62,54 +87,63 @@ const UsersTab = ({ token }) => {
     'eingeschraenkt': 'Eingeschränkt'
   };
 
+  const totalUsers = users.userStats.total + users.dojoUsers.length;
+  const activeRate = totalUsers > 0 ? Math.round((users.userStats.active / totalUsers) * 100) : 0;
+
   return (
     <div className="statistics-tab users-tab">
       {/* KPI Cards */}
       <div className="stats-kpi-grid">
-        <div className="kpi-card">
-          <div className="kpi-icon primary">
-            <Users size={24} />
+        <div className="kpi-card kpi-card--blue">
+          <div className="kpi-icon-wrap kpi-icon-wrap--blue">
+            <Users size={22} />
           </div>
           <div className="kpi-content">
             <div className="kpi-label">Gesamt Benutzer</div>
-            <div className="kpi-value">{users.userStats.total + users.dojoUsers.length}</div>
+            <div className="kpi-value">{totalUsers}</div>
             <div className="kpi-sublabel">
-              {users.userStats.total} Admin + {users.dojoUsers.length} Dojo
+              <span className="kpi-chip kpi-chip--blue">{users.userStats.total} Admin</span>
+              <span className="kpi-chip kpi-chip--muted">{users.dojoUsers.length} Dojo</span>
             </div>
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-icon success">
-            <CheckCircle size={24} />
+        <div className="kpi-card kpi-card--green">
+          <div className="kpi-icon-wrap kpi-icon-wrap--green">
+            <CheckCircle size={22} />
           </div>
           <div className="kpi-content">
             <div className="kpi-label">Aktive Benutzer</div>
             <div className="kpi-value">{users.userStats.active}</div>
-            <div className="kpi-sublabel">{users.activeUsers.length} in letzten 7 Tagen</div>
+            <div className="kpi-sublabel">
+              <span className="kpi-chip kpi-chip--green">{activeRate}% aktiv</span>
+              <span className="kpi-chip kpi-chip--muted">{users.activeUsers.length} in 7 Tagen</span>
+            </div>
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-icon warning">
-            <Activity size={24} />
+        <div className="kpi-card kpi-card--orange">
+          <div className="kpi-icon-wrap kpi-icon-wrap--orange">
+            <Activity size={22} />
           </div>
           <div className="kpi-content">
             <div className="kpi-label">Logins (30 Tage)</div>
             <div className="kpi-value">{users.loginStats.total_logins}</div>
-            <div className="kpi-sublabel">Ø {users.loginStats.avg_per_day} pro Tag</div>
+            <div className="kpi-sublabel">
+              <span className="kpi-chip kpi-chip--orange">Ø {users.loginStats.avg_per_day}/Tag</span>
+            </div>
           </div>
         </div>
 
-        <div className="kpi-card">
-          <div className="kpi-icon primary">
-            <Shield size={24} />
+        <div className="kpi-card kpi-card--gold">
+          <div className="kpi-icon-wrap kpi-icon-wrap--gold">
+            <Shield size={22} />
           </div>
           <div className="kpi-content">
             <div className="kpi-label">Super-Admins</div>
             <div className="kpi-value">{users.userStats.byRole?.super_admin || 0}</div>
             <div className="kpi-sublabel">
-              {users.userStats.byRole?.admin || 0} Admins gesamt
+              <span className="kpi-chip kpi-chip--gold">{users.userStats.byRole?.admin || 0} Admins</span>
             </div>
           </div>
         </div>
@@ -139,14 +173,19 @@ const UsersTab = ({ token }) => {
               <tbody>
                 {users.adminUsers.map((user, idx) => (
                   <tr key={idx} className={!user.aktiv ? 'inactive-user' : ''}>
-                    <td className="username">{user.username}</td>
-                    <td>{user.vorname} {user.nachname}</td>
+                    <td>
+                      <div className="username-cell">
+                        <UserAvatar vorname={user.vorname} nachname={user.nachname} role={user.rolle} />
+                        <span className="username">{user.username}</span>
+                      </div>
+                    </td>
+                    <td className="name-cell">{user.vorname} {user.nachname}</td>
                     <td className="email-cell">{user.email}</td>
                     <td>
                       {user.has_password ? (
-                        <span className="status-badge success">Ja</span>
+                        <span className="status-badge success"><CheckCircle size={12} /> Ja</span>
                       ) : (
-                        <span className="status-badge warning">Nein</span>
+                        <span className="status-badge warning"><XCircle size={12} /> Nein</span>
                       )}
                     </td>
                     <td>
@@ -157,27 +196,16 @@ const UsersTab = ({ token }) => {
                     <td>
                       {user.aktiv ? (
                         <span className="status-badge success">
-                          <CheckCircle size={14} /> Aktiv
+                          <CheckCircle size={13} /> Aktiv
                         </span>
                       ) : (
                         <span className="status-badge inactive">
-                          <XCircle size={14} /> Inaktiv
+                          <XCircle size={13} /> Inaktiv
                         </span>
                       )}
                     </td>
-                    <td>
-                      {user.letzter_login ? (
-                        <>
-                          {new Date(user.letzter_login).toLocaleDateString('de-DE')}
-                          <span className="time-cell">
-                            {new Date(user.letzter_login).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="no-data">Noch nie</span>
-                      )}
-                    </td>
-                    <td>{new Date(user.erstellt_am).toLocaleDateString('de-DE')}</td>
+                    <td><RelativeTime dateStr={user.letzter_login} /></td>
+                    <td className="date-cell">{new Date(user.erstellt_am).toLocaleDateString('de-DE')}</td>
                   </tr>
                 ))}
               </tbody>
