@@ -42,6 +42,7 @@ import SystemChangelog from './SystemChangelog';
 import HilfeCenter from './HilfeCenter';
 import CockpitUebersicht from './CockpitUebersicht';
 import TrainingDashboard from './TrainingDashboard';
+import CommunityBoard from './CommunityBoard';
 
 
 function Dashboard() {
@@ -283,6 +284,7 @@ function Dashboard() {
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
+    { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
     { id: 'shop', label: 'Shop & Kasse', icon: '🛒' },
     { id: 'verwaltung', label: t('tabs.verwaltung'), icon: '🏯' },
@@ -1568,6 +1570,20 @@ function Dashboard() {
                             <div className="nav-arrow">→</div>
                           </div>
                         ))}
+                        </div>
+                      )}
+
+                      {/* 🏘️ Community Tab (Admin-Verwaltung) */}
+                      {activeTab === 'community' && (
+                        <div style={{ padding: '0' }}>
+                          <CommunityBoard
+                            dojoId={activeDojo?.id}
+                            currentMitgliedId={null}
+                            isAdmin={true}
+                            onOpenChat={(userId, mitgliedId, name) => {
+                              navigate('/dashboard/chat');
+                            }}
+                          />
                         </div>
                       )}
 
