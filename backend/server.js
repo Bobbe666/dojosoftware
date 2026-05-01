@@ -169,6 +169,11 @@ app.use(cors({
       return callback(null, true);
     }
 
+    // Erlaube todo.tda-intl.org (To-Do PWA)
+    if (origin === 'https://todo.tda-intl.org') {
+      return callback(null, true);
+    }
+
     // Erlaube bekannte tda-*.de Domains (explizite Whitelist — kein offener Regex)
     const tdaDeDomains = [
       'https://tda-vib.de',
