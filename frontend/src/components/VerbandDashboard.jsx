@@ -7,7 +7,7 @@
 // - Turniere & Events
 // - Verbands-Finanzen
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -17,7 +17,7 @@ import {
   Globe, Award, ChevronRight, Activity, BarChart3,
   CreditCard, FileText, PieChart, RefreshCw, AlertTriangle,
   CheckCircle, Clock, UserPlus, Building, Loader2, ShoppingCart, Target, Ticket,
-  Banknote, Scroll
+  Banknote, Scroll, MapPin
 } from 'lucide-react';
 import VerbandsMitglieder from './VerbandsMitglieder';
 import ArtikelVerwaltung from './ArtikelVerwaltung';
@@ -28,6 +28,7 @@ import Lastschriftlauf from './Lastschriftlauf';
 import Zahllaeufe from './Zahllaeufe';
 import VerbandUrkundenRegister from './VerbandUrkundenRegister';
 import NationalkaderDashboard from './NationalkaderDashboard';
+const PartnerAdmin = lazy(() => import('./PartnerAdmin'));
 import '../styles/VerbandDashboard.css';
 
 const VerbandDashboard = () => {
@@ -128,7 +129,8 @@ const VerbandDashboard = () => {
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'finanzen', label: 'Finanzen', icon: Euro },
     { id: 'lastschrift', label: 'Lastschrift', icon: Banknote },
-    { id: 'urkunden', label: 'Urkunden', icon: Scroll }
+    { id: 'urkunden', label: 'Urkunden', icon: Scroll },
+    { id: 'partner', label: 'Partner', icon: MapPin },
   ];
 
   // Status-Badge Component
@@ -569,7 +571,12 @@ const VerbandDashboard = () => {
         {activeTab === 'events' && <EventsContent />}
         {activeTab === 'finanzen' && <FinanzenContent />}
         {activeTab === 'lastschrift' && <LastschriftContent />}
-        {activeTab === 'urkunden'    && <VerbandUrkundenRegister />}
+        {activeTab === 'urkunden' && <VerbandUrkundenRegister />}
+        {activeTab === 'partner' && (
+          <Suspense fallback={<div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)' }}>Lädt…</div>}>
+            <PartnerAdmin />
+          </Suspense>
+        )}
       </div>
     </div>
   );

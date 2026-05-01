@@ -42,7 +42,6 @@ const Auswertungen        = lazy(() => import('./Auswertungen'));
 const PlattformZentrale   = lazy(() => import('./PlattformZentrale'));
 const PlattformZugangsdaten = lazy(() => import('./PlattformZugangsdaten'));
 const AppsMonitor           = lazy(() => import('./AppsMonitor'));
-const PartnerAdmin          = lazy(() => import('./PartnerAdmin'));
 
 const TabLoader = () => <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>Lädt…</div>;
 
@@ -2231,15 +2230,9 @@ const SuperAdminDashboard = () => {
           <div>
             {renderSubTabs('verband', [
               { id: 'verbandsmitglieder', icon: '🏆', label: 'Verbandsmitglieder' },
-              { id: 'partner',            icon: '🌍', label: 'Partner' },
             ])}
             {subActiveTab.verband === 'verbandsmitglieder' && (
               <VerbandsMitglieder />
-            )}
-            {subActiveTab.verband === 'partner' && (
-              <Suspense fallback={<TabLoader />}>
-                <PartnerAdmin />
-              </Suspense>
             )}
           </div>
         )}
