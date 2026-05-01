@@ -3096,6 +3096,12 @@ const SuperAdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'todos' && (
+          <div className="tab-content">
+            <TodoPanel />
+          </div>
+        )}
+
       </div>
       </Suspense>
 
@@ -3874,12 +3880,6 @@ const SuperAdminChatZentrale = ({ token }) => {
             );
           })()}
         </div>
-
-        {activeTab === 'todos' && (
-          <div className="tab-content">
-            <TodoPanel />
-          </div>
-        )}
 
       </div>
     </div>
