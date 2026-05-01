@@ -390,6 +390,12 @@ router.put('/:id', async (req, res) => {
         values.push(aktiv);
       }
 
+      const { dojo_id } = req.body;
+      if (dojo_id !== undefined) {
+        updates.push('dojo_id = ?');
+        values.push(dojo_id === null || dojo_id === '' ? null : parseInt(dojo_id, 10));
+      }
+
       if (updates.length === 0) {
         return res.status(400).json({ error: 'Keine Änderungen angegeben' });
       }
