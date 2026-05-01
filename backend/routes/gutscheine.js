@@ -80,6 +80,46 @@ router.get('/pdf/:token', async (req, res) => {
   }
 });
 
+// ─── Kasse: Code prüfen (kein Auth, Dojo via Query) ─────────────────────────
+
+// GET /api/gutscheine/pruefen/:code?dojo_id=X
+router.get('/pruefen/:code', async (req, res) => {
+  try {
+    const dojoId = parseInt(req.query.dojo_id, 10);
+    if (!dojoId) return res.status(400).json({ success: false, error: 'dojo_id fehlt' });
+
+    const [[g]] = await pool.query(`
+      SELECT id, code, wert, verbraucht_cent, titel, gueltig_bis, eingeloest, empfaenger_name
+      FROM gutscheine
+      WHERE code = ? AND dojo_id = ? AND bezahlt = 1
+    `, [req.params.code.toUpperCase(), dojoId]);
+
+    if (!g) return res.status(404).json({ success: false, error: 'Gutschein-Code nicht gefunden' });
+    if (g.eingeloest) return res.status(400).json({ success: false, error: 'Dieser Gutschein wurde bereits vollständig eingelöst' });
+    if (g.gueltig_bis && new Date(g.gueltig_bis) < new Date()) return res.status(400).json({ success: false, error: 'Dieser Gutschein ist abgelaufen' });
+
+    const wert_cent = Math.round(parseFloat(g.wert) * 100);
+    const restbetrag_cent = wert_cent - (g.verbraucht_cent || 0);
+
+    res.json({
+      success: true,
+      gutschein: {
+        id: g.id,
+        code: g.code,
+        titel: g.titel,
+        wert_cent,
+        verbraucht_cent: g.verbraucht_cent || 0,
+        restbetrag_cent,
+        restbetrag_euro: (restbetrag_cent / 100).toFixed(2),
+        gueltig_bis: g.gueltig_bis,
+        empfaenger_name: g.empfaenger_name,
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ─── Öffentlicher Gutschein-Shop ──────────────────────────────────────────────
 
 // GET /api/gutscheine/shop/:dojoId/info — Dojo + Vorlagen + Zahlungsarten
@@ -417,6 +457,41 @@ router.post('/shop/:dojoId/stripe/confirm', async (req, res) => {
 
 router.use(authenticateToken);
 router.use(requireFeature('gutscheine'));
+
+// GET /api/gutscheine/meine — Gutscheine des eingeloggten Mitglieds
+router.get('/meine', async (req, res) => {
+  try {
+    const mitgliedId = req.user?.mitglied_id;
+    const email = req.user?.email;
+    if (!mitgliedId && !email) return res.json({ success: true, gutscheine: [] });
+
+    const conditions = [];
+    const params = [];
+    if (mitgliedId) { conditions.push('g.mitglied_id = ?'); params.push(mitgliedId); }
+    if (email) { conditions.push('g.empfaenger_email = ?'); params.push(email); }
+
+    const [rows] = await pool.query(`
+      SELECT g.id, g.code, g.wert, g.verbraucht_cent, g.titel, g.nachricht,
+             g.gueltig_bis, g.eingeloest, g.eingeloest_am, g.erstellt_am,
+             v.bild_url, v.anlass
+      FROM gutscheine g
+      JOIN gutschein_vorlagen v ON g.vorlage_id = v.id
+      WHERE bezahlt = 1 AND (${conditions.join(' OR ')})
+      ORDER BY g.eingeloest ASC, g.gueltig_bis ASC, g.erstellt_am DESC
+    `, params);
+
+    const gutscheine = rows.map(g => {
+      const wert_cent = Math.round(parseFloat(g.wert) * 100);
+      const restbetrag_cent = Math.max(0, wert_cent - (g.verbraucht_cent || 0));
+      const abgelaufen = g.gueltig_bis && new Date(g.gueltig_bis) < new Date();
+      return { ...g, wert_cent, restbetrag_cent, abgelaufen };
+    });
+
+    res.json({ success: true, gutscheine });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // GET /api/gutscheine/vorlagen?anlass=geburtstag
 router.get('/vorlagen', async (req, res) => {

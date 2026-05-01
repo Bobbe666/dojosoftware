@@ -129,6 +129,26 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
   // Manueller Rabatt
   const [manualRabatt, setManualRabatt] = useState({ aktiv: false, typ: 'prozent', wert: '' });
 
+  // Gutschein
+  const [gutscheinInput, setGutscheinInput] = useState('');
+  const [gutscheinInfo, setGutscheinInfo] = useState(null); // validated voucher
+  const [gutscheinFehler, setGutscheinFehler] = useState('');
+  const [gutscheinPruefend, setGutscheinPruefend] = useState(false);
+
+  const pruefeGutschein = async () => {
+    const code = gutscheinInput.trim().toUpperCase();
+    if (!code) return;
+    setGutscheinPruefend(true); setGutscheinFehler(''); setGutscheinInfo(null);
+    try {
+      const dojoId = activeDojo?.id;
+      const res = await apiCall(`/gutscheine/pruefen/${code}${dojoId ? `?dojo_id=${dojoId}` : ''}`);
+      if (res.success) setGutscheinInfo(res.gutschein);
+      else setGutscheinFehler(res.error || 'Ungültiger Code');
+    } catch (e) {
+      setGutscheinFehler(e.message || 'Fehler beim Prüfen');
+    } finally { setGutscheinPruefend(false); }
+  };
+
   // Varianten-Modal State
   const [showVariantenModal, setShowVariantenModal] = useState(false);
   const [selectedArtikelForVariant, setSelectedArtikelForVariant] = useState(null);
@@ -337,7 +357,8 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         bemerkung: bemerkung || null,
         verkauft_von_name: kassiererName,
         dojo_id: activeDojo?.id || null,
-        checkin_id: checkin_id || null
+        checkin_id: checkin_id || null,
+        gutschein_code: gutscheinInfo ? gutscheinInfo.code : null,
       };
 
       const response = await apiCall('/verkaeufe', {
@@ -356,6 +377,7 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
         setMitgliedId('');
         setBemerkung('');
         setManualRabatt({ aktiv: false, typ: 'prozent', wert: '' });
+        setGutscheinInput(''); setGutscheinInfo(null); setGutscheinFehler('');
         setShowZahlung(false);
         setError(null);
 
@@ -673,7 +695,10 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
     if (manualRabatt.typ === 'prozent') return Math.min(warenkorbSummeEuro * wert / 100, warenkorbSummeEuro);
     return Math.min(wert, warenkorbSummeEuro);
   })();
-  const effektivSumme = warenkorbSummeEuro - rabattBetrag;
+  const gutscheinRabattEuro = gutscheinInfo
+    ? Math.min(gutscheinInfo.restbetrag_cent / 100, Math.max(0, warenkorbSummeEuro - rabattBetrag))
+    : 0;
+  const effektivSumme = Math.max(0, warenkorbSummeEuro - rabattBetrag - gutscheinRabattEuro);
 
   const rueckgeld = zahlungsart === 'bar' && gegebenBetrag
     ? Math.max(0, parseFloat(gegebenBetrag) - effektivSumme)
@@ -941,6 +966,34 @@ const VerkaufKasse = ({ kunde, onClose, checkin_id }) => {
               )}
             </div>
           )}
+
+          {/* Gutschein-Eingabe */}
+          <div className="wk-gutschein-row">
+            <div className="wk-gutschein-input-wrap">
+              <input
+                className="wk-gutschein-input"
+                placeholder="Gutschein-Code"
+                value={gutscheinInput}
+                onChange={e => { setGutscheinInput(e.target.value.toUpperCase()); setGutscheinInfo(null); setGutscheinFehler(''); }}
+                onKeyDown={e => e.key === 'Enter' && pruefeGutschein()}
+                disabled={!!gutscheinInfo}
+              />
+              {gutscheinInfo ? (
+                <button className="wk-gutschein-clear" onClick={() => { setGutscheinInfo(null); setGutscheinInput(''); setGutscheinFehler(''); }}>×</button>
+              ) : (
+                <button className="wk-gutschein-btn" onClick={pruefeGutschein} disabled={gutscheinPruefend || !gutscheinInput.trim()}>
+                  {gutscheinPruefend ? '…' : 'Prüfen'}
+                </button>
+              )}
+            </div>
+            {gutscheinFehler && <div className="wk-gutschein-fehler">{gutscheinFehler}</div>}
+            {gutscheinInfo && (
+              <div className="wk-gutschein-ok">
+                ✓ {gutscheinInfo.titel} — Restwert: {gutscheinInfo.restbetrag_euro}€
+                {gutscheinRabattEuro > 0 && <span style={{ marginLeft: 8, color: '#22c55e' }}>−{gutscheinRabattEuro.toFixed(2)}€</span>}
+              </div>
+            )}
+          </div>
 
           <div className="summe-row">
             <span>Netto:</span>

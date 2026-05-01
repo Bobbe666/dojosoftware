@@ -130,7 +130,8 @@ router.post('/', async (req, res) => {
     gegeben_cent,
     bemerkung,
     verkauft_von_name,
-    checkin_id // Optional: Verknüpfung zur Anwesenheit
+    checkin_id, // Optional: Verknüpfung zur Anwesenheit
+    gutschein_code // Optional: Gutschein-Code für Verrechnung
   } = req.body;
 
   // 🔒 SICHER: Query-Param hat Vorrang (Super-Admin), Body-dojo_id als Fallback fuer Write-Ops
@@ -237,8 +238,29 @@ router.post('/', async (req, res) => {
       // Gesamtbeträge berechnen
       const netto_gesamt_cent = artikelDetails.reduce((sum, item) => sum + item.netto_cent, 0);
       const mwst_gesamt_cent = artikelDetails.reduce((sum, item) => sum + item.mwst_cent, 0);
-      const brutto_gesamt_cent = artikelDetails.reduce((sum, item) => sum + item.brutto_cent, 0);
-      
+      let brutto_gesamt_cent = artikelDetails.reduce((sum, item) => sum + item.brutto_cent, 0);
+
+      // Gutschein prüfen & verrechnen
+      let gutschein_rabatt_cent = 0;
+      let gutscheinRow = null;
+      if (gutschein_code) {
+        const pool2 = db.promise ? db.promise() : null;
+        if (pool2) {
+          const [[gs]] = await pool2.query(
+            `SELECT id, wert, verbraucht_cent, eingeloest, gueltig_bis
+             FROM gutscheine WHERE code = ? AND dojo_id = ? AND bezahlt = 1`,
+            [gutschein_code.toUpperCase(), effectiveDojoId]
+          );
+          if (gs && !gs.eingeloest && !(gs.gueltig_bis && new Date(gs.gueltig_bis) < new Date())) {
+            const wert_cent = Math.round(parseFloat(gs.wert) * 100);
+            const restbetrag_cent = Math.max(0, wert_cent - (gs.verbraucht_cent || 0));
+            gutschein_rabatt_cent = Math.min(restbetrag_cent, brutto_gesamt_cent);
+            gutscheinRow = gs;
+          }
+        }
+      }
+      brutto_gesamt_cent = Math.max(0, brutto_gesamt_cent - gutschein_rabatt_cent);
+
       // Rückgeld berechnen (nur bei Barzahlung)
       let rueckgeld_cent = 0;
       if (zahlungsart === 'bar' && gegeben_cent) {
@@ -258,8 +280,9 @@ router.post('/', async (req, res) => {
           verkauf_datum, verkauf_uhrzeit, verkauf_timestamp,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, zahlungsstatus, gegeben_cent, rueckgeld_cent,
-          verkauft_von_name, bemerkung, dojo_id, checkin_id
-        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          verkauft_von_name, bemerkung, gutschein_code, gutschein_rabatt_cent,
+          dojo_id, checkin_id
+        ) VALUES (?, ?, ?, ?, CURDATE(), CURTIME(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const verkaufResult = await new Promise((resolve, reject) => {
@@ -267,7 +290,10 @@ router.post('/', async (req, res) => {
           bonNummer, 'KASSE_01', mitglied_id || null, kunde_name || null,
           netto_gesamt_cent, mwst_gesamt_cent, brutto_gesamt_cent,
           zahlungsart, zahlungsstatus, gegeben_cent || null, rueckgeld_cent,
-          verkauft_von_name || 'System', bemerkung || null, effectiveDojoId, checkin_id || null
+          verkauft_von_name || 'System', bemerkung || null,
+          gutschein_rabatt_cent > 0 ? gutschein_code.toUpperCase() : null,
+          gutschein_rabatt_cent,
+          effectiveDojoId, checkin_id || null
         ], (error, results) => {
           if (error) return reject(error);
           resolve(results);
@@ -300,6 +326,22 @@ router.post('/', async (req, res) => {
         });
       }
       
+      // Gutschein verbuchen (verbraucht_cent + ggf. eingeloest setzen)
+      if (gutscheinRow && gutschein_rabatt_cent > 0) {
+        const pool2 = db.promise ? db.promise() : null;
+        if (pool2) {
+          const neuerVerbraucht = (gutscheinRow.verbraucht_cent || 0) + gutschein_rabatt_cent;
+          const wert_cent = Math.round(parseFloat(gutscheinRow.wert) * 100);
+          const vollEingeloest = neuerVerbraucht >= wert_cent ? 1 : 0;
+          await pool2.query(
+            `UPDATE gutscheine SET verbraucht_cent = ?, eingeloest = ?,
+             eingeloest_am = IF(? = 1, CURDATE(), eingeloest_am)
+             WHERE id = ?`,
+            [neuerVerbraucht, vollEingeloest, vollEingeloest, gutscheinRow.id]
+          );
+        }
+      }
+
       // Kassenbuch-Eintrag (nur bei Barzahlung)
       if (zahlungsart === 'bar') {
         await createKassenbuchEintrag(
@@ -374,6 +416,8 @@ router.post('/', async (req, res) => {
         rueckgeld_euro: rueckgeld_cent / 100,
         artikel_count: artikelDetails.length,
         checkin_id: checkin_id || null,
+        gutschein_rabatt_cent,
+        gutschein_rabatt_euro: gutschein_rabatt_cent / 100,
         rechnung: rechnungInfo,
         message: 'Verkauf erfolgreich erfasst' + (rechnungInfo ? ` (Rechnung ${rechnungInfo.rechnungsnummer} erstellt)` : '')
       });

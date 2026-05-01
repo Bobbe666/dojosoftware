@@ -200,6 +200,15 @@ const MemberDashboard = () => {
   // ProfilWizard: beim ersten Login anzeigen
   const [showProfilWizard, setShowProfilWizard] = useState(false);
 
+  // Meine Gutscheine
+  const [meineGutscheine, setMeineGutscheine] = useState([]);
+  useEffect(() => {
+    fetchWithAuth(`${config.apiBaseUrl}/gutscheine/meine`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.success) setMeineGutscheine(d.gutscheine); })
+      .catch(() => {});
+  }, []);
+
   // App-Onboarding: einmalig beim ersten Login nach Vertragserstellung
   const onboardingKey = `app_onboarded_${user?.mitglied_id}`;
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -2195,6 +2204,49 @@ const MemberDashboard = () => {
 
             {/* Buddy-Gruppen Widget */}
             <BuddyGruppenWidget compact={true} />
+
+            {/* Meine Gutscheine */}
+            {meineGutscheine.filter(g => !g.eingeloest && !g.abgelaufen).length > 0 && (
+              <div className="md-info-card" style={{ '--card-accent': '#f59e0b' }}>
+                <div className="mb-flex-center-gap" style={{ marginBottom: 12 }}>
+                  <div className="mb-icon-lg">🎁</div>
+                  <h4 className="md-section-heading" style={{ margin: 0 }}>Meine Gutscheine</h4>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {meineGutscheine.filter(g => !g.eingeloest && !g.abgelaufen).map(g => {
+                    const rest = g.restbetrag_cent / 100;
+                    const total = g.wert_cent / 100;
+                    const pct = Math.round((g.restbetrag_cent / g.wert_cent) * 100);
+                    return (
+                      <div key={g.id} style={{
+                        background: 'var(--bg-primary, #0f172a)',
+                        border: '1px solid var(--border-color, #334155)',
+                        borderRadius: 10, padding: '12px 14px',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary, #e2e8f0)' }}>{g.titel}</div>
+                            <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#f59e0b', marginTop: 2 }}>{g.code}</div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 700, fontSize: '1rem', color: '#22c55e' }}>{rest.toFixed(2)}€</div>
+                            {g.verbraucht_cent > 0 && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)' }}>von {total.toFixed(2)}€</div>}
+                          </div>
+                        </div>
+                        <div style={{ background: 'var(--border-color, #334155)', borderRadius: 4, height: 4, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: '100%', background: '#22c55e', borderRadius: 4, transition: 'width 0.3s' }} />
+                        </div>
+                        {g.gueltig_bis && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', marginTop: 5 }}>
+                            Gültig bis {new Date(g.gueltig_bis).toLocaleDateString('de-DE')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
 
 
