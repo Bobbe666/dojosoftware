@@ -21,7 +21,8 @@ import {
   CalendarX,
   Copy,
   Check,
-  Gift
+  Gift,
+  Store
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
@@ -1558,6 +1559,11 @@ const MemberDashboard = () => {
           <CalendarSync size={24} />
           <span className="cta-tile-nav-label">{t('navigation.calendarSync')}</span>
         </div>
+        <div className="cta-tile cta-tile-nav" onClick={() => handleNavigation('/member/community')}
+          style={{ '--tile-accent': '#ec4899' }}>
+          <Store size={24} />
+          <span className="cta-tile-nav-label">Community</span>
+        </div>
       </div>
 
       {/* Schnellzugriff - eine Zeile */}
@@ -2095,20 +2101,6 @@ const MemberDashboard = () => {
             {/* Buddy-Gruppen Widget */}
             <BuddyGruppenWidget compact={true} />
 
-            {/* Community Board */}
-            {memberData?.dojo_id && (
-              <div className="md-community-section">
-                <CommunityBoard
-                  dojoId={memberData.dojo_id}
-                  currentMitgliedId={memberData.mitglied_id}
-                  isAdmin={user?.rolle === 'admin' || user?.role === 'admin'}
-                  onOpenChat={(userId, mitgliedId, name) => {
-                    /* Chat öffnen mit diesem Mitglied — navigiere zum Chat-Tab */
-                    window.dispatchEvent(new CustomEvent('open-chat-with', { detail: { userId, mitgliedId, name } }));
-                  }}
-                />
-              </div>
-            )}
 
 
             {/* Trainings-Erinnerungen */}

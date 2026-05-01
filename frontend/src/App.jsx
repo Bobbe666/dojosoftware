@@ -142,6 +142,7 @@ const MemberSchedule = lazyWithReload(() => import(/* webpackChunkName: "member-
 const MemberEvents = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberEvents"));
 const MemberPayments = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberPayments"));
 const MemberStats = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberStats"));
+const MemberCommunityPage = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberCommunityPage"));
 const MemberStyles = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/MemberStyles"));
 const CourseRating = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/CourseRating"));
 const EquipmentChecklist = lazyWithReload(() => import(/* webpackChunkName: "member-area" */ "./components/EquipmentChecklist"));
@@ -697,6 +698,17 @@ const App = () => {
                         <FeatureBoard />
                       </div>
                     </div>
+                  </Suspense>
+                </MemberOnlyRoute>
+              }
+            />
+
+            <Route
+              path="/member/community"
+              element={
+                <MemberOnlyRoute>
+                  <Suspense fallback={<LazyLoadFallback />}>
+                    <MemberCommunityPage />
                   </Suspense>
                 </MemberOnlyRoute>
               }

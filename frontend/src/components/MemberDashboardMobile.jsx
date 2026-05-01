@@ -7,7 +7,7 @@ import {
   Home, Calendar, CreditCard, User, MoreHorizontal,
   QrCode, Clock, Bell, ChevronRight, Trophy, Package,
   BarChart3, CalendarSync, Download, Check, Copy,
-  Star, LogOut, Award, MessageSquare
+  Star, LogOut, Award, MessageSquare, Store
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import dojoLogo from '../assets/logo-kampfkunstschule-schreiner.png';
@@ -77,6 +77,7 @@ function MehrDrawer({ onClose, onNavigate, onLogout }) {
     { icon: <Calendar size={20} />, label: 'Events', path: '/member/events' },
     { icon: <Download size={20} />, label: 'App\ninstallieren', path: '/app-install' },
     { icon: <MessageSquare size={20} />, label: 'Chat', path: '/member/chat' },
+    { icon: <Store size={20} />, label: 'Community', path: '/member/community' },
     { icon: <Award size={20} />, label: 'Auszeich-\nnungen', path: null },
   ];
 
