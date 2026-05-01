@@ -93,6 +93,7 @@ router.get('/', (req, res) => {
       vorname,
       nachname,
       rolle,
+      dojo_id,
       berechtigungen,
       aktiv,
       email_verifiziert,
