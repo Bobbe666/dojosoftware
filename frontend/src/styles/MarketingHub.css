@@ -834,3 +834,97 @@
 
 /* Field hint text */
 .wz-field-hint { font-size: 0.7rem; color: var(--text-muted, #94a3b8); font-weight: 400; }
+
+/* Portal-Erklärungskarten (Schritt 1) */
+.wz-portal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+@media (max-width: 560px) { .wz-portal-row { grid-template-columns: 1fr; } }
+
+.wz-portal-card {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.wz-portal-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.wz-portal-card--dev::before { background: #60a5fa; }
+.wz-portal-card--biz::before { background: #34d399; }
+
+.wz-portal-icon { font-size: 1.6rem; line-height: 1; }
+.wz-portal-name { font-size: 0.9rem; font-weight: 700; color: var(--text-primary, #e2e8f0); }
+.wz-portal-url  { font-size: 0.72rem; color: var(--text-muted, #94a3b8); font-family: monospace; margin-bottom: 2px; }
+.wz-portal-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.5;
+  flex: 1;
+}
+.wz-portal-desc strong { color: var(--text-primary, #e2e8f0); }
+.wz-portal-link {
+  align-self: flex-start;
+  font-size: 0.78rem;
+  color: #60a5fa;
+  text-decoration: none;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.wz-portal-link:hover { text-decoration: underline; }
+
+/* "Was hast du bereits?" Checkboxen */
+.wz-existing-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wz-existing-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-secondary, #cbd5e1);
+  padding: 10px 14px;
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 8px;
+  transition: border-color 0.15s;
+  line-height: 1.4;
+}
+.wz-existing-item:hover { border-color: #ec4899; }
+.wz-existing-item input[type="checkbox"] {
+  accent-color: #ec4899;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  cursor: pointer;
+}
+.wz-existing-item strong { color: var(--text-primary, #e2e8f0); }
+
+/* Pfad-Umschalter Link */
+.wz-toggle-path {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.78rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 16px;
+  display: block;
+}
+.wz-toggle-path:hover { color: #e2e8f0; }

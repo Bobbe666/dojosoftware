@@ -53,6 +53,8 @@ function AccountWizard({ onSaved, onClose }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [hasExistingPages, setHasExistingPages] = useState(false);
+  const [hasExistingApp, setHasExistingApp] = useState(false);
 
   const total = WIZARD_STEPS.length;
   const isLast = step === total - 1;
@@ -81,41 +83,86 @@ function AccountWizard({ onSaved, onClose }) {
       case 'voraussetzungen':
         return (
           <div className="wz-step-body">
-            <p className="wz-intro">Bevor du startest, stelle sicher dass du Folgendes hast:</p>
-            <div className="wz-checklist">
-              <div className="wz-check-item">
-                <span className="wz-check-icon">👤</span>
-                <div>
-                  <strong>Facebook-Konto mit Admin-Rechten</strong>
-                  <p>Du musst Admin der Facebook-Seite sein, die du verbinden möchtest (z.B. TDA International oder TDA Systems).</p>
+            <p className="wz-intro">Zwei Meta-Portale — jedes hat einen anderen Zweck:</p>
+            <div className="wz-portal-row">
+              <div className="wz-portal-card wz-portal-card--dev">
+                <div className="wz-portal-icon">🛠️</div>
+                <div className="wz-portal-name">Meta Developer Portal</div>
+                <div className="wz-portal-url">developers.facebook.com</div>
+                <div className="wz-portal-desc">
+                  <strong>Technische Seite:</strong> Hier erstellst du die App, die den API-Zugriff ermöglicht, und holst Access Tokens (Zugangsschlüssel). Einmalig beim Einrichten — danach nicht mehr nötig.
                 </div>
+                <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="wz-portal-link">Öffnen →</a>
               </div>
-              <div className="wz-check-item">
-                <span className="wz-check-icon">🏢</span>
-                <div>
-                  <strong>Meta Business Account (empfohlen)</strong>
-                  <p>Unter <strong>business.facebook.com</strong> — erlaubt dir, Apps und Seiten zentral zu verwalten.</p>
+              <div className="wz-portal-card wz-portal-card--biz">
+                <div className="wz-portal-icon">📊</div>
+                <div className="wz-portal-name">Meta Business Suite</div>
+                <div className="wz-portal-url">business.facebook.com</div>
+                <div className="wz-portal-desc">
+                  <strong>Inhaltliche Seite:</strong> Hier verwaltest du deine Facebook-Seiten, Instagram-Verknüpfungen und Nutzerrollen. Auch für Insights und manuelle Posts.
                 </div>
+                <a href="https://business.facebook.com" target="_blank" rel="noreferrer" className="wz-portal-link">Öffnen →</a>
               </div>
-              <div className="wz-check-item">
+            </div>
+
+            <p className="wz-intro" style={{ marginTop: 20 }}>Was hast du bereits? <span style={{ fontWeight: 400, color: '#94a3b8' }}>(verkürzt den Wizard)</span></p>
+            <div className="wz-existing-checks">
+              <label className="wz-existing-item">
+                <input type="checkbox" checked={hasExistingPages} onChange={e => setHasExistingPages(e.target.checked)} />
+                <span>Ich habe bereits eine <strong>Facebook-Seite</strong> und/oder ein <strong>Instagram Business-Profil</strong></span>
+              </label>
+              <label className="wz-existing-item">
+                <input type="checkbox" checked={hasExistingApp} onChange={e => setHasExistingApp(e.target.checked)} />
+                <span>Ich habe bereits eine <strong>Meta Developer App</strong> (im Developer Portal)</span>
+              </label>
+            </div>
+
+            {hasExistingPages ? (
+              <div className="wz-info-box" style={{ marginTop: 12 }}>
+                ✅ Du hast bereits Seiten — du musst nichts neu anlegen. Der Wizard zeigt dir nur noch wie du die API-Zugangsdaten abrufst.
+                {form.platform === 'instagram' && (
+                  <div style={{ marginTop: 8 }}>🔗 Stelle sicher dass dein Instagram-Profil in der Business Suite mit deiner Facebook-Seite verknüpft ist: <strong>business.facebook.com → Einstellungen → Instagram-Konten</strong>.</div>
+                )}
+              </div>
+            ) : (
+              <div className="wz-check-item" style={{ marginTop: 14 }}>
                 <span className="wz-check-icon">📱</span>
                 <div>
                   <strong>Für Instagram: Profil muss Business- oder Creator-Konto sein</strong>
-                  <p>Privat-Profile können nicht über die API angesprochen werden. In den Instagram-Einstellungen → Konto → Zu Business-Konto wechseln.</p>
+                  <p>Privat-Profile können nicht über die API angesprochen werden. In der Instagram-App: Einstellungen → Konto → Zu Business-Konto wechseln.</p>
                 </div>
               </div>
-            </div>
-            <div className="wz-link-row">
-              <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="wz-ext-link">🔗 Meta Developer Portal öffnen</a>
-              <a href="https://business.facebook.com" target="_blank" rel="noreferrer" className="wz-ext-link">🔗 Meta Business Suite öffnen</a>
-            </div>
+            )}
           </div>
         );
 
       case 'app':
-        return (
+        return hasExistingApp ? (
           <div className="wz-step-body">
-            <p className="wz-intro">Du brauchst eine Meta-App um API-Zugriff zu erhalten. Falls du bereits eine App hast, überspringe Schritt 2–4.</p>
+            <div className="wz-info-box">
+              ✅ Du hast bereits eine Meta Developer App — kein Neuanlegen nötig.
+            </div>
+            <div className="wz-steps-inner" style={{ marginTop: 14 }}>
+              <div className="wz-inner-step">
+                <span className="wz-inner-num">1</span>
+                <div>Öffne <a href="https://developers.facebook.com/apps" target="_blank" rel="noreferrer" className="wz-link">developers.facebook.com/apps</a> und wähle deine bestehende App.</div>
+              </div>
+              <div className="wz-inner-step">
+                <span className="wz-inner-num">2</span>
+                <div>Notiere <strong>App-ID</strong> und <strong>App-Geheimnis</strong> aus dem Dashboard — du brauchst sie in Schritt „Token verlängern".</div>
+              </div>
+              <div className="wz-inner-step">
+                <span className="wz-inner-num">3</span>
+                <div>Prüfe unter <strong>„Produkte"</strong> ob <em>Facebook Login for Business</em> und (für Instagram) <em>Instagram Graph API</em> vorhanden sind. Falls nicht, jetzt hinzufügen.</div>
+              </div>
+            </div>
+            <button className="wz-toggle-path" onClick={() => setHasExistingApp(false)}>
+              Doch keine App vorhanden → vollständige Anleitung zeigen
+            </button>
+          </div>
+        ) : (
+          <div className="wz-step-body">
+            <p className="wz-intro">Du brauchst eine Meta-App um API-Zugriff zu erhalten — sie gilt einmalig für alle deine Seiten.</p>
             <div className="wz-steps-inner">
               <div className="wz-inner-step">
                 <span className="wz-inner-num">1</span>
@@ -136,12 +183,15 @@ function AccountWizard({ onSaved, onClose }) {
               </div>
               <div className="wz-inner-step">
                 <span className="wz-inner-num">4</span>
-                <div>Notiere dir <strong>App-ID</strong> und <strong>App-Geheimnis</strong> — du brauchst sie in Schritt 6.</div>
+                <div>Notiere dir <strong>App-ID</strong> und <strong>App-Geheimnis</strong> — du brauchst sie in Schritt „Token verlängern".</div>
               </div>
             </div>
             <div className="wz-info-box">
-              ℹ️ Eine App kann für mehrere Seiten (TDA Intl + TDA Systems) verwendet werden — du musst sie nicht doppelt anlegen.
+              ℹ️ Eine App reicht für alle Seiten (TDA Intl + TDA Systems + Dojo) — du musst sie nicht mehrfach anlegen.
             </div>
+            <button className="wz-toggle-path" onClick={() => setHasExistingApp(true)}>
+              Ich habe doch schon eine App → Kurzweg anzeigen
+            </button>
           </div>
         );
 
