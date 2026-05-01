@@ -5324,3 +5324,29 @@ details[open] .sad-ssl-alert-summary::before { transform: rotate(90deg); }
 .sad-todo-tab {
   padding: 0;
 }
+
+/* ── Cockpit: Dojo-Auswertungen ── */
+.sad-auswertungen-section {
+  margin-top: 2.5rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 1.5rem;
+}
+.sad-auswertungen-header {
+  margin-bottom: 1rem;
+}
+.sad-auswertungen-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+}
+.sad-auswertungen-hint {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+  margin: 0.25rem 0 0;
+}
+
+/* ── Cockpit: Event-Karte next event spacing ── */
+.sad-hof-next-event {
+  margin-top: 0.5rem;
+}

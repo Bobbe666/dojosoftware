@@ -3,7 +3,7 @@
 // =============================================
 // Nur sichtbar wenn Dojo-ID = 2 (TDA International) ausgewählt
 
-import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -623,11 +623,17 @@ const SuperAdminDashboard = () => {
   const [showExtendTrialModal, setShowExtendTrialModal] = useState(false);
   const [showActivateSubscriptionModal, setShowActivateSubscriptionModal] = useState(false);
   const [trialDays, setTrialDays] = useState(14);
-  const [subscriptionPlan, setSubscriptionPlan] = useState('starter');
-  const [subscriptionInterval, setSubscriptionInterval] = useState('monthly');
-  const [subscriptionDuration, setSubscriptionDuration] = useState(12);
-  const [customPrice, setCustomPrice] = useState('');
-  const [customNotes, setCustomNotes] = useState('');
+  const [aboForm, setAboForm] = useState({ plan: 'starter', interval: 'monthly', duration: 12, customPrice: '', customNotes: '' });
+  const subscriptionPlan     = aboForm.plan;
+  const subscriptionInterval = aboForm.interval;
+  const subscriptionDuration = aboForm.duration;
+  const customPrice          = aboForm.customPrice;
+  const customNotes          = aboForm.customNotes;
+  const setSubscriptionPlan     = v => setAboForm(f => ({ ...f, plan: v }));
+  const setSubscriptionInterval = v => setAboForm(f => ({ ...f, interval: v }));
+  const setSubscriptionDuration = v => setAboForm(f => ({ ...f, duration: v }));
+  const setCustomPrice          = v => setAboForm(f => ({ ...f, customPrice: v }));
+  const setCustomNotes          = v => setAboForm(f => ({ ...f, customNotes: v }));
   const [isMainSuperAdmin, setIsMainSuperAdmin] = useState(false);
   const [expandedDojos, setExpandedDojos] = useState(new Set());
 
@@ -955,16 +961,16 @@ const SuperAdminDashboard = () => {
   // Lade Aktivitäten + Benachrichtigungen erst wenn relevante Tabs geöffnet werden
   useEffect(() => {
     if (activeTab === 'overview') loadActivities();
-  }, [activeTab]);
+  }, [activeTab, loadActivities]);
 
   useEffect(() => {
     if (activeTab === 'kommunikation' && kommunikationSubTab === 'pushnachrichten') {
       loadNotifications();
     }
-  }, [activeTab, kommunikationSubTab, notificationFilter]);
+  }, [activeTab, kommunikationSubTab, loadNotifications]);
 
   // Aktivitäten laden (letzte Registrierungen, etc.)
-  const loadActivities = async () => {
+  const loadActivities = useCallback(async () => {
     try {
       setActivitiesLoading(true);
       const response = await axios.get('/admin/activities', {
@@ -975,12 +981,11 @@ const SuperAdminDashboard = () => {
       }
     } catch (error) {
       console.error('Fehler beim Laden der Aktivitäten:', error);
-      // Fallback: Erstelle Aktivitäten aus vorhandenen Daten
       generateActivitiesFromData();
     } finally {
       setActivitiesLoading(false);
     }
-  };
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fallback: Aktivitäten aus vorhandenen Daten generieren
   const generateActivitiesFromData = () => {
@@ -1010,7 +1015,7 @@ const SuperAdminDashboard = () => {
   };
 
   // Benachrichtigungen laden
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     try {
       setNotificationsLoading(true);
       const response = await axios.get(`/admin/notifications?filter=${notificationFilter}`, {
@@ -1026,7 +1031,7 @@ const SuperAdminDashboard = () => {
     } finally {
       setNotificationsLoading(false);
     }
-  };
+  }, [token, notificationFilter]);
 
   // Benachrichtigung als gelesen markieren
   const markNotificationAsRead = async (notificationId) => {
@@ -1159,11 +1164,7 @@ const SuperAdminDashboard = () => {
 
   const handleActivateSubscription = (dojo) => {
     setSelectedDojo(dojo);
-    setSubscriptionPlan('basic');
-    setSubscriptionInterval('monthly');
-    setSubscriptionDuration(12);
-    setCustomPrice('');
-    setCustomNotes('');
+    setAboForm({ plan: 'basic', interval: 'monthly', duration: 12, customPrice: '', customNotes: '' });
     setShowActivateSubscriptionModal(true);
   };
 
@@ -1483,7 +1484,7 @@ const SuperAdminDashboard = () => {
           <button
             key={tab.id}
             className={`dashboard-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => { setActiveTab(tab.id); if (tab.id !== 'software') setSoftwareSection(null); }}
           >
             <span className="tab-icon">{tab.icon}</span>
             <span className="tab-label">{tab.label}</span>
@@ -1628,7 +1629,7 @@ const SuperAdminDashboard = () => {
             {/* ── Produkt-Status / Neuanmeldungen ────────────────────── */}
             <div className="sad-product-cards-grid">
               {/* DojoSoftware */}
-              <div onClick={() => setActiveTab('dojosoftware')} className="sad2-clickable-card">
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }} className="sad2-clickable-card">
                 <div className="sad2-icon-15">🥋</div>
                 <div className="sad-gold-heading">DojoSoftware</div>
                 <div className="sad-product-card-sub">
@@ -1683,7 +1684,7 @@ const SuperAdminDashboard = () => {
                         <span>Anmeldung offen</span><strong className="mds-info-value">{eventStats.offen}</strong>
                       </div>
                       {eventStats.naechstes && (
-                        <div className="sad-hof-next-event" style={{ marginTop: '0.5rem' }}>
+                        <div className="sad-hof-next-event">
                           <div className="sad-hof-next-event-title">Nächstes Event</div>
                           <div className="sad-hof-next-event-name">{eventStats.naechstes.name}</div>
                           <div className="u-text-secondary">
@@ -1722,7 +1723,7 @@ const SuperAdminDashboard = () => {
               </div>
 
               {/* Hall of Fame */}
-              <div onClick={() => setActiveTab('halloffame')} className="sad2-clickable-card">
+              <div onClick={() => { setActiveTab('software'); setSoftwareSection('halloffame'); }} className="sad2-clickable-card">
                 <div className="sad2-icon-15">🌟</div>
                 <div className="sad-gold-heading">Hall of Fame</div>
                 <div className="sad-text-secondary-sm">
@@ -1762,7 +1763,7 @@ const SuperAdminDashboard = () => {
               <section className="dashboard-widget">
                 <div className="widget-header">
                   <h3><Building2 size={16} /> Neue Dojos</h3>
-                  <button onClick={() => setActiveTab('dojosoftware')} className="widget-action-btn">Alle →</button>
+                  <button onClick={() => { setActiveTab('software'); setSoftwareSection('lizenzen'); }} className="widget-action-btn">Alle →</button>
                 </div>
                 <div className="widget-content">
                   {overviewSummary?.neueste_dojos?.length === 0 ? (
@@ -1939,14 +1940,10 @@ const SuperAdminDashboard = () => {
             </div>
 
             {/* ── Dojo-Auswertungen ── */}
-            <div style={{ marginTop: '2.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '1.5rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: 0 }}>
-                  📈 Dojo-Auswertungen
-                </h2>
-                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', margin: '0.25rem 0 0' }}>
-                  Aktualisiert sich automatisch bei Dojo-Wechsel
-                </p>
+            <div className="sad-auswertungen-section">
+              <div className="sad-auswertungen-header">
+                <h2 className="sad-auswertungen-title">📈 Dojo-Auswertungen</h2>
+                <p className="sad-auswertungen-hint">Aktualisiert sich automatisch bei Dojo-Wechsel</p>
               </div>
               <div className="sad-auswertungen-embed">
                 <Auswertungen />
@@ -2006,9 +2003,8 @@ const SuperAdminDashboard = () => {
             {softwareSection === 'lizenzen' && (
               <div>
             {renderSubTabs('dojosoftware', [
-              { id: 'lizenzen', icon: '📜', label: 'Lizenzen' },
+              { id: 'lizenzen',  icon: '📜', label: 'Lizenzen' },
               { id: 'dokumente', icon: '📂', label: 'Dokumente' },
-              { id: 'todos',    icon: '✅', label: 'To Do' },
             ])}
 
             {subActiveTab.dojosoftware === 'lizenzen' && (
@@ -2017,10 +2013,6 @@ const SuperAdminDashboard = () => {
 
             {subActiveTab.dojosoftware === 'dokumente' && (
               <DokumentenZentrale embedded />
-            )}
-
-            {subActiveTab.dojosoftware === 'todos' && (
-              <TodoPanel fixedKontext="lizenzen" />
             )}
 
               </div>
@@ -2207,14 +2199,7 @@ const SuperAdminDashboard = () => {
 
         {/* ═══ Verband ══════════════════════════════════════════════ */}
         {activeTab === 'verband' && (
-          <div>
-            {renderSubTabs('verband', [
-              { id: 'verbandsmitglieder', icon: '🏆', label: 'Verbandsmitglieder' },
-            ])}
-            {subActiveTab.verband === 'verbandsmitglieder' && (
-              <VerbandsMitglieder />
-            )}
-          </div>
+          <VerbandsMitglieder />
         )}
 
         {/* ═══ Entwicklung ══════════════════════════════════════════ */}
