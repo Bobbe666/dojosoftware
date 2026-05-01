@@ -107,11 +107,11 @@
     opacity: 0.6 !important;
   }
 
-  /* --- Mobile Hero Buttons (QR + Check-in) --- */
+  /* --- Mobile Hero Buttons (QR + Check-in + Abwesenheit) --- */
   .md-mobile-hero {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 0.6rem !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 0.5rem !important;
     margin-bottom: 0.85rem !important;
   }
 
@@ -120,8 +120,8 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 3px !important;
-    padding: 1rem 0.5rem !important;
+    gap: 2px !important;
+    padding: 0.85rem 0.35rem !important;
     border-radius: 14px !important;
     border: none !important;
     cursor: pointer !important;
@@ -145,13 +145,23 @@
     border: 1.5px solid rgba(255,255,255,0.12) !important;
   }
 
+  .md-mobile-hero-btn--absence {
+    background: rgba(239,68,68,0.07) !important;
+    border: 1.5px solid rgba(239,68,68,0.2) !important;
+  }
+
+  .md-mobile-hero-btn--absence-active {
+    background: rgba(239,68,68,0.15) !important;
+    border: 1.5px solid rgba(239,68,68,0.45) !important;
+  }
+
   .md-mobile-hero-btn-icon {
-    font-size: 1.5rem !important;
+    font-size: 1.3rem !important;
     line-height: 1 !important;
   }
 
   .md-mobile-hero-btn-label {
-    font-size: 0.85rem !important;
+    font-size: 0.78rem !important;
     font-weight: 700 !important;
     color: #fff !important;
     letter-spacing: 0.02em !important;

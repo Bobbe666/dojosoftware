@@ -1490,7 +1490,7 @@ const MemberDashboard = () => {
         </div>
       )}
 
-      {/* Mobile Hero: QR + Check-in prominente Schnellbuttons */}
+      {/* Mobile Hero: QR + Check-in + Abwesenheit prominente Schnellbuttons */}
       <div className="md-mobile-hero">
         <button
           className="md-mobile-hero-btn md-mobile-hero-btn--primary"
@@ -1508,7 +1508,18 @@ const MemberDashboard = () => {
           <span className="md-mobile-hero-btn-label">Check-in</span>
           <span className="md-mobile-hero-btn-sub">Training erfassen</span>
         </button>
+        <button
+          className={`md-mobile-hero-btn md-mobile-hero-btn--absence${showAbwesenheitWidget ? ' md-mobile-hero-btn--absence-active' : ''}`}
+          onClick={() => setShowAbwesenheitWidget(v => !v)}
+        >
+          <span className="md-mobile-hero-btn-icon">🗓️</span>
+          <span className="md-mobile-hero-btn-label">Abwesenheit</span>
+          <span className="md-mobile-hero-btn-sub">Urlaub / Pause</span>
+        </button>
       </div>
+
+      {/* Abwesenheit Widget — direkt unter Mobile Hero */}
+      {showAbwesenheitWidget && <AbwesenheitWidget />}
 
       {/* Nächste Trainings Widget — mobil prominent oben */}
       <div className="md-mobile-schedule-widget">
