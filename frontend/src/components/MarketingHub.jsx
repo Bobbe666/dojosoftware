@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import '../styles/MarketingHub.css';
 
@@ -373,6 +373,221 @@ function AccountWizard({ onSaved, onClose }) {
   );
 }
 
+// ── Schedule Planner ─────────────────────────────────────────────────────────
+const DOW_LABELS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const DOW_ORDER  = [1, 2, 3, 4, 5, 6, 0]; // Mo–So
+
+function generateScheduleDates(mode, { singleDt, weekdays, time, startDate, interval, count, manualDates }) {
+  if (mode === 'single') return singleDt ? [singleDt] : [];
+
+  if (mode === 'weekly') {
+    if (!weekdays.length || !startDate || !time) return [];
+    const result = [];
+    const cursor = new Date(startDate + 'T00:00:00');
+    let safety = 0;
+    while (result.length < count && safety < 500) {
+      safety++;
+      if (weekdays.includes(cursor.getDay())) {
+        result.push(cursor.toISOString().slice(0, 10) + 'T' + time);
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    return result;
+  }
+
+  if (mode === 'interval') {
+    if (!startDate || !time) return [];
+    const result = [];
+    const cursor = new Date(startDate + 'T' + time + ':00');
+    for (let i = 0; i < count && i < 52; i++) {
+      result.push(cursor.toISOString().slice(0, 16));
+      cursor.setDate(cursor.getDate() + interval);
+    }
+    return result;
+  }
+
+  if (mode === 'manual') {
+    return [...manualDates].filter(Boolean).sort();
+  }
+
+  return [];
+}
+
+function SchedulePlanner({ onApply, onClose }) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+  // find next Thursday as default start
+  const nextThursday = new Date();
+  nextThursday.setDate(nextThursday.getDate() + ((4 - nextThursday.getDay() + 7) % 7 || 7));
+  const nextThursdayStr = nextThursday.toISOString().slice(0, 10);
+
+  const [mode, setMode]           = useState('weekly');
+  const [time, setTime]           = useState('19:00');
+  const [startDate, setStartDate] = useState(nextThursdayStr);
+  const [weekdays, setWeekdays]   = useState([4]); // Donnerstag
+  const [interval, setInterval]   = useState(14);
+  const [count, setCount]         = useState(4);
+  const [singleDt, setSingleDt]   = useState('');
+  const [manualDates, setManualDates] = useState(['']);
+
+  const toggleWeekday = (dow) =>
+    setWeekdays(prev => prev.includes(dow) ? prev.filter(d => d !== dow) : [...prev, dow].sort());
+
+  const generatedDates = useMemo(() =>
+    generateScheduleDates(mode, { singleDt, weekdays, time, startDate, interval, count, manualDates }),
+    [mode, singleDt, weekdays, time, startDate, interval, count, manualDates]
+  );
+
+  const formatDt = (iso) => new Date(iso).toLocaleString('de-DE', {
+    weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+
+  const MODES = [
+    { id: 'single',   label: '📌 Einmalig' },
+    { id: 'weekly',   label: '📆 Wöchentlich' },
+    { id: 'interval', label: '🔄 Intervall' },
+    { id: 'manual',   label: '✏️ Manuell' },
+  ];
+
+  return (
+    <div className="sp-panel">
+      {/* Mode tabs */}
+      <div className="sp-modes">
+        {MODES.map(m => (
+          <button key={m.id} className={`sp-mode-btn${mode === m.id ? ' sp-mode-btn--active' : ''}`}
+            onClick={() => setMode(m.id)}>{m.label}</button>
+        ))}
+      </div>
+
+      {/* Config */}
+      <div className="sp-config">
+        {mode === 'single' && (
+          <div className="sp-row">
+            <label className="mh-lbl">Datum &amp; Uhrzeit</label>
+            <input className="mh-input" type="datetime-local" value={singleDt} min={tomorrowStr + 'T00:00'}
+              onChange={e => setSingleDt(e.target.value)} />
+          </div>
+        )}
+
+        {mode === 'weekly' && (
+          <>
+            <div className="sp-row">
+              <label className="mh-lbl">Wochentage</label>
+              <div className="sp-weekdays">
+                {DOW_ORDER.map(dow => (
+                  <button key={dow} type="button"
+                    className={`sp-day-btn${weekdays.includes(dow) ? ' sp-day-btn--active' : ''}`}
+                    onClick={() => toggleWeekday(dow)}>{DOW_LABELS[dow]}</button>
+                ))}
+              </div>
+            </div>
+            <div className="sp-row sp-row--cols">
+              <div>
+                <label className="mh-lbl">Uhrzeit</label>
+                <input className="mh-input mh-input--sm" type="time" value={time}
+                  onChange={e => setTime(e.target.value)} />
+              </div>
+              <div>
+                <label className="mh-lbl">Start ab</label>
+                <input className="mh-input mh-input--sm" type="date" value={startDate} min={tomorrowStr}
+                  onChange={e => setStartDate(e.target.value)} />
+              </div>
+              <div>
+                <label className="mh-lbl">Anzahl Termine</label>
+                <input className="mh-input mh-input--sm" type="number" min={1} max={52} value={count}
+                  onChange={e => setCount(Math.max(1, Math.min(52, +e.target.value)))} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {mode === 'interval' && (
+          <div className="sp-row sp-row--cols">
+            <div>
+              <label className="mh-lbl">Startdatum</label>
+              <input className="mh-input mh-input--sm" type="date" value={startDate} min={tomorrowStr}
+                onChange={e => setStartDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="mh-lbl">Uhrzeit</label>
+              <input className="mh-input mh-input--sm" type="time" value={time}
+                onChange={e => setTime(e.target.value)} />
+            </div>
+            <div>
+              <label className="mh-lbl">Alle X Tage</label>
+              <div className="sp-interval-presets">
+                {[7, 14, 21, 30].map(n => (
+                  <button key={n} type="button"
+                    className={`sp-preset-btn${interval === n ? ' sp-preset-btn--active' : ''}`}
+                    onClick={() => setInterval(n)}>{n}d</button>
+                ))}
+                <input className="mh-input mh-input--sm sp-interval-custom" type="number" min={1} max={365}
+                  value={interval} onChange={e => setInterval(Math.max(1, +e.target.value))} />
+              </div>
+            </div>
+            <div>
+              <label className="mh-lbl">Anzahl Termine</label>
+              <input className="mh-input mh-input--sm" type="number" min={1} max={52} value={count}
+                onChange={e => setCount(Math.max(1, Math.min(52, +e.target.value)))} />
+            </div>
+          </div>
+        )}
+
+        {mode === 'manual' && (
+          <div className="sp-manual">
+            {manualDates.map((dt, i) => (
+              <div key={i} className="sp-manual-row">
+                <input className="mh-input mh-input--sm" type="datetime-local" value={dt}
+                  min={tomorrowStr + 'T00:00'}
+                  onChange={e => setManualDates(prev => prev.map((d, j) => j === i ? e.target.value : d))} />
+                <button className="sp-manual-rm" onClick={() => setManualDates(prev => prev.filter((_, j) => j !== i))}>✕</button>
+              </div>
+            ))}
+            <button className="mh-btn mh-btn--ghost mh-btn--sm" style={{ marginTop: 6 }}
+              onClick={() => setManualDates(prev => [...prev, ''])}>+ Datum hinzufügen</button>
+          </div>
+        )}
+      </div>
+
+      {/* Date preview */}
+      {generatedDates.length > 0 && (
+        <div className="sp-preview">
+          <div className="sp-preview-head">
+            <span className="sp-preview-count">{generatedDates.length} Termin{generatedDates.length !== 1 ? 'e' : ''}</span>
+            <span className="sp-preview-range">
+              {formatDt(generatedDates[0])} → {formatDt(generatedDates[generatedDates.length - 1])}
+            </span>
+          </div>
+          <div className="sp-date-list">
+            {generatedDates.slice(0, 24).map((dt, i) => (
+              <div key={i} className="sp-date-item">
+                <span className="sp-date-num">{i + 1}</span>
+                <span className="sp-date-val">{formatDt(dt)}</span>
+              </div>
+            ))}
+            {generatedDates.length > 24 && (
+              <div className="sp-date-more">+{generatedDates.length - 24} weitere…</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="sp-footer">
+        <button className="mh-btn mh-btn--ghost" onClick={onClose}>Abbrechen</button>
+        <button className="mh-btn mh-btn--primary" disabled={!generatedDates.length}
+          onClick={() => onApply(generatedDates)}>
+          {generatedDates.length
+            ? `${generatedDates.length} Termin${generatedDates.length !== 1 ? 'e' : ''} übernehmen`
+            : 'Keine Termine generiert'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Post-Karte ────────────────────────────────────────────────────────────────
 function PostCard({ post, onDelete }) {
   const channels = typeof post.channels === 'string' ? JSON.parse(post.channels) : (post.channels || []);
@@ -419,6 +634,9 @@ export default function MarketingHub() {
   const [images, setImages]             = useState([]); // [{ url, name }]
   const [uploading, setUploading]       = useState(false);
   const [dragOver, setDragOver]         = useState(false);
+  const [showPlanner, setShowPlanner]   = useState(false);
+  const [scheduledDates, setScheduledDates] = useState([]); // [] = sofort, [...] = geplante Termine
+  const [bulkProgress, setBulkProgress] = useState(null);  // { done, total } during bulk create
 
   // KI state
   const [kiLoading, setKiLoading]       = useState(false);
@@ -501,25 +719,51 @@ export default function MarketingHub() {
       setPostFlash({ type: 'error', msg: 'Instagram-Kanäle ausgewählt — bitte mindestens ein Bild hochladen.' });
       return;
     }
+
+    const channels = selectedChannels.map(a => ({
+      account_type: a.account_type, account_id: a.id, platform: a.platform,
+    }));
+    const mediaUrls = images.map(i => i.url);
+
+    // ── Bulk-Scheduling ──────────────────────────────────────────────────────
+    if (scheduledDates.length > 1 && !publishNow) {
+      setPosting(true);
+      setBulkProgress({ done: 0, total: scheduledDates.length });
+      let successCount = 0;
+      try {
+        for (let i = 0; i < scheduledDates.length; i++) {
+          await axios.post('/marketing-hub/posts', {
+            content, channels, media_urls: mediaUrls, scheduled_at: scheduledDates[i],
+          });
+          successCount++;
+          setBulkProgress({ done: i + 1, total: scheduledDates.length });
+        }
+        setPostFlash({ type: 'success', msg: `${successCount} Posts geplant ✓` });
+        setContent(''); setSelectedChannels([]); setImages([]); setScheduledDates([]);
+        load();
+      } catch (e) {
+        setPostFlash({ type: 'error', msg: `Fehler nach ${successCount} von ${scheduledDates.length} Posts: ${e.response?.data?.error || e.message}` });
+      } finally {
+        setPosting(false); setBulkProgress(null);
+        setTimeout(() => setPostFlash(null), 5000);
+      }
+      return;
+    }
+
+    // ── Einzel-Post ──────────────────────────────────────────────────────────
     setPosting(true);
     try {
-      const channels = selectedChannels.map(a => ({
-        account_type: a.account_type,
-        account_id: a.id,
-        platform: a.platform,
-      }));
+      const scheduled_at = scheduledDates[0] || ((!publishNow && scheduledAt) ? scheduledAt : null);
       const { data } = await axios.post('/marketing-hub/posts', {
-        content, channels,
-        media_urls: images.map(i => i.url),
-        scheduled_at: (!publishNow && scheduledAt) ? scheduledAt : null,
+        content, channels, media_urls: mediaUrls, scheduled_at,
       });
       if (publishNow) {
         await axios.post(`/marketing-hub/posts/${data.id}/publish`);
         setPostFlash({ type: 'success', msg: `Gepostet auf ${selectedChannels.length} Kanal${selectedChannels.length > 1 ? 'en' : ''} ✓` });
       } else {
-        setPostFlash({ type: 'success', msg: scheduledAt ? 'Geplant ✓' : 'Entwurf gespeichert ✓' });
+        setPostFlash({ type: 'success', msg: scheduled_at ? 'Geplant ✓' : 'Entwurf gespeichert ✓' });
       }
-      setContent(''); setSelectedChannels([]); setScheduledAt(''); setImages([]);
+      setContent(''); setSelectedChannels([]); setScheduledAt(''); setImages([]); setScheduledDates([]);
       load();
     } catch (e) {
       setPostFlash({ type: 'error', msg: e.response?.data?.error || 'Fehler beim Posten' });
@@ -645,20 +889,53 @@ export default function MarketingHub() {
               </div>
             )}
 
-            {/* Scheduling + Aktionen */}
+            {/* Zeitplan-Planer */}
+            <div className="mh-planner-toggle-row">
+              <button
+                className={`mh-btn mh-btn--ghost mh-btn--sm${showPlanner ? ' mh-btn--plan-active' : ''}`}
+                onClick={() => setShowPlanner(p => !p)}
+              >
+                📅 Zeitplan {showPlanner ? '▲' : '▼'}
+              </button>
+              {scheduledDates.length > 0 && !showPlanner && (
+                <div className="mh-plan-badge">
+                  <span className="mh-plan-badge-count">{scheduledDates.length} Termin{scheduledDates.length !== 1 ? 'e' : ''} geplant</span>
+                  <button className="mh-plan-badge-clear" onClick={() => setScheduledDates([])} title="Zeitplan löschen">✕</button>
+                </div>
+              )}
+            </div>
+
+            {showPlanner && (
+              <SchedulePlanner
+                onApply={(dates) => { setScheduledDates(dates); setShowPlanner(false); }}
+                onClose={() => setShowPlanner(false)}
+              />
+            )}
+
+            {/* Aktionen */}
             <div className="mh-actions-row">
-              <div className="mh-schedule-wrap">
-                <label className="mh-lbl">Planen (optional)</label>
-                <input className="mh-input mh-input--sm" type="datetime-local" value={scheduledAt}
-                  onChange={e => setScheduledAt(e.target.value)} />
-              </div>
               <div className="mh-post-btns">
-                <button className="mh-btn mh-btn--ghost" onClick={() => handlePost(false)} disabled={posting}>
-                  {scheduledAt ? '📅 Planen' : '💾 Entwurf'}
-                </button>
-                <button className="mh-btn mh-btn--primary" onClick={() => handlePost(true)} disabled={posting || !selectedChannels.length}>
-                  {posting ? 'Posting…' : `🚀 Jetzt posten${selectedChannels.length ? ` (${selectedChannels.length})` : ''}`}
-                </button>
+                {scheduledDates.length > 1 ? (
+                  <>
+                    <button className="mh-btn mh-btn--ghost" onClick={() => setScheduledDates([])} disabled={posting}>
+                      Zeitplan verwerfen
+                    </button>
+                    <button className="mh-btn mh-btn--primary" onClick={() => handlePost(false)} disabled={posting || !selectedChannels.length}>
+                      {posting
+                        ? bulkProgress ? `Einplanen… ${bulkProgress.done}/${bulkProgress.total}` : 'Einplanen…'
+                        : `📅 ${scheduledDates.length} Termine einplanen`}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button className="mh-btn mh-btn--ghost" onClick={() => handlePost(false)} disabled={posting}>
+                      {scheduledDates[0] ? '📅 Planen' : '💾 Entwurf'}
+                    </button>
+                    <button className="mh-btn mh-btn--primary" onClick={() => handlePost(true)} disabled={posting || !selectedChannels.length}>
+                      {posting ? 'Posting…' : `🚀 Jetzt posten${selectedChannels.length ? ` (${selectedChannels.length})` : ''}`}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

@@ -206,6 +206,190 @@
 }
 .mh-img-remove:hover { background: #ef4444; }
 
+/* ── Planner toggle row ────────────────────────────────────────────────────── */
+.mh-planner-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.mh-btn--plan-active {
+  border-color: #ec4899;
+  color: #ec4899;
+}
+.mh-plan-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(236,72,153,0.12);
+  border: 1px solid #ec4899;
+  border-radius: 999px;
+  padding: 3px 10px 3px 12px;
+  font-size: 0.8rem;
+  color: #ec4899;
+}
+.mh-plan-badge-count { font-weight: 600; }
+.mh-plan-badge-clear {
+  background: none; border: none; color: #ec4899;
+  cursor: pointer; font-size: 0.8rem; padding: 0; line-height: 1;
+}
+
+/* ── Schedule Planner Panel ────────────────────────────────────────────────── */
+.sp-panel {
+  background: var(--bg-secondary, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+/* Mode tabs */
+.sp-modes {
+  display: flex;
+  border-bottom: 1px solid var(--border-color, #334155);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.sp-modes::-webkit-scrollbar { display: none; }
+.sp-mode-btn {
+  flex: 1;
+  min-width: 100px;
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.sp-mode-btn:hover { color: var(--text-primary, #e2e8f0); }
+.sp-mode-btn--active { color: #ec4899; border-bottom-color: #ec4899; }
+
+/* Config area */
+.sp-config { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.sp-row { display: flex; flex-direction: column; gap: 6px; }
+.sp-row--cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+/* Weekday buttons */
+.sp-weekdays { display: flex; gap: 5px; flex-wrap: wrap; }
+.sp-day-btn {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--bg-primary, #0f172a);
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sp-day-btn:hover { border-color: #ec4899; color: #ec4899; }
+.sp-day-btn--active { background: #ec4899; border-color: #ec4899; color: #fff; }
+
+/* Interval presets */
+.sp-interval-presets { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.sp-preset-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #334155);
+  background: var(--bg-primary, #0f172a);
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sp-preset-btn:hover { border-color: #ec4899; color: #ec4899; }
+.sp-preset-btn--active { background: rgba(236,72,153,0.15); border-color: #ec4899; color: #ec4899; }
+.sp-interval-custom { width: 64px !important; text-align: center; }
+
+/* Manual date list */
+.sp-manual { display: flex; flex-direction: column; gap: 6px; }
+.sp-manual-row { display: flex; gap: 8px; align-items: center; }
+.sp-manual-rm {
+  background: none; border: none; color: var(--text-muted, #94a3b8);
+  cursor: pointer; font-size: 0.9rem; padding: 4px;
+  flex-shrink: 0; transition: color 0.1s;
+}
+.sp-manual-rm:hover { color: #ef4444; }
+
+/* Date preview */
+.sp-preview {
+  border-top: 1px solid var(--border-color, #334155);
+  padding: 12px 16px;
+}
+.sp-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sp-preview-count {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #ec4899;
+}
+.sp-preview-range {
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+}
+.sp-date-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.sp-date-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: var(--bg-primary, #0f172a);
+  font-size: 0.78rem;
+}
+.sp-date-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(236,72,153,0.15);
+  color: #ec4899;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sp-date-val { color: var(--text-primary, #e2e8f0); }
+.sp-date-more {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+  grid-column: 1 / -1;
+}
+
+/* Planner footer */
+.sp-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color, #334155);
+}
+
 /* Actions row */
 .mh-actions-row {
   display: flex;
