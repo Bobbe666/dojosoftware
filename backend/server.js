@@ -2276,6 +2276,15 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'training', error: error.message });
 }
 
+// TO-DO SYSTEM
+try {
+  const todosRouter = require(path.join(__dirname, 'routes', 'todos.js'));
+  app.use('/api/todos', todosRouter);
+  logger.success('Route gemountet', { path: '/api/todos' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'todos', error: error.message });
+}
+
 // PLATTFORM-ZENTRALE
 try {
   const plattformZentraleRouter = require(path.join(__dirname, 'routes', 'plattform-zentrale.js'));
