@@ -12,6 +12,94 @@ const { generateInitialBeitraege } = require('./vertraege/shared');
 const webpush = require('web-push');
 const router = express.Router();
 
+// ── Welcome-App-Email nach Vertragserstellung ────────────────────────────────
+async function sendWelcomeAppInfoEmail(memberData, newMemberId, dojoId) {
+  try {
+    if (!memberData.email) return;
+    const pool = db.promise();
+    const [dojoRows] = await pool.query('SELECT dojoname as name FROM dojo WHERE id = ?', [dojoId]);
+    const dojoName = dojoRows[0]?.name || 'Dojo';
+    const memberName = `${memberData.vorname || ''} ${memberData.nachname || ''}`.trim() || 'Mitglied';
+    const appUrl = 'https://app.tda-vib.de';
+    const subject = `Willkommen bei ${dojoName} — So nutzt du die Mitglieder-App`;
+
+    const featureRows = [
+      ['📱', 'Check-in', 'Direkt per App einchecken — kein Zettel, kein Suchen.'],
+      ['✅', 'Anwesenheit', 'Deine Trainingshistorie und Statistiken auf einen Blick.'],
+      ['🏆', 'Prüfungen', 'Nächste Gürtelprüfungen, Status und Fortschritt verfolgen.'],
+      ['💰', 'Beiträge', 'Zahlungshistorie und offene Beiträge einsehen.'],
+      ['🏘️', 'Community', 'Schwarzes Brett, Marktplatz und Trainingspartner finden.'],
+      ['💬', 'Chat', 'Direkt mit Trainer und anderen Mitgliedern kommunizieren.'],
+    ].map(([icon, title, desc]) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #334155;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td width="44" style="vertical-align:top;">
+              <div style="width:36px;height:36px;background:#334155;border-radius:8px;text-align:center;line-height:36px;font-size:18px;">${icon}</div>
+            </td>
+            <td style="padding-left:12px;vertical-align:top;">
+              <div style="color:#e2e8f0;font-weight:600;font-size:14px;margin-bottom:2px;">${title}</div>
+              <div style="color:#94a3b8;font-size:13px;line-height:1.5;">${desc}</div>
+            </td>
+          </tr></table>
+        </td>
+      </tr>`).join('');
+
+    const html = `<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#0f172a;padding:32px 16px;">
+<tr><td align="center"><table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+  <tr><td style="background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);border-radius:16px 16px 0 0;padding:40px 40px 32px;text-align:center;border:1px solid #334155;border-bottom:none;">
+    <div style="font-size:48px;margin-bottom:16px;">🥋</div>
+    <h1 style="color:#e2e8f0;font-size:26px;font-weight:700;margin:0 0 8px;">Willkommen bei ${dojoName}!</h1>
+    <p style="color:#94a3b8;font-size:15px;margin:0;">Hallo ${memberName} — schön dass du dabei bist.</p>
+  </td></tr>
+
+  <tr><td style="background:#1e293b;padding:32px 40px;border:1px solid #334155;border-top:none;border-bottom:none;">
+    <p style="color:#cbd5e1;font-size:15px;line-height:1.7;margin:0 0 28px;">Dein Mitgliedskonto ist jetzt aktiv. Mit der <strong style="color:#e2e8f0;">Mitglieder-App</strong> hast du alles auf einen Blick — jederzeit, überall.</p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+      <tr><td align="center">
+        <a href="${appUrl}" style="display:inline-block;background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;font-size:16px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:10px;">→ App öffnen</a>
+        <div style="margin-top:8px;color:#64748b;font-size:12px;">${appUrl}</div>
+      </td></tr>
+    </table>
+
+    <h2 style="color:#e2e8f0;font-size:16px;font-weight:700;margin:0 0 16px;">Was dich in der App erwartet:</h2>
+    <table width="100%" cellpadding="0" cellspacing="0">${featureRows}</table>
+
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px 20px;margin-top:24px;">
+      <div style="color:#e2e8f0;font-weight:600;font-size:14px;margin-bottom:6px;">📲 Als App auf deinem Smartphone speichern</div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.6;">
+        <strong style="color:#cbd5e1;">iPhone:</strong> Safari → ${appUrl} → Teilen → „Zum Home-Bildschirm"<br>
+        <strong style="color:#cbd5e1;">Android:</strong> Chrome → ${appUrl} → Menü → „App installieren"
+      </div>
+    </div>
+
+    <div style="background:#0f172a;border:1px solid #334155;border-radius:10px;padding:16px 20px;margin-top:12px;">
+      <div style="color:#e2e8f0;font-weight:600;font-size:14px;margin-bottom:6px;">🔐 Anmeldung</div>
+      <div style="color:#94a3b8;font-size:13px;line-height:1.6;">Melde dich mit deiner <strong style="color:#cbd5e1;">E-Mail-Adresse</strong> und deinem Passwort an. Falls du noch kein Passwort gesetzt hast, nutze „Passwort vergessen" auf der Login-Seite.</div>
+    </div>
+  </td></tr>
+
+  <tr><td style="background:#0f172a;border-radius:0 0 16px 16px;padding:24px 40px;text-align:center;border:1px solid #334155;border-top:none;">
+    <p style="color:#475569;font-size:12px;margin:0 0 6px;">Bei Fragen wende dich direkt an dein Dojo.</p>
+    <p style="color:#334155;font-size:11px;margin:0;">${dojoName} · Powered by DojoSoftware</p>
+  </td></tr>
+
+</table></td></tr></table>
+</body></html>`;
+
+    const text = `Willkommen bei ${dojoName}!\n\nHallo ${memberName},\n\ndein Mitgliedskonto ist aktiv. Öffne die App: ${appUrl}\n\nFeatures: Check-in, Anwesenheit, Prüfungen, Beiträge, Community, Chat.\n\nAls App speichern:\niPhone: Safari → Teilen → „Zum Home-Bildschirm"\nAndroid: Chrome → Menü → „App installieren"\n\n${dojoName}`;
+
+    await sendEmailForDojo({ to: memberData.email, subject, html, text }, dojoId);
+    logger.info(`✅ App-Welcome-Email gesendet an ${memberData.email} (Mitglied ${newMemberId})`);
+  } catch (e) {
+    logger.error('App-Welcome-Email Fehler:', e.message);
+  }
+}
+
 // IBAN maskieren: erste 4 + letzte 4 Zeichen sichtbar, Rest mit *
 const maskIBAN = (iban) => {
   if (!iban) return iban;
@@ -3652,6 +3740,8 @@ router.post("/",
                                 response.user_account = userResult;
                             }
                             res.status(201).json(response);
+                            // 📧 Welcome-Email fire-and-forget (nach Response)
+                            sendWelcomeAppInfoEmail(memberData, newMemberId, memberData.dojo_id);
                         });
                     });
                 });

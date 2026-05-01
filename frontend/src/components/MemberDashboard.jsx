@@ -200,6 +200,20 @@ const MemberDashboard = () => {
   // ProfilWizard: beim ersten Login anzeigen
   const [showProfilWizard, setShowProfilWizard] = useState(false);
 
+  // App-Onboarding: einmalig beim ersten Login nach Vertragserstellung
+  const onboardingKey = `app_onboarded_${user?.mitglied_id}`;
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  useEffect(() => {
+    if (user?.mitglied_id && !localStorage.getItem(onboardingKey)) {
+      const t = setTimeout(() => setShowOnboarding(true), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [user?.mitglied_id]);
+  const closeOnboarding = () => {
+    localStorage.setItem(onboardingKey, '1');
+    setShowOnboarding(false);
+  };
+
   // Familienmitglieder laden
   const [familyMembers, setFamilyMembers] = useState([]);
   const [familySwitching, setFamilySwitching] = useState(false);
@@ -1195,6 +1209,87 @@ const MemberDashboard = () => {
           vorname={memberData.vorname}
           onClose={() => setShowProfilWizard(false)}
         />
+      )}
+
+      {/* App-Onboarding: einmalig nach Vertragserstellung */}
+      {showOnboarding && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '16px',
+        }}>
+          <div style={{
+            background: 'var(--bg-secondary, #1e293b)',
+            border: '1px solid var(--border-color, #334155)',
+            borderRadius: '20px', padding: '32px 28px',
+            maxWidth: '480px', width: '100%',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+            maxHeight: '90vh', overflowY: 'auto',
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🥋</div>
+              <h2 style={{ margin: '0 0 8px', fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary, #e2e8f0)' }}>
+                Willkommen in der App!
+              </h2>
+              <p style={{ margin: 0, color: 'var(--text-muted, #94a3b8)', fontSize: '0.9rem' }}>
+                Hier ein kurzer Überblick was du alles machen kannst:
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+              {[
+                ['📱', 'Check-in', 'Direkt per App einchecken — kein Zettel nötig.'],
+                ['✅', 'Anwesenheit', 'Deine Trainingshistorie und Statistiken.'],
+                ['🏆', 'Prüfungen', 'Nächste Gürtelprüfungen und deinen Fortschritt verfolgen.'],
+                ['💰', 'Beiträge', 'Zahlungshistorie und offene Beiträge einsehen.'],
+                ['🏘️', 'Community', 'Schwarzes Brett, Marktplatz, Trainingspartner.'],
+                ['💬', 'Chat', 'Direkt mit Trainer und Mitgliedern kommunizieren.'],
+              ].map(([icon, title, desc]) => (
+                <div key={title} style={{
+                  display: 'flex', gap: 12, alignItems: 'flex-start',
+                  background: 'var(--bg-primary, #0f172a)',
+                  border: '1px solid var(--border-color, #334155)',
+                  borderRadius: 10, padding: '12px 14px',
+                }}>
+                  <div style={{
+                    width: 36, height: 36, flexShrink: 0,
+                    background: 'var(--bg-secondary, #1e293b)',
+                    borderRadius: 8, display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: 18,
+                  }}>{icon}</div>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-primary, #e2e8f0)', marginBottom: 2 }}>{title}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.5 }}>{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{
+              background: 'var(--bg-primary, #0f172a)',
+              border: '1px solid var(--border-color, #334155)',
+              borderRadius: 10, padding: '12px 14px', marginBottom: 20,
+              fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6,
+            }}>
+              <strong style={{ color: 'var(--text-secondary, #cbd5e1)' }}>📲 Als App speichern:</strong><br />
+              iPhone: Safari → Teilen → „Zum Home-Bildschirm"<br />
+              Android: Chrome → Menü → „App installieren"
+            </div>
+
+            <button
+              onClick={closeOnboarding}
+              style={{
+                width: '100%', padding: '14px',
+                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
+                border: 'none', borderRadius: 10, cursor: 'pointer',
+                color: '#fff', fontWeight: 700, fontSize: '1rem',
+              }}
+            >
+              Jetzt loslegen →
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Event-Benachrichtigungs-Popup */}
