@@ -105,6 +105,14 @@ const DojoSwitcher = () => {
     window.location.href = '/dashboard';
   };
 
+  const handleSwitchToMarketing = () => {
+    switchDojo('marketing');
+    setFilter('current');
+    setIsOpen(false);
+    setSearchQuery('');
+    window.location.href = '/dashboard';
+  };
+
   const handleShowAll = () => {
     if (dojos.length > 0) {
       const hauptDojo = dojos.find(d => d.ist_hauptdojo) || dojos[0];
@@ -123,6 +131,7 @@ const DojoSwitcher = () => {
   const isInVerbandMode = activeDojo === 'verband';
   const isInSupportMode = activeDojo === 'support';
   const isInShopMode = activeDojo === 'shop';
+  const isInMarketingMode = activeDojo === 'marketing';
   const isInLizenzenMode = window.location.pathname === '/dashboard/lizenzen';
 
   // Filter dojos by search query
@@ -144,6 +153,7 @@ const DojoSwitcher = () => {
     if (isInVerbandMode) return { icon: '🌐', label: 'TDA Verband', color: 'var(--info)' };
     if (isInSuperAdminMode) return { icon: '🏢', label: 'TDA Int\'l Org', color: '#DAA520' };
     if (isInShopMode) return { icon: '🛍️', label: 'TDA Shop', color: '#F97316' };
+    if (isInMarketingMode) return { icon: '📣', label: 'Marketing Hub', color: '#ec4899' };
     if (showAllDojos) return { icon: '📊', label: 'Alle Dojos', color: 'var(--secondary)' };
     return { icon: '🥋', label: activeDojo?.dojoname || 'Dojo', color: activeDojo?.farbe || '#FFD700' };
   };
@@ -304,6 +314,14 @@ const DojoSwitcher = () => {
                     >
                       <span className="ds-btn-icon">🎓</span>
                       <span className="ds-btn-label">Academy</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`ds-admin-btn ds-color-pink ${isInMarketingMode ? 'active' : ''}`}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSwitchToMarketing(); }}
+                    >
+                      <span className="ds-btn-icon">📣</span>
+                      <span className="ds-btn-label">Marketing</span>
                     </button>
                   </div>
 

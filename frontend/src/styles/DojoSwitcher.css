@@ -288,6 +288,7 @@
 .ds-color-orange { --btn-color: #fb923c; --btn-rgb: 251,146,60; }
 .ds-color-red { --btn-color: #f87171; --btn-rgb: 248,113,113; }
 .ds-color-teal { --btn-color: #2dd4bf; --btn-rgb: 45,212,191; }
+.ds-color-pink { --btn-color: #ec4899; --btn-rgb: 236,72,153; }
 
 /* Volle Breite (Grid-Span) */
 .ds-btn-full { grid-column: 1 / -1; }

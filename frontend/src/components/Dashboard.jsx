@@ -30,6 +30,7 @@ import SuperAdminDashboard from './SuperAdminDashboard';
 import VerbandDashboard from './VerbandDashboard';
 import SupportDashboard from './SupportDashboard';
 import ShopDashboard from './shop/ShopDashboard';
+import MarketingHub from './MarketingHub';
 import HofDashboard from './HofDashboard';
 import SupportTickets from './SupportTickets';
 import FeatureBoard from './FeatureBoard';
@@ -1080,6 +1081,50 @@ function Dashboard() {
         <div className="dashboard-content">
           <main className="dashboard-main">
             <ShopDashboard />
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if ((role === 'admin' || role === 'super_admin') && selectedDojo === 'marketing' && isMainDashboard) {
+    return (
+      <div className={`dashboard-container ${theme === 'tda-vib' ? 'dashboard-tda-vib' : ''} ${isFullscreenRoute ? 'dashboard-fullscreen-route' : ''}`}>
+        <header className="dashboard-header">
+          <div className="dashboard-header-left">
+            <img src={logo} alt="DojoSoftware Logo" className="dashboard-logo dojo-software-logo" />
+            <h2>📣 Marketing Hub</h2>
+            <span className="version-badge">v{config.app.version}</span>
+          </div>
+          <div className="dashboard-header-right">
+            <DojoSwitcher />
+            <div className="dashboard-user-wrap">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="logout-button dashboard-user-btn"
+              >
+                <span>👤</span>
+                <span>{userDisplayName || 'User'}</span>
+                <span className="dashboard-user-btn-arrow">▼</span>
+              </button>
+              {showUserMenu && (
+                <div className="dashboard-user-dropdown">
+                  <button onClick={toggleDarkMode} className="dashboard-menu-btn">
+                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+                    <span>{isDarkMode ? 'Helles Theme' : 'Dunkles Theme'}</span>
+                  </button>
+                  <button onClick={() => { setShowUserMenu(false); handleLogout(); }} className="dashboard-menu-btn danger">
+                    <span>🚪</span>
+                    <span>{t('header.logout')}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+        <div className="dashboard-content">
+          <main className="dashboard-main">
+            <MarketingHub />
           </main>
         </div>
       </div>

@@ -160,6 +160,13 @@ export const DojoProvider = ({ children }) => {
           return;
         }
 
+        // Prüfe ob 'marketing' gespeichert ist
+        if (savedDojoId === 'marketing') {
+          console.log('✅ DojoContext: Marketing Hub Modus aus LocalStorage');
+          setActiveDojo('marketing');
+          return;
+        }
+
         // Ansonsten suche normales Dojo
         const saved = dojos.find(d => d.id === parseInt(savedDojoId));
         if (saved) {
@@ -189,6 +196,9 @@ export const DojoProvider = ({ children }) => {
     } else if (dojo === 'shop') {
       localStorage.setItem('activeDojoId', 'shop');
       console.log('✅ Gewechselt zu: TDA Shop');
+    } else if (dojo === 'marketing') {
+      localStorage.setItem('activeDojoId', 'marketing');
+      console.log('✅ Gewechselt zu: Marketing Hub');
     } else {
       localStorage.setItem('activeDojoId', dojo.id);
       console.log('✅ Gewechselt zu Dojo:', dojo.dojoname);
@@ -238,6 +248,11 @@ export const DojoProvider = ({ children }) => {
 
     // Shop Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
     if (activeDojo === 'shop') {
+      return '';
+    }
+
+    // Marketing Hub Modus: Keine Dojo-Filterung (verwendet eigene API-Endpoints)
+    if (activeDojo === 'marketing') {
       return '';
     }
 

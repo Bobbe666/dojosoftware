@@ -543,6 +543,14 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'marketing-ki', error: error.message, stack: error.stack });
 }
 
+try {
+  const marketingHubRoutes = require('./routes/marketing-hub');
+  app.use('/api/marketing-hub', marketingHubRoutes);
+  logger.success('Route gemountet', { path: '/api/marketing-hub' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'marketing-hub', error: error.message });
+}
+
 // 1.4 REFERRAL (Freunde werben Freunde)
 try {
   const referralRoutes = require(path.join(__dirname, 'routes', 'referral.js'));
