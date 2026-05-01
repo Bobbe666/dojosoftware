@@ -238,7 +238,7 @@ function AccountWizard({ onSaved, onClose }) {
               </div>
             </div>
             <div className="wz-warn-box">
-              ⚠️ Wenn du <strong>Instagram</strong> als Plattform wählst, werden Posts als Bild-/Video-Posts gesendet. Reine Text-Posts sind auf Instagram nicht möglich — du brauchst ein Bild-Upload-Feature (kommt später).
+              ⚠️ Instagram unterstützt keine reinen Text-Posts. Der Composer fordert automatisch ein Bild an wenn Instagram-Kanäle ausgewählt sind. 1 Bild = normaler Post, 2–10 Bilder = Carousel.
             </div>
             <div className="wz-skip-note">Kein Instagram? → Einfach auf „Weiter" klicken und das Feld leer lassen.</div>
           </div>
@@ -416,6 +416,9 @@ export default function MarketingHub() {
   const [scheduledAt, setScheduledAt]   = useState('');
   const [posting, setPosting]           = useState(false);
   const [postFlash, setPostFlash]       = useState(null);
+  const [images, setImages]             = useState([]); // [{ url, name }]
+  const [uploading, setUploading]       = useState(false);
+  const [dragOver, setDragOver]         = useState(false);
 
   // KI state
   const [kiLoading, setKiLoading]       = useState(false);
@@ -465,9 +468,39 @@ export default function MarketingHub() {
     finally { setKiLoading(false); }
   };
 
+  const uploadFiles = async (files) => {
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      Array.from(files).forEach(f => fd.append('images', f));
+      const { data } = await axios.post('/marketing-hub/upload', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const newImgs = data.urls.map((url, i) => ({ url, name: files[i]?.name || url.split('/').pop() }));
+      setImages(prev => [...prev, ...newImgs]);
+    } catch (e) {
+      setPostFlash({ type: 'error', msg: e.response?.data?.error || 'Upload fehlgeschlagen' });
+      setTimeout(() => setPostFlash(null), 4000);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault(); setDragOver(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (files.length) uploadFiles(files);
+  };
+
   const handlePost = async (publishNow = false) => {
     if (!content.trim()) { setPostFlash({ type: 'error', msg: 'Kein Inhalt eingegeben.' }); return; }
     if (!selectedChannels.length) { setPostFlash({ type: 'error', msg: 'Bitte mindestens einen Kanal wählen.' }); return; }
+    const igChannels = selectedChannels.filter(c => c.platform === 'instagram');
+    if (igChannels.length && !images.length) {
+      setPostFlash({ type: 'error', msg: 'Instagram-Kanäle ausgewählt — bitte mindestens ein Bild hochladen.' });
+      return;
+    }
     setPosting(true);
     try {
       const channels = selectedChannels.map(a => ({
@@ -476,7 +509,9 @@ export default function MarketingHub() {
         platform: a.platform,
       }));
       const { data } = await axios.post('/marketing-hub/posts', {
-        content, channels, scheduled_at: (!publishNow && scheduledAt) ? scheduledAt : null,
+        content, channels,
+        media_urls: images.map(i => i.url),
+        scheduled_at: (!publishNow && scheduledAt) ? scheduledAt : null,
       });
       if (publishNow) {
         await axios.post(`/marketing-hub/posts/${data.id}/publish`);
@@ -484,7 +519,7 @@ export default function MarketingHub() {
       } else {
         setPostFlash({ type: 'success', msg: scheduledAt ? 'Geplant ✓' : 'Entwurf gespeichert ✓' });
       }
-      setContent(''); setSelectedChannels([]); setScheduledAt('');
+      setContent(''); setSelectedChannels([]); setScheduledAt(''); setImages([]);
       load();
     } catch (e) {
       setPostFlash({ type: 'error', msg: e.response?.data?.error || 'Fehler beim Posten' });
@@ -574,6 +609,41 @@ export default function MarketingHub() {
             <div className="mh-char-count" style={{ color: content.length > 2000 ? '#ef4444' : undefined }}>
               {content.length} Zeichen
             </div>
+
+            {/* Bild-Upload */}
+            <div
+              className={`mh-upload-zone${dragOver ? ' mh-upload-zone--over' : ''}`}
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleDrop}
+            >
+              {uploading ? (
+                <div className="mh-upload-spinner-row"><div className="mh-spinner" /><span>Bilder werden hochgeladen…</span></div>
+              ) : (
+                <>
+                  <span className="mh-upload-icon">🖼️</span>
+                  <span className="mh-upload-text">Bilder hierher ziehen oder</span>
+                  <label className="mh-btn mh-btn--ghost mh-btn--sm mh-upload-pick">
+                    Datei wählen
+                    <input type="file" accept="image/*" multiple style={{ display: 'none' }}
+                      onChange={e => { uploadFiles(e.target.files); e.target.value = ''; }} />
+                  </label>
+                  <span className="mh-upload-hint">JPG, PNG, GIF · max. 10 MB pro Bild</span>
+                </>
+              )}
+            </div>
+
+            {/* Bild-Vorschau */}
+            {images.length > 0 && (
+              <div className="mh-img-preview-strip">
+                {images.map((img, i) => (
+                  <div key={i} className="mh-img-thumb">
+                    <img src={img.url} alt={img.name} />
+                    <button className="mh-img-remove" onClick={() => setImages(prev => prev.filter((_, j) => j !== i))} title="Entfernen">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Scheduling + Aktionen */}
             <div className="mh-actions-row">

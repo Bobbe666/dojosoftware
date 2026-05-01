@@ -144,6 +144,68 @@
   margin-bottom: 12px;
 }
 
+/* ── Image Upload Zone ────────────────────────────────────────────────────── */
+.mh-upload-zone {
+  border: 2px dashed var(--border-color, #334155);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  transition: border-color 0.15s, background 0.15s;
+  cursor: default;
+}
+.mh-upload-zone--over {
+  border-color: #ec4899;
+  background: rgba(236,72,153,0.06);
+}
+.mh-upload-icon { font-size: 1.3rem; flex-shrink: 0; }
+.mh-upload-text { font-size: 0.83rem; color: var(--text-muted, #94a3b8); }
+.mh-upload-pick { cursor: pointer; }
+.mh-upload-hint { font-size: 0.72rem; color: var(--text-muted, #94a3b8); }
+.mh-upload-spinner-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.83rem; color: var(--text-muted, #94a3b8);
+}
+
+/* Image preview strip */
+.mh-img-preview-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.mh-img-thumb {
+  position: relative;
+  width: 80px; height: 80px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-color, #334155);
+  flex-shrink: 0;
+}
+.mh-img-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mh-img-remove {
+  position: absolute;
+  top: 3px; right: 3px;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: #fff;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: background 0.12s;
+}
+.mh-img-remove:hover { background: #ef4444; }
+
 /* Actions row */
 .mh-actions-row {
   display: flex;

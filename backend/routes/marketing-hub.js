@@ -7,10 +7,36 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
 const db = require('../db');
 const metaApiService = require('../services/metaApiService');
 
 const pool = db.promise();
+
+// ── Multer Upload Setup ────────────────────────────────────────────────────────
+
+const uploadDir = path.join(__dirname, '../uploads/marketing');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Nur Bilddateien erlaubt'));
+  },
+});
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -27,6 +53,15 @@ function requireSuperAdmin(req, res, next) {
   if (!isSA) return res.status(403).json({ error: 'Super-Admin erforderlich' });
   next();
 }
+
+// ── POST /upload — Bilder hochladen ──────────────────────────────────────────
+
+router.post('/upload', requireSuperAdmin, upload.array('images', 10), (req, res) => {
+  if (!req.files?.length) return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
+  const baseUrl = process.env.BASE_URL || 'https://dojo.tda-intl.org';
+  const urls = req.files.map(f => `${baseUrl}/uploads/marketing/${f.filename}`);
+  res.json({ success: true, urls });
+});
 
 // ── GET /accounts — alle Kanäle (TDA + Dojos) ────────────────────────────────
 
@@ -122,16 +157,17 @@ router.get('/posts', requireSuperAdmin, async (req, res) => {
 // ── POST /posts — Post erstellen ──────────────────────────────────────────────
 
 router.post('/posts', requireSuperAdmin, async (req, res) => {
-  const { content, channels, scheduled_at } = req.body;
+  const { content, channels, scheduled_at, media_urls } = req.body;
   // channels: [{ account_type: 'hub'|'dojo', account_id: number, platform: 'facebook'|'instagram' }]
   if (!content || !channels?.length) {
     return res.status(400).json({ error: 'content und channels erforderlich' });
   }
   try {
+    const mediaJson = media_urls?.length ? JSON.stringify(media_urls) : null;
     const [result] = await pool.query(
-      `INSERT INTO hub_posts (content, status, scheduled_at, created_by)
-       VALUES (?, ?, ?, ?)`,
-      [content, scheduled_at ? 'scheduled' : 'draft', scheduled_at || null, req.user.email || 'super_admin']
+      `INSERT INTO hub_posts (content, media_urls, status, scheduled_at, created_by)
+       VALUES (?, ?, ?, ?, ?)`,
+      [content, mediaJson, scheduled_at ? 'scheduled' : 'draft', scheduled_at || null, req.user.email || 'super_admin']
     );
     const postId = result.insertId;
     for (const ch of channels) {
@@ -175,13 +211,40 @@ router.post('/posts/:id/publish', requireSuperAdmin, async (req, res) => {
           igAccountId = acc.instagram_business_account_id;
         }
 
+        const mediaUrls = post.media_urls
+          ? (typeof post.media_urls === 'string' ? JSON.parse(post.media_urls) : post.media_urls)
+          : [];
+
         let platformPostId;
         if (ch.platform === 'facebook') {
-          const fbResult = await metaApiService.publishToFacebook(pageId, token, { message: post.content });
-          platformPostId = fbResult.id;
+          if (mediaUrls.length === 0) {
+            const r = await metaApiService.publishToFacebook(pageId, token, { message: post.content });
+            platformPostId = r.id;
+          } else if (mediaUrls.length === 1) {
+            // Single photo post
+            const r = await axios.post(`https://graph.facebook.com/v18.0/${pageId}/photos`, null, {
+              params: { url: mediaUrls[0], caption: post.content, access_token: token, published: true }
+            });
+            platformPostId = r.data.id;
+          } else {
+            // Multi-photo: upload each unpublished, then post with attached_media
+            const photoIds = [];
+            for (const url of mediaUrls) {
+              const photoId = await metaApiService.uploadFacebookPhoto(pageId, token, url);
+              photoIds.push(photoId);
+            }
+            const r = await metaApiService.publishToFacebook(pageId, token, { message: post.content, mediaIds: photoIds });
+            platformPostId = r.id;
+          }
         } else if (ch.platform === 'instagram' && igAccountId) {
-          const igResult = await metaApiService.publishToInstagram(igAccountId, token, { caption: post.content });
-          platformPostId = igResult.id;
+          if (mediaUrls.length === 0) throw new Error('Instagram benötigt mindestens ein Bild');
+          if (mediaUrls.length === 1) {
+            const r = await metaApiService.publishToInstagram(igAccountId, token, { caption: post.content, imageUrl: mediaUrls[0] });
+            platformPostId = r.id;
+          } else {
+            const r = await metaApiService.publishInstagramCarousel(igAccountId, token, { caption: post.content, imageUrls: mediaUrls });
+            platformPostId = r.id;
+          }
         }
 
         await pool.query(
