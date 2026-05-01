@@ -272,7 +272,7 @@ router.get('/apps/pm2', requireSuperAdmin, async (req, res) => {
 router.get('/todo-access', requireSuperAdmin, async (req, res) => {
   try {
     const [rows] = await db.promise().query(`
-      SELECT au.id, au.vorname, au.nachname, au.email, au.rolle, au.dojo_id,
+      SELECT au.id, au.vorname, au.nachname, au.email, au.username, au.rolle, au.dojo_id,
              COALESCE(au.todo_app_access, 1) AS todo_app_access,
              d.dojoname
       FROM admin_users au
@@ -294,6 +294,20 @@ router.patch('/todo-access/:id', requireSuperAdmin, async (req, res) => {
     await db.promise().query(
       'UPDATE admin_users SET todo_app_access = ? WHERE id = ?',
       [access ? 1 : 0, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/todo-access/:id — Nutzer aus admin_users entfernen (deaktivieren)
+router.delete('/todo-access/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.promise().query(
+      'UPDATE admin_users SET aktiv = 0 WHERE id = ?',
+      [id]
     );
     res.json({ success: true });
   } catch (err) {
