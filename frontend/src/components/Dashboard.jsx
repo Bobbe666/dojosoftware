@@ -284,7 +284,7 @@ function Dashboard() {
     { id: 'hof', label: 'Hall of Fame', icon: '🏛️' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
-    ...(hasFeature('todos') ? [{ id: 'todos', label: 'To Do', icon: '✅' }] : []),
+    { id: 'todos', label: 'To Do', icon: '✅' },
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
@@ -1573,9 +1573,23 @@ function Dashboard() {
 
                       {/* ✅ To-Do Tab (Enterprise) */}
                       {activeTab === 'todos' && (
-                        <div className="content-card">
-                          <TodoPanel />
-                        </div>
+                        hasFeature('todos') ? (
+                          <div className="content-card">
+                            <TodoPanel />
+                          </div>
+                        ) : (
+                          <div className="feature-upgrade-banner">
+                            <div className="feature-upgrade-icon">✅</div>
+                            <h3 className="feature-upgrade-title">To-Do System</h3>
+                            <p className="feature-upgrade-desc">
+                              Aufgaben erstellen, zuweisen und verfolgen — für das gesamte Team.<br />
+                              Verfügbar im <strong>Enterprise-Plan</strong>.
+                            </p>
+                            <button className="feature-upgrade-btn" onClick={() => handleNavigation('/dashboard/plan')}>
+                              Jetzt upgraden →
+                            </button>
+                          </div>
+                        )
                       )}
 
                       {/* ✨ Kommunikation & Marketing Tab ✨ */}

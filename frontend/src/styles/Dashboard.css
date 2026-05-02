@@ -1972,3 +1972,60 @@
   margin-top: 2rem;
   text-align: center;
 }
+
+/* ── Feature Upgrade Banner ─────────────────────────────────── */
+.feature-upgrade-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--surface-2, #1e2235);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 1rem;
+  gap: 1rem;
+}
+
+.feature-upgrade-icon {
+  font-size: 3rem;
+  line-height: 1;
+  filter: grayscale(0.4);
+}
+
+.feature-upgrade-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1f5f9);
+  margin: 0;
+}
+
+.feature-upgrade-desc {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.6;
+  max-width: 380px;
+  margin: 0;
+}
+
+.feature-upgrade-desc strong {
+  color: var(--primary, #ffd700);
+}
+
+.feature-upgrade-btn {
+  margin-top: 0.5rem;
+  padding: 0.7rem 1.8rem;
+  background: linear-gradient(135deg, #ffd700, #f59e0b);
+  color: #1a1a2e;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.feature-upgrade-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
+}
