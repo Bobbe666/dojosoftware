@@ -67,7 +67,7 @@ router.get('/', requireMember, async (req, res) => {
   if (!dojoId) return res.status(400).json({ error: 'dojo_id fehlt' });
   try {
     let sql = `
-      SELECT cp.*, m.vorname, m.nachname, m.avatar_url,
+      SELECT cp.*, m.vorname, m.nachname, m.foto_pfad AS avatar_url,
              u.id AS user_id
       FROM community_posts cp
       LEFT JOIN mitglieder m ON m.mitglied_id = cp.mitglied_id

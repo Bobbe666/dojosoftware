@@ -2281,6 +2281,23 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'training', error: error.message });
 }
 
+// ELTERN-ZUGANG
+try {
+  const elternZugangRouter = require(path.join(__dirname, 'routes', 'elternZugang.js'));
+  app.use('/api/eltern-zugang', elternZugangRouter);
+  logger.success('Route gemountet', { path: '/api/eltern-zugang' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'eltern-zugang', error: error.message });
+}
+
+try {
+  const elternPublicRouter = require(path.join(__dirname, 'routes', 'eltern_public.js'));
+  app.use('/api/public/eltern', elternPublicRouter);
+  logger.success('Route gemountet', { path: '/api/public/eltern' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'eltern_public', error: error.message });
+}
+
 // SCHULFERIEN
 try {
   const ferienRouter = require(path.join(__dirname, 'routes', 'ferien.js'));
