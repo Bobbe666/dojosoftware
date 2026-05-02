@@ -2281,6 +2281,15 @@ try {
   logger.error('Fehler beim Laden der Route', { route: 'training', error: error.message });
 }
 
+// SCHULFERIEN
+try {
+  const ferienRouter = require(path.join(__dirname, 'routes', 'ferien.js'));
+  app.use('/api/ferien', ferienRouter);
+  logger.success('Route gemountet', { path: '/api/ferien' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'ferien', error: error.message });
+}
+
 // TO-DO SYSTEM
 try {
   const todosRouter = require(path.join(__dirname, 'routes', 'todos.js'));

@@ -198,6 +198,32 @@ const Events = () => {
       }
     }
 
+    // Schulferien-Check
+    if (newEvent.datum) {
+      try {
+        const params = new URLSearchParams({
+          datum:      newEvent.datum,
+          end_datum:  newEvent.datum,
+          bundesland: activeDojo?.bundesland || '',
+          modus:      activeDojo?.ferien_modus || 'bundesland',
+        });
+        const fr = await axios.get(`/ferien/check?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (fr.data.warnung && fr.data.ferien?.length > 0) {
+          const liste = fr.data.ferien.map(f =>
+            `• ${f.name}${f.bundesland ? ` (${f.bundesland})` : ''}: ${f.start} – ${f.end}`
+          ).join('\n');
+          const ok = window.confirm(
+            `⚠️ Achtung – Schulferien!\n\nIn diesem Zeitraum sind Schulferien:\n${liste}\n\nMöchtest du das Event trotzdem erstellen?`
+          );
+          if (!ok) return;
+        }
+      } catch (e) {
+        // Ferien-API nicht erreichbar → kein Blocking
+      }
+    }
+
     try {
       const response = await axios.post(
         `/events`,
@@ -261,6 +287,34 @@ const Events = () => {
   // Event aktualisieren
   const handleUpdateEvent = async () => {
     setError('');
+
+    // Schulferien-Check beim Bearbeiten (nur wenn Datum geändert wurde)
+    if (selectedEvent.datum) {
+      try {
+        const datum = selectedEvent.datum.substring(0, 10);
+        const params = new URLSearchParams({
+          datum,
+          end_datum:  datum,
+          bundesland: activeDojo?.bundesland || '',
+          modus:      activeDojo?.ferien_modus || 'bundesland',
+        });
+        const fr = await axios.get(`/ferien/check?${params}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (fr.data.warnung && fr.data.ferien?.length > 0) {
+          const liste = fr.data.ferien.map(f =>
+            `• ${f.name}${f.bundesland ? ` (${f.bundesland})` : ''}: ${f.start} – ${f.end}`
+          ).join('\n');
+          const ok = window.confirm(
+            `⚠️ Achtung – Schulferien!\n\nIn diesem Zeitraum sind Schulferien:\n${liste}\n\nMöchtest du das Event trotzdem speichern?`
+          );
+          if (!ok) return;
+        }
+      } catch (e) {
+        // Ferien-API nicht erreichbar → kein Blocking
+      }
+    }
+
     try {
       // trainer_ids aus DB kommt als String "1,2,3" → als Array normalisieren
       const trainerIds = selectedEvent.trainer_ids

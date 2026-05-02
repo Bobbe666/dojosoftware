@@ -666,6 +666,45 @@ const EinstellungenDojo = () => {
                     disabled={!isEditing}
                   />
                 </div>
+                <div className="form-group">
+                  <label>Bundesland</label>
+                  <select
+                    name="bundesland"
+                    value={dojo.bundesland || ""}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  >
+                    <option value="">— bitte wählen —</option>
+                    <option value="BW">Baden-Württemberg</option>
+                    <option value="BY">Bayern</option>
+                    <option value="BE">Berlin</option>
+                    <option value="BB">Brandenburg</option>
+                    <option value="HB">Bremen</option>
+                    <option value="HH">Hamburg</option>
+                    <option value="HE">Hessen</option>
+                    <option value="MV">Mecklenburg-Vorpommern</option>
+                    <option value="NI">Niedersachsen</option>
+                    <option value="NW">Nordrhein-Westfalen</option>
+                    <option value="RP">Rheinland-Pfalz</option>
+                    <option value="SL">Saarland</option>
+                    <option value="SN">Sachsen</option>
+                    <option value="ST">Sachsen-Anhalt</option>
+                    <option value="SH">Schleswig-Holstein</option>
+                    <option value="TH">Thüringen</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Ferien-Anzeige</label>
+                  <select
+                    name="ferien_modus"
+                    value={dojo.ferien_modus || "bundesland"}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  >
+                    <option value="bundesland">Nur eigenes Bundesland</option>
+                    <option value="alle">Alle Bundesländer</option>
+                  </select>
+                </div>
               </div>
             </div>
 

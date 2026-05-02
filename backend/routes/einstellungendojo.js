@@ -51,6 +51,8 @@ function ensureTableStructure(callback) {
     { name: 'vertreter', definition: 'VARCHAR(255) DEFAULT NULL' },
     { name: 'gruendungsjahr', definition: 'VARCHAR(10) DEFAULT NULL' },
     { name: 'land', definition: "VARCHAR(100) DEFAULT 'Deutschland'" },
+    { name: 'bundesland', definition: 'VARCHAR(5) DEFAULT NULL' },
+    { name: 'ferien_modus', definition: "ENUM('bundesland','alle') DEFAULT 'bundesland'" },
     { name: 'fax', definition: 'VARCHAR(50) DEFAULT NULL' },
     { name: 'email_info', definition: 'VARCHAR(255) DEFAULT NULL' },
     { name: 'email_anmeldung', definition: 'VARCHAR(255) DEFAULT NULL' },
