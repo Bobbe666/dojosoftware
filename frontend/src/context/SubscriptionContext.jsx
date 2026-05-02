@@ -114,7 +114,8 @@ export const SubscriptionProvider = ({ children }) => {
       messenger: 'Facebook Messenger',
       homepage_builder: 'Homepage Builder',
       social_media: 'Social Media Posting',
-      training: 'Training Timer'
+      training: 'Training Timer',
+      todos: 'To-Do System'
     };
     return featureNames[featureName] || featureName;
   };
@@ -130,7 +131,8 @@ export const SubscriptionProvider = ({ children }) => {
       messenger: 'enterprise',
       homepage_builder: 'enterprise',
       social_media: 'enterprise',
-      training: 'enterprise'
+      training: 'enterprise',
+      todos: 'enterprise'
     };
     return featurePlans[featureName] || 'starter';
   };

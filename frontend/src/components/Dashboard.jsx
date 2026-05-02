@@ -284,7 +284,7 @@ function Dashboard() {
     { id: 'hof', label: 'Hall of Fame', icon: '🏛️' },
     { id: 'events', label: t('tabs.events'), icon: '📅' },
     { id: 'training', label: 'Training', icon: '⏱' },
-    { id: 'todos', label: 'To Do', icon: '✅' },
+    ...(hasFeature('todos') ? [{ id: 'todos', label: 'To Do', icon: '✅' }] : []),
     { id: 'kommunikation', label: 'Kommunikation', icon: '📣' },
     { id: 'community', label: 'Community', icon: '🏘️' },
     { id: 'finanzen', label: t('tabs.finanzen'), icon: '💰' },
