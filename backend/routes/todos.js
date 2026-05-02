@@ -100,14 +100,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const dojoId = getSecureDojoId(req);
   const { id }  = req.params;
-  const { titel, beschreibung, prioritaet, status, kontext, faellig_am, zugewiesen_an } = req.body;
+  const { titel, beschreibung, sachstand, prioritaet, status, kontext, faellig_am, zugewiesen_an } = req.body;
   try {
     let where = 'WHERE id = ?';
     const params = [id];
     if (dojoId) { where += ' AND dojo_id = ?'; params.push(dojoId); }
     await pool.query(
-      `UPDATE todos SET titel=?, beschreibung=?, prioritaet=?, status=?, kontext=?, faellig_am=?, zugewiesen_an=? ${where}`,
-      [titel, beschreibung || null, prioritaet, status, kontext, faellig_am || null, zugewiesen_an || null, ...params]
+      `UPDATE todos SET titel=?, beschreibung=?, sachstand=?, prioritaet=?, status=?, kontext=?, faellig_am=?, zugewiesen_an=? ${where}`,
+      [titel, beschreibung || null, sachstand || null, prioritaet, status, kontext, faellig_am || null, zugewiesen_an || null, ...params]
     );
     const [rows] = await pool.query(
       `SELECT t.*, au.vorname, au.nachname,
