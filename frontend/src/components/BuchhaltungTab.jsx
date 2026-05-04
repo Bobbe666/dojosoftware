@@ -2085,18 +2085,27 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </button>
                 )}
                 {bankStatistik.vorgeschlagen > 0 && (
-                  <button
-                    className="btn-alle-annehmen"
-                    onClick={alleVorschlaegeAnnehmen}
-                    disabled={alleAnnehmenRunning}
-                    title="Alle Vorschläge bestätigen und in EÜR übertragen"
-                  >
-                    {alleAnnehmenRunning ? (
-                      <><span className="spinner-xs" /> Übertrage...</>
-                    ) : (
-                      <>✅ {bankStatistik.vorgeschlagen} Vorschläge annehmen → EÜR</>
-                    )}
-                  </button>
+                  <>
+                    <button
+                      className="btn-vorschlaege-pruefen"
+                      onClick={() => { setBankStatusFilter('vorgeschlagen'); setBankPage(1); }}
+                      title="Nur Vorschläge anzeigen zum Gegenchecken"
+                    >
+                      🔍 {bankStatistik.vorgeschlagen} Vorschläge prüfen
+                    </button>
+                    <button
+                      className="btn-alle-annehmen"
+                      onClick={alleVorschlaegeAnnehmen}
+                      disabled={alleAnnehmenRunning}
+                      title="Alle Vorschläge bestätigen und in EÜR übertragen"
+                    >
+                      {alleAnnehmenRunning ? (
+                        <><span className="spinner-xs" /> Übertrage...</>
+                      ) : (
+                        <>✅ {bankStatistik.vorgeschlagen} Vorschläge annehmen → EÜR</>
+                      )}
+                    </button>
+                  </>
                 )}
               </div>
             )}
@@ -2303,7 +2312,12 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                           <td>
                             <span className={`bank-status-badge ${tx.status}`}>
                               {tx.status === 'unzugeordnet' && 'Offen'}
-                              {tx.status === 'vorgeschlagen' && 'Vorschlag'}
+                              {tx.status === 'vorgeschlagen' && (() => {
+                                let md = tx.match_details;
+                                if (typeof md === 'string') { try { md = JSON.parse(md); } catch(e) { md = null; } }
+                                const kat = md?.kategorie || (tx.betrag > 0 ? 'Einnahme' : 'Ausgabe');
+                                return <span title="Klicken zum Ändern">💡 {kat}</span>;
+                              })()}
                               {tx.status === 'zugeordnet' && 'Zugeordnet'}
                               {tx.status === 'ignoriert' && 'Ignoriert'}
                             </span>

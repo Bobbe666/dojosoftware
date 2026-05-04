@@ -1165,7 +1165,7 @@
   margin-bottom: 12px;
 }
 
-.btn-auto-vorschlag, .btn-alle-annehmen {
+.btn-auto-vorschlag, .btn-alle-annehmen, .btn-vorschlaege-pruefen {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -1188,8 +1188,14 @@
   color: #fff;
 }
 
+.btn-vorschlaege-pruefen {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+}
+
 .btn-auto-vorschlag:hover:not(:disabled),
-.btn-alle-annehmen:hover:not(:disabled) {
+.btn-alle-annehmen:hover:not(:disabled),
+.btn-vorschlaege-pruefen:hover:not(:disabled) {
   opacity: 0.9;
   transform: translateY(-1px);
 }
@@ -1483,6 +1489,11 @@
 .bank-status-badge.vorgeschlagen {
   background: rgba(255, 193, 7, 0.2);
   color: #d39e00;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
 }
 
 .bank-status-badge.zugeordnet {
