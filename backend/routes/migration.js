@@ -205,4 +205,23 @@ router.get('/dojo-structure', (req, res) => {
   });
 });
 
+// Migration 090: kategorie-Spalten von ENUM auf VARCHAR(100)
+router.post('/090-kategorie-varchar', (req, res) => {
+  const sqls = [
+    `ALTER TABLE buchhaltung_belege MODIFY COLUMN kategorie VARCHAR(100) NULL DEFAULT NULL`,
+    `ALTER TABLE bank_transaktionen MODIFY COLUMN kategorie VARCHAR(100) NULL DEFAULT NULL`,
+    `ALTER TABLE bank_zuordnung_regeln MODIFY COLUMN kategorie VARCHAR(100) NOT NULL DEFAULT 'sonstige_kosten'`
+  ];
+  let done = 0;
+  for (const sql of sqls) {
+    db.query(sql, (err) => {
+      if (err) console.error('Migration 090 Fehler:', err.message);
+      done++;
+      if (done === sqls.length) {
+        res.json({ success: true, message: 'Migration 090: kategorie VARCHAR(100) angewendet' });
+      }
+    });
+  }
+});
+
 module.exports = router;

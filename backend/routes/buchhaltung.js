@@ -423,6 +423,10 @@ const AUTO_KATEGORISIERUNG_REGELN = [
   // ---- Bankgebühren ----
   { kategorie: 'Bankgebühren', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
     keywords: ['kontoführungsgebühr', 'kontoführung', 'bankgebühr', 'gebühr konto', 'entgelt konto', 'jahresgebühr karte', 'kartengebühr'] },
+
+  // ---- Steuerzahlungen / Finanzamt ----
+  { kategorie: 'Steuerzahlungen / Finanzamt', typ: 'ausgabe', euer_typ: 'steuerzahlung',
+    keywords: ['finanzamt', 'finanzkasse', 'fk ', 'umsatzsteuer', 'ust ', 'ustg', 'einkommensteuer', 'est ', 'gewerbesteuer', 'gewst', 'körperschaftsteuer', 'lohnsteuer', 'kirchensteuer', 'solidaritätszuschlag', 'vorauszahlung steuer', 'steuer-vorauszahlung'] },
 ];
 
 /**
@@ -433,7 +437,13 @@ const AUTO_KATEGORISIERUNG_REGELN = [
  */
 const mapZuBelegeKategorie = (kategorieFreitext, euerTyp, betrag) => {
   const k = (kategorieFreitext || '').toLowerCase();
+  // Direkte 1:1-Übernahme wenn bereits ein gültiger DB-Wert
+  const direktWerte = ['betriebseinnahmen','wareneingang','personalkosten','raumkosten','versicherungen',
+    'kfz_kosten','werbekosten','reisekosten','telefon_internet','buerokosten','fortbildung',
+    'abschreibungen','sonstige_kosten','privateinlage','privatentnahme','steuerzahlungen'];
+  if (direktWerte.includes(kategorieFreitext)) return kategorieFreitext;
   if (betrag > 0) return 'betriebseinnahmen';
+  if (k.includes('steuer') || k.includes('finanzamt') || k.includes('finanzkasse')) return 'steuerzahlungen';
   if (k.includes('personal') || k.includes('honorar') || k.includes('lohn') || k.includes('gehalt') || k.includes('trainer')) return 'personalkosten';
   if (k.includes('miete') || k.includes('raum') || k.includes('strom') || k.includes('energie') || k.includes('wasser') || k.includes('nebenkosten')) return 'raumkosten';
   if (k.includes('versicherung')) return 'versicherungen';
@@ -2048,7 +2058,8 @@ router.get('/kategorien', requireBuchhaltungAccess, (req, res) => {
     { id: 'abschreibungen', name: 'Abschreibungen', typ: 'ausgabe', beschreibung: 'AfA auf Anlagegüter' },
     { id: 'sonstige_kosten', name: 'Sonstige Kosten', typ: 'ausgabe', beschreibung: 'Sonstige betriebliche Aufwendungen' },
     { id: 'privateinlage', name: 'Privateinlage', typ: 'privat', beschreibung: 'Private Einzahlung (kein Umsatz)' },
-    { id: 'privatentnahme', name: 'Privatentnahme', typ: 'privat', beschreibung: 'Private Entnahme (keine Ausgabe)' }
+    { id: 'privatentnahme', name: 'Privatentnahme', typ: 'privat', beschreibung: 'Private Entnahme (keine Ausgabe)' },
+    { id: 'steuerzahlungen', name: 'Steuerzahlungen / Finanzamt', typ: 'ausgabe', beschreibung: 'USt, ESt, GewSt, Vorauszahlungen' }
   ];
 
   res.json(kategorien);
