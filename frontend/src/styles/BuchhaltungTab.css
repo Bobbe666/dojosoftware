@@ -2831,6 +2831,88 @@
   margin-top: 0.25rem;
 }
 
+/* ==================== UST SECTION ==================== */
+.ust-section {
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.ust-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.ust-kpi {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.ust-kpi--ust       { border-color: rgba(99, 102, 241, 0.35); }
+.ust-kpi--vorsteuer { border-color: rgba(34, 197, 94, 0.3); }
+.ust-kpi--zahllast  { border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.06); }
+.ust-kpi--guthaben  { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.06); }
+.ust-kpi--gezahlt   { border-color: rgba(156, 163, 175, 0.3); }
+
+.ust-kpi-label {
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.3rem;
+}
+
+.ust-kpi-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ust-kpi--zahllast .ust-kpi-value { color: #f87171; }
+.ust-kpi--guthaben .ust-kpi-value { color: #4ade80; }
+
+.ust-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.ust-quartale {
+  margin-top: 0.5rem;
+}
+
+.ust-quartale h5 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ust-quartal-table th.right,
+.ust-quartal-table td.right { text-align: right; }
+
+.ust-zahllast { color: #f87171; }
+.ust-guthaben { color: #4ade80; }
+
+.ust-row--guthaben td { background: rgba(34, 197, 94, 0.04); }
+
+.ust-hinweis {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .steuer-section {
   margin-bottom: 2rem;
 }

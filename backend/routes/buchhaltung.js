@@ -3600,86 +3600,215 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
     const { jahr = new Date().getFullYear() } = req.query;
     const dojoId = req.buchhaltungDojoId;
     const pool = db.promise();
+    const y = parseInt(jahr);
 
-    const dojoFilter = dojoId ? 'AND t.dojo_id = ?' : '';
-    const params = dojoId ? [parseInt(jahr), parseInt(jahr), dojoId] : [parseInt(jahr), parseInt(jahr)];
+    const dojoFilter = dojoId ? 'AND dojo_id = ?' : '';
+    const baseParams = dojoId ? [y, dojoId] : [y];
 
-    // Alle zugeordneten + auto-kategorisierten Transaktionen des Jahres
-    const [transaktionen] = await pool.query(`
+    // ----------------------------------------------------------------
+    // 1) Einnahmen nach Kategorie (Netto, für EÜR)
+    // ----------------------------------------------------------------
+    const [einnahmenRows] = await pool.query(`
       SELECT
-        t.transaktion_id,
-        t.buchungsdatum,
-        t.betrag,
-        t.verwendungszweck,
-        t.auftraggeber_empfaenger,
-        COALESCE(t.kategorie, t.auto_kategorie) AS kategorie,
-        t.auto_kategorie_typ AS kategorie_typ,
-        COALESCE(t.auto_kategorie_euer, '') AS euer_typ,
-        t.status,
-        e.euer_kategorie AS manueller_euer_typ,
-        e.euer_unterkategorie
-      FROM bank_transaktionen t
-      LEFT JOIN bank_euer_zuordnungen e ON e.transaktion_id = t.transaktion_id
-      WHERE YEAR(t.buchungsdatum) = ?
-        AND t.status != 'ignoriert'
-        AND (t.kategorie IS NOT NULL OR t.auto_kategorie IS NOT NULL)
+        COALESCE(kategorie, 'Unkategorisiert') AS kategorie,
+        SUM(betrag_netto)  AS summe,
+        SUM(mwst_betrag)   AS ust_summe,
+        COUNT(*)           AS anzahl
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        AND buchungsart = 'einnahme'
         ${dojoFilter}
-      ORDER BY t.buchungsdatum
-    `, dojoId ? [parseInt(jahr), dojoId] : [parseInt(jahr)]);
+      GROUP BY kategorie
+      ORDER BY summe DESC
+    `, baseParams);
 
-    // Summieren nach EÜR-Typ
-    const einnahmen = {};
-    const ausgaben  = {};
-    let sumEinnahmen = 0;
-    let sumAusgaben  = 0;
+    // ----------------------------------------------------------------
+    // 2) Ausgaben nach Kategorie (Netto, für EÜR), OHNE Steuerzahlungen
+    // ----------------------------------------------------------------
+    const [ausgabenRows] = await pool.query(`
+      SELECT
+        COALESCE(kategorie, 'Unkategorisiert') AS kategorie,
+        SUM(betrag_netto)  AS summe,
+        SUM(CASE WHEN mwst_satz > 0 THEN mwst_betrag ELSE 0 END) AS vorsteuer_summe,
+        COUNT(*)           AS anzahl
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        AND buchungsart = 'ausgabe'
+        AND (kategorie IS NULL OR kategorie != 'steuerzahlungen')
+        ${dojoFilter}
+      GROUP BY kategorie
+      ORDER BY summe DESC
+    `, baseParams);
 
-    for (const tx of transaktionen) {
-      const euerTyp = tx.manueller_euer_typ || tx.euer_typ;
-      const kat = tx.kategorie || 'Unkategorisiert';
-      const betrag = parseFloat(tx.betrag) || 0;
+    // ----------------------------------------------------------------
+    // 3) USt / Vorsteuer / Zahllast (gesamt)
+    // ----------------------------------------------------------------
+    const [ustRow] = await pool.query(`
+      SELECT
+        SUM(CASE WHEN buchungsart = 'einnahme' THEN mwst_betrag ELSE 0 END)                                        AS umsatzsteuer,
+        SUM(CASE WHEN buchungsart = 'ausgabe' AND mwst_satz > 0
+                      AND (kategorie IS NULL OR kategorie != 'steuerzahlungen') THEN mwst_betrag ELSE 0 END)       AS vorsteuer,
+        SUM(CASE WHEN buchungsart = 'ausgabe' AND kategorie = 'steuerzahlungen' THEN betrag_brutto ELSE 0 END)     AS steuerzahlungen
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        ${dojoFilter}
+    `, baseParams);
 
-      if (betrag > 0 || euerTyp === 'betriebseinnahme') {
-        const key = kat;
-        if (!einnahmen[key]) einnahmen[key] = { kategorie: key, summe: 0, anzahl: 0 };
-        einnahmen[key].summe += Math.abs(betrag);
-        einnahmen[key].anzahl++;
-        sumEinnahmen += Math.abs(betrag);
-      } else {
-        const key = kat;
-        if (!ausgaben[key]) ausgaben[key] = { kategorie: key, euer_typ: euerTyp, summe: 0, anzahl: 0 };
-        ausgaben[key].summe += Math.abs(betrag);
-        ausgaben[key].anzahl++;
-        sumAusgaben += Math.abs(betrag);
-      }
-    }
+    const umsatzsteuer   = parseFloat(ustRow[0]?.umsatzsteuer   || 0);
+    const vorsteuer      = parseFloat(ustRow[0]?.vorsteuer      || 0);
+    const steuerzahlungen = parseFloat(ustRow[0]?.steuerzahlungen || 0);
+    const zahllast       = Math.round((umsatzsteuer - vorsteuer) * 100) / 100;
 
-    // Nicht kategorisierte Transaktionen zählen
+    // ----------------------------------------------------------------
+    // 4) Quartale (Q1–Q4)
+    // ----------------------------------------------------------------
+    const quartalDef = [
+      { quartal: 1, label: 'Q1 Jan–Mär', monate: '01-03', von: '01', bis: '03' },
+      { quartal: 2, label: 'Q2 Apr–Jun', monate: '04-06', von: '04', bis: '06' },
+      { quartal: 3, label: 'Q3 Jul–Sep', monate: '07-09', von: '07', bis: '09' },
+      { quartal: 4, label: 'Q4 Okt–Dez', monate: '10-12', von: '10', bis: '12' },
+    ];
+
+    const [quartalRows] = await pool.query(`
+      SELECT
+        QUARTER(buchungsdatum)  AS q,
+        buchungsart,
+        SUM(betrag_netto)       AS netto,
+        SUM(CASE WHEN buchungsart = 'einnahme' THEN mwst_betrag ELSE 0 END) AS ust,
+        SUM(CASE WHEN buchungsart = 'ausgabe' AND mwst_satz > 0
+                      AND (kategorie IS NULL OR kategorie != 'steuerzahlungen') THEN mwst_betrag ELSE 0 END) AS vorsteuer
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        AND (buchungsart = 'einnahme'
+          OR (buchungsart = 'ausgabe' AND (kategorie IS NULL OR kategorie != 'steuerzahlungen')))
+        ${dojoFilter}
+      GROUP BY q, buchungsart
+    `, baseParams);
+
+    const quartale = quartalDef.map(qd => {
+      const eRow = quartalRows.find(r => r.q === qd.quartal && r.buchungsart === 'einnahme');
+      const aRow = quartalRows.find(r => r.q === qd.quartal && r.buchungsart === 'ausgabe');
+      const qUst      = parseFloat(eRow?.ust      || 0);
+      const qVorsteuer = parseFloat(aRow?.vorsteuer || 0);
+      return {
+        quartal:         qd.quartal,
+        label:           qd.label,
+        monate:          qd.monate,
+        umsatzsteuer:    Math.round(qUst * 100) / 100,
+        vorsteuer:       Math.round(qVorsteuer * 100) / 100,
+        zahllast:        Math.round((qUst - qVorsteuer) * 100) / 100,
+        einnahmen_netto: Math.round(parseFloat(eRow?.netto || 0) * 100) / 100,
+        ausgaben_netto:  Math.round(parseFloat(aRow?.netto || 0) * 100) / 100,
+      };
+    });
+
+    // ----------------------------------------------------------------
+    // 5) Monatlicher Cashflow (12 Monate)
+    // ----------------------------------------------------------------
+    const [monatsRows] = await pool.query(`
+      SELECT
+        MONTH(buchungsdatum)    AS m,
+        buchungsart,
+        SUM(betrag_netto)       AS netto,
+        SUM(CASE WHEN buchungsart = 'einnahme' THEN mwst_betrag ELSE 0 END) AS ust,
+        SUM(CASE WHEN buchungsart = 'ausgabe' AND mwst_satz > 0
+                      AND (kategorie IS NULL OR kategorie != 'steuerzahlungen') THEN mwst_betrag ELSE 0 END) AS vorsteuer
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        AND (buchungsart = 'einnahme'
+          OR (buchungsart = 'ausgabe' AND (kategorie IS NULL OR kategorie != 'steuerzahlungen')))
+        ${dojoFilter}
+      GROUP BY m, buchungsart
+    `, baseParams);
+
+    const monatsNamen = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const monate = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1;
+      const eRow = monatsRows.find(r => r.m === m && r.buchungsart === 'einnahme');
+      const aRow = monatsRows.find(r => r.m === m && r.buchungsart === 'ausgabe');
+      return {
+        monat:           m,
+        label:           monatsNamen[i],
+        einnahmen_netto: Math.round(parseFloat(eRow?.netto    || 0) * 100) / 100,
+        ausgaben_netto:  Math.round(parseFloat(aRow?.netto    || 0) * 100) / 100,
+        ust:             Math.round(parseFloat(eRow?.ust      || 0) * 100) / 100,
+        vorsteuer:       Math.round(parseFloat(aRow?.vorsteuer || 0) * 100) / 100,
+      };
+    });
+
+    // ----------------------------------------------------------------
+    // 6) Nicht kategorisierte Belege zählen
+    // ----------------------------------------------------------------
     const [unkategorisiert] = await pool.query(`
-      SELECT COUNT(*) AS anzahl, SUM(ABS(betrag)) AS summe
-      FROM bank_transaktionen t
-      WHERE YEAR(t.buchungsdatum) = ?
-        AND t.status != 'ignoriert'
-        AND t.kategorie IS NULL AND t.auto_kategorie IS NULL
+      SELECT COUNT(*) AS anzahl, SUM(betrag_brutto) AS summe
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        AND kategorie IS NULL
         ${dojoFilter}
-    `, dojoId ? [parseInt(jahr), dojoId] : [parseInt(jahr)]);
+    `, baseParams);
 
-    // Übertragungsvorschau EÜR
-    const uebertragungsvorschau = {
-      betriebseinnahmen: Object.values(einnahmen).map(e => ({ ...e, summe: Math.round(e.summe * 100) / 100 })),
-      betriebsausgaben: Object.values(ausgaben).map(a => ({ ...a, summe: Math.round(a.summe * 100) / 100 })),
-      gewinn: Math.round((sumEinnahmen - sumAusgaben) * 100) / 100,
+    // ----------------------------------------------------------------
+    // 7) Gesamtanzahl Belege
+    // ----------------------------------------------------------------
+    const [belegeCount] = await pool.query(`
+      SELECT COUNT(*) AS gesamt
+      FROM buchhaltung_belege
+      WHERE YEAR(buchungsdatum) = ?
+        ${dojoFilter}
+    `, baseParams);
+
+    // ----------------------------------------------------------------
+    // Summen aggregieren
+    // ----------------------------------------------------------------
+    const sumEinnahmen = einnahmenRows.reduce((s, r) => s + parseFloat(r.summe || 0), 0);
+    const sumAusgaben  = ausgabenRows.reduce((s, r) => s + parseFloat(r.summe || 0), 0);
+
+    const auswertung = {
+      // EÜR-Kernfelder (Netto-Beträge)
+      betriebseinnahmen: einnahmenRows.map(r => ({
+        kategorie: r.kategorie,
+        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
+        anzahl:    r.anzahl,
+      })),
+      betriebsausgaben: ausgabenRows.map(r => ({
+        kategorie: r.kategorie,
+        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
+        anzahl:    r.anzahl,
+      })),
+      gewinn:          Math.round((sumEinnahmen - sumAusgaben) * 100) / 100,
       summe_einnahmen: Math.round(sumEinnahmen * 100) / 100,
-      summe_ausgaben: Math.round(sumAusgaben * 100) / 100,
+      summe_ausgaben:  Math.round(sumAusgaben  * 100) / 100,
       nicht_kategorisiert: {
-        anzahl: unkategorisiert[0]?.anzahl || 0,
-        summe: Math.round((unkategorisiert[0]?.summe || 0) * 100) / 100,
+        anzahl: parseInt(unkategorisiert[0]?.anzahl || 0),
+        summe:  Math.round(parseFloat(unkategorisiert[0]?.summe || 0) * 100) / 100,
       },
+      // Kategorie-Aufschlüsselung (Alias für Frontend-Kompatibilität)
+      einnahmen_nach_kategorie: einnahmenRows.map(r => ({
+        kategorie: r.kategorie,
+        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
+        anzahl:    r.anzahl,
+      })),
+      ausgaben_nach_kategorie: ausgabenRows.map(r => ({
+        kategorie: r.kategorie,
+        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
+        anzahl:    r.anzahl,
+      })),
+      // USt-Auswertung
+      ust: {
+        umsatzsteuer:   Math.round(umsatzsteuer  * 100) / 100,
+        vorsteuer:      Math.round(vorsteuer      * 100) / 100,
+        zahllast,
+        steuerzahlungen: Math.round(steuerzahlungen * 100) / 100,
+        quartale,
+      },
+      // Monatlicher Cashflow
+      monate,
     };
 
     res.json({
-      jahr: parseInt(jahr),
-      transaktionen_gesamt: transaktionen.length,
-      auswertung: uebertragungsvorschau,
+      jahr: y,
+      transaktionen_gesamt: parseInt(belegeCount[0]?.gesamt || 0),
+      auswertung,
     });
 
   } catch (err) {

@@ -2649,24 +2649,24 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
 
             {steuerauswertung && !steuerLoading && (
               <>
-                {/* Kennzahlen-Karten */}
+                {/* EÜR Kennzahlen */}
                 <div className="steuer-kpi-grid">
                   <div className="steuer-kpi steuer-kpi--einnahmen">
-                    <div className="kpi-label">Betriebseinnahmen</div>
+                    <div className="kpi-label">Betriebseinnahmen (netto)</div>
                     <div className="kpi-value">{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</div>
-                    <div className="kpi-sub">{steuerauswertung.auswertung.betriebseinnahmen.length} Kategorien</div>
+                    <div className="kpi-sub">{steuerauswertung.auswertung.betriebseinnahmen?.length || 0} Kategorien</div>
                   </div>
                   <div className="steuer-kpi steuer-kpi--ausgaben">
-                    <div className="kpi-label">Betriebsausgaben</div>
+                    <div className="kpi-label">Betriebsausgaben (netto)</div>
                     <div className="kpi-value">{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</div>
-                    <div className="kpi-sub">{steuerauswertung.auswertung.betriebsausgaben.length} Kategorien</div>
+                    <div className="kpi-sub">{steuerauswertung.auswertung.betriebsausgaben?.length || 0} Kategorien</div>
                   </div>
                   <div className={`steuer-kpi ${steuerauswertung.auswertung.gewinn >= 0 ? 'steuer-kpi--gewinn' : 'steuer-kpi--verlust'}`}>
-                    <div className="kpi-label">{steuerauswertung.auswertung.gewinn >= 0 ? 'Gewinn' : 'Verlust'}</div>
+                    <div className="kpi-label">{steuerauswertung.auswertung.gewinn >= 0 ? 'Gewinn (EÜR)' : 'Verlust (EÜR)'}</div>
                     <div className="kpi-value">{formatCurrency(Math.abs(steuerauswertung.auswertung.gewinn))}</div>
-                    <div className="kpi-sub">vor Steuern</div>
+                    <div className="kpi-sub">Netto vor Steuern</div>
                   </div>
-                  {steuerauswertung.auswertung.nicht_kategorisiert.anzahl > 0 && (
+                  {steuerauswertung.auswertung.nicht_kategorisiert?.anzahl > 0 && (
                     <div className="steuer-kpi steuer-kpi--warnung">
                       <div className="kpi-label">Nicht kategorisiert</div>
                       <div className="kpi-value">{steuerauswertung.auswertung.nicht_kategorisiert.anzahl}</div>
@@ -2674,6 +2674,83 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     </div>
                   )}
                 </div>
+
+                {/* USt-Auswertung */}
+                {steuerauswertung.auswertung.ust && (
+                  <div className="steuer-section ust-section">
+                    <h4><Euro size={16} /> Umsatzsteuer-Auswertung {selectedJahr}</h4>
+                    <div className="ust-kpi-grid">
+                      <div className="ust-kpi ust-kpi--ust">
+                        <div className="ust-kpi-label">Umsatzsteuer (vereinnahmt)</div>
+                        <div className="ust-kpi-value">{formatCurrency(steuerauswertung.auswertung.ust.umsatzsteuer)}</div>
+                        <div className="ust-kpi-sub">USt auf Einnahmen</div>
+                      </div>
+                      <div className="ust-kpi ust-kpi--vorsteuer">
+                        <div className="ust-kpi-label">Vorsteuer (abzugsfähig)</div>
+                        <div className="ust-kpi-value">{formatCurrency(steuerauswertung.auswertung.ust.vorsteuer)}</div>
+                        <div className="ust-kpi-sub">aus Eingangsrechnungen</div>
+                      </div>
+                      <div className={`ust-kpi ${steuerauswertung.auswertung.ust.zahllast >= 0 ? 'ust-kpi--zahllast' : 'ust-kpi--guthaben'}`}>
+                        <div className="ust-kpi-label">{steuerauswertung.auswertung.ust.zahllast >= 0 ? 'USt-Zahllast' : 'Vorsteuer-Guthaben'}</div>
+                        <div className="ust-kpi-value">{formatCurrency(Math.abs(steuerauswertung.auswertung.ust.zahllast))}</div>
+                        <div className="ust-kpi-sub">{steuerauswertung.auswertung.ust.zahllast >= 0 ? '→ an Finanzamt abzuführen' : '→ vom Finanzamt erstattbar'}</div>
+                      </div>
+                      {steuerauswertung.auswertung.ust.steuerzahlungen > 0 && (
+                        <div className="ust-kpi ust-kpi--gezahlt">
+                          <div className="ust-kpi-label">Bereits bezahlt</div>
+                          <div className="ust-kpi-value">{formatCurrency(steuerauswertung.auswertung.ust.steuerzahlungen)}</div>
+                          <div className="ust-kpi-sub">Steuerzahlungen gebucht</div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quartalsweise UStVA-Vorschau */}
+                    {steuerauswertung.auswertung.ust.quartale?.length > 0 && (
+                      <div className="ust-quartale">
+                        <h5>Quartalsweise Vorschau (UStVA)</h5>
+                        <table className="steuer-table ust-quartal-table">
+                          <thead>
+                            <tr>
+                              <th>Zeitraum</th>
+                              <th className="right">Einnahmen (netto)</th>
+                              <th className="right">Ausgaben (netto)</th>
+                              <th className="right">USt (KZ 81)</th>
+                              <th className="right">Vorsteuer (KZ 66)</th>
+                              <th className="right">Zahllast</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {steuerauswertung.auswertung.ust.quartale.map((q, i) => (
+                              <tr key={i} className={q.zahllast < 0 ? 'ust-row--guthaben' : ''}>
+                                <td><strong>{q.label}</strong></td>
+                                <td className="right einnahme-betrag">{formatCurrency(q.einnahmen_netto)}</td>
+                                <td className="right ausgabe-betrag">{formatCurrency(q.ausgaben_netto)}</td>
+                                <td className="right">{formatCurrency(q.umsatzsteuer)}</td>
+                                <td className="right">{formatCurrency(q.vorsteuer)}</td>
+                                <td className={`right ${q.zahllast >= 0 ? 'ust-zahllast' : 'ust-guthaben'}`}>
+                                  <strong>{q.zahllast >= 0 ? '+' : ''}{formatCurrency(q.zahllast)}</strong>
+                                </td>
+                              </tr>
+                            ))}
+                            <tr className="summen-zeile">
+                              <td><strong>Gesamt {selectedJahr}</strong></td>
+                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</strong></td>
+                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</strong></td>
+                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.ust.umsatzsteuer)}</strong></td>
+                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.ust.vorsteuer)}</strong></td>
+                              <td className={`right ${steuerauswertung.auswertung.ust.zahllast >= 0 ? 'ust-zahllast' : 'ust-guthaben'}`}>
+                                <strong>{formatCurrency(steuerauswertung.auswertung.ust.zahllast)}</strong>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <p className="ust-hinweis">
+                          <AlertCircle size={12} /> KZ 81 = Umsatzsteuer 19% · KZ 66 = Abziehbare Vorsteuer · Zahllast = ans Finanzamt abzuführen
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Einnahmen nach Kategorien */}
                 {steuerauswertung.auswertung.betriebseinnahmen.length > 0 && (
