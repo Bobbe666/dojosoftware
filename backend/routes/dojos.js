@@ -43,7 +43,8 @@ router.get('/', async (req, res) => {
 
     // Filter für zentral verwaltete Dojos (ohne separate Tenants)
     // WICHTIG: TDA International (id=2) immer einschließen, auch wenn es Admin-User hat
-    if (filter === 'managed') {
+    // Super-Admins bypassen diesen Filter – sie sehen alle aktiven Dojos
+    if (filter === 'managed' && !isSuperAdmin) {
       // TDA-eigene Dojos: Ausschließen wenn ein vollwertiger Admin (nicht nur Trainer/eingeschraenkt/checkin)
       // direkt zugeordnet ist → echte Lizenz-Kundendojos werden ausgeblendet.
       whereClause += ` AND (d.id = 2 OR d.id NOT IN (
