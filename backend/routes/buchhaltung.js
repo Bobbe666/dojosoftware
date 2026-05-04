@@ -426,6 +426,29 @@ const AUTO_KATEGORISIERUNG_REGELN = [
 ];
 
 /**
+ * Mapped eine freie Kategorie-Bezeichnung auf einen gültigen ENUM-Wert für buchhaltung_belege.kategorie.
+ * ENUM: betriebseinnahmen, wareneingang, personalkosten, raumkosten, versicherungen,
+ *       kfz_kosten, werbekosten, reisekosten, telefon_internet, buerokosten,
+ *       fortbildung, abschreibungen, sonstige_kosten, privateinlage, privatentnahme
+ */
+const mapZuBelegeKategorie = (kategorieFreitext, euerTyp, betrag) => {
+  const k = (kategorieFreitext || '').toLowerCase();
+  if (betrag > 0) return 'betriebseinnahmen';
+  if (k.includes('personal') || k.includes('honorar') || k.includes('lohn') || k.includes('gehalt') || k.includes('trainer')) return 'personalkosten';
+  if (k.includes('miete') || k.includes('raum') || k.includes('strom') || k.includes('energie') || k.includes('wasser') || k.includes('nebenkosten')) return 'raumkosten';
+  if (k.includes('versicherung')) return 'versicherungen';
+  if (k.includes('kfz') || k.includes('fahrt') || k.includes('reise')) return 'reisekosten';
+  if (k.includes('werbung') || k.includes('marketing') || k.includes('anzeige')) return 'werbekosten';
+  if (k.includes('telefon') || k.includes('internet') || k.includes('mobil')) return 'telefon_internet';
+  if (k.includes('büro') || k.includes('buro') || k.includes('porto') || k.includes('steuerberater') || k.includes('buchhaltung')) return 'buerokosten';
+  if (k.includes('fortbildung') || k.includes('seminar') || k.includes('lehrgang')) return 'fortbildung';
+  if (k.includes('abschreibung')) return 'abschreibungen';
+  if (k.includes('privateinlage')) return 'privateinlage';
+  if (k.includes('privatentnahme')) return 'privatentnahme';
+  return 'sonstige_kosten';
+};
+
+/**
  * Ermittelt automatisch eine Kategorie für eine Transaktion.
  * @param {string} verwendungszweck
  * @param {string} auftraggeber
@@ -3183,8 +3206,8 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireFeature('kontoauszug')
     }
 
     // Erstelle Beleg und markiere als zugeordnet
-    const kategorie = matchDetails?.kategorie || 'betriebseinnahmen';
     const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
+    const kategorie = mapZuBelegeKategorie(matchDetails?.kategorie, matchDetails?.euer_typ, tx.betrag);
     const jahr = new Date(tx.buchungsdatum).getFullYear();
     const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
 
@@ -3364,11 +3387,10 @@ router.post('/bank-import/alle-vorschlaege-annehmen', requireFeature('kontoauszu
           });
         }
 
-        // Kategorie bestimmen
-        const kategorie = matchDetails?.kategorie
-          || tx.auto_kategorie
-          || (tx.betrag > 0 ? 'betriebseinnahmen' : 'betriebsausgaben');
+        // Kategorie auf gültigen ENUM-Wert für buchhaltung_belege mappen
         const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
+        const roheKategorie = matchDetails?.kategorie || tx.auto_kategorie;
+        const kategorie = mapZuBelegeKategorie(roheKategorie, matchDetails?.euer_typ, tx.betrag);
         const jahr = new Date(tx.buchungsdatum).getFullYear();
         const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
 
