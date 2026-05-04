@@ -1995,7 +1995,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
             <p>Importieren Sie Kontoauszüge direkt aus Ihrem Online-Banking und ordnen Sie Transaktionen automatisch zu.</p>
             <ul className="enterprise-feature-list">
               <li><Check size={14} /> Alle deutschen Banken (Sparkasse, Volksbank, DKB, ING, Comdirect, N26, Deutsche Bank, Postbank)</li>
-              <li><Check size={14} /> Formate: CSV, XLSX, MT940/STA</li>
+              <li><Check size={14} /> Formate: CSV, XLSX, MT940/STA, XML (camt.052/053 — Holvi, Sparkasse)</li>
               <li><Check size={14} /> Auto-Kategorisierung per Keyword-Erkennung</li>
               <li><Check size={14} /> Duplikaterkennung & Rechnungsabgleich</li>
               <li><Check size={14} /> Direkte EÜR-Übertragung</li>
@@ -2969,12 +2969,15 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   <FileUp size={48} />
                   <p>Kontoauszug hochladen</p>
                   <p className="upload-hint">
-                    CSV, XLS, XLSX, MT940 (STA) oder PDF
+                    CSV, XLS, XLSX, MT940 (STA), PDF oder XML (camt.052/053)
+                  </p>
+                  <p className="upload-hint" style={{fontSize: '0.75rem', color: 'var(--text-muted)'}}>
+                    Holvi: Berichte → Elektronischer Kontoauszug → XML
                   </p>
                 </div>
                 <input
                   type="file"
-                  accept=".csv,.sta,.mt940,.txt,.xls,.xlsx,.pdf,application/pdf"
+                  accept=".csv,.sta,.mt940,.txt,.xls,.xlsx,.pdf,application/pdf,.xml,text/xml,application/xml"
                   onChange={(e) => setBankUploadFile(e.target.files[0])}
                 />
                 {bankUploadFile && (

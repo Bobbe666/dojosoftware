@@ -13,6 +13,7 @@ const iconv = require('iconv-lite');
 const ExcelJS = require('exceljs');
 const logger = require('../utils/logger');
 const { requireFeature } = require('../middleware/featureAccess');
+const { convert: xmlConvert } = require('xmlbuilder2');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -71,13 +72,13 @@ const bankUpload = multer({
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['text/csv', 'text/plain', 'application/octet-stream',
       'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/pdf'];
-    const allowedExts = ['.csv', '.sta', '.mt940', '.txt', '.xls', '.xlsx', '.pdf'];
+      'application/pdf', 'text/xml', 'application/xml'];
+    const allowedExts = ['.csv', '.sta', '.mt940', '.txt', '.xls', '.xlsx', '.pdf', '.xml'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(file.mimetype) || allowedExts.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Nur CSV, MT940 und Excel Dateien erlaubt'));
+      cb(new Error('Nur CSV, MT940, Excel und camt XML Dateien erlaubt'));
     }
   }
 });
@@ -813,6 +814,85 @@ const generateBelegNummer = async (dojoId, jahr, offset = 0) => {
       resolve(belegNummer);
     });
   });
+};
+
+// ===================================================================
+// 🏦 CAMT.052 / CAMT.053 PARSER (ISO 20022 XML — Holvi, Sparkasse, etc.)
+// ===================================================================
+const parseCamtContent = (content) => {
+  try {
+    const doc = xmlConvert(content, { format: 'object' });
+
+    // camt.052 = BkToCstmrAcctRpt / camt.053 = BkToCstmrStmt
+    const root = doc?.Document;
+    if (!root) return { error: 'Kein gültiges camt-Dokument (fehlendes <Document>)', transaktionen: [] };
+
+    const rptContainer = root.BkToCstmrAcctRpt || root.BkToCstmrStmt;
+    if (!rptContainer) return { error: 'Kein BkToCstmrAcctRpt/Stmt Element gefunden', transaktionen: [] };
+
+    // Rpt/Stmt kann ein Objekt oder ein Array von Objekten sein
+    const rptRaw = rptContainer.Rpt || rptContainer.Stmt;
+    const rpts = Array.isArray(rptRaw) ? rptRaw : [rptRaw];
+
+    const transaktionen = [];
+
+    for (const rpt of rpts) {
+      if (!rpt) continue;
+      const entries = rpt.Ntry ? (Array.isArray(rpt.Ntry) ? rpt.Ntry : [rpt.Ntry]) : [];
+
+      for (const ntry of entries) {
+        // Betrag und Richtung
+        const betragRaw = ntry.Amt?.['#'] || ntry.Amt || 0;
+        const betrag = parseFloat(String(betragRaw).replace(',', '.')) || 0;
+        const isDebit = ntry.CdtDbtInd === 'DBIT';
+
+        // Datum
+        const buchDt = ntry.BookgDt?.Dt || ntry.BookgDt?.DtTm?.substring(0, 10) || '';
+        const valtDt = ntry.ValDt?.Dt || ntry.ValDt?.DtTm?.substring(0, 10) || buchDt;
+
+        // Transaktionsdetails (können mehrfach vorhanden sein)
+        const txDtlsRaw = ntry.NtryDtls?.TxDtls;
+        const txDtlsList = txDtlsRaw ? (Array.isArray(txDtlsRaw) ? txDtlsRaw : [txDtlsRaw]) : [{}];
+        const tx = txDtlsList[0] || {};
+
+        // Verwendungszweck — Ustrd (unstrukturiert) oder Strd
+        const ustrdRaw = tx.RmtInf?.Ustrd;
+        const verwendungszweck = Array.isArray(ustrdRaw)
+          ? ustrdRaw.join(' ')
+          : (String(ustrdRaw || ntry.AddtlNtryInf || ntry.AddtlInf || '')).trim();
+
+        // Auftraggeber/Empfänger
+        const gegenpartei = isDebit
+          ? (tx.RltdPties?.Cdtr?.Nm || tx.RltdPties?.CdtrAcct?.Id?.IBAN || '')
+          : (tx.RltdPties?.Dbtr?.Nm || tx.RltdPties?.DbtrAcct?.Id?.IBAN || '');
+
+        // IBAN Gegenkonto
+        const ibanGegen = isDebit
+          ? (tx.RltdPties?.CdtrAcct?.Id?.IBAN || '')
+          : (tx.RltdPties?.DbtrAcct?.Id?.IBAN || '');
+
+        // Buchungstext / Transaktionstyp
+        const buchungstext = ntry.AddtlNtryInf || tx.RmtInf?.Strd?.CdtrRefInf?.Ref || '';
+
+        if (!buchDt || betrag === 0) continue;
+
+        transaktionen.push({
+          buchungsdatum: buchDt,
+          valutadatum: valtDt,
+          betrag: isDebit ? -Math.abs(betrag) : Math.abs(betrag),
+          waehrung: 'EUR',
+          verwendungszweck: verwendungszweck || buchungstext,
+          auftraggeber_empfaenger: String(gegenpartei).trim(),
+          iban_gegenkonto: String(ibanGegen).trim(),
+          buchungstext: String(buchungstext).trim(),
+        });
+      }
+    }
+
+    return { transaktionen, bank: 'camt-Import', format: 'camt' };
+  } catch (e) {
+    return { error: 'camt XML konnte nicht verarbeitet werden: ' + e.message, transaktionen: [] };
+  }
 };
 
 // Prüfe Super Admin Berechtigung (unverändert, für interne Nutzung)
@@ -1999,17 +2079,21 @@ router.post('/bank-import/upload', requireFeature('kontoauszug'), requireBuchhal
       return res.status(400).json({ message: 'Datei konnte nicht gelesen werden' });
     }
 
-    // Bestimme Format (PDF, Excel, MT940 oder CSV)
+    // Bestimme Format (PDF, Excel, camt XML, MT940 oder CSV)
     let parseResult;
     const ext = path.extname(req.file.originalname).toLowerCase();
     const isPDF = ext === '.pdf' || req.file.mimetype === 'application/pdf';
     const isExcel = ext === '.xls' || ext === '.xlsx';
+    const isCamt = ext === '.xml' || req.file.mimetype === 'text/xml' || req.file.mimetype === 'application/xml'
+      || (content && content.includes('<BkToCstmrAcctRpt') || content?.includes('<BkToCstmrStmt'));
     const isMT940 = ext === '.sta' || ext === '.mt940' || (content && content.includes(':20:') && content.includes(':61:'));
 
     if (isPDF) {
       parseResult = await parsePDFContent(req.file.path);
     } else if (isExcel) {
       parseResult = await parseExcelContent(req.file.path);
+    } else if (isCamt || requestedFormat === 'camt') {
+      parseResult = parseCamtContent(content);
     } else if (isMT940 || requestedFormat === 'mt940') {
       parseResult = parseMT940Content(content);
     } else {
