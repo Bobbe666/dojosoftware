@@ -1379,6 +1379,14 @@
   background: var(--bg-hover, #f5f5f5);
 }
 
+.bank-row--clickable {
+  cursor: pointer;
+}
+
+.bank-row--clickable:hover {
+  background: var(--bg-hover, rgba(255,215,0,0.06));
+}
+
 .bank-row.zugeordnet {
   opacity: 0.6;
 }

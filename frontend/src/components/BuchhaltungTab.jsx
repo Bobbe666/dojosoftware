@@ -2201,7 +2201,17 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   ) : (
                     getFilteredSortedTransaktionen().map(tx => (
                       <React.Fragment key={tx.transaktion_id}>
-                        <tr className={`bank-row ${tx.status}`}>
+                        <tr
+                          className={`bank-row ${tx.status}${tx.status !== 'zugeordnet' ? ' bank-row--clickable' : ''}`}
+                          onClick={(e) => {
+                            if (e.target.closest('input,button')) return;
+                            if (tx.status === 'unzugeordnet' || tx.status === 'vorgeschlagen') {
+                              setSelectedBankTx(tx);
+                              setShowKategorieModal(true);
+                              ladeAehnliche(tx.transaktion_id);
+                            }
+                          }}
+                        >
                           <td className="checkbox-col">
                             {tx.status !== 'zugeordnet' && tx.status !== 'ignoriert' && (
                               <input
