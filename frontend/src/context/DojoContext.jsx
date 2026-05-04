@@ -15,7 +15,11 @@ export const DojoProvider = ({ children }) => {
   const [dojos, setDojos] = useState([]);
   const [activeDojo, setActiveDojo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // 'current', 'all', 'compare' - Standard: alle Dojos anzeigen
+  const [filter, setFilterState] = useState(() => localStorage.getItem('dojoFilter') || 'all'); // 'current', 'all', 'compare'
+  const setFilter = useCallback((val) => {
+    localStorage.setItem('dojoFilter', val);
+    setFilterState(val);
+  }, []);
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef(null);
 
