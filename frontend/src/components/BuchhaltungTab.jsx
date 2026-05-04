@@ -99,6 +99,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [bankKategorieFilter, setBankKategorieFilter] = useState(''); // Filter für zugeordnete Kategorie
   const [bankDatumVon, setBankDatumVon] = useState('');
   const [bankDatumBis, setBankDatumBis] = useState('');
+
+  // Review Modal States
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewQueue, setReviewQueue] = useState([]);
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const [reviewStats, setReviewStats] = useState({ angenommen: 0, geaendert: 0, uebersprungen: 0 });
+  const [reviewKategorieMode, setReviewKategorieMode] = useState(false);
+  const [reviewAccepting, setReviewAccepting] = useState(false);
   const [beitraegeDetail, setBeitraegeDetail] = useState(null); // { monat, jahr, label, eintraege }
   const [beitraegeDetailLoading, setBeitraegeDetailLoading] = useState(false);
   const [verkaufDetail, setVerkaufDetail] = useState(null); // { bon_nummer, datum, kunde, positionen, ... }
@@ -316,6 +324,77 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       setError(err.response?.data?.message || 'Fehler beim Annehmen der Vorschläge');
     } finally {
       setAlleAnnehmenRunning(false);
+    }
+  };
+
+  // Review Modal öffnen
+  const openReviewModal = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get('/buchhaltung/bank-import/transaktionen', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          organisation: selectedOrg !== 'alle' ? selectedOrg : undefined,
+          status: 'vorgeschlagen',
+          seite: 1,
+          limit: 10000
+        }
+      });
+      const queue = res.data.transaktionen || [];
+      if (queue.length === 0) {
+        setSuccess('Keine Vorschläge zum Prüfen vorhanden.');
+        setTimeout(() => setSuccess(''), 3000);
+        return;
+      }
+      setReviewQueue(queue);
+      setReviewIndex(0);
+      setReviewStats({ angenommen: 0, geaendert: 0, uebersprungen: 0 });
+      setShowReviewModal(true);
+    } catch (err) {
+      setError('Fehler beim Laden der Vorschläge');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Review: Vorschlag annehmen
+  const reviewVorschlagAnnehmen = async () => {
+    const tx = reviewQueue[reviewIndex];
+    if (!tx || reviewAccepting) return;
+    setReviewAccepting(true);
+    try {
+      await axios.post(`/buchhaltung/bank-import/vorschlag-annehmen/${tx.transaktion_id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setReviewStats(prev => ({ ...prev, angenommen: prev.angenommen + 1 }));
+      setReviewIndex(prev => prev + 1);
+      loadBankStatistik();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Annehmen');
+    } finally {
+      setReviewAccepting(false);
+    }
+  };
+
+  // Review: Kategorie-Zuordnung (aus Review Modal heraus)
+  const reviewZuordnen = async (kategorie) => {
+    if (!selectedBankTx) return;
+    try {
+      setLoading(true);
+      await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, { kategorie }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowKategorieModal(false);
+      setSelectedBankTx(null);
+      setReviewKategorieMode(false);
+      setReviewStats(prev => ({ ...prev, geaendert: prev.geaendert + 1 }));
+      setReviewIndex(prev => prev + 1);
+      loadBankTransaktionen();
+      loadBankStatistik();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler bei der Zuordnung');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -812,6 +891,24 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       loadAbschluss();
     }
   }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchBilanzData]);
+
+  // Review Modal Tastatur-Navigation
+  useEffect(() => {
+    if (!showReviewModal || showKategorieModal) return;
+    const handler = (e) => {
+      if (e.key === 'Escape') { setShowReviewModal(false); return; }
+      const tx = reviewQueue[reviewIndex];
+      if (!tx) return;
+      if (e.key === 'Enter') reviewVorschlagAnnehmen();
+      if (e.key === 'ArrowRight') {
+        setReviewStats(prev => ({ ...prev, uebersprungen: prev.uebersprungen + 1 }));
+        setReviewIndex(prev => prev + 1);
+      }
+      if (e.key === 'ArrowLeft') setReviewIndex(prev => Math.max(0, prev - 1));
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showReviewModal, showKategorieModal, reviewIndex, reviewQueue]);
 
   // Beleg speichern
   const saveBeleg = async () => {
@@ -2088,10 +2185,10 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   <>
                     <button
                       className="btn-vorschlaege-pruefen"
-                      onClick={() => { setBankStatusFilter('vorgeschlagen'); setBankPage(1); }}
-                      title="Nur Vorschläge anzeigen zum Gegenchecken"
+                      onClick={openReviewModal}
+                      title="Vorschläge einzeln prüfen — eine Transaktion nach der anderen"
                     >
-                      🔍 {bankStatistik.vorgeschlagen} Vorschläge prüfen
+                      📋 {bankStatistik.vorgeschlagen} Vorschläge einzeln prüfen
                     </button>
                     <button
                       className="btn-alle-annehmen"
@@ -3194,7 +3291,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     key={kat.id}
                     className={`kategorie-btn ${kat.typ}`}
                     onClick={() => {
-                      if (selectedBankTxIds.length > 0 && !selectedBankTx) {
+                      if (reviewKategorieMode) {
+                        reviewZuordnen(kat.id);
+                      } else if (selectedBankTxIds.length > 0 && !selectedBankTx) {
                         batchZuordnen(kat.id);
                         setShowKategorieModal(false);
                       } else {
@@ -3627,6 +3726,159 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           </div>
         </div>
       )}
+
+      {/* ==================== REVIEW MODAL ==================== */}
+      {showReviewModal && (() => {
+        const tx = reviewQueue[reviewIndex];
+        const isDone = reviewIndex >= reviewQueue.length;
+        const total = reviewQueue.length;
+        const progressPct = Math.round((reviewIndex / total) * 100);
+
+        let matchDetails = null;
+        if (tx) {
+          try { matchDetails = typeof tx.match_details === 'string' ? JSON.parse(tx.match_details) : tx.match_details; } catch (_) {}
+        }
+        const vorschlagKat = matchDetails?.kategorie || (tx?.betrag > 0 ? 'Betriebseinnahmen' : 'Sonstige Kosten');
+        const isFallback = matchDetails?.quelle === 'fallback';
+        const confidence = matchDetails?.confidence ?? (isFallback ? 0.30 : 0.65);
+
+        return (
+          <div className="modal-overlay review-overlay" onClick={() => setShowReviewModal(false)}>
+            <div className="modal review-modal" onClick={e => e.stopPropagation()}>
+              <div className="review-modal-header">
+                <div className="review-progress-bar">
+                  <div className="review-progress-fill" style={{ width: `${progressPct}%` }} />
+                </div>
+                <div className="review-header-row">
+                  <span className="review-counter">
+                    {isDone ? `Fertig! ${total} Vorschläge` : `${reviewIndex + 1} von ${total}`}
+                  </span>
+                  <div className="review-stats-mini">
+                    <span title="Angenommen">✅ {reviewStats.angenommen}</span>
+                    <span title="Kategorie geändert">✏️ {reviewStats.geaendert}</span>
+                    <span title="Übersprungen">⏭️ {reviewStats.uebersprungen}</span>
+                  </div>
+                  <button className="close-btn" onClick={() => setShowReviewModal(false)}><X size={20} /></button>
+                </div>
+              </div>
+
+              <div className="review-modal-body">
+                {isDone ? (
+                  <div className="review-summary">
+                    <div className="review-summary-icon">🎉</div>
+                    <h3>Alle Vorschläge geprüft!</h3>
+                    <div className="review-summary-stats">
+                      <div className="review-summary-stat">
+                        <span className="stat-number accepted">{reviewStats.angenommen}</span>
+                        <span className="stat-label">Angenommen</span>
+                      </div>
+                      <div className="review-summary-stat">
+                        <span className="stat-number changed">{reviewStats.geaendert}</span>
+                        <span className="stat-label">Kategorie geändert</span>
+                      </div>
+                      <div className="review-summary-stat">
+                        <span className="stat-number skipped">{reviewStats.uebersprungen}</span>
+                        <span className="stat-label">Übersprungen</span>
+                      </div>
+                    </div>
+                    <button className="btn-primary review-close-btn" onClick={() => {
+                      setShowReviewModal(false);
+                      loadBankTransaktionen();
+                      loadBankStatistik();
+                    }}>
+                      Schließen &amp; Aktualisieren
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="review-tx-card">
+                      <div className="review-tx-betrag">
+                        <span className={parseFloat(tx.betrag) >= 0 ? 'einnahme' : 'ausgabe'}>
+                          {parseFloat(tx.betrag) >= 0 ? '+' : ''}{formatCurrency(tx.betrag)}
+                        </span>
+                        <span className="review-tx-datum">{formatDate(tx.buchungsdatum)}</span>
+                      </div>
+                      <div className="review-tx-name">{tx.auftraggeber_empfaenger || '—'}</div>
+                      {tx.verwendungszweck && (
+                        <div className="review-tx-vwz">{tx.verwendungszweck}</div>
+                      )}
+                      {tx.organisation_name && (
+                        <div className="review-tx-org">{tx.organisation_name}</div>
+                      )}
+                    </div>
+
+                    <div className="review-vorschlag">
+                      <div className="review-vorschlag-label">
+                        {isFallback ? '❓ Fallback-Vorschlag' : '💡 KI-Vorschlag'}
+                        <span className="review-confidence">{Math.round(confidence * 100)}% Konfidenz</span>
+                      </div>
+                      <div className="review-vorschlag-kat">{vorschlagKat}</div>
+                    </div>
+
+                    <div className="review-actions">
+                      <button
+                        className="review-btn review-btn-accept"
+                        onClick={reviewVorschlagAnnehmen}
+                        disabled={reviewAccepting}
+                        title="Vorschlag annehmen (Enter)"
+                      >
+                        {reviewAccepting ? <span className="spinner-xs" /> : '✅'} Annehmen
+                      </button>
+                      <button
+                        className="review-btn review-btn-change"
+                        onClick={() => {
+                          setSelectedBankTx(tx);
+                          setReviewKategorieMode(true);
+                          setShowKategorieModal(true);
+                        }}
+                        title="Andere Kategorie wählen"
+                      >
+                        ✏️ Ändern
+                      </button>
+                      <button
+                        className="review-btn review-btn-skip"
+                        onClick={() => {
+                          setReviewStats(prev => ({ ...prev, uebersprungen: prev.uebersprungen + 1 }));
+                          setReviewIndex(prev => prev + 1);
+                        }}
+                        title="Überspringen (→)"
+                      >
+                        ⏭️ Überspringen
+                      </button>
+                      <button
+                        className="review-btn review-btn-ignore"
+                        onClick={async () => {
+                          try {
+                            await axios.post(`/buchhaltung/bank-import/ignorieren/${tx.transaktion_id}`, { lerne_regel: false }, { headers: { Authorization: `Bearer ${token}` } });
+                            setReviewIndex(prev => prev + 1);
+                            loadBankStatistik();
+                          } catch (_) {}
+                        }}
+                        title="Ignorieren"
+                      >
+                        🚫 Ignorieren
+                      </button>
+                    </div>
+
+                    <div className="review-keyboard-hint">
+                      <kbd>Enter</kbd> Annehmen &nbsp;&middot;&nbsp;
+                      <kbd>→</kbd> Überspringen &nbsp;&middot;&nbsp;
+                      <kbd>←</kbd> Zurück &nbsp;&middot;&nbsp;
+                      <kbd>Esc</kbd> Schließen
+                    </div>
+
+                    {reviewIndex > 0 && (
+                      <button className="review-back-btn" onClick={() => setReviewIndex(prev => Math.max(0, prev - 1))}>
+                        ← Zurück
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Loading Overlay */}
       {loading && (
