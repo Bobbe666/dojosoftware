@@ -380,6 +380,10 @@ const AUTO_KATEGORISIERUNG_REGELN = [
   { kategorie: 'Wasser / Abwasser', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
     keywords: ['wasser', 'abwasser', 'wasserwerk'] },
 
+  // ---- Betriebsausgaben: KFZ-Kosten (vor Versicherungen, damit kfz-versicherung hier landet) ----
+  { kategorie: 'KFZ-Kosten', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
+    keywords: ['kfz-versicherung', 'kfz versicherung', 'autoversicherung', 'fahrzeugversicherung', 'kraftfahrtversicherung', 'kfz-steuer', 'kraftfahrzeugsteuer', 'hauptuntersuchung', 'tüv', 'kraftstoff', 'tankstelle', 'shell ', 'aral ', 'bp ', 'esso ', 'werkstatt', 'reifenwechsel', 'kfz-reparatur', 'fahrzeugreparatur'] },
+
   // ---- Betriebsausgaben: Versicherung ----
   { kategorie: 'Versicherungen', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
     keywords: ['versicherung', 'haftpflicht', 'betriebshaftpflicht', 'sportversicherung', 'unfallversicherung', 'allianz', 'axa ', 'huk ', 'generali', 'zurich versicherung', 'dak ', 'techniker krankenkasse', 'krankenkasse', 'aok '] },
@@ -447,8 +451,9 @@ const mapZuBelegeKategorie = (kategorieFreitext, euerTyp, betrag) => {
   if (k.includes('bankgebühr') || k.includes('kontoführung') || k.includes('kontogebühr') || k.includes('kartengebühr') || k.includes('entgelt konto')) return 'bankgebuehren';
   if (k.includes('personal') || k.includes('honorar') || k.includes('lohn') || k.includes('gehalt') || k.includes('trainer')) return 'personalkosten';
   if (k.includes('miete') || k.includes('raum') || k.includes('strom') || k.includes('energie') || k.includes('wasser') || k.includes('nebenkosten')) return 'raumkosten';
+  if (k.includes('kfz') || k.includes('autoversicherung') || k.includes('fahrzeugversicherung') || k.includes('kraftfahrt') || k.includes('tüv') || k.includes('hauptuntersuchung') || k.includes('kraftstoff') || k.includes('werkstatt')) return 'kfz_kosten';
   if (k.includes('versicherung')) return 'versicherungen';
-  if (k.includes('kfz') || k.includes('fahrt') || k.includes('reise')) return 'reisekosten';
+  if (k.includes('fahrt') || k.includes('reise')) return 'reisekosten';
   if (k.includes('werbung') || k.includes('marketing') || k.includes('anzeige')) return 'werbekosten';
   if (k.includes('telefon') || k.includes('internet') || k.includes('mobil')) return 'telefon_internet';
   if (k.includes('büro') || k.includes('buro') || k.includes('porto') || k.includes('steuerberater') || k.includes('buchhaltung')) return 'buerokosten';
@@ -2066,7 +2071,7 @@ router.get('/kategorien', requireBuchhaltungAccess, (req, res) => {
     { id: 'personalkosten', name: 'Personalkosten', typ: 'ausgabe', beschreibung: 'Löhne, Gehälter, Sozialabgaben' },
     { id: 'raumkosten', name: 'Raumkosten', typ: 'ausgabe', beschreibung: 'Miete, Nebenkosten, Reinigung' },
     { id: 'versicherungen', name: 'Versicherungen', typ: 'ausgabe', beschreibung: 'Haftpflicht, Unfallversicherung' },
-    { id: 'kfz_kosten', name: 'KFZ-Kosten', typ: 'ausgabe', beschreibung: 'Fahrzeugkosten, Kraftstoff' },
+    { id: 'kfz_kosten', name: 'KFZ-Kosten', typ: 'ausgabe', beschreibung: 'Fahrzeugkosten, Kraftstoff, KFZ-Versicherung, TÜV' },
     { id: 'werbekosten', name: 'Werbekosten', typ: 'ausgabe', beschreibung: 'Marketing, Flyer, Online-Werbung' },
     { id: 'reisekosten', name: 'Reisekosten', typ: 'ausgabe', beschreibung: 'Fahrten, Übernachtungen' },
     { id: 'telefon_internet', name: 'Telefon/Internet', typ: 'ausgabe', beschreibung: 'Kommunikationskosten' },
