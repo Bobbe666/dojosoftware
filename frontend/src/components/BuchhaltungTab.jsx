@@ -89,6 +89,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [selectedBankTx, setSelectedBankTx] = useState(null);
   const [selectedBankTxIds, setSelectedBankTxIds] = useState([]);
   const [bankUploading, setBankUploading] = useState(false);
+  const [autoVorschlagRunning, setAutoVorschlagRunning] = useState(false);
+  const [alleAnnehmenRunning, setAlleAnnehmenRunning] = useState(false);
   const [bankSortField, setBankSortField] = useState('buchungsdatum');
   const [bankSortDirection, setBankSortDirection] = useState('desc');
   const [bankSearchTerm, setBankSearchTerm] = useState('');
@@ -280,6 +282,42 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       console.error('Bank-Statistik laden fehlgeschlagen:', err);
     }
   }, [token, selectedOrg]);
+
+  // 🤖 Auto-Vorschlag für alle offenen Transaktionen
+  const autoAlleVorschlagen = async () => {
+    setAutoVorschlagRunning(true);
+    try {
+      const res = await axios.post('/buchhaltung/bank-import/auto-alle-vorschlagen', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+      });
+      setSuccess(res.data.message);
+      await loadBankTransaktionen();
+      await loadBankStatistik();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim automatischen Vorschlagen');
+    } finally {
+      setAutoVorschlagRunning(false);
+    }
+  };
+
+  // ✅ Alle Vorschläge auf einmal annehmen
+  const alleVorschlaegeAnnehmen = async () => {
+    setAlleAnnehmenRunning(true);
+    try {
+      const res = await axios.post('/buchhaltung/bank-import/alle-vorschlaege-annehmen', {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+      });
+      setSuccess(res.data.message);
+      await loadBankTransaktionen();
+      await loadBankStatistik();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Annehmen der Vorschläge');
+    } finally {
+      setAlleAnnehmenRunning(false);
+    }
+  };
 
   // Bank-Datei hochladen
   const uploadBankFile = async () => {
@@ -2026,6 +2064,40 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   <span className="stat-value">{bankStatistik.ignoriert || 0}</span>
                   <span className="stat-label">Ignoriert</span>
                 </div>
+              </div>
+            )}
+
+            {/* Auto-Aktionen */}
+            {bankStatistik && (bankStatistik.unzugeordnet > 0 || bankStatistik.vorgeschlagen > 0) && (
+              <div className="bank-auto-actions">
+                {bankStatistik.unzugeordnet > 0 && (
+                  <button
+                    className="btn-auto-vorschlag"
+                    onClick={autoAlleVorschlagen}
+                    disabled={autoVorschlagRunning}
+                    title="Keyword-Regeln und gelernte Zuordnungen auf alle offenen Transaktionen anwenden"
+                  >
+                    {autoVorschlagRunning ? (
+                      <><span className="spinner-xs" /> Analysiere...</>
+                    ) : (
+                      <>🤖 {bankStatistik.unzugeordnet} automatisch vorschlagen</>
+                    )}
+                  </button>
+                )}
+                {bankStatistik.vorgeschlagen > 0 && (
+                  <button
+                    className="btn-alle-annehmen"
+                    onClick={alleVorschlaegeAnnehmen}
+                    disabled={alleAnnehmenRunning}
+                    title="Alle Vorschläge bestätigen und in EÜR übertragen"
+                  >
+                    {alleAnnehmenRunning ? (
+                      <><span className="spinner-xs" /> Übertrage...</>
+                    ) : (
+                      <>✅ {bankStatistik.vorgeschlagen} Vorschläge annehmen → EÜR</>
+                    )}
+                  </button>
+                )}
               </div>
             )}
 

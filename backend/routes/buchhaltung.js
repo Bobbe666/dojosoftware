@@ -3242,6 +3242,193 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireFeature('kontoauszug')
 });
 
 // ===================================================================
+// 🤖 POST /api/buchhaltung/bank-import/auto-alle-vorschlagen
+// Läuft Auto-Kategorisierung + gelernte Regeln auf alle offenen Transaktionen
+// ===================================================================
+router.post('/bank-import/auto-alle-vorschlagen', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation } = req.query;
+    const orgFilter = buildOrgFilter(req, organisation);
+    const whereExtra = orgFilter.sql ? orgFilter.sql : '';
+    const whereParams = orgFilter.params || [];
+
+    // Alle unzugeordneten Transaktionen holen
+    const txList = await new Promise((resolve, reject) => {
+      db.query(
+        `SELECT * FROM bank_transaktionen WHERE status = 'unzugeordnet' ${whereExtra}`,
+        whereParams, (err, results) => err ? reject(err) : resolve(results)
+      );
+    });
+
+    if (txList.length === 0) {
+      return res.json({ message: 'Keine offenen Transaktionen', count: 0 });
+    }
+
+    let vorgeschlagenCount = 0;
+
+    for (const tx of txList) {
+      // 1. Gelernte Regeln prüfen (runAutoMatching setzt status='vorgeschlagen' wenn Match)
+      await runAutoMatching(tx.transaktion_id, tx.dojo_id);
+
+      // Nach runAutoMatching prüfen ob bereits vorgeschlagen
+      const afterMatch = await new Promise((resolve) => {
+        db.query('SELECT status FROM bank_transaktionen WHERE transaktion_id = ?',
+          [tx.transaktion_id], (err, r) => resolve(r?.[0] || tx));
+      });
+
+      if (afterMatch.status === 'vorgeschlagen') {
+        vorgeschlagenCount++;
+        continue;
+      }
+
+      // 2. Keyword-basierte Auto-Kategorisierung
+      const kat = autoKategorisieren(tx.verwendungszweck, tx.auftraggeber_empfaenger);
+      if (kat) {
+        await new Promise((resolve) => {
+          db.query(`
+            UPDATE bank_transaktionen SET
+              status = 'vorgeschlagen',
+              match_typ = 'auto_kategorie',
+              match_confidence = 0.65,
+              match_details = ?,
+              auto_kategorie = ?,
+              auto_kategorie_typ = ?,
+              auto_kategorie_euer = ?
+            WHERE transaktion_id = ? AND status = 'unzugeordnet'
+          `, [
+            JSON.stringify({ kategorie: kat.kategorie, quelle: 'keyword' }),
+            kat.kategorie, kat.typ, kat.euer_typ,
+            tx.transaktion_id
+          ], () => resolve());
+        });
+        vorgeschlagenCount++;
+      }
+    }
+
+    res.json({
+      message: `${vorgeschlagenCount} von ${txList.length} Transaktionen automatisch vorgeschlagen`,
+      count: vorgeschlagenCount,
+      gesamt: txList.length
+    });
+
+  } catch (err) {
+    logger.error('Auto-Vorschlag-Fehler:', { error: err });
+    res.status(500).json({ message: 'Fehler beim automatischen Vorschlagen', error: err.message });
+  }
+});
+
+// ===================================================================
+// ✅ POST /api/buchhaltung/bank-import/alle-vorschlaege-annehmen
+// Nimmt alle vorgeschlagenen Transaktionen auf einmal an → EÜR-Belege
+// ===================================================================
+router.post('/bank-import/alle-vorschlaege-annehmen', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation } = req.query;
+    const orgFilter = buildOrgFilter(req, organisation);
+    const whereExtra = orgFilter.sql ? orgFilter.sql : '';
+    const whereParams = orgFilter.params || [];
+
+    const txList = await new Promise((resolve, reject) => {
+      db.query(
+        `SELECT * FROM bank_transaktionen WHERE status = 'vorgeschlagen' ${whereExtra}`,
+        whereParams, (err, results) => err ? reject(err) : resolve(results)
+      );
+    });
+
+    if (txList.length === 0) {
+      return res.json({ message: 'Keine vorgeschlagenen Transaktionen', count: 0 });
+    }
+
+    let angenommenCount = 0;
+    let fehlerCount = 0;
+
+    for (const tx of txList) {
+      try {
+        let matchDetails = tx.match_details;
+        if (typeof matchDetails === 'string') {
+          try { matchDetails = JSON.parse(matchDetails); } catch (e) {}
+        }
+
+        // Beitrag bezahlt markieren
+        if (tx.match_typ === 'beitrag' && tx.match_id) {
+          await new Promise((resolve) => {
+            db.query(`UPDATE beitraege SET bezahlt=1, zahlungsdatum=?, zahlungsart='Überweisung' WHERE beitrag_id=?`,
+              [tx.buchungsdatum, tx.match_id], () => resolve());
+          });
+        }
+        // Rechnung bezahlt markieren
+        else if (tx.match_typ === 'rechnung' && tx.match_id) {
+          await new Promise((resolve) => {
+            db.query(`UPDATE rechnungen SET status='bezahlt', bezahlt_am=? WHERE rechnung_id=?`,
+              [tx.buchungsdatum, tx.match_id], () => resolve());
+          });
+        }
+
+        // Kategorie bestimmen
+        const kategorie = matchDetails?.kategorie
+          || tx.auto_kategorie
+          || (tx.betrag > 0 ? 'betriebseinnahmen' : 'betriebsausgaben');
+        const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
+        const jahr = new Date(tx.buchungsdatum).getFullYear();
+        const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
+
+        const belegResult = await new Promise((resolve, reject) => {
+          db.query(`
+            INSERT INTO buchhaltung_belege (
+              beleg_nummer, dojo_id, organisation_name, buchungsart,
+              beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+              kategorie, beschreibung, lieferant_kunde, erstellt_von
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+          `, [
+            belegNummer, tx.dojo_id, tx.organisation_name, buchungsart,
+            tx.buchungsdatum, tx.buchungsdatum,
+            Math.abs(tx.betrag), Math.abs(tx.betrag),
+            kategorie, tx.verwendungszweck || 'Bank-Import',
+            tx.auftraggeber_empfaenger, req.user?.id || 1
+          ], (err, result) => err ? reject(err) : resolve(result));
+        });
+
+        await new Promise((resolve, reject) => {
+          db.query(`
+            UPDATE bank_transaktionen SET
+              status='zugeordnet', kategorie=?, beleg_id=?,
+              zugeordnet_von=?, zugeordnet_am=NOW()
+            WHERE transaktion_id=?
+          `, [kategorie, belegResult.insertId, req.user?.id || 1, tx.transaktion_id],
+          (err) => err ? reject(err) : resolve());
+        });
+
+        // Lernende Regel speichern wenn Auftraggeber bekannt
+        if (tx.auftraggeber_empfaenger && matchDetails?.kategorie && tx.dojo_id) {
+          const suchWert = tx.auftraggeber_empfaenger.toLowerCase().trim();
+          db.query(`
+            INSERT IGNORE INTO bank_zuordnung_regeln
+              (dojo_id, match_feld, match_typ, match_wert, kategorie, aktion, verwendungen)
+            VALUES (?, 'auftraggeber', 'enthaelt', ?, ?, 'kategorisieren', 1)
+            ON DUPLICATE KEY UPDATE verwendungen = verwendungen + 1
+          `, [tx.dojo_id, suchWert, matchDetails.kategorie], () => {});
+        }
+
+        angenommenCount++;
+      } catch (txErr) {
+        logger.error('Fehler bei Transaktion ' + tx.transaktion_id, { error: txErr });
+        fehlerCount++;
+      }
+    }
+
+    res.json({
+      message: `${angenommenCount} Transaktionen in EÜR übertragen`,
+      count: angenommenCount,
+      fehler: fehlerCount
+    });
+
+  } catch (err) {
+    logger.error('Alle-Vorschläge-Annehmen-Fehler:', { error: err });
+    res.status(500).json({ message: 'Fehler beim Annehmen aller Vorschläge', error: err.message });
+  }
+});
+
+// ===================================================================
 // 🗑️ DELETE /api/buchhaltung/bank-import/transaktion/:id - Einzelne Transaktion löschen
 // ===================================================================
 router.delete('/bank-import/transaktion/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, (req, res) => {

@@ -1157,6 +1157,59 @@
   border-left: 3px solid #6c757d;
 }
 
+/* Auto-Aktionen Buttons */
+.bank-auto-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.btn-auto-vorschlag, .btn-alle-annehmen {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.btn-auto-vorschlag {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.btn-alle-annehmen {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+}
+
+.btn-auto-vorschlag:hover:not(:disabled),
+.btn-alle-annehmen:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-auto-vorschlag:disabled,
+.btn-alle-annehmen:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-xs {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 /* Bank Header */
 .bank-header {
   display: flex;
