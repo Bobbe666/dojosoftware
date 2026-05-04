@@ -266,9 +266,12 @@ router.use(authenticateToken);
 router.get('/current', async (req, res) => {
   try {
     const dojoId = req.user.dojo_id;
+    const userId = req.user?.id || req.user?.user_id;
+    const username = req.user?.username;
 
-    // Super-Admin (dojo_id = null) bekommt automatisch eine vollständige Enterprise-Subscription
-    if (dojoId === null || dojoId === undefined) {
+    // Super-Admin (dojo_id = null ODER userId=1 / username='admin') bekommt Enterprise-Subscription
+    const isSuperAdmin = (dojoId === null || dojoId === undefined) || userId == 1 || username === 'admin';
+    if (isSuperAdmin) {
       return res.json({
         subscription: {
           plan_type: 'enterprise',
