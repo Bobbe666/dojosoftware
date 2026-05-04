@@ -888,11 +888,28 @@ const parseCamtContent = (content) => {
         const txDtlsList = txDtlsRaw ? (Array.isArray(txDtlsRaw) ? txDtlsRaw : [txDtlsRaw]) : [{}];
         const tx = txDtlsList[0] || {};
 
-        // Verwendungszweck — Ustrd (unstrukturiert) oder Strd
+        // Verwendungszweck — alle möglichen Felder kombinieren
         const ustrdRaw = tx.RmtInf?.Ustrd;
-        const verwendungszweck = Array.isArray(ustrdRaw)
-          ? ustrdRaw.join(' ')
-          : (String(ustrdRaw || ntry.AddtlNtryInf || ntry.AddtlInf || '')).trim();
+        const ustrd = Array.isArray(ustrdRaw) ? ustrdRaw.join(' ') : String(ustrdRaw || '').trim();
+        const addtlStrd = (() => {
+          const strd = tx.RmtInf?.Strd;
+          if (!strd) return '';
+          const parts = [];
+          const ref = strd.CdtrRefInf?.Ref; if (ref) parts.push(String(ref));
+          const addtl = strd.AddtlRmtInf; if (addtl) parts.push(Array.isArray(addtl) ? addtl.join(' ') : String(addtl));
+          return parts.join(' ').trim();
+        })();
+        const purpCd = tx.Purp?.Cd || '';  // SEPA Purpose Code z.B. TAXS, SALA, RENT
+        const endToEnd = tx.Refs?.EndToEndId || '';
+        const addtlEntry = String(ntry.AddtlNtryInf || ntry.AddtlInf || '').trim();
+
+        // Bevorzuge echten Verwendungszweck über generisches "Ausgehende/Eingehende Zahlung"
+        const genericTerms = /^(ausgehende|eingehende|ausführung|sepa|überweisung)\s*(zahlung|auftrag|gutschrift)?$/i;
+        const useAddtlEntry = !ustrd || genericTerms.test(ustrd);
+        const rawVwz = useAddtlEntry
+          ? [ustrd, addtlStrd, purpCd, endToEnd, addtlEntry].filter(Boolean).join(' | ')
+          : [ustrd, addtlStrd, purpCd].filter(Boolean).join(' | ');
+        const verwendungszweck = rawVwz.replace(/\s*\|\s*$/,'').trim() || addtlEntry;
 
         // Auftraggeber/Empfänger
         const gegenpartei = isDebit
@@ -905,7 +922,7 @@ const parseCamtContent = (content) => {
           : (tx.RltdPties?.DbtrAcct?.Id?.IBAN || '');
 
         // Buchungstext / Transaktionstyp
-        const buchungstext = ntry.AddtlNtryInf || tx.RmtInf?.Strd?.CdtrRefInf?.Ref || '';
+        const buchungstext = addtlEntry || tx.RmtInf?.Strd?.CdtrRefInf?.Ref || '';
 
         if (!buchDt || betrag === 0) continue;
 
