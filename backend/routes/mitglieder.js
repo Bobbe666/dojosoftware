@@ -3031,10 +3031,7 @@ router.get("/:id/sepa-mandate", (req, res) => {
 
     // Dojo-Filter: Super-Admin (secureDojoId === null) kann alle sehen
     if (secureDojoId === null) {
-        // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
-        whereConditions.push(`m.dojo_id NOT IN (
-            SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
-        )`);
+        // Super-Admin: Kein Dojo-Filter – kann SEPA-Mandate aus jedem Dojo abrufen
     } else {
         // Normaler Admin: Nur eigenes Dojo
         whereConditions.push('m.dojo_id = ?');
