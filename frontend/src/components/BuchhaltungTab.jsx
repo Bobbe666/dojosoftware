@@ -3201,7 +3201,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
 
       {/* ==================== KATEGORIE MODAL ==================== */}
       {showKategorieModal && (selectedBankTx || selectedBankTxIds.length > 0) && (
-        <div className="modal-overlay kategorie-overlay" onClick={() => setShowKategorieModal(false)}>
+        <div className="modal-overlay kategorie-overlay" onClick={() => { setShowKategorieModal(false); setReviewKategorieMode(false); }}>
           <div className="modal kategorie-modal kategorie-modal-wide" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
@@ -3209,7 +3209,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   ? `${selectedBankTxIds.length} Transaktionen zuordnen`
                   : 'Kategorie zuordnen'}
               </h3>
-              <button className="close-btn" onClick={() => setShowKategorieModal(false)}>
+              <button className="close-btn" onClick={() => { setShowKategorieModal(false); setReviewKategorieMode(false); setSelectedBankTx(null); }}>
                 <X size={20} />
               </button>
             </div>
@@ -3728,7 +3728,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       )}
 
       {/* ==================== REVIEW MODAL ==================== */}
-      {showReviewModal && (() => {
+      {showReviewModal && !reviewKategorieMode && (() => {
         const tx = reviewQueue[reviewIndex];
         const isDone = reviewIndex >= reviewQueue.length;
         const total = reviewQueue.length;
