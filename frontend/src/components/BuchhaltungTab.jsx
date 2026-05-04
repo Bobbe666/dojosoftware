@@ -108,6 +108,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [reviewStats, setReviewStats] = useState({ angenommen: 0, geaendert: 0, uebersprungen: 0 });
   const [reviewKategorieMode, setReviewKategorieMode] = useState(false);
   const [reviewAccepting, setReviewAccepting] = useState(false);
+  const [reviewMwst, setReviewMwst] = useState('0');
   const [beitraegeDetail, setBeitraegeDetail] = useState(null); // { monat, jahr, label, eintraege }
   const [beitraegeDetailLoading, setBeitraegeDetailLoading] = useState(false);
   const [verkaufDetail, setVerkaufDetail] = useState(null); // { bon_nummer, datum, kunde, positionen, ... }
@@ -364,11 +365,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     if (!tx || reviewAccepting) return;
     setReviewAccepting(true);
     try {
-      await axios.post(`/buchhaltung/bank-import/vorschlag-annehmen/${tx.transaktion_id}`, {}, {
+      await axios.post(`/buchhaltung/bank-import/vorschlag-annehmen/${tx.transaktion_id}`, {
+        mwst_satz: parseFloat(reviewMwst || '0')
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReviewStats(prev => ({ ...prev, angenommen: prev.angenommen + 1 }));
       setReviewIndex(prev => prev + 1);
+      setReviewMwst('0');
       loadBankStatistik();
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Annehmen');
@@ -3843,6 +3847,23 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       <div className="review-vorschlag-kat">{vorschlagKat}</div>
                     </div>
 
+                    <div className="review-mwst-row">
+                      <span className="review-mwst-label">MwSt:</span>
+                      {[
+                        { val: '0',  label: '0%',  hint: 'Ausland / steuerfrei' },
+                        { val: '7',  label: '7%',  hint: '' },
+                        { val: '19', label: '19%', hint: 'Standard' }
+                      ].map(opt => (
+                        <button
+                          key={opt.val}
+                          className={`review-mwst-btn ${reviewMwst === opt.val ? 'active' : ''}`}
+                          onClick={() => setReviewMwst(opt.val)}
+                          title={opt.hint}
+                          type="button"
+                        >{opt.label}</button>
+                      ))}
+                    </div>
+
                     <div className="review-actions">
                       <button
                         className="review-btn review-btn-accept"
@@ -3856,7 +3877,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                         className="review-btn review-btn-change"
                         onClick={() => {
                           setSelectedBankTx(tx);
-                          setKategorieModalMwst('0');
+                          setKategorieModalMwst(reviewMwst);
                           setReviewKategorieMode(true);
                           setShowKategorieModal(true);
                         }}
@@ -3869,6 +3890,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                         onClick={() => {
                           setReviewStats(prev => ({ ...prev, uebersprungen: prev.uebersprungen + 1 }));
                           setReviewIndex(prev => prev + 1);
+                          setReviewMwst('0');
                         }}
                         title="Überspringen (→)"
                       >

@@ -3255,13 +3255,18 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireFeature('kontoauszug')
     const jahr = new Date(tx.buchungsdatum).getFullYear();
     const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
 
+    const mwstSatz = parseFloat(req.body?.mwst_satz ?? 0);
+    const brutto = Math.abs(tx.betrag);
+    const netto = mwstSatz > 0 ? brutto / (1 + mwstSatz / 100) : brutto;
+    const mwstBetrag = brutto - netto;
+
     const belegResult = await new Promise((resolve, reject) => {
       db.query(`
         INSERT INTO buchhaltung_belege (
           beleg_nummer, dojo_id, organisation_name, buchungsart,
           beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
           kategorie, beschreibung, lieferant_kunde, erstellt_von
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         belegNummer,
         tx.dojo_id,
@@ -3269,8 +3274,10 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireFeature('kontoauszug')
         buchungsart,
         tx.buchungsdatum,
         tx.buchungsdatum,
-        Math.abs(tx.betrag),
-        Math.abs(tx.betrag),
+        parseFloat(netto.toFixed(2)),
+        mwstSatz,
+        parseFloat(mwstBetrag.toFixed(2)),
+        brutto,
         kategorie,
         tx.verwendungszweck || 'Bank-Import',
         tx.auftraggeber_empfaenger,
