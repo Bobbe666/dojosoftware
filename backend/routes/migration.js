@@ -205,6 +205,39 @@ router.get('/dojo-structure', (req, res) => {
   });
 });
 
+// Bank-Import komplett zurücksetzen (alle Transaktionen + verknüpfte Belege + Historie)
+router.post('/bank-reset', async (req, res) => {
+  try {
+    const pool = db.promise();
+    // 1. Belege löschen die aus Bank-Import entstanden sind
+    const [belegeRows] = await pool.query(
+      `SELECT DISTINCT beleg_id FROM bank_transaktionen WHERE beleg_id IS NOT NULL`
+    );
+    if (belegeRows.length > 0) {
+      const ids = belegeRows.map(r => r.beleg_id);
+      await pool.query(`DELETE FROM buchhaltung_belege WHERE beleg_id IN (?)`, [ids]);
+    }
+    // 2. Alle Bank-Transaktionen löschen
+    const [txResult] = await pool.query(`DELETE FROM bank_transaktionen`);
+    // 3. Import-Historie löschen
+    const [histResult] = await pool.query(`DELETE FROM bank_import_historie`);
+    // 4. Gelernte Zuordnungs-Regeln aus Bank-Import löschen
+    await pool.query(`DELETE FROM bank_zuordnung_regeln WHERE aktion IN ('kategorisieren','ignorieren')`);
+
+    res.json({
+      success: true,
+      message: 'Bank-Import zurückgesetzt',
+      geloescht: {
+        belege: belegeRows.length,
+        transaktionen: txResult.affectedRows,
+        imports: histResult.affectedRows
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Migration 090: kategorie-Spalten von ENUM auf VARCHAR(100)
 router.post('/090-kategorie-varchar', (req, res) => {
   const sqls = [
