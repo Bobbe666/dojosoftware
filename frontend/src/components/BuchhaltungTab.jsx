@@ -86,7 +86,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [bankUploadOrg, setBankUploadOrg] = useState('Kampfkunstschule Schreiner');
   const [showBankUploadModal, setShowBankUploadModal] = useState(false);
   const [showKategorieModal, setShowKategorieModal] = useState(false);
-  const [kategorieModalMwst, setKategorieModalMwst] = useState('0');
+  const [kategorieModalMwst, setKategorieModalMwst] = useState('19');
   const [selectedBankTx, setSelectedBankTx] = useState(null);
   const [selectedBankTxIds, setSelectedBankTxIds] = useState([]);
   const [bankUploading, setBankUploading] = useState(false);
@@ -108,7 +108,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [reviewStats, setReviewStats] = useState({ angenommen: 0, geaendert: 0, uebersprungen: 0 });
   const [reviewKategorieMode, setReviewKategorieMode] = useState(false);
   const [reviewAccepting, setReviewAccepting] = useState(false);
-  const [reviewMwst, setReviewMwst] = useState('0');
+  const [reviewMwst, setReviewMwst] = useState('19');
   const [beitraegeDetail, setBeitraegeDetail] = useState(null); // { monat, jahr, label, eintraege }
   const [beitraegeDetailLoading, setBeitraegeDetailLoading] = useState(false);
   const [verkaufDetail, setVerkaufDetail] = useState(null); // { bon_nummer, datum, kunde, positionen, ... }
@@ -372,7 +372,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       });
       setReviewStats(prev => ({ ...prev, angenommen: prev.angenommen + 1 }));
       setReviewIndex(prev => prev + 1);
-      setReviewMwst('0');
+      setReviewMwst('19');
       loadBankStatistik();
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Annehmen');
@@ -2310,7 +2310,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 <div className="batch-buttons">
                   <button
                     className="btn-primary"
-                    onClick={() => { setAehnlicheAnzahl(0); setKategorieModalMwst('0'); setShowKategorieModal(true); }}
+                    onClick={() => { setAehnlicheAnzahl(0); setKategorieModalMwst('19'); setShowKategorieModal(true); }}
                   >
                     Kategorie zuordnen
                   </button>
@@ -2394,7 +2394,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                             if (e.target.closest('input,button')) return;
                             if (tx.status === 'unzugeordnet' || tx.status === 'vorgeschlagen') {
                               setSelectedBankTx(tx);
-                              setKategorieModalMwst('0');
+                              setKategorieModalMwst('19');
                               setShowKategorieModal(true);
                               ladeAehnliche(tx.transaktion_id);
                             }
@@ -2443,7 +2443,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 <button
                                   className="btn-icon"
                                   title="Andere Kategorie wählen"
-                                  onClick={() => { setSelectedBankTx(tx); setKategorieModalMwst('0'); setShowKategorieModal(true); ladeAehnliche(tx.transaktion_id); }}
+                                  onClick={() => { setSelectedBankTx(tx); setKategorieModalMwst('19'); setShowKategorieModal(true); ladeAehnliche(tx.transaktion_id); }}
                                 >
                                   <Edit size={14} />
                                 </button>
@@ -3890,7 +3890,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                         onClick={() => {
                           setReviewStats(prev => ({ ...prev, uebersprungen: prev.uebersprungen + 1 }));
                           setReviewIndex(prev => prev + 1);
-                          setReviewMwst('0');
+                          setReviewMwst('19');
                         }}
                         title="Überspringen (→)"
                       >
