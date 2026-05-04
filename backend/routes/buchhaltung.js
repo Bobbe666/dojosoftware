@@ -3267,41 +3267,41 @@ router.post('/bank-import/auto-alle-vorschlagen', requireFeature('kontoauszug'),
     let vorgeschlagenCount = 0;
 
     for (const tx of txList) {
-      // 1. Gelernte Regeln prüfen (runAutoMatching setzt status='vorgeschlagen' wenn Match)
-      await runAutoMatching(tx.transaktion_id, tx.dojo_id);
+      try {
+        // 1. Gelernte Regeln prüfen (runAutoMatching setzt status='vorgeschlagen' wenn Match)
+        await runAutoMatching(tx.transaktion_id, tx.dojo_id);
 
-      // Nach runAutoMatching prüfen ob bereits vorgeschlagen
-      const afterMatch = await new Promise((resolve) => {
-        db.query('SELECT status FROM bank_transaktionen WHERE transaktion_id = ?',
-          [tx.transaktion_id], (err, r) => resolve(r?.[0] || tx));
-      });
-
-      if (afterMatch.status === 'vorgeschlagen') {
-        vorgeschlagenCount++;
-        continue;
-      }
-
-      // 2. Keyword-basierte Auto-Kategorisierung
-      const kat = autoKategorisieren(tx.verwendungszweck, tx.auftraggeber_empfaenger);
-      if (kat) {
-        await new Promise((resolve) => {
-          db.query(`
-            UPDATE bank_transaktionen SET
-              status = 'vorgeschlagen',
-              match_typ = 'auto_kategorie',
-              match_confidence = 0.65,
-              match_details = ?,
-              auto_kategorie = ?,
-              auto_kategorie_typ = ?,
-              auto_kategorie_euer = ?
-            WHERE transaktion_id = ? AND status = 'unzugeordnet'
-          `, [
-            JSON.stringify({ kategorie: kat.kategorie, quelle: 'keyword' }),
-            kat.kategorie, kat.typ, kat.euer_typ,
-            tx.transaktion_id
-          ], () => resolve());
+        // Nach runAutoMatching prüfen ob bereits vorgeschlagen
+        const afterMatch = await new Promise((resolve) => {
+          db.query('SELECT status FROM bank_transaktionen WHERE transaktion_id = ?',
+            [tx.transaktion_id], (err, r) => resolve(r?.[0] || tx));
         });
-        vorgeschlagenCount++;
+
+        if (afterMatch.status === 'vorgeschlagen') {
+          vorgeschlagenCount++;
+          continue;
+        }
+
+        // 2. Keyword-basierte Auto-Kategorisierung (nutzt nur Kernspalten aus Migration 037)
+        const kat = autoKategorisieren(tx.verwendungszweck, tx.auftraggeber_empfaenger);
+        if (kat) {
+          await new Promise((resolve, reject) => {
+            db.query(`
+              UPDATE bank_transaktionen SET
+                status = 'vorgeschlagen',
+                match_typ = 'manuell',
+                match_confidence = 0.65,
+                match_details = ?
+              WHERE transaktion_id = ? AND status = 'unzugeordnet'
+            `, [
+              JSON.stringify({ kategorie: kat.kategorie, typ: kat.typ, euer_typ: kat.euer_typ, quelle: 'auto_kategorie' }),
+              tx.transaktion_id
+            ], (err) => err ? reject(err) : resolve());
+          });
+          vorgeschlagenCount++;
+        }
+      } catch (txErr) {
+        logger.error('Auto-Vorschlag Transaktion Fehler:', { error: txErr, id: tx.transaktion_id });
       }
     }
 
