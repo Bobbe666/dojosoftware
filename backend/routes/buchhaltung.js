@@ -406,7 +406,9 @@ const AUTO_KATEGORISIERUNG_REGELN = [
 
   // ---- Betriebsausgaben: Marketing ----
   { kategorie: 'Marketing / Werbung', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
-    keywords: ['werbung', 'anzeige', 'flyer', 'plakat', 'facebook ads', 'google ads', 'instagram', 'marketing', 'druck'] },
+    keywords: ['werbung', 'anzeige', 'flyer', 'plakat', 'facebook ads', 'google ads', 'instagram', 'marketing', 'druck',
+      'wir machen druck', 'wirmachendruck', 'flyeralarm', 'vistaprint', 'print24', 'onlineprinters', 'saxoprint',
+      'druckerei', 'drucksachen', 'poster', 'banner druck', 'visitenkarten', 'werbeagentur'] },
 
   // ---- Betriebsausgaben: Fortbildung ----
   { kategorie: 'Fortbildung / Lehrgänge', typ: 'ausgabe', euer_typ: 'betriebsausgabe',
