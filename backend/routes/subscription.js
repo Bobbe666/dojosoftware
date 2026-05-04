@@ -789,7 +789,16 @@ router.get('/features-with-access', async (req, res) => {
 router.get('/feature-access/:featureKey', async (req, res) => {
   try {
     const dojoId = req.user.dojo_id;
+    const userId = req.user?.id || req.user?.user_id;
+    const username = req.user?.username;
     const { featureKey } = req.params;
+
+    // Super-Admin bekommt immer Zugriff
+    const isSuperAdmin = (dojoId === null || dojoId === undefined) || userId == 1 || username === 'admin';
+    if (isSuperAdmin) {
+      return res.json({ hasAccess: true, accessType: 'plan', details: { featureName: featureKey } });
+    }
+
     const access = await featureAccessService.hasFeatureAccess(dojoId, featureKey);
     res.json(access);
   } catch (error) {
