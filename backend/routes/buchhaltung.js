@@ -3333,24 +3333,30 @@ router.post('/bank-import/auto-alle-vorschlagen', requireFeature('kontoauszug'),
           continue;
         }
 
-        // 2. Keyword-basierte Auto-Kategorisierung (nutzt nur Kernspalten aus Migration 037)
+        // 2. Keyword-basierte Auto-Kategorisierung
         const kat = autoKategorisieren(tx.verwendungszweck, tx.auftraggeber_empfaenger);
-        if (kat) {
-          await new Promise((resolve, reject) => {
-            db.query(`
-              UPDATE bank_transaktionen SET
-                status = 'vorgeschlagen',
-                match_typ = 'manuell',
-                match_confidence = 0.65,
-                match_details = ?
-              WHERE transaktion_id = ? AND status = 'unzugeordnet'
-            `, [
-              JSON.stringify({ kategorie: kat.kategorie, typ: kat.typ, euer_typ: kat.euer_typ, quelle: 'auto_kategorie' }),
-              tx.transaktion_id
-            ], (err) => err ? reject(err) : resolve());
-          });
-          vorgeschlagenCount++;
-        }
+
+        // 3. Fallback: immer einen Vorschlag machen basierend auf Betrag-Vorzeichen
+        const vorschlag = kat || (tx.betrag > 0
+          ? { kategorie: 'Betriebseinnahmen', typ: 'einnahme', euer_typ: 'betriebseinnahme' }
+          : { kategorie: 'Sonstige Kosten', typ: 'ausgabe', euer_typ: 'betriebsausgabe' });
+        const confidence = kat ? 0.65 : 0.30;
+
+        await new Promise((resolve, reject) => {
+          db.query(`
+            UPDATE bank_transaktionen SET
+              status = 'vorgeschlagen',
+              match_typ = 'manuell',
+              match_confidence = ?,
+              match_details = ?
+            WHERE transaktion_id = ? AND status = 'unzugeordnet'
+          `, [
+            confidence,
+            JSON.stringify({ kategorie: vorschlag.kategorie, typ: vorschlag.typ, euer_typ: vorschlag.euer_typ, quelle: kat ? 'auto_kategorie' : 'fallback' }),
+            tx.transaktion_id
+          ], (err) => err ? reject(err) : resolve());
+        });
+        vorgeschlagenCount++;
       } catch (txErr) {
         logger.error('Auto-Vorschlag Transaktion Fehler:', { error: txErr, id: tx.transaktion_id });
       }

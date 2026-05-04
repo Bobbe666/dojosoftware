@@ -2316,7 +2316,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 let md = tx.match_details;
                                 if (typeof md === 'string') { try { md = JSON.parse(md); } catch(e) { md = null; } }
                                 const kat = md?.kategorie || (tx.betrag > 0 ? 'Einnahme' : 'Ausgabe');
-                                return <span title="Klicken zum Ändern">💡 {kat}</span>;
+                                const isFallback = md?.quelle === 'fallback';
+                                return <span title={isFallback ? 'Fallback-Vorschlag — bitte prüfen' : 'Klicken zum Ändern'}>{isFallback ? '❓' : '💡'} {kat}</span>;
                               })()}
                               {tx.status === 'zugeordnet' && 'Zugeordnet'}
                               {tx.status === 'ignoriert' && 'Ignoriert'}
