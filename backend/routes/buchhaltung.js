@@ -444,7 +444,7 @@ const mapZuBelegeKategorie = (kategorieFreitext, euerTyp, betrag) => {
   // Direkte 1:1-Übernahme wenn bereits ein gültiger DB-Wert
   const direktWerte = ['betriebseinnahmen','wareneingang','personalkosten','raumkosten','versicherungen',
     'kfz_kosten','werbekosten','reisekosten','telefon_internet','buerokosten','fortbildung',
-    'abschreibungen','sonstige_kosten','privateinlage','privatentnahme','steuerzahlungen','bankgebuehren'];
+    'abschreibungen','sonstige_kosten','privateinlage','privatentnahme','steuerzahlungen','bankgebuehren','ausstattung'];
   if (direktWerte.includes(kategorieFreitext)) return kategorieFreitext;
   if (betrag > 0) return 'betriebseinnahmen';
   if (k.includes('steuer') || k.includes('finanzamt') || k.includes('finanzkasse')) return 'steuerzahlungen';
@@ -2080,6 +2080,7 @@ router.get('/kategorien', requireBuchhaltungAccess, (req, res) => {
     { id: 'fortbildung', name: 'Fortbildung', typ: 'ausgabe', beschreibung: 'Seminare, Weiterbildung' },
     { id: 'abschreibungen', name: 'Abschreibungen', typ: 'ausgabe', beschreibung: 'AfA auf Anlagegüter' },
     { id: 'bankgebuehren', name: 'Kontoführungsgebühren', typ: 'ausgabe', beschreibung: 'Bankgebühren, Kontoführung, Kartengebühren' },
+    { id: 'ausstattung', name: 'Betriebs-/Geschäftsausstattung', typ: 'ausgabe', beschreibung: 'Geräte, Ausrüstung, Equipment (bis 800€ netto)' },
     { id: 'sonstige_kosten', name: 'Sonstige Kosten', typ: 'ausgabe', beschreibung: 'Sonstige betriebliche Aufwendungen' },
     { id: 'privateinlage', name: 'Privateinlage', typ: 'privat', beschreibung: 'Private Einzahlung (kein Umsatz)' },
     { id: 'privatentnahme', name: 'Privatentnahme', typ: 'privat', beschreibung: 'Private Entnahme (keine Ausgabe)' },
@@ -2714,7 +2715,7 @@ router.get('/bank-import/aehnliche/:id', requireFeature('kontoauszug'), requireB
 router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireBuchhaltungAccess, async (req, res) => {
   try {
     const transaktionId = req.params.id;
-    const { kategorie, match_typ, match_id, lerne_regel = false } = req.body;
+    const { kategorie, match_typ, match_id, lerne_regel = false, mwst_satz: mwstRaw } = req.body;
 
     if (!kategorie) {
       return res.status(400).json({ message: 'Kategorie ist erforderlich' });
@@ -2736,6 +2737,12 @@ router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireB
     if (!checkDojoOwnership(req, res, tx.dojo_id)) return;
     const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
 
+    // MwSt berechnen
+    const mwstSatz = parseFloat(mwstRaw ?? 0);
+    const brutto = Math.abs(tx.betrag);
+    const netto = mwstSatz > 0 ? brutto / (1 + mwstSatz / 100) : brutto;
+    const mwstBetrag = brutto - netto;
+
     // Erstelle Buchhaltungs-Beleg
     const jahr = new Date(tx.buchungsdatum).getFullYear();
     const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
@@ -2746,7 +2753,7 @@ router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireB
           beleg_nummer, dojo_id, organisation_name, buchungsart,
           beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
           kategorie, beschreibung, lieferant_kunde, erstellt_von
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         belegNummer,
         tx.dojo_id,
@@ -2754,8 +2761,10 @@ router.post('/bank-import/zuordnen/:id', requireFeature('kontoauszug'), requireB
         buchungsart,
         tx.buchungsdatum,
         tx.buchungsdatum,
-        Math.abs(tx.betrag),
-        Math.abs(tx.betrag),
+        parseFloat(netto.toFixed(2)),
+        mwstSatz,
+        parseFloat(mwstBetrag.toFixed(2)),
+        brutto,
         kategorie,
         tx.verwendungszweck || 'Bank-Import',
         tx.auftraggeber_empfaenger,

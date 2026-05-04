@@ -86,6 +86,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [bankUploadOrg, setBankUploadOrg] = useState('Kampfkunstschule Schreiner');
   const [showBankUploadModal, setShowBankUploadModal] = useState(false);
   const [showKategorieModal, setShowKategorieModal] = useState(false);
+  const [kategorieModalMwst, setKategorieModalMwst] = useState('0');
   const [selectedBankTx, setSelectedBankTx] = useState(null);
   const [selectedBankTxIds, setSelectedBankTxIds] = useState([]);
   const [bankUploading, setBankUploading] = useState(false);
@@ -381,7 +382,10 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     if (!selectedBankTx) return;
     try {
       setLoading(true);
-      await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, { kategorie }, {
+      await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, {
+        kategorie,
+        mwst_satz: parseFloat(kategorieModalMwst || '0')
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setShowKategorieModal(false);
@@ -449,7 +453,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     try {
       setLoading(true);
       const res = await axios.post(`/buchhaltung/bank-import/zuordnen/${selectedBankTx.transaktion_id}`, {
-        kategorie
+        kategorie,
+        mwst_satz: parseFloat(kategorieModalMwst || '0')
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -2301,7 +2306,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 <div className="batch-buttons">
                   <button
                     className="btn-primary"
-                    onClick={() => { setAehnlicheAnzahl(0); setShowKategorieModal(true); }}
+                    onClick={() => { setAehnlicheAnzahl(0); setKategorieModalMwst('0'); setShowKategorieModal(true); }}
                   >
                     Kategorie zuordnen
                   </button>
@@ -2385,6 +2390,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                             if (e.target.closest('input,button')) return;
                             if (tx.status === 'unzugeordnet' || tx.status === 'vorgeschlagen') {
                               setSelectedBankTx(tx);
+                              setKategorieModalMwst('0');
                               setShowKategorieModal(true);
                               ladeAehnliche(tx.transaktion_id);
                             }
@@ -2433,7 +2439,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 <button
                                   className="btn-icon"
                                   title="Andere Kategorie wählen"
-                                  onClick={() => { setSelectedBankTx(tx); setShowKategorieModal(true); ladeAehnliche(tx.transaktion_id); }}
+                                  onClick={() => { setSelectedBankTx(tx); setKategorieModalMwst('0'); setShowKategorieModal(true); ladeAehnliche(tx.transaktion_id); }}
                                 >
                                   <Edit size={14} />
                                 </button>
@@ -3285,6 +3291,28 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </div>
               )}
 
+              <div className="kategorie-mwst-row">
+                <label>MwSt-Satz für diesen Beleg:</label>
+                <div className="kategorie-mwst-btns">
+                  {[
+                    { val: '0',  label: '0%', hint: 'Ausland, steuerfreie Leistung' },
+                    { val: '7',  label: '7%', hint: 'Ermäßigt' },
+                    { val: '19', label: '19%', hint: 'Regelsteuersatz' }
+                  ].map(opt => (
+                    <button
+                      key={opt.val}
+                      className={`mwst-opt-btn ${kategorieModalMwst === opt.val ? 'active' : ''}`}
+                      onClick={() => setKategorieModalMwst(opt.val)}
+                      title={opt.hint}
+                      type="button"
+                    >
+                      {opt.label}
+                      {opt.hint && <span className="mwst-hint">{opt.hint}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="kategorie-grid">
                 {kategorien.map(kat => (
                   <button
@@ -3828,6 +3856,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                         className="review-btn review-btn-change"
                         onClick={() => {
                           setSelectedBankTx(tx);
+                          setKategorieModalMwst('0');
                           setReviewKategorieMode(true);
                           setShowKategorieModal(true);
                         }}
