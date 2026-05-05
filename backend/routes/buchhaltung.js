@@ -1524,7 +1524,8 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
     const brutto = Math.round((netto + mwstBetrag) * 100) / 100;
 
     // Dojo ID: Dojo-Admin nutzt eigene dojo_id, Super-Admin nutzt Organisation
-    const dojoId = req.buchhaltungDojoId || (organisation_name === 'TDA International' ? 2 : 1);
+    const _orgMapBeleg = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const dojoId = req.buchhaltungDojoId || _orgMapBeleg[organisation_name] || null;
     const effectiveOrgName = organisation_name || `Dojo ${dojoId}`;
     const jahr = new Date(buchungsdatum || beleg_datum).getFullYear();
 
@@ -2055,7 +2056,8 @@ router.post('/abschluss/:jahr/festschreiben', requireBuchhaltungAccess, (req, re
   const { organisation } = req.body;
 
   // Für Dojo-Admin: organisation aus dojo_id ableiten; Super-Admin: organisation aus Body
-  const dojoId = req.buchhaltungDojoId || (organisation === 'TDA International' ? 2 : 1);
+  const _orgMapDel = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+  const dojoId = req.buchhaltungDojoId || _orgMapDel[organisation] || null;
   if (!dojoId) return res.status(400).json({ message: 'Organisation oder dojo_id erforderlich' });
 
   // Erst alle nicht-festgeschriebenen Belege des Jahres festschreiben
@@ -2162,7 +2164,8 @@ router.get('/abschluss/:jahr/export', requireBuchhaltungAccess, (req, res) => {
     csv += `;Gewinn/Verlust;;;${gewinn.toFixed(2)};;\n`;
 
     // Update Export-Tracking
-    const _exportDojoId = req.buchhaltungDojoId || (organisation === 'TDA International' ? 2 : (organisation ? 1 : null));
+    const _orgMapExp = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const _exportDojoId = req.buchhaltungDojoId || _orgMapExp[organisation] || null;
     if (_exportDojoId) {
       db.query(
         `UPDATE euer_abschluesse SET letzter_export_datum = NOW(), letzter_export_format = ? WHERE dojo_id = ? AND jahr = ?`,
@@ -2234,7 +2237,8 @@ router.post('/bank-import/upload', requireFeature('kontoauszug'), requireBuchhal
     }
 
     const { organisation = 'Kampfkunstschule Schreiner', format: requestedFormat } = req.body;
-    const dojoId = req.buchhaltungDojoId || (organisation === 'TDA International' ? 2 : 1);
+    const orgDojoMap = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const dojoId = req.buchhaltungDojoId || orgDojoMap[organisation] || null;
     const importId = generateImportId();
 
     // Lese Datei
