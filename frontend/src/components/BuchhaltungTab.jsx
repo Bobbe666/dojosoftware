@@ -4082,6 +4082,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                         </span>
                         <span className="review-tx-datum">{formatDate(tx.buchungsdatum)}</span>
                       </div>
+                      <div className="review-vorschlag review-vorschlag-inline">
+                        <span className="review-vorschlag-icon">{isFallback ? '❓' : '💡'}</span>
+                        <span className="review-vorschlag-kat">{vorschlagKat}</span>
+                        <span className="review-confidence">{Math.round(confidence * 100)}% Konfidenz</span>
+                      </div>
                       <div className="review-tx-name">{tx.auftraggeber_empfaenger || '—'}</div>
                       {tx.verwendungszweck && (
                         <div className="review-tx-vwz">{tx.verwendungszweck}</div>
@@ -4122,14 +4127,6 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                           </label>
                         )}
                       </div>
-                    </div>
-
-                    <div className="review-vorschlag">
-                      <div className="review-vorschlag-label">
-                        {isFallback ? '❓ Fallback-Vorschlag' : '💡 KI-Vorschlag'}
-                        <span className="review-confidence">{Math.round(confidence * 100)}% Konfidenz</span>
-                      </div>
-                      <div className="review-vorschlag-kat">{vorschlagKat}</div>
                     </div>
 
                     {!dojoEinstellungen.kleinunternehmer && (

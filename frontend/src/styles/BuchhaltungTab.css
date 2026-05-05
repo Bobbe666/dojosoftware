@@ -3232,33 +3232,34 @@
   margin-top: 0.25rem;
 }
 
-/* Proposal Box */
-.review-vorschlag {
-  background: rgba(99, 102, 241, 0.08);
-  border: 1px solid rgba(99, 102, 241, 0.25);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.review-vorschlag-label {
-  font-size: 0.75rem;
-  color: #a5b4fc;
+/* KI-Vorschlag — inline unter dem Betrag */
+.review-vorschlag-inline {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.25rem;
+  gap: 0.5rem;
+  margin: 0.1rem 0 0.85rem 0;
+  padding: 0.3rem 0.65rem;
+  background: rgba(99, 102, 241, 0.07);
+  border-left: 3px solid rgba(99, 102, 241, 0.4);
+  border-radius: 0 6px 6px 0;
 }
 
-.review-confidence {
-  font-size: 0.7rem;
-  color: var(--text-muted);
+.review-vorschlag-icon {
+  font-size: 0.8rem;
+  flex-shrink: 0;
 }
 
 .review-vorschlag-kat {
-  font-size: 1rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-primary);
+  flex: 1;
+}
+
+.review-confidence {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 /* MwSt selector in Review Modal */
