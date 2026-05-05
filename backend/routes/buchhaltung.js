@@ -182,6 +182,19 @@ const BANK_SIGNATURES = [
     payeeCol: 'empfaenger/auftraggeber',
   },
   {
+    format: 'wise',
+    name: 'Wise',
+    test: (h) => h.includes('transferwise id') || (h.includes('payment reference') && h.includes('running balance')),
+    dateCol: 'date',
+    amountCol: 'amount',
+    descCol: 'description',
+    payeeCol: 'payee name',
+    payerCol: 'payer name',
+    merchantCol: 'merchant',
+    refCol: 'payment reference',
+    delimiter: ',',
+  },
+  {
     format: 'generic',
     name: 'Unbekannte Bank',
     test: (h) => (h.includes('buchungstag') || h.includes('buchungsdatum') || h.includes('datum')) && h.includes('betrag'),
@@ -212,18 +225,23 @@ const parseGermanAmount = (str) => {
   return parseFloat(cleaned) || 0;
 };
 
-// Parsed deutsches Datum (DD.MM.YYYY oder YYYY-MM-DD)
+// Parsed deutsches Datum (DD.MM.YYYY, DD-MM-YYYY oder YYYY-MM-DD)
 const parseGermanDate = (str) => {
   if (!str) return null;
   str = str.trim();
-  // ISO
+  // ISO YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.substring(0, 10);
+  // DD-MM-YYYY (Wise)
+  if (/^\d{2}-\d{2}-\d{4}/.test(str)) {
+    const [day, month, year] = str.substring(0, 10).split('-');
+    return `${year}-${month}-${day}`;
+  }
   // DD.MM.YYYY
   const parts = str.split('.');
   if (parts.length === 3) {
     const day = parts[0].padStart(2, '0');
     const month = parts[1].padStart(2, '0');
-    let year = parts[2].trim().split(' ')[0]; // ggf. Zeitanteil entfernen
+    let year = parts[2].trim().split(' ')[0];
     if (year.length === 2) year = parseInt(year) > 50 ? '19' + year : '20' + year;
     return `${year}-${month}-${day}`;
   }
@@ -273,7 +291,7 @@ const parseCSVContent = (content) => {
   }
 
   if (!signature) {
-    return { error: 'Unbekanntes Bank-Format. Unterstützt: Sparkasse, Volksbank, DKB, ING, Comdirect, N26, Deutsche Bank, Postbank und MT940.', transaktionen: [] };
+    return { error: 'Unbekanntes Bank-Format. Unterstützt: Sparkasse, Volksbank, DKB, ING, Comdirect, N26, Deutsche Bank, Postbank, Wise und MT940.', transaktionen: [] };
   }
 
   const headerLine = lines[headerIndex];
@@ -290,8 +308,11 @@ const parseCSVContent = (content) => {
   const dateIdx  = colIdx(signature.dateCol);
   const amtIdx   = colIdx(signature.amountCol);
   const descIdx  = colIdx(signature.descCol);
-  const payeeIdx = colIdx(signature.payeeCol);
-  const ibanIdx  = headers.findIndex(h => h === 'iban' || h === 'kontonummer' || h.includes('iban'));
+  const payeeIdx    = colIdx(signature.payeeCol);
+  const payerIdx    = signature.payerCol    ? colIdx(signature.payerCol)    : -1;
+  const merchantIdx = signature.merchantCol ? colIdx(signature.merchantCol) : -1;
+  const refIdx      = signature.refCol      ? colIdx(signature.refCol)      : -1;
+  const ibanIdx  = headers.findIndex(h => h === 'iban' || h === 'kontonummer' || h.includes('payee account') || h.includes('iban'));
   const bicIdx   = headers.findIndex(h => h === 'bic' || h === 'blz');
 
   if (dateIdx < 0 || amtIdx < 0) {
@@ -323,12 +344,24 @@ const parseCSVContent = (content) => {
       const buchungsdatum = parseGermanDate(values[dateIdx] || '');
       if (!buchungsdatum) continue;
 
+      // Wise: bei Eingang Payer Name, bei Ausgang Payee Name, Fallback Merchant
+      let gegenpartei = (payeeIdx >= 0 ? values[payeeIdx] : '') || '';
+      if (betrag > 0 && payerIdx >= 0 && values[payerIdx]?.trim()) {
+        gegenpartei = values[payerIdx].trim();
+      }
+      if (!gegenpartei && merchantIdx >= 0 && values[merchantIdx]?.trim()) {
+        gegenpartei = values[merchantIdx].trim();
+      }
+      // Wise: Payment Reference als Verwendungszweck wenn Description leer
+      let vwz = (descIdx >= 0 ? values[descIdx] : '') || '';
+      if (!vwz && refIdx >= 0) vwz = values[refIdx] || '';
+
       const t = {
         buchungsdatum,
         valutadatum: null,
         betrag,
-        verwendungszweck: (descIdx >= 0 ? values[descIdx] : '') || '',
-        auftraggeber_empfaenger: (payeeIdx >= 0 ? values[payeeIdx] : '') || '',
+        verwendungszweck: vwz,
+        auftraggeber_empfaenger: gegenpartei,
         iban_gegenkonto: (ibanIdx >= 0 ? values[ibanIdx] : '') || '',
         bic: (bicIdx >= 0 ? values[bicIdx] : '') || '',
         buchungstext: '',
