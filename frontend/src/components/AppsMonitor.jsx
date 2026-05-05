@@ -11,10 +11,11 @@ const ROLES = [
 ];
 
 const APP_FLAGS = [
-  { key: 'todo',   label: '✅ To Do',   app: 'todo'   },
-  { key: 'events', label: '🏆 Events',  app: 'events' },
-  { key: 'kids',   label: '⭐ Kids',    app: 'kids'   },
-  { key: 'hof',    label: '🏅 HOF',     app: 'hof'    },
+  { key: 'todo',    label: '✅ To Do',   app: 'todo'    },
+  { key: 'events',  label: '🏆 Events',  app: 'events'  },
+  { key: 'kids',    label: '⭐ Kids',    app: 'kids'    },
+  { key: 'hof',     label: '🏅 HOF',     app: 'hof'     },
+  { key: 'trainer', label: '🥋 Trainer', app: 'trainer' },
 ];
 
 // ── Unified App-Zugänge Modal ─────────────────────────────────────────────────

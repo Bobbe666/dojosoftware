@@ -109,7 +109,7 @@ router.post('/trainer-login', loginLimiter, async (req, res) => {
 
   try {
     const [rows] = await db.promise().query(
-      `SELECT id, username, email, password, rolle, dojo_id, vorname, nachname, aktiv
+      `SELECT id, username, email, password, rolle, dojo_id, vorname, nachname, aktiv, trainer_app_access
        FROM admin_users
        WHERE (email = ? OR username = ?) AND aktiv = 1
        LIMIT 1`,
@@ -125,6 +125,10 @@ router.post('/trainer-login', loginLimiter, async (req, res) => {
     const { valid } = await verifyPassword(password, user.password);
     if (!valid) {
       return res.status(401).json({ error: 'Ungültige Zugangsdaten' });
+    }
+
+    if (!user.trainer_app_access) {
+      return res.status(403).json({ error: 'Kein Zugriff auf die Trainer-App' });
     }
 
     // Trainer-ID via E-Mail-Match nachschlagen (NULL-sicher)

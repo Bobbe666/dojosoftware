@@ -289,10 +289,11 @@ router.get('/app-access', requireSuperAdmin, async (req, res) => {
   try {
     const [rows] = await db.promise().query(`
       SELECT au.id, au.vorname, au.nachname, au.email, au.username, au.rolle, au.dojo_id,
-             COALESCE(au.todo_app_access, 1)   AS todo_app_access,
-             COALESCE(au.events_app_access, 1) AS events_app_access,
-             COALESCE(au.kids_app_access, 1)   AS kids_app_access,
-             COALESCE(au.hof_app_access, 1)    AS hof_app_access,
+             COALESCE(au.todo_app_access, 1)     AS todo_app_access,
+             COALESCE(au.events_app_access, 1)   AS events_app_access,
+             COALESCE(au.kids_app_access, 1)     AS kids_app_access,
+             COALESCE(au.hof_app_access, 1)      AS hof_app_access,
+             COALESCE(au.trainer_app_access, 0)  AS trainer_app_access,
              d.dojoname
       FROM admin_users au
       LEFT JOIN dojo d ON d.id = au.dojo_id
@@ -313,10 +314,11 @@ router.get('/todo-access', requireSuperAdmin, async (req, res) => {
 // PATCH /api/admin/app-access/:id — App-Zugriff für einen Nutzer setzen
 // Body: { app: 'todo'|'events'|'kids'|'hof', access: 0|1 }
 const ALLOWED_APP_COLS = {
-  todo:   'todo_app_access',
-  events: 'events_app_access',
-  kids:   'kids_app_access',
-  hof:    'hof_app_access',
+  todo:    'todo_app_access',
+  events:  'events_app_access',
+  kids:    'kids_app_access',
+  hof:     'hof_app_access',
+  trainer: 'trainer_app_access',
 };
 router.patch('/app-access/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
