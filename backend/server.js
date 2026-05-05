@@ -666,6 +666,24 @@ try {
     });
 }
 
+// AfA (Anlagevermögen / Abschreibungen) — Enterprise
+try {
+  const afaRoutes = require('./routes/buchhaltung-afa');
+  app.use('/api/buchhaltung/afa', authenticateToken, afaRoutes);
+  logger.success('Route gemountet', { path: '/api/buchhaltung/afa' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'buchhaltung-afa', error: error.message });
+}
+
+// Kassenbuch (Bargeldbuch) — Enterprise
+try {
+  const kasseRoutes = require('./routes/buchhaltung-kasse');
+  app.use('/api/buchhaltung/kasse', authenticateToken, kasseRoutes);
+  logger.success('Route gemountet', { path: '/api/buchhaltung/kasse' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'buchhaltung-kasse', error: error.message });
+}
+
 // STEUER ROUTES (UStVA-Vorschau, ELSTER-XML, EÜR-Jahresübersicht)
 try {
   const steuerRouter = require(path.join(__dirname, "routes", "steuer.js"));

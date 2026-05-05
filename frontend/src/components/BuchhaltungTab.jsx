@@ -128,6 +128,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [cashflow, setCashflow] = useState(null);
   const [abgleichBericht, setAbgleichBericht] = useState(null);
   const [abgleichFilter, setAbgleichFilter] = useState('alle'); // alle | neu | bereits_erfasst | offen
+  const [dojoEinstellungen, setDojoEinstellungen] = useState({ kleinunternehmer: false, umsatzsteuerpflichtig: true });
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -199,6 +200,16 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       setLoading(false);
     }
   }, [token, selectedOrg, selectedJahr, selectedQuartal]);
+
+  // Dojo-Einstellungen laden (einmalig)
+  const loadEinstellungen = useCallback(async () => {
+    try {
+      const res = await axios.get('/buchhaltung/einstellungen', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setDojoEinstellungen(res.data);
+    } catch { /* ignore — defaults bleiben */ }
+  }, [token]);
 
   // Belege laden
   const loadBelege = useCallback(async () => {
@@ -365,14 +376,15 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     if (!tx || reviewAccepting) return;
     setReviewAccepting(true);
     try {
+      const mwstFuerRequest = dojoEinstellungen.kleinunternehmer ? 0 : parseFloat(reviewMwst || '0');
       await axios.post(`/buchhaltung/bank-import/vorschlag-annehmen/${tx.transaktion_id}`, {
-        mwst_satz: parseFloat(reviewMwst || '0')
+        mwst_satz: mwstFuerRequest
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setReviewStats(prev => ({ ...prev, angenommen: prev.angenommen + 1 }));
       setReviewIndex(prev => prev + 1);
-      setReviewMwst('19');
+      setReviewMwst(dojoEinstellungen.kleinunternehmer ? '0' : '19');
       loadBankStatistik();
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Annehmen');
@@ -877,6 +889,10 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   useEffect(() => {
     loadKategorien();
   }, [loadKategorien]);
+
+  useEffect(() => {
+    loadEinstellungen();
+  }, [loadEinstellungen]);
 
   // Load data based on active sub-tab
   useEffect(() => {
@@ -2650,21 +2666,34 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
             {steuerauswertung && !steuerLoading && (
               <>
                 {/* EÜR Kennzahlen */}
+                {(() => {
+                  const isKlein = steuerauswertung.auswertung?.kleinunternehmer ?? dojoEinstellungen.kleinunternehmer;
+                  const sumEin  = isKlein ? steuerauswertung.auswertung.summe_einnahmen : steuerauswertung.auswertung.summe_brutto_einnahmen;
+                  const sumAus  = isKlein ? steuerauswertung.auswertung.summe_ausgaben  : steuerauswertung.auswertung.summe_brutto_ausgaben;
+                  const gewinn  = isKlein ? steuerauswertung.auswertung.gewinn          : steuerauswertung.auswertung.gewinn_brutto;
+                  return (
                 <div className="steuer-kpi-grid">
+                  {isKlein && (
+                    <div className="steuer-kpi steuer-kpi--info">
+                      <div className="kpi-label">§ 19 UStG</div>
+                      <div className="kpi-value" style={{fontSize:'0.9rem'}}>Kleinunternehmer</div>
+                      <div className="kpi-sub">Keine Umsatzsteuer</div>
+                    </div>
+                  )}
                   <div className="steuer-kpi steuer-kpi--einnahmen">
-                    <div className="kpi-label">Betriebseinnahmen (netto)</div>
-                    <div className="kpi-value">{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</div>
+                    <div className="kpi-label">Betriebseinnahmen {isKlein ? '(Netto)' : '(Brutto)'}</div>
+                    <div className="kpi-value">{formatCurrency(sumEin)}</div>
                     <div className="kpi-sub">{steuerauswertung.auswertung.betriebseinnahmen?.length || 0} Kategorien</div>
                   </div>
                   <div className="steuer-kpi steuer-kpi--ausgaben">
-                    <div className="kpi-label">Betriebsausgaben (netto)</div>
-                    <div className="kpi-value">{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</div>
+                    <div className="kpi-label">Betriebsausgaben {isKlein ? '(Netto)' : '(Brutto)'}</div>
+                    <div className="kpi-value">{formatCurrency(sumAus)}</div>
                     <div className="kpi-sub">{steuerauswertung.auswertung.betriebsausgaben?.length || 0} Kategorien</div>
                   </div>
-                  <div className={`steuer-kpi ${steuerauswertung.auswertung.gewinn >= 0 ? 'steuer-kpi--gewinn' : 'steuer-kpi--verlust'}`}>
-                    <div className="kpi-label">{steuerauswertung.auswertung.gewinn >= 0 ? 'Gewinn (EÜR)' : 'Verlust (EÜR)'}</div>
-                    <div className="kpi-value">{formatCurrency(Math.abs(steuerauswertung.auswertung.gewinn))}</div>
-                    <div className="kpi-sub">Netto vor Steuern</div>
+                  <div className={`steuer-kpi ${gewinn >= 0 ? 'steuer-kpi--gewinn' : 'steuer-kpi--verlust'}`}>
+                    <div className="kpi-label">{gewinn >= 0 ? 'Gewinn (EÜR)' : 'Verlust (EÜR)'}</div>
+                    <div className="kpi-value">{formatCurrency(Math.abs(gewinn))}</div>
+                    <div className="kpi-sub">{isKlein ? 'Vor Einkommensteuer' : 'Brutto vor Steuern'}</div>
                   </div>
                   {steuerauswertung.auswertung.nicht_kategorisiert?.anzahl > 0 && (
                     <div className="steuer-kpi steuer-kpi--warnung">
@@ -2674,9 +2703,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     </div>
                   )}
                 </div>
+                  );
+                })()}
 
-                {/* USt-Auswertung */}
-                {steuerauswertung.auswertung.ust && (
+                {/* USt-Auswertung — nur für Regelbesteuerung */}
+                {steuerauswertung.auswertung.ust && !(steuerauswertung.auswertung?.kleinunternehmer ?? dojoEinstellungen.kleinunternehmer) && (
                   <div className="steuer-section ust-section">
                     <h4><Euro size={16} /> Umsatzsteuer-Auswertung {selectedJahr}</h4>
                     <div className="ust-kpi-grid">
@@ -2723,8 +2754,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                             {steuerauswertung.auswertung.ust.quartale.map((q, i) => (
                               <tr key={i} className={q.zahllast < 0 ? 'ust-row--guthaben' : ''}>
                                 <td><strong>{q.label}</strong></td>
-                                <td className="right einnahme-betrag">{formatCurrency(q.einnahmen_netto)}</td>
-                                <td className="right ausgabe-betrag">{formatCurrency(q.ausgaben_netto)}</td>
+                                <td className="right einnahme-betrag">{formatCurrency(q.einnahmen_brutto ?? q.einnahmen_netto)}</td>
+                                <td className="right ausgabe-betrag">{formatCurrency(q.ausgaben_brutto ?? q.ausgaben_netto)}</td>
                                 <td className="right">{formatCurrency(q.umsatzsteuer)}</td>
                                 <td className="right">{formatCurrency(q.vorsteuer)}</td>
                                 <td className={`right ${q.zahllast >= 0 ? 'ust-zahllast' : 'ust-guthaben'}`}>
@@ -2734,8 +2765,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                             ))}
                             <tr className="summen-zeile">
                               <td><strong>Gesamt {selectedJahr}</strong></td>
-                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</strong></td>
-                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</strong></td>
+                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_brutto_einnahmen ?? steuerauswertung.auswertung.summe_einnahmen)}</strong></td>
+                              <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_brutto_ausgaben ?? steuerauswertung.auswertung.summe_ausgaben)}</strong></td>
                               <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.ust.umsatzsteuer)}</strong></td>
                               <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.ust.vorsteuer)}</strong></td>
                               <td className={`right ${steuerauswertung.auswertung.ust.zahllast >= 0 ? 'ust-zahllast' : 'ust-guthaben'}`}>
@@ -2753,38 +2784,45 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 )}
 
                 {/* Einnahmen nach Kategorien */}
-                {steuerauswertung.auswertung.betriebseinnahmen.length > 0 && (
+                {steuerauswertung.auswertung.betriebseinnahmen.length > 0 && (() => {
+                  const isKlein = steuerauswertung.auswertung?.kleinunternehmer ?? dojoEinstellungen.kleinunternehmer;
+                  const sumLabel = isKlein ? 'Summe (Netto)' : 'Summe (Brutto)';
+                  return (
                   <div className="steuer-section">
                     <h4><TrendingUp size={16} /> Betriebseinnahmen nach Kategorie</h4>
                     <table className="steuer-table">
                       <thead>
-                        <tr><th>Kategorie</th><th>Anzahl</th><th className="right">Summe</th></tr>
+                        <tr><th>Kategorie</th><th>Anzahl</th><th className="right">{sumLabel}</th></tr>
                       </thead>
                       <tbody>
                         {steuerauswertung.auswertung.betriebseinnahmen.map((e, i) => (
                           <tr key={i}>
                             <td>{e.kategorie}</td>
                             <td>{e.anzahl}</td>
-                            <td className="right einnahme-betrag">{formatCurrency(e.summe)}</td>
+                            <td className="right einnahme-betrag">{formatCurrency(isKlein ? e.summe : (e.summe_brutto ?? e.summe))}</td>
                           </tr>
                         ))}
                         <tr className="summen-zeile">
                           <td><strong>Gesamt</strong></td>
                           <td></td>
-                          <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_einnahmen)}</strong></td>
+                          <td className="right"><strong>{formatCurrency(isKlein ? steuerauswertung.auswertung.summe_einnahmen : (steuerauswertung.auswertung.summe_brutto_einnahmen ?? steuerauswertung.auswertung.summe_einnahmen))}</strong></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Ausgaben nach Kategorien */}
-                {steuerauswertung.auswertung.betriebsausgaben.length > 0 && (
+                {steuerauswertung.auswertung.betriebsausgaben.length > 0 && (() => {
+                  const isKlein = steuerauswertung.auswertung?.kleinunternehmer ?? dojoEinstellungen.kleinunternehmer;
+                  const sumLabel = isKlein ? 'Summe (Netto)' : 'Summe (Brutto)';
+                  return (
                   <div className="steuer-section">
                     <h4><TrendingDown size={16} /> Betriebsausgaben nach Kategorie</h4>
                     <table className="steuer-table">
                       <thead>
-                        <tr><th>Kategorie</th><th>EÜR-Typ</th><th>Anzahl</th><th className="right">Summe</th></tr>
+                        <tr><th>Kategorie</th><th>EÜR-Typ</th><th>Anzahl</th><th className="right">{sumLabel}</th></tr>
                       </thead>
                       <tbody>
                         {steuerauswertung.auswertung.betriebsausgaben.map((a, i) => (
@@ -2792,19 +2830,20 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                             <td>{a.kategorie}</td>
                             <td><span className="euer-typ-badge">{a.euer_typ || '—'}</span></td>
                             <td>{a.anzahl}</td>
-                            <td className="right ausgabe-betrag">{formatCurrency(a.summe)}</td>
+                            <td className="right ausgabe-betrag">{formatCurrency(isKlein ? a.summe : (a.summe_brutto ?? a.summe))}</td>
                           </tr>
                         ))}
                         <tr className="summen-zeile">
                           <td><strong>Gesamt</strong></td>
                           <td></td>
                           <td></td>
-                          <td className="right"><strong>{formatCurrency(steuerauswertung.auswertung.summe_ausgaben)}</strong></td>
+                          <td className="right"><strong>{formatCurrency(isKlein ? steuerauswertung.auswertung.summe_ausgaben : (steuerauswertung.auswertung.summe_brutto_ausgaben ?? steuerauswertung.auswertung.summe_ausgaben))}</strong></td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Cashflow-Chart (CSS-Balkendiagramm) */}
                 {cashflow && cashflow.monate.length > 0 && (
@@ -3372,6 +3411,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </div>
               )}
 
+              {!dojoEinstellungen.kleinunternehmer && (
               <div className="kategorie-mwst-row">
                 <label>MwSt-Satz für diesen Beleg:</label>
                 <div className="kategorie-mwst-btns">
@@ -3393,6 +3433,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   ))}
                 </div>
               </div>
+              )}
 
               <div className="kategorie-grid">
                 {kategorien.map(kat => (
@@ -3924,6 +3965,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       <div className="review-vorschlag-kat">{vorschlagKat}</div>
                     </div>
 
+                    {!dojoEinstellungen.kleinunternehmer && (
                     <div className="review-mwst-row">
                       <span className="review-mwst-label">MwSt:</span>
                       {[
@@ -3940,6 +3982,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                         >{opt.label}</button>
                       ))}
                     </div>
+                    )}
 
                     <div className="review-actions">
                       <button

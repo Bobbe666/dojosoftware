@@ -3605,39 +3605,50 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
     const dojoFilter = dojoId ? 'AND dojo_id = ?' : '';
     const baseParams = dojoId ? [y, dojoId] : [y];
 
+    // Dojo-Einstellungen für Anzeige-Modus (Kleinunternehmer → netto, sonst brutto)
+    let kleinunternehmer = false;
+    if (dojoId) {
+      const [dojoRows] = await pool.query(
+        'SELECT kleinunternehmer FROM dojo WHERE dojo_id = ?', [dojoId]
+      );
+      kleinunternehmer = !!(dojoRows[0]?.kleinunternehmer);
+    }
+
     // ----------------------------------------------------------------
-    // 1) Einnahmen nach Kategorie (Netto, für EÜR)
+    // 1) Einnahmen nach Kategorie
     // ----------------------------------------------------------------
     const [einnahmenRows] = await pool.query(`
       SELECT
         COALESCE(kategorie, 'Unkategorisiert') AS kategorie,
-        SUM(betrag_netto)  AS summe,
-        SUM(mwst_betrag)   AS ust_summe,
-        COUNT(*)           AS anzahl
+        SUM(betrag_netto)   AS summe_netto,
+        SUM(betrag_brutto)  AS summe_brutto,
+        SUM(mwst_betrag)    AS ust_summe,
+        COUNT(*)            AS anzahl
       FROM buchhaltung_belege
       WHERE YEAR(buchungsdatum) = ?
         AND buchungsart = 'einnahme'
         ${dojoFilter}
       GROUP BY kategorie
-      ORDER BY summe DESC
+      ORDER BY summe_netto DESC
     `, baseParams);
 
     // ----------------------------------------------------------------
-    // 2) Ausgaben nach Kategorie (Netto, für EÜR), OHNE Steuerzahlungen
+    // 2) Ausgaben nach Kategorie, OHNE Steuerzahlungen
     // ----------------------------------------------------------------
     const [ausgabenRows] = await pool.query(`
       SELECT
         COALESCE(kategorie, 'Unkategorisiert') AS kategorie,
-        SUM(betrag_netto)  AS summe,
+        SUM(betrag_netto)   AS summe_netto,
+        SUM(betrag_brutto)  AS summe_brutto,
         SUM(CASE WHEN mwst_satz > 0 THEN mwst_betrag ELSE 0 END) AS vorsteuer_summe,
-        COUNT(*)           AS anzahl
+        COUNT(*)            AS anzahl
       FROM buchhaltung_belege
       WHERE YEAR(buchungsdatum) = ?
         AND buchungsart = 'ausgabe'
         AND (kategorie IS NULL OR kategorie != 'steuerzahlungen')
         ${dojoFilter}
       GROUP BY kategorie
-      ORDER BY summe DESC
+      ORDER BY summe_netto DESC
     `, baseParams);
 
     // ----------------------------------------------------------------
@@ -3674,6 +3685,7 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
         QUARTER(buchungsdatum)  AS q,
         buchungsart,
         SUM(betrag_netto)       AS netto,
+        SUM(betrag_brutto)      AS brutto,
         SUM(CASE WHEN buchungsart = 'einnahme' THEN mwst_betrag ELSE 0 END) AS ust,
         SUM(CASE WHEN buchungsart = 'ausgabe' AND mwst_satz > 0
                       AND (kategorie IS NULL OR kategorie != 'steuerzahlungen') THEN mwst_betrag ELSE 0 END) AS vorsteuer
@@ -3691,14 +3703,16 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
       const qUst      = parseFloat(eRow?.ust      || 0);
       const qVorsteuer = parseFloat(aRow?.vorsteuer || 0);
       return {
-        quartal:         qd.quartal,
-        label:           qd.label,
-        monate:          qd.monate,
-        umsatzsteuer:    Math.round(qUst * 100) / 100,
-        vorsteuer:       Math.round(qVorsteuer * 100) / 100,
-        zahllast:        Math.round((qUst - qVorsteuer) * 100) / 100,
-        einnahmen_netto: Math.round(parseFloat(eRow?.netto || 0) * 100) / 100,
-        ausgaben_netto:  Math.round(parseFloat(aRow?.netto || 0) * 100) / 100,
+        quartal:          qd.quartal,
+        label:            qd.label,
+        monate:           qd.monate,
+        umsatzsteuer:     Math.round(qUst * 100) / 100,
+        vorsteuer:        Math.round(qVorsteuer * 100) / 100,
+        zahllast:         Math.round((qUst - qVorsteuer) * 100) / 100,
+        einnahmen_netto:  Math.round(parseFloat(eRow?.netto   || 0) * 100) / 100,
+        ausgaben_netto:   Math.round(parseFloat(aRow?.netto   || 0) * 100) / 100,
+        einnahmen_brutto: Math.round(parseFloat(eRow?.brutto  || 0) * 100) / 100,
+        ausgaben_brutto:  Math.round(parseFloat(aRow?.brutto  || 0) * 100) / 100,
       };
     });
 
@@ -3758,40 +3772,52 @@ router.get('/bank-import/steuerauswertung', requireFeature('kontoauszug'), requi
     `, baseParams);
 
     // ----------------------------------------------------------------
-    // Summen aggregieren
+    // Summen aggregieren (netto + brutto)
     // ----------------------------------------------------------------
-    const sumEinnahmen = einnahmenRows.reduce((s, r) => s + parseFloat(r.summe || 0), 0);
-    const sumAusgaben  = ausgabenRows.reduce((s, r) => s + parseFloat(r.summe || 0), 0);
+    const sumEinnahmen       = einnahmenRows.reduce((s, r) => s + parseFloat(r.summe_netto  || 0), 0);
+    const sumAusgaben        = ausgabenRows.reduce((s, r)  => s + parseFloat(r.summe_netto  || 0), 0);
+    const sumBruttoEinnahmen = einnahmenRows.reduce((s, r) => s + parseFloat(r.summe_brutto || 0), 0);
+    const sumBruttoAusgaben  = ausgabenRows.reduce((s, r)  => s + parseFloat(r.summe_brutto || 0), 0);
 
     const auswertung = {
-      // EÜR-Kernfelder (Netto-Beträge)
+      kleinunternehmer,
+      // EÜR-Kernfelder pro Kategorie
       betriebseinnahmen: einnahmenRows.map(r => ({
-        kategorie: r.kategorie,
-        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
-        anzahl:    r.anzahl,
+        kategorie:    r.kategorie,
+        summe:        Math.round(parseFloat(r.summe_netto  || 0) * 100) / 100,
+        summe_brutto: Math.round(parseFloat(r.summe_brutto || 0) * 100) / 100,
+        anzahl:       r.anzahl,
       })),
       betriebsausgaben: ausgabenRows.map(r => ({
-        kategorie: r.kategorie,
-        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
-        anzahl:    r.anzahl,
+        kategorie:    r.kategorie,
+        summe:        Math.round(parseFloat(r.summe_netto  || 0) * 100) / 100,
+        summe_brutto: Math.round(parseFloat(r.summe_brutto || 0) * 100) / 100,
+        anzahl:       r.anzahl,
       })),
+      // Netto-Summen (Kleinunternehmer + formale EÜR)
       gewinn:          Math.round((sumEinnahmen - sumAusgaben) * 100) / 100,
       summe_einnahmen: Math.round(sumEinnahmen * 100) / 100,
       summe_ausgaben:  Math.round(sumAusgaben  * 100) / 100,
+      // Brutto-Summen (Regelbesteuerung-Anzeige)
+      gewinn_brutto:          Math.round((sumBruttoEinnahmen - sumBruttoAusgaben) * 100) / 100,
+      summe_brutto_einnahmen: Math.round(sumBruttoEinnahmen * 100) / 100,
+      summe_brutto_ausgaben:  Math.round(sumBruttoAusgaben  * 100) / 100,
       nicht_kategorisiert: {
         anzahl: parseInt(unkategorisiert[0]?.anzahl || 0),
         summe:  Math.round(parseFloat(unkategorisiert[0]?.summe || 0) * 100) / 100,
       },
       // Kategorie-Aufschlüsselung (Alias für Frontend-Kompatibilität)
       einnahmen_nach_kategorie: einnahmenRows.map(r => ({
-        kategorie: r.kategorie,
-        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
-        anzahl:    r.anzahl,
+        kategorie:    r.kategorie,
+        summe:        Math.round(parseFloat(r.summe_netto  || 0) * 100) / 100,
+        summe_brutto: Math.round(parseFloat(r.summe_brutto || 0) * 100) / 100,
+        anzahl:       r.anzahl,
       })),
       ausgaben_nach_kategorie: ausgabenRows.map(r => ({
-        kategorie: r.kategorie,
-        summe:     Math.round(parseFloat(r.summe || 0) * 100) / 100,
-        anzahl:    r.anzahl,
+        kategorie:    r.kategorie,
+        summe:        Math.round(parseFloat(r.summe_netto  || 0) * 100) / 100,
+        summe_brutto: Math.round(parseFloat(r.summe_brutto || 0) * 100) / 100,
+        anzahl:       r.anzahl,
       })),
       // USt-Auswertung
       ust: {
@@ -4762,6 +4788,143 @@ router.get('/bilanz/export', requireBuchhaltungAccess, (req, res) => {
     console.error('Bilanz-Export-Fehler:', err);
     res.status(500).json({ message: 'Fehler beim Export der Bilanz', error: err.message });
   });
+});
+
+// ===================================================================
+// 📊 GET /api/buchhaltung/export/datev - DATEV CSV Export
+// ===================================================================
+router.get('/export/datev', requireBuchhaltungAccess, async (req, res) => {
+  const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+  const dojoId = req.buchhaltungDojoId;
+
+  let sql = 'SELECT * FROM buchhaltung_belege WHERE YEAR(buchungsdatum) = ? AND status != "storniert"';
+  const params = [jahr];
+  if (dojoId !== null && dojoId !== undefined) {
+    sql += ' AND dojo_id = ?';
+    params.push(dojoId);
+  }
+  sql += ' ORDER BY buchungsdatum ASC';
+
+  try {
+    const belege = await new Promise((resolve, reject) =>
+      db.query(sql, params, (err, rows) => err ? reject(err) : resolve(rows))
+    );
+
+    const kontoMap = {
+      betriebseinnahmen: '8400',
+      wareneingang: '3400',
+      personalkosten: '4110',
+      raumkosten: '4210',
+      versicherungen: '4360',
+      kfz_kosten: '4530',
+      werbekosten: '4610',
+      reisekosten: '4670',
+      telefon_internet: '4920',
+      software: '4970',
+      buerokosten: '4730',
+      fortbildung: '4900',
+      abschreibungen: '4830',
+      bankgebuehren: '4970',
+      ausstattung: '4985',
+      steuerzahlungen: '4320',
+      sonstige_kosten: '4970',
+      privateinlage: '1800',
+      privatentnahme: '1800'
+    };
+
+    const datevDate = new Date(jahr, 0, 1).toISOString().slice(0, 10).replace(/-/g, '');
+
+    // DATEV header line 1
+    const header1 = `"EXTF";700;21;"Buchungsstapel";13;${datevDate};;"DOJOSOFTWARE";;;"";1;${datevDate};4;${jahr};12;;;`;
+
+    // DATEV header line 2 (column names)
+    const header2 = 'Umsatz (ohne Soll/Haben-Kz);Soll/Haben-Kennzeichen;WKZ Umsatz;Kurs;Basis-Umsatz;WKZ Basis-Umsatz;Konto;Gegenkonto (ohne BU-Schlüssel);BU-Schlüssel;Belegdatum;Belegfeld 1;Belegfeld 2;Skonto;Buchungstext;Postensperre;Diverse Adressnummer;Geschäftspartnerbank;Sachverhalt;Zinssperre;Beleglink;Beleginfo - Art 1;Beleginfo - Inhalt 1;Beleginfo - Art 2;Beleginfo - Inhalt 2;KOST1 - Kostenstelle;KOST2 - Kostenstelle;Kost-Menge;EU-Land u. UStId;EU-Steuersatz;Abw. Versteuerungsart;Sachverhalt L+L;Funktionsergänzung L+L;BU 49 Hauptfunktionstyp;BU 49 Hauptfunktionsnummer;BU 49 Funktionsergänzung;Zusatzinformation - Art 1;Zusatzinformation- Inhalt 1;Zusatzinformation - Art 2;Zusatzinformation- Inhalt 2;Zusatzinformation - Art 3;Zusatzinformation- Inhalt 3;Zusatzinformation - Art 4;Zusatzinformation- Inhalt 4;Stück;Gewicht;Zahlweise;Forderungsart;Veranlagungsjahr;Zugeordnete Fälligkeit;Skontotyp;Auftragsnummer;Buchungstyp;Ust-Schlüssel (Vorsystem);EU-Mitgliedstaat (Vorsystem);Sachverhalt§13b UStG (Vorsystem);EU-Steuersatz (Vorsystem);Erlöskonto (Vorsystem);Herkunft-Kz;Buchungs GUID;KOST-Datum;SEPA-Mandatsreferenz;Skontosperre;Gesellschaftername;Beteiligtennummer;Identifikationsnummer;Zeichnernummer;Postensperre bis;Bezeichnung SoBil-Sachverhalt;Kennzeichen SoBil-Buchung;Festschreibung;Leistungsdatum;Leistungsdatum Ende';
+
+    const lines = [header1, header2];
+
+    for (const b of belege) {
+      const betrag = parseFloat(b.betrag_netto || 0).toFixed(2).replace('.', ',');
+      const shKz = b.buchungsart === 'ausgabe' ? 'S' : 'H';
+      const konto = kontoMap[b.kategorie] || '4970';
+      const gegenkonto = '1800';
+
+      let buSchluessel = '';
+      const mwst = parseInt(b.mwst_satz || 0);
+      if (mwst === 7) buSchluessel = '9';
+      else if (mwst === 0) buSchluessel = '40';
+
+      const datum = b.buchungsdatum ? new Date(b.buchungsdatum) : new Date();
+      const dd = String(datum.getDate()).padStart(2, '0');
+      const mm = String(datum.getMonth() + 1).padStart(2, '0');
+      const belegdatum = `${dd}${mm}`;
+
+      const belegfeld1 = b.beleg_nummer || '';
+      const buchungstext = (b.beschreibung || '').substring(0, 60);
+
+      // Build CSV line: only first 14 fields populated, rest empty (73 total columns = 72 semicolons)
+      const fields = [
+        betrag,      // Umsatz
+        shKz,        // S/H
+        'EUR',       // WKZ
+        '',          // Kurs
+        '',          // Basis-Umsatz
+        '',          // WKZ Basis
+        konto,       // Konto
+        gegenkonto,  // Gegenkonto
+        buSchluessel,// BU-Schlüssel
+        belegdatum,  // Belegdatum
+        belegfeld1,  // Belegfeld 1
+        '',          // Belegfeld 2
+        '',          // Skonto
+        buchungstext // Buchungstext
+      ];
+
+      // Pad to 74 fields (73 semicolons) as required by DATEV format
+      while (fields.length < 74) fields.push('');
+
+      lines.push(fields.join(';'));
+    }
+
+    const csv = lines.join('\r\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=latin1');
+    res.setHeader('Content-Disposition', `attachment; filename=DATEV_Buchungsstapel_${jahr}.csv`);
+    res.send(Buffer.from(csv, 'latin1'));
+  } catch (err) {
+    console.error('DATEV-Export-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim DATEV-Export', error: err.message });
+  }
+});
+
+// ===================================================================
+// GET /api/buchhaltung/einstellungen - Steuerliche Einstellungen des Dojos
+// ===================================================================
+router.get('/einstellungen', requireBuchhaltungAccess, async (req, res) => {
+  const dojoId = req.buchhaltungDojoId;
+
+  if (dojoId === null || dojoId === undefined) {
+    // Super-Admin: no specific dojo selected, return defaults
+    return res.json({ kleinunternehmer: false, umsatzsteuerpflichtig: true });
+  }
+
+  try {
+    const rows = await new Promise((resolve, reject) =>
+      db.query(
+        'SELECT kleinunternehmer, umsatzsteuerpflichtig, gemeinnuetzig, rechtsform, steuernummer, umsatzsteuer_id, finanzamt FROM dojo WHERE dojo_id = ?',
+        [dojoId],
+        (err, r) => err ? reject(err) : resolve(r)
+      )
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: 'Dojo nicht gefunden' });
+    }
+
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Einstellungen-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Laden der Einstellungen', error: err.message });
+  }
 });
 
 module.exports = router;
