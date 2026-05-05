@@ -2206,7 +2206,8 @@ router.get('/kategorien', requireBuchhaltungAccess, (req, res) => {
     { id: 'sonstige_kosten', name: 'Sonstige Kosten', typ: 'ausgabe', beschreibung: 'Sonstige betriebliche Aufwendungen' },
     { id: 'privateinlage', name: 'Privateinlage', typ: 'privat', beschreibung: 'Private Einzahlung (kein Umsatz)' },
     { id: 'privatentnahme', name: 'Privatentnahme', typ: 'privat', beschreibung: 'Private Entnahme (keine Ausgabe)' },
-    { id: 'steuerzahlungen', name: 'Steuerzahlungen / Finanzamt', typ: 'ausgabe', beschreibung: 'USt, ESt, GewSt, Vorauszahlungen' }
+    { id: 'steuerzahlungen', name: 'Steuerzahlungen / Finanzamt', typ: 'ausgabe', beschreibung: 'USt, ESt, GewSt, Vorauszahlungen' },
+    { id: 'anlagevermögen', name: 'Anlagevermögen (Kauf / Rate)', typ: 'ausgabe', beschreibung: 'Kauf eines Anlageguts — AfA wird separat im Anlagenregister berechnet' }
   ];
 
   res.json(kategorien);
@@ -5081,6 +5082,190 @@ router.get('/einstellungen', requireBuchhaltungAccess, async (req, res) => {
   } catch (err) {
     console.error('Einstellungen-Fehler:', err);
     res.status(500).json({ message: 'Fehler beim Laden der Einstellungen', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📐 AfA-BERECHNUNG (Lineare Abschreibung nach § 7 EStG)
+// ===================================================================
+
+const dbQuery = (sql, params) =>
+  new Promise((resolve, reject) =>
+    db.query(sql, params, (err, rows) => err ? reject(err) : resolve(rows))
+  );
+
+function berechneAfaJahre(anschaffungskosten, restwert, nutzungsdauer, kaufdatum) {
+  const aks = parseFloat(anschaffungskosten);
+  const rw  = parseFloat(restwert) || 0;
+  const nd  = parseInt(nutzungsdauer);
+  const kauf = new Date(kaufdatum);
+  const kaufJahr  = kauf.getFullYear();
+  const kaufMonat = kauf.getMonth() + 1; // 1–12
+
+  const basis      = aks - rw;
+  const jahresAfa  = basis / nd;
+  const anteilMon  = 12 - kaufMonat + 1;
+  const erstjahrAfa = Math.round(jahresAfa * (anteilMon / 12) * 100) / 100;
+
+  const positionen = [];
+  let buchwert = aks;
+
+  for (let i = 0; i < nd; i++) {
+    const ist_erstes_jahr  = i === 0 ? 1 : 0;
+    const ist_letztes_jahr = i === nd - 1 ? 1 : 0;
+    let afa;
+    if (ist_erstes_jahr)       afa = erstjahrAfa;
+    else if (ist_letztes_jahr) afa = Math.max(0, Math.round((buchwert - rw) * 100) / 100);
+    else                       afa = Math.round(jahresAfa * 100) / 100;
+
+    const endeWert = Math.max(rw, Math.round((buchwert - afa) * 100) / 100);
+    positionen.push({
+      afa_jahr: kaufJahr + i,
+      afa_betrag: afa,
+      buchwert_beginn: Math.round(buchwert * 100) / 100,
+      buchwert_ende:   endeWert,
+      ist_erstes_jahr,
+      ist_letztes_jahr
+    });
+    buchwert = endeWert;
+  }
+  return positionen;
+}
+
+const ANLAGE_ORG_MAP = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+
+// ===================================================================
+// 📋 GET /api/buchhaltung/anlagevermögen
+// ===================================================================
+router.get('/anlageverm%C3%B6gen', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation } = req.query;
+    const of = buildOrgFilter(req, organisation);
+    const where = of.sql ? `WHERE 1=1 ${of.sql}` : 'WHERE 1=1';
+    const rows = await dbQuery(
+      `SELECT ar.*,
+         (SELECT ap.afa_betrag FROM afa_positionen ap WHERE ap.anlage_id = ar.anlage_id AND ap.afa_jahr = YEAR(CURDATE())) AS afa_aktuelles_jahr,
+         (SELECT ap.buchwert_ende FROM afa_positionen ap WHERE ap.anlage_id = ar.anlage_id AND ap.afa_jahr = YEAR(CURDATE())) AS buchwert_aktuell
+       FROM anlage_register ar ${where} ORDER BY ar.kaufdatum DESC`,
+      of.params
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📋 GET /api/buchhaltung/anlagevermögen/:id/afa
+// ===================================================================
+router.get('/anlageverm%C3%B6gen/:id/afa', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [anlage] = await dbQuery('SELECT * FROM anlage_register WHERE anlage_id = ?', [req.params.id]);
+    if (!anlage) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, anlage.dojo_id)) return;
+    const positionen = await dbQuery('SELECT * FROM afa_positionen WHERE anlage_id = ? ORDER BY afa_jahr ASC', [req.params.id]);
+    res.json({ anlage, positionen });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
+// ➕ POST /api/buchhaltung/anlagevermögen
+// ===================================================================
+router.post('/anlageverm%C3%B6gen', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation_name, bezeichnung, beschreibung, anlage_kategorie,
+            kaufdatum, anschaffungskosten, restwert = 0,
+            nutzungsdauer, lieferant, rechnungsnummer } = req.body;
+    if (!bezeichnung || !kaufdatum || !anschaffungskosten || !nutzungsdauer)
+      return res.status(400).json({ message: 'Pflichtfelder fehlen' });
+
+    const dojoId = req.buchhaltungDojoId || ANLAGE_ORG_MAP[organisation_name] || null;
+    const orgName = organisation_name || (dojoId === 2 ? 'TDA International' : 'Kampfkunstschule Schreiner');
+
+    const ins = await dbQuery(
+      `INSERT INTO anlage_register (dojo_id, organisation_name, bezeichnung, beschreibung,
+         anlage_kategorie, kaufdatum, anschaffungskosten, restwert, nutzungsdauer,
+         lieferant, rechnungsnummer, erstellt_von)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [dojoId, orgName, bezeichnung, beschreibung || null, anlage_kategorie || 'sonstiges',
+       kaufdatum, parseFloat(anschaffungskosten), parseFloat(restwert) || 0,
+       parseInt(nutzungsdauer), lieferant || null, rechnungsnummer || null, req.user?.id || 1]
+    );
+    const anlageId = ins.insertId;
+
+    const positionen = berechneAfaJahre(anschaffungskosten, restwert, nutzungsdauer, kaufdatum);
+    for (const p of positionen) {
+      await dbQuery(
+        `INSERT INTO afa_positionen (anlage_id, dojo_id, organisation_name,
+           afa_jahr, afa_betrag, buchwert_beginn, buchwert_ende, ist_erstes_jahr, ist_letztes_jahr)
+         VALUES (?,?,?,?,?,?,?,?,?)`,
+        [anlageId, dojoId, orgName, p.afa_jahr, p.afa_betrag,
+         p.buchwert_beginn, p.buchwert_ende, p.ist_erstes_jahr, p.ist_letztes_jahr]
+      );
+    }
+    res.status(201).json({ anlage_id: anlageId, afa_positionen: positionen });
+  } catch (err) {
+    console.error('Anlage-Create-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Anlegen', error: err.message });
+  }
+});
+
+// ===================================================================
+// ✏️ PUT /api/buchhaltung/anlagevermögen/:id
+// ===================================================================
+router.put('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [existing] = await dbQuery('SELECT dojo_id, organisation_name FROM anlage_register WHERE anlage_id = ?', [req.params.id]);
+    if (!existing) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, existing.dojo_id)) return;
+
+    const { bezeichnung, beschreibung, anlage_kategorie, kaufdatum,
+            anschaffungskosten, restwert = 0, nutzungsdauer, lieferant, rechnungsnummer } = req.body;
+
+    await dbQuery(
+      `UPDATE anlage_register SET bezeichnung=?, beschreibung=?, anlage_kategorie=?,
+         kaufdatum=?, anschaffungskosten=?, restwert=?, nutzungsdauer=?,
+         lieferant=?, rechnungsnummer=?, geaendert_von=?
+       WHERE anlage_id=?`,
+      [bezeichnung, beschreibung || null, anlage_kategorie || 'sonstiges', kaufdatum,
+       parseFloat(anschaffungskosten), parseFloat(restwert) || 0, parseInt(nutzungsdauer),
+       lieferant || null, rechnungsnummer || null, req.user?.id || 1, req.params.id]
+    );
+
+    await dbQuery('DELETE FROM afa_positionen WHERE anlage_id = ?', [req.params.id]);
+    const positionen = berechneAfaJahre(anschaffungskosten, restwert, nutzungsdauer, kaufdatum);
+    for (const p of positionen) {
+      await dbQuery(
+        `INSERT INTO afa_positionen (anlage_id, dojo_id, organisation_name,
+           afa_jahr, afa_betrag, buchwert_beginn, buchwert_ende, ist_erstes_jahr, ist_letztes_jahr)
+         VALUES (?,?,?,?,?,?,?,?,?)`,
+        [req.params.id, existing.dojo_id, existing.organisation_name,
+         p.afa_jahr, p.afa_betrag, p.buchwert_beginn, p.buchwert_ende,
+         p.ist_erstes_jahr, p.ist_letztes_jahr]
+      );
+    }
+    res.json({ message: 'Aktualisiert', afa_positionen: positionen });
+  } catch (err) {
+    console.error('Anlage-Update-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Aktualisieren', error: err.message });
+  }
+});
+
+// ===================================================================
+// 🗑️ DELETE /api/buchhaltung/anlagevermögen/:id
+// ===================================================================
+router.delete('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM anlage_register WHERE anlage_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    await dbQuery('UPDATE anlage_register SET aktiv=0, ausgeschieden_am=CURDATE(), geaendert_von=? WHERE anlage_id=?',
+      [req.user?.id || 1, req.params.id]);
+    res.json({ message: 'Anlage ausgeschieden' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
   }
 });
 

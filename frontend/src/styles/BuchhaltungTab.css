@@ -3566,3 +3566,83 @@
 }
 .steuer-kpi--info .kpi-label { color: #a5b4fc; }
 .steuer-kpi--info .kpi-value { color: #a5b4fc; }
+
+/* =====================================================
+   ANLAGEVERMÖGEN & AfA
+   ===================================================== */
+.anlagen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.anlagen-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+  margin: 0;
+}
+.anlagen-info-box {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  background: rgba(99, 102, 241, 0.07);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary, var(--text-muted));
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+.anlage-form-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.anlage-form-card h4 { margin: 0 0 1rem 0; font-size: 1rem; }
+.anlage-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+.anlage-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+.anlagen-table-wrap { overflow-x: auto; margin-bottom: 1.5rem; }
+.anlagen-table th, .anlagen-table td { padding: 0.55rem 0.75rem; }
+.anlage-name { font-weight: 600; }
+.anlage-meta { font-size: 0.75rem; color: var(--text-muted); }
+.anlage-actions { display: flex; gap: 0.35rem; }
+.btn-icon { background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 0.2rem; border-radius: 4px; }
+.btn-icon:hover { color: var(--text-primary); background: var(--bg-tertiary, rgba(255,255,255,0.06)); }
+.btn-danger-icon:hover { color: #f87171; }
+.row-inactive td { opacity: 0.45; }
+.row-highlight { background: rgba(99, 102, 241, 0.08); font-weight: 600; }
+.row-past { opacity: 0.65; }
+.text-danger { color: #f87171; }
+.empty-cell { text-align: center; color: var(--text-muted); padding: 2rem !important; }
+.right { text-align: right; }
+.afa-schedule-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-top: 1rem;
+}
+.afa-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.afa-schedule-header h4 { margin: 0; font-size: 1rem; }
+.afa-table th, .afa-table td { padding: 0.45rem 0.75rem; }
+.afa-note { font-size: 0.75rem; color: var(--text-muted); }
+.badge-aktuell { font-size: 0.7rem; background: rgba(99,102,241,0.2); color: #a5b4fc; border-radius: 4px; padding: 1px 6px; margin-left: 4px; }
