@@ -3372,7 +3372,28 @@ router.post('/bank-import/vorschlag-annehmen/:id', requireFeature('kontoauszug')
       });
     }
 
-    // Erstelle Beleg und markiere als zugeordnet
+    // Beitrag/Rechnung/Verkauf-Matches brauchen keinen eigenen Beleg — die erscheinen
+    // bereits über ihren eigenen EÜR-Branch. Nur Status auf 'zugeordnet' setzen.
+    const euerManagedTypes = ['beitrag', 'rechnung', 'verkauf'];
+    if (euerManagedTypes.includes(tx.match_typ)) {
+      const kategorie = mapZuBelegeKategorie(matchDetails?.kategorie, matchDetails?.euer_typ, tx.betrag);
+      await new Promise((resolve, reject) => {
+        db.query(`
+          UPDATE bank_transaktionen SET
+            status = 'zugeordnet',
+            kategorie = ?,
+            zugeordnet_von = ?,
+            zugeordnet_am = NOW()
+          WHERE transaktion_id = ?
+        `, [kategorie, req.user?.id || 1, transaktionId], (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+      return res.json({ message: 'Vorschlag angenommen', match_typ: tx.match_typ });
+    }
+
+    // Alle anderen Match-Typen: Beleg erstellen
     const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
     const kategorie = mapZuBelegeKategorie(matchDetails?.kategorie, matchDetails?.euer_typ, tx.betrag);
     const jahr = new Date(tx.buchungsdatum).getFullYear();
@@ -3567,10 +3588,25 @@ router.post('/bank-import/alle-vorschlaege-annehmen', requireFeature('kontoauszu
           });
         }
 
-        // Kategorie auf gültigen ENUM-Wert für buchhaltung_belege mappen
-        const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
         const roheKategorie = matchDetails?.kategorie || tx.auto_kategorie;
         const kategorie = mapZuBelegeKategorie(roheKategorie, matchDetails?.euer_typ, tx.betrag);
+
+        // Beitrag/Rechnung/Verkauf: bereits in EÜR über eigenen Branch — kein Beleg erstellen
+        if (['beitrag', 'rechnung', 'verkauf'].includes(tx.match_typ)) {
+          await new Promise((resolve, reject) => {
+            db.query(`
+              UPDATE bank_transaktionen SET
+                status='zugeordnet', kategorie=?,
+                zugeordnet_von=?, zugeordnet_am=NOW()
+              WHERE transaktion_id=?
+            `, [kategorie, req.user?.id || 1, tx.transaktion_id],
+            (err) => err ? reject(err) : resolve());
+          });
+          angenommenCount++;
+          continue;
+        }
+
+        const buchungsart = tx.betrag > 0 ? 'einnahme' : 'ausgabe';
         const jahr = new Date(tx.buchungsdatum).getFullYear();
         const belegNummer = await generateBelegNummer(tx.dojo_id, jahr);
 
