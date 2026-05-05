@@ -171,9 +171,13 @@ const PasswortVerwaltung = ({ dojoOnly = false }) => {
 
   // ── Software-Konto anlegen ───────────────────────────────────────
   const handleCreateSoftwareAccount = async () => {
-    const { username, password, rolle } = softwareForm;
+    const { username, email, password, rolle } = softwareForm;
     if (!username || username.length < 3) {
       setMessage({ text: 'Benutzername muss mindestens 3 Zeichen haben', type: 'error' });
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setMessage({ text: 'E-Mail ist erforderlich', type: 'error' });
       return;
     }
     if (!password || password.length < 8) {

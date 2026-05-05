@@ -897,6 +897,7 @@ router.post('/password-management/software/create', async (req, res) => {
       return res.status(403).json({ error: 'Keine Berechtigung' });
     }
     if (!username || username.length < 3) return res.status(400).json({ error: 'Benutzername muss mindestens 3 Zeichen haben' });
+    if (!email || !email.includes('@')) return res.status(400).json({ error: 'E-Mail ist erforderlich' });
     if (!password || password.length < 8) return res.status(400).json({ error: 'Passwort muss mindestens 8 Zeichen haben' });
     if (!rolle) return res.status(400).json({ error: 'Rolle fehlt' });
 
@@ -922,7 +923,10 @@ router.post('/password-management/software/create', async (req, res) => {
     res.status(201).json({ success: true, id: result.insertId, username, rolle });
   } catch (error) {
     console.error('Fehler beim Anlegen des Software-Kontos:', error);
-    res.status(500).json({ error: 'Fehler beim Anlegen' });
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'Benutzername oder E-Mail bereits vergeben' });
+    }
+    res.status(500).json({ error: error.message || 'Fehler beim Anlegen' });
   }
 });
 
