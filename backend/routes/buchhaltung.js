@@ -1720,6 +1720,90 @@ router.get('/belege/:id/datei', requireBuchhaltungAccess, (req, res) => {
 });
 
 // ===================================================================
+// 📎 POST /api/buchhaltung/bank-import/transaktion/:id/upload
+// ===================================================================
+router.post('/bank-import/transaktion/:id/upload', requireFeature('kontoauszug'), requireBuchhaltungAccess, upload.single('datei'), async (req, res) => {
+  const txId = parseInt(req.params.id);
+  if (!req.file) return res.status(400).json({ message: 'Keine Datei hochgeladen' });
+
+  try {
+    const pool = db.promise();
+    const dojoId = req.buchhaltungDojoId;
+
+    const [rows] = await pool.query(
+      'SELECT transaktion_id, dojo_id FROM bank_transaktionen WHERE transaktion_id = ?', [txId]
+    );
+    if (!rows.length) { fs.unlinkSync(req.file.path); return res.status(404).json({ message: 'Transaktion nicht gefunden' }); }
+    if (dojoId && rows[0].dojo_id !== dojoId) { fs.unlinkSync(req.file.path); return res.status(403).json({ message: 'Keine Berechtigung' }); }
+
+    // Alte Datei löschen wenn vorhanden
+    const [oldRows] = await pool.query('SELECT datei_pfad FROM bank_transaktionen WHERE transaktion_id = ?', [txId]);
+    if (oldRows[0]?.datei_pfad && fs.existsSync(oldRows[0].datei_pfad)) {
+      try { fs.unlinkSync(oldRows[0].datei_pfad); } catch {}
+    }
+
+    await pool.query(`
+      UPDATE bank_transaktionen SET
+        datei_pfad = ?, datei_name = ?, datei_typ = ?, datei_groesse = ?
+      WHERE transaktion_id = ?
+    `, [req.file.path, req.file.originalname, req.file.mimetype, req.file.size, txId]);
+
+    res.json({ message: 'Anhang hochgeladen', datei_name: req.file.originalname });
+  } catch (err) {
+    try { fs.unlinkSync(req.file.path); } catch {}
+    res.status(500).json({ message: 'Upload fehlgeschlagen', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📥 GET /api/buchhaltung/bank-import/transaktion/:id/datei
+// ===================================================================
+router.get('/bank-import/transaktion/:id/datei', requireBuchhaltungAccess, async (req, res) => {
+  const txId = parseInt(req.params.id);
+  try {
+    const pool = db.promise();
+    const dojoId = req.buchhaltungDojoId;
+    const [rows] = await pool.query(
+      'SELECT datei_pfad, datei_name, datei_typ, dojo_id FROM bank_transaktionen WHERE transaktion_id = ?', [txId]
+    );
+    if (!rows.length || !rows[0].datei_pfad) return res.status(404).json({ message: 'Keine Datei vorhanden' });
+    if (dojoId && rows[0].dojo_id !== dojoId) return res.status(403).json({ message: 'Keine Berechtigung' });
+    const { datei_pfad, datei_name, datei_typ } = rows[0];
+    if (!fs.existsSync(datei_pfad)) return res.status(404).json({ message: 'Datei nicht mehr vorhanden' });
+    res.setHeader('Content-Type', datei_typ);
+    res.setHeader('Content-Disposition', `inline; filename="${datei_name}"`);
+    res.sendFile(datei_pfad);
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
+// 🗑️ DELETE /api/buchhaltung/bank-import/transaktion/:id/datei
+// ===================================================================
+router.delete('/bank-import/transaktion/:id/datei', requireBuchhaltungAccess, async (req, res) => {
+  const txId = parseInt(req.params.id);
+  try {
+    const pool = db.promise();
+    const dojoId = req.buchhaltungDojoId;
+    const [rows] = await pool.query(
+      'SELECT datei_pfad, dojo_id FROM bank_transaktionen WHERE transaktion_id = ?', [txId]
+    );
+    if (!rows.length) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (dojoId && rows[0].dojo_id !== dojoId) return res.status(403).json({ message: 'Keine Berechtigung' });
+    if (rows[0].datei_pfad && fs.existsSync(rows[0].datei_pfad)) {
+      try { fs.unlinkSync(rows[0].datei_pfad); } catch {}
+    }
+    await pool.query(
+      'UPDATE bank_transaktionen SET datei_pfad=NULL, datei_name=NULL, datei_typ=NULL, datei_groesse=NULL WHERE transaktion_id=?', [txId]
+    );
+    res.json({ message: 'Anhang gelöscht' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
 // 🔒 POST /api/buchhaltung/belege/:id/festschreiben - Beleg festschreiben
 // ===================================================================
 router.post('/belege/:id/festschreiben', requireBuchhaltungAccess, (req, res) => {
@@ -2586,7 +2670,7 @@ router.get('/bank-import/transaktionen', requireFeature('kontoauszug'), requireB
       organisation_name, buchungsdatum, valutadatum, betrag, waehrung,
       verwendungszweck, auftraggeber_empfaenger, iban_gegenkonto, buchungstext,
       status, kategorie, match_typ, match_id, match_confidence, match_details,
-      beleg_id, zugeordnet_am
+      beleg_id, zugeordnet_am, datei_name, datei_typ
     FROM bank_transaktionen
     WHERE ${whereClause}
     ORDER BY buchungsdatum DESC, transaktion_id DESC

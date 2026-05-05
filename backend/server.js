@@ -653,6 +653,15 @@ try {
     });
 }
 
+// Migration 148: Dateianhang für bank_transaktionen
+db.promise().query(`
+  ALTER TABLE bank_transaktionen
+    ADD COLUMN IF NOT EXISTS datei_pfad    VARCHAR(500) DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS datei_name    VARCHAR(255) DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS datei_typ     VARCHAR(100) DEFAULT NULL,
+    ADD COLUMN IF NOT EXISTS datei_groesse INT          DEFAULT NULL
+`).catch(err => logger.warn('Migration 148 (ignoriert):', { error: err.message }));
+
 // BUCHHALTUNG ROUTES (EÜR - Einnahmen-Überschuss-Rechnung)
 try {
   const buchhaltungRoutes = require('./routes/buchhaltung');

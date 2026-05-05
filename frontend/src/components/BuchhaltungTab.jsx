@@ -72,6 +72,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [editingBeleg, setEditingBeleg] = useState(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadBelegId, setUploadBelegId] = useState(null);
+  const [showTxUploadModal, setShowTxUploadModal] = useState(false);
+  const [txUploadId, setTxUploadId] = useState(null);
+  const [belegFile, setBelegFile] = useState(null); // für Beleg-Formular inline-Upload
   const [showAbschlussModal, setShowAbschlussModal] = useState(false);
   const [showBilanzStammdatenModal, setShowBilanzStammdatenModal] = useState(false);
 
@@ -945,16 +948,35 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         await axios.put(`/buchhaltung/belege/${editingBeleg.beleg_id}`, belegForm, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        // Datei-Upload beim Bearbeiten
+        if (belegFile) {
+          const fd = new FormData();
+          fd.append('datei', belegFile);
+          await axios.post(`/buchhaltung/belege/${editingBeleg.beleg_id}/upload`, fd, {
+            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+          });
+        }
         setSuccess('Beleg erfolgreich aktualisiert');
       } else {
-        await axios.post('/buchhaltung/belege', belegForm, {
+        const res = await axios.post('/buchhaltung/belege', belegForm, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        // Datei-Upload direkt nach Erstellung
+        if (belegFile && res.data?.beleg_id) {
+          try {
+            const fd = new FormData();
+            fd.append('datei', belegFile);
+            await axios.post(`/buchhaltung/belege/${res.data.beleg_id}/upload`, fd, {
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+            });
+          } catch { /* Upload-Fehler ignorieren, Beleg ist gespeichert */ }
+        }
         setSuccess('Beleg erfolgreich erstellt');
       }
 
       setShowBelegModal(false);
       setEditingBeleg(null);
+      setBelegFile(null);
       resetBelegForm();
       loadBelege();
       setTimeout(() => setSuccess(''), 3000);
@@ -1030,6 +1052,39 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       setError(err.response?.data?.message || 'Fehler beim Upload');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Bank-Transaktion: Beleg-Datei hochladen
+  const uploadTxDatei = async (file, txId) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('datei', file);
+    try {
+      await axios.post(`/buchhaltung/bank-import/transaktion/${txId}/upload`, formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      setSuccess('Anhang hochgeladen');
+      setShowTxUploadModal(false);
+      setTxUploadId(null);
+      loadBankTransaktionen();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Upload');
+    }
+  };
+
+  // Bank-Transaktion: Anhang löschen
+  const deleteTxDatei = async (txId) => {
+    try {
+      await axios.delete(`/buchhaltung/bank-import/transaktion/${txId}/datei`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Anhang gelöscht');
+      loadBankTransaktionen();
+      setTimeout(() => setSuccess(''), 2000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Löschen');
     }
   };
 
@@ -2510,6 +2565,26 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 <Edit size={14} />
                               </button>
                             )}
+                            {/* Beleg-Anhang */}
+                            {tx.datei_name ? (
+                              <a
+                                href={`/api/buchhaltung/bank-import/transaktion/${tx.transaktion_id}/datei`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-icon success"
+                                title={`Anhang: ${tx.datei_name}`}
+                              >
+                                <FileText size={14} />
+                              </a>
+                            ) : (
+                              <button
+                                className="btn-icon"
+                                title="Beleg / Quittung anhängen"
+                                onClick={() => { setTxUploadId(tx.transaktion_id); setShowTxUploadModal(true); }}
+                              >
+                                <Upload size={14} />
+                              </button>
+                            )}
                           </td>
                         </tr>
                         {/* Vorschlag-Zeile */}
@@ -3180,6 +3255,29 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   )}
                 </span>
               </div>
+
+              {/* Datei-Anhang */}
+              <div className="form-group beleg-datei-upload"
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) setBelegFile(f); }}
+              >
+                <label>Beleg / Rechnung (optional)</label>
+                {belegFile ? (
+                  <div className="beleg-datei-preview">
+                    <FileText size={16} />
+                    <span>{belegFile.name}</span>
+                    <button type="button" className="beleg-datei-del" onClick={() => setBelegFile(null)}>×</button>
+                  </div>
+                ) : (
+                  <label className="beleg-datei-drop">
+                    <Upload size={20} />
+                    <span>PDF, JPG oder PNG hier ablegen oder klicken</span>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
+                      onChange={e => { const f = e.target.files[0]; if (f) setBelegFile(f); }}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
 
             <div className="modal-footer">
@@ -3219,6 +3317,34 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={uploadDatei}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== TX ANHANG MODAL ==================== */}
+      {showTxUploadModal && (
+        <div className="modal-overlay" onClick={() => { setShowTxUploadModal(false); setTxUploadId(null); }}>
+          <div className="modal upload-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Quittung / Rechnung anhängen</h3>
+              <button className="close-btn" onClick={() => { setShowTxUploadModal(false); setTxUploadId(null); }}><X size={20} /></button>
+            </div>
+            <div className="modal-body">
+              <div className="upload-dropzone"
+                onDragOver={e => e.preventDefault()}
+                onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f && txUploadId) uploadTxDatei(f, txUploadId); }}
+              >
+                <Upload size={40} />
+                <p>PDF, JPG oder PNG hier ablegen</p>
+                <p className="upload-sub">oder klicken zum Auswählen (max. 10 MB)</p>
+                <label className="btn-primary upload-btn">
+                  Datei auswählen
+                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
+                    onChange={e => { const f = e.target.files[0]; if (f && txUploadId) uploadTxDatei(f, txUploadId); }}
+                  />
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -3955,6 +4081,39 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       {tx.organisation_name && (
                         <div className="review-tx-org">{tx.organisation_name}</div>
                       )}
+                      {/* Anhang-Bereich */}
+                      <div className="review-anhang-row">
+                        {tx.datei_name ? (
+                          <>
+                            <a
+                              href={`/api/buchhaltung/bank-import/transaktion/${tx.transaktion_id}/datei`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="review-anhang-badge"
+                              title={tx.datei_name}
+                            >
+                              <FileText size={13} /> {tx.datei_name}
+                            </a>
+                            <button
+                              className="review-anhang-del"
+                              title="Anhang entfernen"
+                              onClick={async () => { await deleteTxDatei(tx.transaktion_id); setReviewQueue(q => q.map((t,i) => i === reviewIndex ? {...t, datei_name: null, datei_typ: null} : t)); }}
+                            >×</button>
+                          </>
+                        ) : (
+                          <label className="review-anhang-upload" title="Quittung / Rechnung anhängen">
+                            <Upload size={13} /> Quittung anhängen
+                            <input type="file" accept=".pdf,.jpg,.jpeg,.png" style={{display:'none'}}
+                              onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (!file) return;
+                                await uploadTxDatei(file, tx.transaktion_id);
+                                setReviewQueue(q => q.map((t,i) => i === reviewIndex ? {...t, datei_name: file.name, datei_typ: file.type} : t));
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
                     </div>
 
                     <div className="review-vorschlag">
