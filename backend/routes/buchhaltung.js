@@ -5649,4 +5649,373 @@ router.post('/wiederkehrend/ausfuehren-faellige', requireFeature('buchhaltung'),
   }
 });
 
+// ===================================================================
+// 📋 GET /api/buchhaltung/export/anlage-euer
+//    Anlage EÜR Excel-Export (amtliche Zeilennummern 2024)
+//    → direkt in WISO Steuer / ELSTER übertragbar
+// ===================================================================
+router.get('/export/anlage-euer', requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+    const dojoId = req.buchhaltungDojoId;
+    const orgFilter = req.query.organisation;
+
+    // -- Dojo-Einstellungen (Kleinunternehmer?)
+    let kleinunternehmer = false;
+    let steuernummer = '';
+    let finanzamt = '';
+    let rechtsform = '';
+    if (dojoId) {
+      const [einst] = await dbQuery(
+        'SELECT kleinunternehmer, steuernummer, finanzamt, rechtsform FROM dojo WHERE dojo_id = ?', [dojoId]
+      );
+      kleinunternehmer = !!(einst?.kleinunternehmer);
+      steuernummer     = einst?.steuernummer || '';
+      finanzamt        = einst?.finanzamt || '';
+      rechtsform       = einst?.rechtsform || 'Einzelunternehmen';
+    }
+
+    // -- Org-Where für Queries
+    let orgWhere = '';
+    const orgParams = [jahr];
+    if (dojoId) { orgWhere = 'AND dojo_id = ?'; orgParams.push(dojoId); }
+    else if (orgFilter && orgFilter !== 'alle') { orgWhere = 'AND organisation_name = ?'; orgParams.push(orgFilter); }
+
+    // -- Einnahmen aggregiert nach Kategorie
+    const einnahmenRows = await dbQuery(`
+      SELECT kategorie,
+             SUM(betrag_brutto) AS summe,
+             COUNT(*) AS anzahl
+      FROM v_euer_einnahmen
+      WHERE jahr = ? ${orgWhere}
+      GROUP BY kategorie
+    `, orgParams);
+
+    // -- Ausgaben aggregiert nach Kategorie
+    const ausgabenRows = await dbQuery(`
+      SELECT kategorie,
+             SUM(betrag_brutto) AS summe,
+             COUNT(*) AS anzahl
+      FROM v_euer_ausgaben
+      WHERE jahr = ? ${orgWhere}
+      GROUP BY kategorie
+    `, orgParams);
+
+    // -- MwSt-Beträge aus Belegen (für Zeile 18/40)
+    const mwstParams = [jahr];
+    let mwstWhere = 'YEAR(buchungsdatum) = ?';
+    if (dojoId) { mwstWhere += ' AND dojo_id = ?'; mwstParams.push(dojoId); }
+    const mwstRows = await dbQuery(`
+      SELECT
+        SUM(CASE WHEN buchungsart='einnahme' AND storniert=0 THEN mwst_betrag ELSE 0 END) AS einnahmen_mwst,
+        SUM(CASE WHEN buchungsart='ausgabe' AND storniert=0 THEN mwst_betrag ELSE 0 END) AS ausgaben_vorsteuer
+      FROM buchhaltung_belege
+      WHERE ${mwstWhere}
+    `, mwstParams);
+    const einnahmenMwst  = parseFloat(mwstRows[0]?.einnahmen_mwst || 0);
+    const ausgabenVorsteuer = parseFloat(mwstRows[0]?.ausgaben_vorsteuer || 0);
+
+    // -- GWG-Belege (ist_gwg = 1)
+    const gwgParams = [jahr];
+    let gwgWhere = 'buchungsart="ausgabe" AND ist_gwg=1 AND storniert=0 AND YEAR(beleg_datum) = ?';
+    if (dojoId) { gwgWhere += ' AND dojo_id = ?'; gwgParams.push(dojoId); }
+    const gwgRows = await dbQuery(`
+      SELECT COALESCE(SUM(ROUND(betrag_brutto * (1 - COALESCE(privatanteil_prozent,0)/100), 2)), 0) AS summe
+      FROM buchhaltung_belege WHERE ${gwgWhere}
+    `, gwgParams);
+    const gwgSumme = parseFloat(gwgRows[0]?.summe || 0);
+
+    // Hilfsfunktion: Kategorie-Summe holen
+    const getE = (kat) => {
+      const cats = Array.isArray(kat) ? kat : [kat];
+      return einnahmenRows.filter(r => cats.includes(r.kategorie)).reduce((s, r) => s + parseFloat(r.summe || 0), 0);
+    };
+    const getA = (kat) => {
+      const cats = Array.isArray(kat) ? kat : [kat];
+      return ausgabenRows.filter(r => cats.includes(r.kategorie)).reduce((s, r) => s + parseFloat(r.summe || 0), 0);
+    };
+
+    // -- EÜR-Zeilen berechnen (Anlage EÜR 2024 amtliche Struktur)
+    const totalEinnahmen = einnahmenRows.reduce((s, r) => s + parseFloat(r.summe || 0), 0);
+    const ek_betriebseinnahmen = totalEinnahmen; // alle Einnahmen aus v_euer_einnahmen (excl. privateinlage)
+
+    // Betriebseinnahmen aufgeteilt
+    const z11  = kleinunternehmer ? ek_betriebseinnahmen : 0;          // Kleinunternehmer § 19
+    const z14  = kleinunternehmer ? 0 : (ek_betriebseinnahmen - getE(['mitgliedsbeitraege'])); // USt-pflichtig (netto)
+    const z16  = kleinunternehmer ? 0 : getE('mitgliedsbeitraege');     // USt-frei (Mitgliedsbeiträge Sport oft steuerfrei)
+    const z18  = kleinunternehmer ? 0 : einnahmenMwst;                  // Vereinnahmte USt
+    const z24  = z11 + z14 + z16 + z18;                                 // Summe Betriebseinnahmen
+
+    // Betriebsausgaben
+    const z26  = getA('wareneingang');
+    const z29  = getA('abschreibungen');                  // AfA (aus afa_positionen via v_euer_ausgaben)
+    const z30  = gwgSumme;                                // GWG Sofortabschreibung
+    const z33  = getA('raumkosten');                      // Miete/Pacht Grundstücke
+    const z36  = getA('kfz_kosten');                      // Kfz-Kosten
+    const z40  = kleinunternehmer ? 0 : ausgabenVorsteuer; // Gezahlte Vorsteuer
+    const z46  = getA('personalkosten');                  // Löhne und Gehälter
+    const z57  = getA(['telefon_internet', 'buerokosten']); // Telefon, Porto, Büro
+    const z59  = getA('versicherungen');                  // Versicherungen
+    const z61  = getA('fortbildung');                     // Fortbildung
+    const z62  = getA('werbekosten');                     // Werbekosten
+    const z63  = getA('reisekosten');                     // Reisekosten
+    const z66  = getA(['sonstige_kosten', 'bankgebuehren', 'software', 'steuerzahlungen', 'ausstattung']); // Sonstige
+    const z82  = z26 + z29 + z30 + z33 + z36 + z40 + z46 + z57 + z59 + z61 + z62 + z63 + z66;
+    const z83  = z24 - z82;                               // Gewinn (+) / Verlust (-)
+
+    // -- Excel erstellen
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Dojosoftware';
+    workbook.created = new Date();
+
+    // ── SHEET 1: Anlage EÜR ──────────────────────────────────────────
+    const ws = workbook.addWorksheet(`Anlage EÜR ${jahr}`, {
+      pageSetup: { paperSize: 9, orientation: 'portrait', fitToPage: true }
+    });
+
+    ws.columns = [
+      { key: 'zeile', width: 8 },
+      { key: 'beschreibung', width: 58 },
+      { key: 'betrag', width: 16 },
+      { key: 'quelle', width: 32 },
+    ];
+
+    const EUR = (v) => v === 0 ? '' : Math.round(v * 100) / 100;
+
+    // Farben
+    const COL_HEADER   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A3A5C' } };
+    const COL_SECTION  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2D5986' } };
+    const COL_SUBSECT  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F0F8' } };
+    const COL_VALUE    = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDFDE8' } };
+    const COL_TOTAL    = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDFF2CC' } };
+    const COL_RESULT   = { type: 'pattern', pattern: 'solid', fgColor: { argb: z83 >= 0 ? 'FFCCFFCC' : 'FFFFCCCC' } };
+
+    const addTitle = (text) => {
+      const r = ws.addRow(['', text]);
+      r.getCell(2).font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      r.getCell(2).fill = COL_HEADER;
+      ws.mergeCells(`B${r.number}:D${r.number}`);
+      r.height = 22;
+    };
+    const addMeta = (label, value) => {
+      const r = ws.addRow(['', label, value]);
+      r.getCell(2).font = { bold: false, size: 10, color: { argb: 'FF555555' } };
+      r.getCell(3).font = { bold: true, size: 10 };
+    };
+    const addBlank = () => ws.addRow([]);
+    const addSection = (text) => {
+      const r = ws.addRow(['', text]);
+      r.getCell(2).font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      r.getCell(2).fill = COL_SECTION;
+      ws.mergeCells(`B${r.number}:D${r.number}`);
+      r.height = 18;
+    };
+    const addSubsection = (text) => {
+      const r = ws.addRow(['', text]);
+      r.getCell(2).font = { bold: true, size: 10, color: { argb: 'FF1A3A5C' } };
+      r.getCell(2).fill = COL_SUBSECT;
+      ws.mergeCells(`B${r.number}:D${r.number}`);
+    };
+    const addRow = (zeile, beschreibung, betrag, quelle = '') => {
+      const r = ws.addRow([zeile, beschreibung, EUR(betrag), quelle]);
+      r.getCell(1).font = { bold: true, size: 9, color: { argb: 'FF666666' } };
+      r.getCell(1).alignment = { horizontal: 'center' };
+      r.getCell(2).font = { size: 10 };
+      if (betrag !== 0 && betrag !== '') {
+        r.getCell(3).numFmt = '#,##0.00 €';
+        r.getCell(3).fill = COL_VALUE;
+        r.getCell(3).font = { bold: true, size: 10, color: { argb: 'FF1A3A5C' } };
+      }
+      r.getCell(3).alignment = { horizontal: 'right' };
+      r.getCell(4).font = { size: 9, color: { argb: 'FF888888' }, italic: true };
+      // Border unten
+      ['A','B','C','D'].forEach(col => {
+        r.getCell(col).border = { bottom: { style: 'thin', color: { argb: 'FFDDDDDD' } } };
+      });
+    };
+    const addTotal = (beschreibung, betrag) => {
+      const r = ws.addRow(['', beschreibung, EUR(betrag)]);
+      r.getCell(2).font = { bold: true, size: 11 };
+      r.getCell(2).fill = COL_TOTAL;
+      r.getCell(3).numFmt = '#,##0.00 €';
+      r.getCell(3).fill = COL_TOTAL;
+      r.getCell(3).font = { bold: true, size: 11 };
+      r.getCell(3).alignment = { horizontal: 'right' };
+      r.height = 18;
+    };
+
+    // ── Kopfzeile ───────────────────────────────
+    addTitle(`Anlage EÜR ${jahr} — Einnahmen-Überschuss-Rechnung (§ 4 Abs. 3 EStG)`);
+    addBlank();
+    addMeta('Organisation:', orgFilter || (dojoId === 2 ? 'TDA International' : 'Kampfkunstschule Schreiner'));
+    addMeta('Steuernummer:', steuernummer || '(bitte eintragen)');
+    addMeta('Finanzamt:', finanzamt || '(bitte eintragen)');
+    addMeta('Veranlagungsjahr:', String(jahr));
+    addMeta('Rechtsform:', rechtsform);
+    addMeta('Kleinunternehmer gem. § 19 UStG:', kleinunternehmer ? 'Ja' : 'Nein');
+    addMeta('Erstellt am:', new Date().toLocaleDateString('de-DE'));
+    addMeta('', '');
+    addMeta('→ WISO Steuer:', 'Formularbasierte Eingabe auswählen, dann Zeilen-Nummern übernehmen');
+    addBlank();
+
+    // ── A. BETRIEBSEINNAHMEN ─────────────────────────────────────────
+    addSection('A   BETRIEBSEINNAHMEN (Zeilen 11–24)');
+    addSubsection('Hinweis: Nur eine der Zeilen 11 oder 14+16 ausfüllen (je nach USt-Status)');
+
+    addRow(11, 'Betriebseinnahmen als Kleinunternehmer (§ 19 Abs. 1 UStG) — brutto',
+      z11, kleinunternehmer ? 'Alle Einnahmen' : 'Nicht zutreffend (kein Kleinunternehmer)');
+    addRow(14, 'Umsatzsteuerpflichtige Einnahmen (ohne Umsatzsteuer) — netto',
+      z14, kleinunternehmer ? 'Nicht zutreffend' : 'Betriebseinnahmen netto');
+    addRow(16, 'Umsatzsteuerfreie/nicht-steuerbare Einnahmen',
+      z16, 'Mitgliedsbeiträge, steuerbefreite Einnahmen');
+    addRow(18, 'Vereinnahmte Umsatzsteuer / Umsatzsteuer-Vorauszahlungen',
+      z18, 'MwSt-Beträge aus Belegen');
+    addTotal('Summe Betriebseinnahmen (Zeile 24)', z24);
+    addBlank();
+
+    // ── B. BETRIEBSAUSGABEN ──────────────────────────────────────────
+    addSection('B   BETRIEBSAUSGABEN (Zeilen 25–82)');
+
+    addSubsection('Wareneinkauf & Material');
+    addRow(26, 'Waren, Roh-, Hilfs- und Betriebsstoffe, Fremdleistungen',
+      z26, 'Kategorie: Wareneingang');
+
+    addSubsection('Abschreibungen');
+    addRow(29, 'Absetzung für Abnutzung (AfA) auf Anlagegüter',
+      z29, 'AfA aus Anlagenregister (lineare Abschreibung § 7 EStG)');
+    addRow(30, 'Sofortabschreibung GWG ≤ 800 € netto (§ 6 Abs. 2 EStG)',
+      z30, 'Belege mit GWG-Flag');
+
+    addSubsection('Raumkosten');
+    addRow(33, 'Miete/Pacht für Grundstücke, Gebäude, Räume, Garagen',
+      z33, 'Kategorie: Raumkosten');
+
+    addSubsection('Fahrzeugkosten');
+    addRow(36, 'Kraftfahrzeugkosten (inkl. Kfz-Versicherung, Kraftstoff, TÜV)',
+      z36, 'Kategorie: KFZ-Kosten');
+
+    addSubsection('Umsatzsteuer');
+    addRow(40, 'Gezahlte/abgeführte Vorsteuerbeträge',
+      z40, kleinunternehmer ? 'Nicht zutreffend (Kleinunternehmer)' : 'Vorsteuer aus Belegen');
+
+    addSubsection('Personalkosten');
+    addRow(46, 'Löhne und Gehälter (Bruttoarbeitslöhne)',
+      z46, 'Kategorie: Personalkosten');
+
+    addSubsection('Kommunikation & Büro');
+    addRow(57, 'Aufwendungen für Telekommunikation, Porto, Büromaterial',
+      z57, 'Kategorien: Telefon/Internet, Bürokosten');
+
+    addSubsection('Versicherungen & Beiträge');
+    addRow(59, 'Versicherungen (Haftpflicht, Unfall etc.)',
+      z59, 'Kategorie: Versicherungen');
+
+    addSubsection('Sonstige Betriebsausgaben');
+    addRow(61, 'Fortbildungskosten',
+      z61, 'Kategorie: Fortbildung');
+    addRow(62, 'Werbekosten, Anzeigen, Marketing',
+      z62, 'Kategorie: Werbekosten');
+    addRow(63, 'Reisekosten (Fahrtkosten, Übernachtung)',
+      z63, 'Kategorie: Reisekosten');
+    addRow(66, 'Sonstige Betriebsausgaben (Bankgebühren, Software, Steuern etc.)',
+      z66, 'Kategorien: Sonstige Kosten, Bankgebühren, Software, Steuerzahlungen, Ausstattung');
+
+    addTotal('Summe Betriebsausgaben (Zeile 82)', z82);
+    addBlank();
+
+    // ── C. ERGEBNIS ──────────────────────────────────────────────────
+    addSection('C   ERGEBNIS');
+    const ergebnisRow = ws.addRow(['83', z83 >= 0 ? 'Gewinn  (+)' : 'Verlust  (−)', EUR(Math.abs(z83))]);
+    ergebnisRow.getCell(1).font  = { bold: true, size: 11 };
+    ergebnisRow.getCell(1).alignment = { horizontal: 'center' };
+    ergebnisRow.getCell(2).font  = { bold: true, size: 13 };
+    ergebnisRow.getCell(2).fill  = COL_RESULT;
+    ergebnisRow.getCell(3).font  = { bold: true, size: 13, color: { argb: z83 >= 0 ? 'FF006600' : 'FFCC0000' } };
+    ergebnisRow.getCell(3).numFmt = '#,##0.00 €';
+    ergebnisRow.getCell(3).fill  = COL_RESULT;
+    ergebnisRow.getCell(3).alignment = { horizontal: 'right' };
+    ergebnisRow.height = 24;
+    addBlank();
+
+    // ── D. HINWEISE ──────────────────────────────────────────────────
+    addSection('D   EINGABE IN WISO STEUER-WEB / ELSTER');
+    const hinweisRow = ws.addRow(['', [
+      '1. WISO Steuer-Web öffnen → Selbständige Arbeit → "Formularbasierte Eingabe" wählen',
+      '2. Zeilennummern (linke Spalte) direkt in die entsprechenden Felder des WISO-Formulars übertragen',
+      '3. Bei Kleinunternehmer: Nur Zeile 11 ausfüllen (Zeilen 14/16/18/40 bleiben leer)',
+      '4. Bei USt-Pflicht: Zeilen 14 + 16 + 18 ausfüllen (Zeile 11 bleibt leer)',
+      '5. Zeile 29 (AfA): Dojosoftware → Anlagevermögen-Tab für Detailnachweis',
+      '6. Fertig: Zeile 83 = Gewinn/Verlust → erscheint automatisch in Steuerbescheid',
+    ].join('\n')]);
+    hinweisRow.getCell(2).font = { size: 10 };
+    hinweisRow.getCell(2).alignment = { wrapText: true };
+    hinweisRow.height = 100;
+    ws.mergeCells(`B${hinweisRow.number}:D${hinweisRow.number}`);
+
+    // ── SHEET 2: Detailaufstellung ───────────────────────────────────
+    const ws2 = workbook.addWorksheet('Detailaufstellung');
+    ws2.columns = [
+      { header: 'Typ',         key: 'typ',    width: 10 },
+      { header: 'Kategorie',   key: 'kat',    width: 28 },
+      { header: 'Summe (€)',   key: 'summe',  width: 14 },
+      { header: 'Anzahl',      key: 'anz',    width: 10 },
+      { header: 'EÜR-Zeile',   key: 'zeile',  width: 12 },
+    ];
+    ws2.getRow(1).font = { bold: true };
+    ws2.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A3A5C' } };
+    ws2.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+    // Zeilen-Mapping für Detailblatt
+    const zeileMap = {
+      betriebseinnahmen: kleinunternehmer ? 11 : 14,
+      mitgliedsbeitraege: kleinunternehmer ? 11 : 16,
+      sonstige_einnahmen: kleinunternehmer ? 11 : 14,
+      beitrag: kleinunternehmer ? 11 : 16,
+      rechnung: kleinunternehmer ? 11 : 14,
+      verkauf: kleinunternehmer ? 11 : 14,
+      kassenbuch: kleinunternehmer ? 11 : 14,
+      bank: kleinunternehmer ? 11 : 14,
+      beleg: kleinunternehmer ? 11 : 14,
+      wareneingang: 26, abschreibungen: 29,
+      raumkosten: 33, kfz_kosten: 36,
+      personalkosten: 46, telefon_internet: 57, buerokosten: 57,
+      versicherungen: 59, fortbildung: 61, werbekosten: 62,
+      reisekosten: 63, sonstige_kosten: 66, bankgebuehren: 66,
+      software: 66, steuerzahlungen: 66, ausstattung: 66,
+    };
+
+    einnahmenRows.forEach(r => {
+      const row = ws2.addRow({
+        typ: 'Einnahme', kat: r.kategorie,
+        summe: parseFloat(r.summe).toFixed(2),
+        anz: r.anzahl,
+        zeile: zeileMap[r.kategorie] || '14/16'
+      });
+      row.getCell('summe').numFmt = '#,##0.00';
+      row.getCell('typ').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F8E8' } };
+    });
+    ausgabenRows.forEach(r => {
+      const row = ws2.addRow({
+        typ: 'Ausgabe', kat: r.kategorie,
+        summe: parseFloat(r.summe).toFixed(2),
+        anz: r.anzahl,
+        zeile: zeileMap[r.kategorie] || 66
+      });
+      row.getCell('summe').numFmt = '#,##0.00';
+      row.getCell('typ').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF0F0' } };
+    });
+
+    // -- Response senden
+    const orgName = orgFilter || (dojoId === 2 ? 'TDA' : 'Schreiner');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="AnlageEUeR_${jahr}_${orgName}.xlsx"`);
+    await workbook.xlsx.write(res);
+    res.end();
+
+  } catch (err) {
+    console.error('Anlage-EÜR-Export-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Anlage EÜR Export', error: err.message });
+  }
+});
+
 module.exports = router;

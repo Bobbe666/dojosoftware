@@ -819,7 +819,27 @@
 .abschluss-actions {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
+
+/* Anlage EÜR Export-Button — Steuer-Grün */
+.btn-anlage-euer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #166534, #15803d);
+  color: #fff;
+  border: none;
+  border-radius: var(--comp-radius-md, 8px);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.btn-anlage-euer:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-anlage-euer:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 .abschluss-status {
   display: flex;

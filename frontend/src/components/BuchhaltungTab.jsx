@@ -1448,6 +1448,35 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     }
   };
 
+  // Anlage EÜR Excel-Export (amtliche Zeilennummern für WISO / ELSTER)
+  const exportAnlageEuer = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/buchhaltung/export/anlage-euer', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { jahr: selectedJahr, organisation: selectedOrg },
+        responseType: 'blob'
+      });
+      const orgName = selectedOrg !== 'alle' ? selectedOrg.replace(/\s/g, '_') : 'alle';
+      const blob = new Blob([response.data],
+        { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `AnlageEUeR_${selectedJahr}_${orgName}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      setSuccess('Anlage EÜR Excel heruntergeladen — Zeilennummern direkt in WISO übertragen');
+      setTimeout(() => setSuccess(''), 5000);
+    } catch (err) {
+      setError('Anlage EÜR Export fehlgeschlagen');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Form Reset
   const resetBelegForm = () => {
     setBelegForm({
@@ -3360,6 +3389,15 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 <button className="btn-secondary" onClick={exportCSV}>
                   <Download size={16} />
                   CSV Export
+                </button>
+                <button
+                  className="btn-anlage-euer"
+                  onClick={exportAnlageEuer}
+                  disabled={loading}
+                  title="Excel mit amtlichen EÜR-Zeilennummern für WISO Steuer / ELSTER"
+                >
+                  <FileSpreadsheet size={16} />
+                  Anlage EÜR (WISO / ELSTER)
                 </button>
                 {selectedOrg !== 'alle' && (!abschlussData?.abschluss || abschlussData.abschluss.status !== 'abgeschlossen') && (
                   <button className="btn-primary" onClick={() => setShowAbschlussModal(true)}>
