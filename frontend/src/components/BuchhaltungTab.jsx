@@ -91,6 +91,41 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     lieferant: '', rechnungsnummer: ''
   });
 
+  // Kreditoren States
+  const [kreditoren, setKreditoren] = useState([]);
+  const [kreditorenLoading, setKreditorenLoading] = useState(false);
+  const [showKreditorForm, setShowKreditorForm] = useState(false);
+  const [editingKreditor, setEditingKreditor] = useState(null);
+  const [kreditorForm, setKreditorForm] = useState({
+    organisation_name: 'TDA International', name: '', kurzname: '',
+    adresse: '', email: '', telefon: '', ust_id: '', zahlungsziel_tage: '14',
+    iban: '', bic: '', notizen: ''
+  });
+  const [kreditorSuggestions, setKreditorSuggestions] = useState([]);
+
+  // Offene Posten & Mahnwesen States
+  const [offenePosten, setOffenePosten] = useState({ offeneRechnungen: [], mahnungen: [] });
+  const [offenePostenLoading, setOffenePostenLoading] = useState(false);
+  const [showMahnungForm, setShowMahnungForm] = useState(false);
+  const [mahnungForm, setMahnungForm] = useState({
+    organisation_name: 'TDA International', rechnung_id: '', mitglied_id: '',
+    schuldner_name: '', offener_betrag: '', faelligkeitsdatum: '',
+    mahnstufe: '1', mahngebuehr: '0', mahntext: ''
+  });
+
+  // Wiederkehrende Buchungen States
+  const [wiederkehrend, setWiederkehrend] = useState([]);
+  const [wiederkehrendLoading, setWiederkehrendLoading] = useState(false);
+  const [showWiederkehrendForm, setShowWiederkehrendForm] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [templateForm, setTemplateForm] = useState({
+    organisation_name: 'TDA International', bezeichnung: '', buchungsart: 'ausgabe',
+    betrag_netto: '', mwst_satz: '19', kategorie: 'sonstige_kosten',
+    beschreibung: '', lieferant_kunde: '', intervall: 'monatlich',
+    naechste_faelligkeit: new Date().toISOString().split('T')[0], auto_ausfuehren: false
+  });
+  const [ausfuehrenRunning, setAusfuehrenRunning] = useState(false);
+
   // Bank-Import States
   const [bankTransaktionen, setBankTransaktionen] = useState([]);
   const [bankTransaktionenTotal, setBankTransaktionenTotal] = useState(0);
@@ -157,7 +192,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     kategorie: 'sonstige_kosten',
     beschreibung: '',
     lieferant_kunde: '',
-    rechnungsnummer_extern: ''
+    rechnungsnummer_extern: '',
+    ist_gwg: false,
+    privatanteil_prozent: '0'
   });
 
   // Pagination
@@ -352,6 +389,183 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     buero:    { jahre: 13, label: 'Büroausstattung (13 Jahre)' },
     betrieb:  { jahre: 10, label: 'Betriebsausstattung (10 Jahre)' },
     sonstiges:{ jahre: 5,  label: 'Sonstiges' },
+  };
+
+  // Kreditoren laden
+  const loadKreditoren = useCallback(async () => {
+    setKreditorenLoading(true);
+    try {
+      const res = await axios.get('/buchhaltung/kreditoren', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: selectedOrg !== 'alle' ? { organisation: selectedOrg } : {}
+      });
+      setKreditoren(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Laden der Kreditoren');
+    } finally { setKreditorenLoading(false); }
+  }, [token, selectedOrg]);
+
+  const saveKreditor = async () => {
+    try {
+      setLoading(true);
+      const payload = { ...kreditorForm };
+      if (editingKreditor) {
+        await axios.put(`/buchhaltung/kreditoren/${editingKreditor.kreditor_id}`, payload,
+          { headers: { Authorization: `Bearer ${token}` } });
+        setSuccess('Kreditor aktualisiert');
+      } else {
+        payload.organisation_name = selectedOrg !== 'alle' ? selectedOrg : 'Kampfkunstschule Schreiner';
+        await axios.post('/buchhaltung/kreditoren', payload, { headers: { Authorization: `Bearer ${token}` } });
+        setSuccess('Kreditor angelegt');
+      }
+      setShowKreditorForm(false);
+      setEditingKreditor(null);
+      loadKreditoren();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Speichern');
+    } finally { setLoading(false); }
+  };
+
+  const deleteKreditor = async (id) => {
+    if (!window.confirm('Kreditor löschen?')) return;
+    try {
+      await axios.delete(`/buchhaltung/kreditoren/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess('Kreditor gelöscht');
+      loadKreditoren();
+    } catch (err) { setError(err.response?.data?.message || 'Fehler'); }
+  };
+
+  const searchKreditoren = async (q) => {
+    if (q.length < 2) { setKreditorSuggestions([]); return; }
+    try {
+      const res = await axios.get('/buchhaltung/kreditoren', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { q, organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+      });
+      setKreditorSuggestions(res.data.slice(0, 5));
+    } catch { setKreditorSuggestions([]); }
+  };
+
+  // Offene Posten laden
+  const loadOffenePosten = useCallback(async () => {
+    setOffenePostenLoading(true);
+    try {
+      const res = await axios.get('/buchhaltung/offene-posten', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: selectedOrg !== 'alle' ? { organisation: selectedOrg } : {}
+      });
+      setOffenePosten(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Laden der offenen Posten');
+    } finally { setOffenePostenLoading(false); }
+  }, [token, selectedOrg]);
+
+  const saveMahnung = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        ...mahnungForm,
+        organisation_name: selectedOrg !== 'alle' ? selectedOrg : 'Kampfkunstschule Schreiner'
+      };
+      await axios.post('/buchhaltung/mahnungen', payload, { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess('Mahnung erstellt');
+      setShowMahnungForm(false);
+      setMahnungForm({ organisation_name: 'TDA International', rechnung_id: '', mitglied_id: '',
+        schuldner_name: '', offener_betrag: '', faelligkeitsdatum: '',
+        mahnstufe: '1', mahngebuehr: '0', mahntext: '' });
+      loadOffenePosten();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler');
+    } finally { setLoading(false); }
+  };
+
+  const mahnungVersandt = async (id) => {
+    try {
+      await axios.put(`/buchhaltung/mahnungen/${id}/versandt`, { versandt_per: 'email' },
+        { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess('Als versandt markiert');
+      loadOffenePosten();
+    } catch (err) { setError(err.response?.data?.message || 'Fehler'); }
+  };
+
+  const mahnungBezahlt = async (id) => {
+    try {
+      await axios.put(`/buchhaltung/mahnungen/${id}/bezahlt`, {},
+        { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess('Als bezahlt markiert');
+      loadOffenePosten();
+    } catch (err) { setError(err.response?.data?.message || 'Fehler'); }
+  };
+
+  // Wiederkehrende Buchungen laden
+  const loadWiederkehrend = useCallback(async () => {
+    setWiederkehrendLoading(true);
+    try {
+      const res = await axios.get('/buchhaltung/wiederkehrend', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: selectedOrg !== 'alle' ? { organisation: selectedOrg } : {}
+      });
+      setWiederkehrend(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Laden der Templates');
+    } finally { setWiederkehrendLoading(false); }
+  }, [token, selectedOrg]);
+
+  const saveTemplate = async () => {
+    try {
+      setLoading(true);
+      const payload = {
+        ...templateForm,
+        organisation_name: selectedOrg !== 'alle' ? selectedOrg : 'Kampfkunstschule Schreiner'
+      };
+      if (editingTemplate) {
+        await axios.put(`/buchhaltung/wiederkehrend/${editingTemplate.template_id}`, payload,
+          { headers: { Authorization: `Bearer ${token}` } });
+        setSuccess('Template aktualisiert');
+      } else {
+        await axios.post('/buchhaltung/wiederkehrend', payload, { headers: { Authorization: `Bearer ${token}` } });
+        setSuccess('Wiederkehrende Buchung angelegt');
+      }
+      setShowWiederkehrendForm(false);
+      setEditingTemplate(null);
+      loadWiederkehrend();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Speichern');
+    } finally { setLoading(false); }
+  };
+
+  const templateAusfuehren = async (id) => {
+    try {
+      setAusfuehrenRunning(true);
+      const res = await axios.post(`/buchhaltung/wiederkehrend/${id}/ausfuehren`, {},
+        { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess(`Beleg ${res.data.beleg_nummer} erstellt. Nächste Fälligkeit: ${res.data.naechste_faelligkeit}`);
+      loadWiederkehrend();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Ausführen');
+    } finally { setAusfuehrenRunning(false); }
+  };
+
+  const alleFaelligeAusfuehren = async () => {
+    if (!window.confirm('Alle fälligen auto-Buchungen jetzt ausführen?')) return;
+    try {
+      setAusfuehrenRunning(true);
+      const res = await axios.post('/buchhaltung/wiederkehrend/ausfuehren-faellige', {},
+        { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess(`${res.data.anzahl} Buchungen ausgeführt`);
+      loadWiederkehrend();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler');
+    } finally { setAusfuehrenRunning(false); }
+  };
+
+  const deleteTemplate = async (id) => {
+    if (!window.confirm('Template löschen?')) return;
+    try {
+      await axios.delete(`/buchhaltung/wiederkehrend/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setSuccess('Template gelöscht');
+      loadWiederkehrend();
+    } catch (err) { setError(err.response?.data?.message || 'Fehler'); }
   };
 
   // Bank-Transaktionen laden
@@ -1002,8 +1216,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       loadAbschluss();
     } else if (activeSubTab === 'anlagen') {
       loadAnlagen();
+    } else if (activeSubTab === 'kreditoren') {
+      loadKreditoren();
+    } else if (activeSubTab === 'offene-posten') {
+      loadOffenePosten();
+    } else if (activeSubTab === 'wiederkehrend') {
+      loadWiederkehrend();
     }
-  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchBilanzData, loadAnlagen]);
+  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchBilanzData, loadAnlagen, loadKreditoren, loadOffenePosten, loadWiederkehrend]);
 
   // Review Modal Tastatur-Navigation
   useEffect(() => {
@@ -1240,7 +1460,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       kategorie: 'sonstige_kosten',
       beschreibung: '',
       lieferant_kunde: '',
-      rechnungsnummer_extern: ''
+      rechnungsnummer_extern: '',
+      ist_gwg: false,
+      privatanteil_prozent: '0'
     });
   };
 
@@ -1257,7 +1479,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       kategorie: beleg.kategorie,
       beschreibung: beleg.beschreibung,
       lieferant_kunde: beleg.lieferant_kunde || '',
-      rechnungsnummer_extern: beleg.rechnungsnummer_extern || ''
+      rechnungsnummer_extern: beleg.rechnungsnummer_extern || '',
+      ist_gwg: !!beleg.ist_gwg,
+      privatanteil_prozent: String(beleg.privatanteil_prozent || '0')
     });
     setShowBelegModal(true);
   };
@@ -1339,7 +1563,10 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     { id: 'bankimport', label: 'Kontoauszüge', icon: <Landmark size={16} />, enterprise: true },
     { id: 'steuerauswertung', label: 'Steuerauswertung', icon: <BarChart3 size={16} />, enterprise: true },
     { id: 'abschluss', label: 'Jahresabschluss', icon: <FileSpreadsheet size={16} /> },
-    { id: 'anlagen', label: 'Anlagevermögen', icon: <Building2 size={16} /> }
+    { id: 'anlagen', label: 'Anlagevermögen', icon: <Building2 size={16} /> },
+    { id: 'offene-posten', label: 'Offene Posten', icon: <AlertCircle size={16} /> },
+    { id: 'wiederkehrend', label: 'Wiederkehrend', icon: <RefreshCw size={16} /> },
+    { id: 'kreditoren', label: 'Kreditoren', icon: <FileText size={16} /> }
   ];
 
   return (
@@ -3394,6 +3621,519 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           </div>
         )}
 
+        {/* ==================== OFFENE POSTEN + MAHNWESEN ==================== */}
+        {activeSubTab === 'offene-posten' && (
+          <div className="offene-posten-content">
+            <div className="section-header">
+              <h3><AlertCircle size={18} /> Offene Posten &amp; Mahnwesen</h3>
+              <button className="btn-primary" onClick={() => setShowMahnungForm(true)}>
+                <Plus size={14} /> Mahnung erstellen
+              </button>
+            </div>
+
+            {offenePostenLoading ? (
+              <div className="loading-state">Lade...</div>
+            ) : (
+              <>
+                <h4 className="section-subtitle">Offene Rechnungen</h4>
+                {offenePosten.offeneRechnungen.length === 0 ? (
+                  <div className="empty-hint">Keine offenen Rechnungen</div>
+                ) : (
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Rechnungsnr.</th>
+                        <th>Schuldner</th>
+                        <th className="right">Betrag</th>
+                        <th>Fällig</th>
+                        <th className="right">Überfällig</th>
+                        <th>Mahnstufe</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {offenePosten.offeneRechnungen.map(r => (
+                        <tr key={r.rechnung_id} className={r.tage_ueberfaellig > 30 ? 'row-danger' : r.tage_ueberfaellig > 0 ? 'row-warning' : ''}>
+                          <td>{r.rechnungsnummer}</td>
+                          <td>{r.vorname} {r.nachname}</td>
+                          <td className="right">{parseFloat(r.betrag).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</td>
+                          <td>{r.faelligkeitsdatum ? new Date(r.faelligkeitsdatum).toLocaleDateString('de-DE') : '—'}</td>
+                          <td className="right">{r.tage_ueberfaellig > 0 ? <span className="text-danger">{r.tage_ueberfaellig} Tage</span> : '—'}</td>
+                          <td>
+                            {r.mahnstufe === 0 ? <span className="badge badge-neutral">Keine</span>
+                              : r.mahnstufe === 1 ? <span className="badge badge-warning">Erinnerung</span>
+                              : r.mahnstufe === 2 ? <span className="badge badge-danger">1. Mahnung</span>
+                              : <span className="badge badge-danger">2. Mahnung</span>}
+                          </td>
+                          <td>
+                            <button className="btn-sm btn-warning" onClick={() => {
+                              setMahnungForm(f => ({
+                                ...f,
+                                rechnung_id: String(r.rechnung_id),
+                                schuldner_name: `${r.vorname} ${r.nachname}`,
+                                offener_betrag: String(r.betrag),
+                                faelligkeitsdatum: new Date().toISOString().split('T')[0],
+                                mahnstufe: String(Math.min(r.mahnstufe + 1, 3))
+                              }));
+                              setShowMahnungForm(true);
+                            }}>Mahnen</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                <h4 className="section-subtitle" style={{ marginTop: '1.5rem' }}>Offene Mahnungen</h4>
+                {offenePosten.mahnungen.length === 0 ? (
+                  <div className="empty-hint">Keine offenen Mahnungen</div>
+                ) : (
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Schuldner</th>
+                        <th>Stufe</th>
+                        <th className="right">Betrag</th>
+                        <th className="right">Mahngebühr</th>
+                        <th>Erstellt</th>
+                        <th>Versandt</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {offenePosten.mahnungen.map(m => (
+                        <tr key={m.mahnung_id}>
+                          <td>{m.schuldner_name}</td>
+                          <td>
+                            {m.mahnstufe === 1 ? <span className="badge badge-neutral">Erinnerung</span>
+                              : m.mahnstufe === 2 ? <span className="badge badge-warning">1. Mahnung</span>
+                              : <span className="badge badge-danger">2. Mahnung</span>}
+                          </td>
+                          <td className="right">{parseFloat(m.offener_betrag).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</td>
+                          <td className="right">{parseFloat(m.mahngebuehr) > 0 ? `${parseFloat(m.mahngebuehr).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €` : '—'}</td>
+                          <td>{new Date(m.erstellt_am).toLocaleDateString('de-DE')}</td>
+                          <td>{m.versandt_am ? new Date(m.versandt_am).toLocaleDateString('de-DE') : <span className="text-muted">Nicht versandt</span>}</td>
+                          <td className="action-cell">
+                            {!m.versandt_am && (
+                              <button className="btn-sm" onClick={() => mahnungVersandt(m.mahnung_id)}>Versandt</button>
+                            )}
+                            <button className="btn-sm btn-success" onClick={() => mahnungBezahlt(m.mahnung_id)}>Bezahlt</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </>
+            )}
+
+            {showMahnungForm && (
+              <div className="modal-overlay" onClick={() => setShowMahnungForm(false)}>
+                <div className="modal" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>Mahnung erstellen</h3>
+                    <button className="close-btn" onClick={() => setShowMahnungForm(false)}><X size={20} /></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Schuldner *</label>
+                        <input value={mahnungForm.schuldner_name}
+                          onChange={e => setMahnungForm(f => ({ ...f, schuldner_name: e.target.value }))}
+                          placeholder="Name des Schuldners" />
+                      </div>
+                      <div className="form-group">
+                        <label>Offener Betrag (€) *</label>
+                        <input type="number" step="0.01" value={mahnungForm.offener_betrag}
+                          onChange={e => setMahnungForm(f => ({ ...f, offener_betrag: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Mahnstufe</label>
+                        <select value={mahnungForm.mahnstufe}
+                          onChange={e => setMahnungForm(f => ({ ...f, mahnstufe: e.target.value }))}>
+                          <option value="1">Zahlungserinnerung</option>
+                          <option value="2">1. Mahnung</option>
+                          <option value="3">2. Mahnung</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Fälligkeitsdatum *</label>
+                        <input type="date" value={mahnungForm.faelligkeitsdatum}
+                          onChange={e => setMahnungForm(f => ({ ...f, faelligkeitsdatum: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Rechnungs-ID</label>
+                        <input value={mahnungForm.rechnung_id}
+                          onChange={e => setMahnungForm(f => ({ ...f, rechnung_id: e.target.value }))}
+                          placeholder="Optional" />
+                      </div>
+                      <div className="form-group">
+                        <label>Mahngebühr (€)</label>
+                        <input type="number" step="0.01" value={mahnungForm.mahngebuehr}
+                          onChange={e => setMahnungForm(f => ({ ...f, mahngebuehr: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Mahntext</label>
+                      <textarea value={mahnungForm.mahntext} rows="3"
+                        onChange={e => setMahnungForm(f => ({ ...f, mahntext: e.target.value }))}
+                        placeholder="Optionaler Mahntext..." />
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-secondary" onClick={() => setShowMahnungForm(false)}>Abbrechen</button>
+                    <button className="btn-primary" onClick={saveMahnung}
+                      disabled={loading || !mahnungForm.schuldner_name || !mahnungForm.offener_betrag || !mahnungForm.faelligkeitsdatum}>
+                      {loading ? 'Speichern...' : 'Mahnung erstellen'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== WIEDERKEHRENDE BUCHUNGEN ==================== */}
+        {activeSubTab === 'wiederkehrend' && (
+          <div className="wiederkehrend-content">
+            <div className="section-header">
+              <h3><RefreshCw size={18} /> Wiederkehrende Buchungen</h3>
+              <div className="header-actions">
+                <button className="btn-secondary" onClick={alleFaelligeAusfuehren} disabled={ausfuehrenRunning}>
+                  {ausfuehrenRunning ? 'Läuft...' : '▶ Alle Fälligen ausführen'}
+                </button>
+                <button className="btn-primary" onClick={() => {
+                  setEditingTemplate(null);
+                  setTemplateForm({ organisation_name: selectedOrg !== 'alle' ? selectedOrg : 'Kampfkunstschule Schreiner',
+                    bezeichnung: '', buchungsart: 'ausgabe', betrag_netto: '', mwst_satz: '19',
+                    kategorie: 'sonstige_kosten', beschreibung: '', lieferant_kunde: '',
+                    intervall: 'monatlich', naechste_faelligkeit: new Date().toISOString().split('T')[0],
+                    auto_ausfuehren: false });
+                  setShowWiederkehrendForm(true);
+                }}>
+                  <Plus size={14} /> Neues Template
+                </button>
+              </div>
+            </div>
+
+            <div className="anlagen-info-box">
+              <span>💡</span>
+              <span>Templates mit <strong>„Auto-Ausführen"</strong> werden bei jedem Klick auf „Alle Fälligen ausführen" automatisch als Beleg gebucht.</span>
+            </div>
+
+            {wiederkehrendLoading ? (
+              <div className="loading-state">Lade...</div>
+            ) : wiederkehrend.length === 0 ? (
+              <div className="empty-hint">Noch keine wiederkehrenden Buchungen angelegt</div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Bezeichnung</th>
+                    <th>Art</th>
+                    <th className="right">Betrag (Netto)</th>
+                    <th>Intervall</th>
+                    <th>Nächste Fälligkeit</th>
+                    <th>Auto</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {wiederkehrend.map(t => {
+                    const faellig = new Date(t.naechste_faelligkeit) <= new Date();
+                    return (
+                      <tr key={t.template_id} className={!t.aktiv ? 'row-inactive' : faellig ? 'row-warning' : ''}>
+                        <td>
+                          <div className="anlage-name">{t.bezeichnung}</div>
+                          {t.lieferant_kunde && <div className="anlage-meta">{t.lieferant_kunde}</div>}
+                        </td>
+                        <td>{t.buchungsart === 'ausgabe' ? <span className="badge badge-danger">Ausgabe</span> : <span className="badge badge-success">Einnahme</span>}</td>
+                        <td className="right">{parseFloat(t.betrag_netto).toLocaleString('de-DE', { minimumFractionDigits: 2 })} €</td>
+                        <td>{t.intervall}</td>
+                        <td className={faellig ? 'text-danger' : ''}>{new Date(t.naechste_faelligkeit).toLocaleDateString('de-DE')}</td>
+                        <td>{t.auto_ausfuehren ? '✓' : '—'}</td>
+                        <td className="anlage-actions">
+                          <button className="btn-sm btn-success" title="Jetzt ausführen" onClick={() => templateAusfuehren(t.template_id)} disabled={ausfuehrenRunning}>▶</button>
+                          <button className="btn-icon" title="Bearbeiten" onClick={() => {
+                            setEditingTemplate(t);
+                            setTemplateForm({
+                              organisation_name: t.organisation_name,
+                              bezeichnung: t.bezeichnung, buchungsart: t.buchungsart,
+                              betrag_netto: t.betrag_netto, mwst_satz: t.mwst_satz,
+                              kategorie: t.kategorie, beschreibung: t.beschreibung || '',
+                              lieferant_kunde: t.lieferant_kunde || '',
+                              intervall: t.intervall,
+                              naechste_faelligkeit: t.naechste_faelligkeit?.split('T')[0] || '',
+                              auto_ausfuehren: !!t.auto_ausfuehren
+                            });
+                            setShowWiederkehrendForm(true);
+                          }}><Edit size={14} /></button>
+                          <button className="btn-icon btn-danger-icon" title="Löschen" onClick={() => deleteTemplate(t.template_id)}>
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+
+            {showWiederkehrendForm && (
+              <div className="modal-overlay" onClick={() => setShowWiederkehrendForm(false)}>
+                <div className="modal" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>{editingTemplate ? 'Template bearbeiten' : 'Neue wiederkehrende Buchung'}</h3>
+                    <button className="close-btn" onClick={() => setShowWiederkehrendForm(false)}><X size={20} /></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Bezeichnung *</label>
+                        <input value={templateForm.bezeichnung}
+                          onChange={e => setTemplateForm(f => ({ ...f, bezeichnung: e.target.value }))}
+                          placeholder="z.B. Miete Halle, Versicherung" />
+                      </div>
+                      <div className="form-group">
+                        <label>Buchungsart</label>
+                        <select value={templateForm.buchungsart}
+                          onChange={e => setTemplateForm(f => ({ ...f, buchungsart: e.target.value }))}>
+                          <option value="ausgabe">Ausgabe</option>
+                          <option value="einnahme">Einnahme</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Betrag Netto (€) *</label>
+                        <input type="number" step="0.01" value={templateForm.betrag_netto}
+                          onChange={e => setTemplateForm(f => ({ ...f, betrag_netto: e.target.value }))} />
+                      </div>
+                      <div className="form-group">
+                        <label>MwSt (%)</label>
+                        <select value={templateForm.mwst_satz}
+                          onChange={e => setTemplateForm(f => ({ ...f, mwst_satz: e.target.value }))}>
+                          <option value="19">19%</option>
+                          <option value="7">7%</option>
+                          <option value="0">0%</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Kategorie *</label>
+                        <select value={templateForm.kategorie}
+                          onChange={e => setTemplateForm(f => ({ ...f, kategorie: e.target.value }))}>
+                          {kategorien.filter(k => k.typ === templateForm.buchungsart).map(k => (
+                            <option key={k.id} value={k.id}>{k.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Intervall</label>
+                        <select value={templateForm.intervall}
+                          onChange={e => setTemplateForm(f => ({ ...f, intervall: e.target.value }))}>
+                          <option value="wöchentlich">Wöchentlich</option>
+                          <option value="monatlich">Monatlich</option>
+                          <option value="vierteljährlich">Vierteljährlich</option>
+                          <option value="halbjährlich">Halbjährlich</option>
+                          <option value="jährlich">Jährlich</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Lieferant / Kunde</label>
+                        <input value={templateForm.lieferant_kunde}
+                          onChange={e => setTemplateForm(f => ({ ...f, lieferant_kunde: e.target.value }))}
+                          placeholder="Optional" />
+                      </div>
+                      <div className="form-group">
+                        <label>Nächste Fälligkeit *</label>
+                        <input type="date" value={templateForm.naechste_faelligkeit}
+                          onChange={e => setTemplateForm(f => ({ ...f, naechste_faelligkeit: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Beschreibung (wird in Beleg übernommen)</label>
+                      <textarea value={templateForm.beschreibung} rows="2"
+                        onChange={e => setTemplateForm(f => ({ ...f, beschreibung: e.target.value }))} />
+                    </div>
+                    <label className="checkbox-label">
+                      <input type="checkbox" checked={templateForm.auto_ausfuehren}
+                        onChange={e => setTemplateForm(f => ({ ...f, auto_ausfuehren: e.target.checked }))} />
+                      Auto-Ausführen (wird bei „Alle Fälligen" automatisch gebucht)
+                    </label>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-secondary" onClick={() => setShowWiederkehrendForm(false)}>Abbrechen</button>
+                    <button className="btn-primary" onClick={saveTemplate}
+                      disabled={loading || !templateForm.bezeichnung || !templateForm.betrag_netto}>
+                      {loading ? 'Speichern...' : 'Speichern'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== KREDITOREN / LIEFERANTENAKTE ==================== */}
+        {activeSubTab === 'kreditoren' && (
+          <div className="kreditoren-content">
+            <div className="section-header">
+              <h3><FileText size={18} /> Kreditoren / Lieferantenakte</h3>
+              <button className="btn-primary" onClick={() => {
+                setEditingKreditor(null);
+                setKreditorForm({ organisation_name: selectedOrg !== 'alle' ? selectedOrg : 'Kampfkunstschule Schreiner',
+                  name: '', kurzname: '', adresse: '', email: '', telefon: '',
+                  ust_id: '', zahlungsziel_tage: '14', iban: '', bic: '', notizen: '' });
+                setShowKreditorForm(true);
+              }}>
+                <Plus size={14} /> Neuer Kreditor
+              </button>
+            </div>
+
+            {kreditorenLoading ? (
+              <div className="loading-state">Lade...</div>
+            ) : kreditoren.length === 0 ? (
+              <div className="empty-hint">Noch keine Kreditoren angelegt. Kreditoren erscheinen als Vorschläge im Belegerfassungs-Formular.</div>
+            ) : (
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Kurzname</th>
+                    <th>E-Mail</th>
+                    <th>Telefon</th>
+                    <th>Zahlungsziel</th>
+                    <th>IBAN</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {kreditoren.map(k => (
+                    <tr key={k.kreditor_id}>
+                      <td>
+                        <div className="anlage-name">{k.name}</div>
+                        {k.ust_id && <div className="anlage-meta">USt-ID: {k.ust_id}</div>}
+                      </td>
+                      <td>{k.kurzname || '—'}</td>
+                      <td>{k.email || '—'}</td>
+                      <td>{k.telefon || '—'}</td>
+                      <td>{k.zahlungsziel_tage} Tage</td>
+                      <td>{k.iban ? `${k.iban.substring(0, 8)}...` : '—'}</td>
+                      <td className="anlage-actions">
+                        <button className="btn-icon" title="Bearbeiten" onClick={() => {
+                          setEditingKreditor(k);
+                          setKreditorForm({
+                            organisation_name: k.organisation_name,
+                            name: k.name, kurzname: k.kurzname || '',
+                            adresse: k.adresse || '', email: k.email || '',
+                            telefon: k.telefon || '', ust_id: k.ust_id || '',
+                            zahlungsziel_tage: String(k.zahlungsziel_tage || 14),
+                            iban: k.iban || '', bic: k.bic || '', notizen: k.notizen || ''
+                          });
+                          setShowKreditorForm(true);
+                        }}><Edit size={14} /></button>
+                        <button className="btn-icon btn-danger-icon" title="Löschen" onClick={() => deleteKreditor(k.kreditor_id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            {showKreditorForm && (
+              <div className="modal-overlay" onClick={() => setShowKreditorForm(false)}>
+                <div className="modal" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>{editingKreditor ? 'Kreditor bearbeiten' : 'Neuer Kreditor'}</h3>
+                    <button className="close-btn" onClick={() => setShowKreditorForm(false)}><X size={20} /></button>
+                  </div>
+                  <div className="modal-body">
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Name *</label>
+                        <input value={kreditorForm.name}
+                          onChange={e => setKreditorForm(f => ({ ...f, name: e.target.value }))}
+                          placeholder="Firmenname" />
+                      </div>
+                      <div className="form-group">
+                        <label>Kurzname</label>
+                        <input value={kreditorForm.kurzname}
+                          onChange={e => setKreditorForm(f => ({ ...f, kurzname: e.target.value }))}
+                          placeholder="z.B. Stadtwerke" />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Adresse</label>
+                      <textarea value={kreditorForm.adresse} rows="2"
+                        onChange={e => setKreditorForm(f => ({ ...f, adresse: e.target.value }))} />
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>E-Mail</label>
+                        <input type="email" value={kreditorForm.email}
+                          onChange={e => setKreditorForm(f => ({ ...f, email: e.target.value }))} />
+                      </div>
+                      <div className="form-group">
+                        <label>Telefon</label>
+                        <input value={kreditorForm.telefon}
+                          onChange={e => setKreditorForm(f => ({ ...f, telefon: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>USt-ID</label>
+                        <input value={kreditorForm.ust_id}
+                          onChange={e => setKreditorForm(f => ({ ...f, ust_id: e.target.value }))}
+                          placeholder="DE123456789" />
+                      </div>
+                      <div className="form-group">
+                        <label>Zahlungsziel (Tage)</label>
+                        <input type="number" min="0" value={kreditorForm.zahlungsziel_tage}
+                          onChange={e => setKreditorForm(f => ({ ...f, zahlungsziel_tage: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>IBAN</label>
+                        <input value={kreditorForm.iban}
+                          onChange={e => setKreditorForm(f => ({ ...f, iban: e.target.value }))}
+                          placeholder="DE89 3704 0044 ..." />
+                      </div>
+                      <div className="form-group">
+                        <label>BIC</label>
+                        <input value={kreditorForm.bic}
+                          onChange={e => setKreditorForm(f => ({ ...f, bic: e.target.value }))} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Notizen</label>
+                      <textarea value={kreditorForm.notizen} rows="2"
+                        onChange={e => setKreditorForm(f => ({ ...f, notizen: e.target.value }))} />
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-secondary" onClick={() => setShowKreditorForm(false)}>Abbrechen</button>
+                    <button className="btn-primary" onClick={saveKreditor}
+                      disabled={loading || !kreditorForm.name}>
+                      {loading ? 'Speichern...' : 'Speichern'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* ==================== BELEG MODAL ==================== */}
@@ -3478,6 +4218,22 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </div>
               </div>
 
+              {/* GWG-Hinweis */}
+              {belegForm.buchungsart === 'ausgabe' && parseFloat(belegForm.betrag_netto) > 0 && parseFloat(belegForm.betrag_netto) <= 800 && (
+                <div className="gwg-hinweis">
+                  <span className="gwg-icon">💡</span>
+                  <span>
+                    <strong>GWG-Grenze:</strong> Netto ≤ 800 € → Sofortabschreibung möglich (§ 6 Abs. 2 EStG).
+                    Kein Anlagenregister nötig.
+                  </span>
+                  <label className="gwg-checkbox-label">
+                    <input type="checkbox" checked={belegForm.ist_gwg}
+                      onChange={e => setBelegForm(f => ({ ...f, ist_gwg: e.target.checked }))} />
+                    Als GWG buchen
+                  </label>
+                </div>
+              )}
+
               <div className="form-group">
                 <label>Kategorie *</label>
                 <select
@@ -3492,6 +4248,27 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </select>
               </div>
 
+              {/* Privatanteil */}
+              {belegForm.buchungsart === 'ausgabe' && (
+                <div className="form-group privatanteil-group">
+                  <label>Privatanteil (%)</label>
+                  <div className="privatanteil-row">
+                    <input
+                      type="number" min="0" max="100" step="5"
+                      value={belegForm.privatanteil_prozent}
+                      onChange={e => setBelegForm(f => ({ ...f, privatanteil_prozent: e.target.value }))}
+                      placeholder="0"
+                    />
+                    {parseFloat(belegForm.privatanteil_prozent) > 0 && (
+                      <span className="privatanteil-info">
+                        Betriebsanteil: {(100 - parseFloat(belegForm.privatanteil_prozent)).toFixed(0)} % →{' '}
+                        {formatCurrency(parseFloat(belegForm.betrag_netto || 0) * (1 + parseFloat(belegForm.mwst_satz || 0) / 100) * (1 - parseFloat(belegForm.privatanteil_prozent) / 100))} in EÜR
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="form-group">
                 <label>Beschreibung *</label>
                 <textarea
@@ -3503,14 +4280,28 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
               </div>
 
               <div className="form-row">
-                <div className="form-group">
+                <div className="form-group" style={{ position: 'relative' }}>
                   <label>Lieferant / Kunde</label>
                   <input
                     type="text"
                     value={belegForm.lieferant_kunde}
-                    onChange={e => setBelegForm(f => ({ ...f, lieferant_kunde: e.target.value }))}
+                    onChange={e => {
+                      setBelegForm(f => ({ ...f, lieferant_kunde: e.target.value }));
+                      searchKreditoren(e.target.value);
+                    }}
+                    onBlur={() => setTimeout(() => setKreditorSuggestions([]), 200)}
                     placeholder="Name des Lieferanten/Kunden"
                   />
+                  {kreditorSuggestions.length > 0 && (
+                    <ul className="kreditor-suggestions">
+                      {kreditorSuggestions.map(k => (
+                        <li key={k.kreditor_id} onMouseDown={() => {
+                          setBelegForm(f => ({ ...f, lieferant_kunde: k.name }));
+                          setKreditorSuggestions([]);
+                        }}>{k.name}{k.kurzname ? ` (${k.kurzname})` : ''}</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 <div className="form-group">

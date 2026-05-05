@@ -1509,7 +1509,9 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       kategorie,
       beschreibung,
       lieferant_kunde,
-      rechnungsnummer_extern
+      rechnungsnummer_extern,
+      ist_gwg = 0,
+      privatanteil_prozent = 0
     } = req.body;
 
     // Validierung
@@ -1536,8 +1538,8 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       INSERT INTO buchhaltung_belege (
         beleg_nummer, dojo_id, organisation_name, buchungsart,
         beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
-        kategorie, beschreibung, lieferant_kunde, rechnungsnummer_extern, erstellt_von
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        kategorie, beschreibung, lieferant_kunde, rechnungsnummer_extern, ist_gwg, privatanteil_prozent, erstellt_von
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
@@ -1555,6 +1557,8 @@ router.post('/belege', requireBuchhaltungAccess, async (req, res) => {
       beschreibung,
       lieferant_kunde || null,
       rechnungsnummer_extern || null,
+      ist_gwg ? 1 : 0,
+      parseFloat(privatanteil_prozent) || 0,
       req.user?.id || 1
     ];
 
@@ -1612,7 +1616,9 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
       kategorie,
       beschreibung,
       lieferant_kunde,
-      rechnungsnummer_extern
+      rechnungsnummer_extern,
+      ist_gwg,
+      privatanteil_prozent
     } = req.body;
 
     // Berechne MwSt und Brutto
@@ -1633,6 +1639,8 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
         beschreibung = ?,
         lieferant_kunde = ?,
         rechnungsnummer_extern = ?,
+        ist_gwg = ?,
+        privatanteil_prozent = ?,
         geaendert_von = ?
       WHERE beleg_id = ?
     `;
@@ -1648,6 +1656,8 @@ router.put('/belege/:id', requireBuchhaltungAccess, (req, res) => {
       beschreibung || beleg.beschreibung,
       lieferant_kunde !== undefined ? lieferant_kunde : beleg.lieferant_kunde,
       rechnungsnummer_extern !== undefined ? rechnungsnummer_extern : beleg.rechnungsnummer_extern,
+      ist_gwg !== undefined ? (ist_gwg ? 1 : 0) : beleg.ist_gwg,
+      privatanteil_prozent !== undefined ? (parseFloat(privatanteil_prozent)||0) : beleg.privatanteil_prozent,
       req.user?.id || 1,
       belegId
     ];
@@ -5265,6 +5275,376 @@ router.delete('/anlageverm%C3%B6gen/:id', requireFeature('buchhaltung'), require
       [req.user?.id || 1, req.params.id]);
     res.json({ message: 'Anlage ausgeschieden' });
   } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
+// 💳 KREDITOREN / LIEFERANTENAKTE
+// ===================================================================
+
+router.get('/kreditoren', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const dojoId = req.buchhaltungDojoId;
+    const orgFilter = req.query.organisation;
+    let sql = 'SELECT * FROM kreditoren WHERE aktiv = 1';
+    const params = [];
+    if (dojoId) {
+      sql += ' AND dojo_id = ?'; params.push(dojoId);
+    } else if (orgFilter && orgFilter !== 'alle') {
+      sql += ' AND organisation_name = ?'; params.push(orgFilter);
+    }
+    if (req.query.q) {
+      sql += ' AND name LIKE ?'; params.push(`%${req.query.q}%`);
+    }
+    sql += ' ORDER BY name ASC';
+    const rows = await dbQuery(sql, params);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+router.post('/kreditoren', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation_name, name, kurzname, adresse, email, telefon, ust_id, zahlungsziel_tage = 14, iban, bic, notizen } = req.body;
+    if (!name) return res.status(400).json({ message: 'Name ist Pflichtfeld' });
+    const _orgMap = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const dojoId = req.buchhaltungDojoId || _orgMap[organisation_name] || null;
+    if (!dojoId) return res.status(400).json({ message: 'Dojo-ID fehlt' });
+    const result = await dbQuery(
+      `INSERT INTO kreditoren (dojo_id, organisation_name, name, kurzname, adresse, email, telefon, ust_id, zahlungsziel_tage, iban, bic, notizen)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [dojoId, organisation_name || `Dojo ${dojoId}`, name, kurzname||null, adresse||null, email||null, telefon||null, ust_id||null, zahlungsziel_tage, iban||null, bic||null, notizen||null]
+    );
+    res.status(201).json({ kreditor_id: result.insertId, message: 'Kreditor angelegt' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+router.put('/kreditoren/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM kreditoren WHERE kreditor_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    const { name, kurzname, adresse, email, telefon, ust_id, zahlungsziel_tage, iban, bic, notizen } = req.body;
+    await dbQuery(
+      `UPDATE kreditoren SET name=?, kurzname=?, adresse=?, email=?, telefon=?, ust_id=?, zahlungsziel_tage=?, iban=?, bic=?, notizen=? WHERE kreditor_id=?`,
+      [name, kurzname||null, adresse||null, email||null, telefon||null, ust_id||null, zahlungsziel_tage||14, iban||null, bic||null, notizen||null, req.params.id]
+    );
+    res.json({ message: 'Aktualisiert' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+router.delete('/kreditoren/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM kreditoren WHERE kreditor_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    await dbQuery('UPDATE kreditoren SET aktiv=0 WHERE kreditor_id=?', [req.params.id]);
+    res.json({ message: 'Gelöscht' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📋 OFFENE POSTEN + MAHNWESEN
+// ===================================================================
+
+// GET /offene-posten — listet unbezahlte Belege + externe Rechnungen
+router.get('/offene-posten', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const dojoId = req.buchhaltungDojoId;
+    const orgFilter = req.query.organisation;
+    let dojoWhere = '';
+    const params = [];
+    if (dojoId) {
+      dojoWhere = 'AND b.dojo_id = ?'; params.push(dojoId);
+    } else if (orgFilter && orgFilter !== 'alle') {
+      dojoWhere = 'AND b.organisation_name = ?'; params.push(orgFilter);
+    }
+
+    // Belege ohne zugehörige bezahlte Transaktion (offene Ausgaben-Belege als Verbindlichkeiten)
+    // Für EÜR: offene Forderungen = Rechnungen aus dem Rechnungsmodul die noch offen sind
+    const offeneRechnungen = await dbQuery(`
+      SELECT
+        r.rechnung_id,
+        r.rechnungsnummer,
+        r.gesamtbetrag AS betrag,
+        r.erstellt_am AS beleg_datum,
+        r.faellig_am AS faelligkeitsdatum,
+        m.vorname, m.nachname,
+        m.dojo_id,
+        CASE WHEN m.dojo_id = 2 THEN 'TDA International' ELSE 'Kampfkunstschule Schreiner' END AS organisation_name,
+        DATEDIFF(CURDATE(), IFNULL(r.faellig_am, r.erstellt_am)) AS tage_ueberfaellig,
+        COALESCE(mah.hoechste_stufe, 0) AS mahnstufe
+      FROM rechnungen r
+      JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+      LEFT JOIN (
+        SELECT rechnung_id, MAX(mahnstufe) AS hoechste_stufe FROM mahnungen WHERE storniert=0 AND bezahlt_am IS NULL GROUP BY rechnung_id
+      ) mah ON mah.rechnung_id = r.rechnung_id
+      WHERE r.status IN ('offen','ueberfaellig')
+        ${dojoId ? 'AND m.dojo_id = ?' : (orgFilter && orgFilter !== 'alle') ? 'AND m.dojo_id = (SELECT dojo_id FROM mitglieder WHERE organisation_name = ? LIMIT 1)' : ''}
+      ORDER BY tage_ueberfaellig DESC
+    `, dojoId ? [dojoId] : (orgFilter && orgFilter !== 'alle' ? [orgFilter] : []));
+
+    const mahnungen = await dbQuery(`
+      SELECT mah.*, r.rechnungsnummer
+      FROM mahnungen mah
+      LEFT JOIN rechnungen r ON r.rechnung_id = mah.rechnung_id
+      WHERE mah.storniert = 0 AND mah.bezahlt_am IS NULL
+        ${dojoId ? 'AND mah.dojo_id = ?' : (orgFilter && orgFilter !== 'alle') ? 'AND mah.organisation_name = ?' : ''}
+      ORDER BY mah.erstellt_am DESC
+    `, dojoId ? [dojoId] : (orgFilter && orgFilter !== 'alle' ? [orgFilter] : []));
+
+    res.json({ offeneRechnungen, mahnungen });
+  } catch (err) {
+    console.error('Offene-Posten-Fehler:', err);
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// POST /mahnungen — neue Mahnung erstellen
+router.post('/mahnungen', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation_name, rechnung_id, mitglied_id, schuldner_name, offener_betrag,
+            faelligkeitsdatum, mahnstufe = 1, mahngebuehr = 0, mahntext } = req.body;
+    if (!schuldner_name || !offener_betrag || !faelligkeitsdatum) {
+      return res.status(400).json({ message: 'Pflichtfelder fehlen' });
+    }
+    const _orgMap = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const dojoId = req.buchhaltungDojoId || _orgMap[organisation_name] || null;
+    if (!dojoId) return res.status(400).json({ message: 'Dojo-ID fehlt' });
+
+    const result = await dbQuery(
+      `INSERT INTO mahnungen (dojo_id, organisation_name, rechnung_id, mitglied_id, schuldner_name,
+         offener_betrag, faelligkeitsdatum, mahnstufe, mahngebuehr, mahntext, erstellt_von)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [dojoId, organisation_name || `Dojo ${dojoId}`, rechnung_id||null, mitglied_id||null,
+       schuldner_name, parseFloat(offener_betrag), faelligkeitsdatum, mahnstufe,
+       parseFloat(mahngebuehr)||0, mahntext||null, req.user?.id||1]
+    );
+    res.status(201).json({ mahnung_id: result.insertId, message: 'Mahnung erstellt' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// PUT /mahnungen/:id/versandt
+router.put('/mahnungen/:id/versandt', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM mahnungen WHERE mahnung_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    const { versandt_per = 'email' } = req.body;
+    await dbQuery('UPDATE mahnungen SET versandt_am=CURDATE(), versandt_per=? WHERE mahnung_id=?',
+      [versandt_per, req.params.id]);
+    res.json({ message: 'Als versandt markiert' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// PUT /mahnungen/:id/bezahlt
+router.put('/mahnungen/:id/bezahlt', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM mahnungen WHERE mahnung_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    await dbQuery('UPDATE mahnungen SET bezahlt_am=CURDATE() WHERE mahnung_id=?', [req.params.id]);
+    res.json({ message: 'Als bezahlt markiert' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// DELETE (stornieren) /mahnungen/:id
+router.delete('/mahnungen/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM mahnungen WHERE mahnung_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    await dbQuery('UPDATE mahnungen SET storniert=1 WHERE mahnung_id=?', [req.params.id]);
+    res.json({ message: 'Storniert' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// ===================================================================
+// 🔁 WIEDERKEHRENDE BUCHUNGEN
+// ===================================================================
+
+router.get('/wiederkehrend', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const dojoId = req.buchhaltungDojoId;
+    const orgFilter = req.query.organisation;
+    let sql = 'SELECT * FROM wiederkehrende_buchungen WHERE 1=1';
+    const params = [];
+    if (dojoId) {
+      sql += ' AND dojo_id = ?'; params.push(dojoId);
+    } else if (orgFilter && orgFilter !== 'alle') {
+      sql += ' AND organisation_name = ?'; params.push(orgFilter);
+    }
+    sql += ' ORDER BY naechste_faelligkeit ASC';
+    const rows = await dbQuery(sql, params);
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+router.post('/wiederkehrend', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const { organisation_name, bezeichnung, buchungsart = 'ausgabe', betrag_netto, mwst_satz = 19,
+            kategorie, beschreibung, lieferant_kunde, intervall = 'monatlich',
+            naechste_faelligkeit, auto_ausfuehren = 0 } = req.body;
+    if (!bezeichnung || !betrag_netto || !kategorie || !naechste_faelligkeit) {
+      return res.status(400).json({ message: 'Pflichtfelder fehlen' });
+    }
+    const _orgMap = { 'TDA International': 2, 'Kampfkunstschule Schreiner': 3 };
+    const dojoId = req.buchhaltungDojoId || _orgMap[organisation_name] || null;
+    if (!dojoId) return res.status(400).json({ message: 'Dojo-ID fehlt' });
+
+    const result = await dbQuery(
+      `INSERT INTO wiederkehrende_buchungen (dojo_id, organisation_name, bezeichnung, buchungsart,
+         betrag_netto, mwst_satz, kategorie, beschreibung, lieferant_kunde, intervall,
+         naechste_faelligkeit, auto_ausfuehren, erstellt_von)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [dojoId, organisation_name||`Dojo ${dojoId}`, bezeichnung, buchungsart,
+       parseFloat(betrag_netto), parseFloat(mwst_satz), kategorie, beschreibung||null,
+       lieferant_kunde||null, intervall, naechste_faelligkeit, auto_ausfuehren?1:0, req.user?.id||1]
+    );
+    res.status(201).json({ template_id: result.insertId, message: 'Template erstellt' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+router.put('/wiederkehrend/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM wiederkehrende_buchungen WHERE template_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    const { bezeichnung, buchungsart, betrag_netto, mwst_satz, kategorie, beschreibung,
+            lieferant_kunde, intervall, naechste_faelligkeit, auto_ausfuehren, aktiv } = req.body;
+    await dbQuery(
+      `UPDATE wiederkehrende_buchungen SET bezeichnung=?, buchungsart=?, betrag_netto=?, mwst_satz=?,
+         kategorie=?, beschreibung=?, lieferant_kunde=?, intervall=?, naechste_faelligkeit=?,
+         auto_ausfuehren=?, aktiv=? WHERE template_id=?`,
+      [bezeichnung, buchungsart, parseFloat(betrag_netto), parseFloat(mwst_satz), kategorie,
+       beschreibung||null, lieferant_kunde||null, intervall, naechste_faelligkeit,
+       auto_ausfuehren?1:0, aktiv===false?0:1, req.params.id]
+    );
+    res.json({ message: 'Aktualisiert' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+router.delete('/wiederkehrend/:id', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [row] = await dbQuery('SELECT dojo_id FROM wiederkehrende_buchungen WHERE template_id = ?', [req.params.id]);
+    if (!row) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, row.dojo_id)) return;
+    await dbQuery('DELETE FROM wiederkehrende_buchungen WHERE template_id=?', [req.params.id]);
+    res.json({ message: 'Gelöscht' });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// POST /wiederkehrend/:id/ausfuehren — bucht genau dieses Template als Beleg
+router.post('/wiederkehrend/:id/ausfuehren', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const [tmpl] = await dbQuery('SELECT * FROM wiederkehrende_buchungen WHERE template_id = ?', [req.params.id]);
+    if (!tmpl) return res.status(404).json({ message: 'Nicht gefunden' });
+    if (!checkDojoOwnership(req, res, tmpl.dojo_id)) return;
+
+    const netto = parseFloat(tmpl.betrag_netto);
+    const mwst = parseFloat(tmpl.mwst_satz);
+    const mwstBetrag = Math.round(netto * (mwst / 100) * 100) / 100;
+    const brutto = Math.round((netto + mwstBetrag) * 100) / 100;
+    const heute = new Date().toISOString().split('T')[0];
+    const jahr = new Date().getFullYear();
+
+    const belegNummer = await generateBelegNummer(tmpl.dojo_id, jahr);
+    const result = await dbQuery(
+      `INSERT INTO buchhaltung_belege (beleg_nummer, dojo_id, organisation_name, buchungsart,
+         beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+         kategorie, beschreibung, lieferant_kunde, erstellt_von)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [belegNummer, tmpl.dojo_id, tmpl.organisation_name, tmpl.buchungsart,
+       heute, heute, netto, mwst, mwstBetrag, brutto,
+       tmpl.kategorie, tmpl.beschreibung || tmpl.bezeichnung, tmpl.lieferant_kunde||null, req.user?.id||1]
+    );
+
+    // Nächste Fälligkeit berechnen
+    const naechste = berechnenaechsteFaelligkeit(tmpl.naechste_faelligkeit, tmpl.intervall);
+    await dbQuery('UPDATE wiederkehrende_buchungen SET letzte_ausfuehrung=?, naechste_faelligkeit=? WHERE template_id=?',
+      [heute, naechste, tmpl.template_id]);
+
+    res.status(201).json({ beleg_id: result.insertId, beleg_nummer: belegNummer, naechste_faelligkeit: naechste });
+  } catch (err) {
+    console.error('Wiederkehrend-Ausführen-Fehler:', err);
+    res.status(500).json({ message: 'Fehler', error: err.message });
+  }
+});
+
+// Hilfsfunktion: nächste Fälligkeit berechnen
+function berechnenaechsteFaelligkeit(aktuell, intervall) {
+  const d = new Date(aktuell);
+  switch (intervall) {
+    case 'wöchentlich':       d.setDate(d.getDate() + 7); break;
+    case 'monatlich':         d.setMonth(d.getMonth() + 1); break;
+    case 'vierteljährlich':   d.setMonth(d.getMonth() + 3); break;
+    case 'halbjährlich':      d.setMonth(d.getMonth() + 6); break;
+    case 'jährlich':          d.setFullYear(d.getFullYear() + 1); break;
+    default:                  d.setMonth(d.getMonth() + 1);
+  }
+  return d.toISOString().split('T')[0];
+}
+
+// POST /wiederkehrend/ausfuehren-faellige — alle fälligen auto_ausfuehren=1 Templates buchen
+router.post('/wiederkehrend/ausfuehren-faellige', requireFeature('buchhaltung'), requireBuchhaltungAccess, async (req, res) => {
+  try {
+    const dojoId = req.buchhaltungDojoId;
+    let sql = `SELECT * FROM wiederkehrende_buchungen WHERE aktiv=1 AND auto_ausfuehren=1 AND naechste_faelligkeit <= CURDATE()`;
+    const params = [];
+    if (dojoId) { sql += ' AND dojo_id=?'; params.push(dojoId); }
+    const faellige = await dbQuery(sql, params);
+    const gebuchte = [];
+    const heute = new Date().toISOString().split('T')[0];
+
+    for (const tmpl of faellige) {
+      const netto = parseFloat(tmpl.betrag_netto);
+      const mwst = parseFloat(tmpl.mwst_satz);
+      const mwstBetrag = Math.round(netto * (mwst / 100) * 100) / 100;
+      const brutto = Math.round((netto + mwstBetrag) * 100) / 100;
+      const jahr = new Date().getFullYear();
+      const belegNummer = await generateBelegNummer(tmpl.dojo_id, jahr);
+      await dbQuery(
+        `INSERT INTO buchhaltung_belege (beleg_nummer, dojo_id, organisation_name, buchungsart,
+           beleg_datum, buchungsdatum, betrag_netto, mwst_satz, mwst_betrag, betrag_brutto,
+           kategorie, beschreibung, lieferant_kunde, erstellt_von)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [belegNummer, tmpl.dojo_id, tmpl.organisation_name, tmpl.buchungsart,
+         heute, heute, netto, mwst, mwstBetrag, brutto,
+         tmpl.kategorie, tmpl.beschreibung||tmpl.bezeichnung, tmpl.lieferant_kunde||null, req.user?.id||1]
+      );
+      const naechste = berechnenaechsteFaelligkeit(tmpl.naechste_faelligkeit, tmpl.intervall);
+      await dbQuery('UPDATE wiederkehrende_buchungen SET letzte_ausfuehrung=?, naechste_faelligkeit=? WHERE template_id=?',
+        [heute, naechste, tmpl.template_id]);
+      gebuchte.push({ template_id: tmpl.template_id, bezeichnung: tmpl.bezeichnung, belegNummer });
+    }
+
+    res.json({ gebuchte, anzahl: gebuchte.length });
+  } catch (err) {
+    console.error('Fällige-Ausführen-Fehler:', err);
     res.status(500).json({ message: 'Fehler', error: err.message });
   }
 });
