@@ -1449,9 +1449,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                   setExpandedKategorien(prev => ({ ...prev, [`ein_${kat}_${idx}`]: !prev[`ein_${kat}_${idx}`] }));
                                 }}
                               >
-                                <td></td>
-                                <td>
-                                  <span className="bt-flex-icon">
+                                <td colSpan="2">
+                                  <span className="detail-row-indent">
                                     {detail.einzelbuchungen?.length > 0 && (
                                       expandedKategorien[`ein_${kat}_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />
                                     )}
@@ -1468,16 +1467,15 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                     if (buchung.drilldown.typ === 'beitraege') ladeBeitraegeDetail(buchung.drilldown.monat, buchung.drilldown.jahr, buchung.beschreibung, buchung.drilldown.organisation);
                                     else if (buchung.drilldown.typ === 'verkauf') ladeVerkaufDetail(buchung.drilldown.verkauf_id, buchung.beschreibung);
                                   } : undefined}
-                                  title={buchung.drilldown ? 'Klicken für Einzelmitglieder' : undefined}
+                                  title={buchung.drilldown ? 'Klicken für Details' : undefined}
                                 >
-                                  <td></td>
-                                  <td className="bt-cell-sub">
-                                    <span className="bt-flex-icon">
-                                      {buchung.drilldown && <ChevronRight size={12} />}
-                                      {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
+                                  <td colSpan="2">
+                                    <span className="einzelbuchung-indent">
+                                      {buchung.drilldown && <ChevronRight size={11} />}
+                                      {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
                                     </span>
                                   </td>
-                                  <td className="right bt-cell-sub-right">{formatCurrency(buchung.betrag)}</td>
+                                  <td className="right">{formatCurrency(buchung.betrag)}</td>
                                 </tr>
                               ))}
                             </React.Fragment>
@@ -1529,9 +1527,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                   setExpandedKategorien(prev => ({ ...prev, [`aus_${kat}_${idx}`]: !prev[`aus_${kat}_${idx}`] }));
                                 }}
                               >
-                                <td></td>
-                                <td>
-                                  <span className="bt-flex-icon">
+                                <td colSpan="2">
+                                  <span className="detail-row-indent">
                                     {detail.einzelbuchungen?.length > 0 && (
                                       expandedKategorien[`aus_${kat}_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />
                                     )}
@@ -1542,11 +1539,12 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                               </tr>
                               {expandedKategorien[`aus_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
                                 <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
-                                  <td></td>
-                                  <td className="bt-cell-sub">
-                                    {new Date(buchung.datum).toLocaleDateString('de-DE')} - {buchung.beschreibung || 'Keine Beschreibung'}
+                                  <td colSpan="2">
+                                    <span className="einzelbuchung-indent">
+                                      {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
+                                    </span>
                                   </td>
-                                  <td className="right bt-cell-sub-right">{formatCurrency(buchung.betrag)}</td>
+                                  <td className="right">{formatCurrency(buchung.betrag)}</td>
                                 </tr>
                               ))}
                             </React.Fragment>
@@ -3593,7 +3591,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           <div className="modal beitraege-detail-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{beitraegeDetail.label}</h3>
-              <button className="modal-close" onClick={() => setBeitraegeDetail(null)}><X size={18} /></button>
+              <button className="close-btn" onClick={() => setBeitraegeDetail(null)}><X size={20} /></button>
             </div>
             <div className="modal-body">
               {beitraegeDetailLoading ? (
@@ -3633,6 +3631,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </>
               )}
             </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setBeitraegeDetail(null)}>
+                <X size={14} /> Schließen
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -3643,7 +3646,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           <div className="modal beitraege-detail-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{verkaufDetail.label}</h3>
-              <button className="modal-close" onClick={() => setVerkaufDetail(null)}><X size={18} /></button>
+              <button className="close-btn" onClick={() => setVerkaufDetail(null)}><X size={20} /></button>
             </div>
             <div className="modal-body">
               {verkaufDetailLoading || verkaufDetail.loading ? (
@@ -3685,6 +3688,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </table>
                 </>
               )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setVerkaufDetail(null)}>
+                <X size={14} /> Schließen
+              </button>
             </div>
           </div>
         </div>

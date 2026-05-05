@@ -316,8 +316,7 @@
 }
 
 .euer-table .detail-row td {
-  padding-left: 2rem;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-secondary, #666);
 }
 
@@ -348,9 +347,9 @@
 }
 
 .euer-table .detail-row td {
-  padding-left: 1.5rem;
+  padding-left: 0.5rem;
   color: var(--text-secondary, #666);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
 }
 
 .euer-table .detail-row.clickable {
@@ -366,14 +365,33 @@
 }
 
 .euer-table .einzelbuchung-row td {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding-top: 0.22rem;
+  padding-bottom: 0.22rem;
+  padding-left: 0.5rem;
   border-bottom: 1px dashed var(--border-color, #eee);
+  font-size: 0.8rem;
+  color: var(--text-secondary, #777);
+}
+
+/* Level-3-Einrückung: nur über padding, kein leeres td */
+.euer-table .einzelbuchung-row .einzelbuchung-indent {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding-left: 2rem;
 }
 
 .euer-table .einzelbuchung-row.clickable:hover {
   background-color: rgba(var(--accent-rgb, 218, 165, 32), 0.08);
   cursor: pointer;
+}
+
+/* Level-2-Einrückung (Quelle-Zeile) */
+.euer-table .detail-row-indent {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding-left: 1.25rem;
 }
 
 .beitraege-detail-modal {
