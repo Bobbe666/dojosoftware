@@ -2979,3 +2979,125 @@ body.dark-mode .lager-status.archived {
 .af2-accent-green {
   accent-color: var(--status-success);
 }
+
+/* ============================================================
+   KOMPAKTE TABELLE — Aufklappbare Detailzeilen
+   ============================================================ */
+
+.artikel-table-kompakt td {
+  padding: 0.55rem var(--abstand-md);
+}
+
+/* Chevron-Zelle */
+.expand-cell {
+  width: 28px;
+  padding-right: 0 !important;
+  text-align: center;
+}
+.expand-chevron {
+  display: inline-block;
+  font-size: 1.1rem;
+  color: var(--text-muted, rgba(255,255,255,0.35));
+  line-height: 1;
+  transition: transform 0.18s ease, color 0.15s;
+  transform: rotate(0deg);
+  user-select: none;
+}
+.expand-chevron.open {
+  transform: rotate(90deg);
+  color: var(--primary);
+}
+
+/* Hauptzeile hover */
+.artikel-row-main:hover .expand-chevron {
+  color: var(--primary);
+}
+.artikel-row-expanded {
+  background: rgba(139, 90, 43, 0.06) !important;
+}
+
+/* Badges in der Hauptzeile — kompakter */
+.artikel-badges-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.artikel-badges-inline .artikelgruppe-badge,
+.artikel-badges-inline .kategorie-badge {
+  padding: 0.15rem 0.55rem !important;
+  font-size: 0.72rem !important;
+}
+
+/* Kids/Erw inline nebeneinander */
+.preis-kategorien-inline {
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+.preis-kategorien-inline .preis-kids { color: rgba(255,255,255,0.75); }
+.preis-kategorien-inline .preis-sep  { color: rgba(255,255,255,0.3); margin: 0 2px; }
+.preis-kategorien-inline .preis-erw  { color: rgba(255,255,255,0.75); }
+
+/* Lager inline */
+.mindestbestand-inline {
+  font-size: 0.78rem;
+  color: var(--text-hell, rgba(255,255,255,0.5));
+}
+
+/* Detail-Erweiterungszeile */
+.artikel-row-detail td {
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+  padding: 0.75rem var(--abstand-md) 0.75rem 0 !important;
+}
+.artikel-row-detail:hover {
+  background: transparent !important;
+}
+
+.artikel-detail-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 0 0 0 0.5rem;
+}
+.artikel-detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 100px;
+}
+.artikel-detail-desc {
+  flex: 1 1 100%;
+}
+.detail-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted, rgba(255,255,255,0.35));
+}
+.detail-value {
+  font-size: 0.875rem;
+  color: var(--text-secondary, rgba(255,255,255,0.75));
+}
+
+/* Light-Mode Anpassungen */
+[data-theme="light"] .artikel-row-expanded {
+  background: rgba(139, 90, 43, 0.04) !important;
+}
+[data-theme="light"] .artikel-row-detail td {
+  background: rgba(0,0,0,0.03);
+}
+[data-theme="light"] .expand-chevron {
+  color: rgba(0,0,0,0.25);
+}
+[data-theme="light"] .preis-kategorien-inline .preis-kids,
+[data-theme="light"] .preis-kategorien-inline .preis-erw {
+  color: rgba(0,0,0,0.75);
+}
+[data-theme="light"] .detail-label {
+  color: rgba(0,0,0,0.4);
+}
+[data-theme="light"] .detail-value {
+  color: rgba(0,0,0,0.75);
+}

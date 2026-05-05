@@ -50,6 +50,15 @@ const ArtikelVerwaltung = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [selectedGruppe, setSelectedGruppe] = useState(null); // null = Alle, id = Gruppe, 'none' = ohne Gruppe
   const [expandedGruppen, setExpandedGruppen] = useState({}); // { [hauptId]: true/false }
+  const [expandedRows, setExpandedRows] = useState(new Set()); // aufgeklappte Artikel-Zeilen
+
+  const toggleRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
   // Tab Navigation States (ersetzt Steps)
   const [activeTab, setActiveTab] = useState('basis'); // 'basis', 'preise', 'lager', 'einstellungen'
@@ -1332,124 +1341,134 @@ const ArtikelVerwaltung = () => {
 
       {/* Artikel Tabelle */}
       <div className="artikel-table-container">
-        <table className="artikel-table">
+        <table className="artikel-table artikel-table-kompakt">
           <thead>
             <tr>
+              <th style={{ width: '28px' }}></th>
               <th className="sortable-th" onClick={() => handleSort('name')}>Artikel <SortIcon col="name" /></th>
-              <th className="sortable-th" onClick={() => handleSort('ek')}>EK <SortIcon col="ek" /></th>
-              <th className="sortable-th" onClick={() => handleSort('vk')}>VK Netto <SortIcon col="vk" /></th>
-              <th>VK Brutto</th>
-              <th className="sortable-th" onClick={() => handleSort('mwst')}>MwSt <SortIcon col="mwst" /></th>
+              <th className="sortable-th" onClick={() => handleSort('vk')}>VK Brutto <SortIcon col="vk" /></th>
               <th className="sortable-th" onClick={() => handleSort('lager')}>Lager <SortIcon col="lager" /></th>
               <th className="sortable-th" onClick={() => handleSort('status')}>Status <SortIcon col="status" /></th>
               <th>Aktionen</th>
             </tr>
           </thead>
           <tbody>
-            {sortedArtikel.map(item => (
-              <tr key={item.artikel_id} className={!item.aktiv ? 'artikel-archiviert' : ''}>
-                <td className="artikel-info">
-                  <div className="artikel-name">{item.name}</div>
-                  <div className="artikel-details">
-                    {item.artikel_nummer && `#${item.artikel_nummer}`}
-                    {item.ean_code && ` • EAN: ${item.ean_code}`}
-                  </div>
-                  <div className="artikel-badges">
-                    {selectedGruppe === null && item.artikelgruppe_name && (
-                      <span className="artikelgruppe-badge">{item.artikelgruppe_name}</span>
-                    )}
-                    {item.kategorie_name && (
-                      <span className="kategorie-badge">{item.kategorie_name}</span>
-                    )}
-                  </div>
-                </td>
-
-                <td className="preis-cell">
-                  {item.hat_preiskategorien ? (
-                    <div className="preis-kategorien">
-                      <div className="preis-kids">Kids: {item.listeneinkaufspreis_kids_euro?.toFixed(2) || '-'}€</div>
-                      <div className="preis-erw">Erw: {item.listeneinkaufspreis_erwachsene_euro?.toFixed(2) || '-'}€</div>
-                    </div>
-                  ) : (
-                    item.einkaufspreis_euro > 0 ? `${item.einkaufspreis_euro.toFixed(2)}€` : '-'
-                  )}
-                </td>
-
-                <td className="preis-cell">
-                  {item.hat_preiskategorien ? (
-                    <div className="preis-kategorien">
-                      <div className="preis-kids">Kids: {item.preis_kids_euro?.toFixed(2) || '-'}€</div>
-                      <div className="preis-erw">Erw: {item.preis_erwachsene_euro?.toFixed(2) || '-'}€</div>
-                    </div>
-                  ) : (
-                    item.verkaufspreis_euro > 0 ? `${item.verkaufspreis_euro.toFixed(2)}€` : '-'
-                  )}
-                </td>
-
-                <td className="preis-cell">
-                  {item.hat_preiskategorien ? (
-                    <div className="preis-kategorien">
-                      <div className="preis-kids">Kids: {(item.preis_kids_euro * (1 + (item.mwst_satz || 19) / 100)).toFixed(2)}€</div>
-                      <div className="preis-erw">Erw: {(item.preis_erwachsene_euro * (1 + (item.mwst_satz || 19) / 100)).toFixed(2)}€</div>
-                    </div>
-                  ) : (
-                    item.verkaufspreis_euro > 0
-                      ? `${(item.verkaufspreis_euro * (1 + (item.mwst_satz || 19) / 100)).toFixed(2)}€`
-                      : '-'
-                  )}
-                </td>
-
-                <td className="preis-cell">
-                  {item.mwst_satz || 19}%
-                </td>
-
-                <td className="lager-info">
-                  <div className="lagerbestand">
-                    {item.lager_tracking ? item.lagerbestand : '∞'}
-                  </div>
-                  {item.lager_tracking && item.mindestbestand > 0 && (
-                    <div className="mindestbestand">
-                      Min: {item.mindestbestand}
-                    </div>
-                  )}
-                </td>
-
-                <td>
-                  {renderLagerStatus(item)}
-                </td>
-
-                <td className="actions">
-                  <button
-                    className="sub-tab-btn av-btn-sm"
-                    onClick={() => handleEdit(item)}
-                    title="Bearbeiten"
+            {sortedArtikel.map(item => {
+              const isExpanded = expandedRows.has(item.artikel_id);
+              const mwst = item.mwst_satz || 19;
+              return (
+                <React.Fragment key={item.artikel_id}>
+                  {/* Kompakte Hauptzeile */}
+                  <tr
+                    className={`artikel-row-main${!item.aktiv ? ' artikel-archiviert' : ''}${isExpanded ? ' artikel-row-expanded' : ''}`}
+                    onClick={() => toggleRow(item.artikel_id)}
+                    style={{ cursor: 'pointer' }}
                   >
-                    ✏️
-                  </button>
+                    <td className="expand-cell">
+                      <span className={`expand-chevron${isExpanded ? ' open' : ''}`}>›</span>
+                    </td>
 
-                  {item.lager_tracking && (
-                    <button
-                      className="sub-tab-btn av-btn-sm"
-                      onClick={() => handleLager(item)}
-                      title="Lagerbestand ändern"
-                    >
-                      📦
-                    </button>
+                    <td className="artikel-info">
+                      <div className="artikel-name">{item.name}</div>
+                      {(selectedGruppe === null && item.artikelgruppe_name) || item.kategorie_name ? (
+                        <div className="artikel-badges-inline">
+                          {selectedGruppe === null && item.artikelgruppe_name && (
+                            <span className="artikelgruppe-badge">{item.artikelgruppe_name}</span>
+                          )}
+                          {item.kategorie_name && (
+                            <span className="kategorie-badge">{item.kategorie_name}</span>
+                          )}
+                        </div>
+                      ) : null}
+                    </td>
+
+                    <td className="preis-cell">
+                      {item.hat_preiskategorien ? (
+                        <div className="preis-kategorien-inline">
+                          <span className="preis-kids">Kids {(item.preis_kids_euro * (1 + mwst / 100)).toFixed(2)}€</span>
+                          <span className="preis-sep"> / </span>
+                          <span className="preis-erw">Erw {(item.preis_erwachsene_euro * (1 + mwst / 100)).toFixed(2)}€</span>
+                        </div>
+                      ) : (
+                        item.verkaufspreis_euro > 0
+                          ? `${(item.verkaufspreis_euro * (1 + mwst / 100)).toFixed(2)}€`
+                          : '-'
+                      )}
+                    </td>
+
+                    <td className="lager-info">
+                      <span className="lagerbestand">{item.lager_tracking ? item.lagerbestand : '∞'}</span>
+                      {item.lager_tracking && item.mindestbestand > 0 && (
+                        <span className="mindestbestand-inline"> / Min {item.mindestbestand}</span>
+                      )}
+                    </td>
+
+                    <td onClick={e => e.stopPropagation()}>
+                      {renderLagerStatus(item)}
+                    </td>
+
+                    <td className="actions" onClick={e => e.stopPropagation()}>
+                      <button className="sub-tab-btn av-btn-sm" onClick={() => handleEdit(item)} title="Bearbeiten">✏️</button>
+                      {item.lager_tracking && (
+                        <button className="sub-tab-btn av-btn-sm" onClick={() => handleLager(item)} title="Lagerbestand ändern">📦</button>
+                      )}
+                      <button className="sub-tab-btn av-btn-sm" onClick={() => deleteArtikel(item.artikel_id)} title="Deaktivieren">🗑️</button>
+                    </td>
+                  </tr>
+
+                  {/* Aufgeklappte Detailzeile */}
+                  {isExpanded && (
+                    <tr className="artikel-row-detail">
+                      <td></td>
+                      <td colSpan="5">
+                        <div className="artikel-detail-grid">
+                          <div className="artikel-detail-block">
+                            <span className="detail-label">Artikelnr.</span>
+                            <span className="detail-value">
+                              {item.artikel_nummer ? `#${item.artikel_nummer}` : '—'}
+                              {item.ean_code ? ` · EAN ${item.ean_code}` : ''}
+                            </span>
+                          </div>
+                          <div className="artikel-detail-block">
+                            <span className="detail-label">EK</span>
+                            <span className="detail-value">
+                              {item.hat_preiskategorien ? (
+                                <>Kids {item.listeneinkaufspreis_kids_euro?.toFixed(2) || '—'}€ / Erw {item.listeneinkaufspreis_erwachsene_euro?.toFixed(2) || '—'}€</>
+                              ) : (
+                                item.einkaufspreis_euro > 0 ? `${item.einkaufspreis_euro.toFixed(2)}€` : '—'
+                              )}
+                            </span>
+                          </div>
+                          <div className="artikel-detail-block">
+                            <span className="detail-label">VK Netto</span>
+                            <span className="detail-value">
+                              {item.hat_preiskategorien ? (
+                                <>Kids {item.preis_kids_euro?.toFixed(2) || '—'}€ / Erw {item.preis_erwachsene_euro?.toFixed(2) || '—'}€</>
+                              ) : (
+                                item.verkaufspreis_euro > 0 ? `${item.verkaufspreis_euro.toFixed(2)}€` : '—'
+                              )}
+                            </span>
+                          </div>
+                          <div className="artikel-detail-block">
+                            <span className="detail-label">MwSt</span>
+                            <span className="detail-value">{mwst}%</span>
+                          </div>
+                          {item.beschreibung && (
+                            <div className="artikel-detail-block artikel-detail-desc">
+                              <span className="detail-label">Beschreibung</span>
+                              <span className="detail-value">{item.beschreibung}</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
                   )}
-
-                  <button
-                    className="sub-tab-btn av-btn-sm"
-                    onClick={() => deleteArtikel(item.artikel_id)}
-                    title="Deaktivieren"
-                  >
-                    🗑️
-                  </button>
-                </td>
-              </tr>
-            ))}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
-        
+
         {sortedArtikel.length === 0 && (
           <div className="empty-state">
             <p>Keine Artikel gefunden</p>
