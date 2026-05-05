@@ -57,7 +57,7 @@ SELECT
     b.zahlungsdatum as datum,
     b.betrag,
     'mitgliedsbeitraege' as kategorie,
-    CONCAT('Mitgliedsbeitrag ', b.monat, '/', b.jahr) as beschreibung,
+    CONCAT('Mitgliedsbeitrag ', MONTH(b.zahlungsdatum), '/', YEAR(b.zahlungsdatum)) as beschreibung,
     YEAR(b.zahlungsdatum) as jahr,
     MONTH(b.zahlungsdatum) as monat
 FROM beitraege b
