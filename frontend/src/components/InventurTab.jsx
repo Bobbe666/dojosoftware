@@ -18,6 +18,8 @@ export default function InventurTab() {
   const [suche, setSuche] = useState('');
   const [statusFilter, setStatusFilter] = useState('alle');
   const [bewegungsartFilter, setBewegungsartFilter] = useState('alle');
+  const [gruppeFilter, setGruppeFilter] = useState('alle');
+  const [sortierung, setSortierung] = useState('name_asc'); // name_asc|name_desc|bestand_asc|bestand_desc|status
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [stats, setStats] = useState({ gesamt: 0, verfuegbar: 0, nachbestellen: 0, ausverkauft: 0, lagerwert: 0 });
 
@@ -127,13 +129,32 @@ export default function InventurTab() {
     }
   };
 
-  const filteredArtikel = artikel.filter(a => {
-    const matchSuche = !suche || a.name.toLowerCase().includes(suche.toLowerCase()) ||
-      (a.artikel_nummer || '').toLowerCase().includes(suche.toLowerCase()) ||
-      (a.ean_code || '').includes(suche);
-    const matchStatus = statusFilter === 'alle' || a.lager_status === statusFilter;
-    return matchSuche && matchStatus;
-  });
+  // Eindeutige Gruppen aus geladenen Artikeln
+  const gruppenOptionen = [...new Set(
+    artikel.map(a => a.gruppe_name || a.kategorie_name).filter(Boolean)
+  )].sort();
+
+  const STATUS_SORT = { ausverkauft: 0, nachbestellen: 1, verfuegbar: 2, kein_tracking: 3 };
+
+  const filteredArtikel = artikel
+    .filter(a => {
+      const matchSuche = !suche || a.name.toLowerCase().includes(suche.toLowerCase()) ||
+        (a.artikel_nummer || '').toLowerCase().includes(suche.toLowerCase()) ||
+        (a.ean_code || '').includes(suche);
+      const matchStatus = statusFilter === 'alle' || a.lager_status === statusFilter;
+      const matchGruppe = gruppeFilter === 'alle' || (a.gruppe_name || a.kategorie_name) === gruppeFilter;
+      return matchSuche && matchStatus && matchGruppe;
+    })
+    .sort((a, b) => {
+      switch (sortierung) {
+        case 'name_asc':  return a.name.localeCompare(b.name, 'de');
+        case 'name_desc': return b.name.localeCompare(a.name, 'de');
+        case 'bestand_asc':  return a.lagerbestand - b.lagerbestand;
+        case 'bestand_desc': return b.lagerbestand - a.lagerbestand;
+        case 'status': return (STATUS_SORT[a.lager_status] ?? 9) - (STATUS_SORT[b.lager_status] ?? 9);
+        default: return 0;
+      }
+    });
 
   const filteredBewegungen = bewegungen.filter(b => {
     return !suche || (b.artikel_name || '').toLowerCase().includes(suche.toLowerCase()) ||
@@ -194,11 +215,11 @@ export default function InventurTab() {
           <input
             className="inv-search"
             type="text"
-            placeholder="Suche nach Name, Artikelnr., EAN..."
+            placeholder="Name, Artikelnr., EAN..."
             value={suche}
             onChange={e => setSuche(e.target.value)}
           />
-          {ansicht === 'lager' && (
+          {ansicht === 'lager' && (<>
             <select className="inv-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="alle">Alle Status</option>
               <option value="verfuegbar">Verfügbar</option>
@@ -206,7 +227,18 @@ export default function InventurTab() {
               <option value="ausverkauft">Ausverkauft</option>
               <option value="kein_tracking">Kein Tracking</option>
             </select>
-          )}
+            <select className="inv-select" value={gruppeFilter} onChange={e => setGruppeFilter(e.target.value)}>
+              <option value="alle">Alle Gruppen</option>
+              {gruppenOptionen.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+            <select className="inv-select" value={sortierung} onChange={e => setSortierung(e.target.value)}>
+              <option value="name_asc">Name A–Z</option>
+              <option value="name_desc">Name Z–A</option>
+              <option value="bestand_asc">Bestand ↑</option>
+              <option value="bestand_desc">Bestand ↓</option>
+              <option value="status">Status</option>
+            </select>
+          </>)}
           {ansicht === 'verlauf' && (
             <select className="inv-select" value={bewegungsartFilter} onChange={e => setBewegungsartFilter(e.target.value)}>
               <option value="alle">Alle Bewegungsarten</option>
@@ -219,69 +251,67 @@ export default function InventurTab() {
         </div>
       </div>
 
-      {/* Lagerbestand — kompakte Zeilen-Liste */}
+      {/* Lagerbestand — kompaktes Grid */}
       {ansicht === 'lager' && (
         filteredArtikel.length === 0
           ? <div className="inv-empty">Keine Artikel gefunden.</div>
-          : <div className="inv-list">
+          : <div className="inv-grid">
               {filteredArtikel.map(a => {
                 const expanded = expandedRows.has(a.artikel_id);
                 const variantenEntries = a.hat_varianten ? Object.entries(a.varianten_bestand) : [];
                 const statusColor = LAGER_STATUS_COLOR[a.lager_status];
                 const bestandColor = a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'var(--text-hauptfarbe)';
                 return (
-                  <div key={a.artikel_id} className={`inv-list-item ${expanded ? 'expanded' : ''}`} style={{ '--status-color': statusColor }}>
-                    {/* Hauptzeile */}
-                    <div className="inv-list-row" onClick={() => toggleRow(a.artikel_id)}>
-                      {/* Name + Badges */}
-                      <div className="inv-list-name">
-                        <span className="inv-farb-dot" style={{ background: a.farbe_hex || '#666' }} />
-                        <span className="inv-name-text">{a.name}</span>
-                        {a.hat_varianten && variantenEntries.length > 0 && (
-                          <span className="inv-varianten-hint">{variantenEntries.length} Gr.</span>
-                        )}
+                  <div key={a.artikel_id} className={`inv-card ${expanded ? 'expanded' : ''}`} style={{ '--sc': statusColor }}>
+
+                    {/* Karten-Kopf: Name + Status */}
+                    <div className="inv-card-top" onClick={() => toggleRow(a.artikel_id)}>
+                      <div className="inv-card-name-row">
+                        <span className="inv-farb-dot" style={{ background: a.farbe_hex || '#555' }} />
+                        <span className="inv-card-name" title={a.name}>{a.name}</span>
                       </div>
-                      {/* Status */}
-                      <span className="inv-status-badge" style={{ background: statusColor + '22', color: statusColor, border: `1px solid ${statusColor}` }}>
+                      <span className="inv-status-badge" style={{ background: statusColor + '20', color: statusColor, border: `1px solid ${statusColor}` }}>
                         {LAGER_STATUS_LABEL[a.lager_status]}
                       </span>
-                      {/* Bestand */}
-                      <div className="inv-list-bestand">
-                        <span className="inv-bestand-zahl" style={{ color: bestandColor }}>{a.lagerbestand}</span>
-                        {a.mindestbestand > 0 && <span className="inv-mindest-hint">/ {a.mindestbestand}</span>}
+                    </div>
+
+                    {/* Bestand */}
+                    <div className="inv-card-mid" onClick={() => toggleRow(a.artikel_id)}>
+                      <span className="inv-card-zahl" style={{ color: bestandColor }}>{a.lagerbestand}</span>
+                      <div className="inv-card-sub">
+                        <span>Stk.</span>
+                        {a.hat_varianten && variantenEntries.length > 0 && <span className="inv-varianten-hint">{variantenEntries.length}×</span>}
+                        {a.mindestbestand > 0 && <span className="inv-card-mindest">min.{a.mindestbestand}</span>}
                       </div>
-                      {/* Aktionen */}
-                      <div className="inv-list-actions" onClick={e => e.stopPropagation()}>
-                        <button className="btn-buchung" onClick={() => openBuchung(a)}>Buchen</button>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="inv-card-foot">
+                      <button className="btn-buchung" onClick={e => { e.stopPropagation(); openBuchung(a); }}>Buchen</button>
+                      <button className="inv-expand-btn" onClick={() => toggleRow(a.artikel_id)}>
                         <span className={`inv-chevron ${expanded ? 'open' : ''}`}>›</span>
-                      </div>
+                      </button>
                     </div>
 
                     {/* Aufgeklappte Details */}
                     {expanded && (
-                      <div className="inv-list-detail">
+                      <div className="inv-card-detail">
                         <div className="inv-detail-meta">
-                          {a.artikel_nummer && (
-                            <span className="inv-detail-item"><span className="inv-detail-label">Artikelnr.</span><span className="inv-mono">{a.artikel_nummer}</span></span>
-                          )}
-                          {(a.gruppe_name || a.kategorie_name) && (
-                            <span className="inv-detail-item"><span className="inv-detail-label">Gruppe</span>{a.gruppe_name || a.kategorie_name}</span>
-                          )}
-                          <span className="inv-detail-item"><span className="inv-detail-label">EK-Preis</span>{a.einkaufspreis.toFixed(2)} €</span>
-                          <span className="inv-detail-item"><span className="inv-detail-label">Lagerwert</span>{a.lagerwert.toFixed(2)} €</span>
-                          {a.letzte_bewegung && (
-                            <span className="inv-detail-item"><span className="inv-detail-label">Letzte Buchung</span>{new Date(a.letzte_bewegung).toLocaleDateString('de-DE')}</span>
-                          )}
+                          {a.artikel_nummer && <span className="inv-detail-item"><span className="inv-detail-label">Art.-Nr.</span><span className="inv-mono">{a.artikel_nummer}</span></span>}
+                          {(a.gruppe_name || a.kategorie_name) && <span className="inv-detail-item"><span className="inv-detail-label">Gruppe</span>{a.gruppe_name || a.kategorie_name}</span>}
+                          <span className="inv-detail-item"><span className="inv-detail-label">EK</span>{a.einkaufspreis.toFixed(2)} €</span>
+                          <span className="inv-detail-item"><span className="inv-detail-label">Wert</span>{a.lagerwert.toFixed(2)} €</span>
+                          {a.letzte_bewegung && <span className="inv-detail-item"><span className="inv-detail-label">Zuletzt</span>{new Date(a.letzte_bewegung).toLocaleDateString('de-DE')}</span>}
                         </div>
                         {a.hat_varianten && variantenEntries.length > 0 && (
                           <div className="inv-varianten-grid">
-                            <div className="inv-detail-label" style={{ marginBottom: '0.4rem' }}>Größen</div>
+                            <div className="inv-detail-label" style={{ marginBottom: '0.35rem' }}>Größen</div>
                             <div className="inv-varianten-row">
                               {variantenEntries.map(([key, v]) => {
                                 const groesse = key.split('|')[0];
                                 const bestand = v.bestand ?? 0;
                                 return (
-                                  <div key={key} className={`inv-variante-card ${bestand === 0 ? 'ausverkauft' : ''}`}>
+                                  <div key={key} className={`inv-variante-card ${bestand === 0 ? 'leer' : ''}`}>
                                     <span className="inv-variante-groesse">{groesse}</span>
                                     <span className="inv-variante-bestand" style={{ color: bestand === 0 ? '#e74c3c' : 'inherit' }}>{bestand}</span>
                                     <button className="btn-buchung-sm" onClick={() => openBuchung(a, key, bestand)}>+/−</button>
