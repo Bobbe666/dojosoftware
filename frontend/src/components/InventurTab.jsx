@@ -274,9 +274,9 @@ export default function InventurTab() {
                 const expanded = expandedRows.has(a.artikel_id);
                 const variantenEntries = a.hat_varianten ? Object.entries(a.varianten_bestand) : [];
                 const statusColor = LAGER_STATUS_COLOR[a.lager_status];
-                const bestandColor = a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'var(--text-hauptfarbe)';
+                const bestandColor = a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'inherit';
                 return (
-                  <div key={a.artikel_id} className={`inv-card ${expanded ? 'expanded' : ''}`} style={{ '--sc': statusColor }}>
+                  <div key={a.artikel_id} className={`inv-card ${a.lager_status} ${expanded ? 'expanded' : ''}`}>
 
                     {/* Karten-Kopf: Name + Status */}
                     <div className="inv-card-top" onClick={() => toggleRow(a.artikel_id)}>
