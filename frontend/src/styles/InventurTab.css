@@ -753,10 +753,22 @@
 
 .inv-modal-footer {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.75rem;
-  justify-content: flex-end;
   padding: 0 1.4rem 1.4rem;
 }
+
+.inv-modal-footer-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.inv-btn-bearbeiten {
+  opacity: 0.7;
+  font-size: 0.82rem;
+}
+.inv-btn-bearbeiten:hover { opacity: 1; }
 
 /* ============================================
    MODAL HEADER — Artikel-Info

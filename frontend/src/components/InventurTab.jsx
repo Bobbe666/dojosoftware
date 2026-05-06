@@ -572,14 +572,22 @@ export default function InventurTab() {
             </div>
 
             <div className="inv-modal-footer">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>Abbrechen</button>
               <button
-                className="btn-primary"
-                onClick={submitBuchung}
-                disabled={buchungLoading || (variantenEntries.length === 0 && buchung.menge === '')}
+                className="btn-secondary inv-btn-bearbeiten"
+                onClick={() => { setShowModal(false); navigate(`/dashboard/artikel/${selectedArtikel.artikel_id}`); }}
               >
-                {buchungLoading ? 'Wird gebucht...' : 'Buchung speichern'}
+                ✎ Bearbeiten
               </button>
+              <div className="inv-modal-footer-right">
+                <button className="btn-secondary" onClick={() => setShowModal(false)}>Abbrechen</button>
+                <button
+                  className="btn-primary"
+                  onClick={submitBuchung}
+                  disabled={buchungLoading || (variantenEntries.length === 0 && buchung.menge === '')}
+                >
+                  {buchungLoading ? 'Wird gebucht...' : 'Buchung speichern'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
