@@ -177,17 +177,21 @@
 /* Karte */
 .inv-card {
   background: var(--hintergrund-hauptfarbe);
-  border: 1px solid var(--rand-farbe);
-  border-top: 3px solid var(--rand-farbe);
+  border: 1.5px solid rgba(255,255,255,0.12);
+  border-top: 3px solid rgba(255,255,255,0.12);
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: box-shadow 0.15s;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
 }
 .inv-card.nachbestellen { border-top-color: #f39c12; }
 .inv-card.ausverkauft   { border-top-color: #e74c3c; }
-.inv-card:hover { box-shadow: 0 3px 14px rgba(0,0,0,0.2); }
+.inv-card:hover {
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
 
 /* Karten-Kopf */
 .inv-card-top {
