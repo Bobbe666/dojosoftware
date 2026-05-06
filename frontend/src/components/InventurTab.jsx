@@ -87,11 +87,22 @@ export default function InventurTab() {
     }
   };
 
+  const buildVariantKeys = (art) => {
+    const bestandKeys = Object.keys(art.varianten_bestand || {});
+    if (bestandKeys.length > 0) return bestandKeys;
+    // varianten_bestand is empty → derive keys from groessen × farben
+    const groessen = art.varianten_groessen || [];
+    const farben   = art.varianten_farben   || [];
+    if (groessen.length > 0 && farben.length > 0)
+      return groessen.flatMap(g => farben.map(f => `${g}|${f}`));
+    return groessen;
+  };
+
   const openBuchung = (art) => {
     setSelectedArtikel(art);
     const initMengen = {};
-    if (art.hat_varianten && art.varianten_bestand) {
-      Object.keys(art.varianten_bestand).forEach(k => { initMengen[k] = ''; });
+    if (art.hat_varianten) {
+      buildVariantKeys(art).forEach(k => { initMengen[k] = ''; });
     }
     setVariantMengen(initMengen);
     setBuchung({ bewegungsart: 'eingang', menge: '', grund: '' });
@@ -194,9 +205,13 @@ export default function InventurTab() {
 
   // Modal helpers
   const isKorrektur = buchung.bewegungsart === 'korrektur' || buchung.bewegungsart === 'inventur';
-  const variantenEntries = selectedArtikel?.hat_varianten
-    ? Object.entries(selectedArtikel.varianten_bestand || {})
-    : [];
+  const variantenEntries = (() => {
+    if (!selectedArtikel?.hat_varianten) return [];
+    const entries = Object.entries(selectedArtikel.varianten_bestand || {});
+    if (entries.length > 0) return entries;
+    // Fallback: build from groessen × farben with bestand 0
+    return buildVariantKeys(selectedArtikel).map(k => [k, { bestand: 0, mindestbestand: 0 }]);
+  })();
 
   if (loading) {
     return (
