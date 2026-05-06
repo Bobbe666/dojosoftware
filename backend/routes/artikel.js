@@ -493,7 +493,10 @@ router.get('/inventur/uebersicht', (req, res) => {
       if (a.hat_varianten && a.varianten_bestand) {
         try {
           variantenBestand = typeof a.varianten_bestand === 'string' ? JSON.parse(a.varianten_bestand) : a.varianten_bestand;
-          effectiveLagerbestand = Object.values(variantenBestand).reduce((s, v) => s + (v.bestand || 0), 0);
+          // Only override lagerbestand from varianten sum if there are actually defined variants
+          if (Object.keys(variantenBestand).length > 0) {
+            effectiveLagerbestand = Object.values(variantenBestand).reduce((s, v) => s + (v.bestand || 0), 0);
+          }
         } catch(e) {}
       }
       const lager_status = !a.lager_tracking ? 'kein_tracking'

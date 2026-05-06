@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
@@ -466,7 +467,7 @@ export default function InventurTab() {
       )}
 
       {/* Buchungs-Modal */}
-      {showModal && selectedArtikel && (
+      {showModal && selectedArtikel && createPortal(
         <div className="inv-modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="inv-modal">
             <div className="inv-modal-header">
@@ -564,7 +565,7 @@ export default function InventurTab() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 }
