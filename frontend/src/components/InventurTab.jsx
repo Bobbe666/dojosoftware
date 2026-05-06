@@ -90,12 +90,20 @@ export default function InventurTab() {
   const buildVariantKeys = (art) => {
     const bestandKeys = Object.keys(art.varianten_bestand || {});
     if (bestandKeys.length > 0) return bestandKeys;
-    // varianten_bestand is empty → derive keys from groessen × farben
-    const groessen = art.varianten_groessen || [];
-    const farben   = art.varianten_farben   || [];
-    if (groessen.length > 0 && farben.length > 0)
-      return groessen.flatMap(g => farben.map(f => `${g}|${f}`));
-    return groessen;
+    // Exact mirror of ArtikelFormular getVariantenKombinationen()
+    const gList = (art.varianten_groessen  || []).length > 0 ? (art.varianten_groessen  || []) : [''];
+    const fList = (art.varianten_farben    || []).length > 0 ? (art.varianten_farben    || []) : [{ name: '', hex: '' }];
+    const mList = (art.varianten_material  || []).length > 0 ? (art.varianten_material  || []) : [''];
+    const keys = [];
+    gList.forEach(g => {
+      fList.forEach(f => {
+        mList.forEach(m => {
+          const fname = typeof f === 'object' ? (f.name || '') : (f || '');
+          keys.push(`${g}|${fname}|${m}`);
+        });
+      });
+    });
+    return keys;
   };
 
   const openBuchung = (art) => {
@@ -492,7 +500,7 @@ export default function InventurTab() {
                       <span>Ergebnis</span>
                     </div>
                     {variantenEntries.map(([key, v]) => {
-                      const label = key.split('|').filter(Boolean).join(' · ');
+                      const label = key.split('|').filter(Boolean).join(' / ');
                       const bestand = v.bestand ?? 0;
                       const mengeStr = variantMengen[key] ?? '';
                       const mengeInt = parseInt(mengeStr);

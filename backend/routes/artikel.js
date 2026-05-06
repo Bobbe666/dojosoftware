@@ -472,6 +472,7 @@ router.get('/inventur/uebersicht', (req, res) => {
       a.varianten_bestand,
       a.varianten_groessen,
       a.varianten_farben,
+      a.varianten_material,
       ak.name AS kategorie_name,
       ag.name AS gruppe_name,
       (SELECT lb.bewegung_timestamp FROM lager_bewegungen lb WHERE lb.artikel_id = a.artikel_id ORDER BY lb.bewegung_timestamp DESC LIMIT 1) AS letzte_bewegung
@@ -520,6 +521,7 @@ router.get('/inventur/uebersicht', (req, res) => {
         varianten_bestand: variantenBestand,
         varianten_groessen: a.varianten_groessen ? (typeof a.varianten_groessen === 'string' ? JSON.parse(a.varianten_groessen) : a.varianten_groessen) : [],
         varianten_farben: a.varianten_farben ? (typeof a.varianten_farben === 'string' ? JSON.parse(a.varianten_farben) : a.varianten_farben) : [],
+        varianten_material: a.varianten_material ? (typeof a.varianten_material === 'string' ? JSON.parse(a.varianten_material) : a.varianten_material) : [],
         kategorie_name: a.kategorie_name,
         gruppe_name: a.gruppe_name,
         letzte_bewegung: a.letzte_bewegung
