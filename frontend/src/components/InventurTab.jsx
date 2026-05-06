@@ -574,7 +574,7 @@ export default function InventurTab() {
             <div className="inv-modal-footer">
               <button
                 className="btn-secondary inv-btn-bearbeiten"
-                onClick={() => { setShowModal(false); navigate(`/dashboard/artikel/${selectedArtikel.artikel_id}`); }}
+                onClick={() => { setShowModal(false); navigate(`/dashboard/artikel/bearbeiten/${selectedArtikel.artikel_id}`); }}
               >
                 ✎ Bearbeiten
               </button>
