@@ -3801,19 +3801,69 @@
 /* =============================================
    SKR KONTORAHMEN ANSICHT
    ============================================= */
-.skr-toggle {
+.guv-view-toggle {
   display: flex;
-  gap: 4px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 3px;
-  background: var(--surface-bg);
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  margin-top: 4px;
 }
 
-.skr-toggle .btn-sm {
-  padding: 4px 10px;
-  font-size: 12px;
-  border-radius: 4px;
+.guv-toggle-label {
+  font-size: 13px;
+  color: var(--text-muted, #888);
+  white-space: nowrap;
+}
+
+.guv-skr-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  border-radius: 6px;
+  overflow: hidden;
+  background: transparent;
+}
+
+.guv-skr-btn {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border-color, rgba(255,255,255,0.15));
+  padding: 5px 14px;
+  font-size: 13px;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.guv-skr-btn:last-child {
+  border-right: none;
+}
+
+.guv-skr-btn:hover {
+  background: rgba(255,255,255,0.07);
+  color: var(--text-primary, #eee);
+}
+
+.guv-skr-btn.active {
+  background: var(--accent-gold, #d4af37);
+  color: #1a1a0e;
+  font-weight: 600;
+}
+
+[data-theme="light"] .guv-skr-btn {
+  color: #555;
+}
+
+[data-theme="light"] .guv-skr-btn:hover {
+  background: rgba(0,0,0,0.06);
+  color: #222;
+}
+
+[data-theme="light"] .guv-skr-btn.active {
+  background: #8b6914;
+  color: #fff;
 }
 
 .guv-skr-container {

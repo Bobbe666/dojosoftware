@@ -1941,22 +1941,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           <div className="guv-content">
             <div className="section-header">
               <h3>Gewinn- und Verlustrechnung {selectedJahr}</h3>
-              <div className="header-actions" style={{ gap: '8px', flexWrap: 'wrap' }}>
-                {/* Ansichts-Toggle */}
-                <div className="skr-toggle">
-                  <button
-                    className={`btn btn-sm ${guvAnsicht === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setGuvAnsicht('standard')}
-                  >Standard</button>
-                  <button
-                    className={`btn btn-sm ${guvAnsicht === 'skr' && skrKontorahmen === 'SKR03' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => { setGuvAnsicht('skr'); setSkrKontorahmen('SKR03'); fetchGuvSkrData('SKR03'); }}
-                  >SKR 03</button>
-                  <button
-                    className={`btn btn-sm ${guvAnsicht === 'skr' && skrKontorahmen === 'SKR04' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => { setGuvAnsicht('skr'); setSkrKontorahmen('SKR04'); fetchGuvSkrData('SKR04'); }}
-                  >SKR 04</button>
-                </div>
+              <div className="header-actions">
                 <button
                   className="btn btn-secondary"
                   onClick={() => openApiBlob(`/api/buchhaltung/guv/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv&quartal=${selectedQuartal}`, { download: true, filename: `guv-${selectedJahr}.csv` })}
@@ -1964,6 +1949,25 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   <Download size={16} />
                   CSV
                 </button>
+              </div>
+            </div>
+
+            {/* Ansichts-Toggle */}
+            <div className="guv-view-toggle">
+              <span className="guv-toggle-label">Ansicht:</span>
+              <div className="guv-skr-toggle">
+                <button
+                  className={`guv-skr-btn${guvAnsicht === 'standard' ? ' active' : ''}`}
+                  onClick={() => setGuvAnsicht('standard')}
+                >Standard</button>
+                <button
+                  className={`guv-skr-btn${guvAnsicht === 'skr' && skrKontorahmen === 'SKR03' ? ' active' : ''}`}
+                  onClick={() => { setGuvAnsicht('skr'); setSkrKontorahmen('SKR03'); fetchGuvSkrData('SKR03'); }}
+                >SKR 03</button>
+                <button
+                  className={`guv-skr-btn${guvAnsicht === 'skr' && skrKontorahmen === 'SKR04' ? ' active' : ''}`}
+                  onClick={() => { setGuvAnsicht('skr'); setSkrKontorahmen('SKR04'); fetchGuvSkrData('SKR04'); }}
+                >SKR 04</button>
               </div>
             </div>
 
