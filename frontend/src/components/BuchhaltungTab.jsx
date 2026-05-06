@@ -10,7 +10,7 @@ import {
   Calculator, FileText, Receipt, Download, Upload, Plus, Edit, Trash2, Lock, X,
   TrendingUp, TrendingDown, PieChart, Calendar, Filter, Search, ChevronDown, ChevronUp, ChevronRight,
   AlertCircle, CheckCircle, RefreshCw, Building2, Euro, FileSpreadsheet,
-  Landmark, Check, XCircle, Lightbulb, FileUp, History, BarChart3, Star, ArrowUpRight
+  Landmark, Check, XCircle, Lightbulb, FileUp, History, BarChart3, Star, ArrowUpRight, Camera
 } from 'lucide-react';
 import '../styles/BuchhaltungTab.css';
 import VerbandRechnungErstellen from './VerbandRechnungErstellen';
@@ -80,6 +80,20 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [showTxUploadModal, setShowTxUploadModal] = useState(false);
   const [txUploadId, setTxUploadId] = useState(null);
   const [belegFile, setBelegFile] = useState(null); // für Beleg-Formular inline-Upload
+
+  // Quick-Foto-Capture States
+  const [showQuickCapture, setShowQuickCapture] = useState(false);
+  const [quickFile, setQuickFile] = useState(null);
+  const [quickPreview, setQuickPreview] = useState(null);
+  const [quickLoading, setQuickLoading] = useState(false);
+  const [quickForm, setQuickForm] = useState({
+    betrag_brutto: '',
+    buchungsart: 'ausgabe',
+    beleg_datum: new Date().toISOString().split('T')[0],
+    beschreibung: '',
+    kategorie: '',
+    mwst_satz: 19,
+  });
   const [showAbschlussModal, setShowAbschlussModal] = useState(false);
   const [showBilanzStammdatenModal, setShowBilanzStammdatenModal] = useState(false);
 
@@ -1276,6 +1290,65 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [showReviewModal, showKategorieModal, reviewIndex, reviewQueue]);
+
+  // Quick-Capture: Foto-Auswahl
+  const handleQuickFile = (file) => {
+    if (!file) return;
+    setQuickFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setQuickPreview(e.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const openQuickCapture = () => {
+    setQuickFile(null);
+    setQuickPreview(null);
+    setQuickForm({
+      betrag_brutto: '',
+      buchungsart: 'ausgabe',
+      beleg_datum: new Date().toISOString().split('T')[0],
+      beschreibung: '',
+      kategorie: '',
+      mwst_satz: 19,
+    });
+    setShowQuickCapture(true);
+  };
+
+  const saveQuickBeleg = async () => {
+    if (!quickForm.betrag_brutto) return;
+    setQuickLoading(true);
+    setError('');
+    try {
+      const betrag = parseFloat(quickForm.betrag_brutto);
+      const mwst = quickForm.mwst_satz;
+      const payload = {
+        ...quickForm,
+        betrag_brutto: betrag,
+        betrag_netto: mwst > 0 ? parseFloat((betrag / (1 + mwst / 100)).toFixed(2)) : betrag,
+        mwst_betrag: mwst > 0 ? parseFloat((betrag - betrag / (1 + mwst / 100)).toFixed(2)) : 0,
+        organisation_name: selectedOrg !== 'alle' ? selectedOrg : undefined,
+        dojo_id: dojoId,
+      };
+      const res = await axios.post('/buchhaltung/belege', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (quickFile && res.data?.beleg_id) {
+        const fd = new FormData();
+        fd.append('datei', quickFile);
+        await axios.post(`/buchhaltung/belege/${res.data.beleg_id}/upload`, fd, {
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+        });
+      }
+      setSuccess('Beleg mit Foto gespeichert');
+      setShowQuickCapture(false);
+      loadBelege();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Speichern');
+    } finally {
+      setQuickLoading(false);
+    }
+  };
 
   // Beleg speichern
   const saveBeleg = async () => {
@@ -2626,10 +2699,16 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 <Receipt size={18} />
                 Manuelle Belege
               </h3>
-              <button className="btn-primary" onClick={() => { resetBelegForm(); setEditingBeleg(null); setShowBelegModal(true); }}>
-                <Plus size={16} />
-                Neuer Beleg
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button className="btn-secondary" onClick={openQuickCapture} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Camera size={16} />
+                  Foto aufnehmen
+                </button>
+                <button className="btn-primary" onClick={() => { resetBelegForm(); setEditingBeleg(null); setShowBelegModal(true); }}>
+                  <Plus size={16} />
+                  Neuer Beleg
+                </button>
+              </div>
             </div>
 
             {/* Belege Tabelle */}
@@ -4759,6 +4838,147 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 disabled={loading || !belegForm.betrag_netto || !belegForm.beschreibung}
               >
                 {loading ? 'Speichern...' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== QUICK FOTO CAPTURE MODAL ==================== */}
+      {showQuickCapture && (
+        <div className="modal-overlay" onClick={() => setShowQuickCapture(false)}>
+          <div className="modal" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3><Camera size={18} style={{ marginRight: 8 }} />Beleg fotografieren</h3>
+              <button className="close-btn" onClick={() => setShowQuickCapture(false)}><X size={20} /></button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Foto-Bereich */}
+              {quickPreview ? (
+                <div style={{ position: 'relative', textAlign: 'center' }}>
+                  <img
+                    src={quickPreview}
+                    alt="Beleg-Vorschau"
+                    style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, border: '1px solid rgba(255,255,255,.15)', objectFit: 'contain' }}
+                  />
+                  <button
+                    onClick={() => { setQuickFile(null); setQuickPreview(null); }}
+                    style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '32px 20px', border: '2px dashed rgba(255,215,0,.4)', borderRadius: 10, cursor: 'pointer', background: 'rgba(255,215,0,.03)', minHeight: 180 }}>
+                  <Camera size={48} style={{ color: '#ffd700', opacity: 0.8 }} />
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Foto aufnehmen oder auswählen</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Auf dem Handy öffnet sich die Kamera direkt</div>
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={e => handleQuickFile(e.target.files[0])}
+                  />
+                </label>
+              )}
+
+              {/* Minimales Formular */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Betrag (brutto) *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={quickForm.betrag_brutto}
+                    onChange={e => setQuickForm(f => ({ ...f, betrag_brutto: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 16, boxSizing: 'border-box' }}
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>MwSt.</label>
+                  <select
+                    value={quickForm.mwst_satz}
+                    onChange={e => setQuickForm(f => ({ ...f, mwst_satz: parseInt(e.target.value) }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                  >
+                    <option value={19}>19 %</option>
+                    <option value={7}>7 %</option>
+                    <option value={0}>0 % (steuerfrei)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Datum</label>
+                  <input
+                    type="date"
+                    value={quickForm.beleg_datum}
+                    onChange={e => setQuickForm(f => ({ ...f, beleg_datum: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Typ</label>
+                  <select
+                    value={quickForm.buchungsart}
+                    onChange={e => setQuickForm(f => ({ ...f, buchungsart: e.target.value, kategorie: '' }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                  >
+                    <option value="ausgabe">Ausgabe</option>
+                    <option value="einnahme">Einnahme</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Kategorie</label>
+                <select
+                  value={quickForm.kategorie}
+                  onChange={e => setQuickForm(f => ({ ...f, kategorie: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                >
+                  <option value="">— Kategorie wählen —</option>
+                  {kategorien.filter(k => !k.typ || k.typ === quickForm.buchungsart).map(k => (
+                    <option key={k.id} value={k.id}>{k.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Beschreibung / Lieferant</label>
+                <input
+                  type="text"
+                  placeholder="z.B. Büromaterial Media Markt"
+                  value={quickForm.beschreibung}
+                  onChange={e => setQuickForm(f => ({ ...f, beschreibung: e.target.value }))}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                />
+              </div>
+
+              {quickForm.betrag_brutto > 0 && quickForm.mwst_satz > 0 && (
+                <div style={{ background: 'rgba(255,215,0,.06)', borderRadius: 6, padding: '8px 12px', fontSize: 13, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Netto: <strong>{(parseFloat(quickForm.betrag_brutto) / (1 + quickForm.mwst_satz / 100)).toFixed(2)} €</strong></span>
+                  <span>MwSt: <strong>{(parseFloat(quickForm.betrag_brutto) - parseFloat(quickForm.betrag_brutto) / (1 + quickForm.mwst_satz / 100)).toFixed(2)} €</strong></span>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={() => setShowQuickCapture(false)}>Abbrechen</button>
+              <button
+                className="btn-primary"
+                onClick={saveQuickBeleg}
+                disabled={quickLoading || !quickForm.betrag_brutto}
+              >
+                {quickLoading ? 'Speichern...' : (quickFile ? '📷 Beleg speichern' : '💾 Ohne Foto speichern')}
               </button>
             </div>
           </div>
