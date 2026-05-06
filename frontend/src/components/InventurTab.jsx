@@ -492,7 +492,7 @@ export default function InventurTab() {
                       <span>Ergebnis</span>
                     </div>
                     {variantenEntries.map(([key, v]) => {
-                      const groesse = key.split('|')[0];
+                      const label = key.split('|').filter(Boolean).join(' · ');
                       const bestand = v.bestand ?? 0;
                       const mengeStr = variantMengen[key] ?? '';
                       const mengeInt = parseInt(mengeStr);
@@ -505,7 +505,7 @@ export default function InventurTab() {
                       const diff = neuerBestand !== null ? neuerBestand - bestand : null;
                       return (
                         <div key={key} className="inv-varianten-eingabe-row">
-                          <span className="inv-var-label">{groesse}</span>
+                          <span className="inv-var-label">{label}</span>
                           <span className="inv-var-bestand" style={{ color: bestand === 0 ? '#e74c3c' : 'inherit' }}>{bestand}</span>
                           <input
                             className="inv-input-sm"

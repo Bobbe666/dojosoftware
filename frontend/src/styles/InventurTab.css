@@ -814,7 +814,7 @@
 
 .inv-varianten-eingabe-header {
   display: grid;
-  grid-template-columns: 1fr 54px 72px 60px;
+  grid-template-columns: minmax(60px,1fr) 54px 72px 60px;
   gap: 0.5rem;
   padding: 0.4rem 0.75rem;
   background: rgba(255,255,255,0.05);
@@ -831,7 +831,7 @@
 
 .inv-varianten-eingabe-row {
   display: grid;
-  grid-template-columns: 1fr 54px 72px 60px;
+  grid-template-columns: minmax(60px,1fr) 54px 72px 60px;
   gap: 0.5rem;
   padding: 0.32rem 0.75rem;
   align-items: center;
