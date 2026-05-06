@@ -14,6 +14,7 @@ const ExcelJS = require('exceljs');
 const logger = require('../utils/logger');
 const { requireFeature } = require('../middleware/featureAccess');
 const { convert: xmlConvert } = require('xmlbuilder2');
+const Anthropic = require('@anthropic-ai/sdk');
 
 // ===================================================================
 // 📂 FILE UPLOAD CONFIG
@@ -1405,6 +1406,90 @@ router.get('/euer/verkauf-detail/:id', requireBuchhaltungAccess, (req, res) => {
       }))
     });
   });
+});
+
+// ===================================================================
+// 🤖 POST /api/buchhaltung/belege/ocr - Beleg mit KI auslesen
+// ===================================================================
+const ocrUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Nur Bilder erlaubt (JPG, PNG, WEBP)'));
+    }
+  }
+});
+
+router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Kein Bild hochgeladen' });
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: 'KI-OCR nicht konfiguriert (ANTHROPIC_API_KEY fehlt)' });
+
+  try {
+    const anthropic = new Anthropic({ apiKey });
+    const base64 = req.file.buffer.toString('base64');
+    const mediaType = req.file.mimetype;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: mediaType, data: base64 }
+          },
+          {
+            type: 'text',
+            text: `Analysiere diesen Kassenbon oder Beleg und extrahiere die Daten als JSON.
+
+Felder:
+- betrag_brutto: Gesamtbetrag inkl. MwSt als Zahl (z.B. 12.99). Falls mehrere Beträge: Endbetrag/Summe nehmen.
+- mwst_satz: Mehrwertsteuersatz in % (19, 7 oder 0). Falls unklar: 19.
+- datum: Datum im Format YYYY-MM-DD. Falls kein Jahr erkennbar: aktuelles Jahr annehmen.
+- lieferant: Name des Geschäfts oder Lieferanten (max 60 Zeichen).
+- beschreibung: Was wurde gekauft — kurz, prägnant (max 80 Zeichen, auf Deutsch).
+- buchungsart: "ausgabe" (Standard) oder "einnahme".
+
+Antworte NUR mit dem JSON-Objekt, ohne Markdown, ohne Erklärung.
+Falls ein Wert absolut nicht erkennbar ist: null verwenden.
+
+Beispiel: {"betrag_brutto":24.99,"mwst_satz":19,"datum":"2026-05-06","lieferant":"REWE","beschreibung":"Lebensmittel / Büromaterial","buchungsart":"ausgabe"}`
+          }
+        ]
+      }]
+    });
+
+    const raw = response.content[0]?.text?.trim() || '{}';
+    let parsed = {};
+    try {
+      // Claude antwortet manchmal mit ```json ... ``` — bereinigen
+      const cleaned = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch {
+      return res.status(422).json({ error: 'KI konnte keinen strukturierten Text extrahieren', raw });
+    }
+
+    // Sanity checks
+    const result = {
+      betrag_brutto: typeof parsed.betrag_brutto === 'number' && parsed.betrag_brutto > 0 ? parsed.betrag_brutto : null,
+      mwst_satz: [0, 7, 19].includes(Number(parsed.mwst_satz)) ? Number(parsed.mwst_satz) : 19,
+      datum: parsed.datum && /^\d{4}-\d{2}-\d{2}$/.test(parsed.datum) ? parsed.datum : new Date().toISOString().split('T')[0],
+      lieferant: typeof parsed.lieferant === 'string' ? parsed.lieferant.substring(0, 60) : '',
+      beschreibung: typeof parsed.beschreibung === 'string' ? parsed.beschreibung.substring(0, 80) : '',
+      buchungsart: parsed.buchungsart === 'einnahme' ? 'einnahme' : 'ausgabe',
+    };
+
+    res.json(result);
+  } catch (err) {
+    logger.error('OCR-Fehler', { error: err.message });
+    res.status(500).json({ error: 'KI-Analyse fehlgeschlagen: ' + err.message });
+  }
 });
 
 // ===================================================================

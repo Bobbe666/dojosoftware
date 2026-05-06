@@ -86,6 +86,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [quickFile, setQuickFile] = useState(null);
   const [quickPreview, setQuickPreview] = useState(null);
   const [quickLoading, setQuickLoading] = useState(false);
+  const [quickOcrLoading, setQuickOcrLoading] = useState(false);
+  const [quickOcrDone, setQuickOcrDone] = useState(false);
   const [quickForm, setQuickForm] = useState({
     betrag_brutto: '',
     buchungsart: 'ausgabe',
@@ -1291,18 +1293,47 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     return () => window.removeEventListener('keydown', handler);
   }, [showReviewModal, showKategorieModal, reviewIndex, reviewQueue]);
 
-  // Quick-Capture: Foto-Auswahl
-  const handleQuickFile = (file) => {
+  // Quick-Capture: Foto-Auswahl + automatisch OCR
+  const handleQuickFile = async (file) => {
     if (!file) return;
     setQuickFile(file);
+    setQuickOcrDone(false);
     const reader = new FileReader();
     reader.onload = (e) => setQuickPreview(e.target.result);
     reader.readAsDataURL(file);
+
+    // OCR direkt starten
+    setQuickOcrLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('bild', file);
+      const res = await axios.post('/buchhaltung/belege/ocr', fd, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
+      const ocr = res.data;
+      setQuickForm(f => ({
+        ...f,
+        betrag_brutto: ocr.betrag_brutto != null ? String(ocr.betrag_brutto) : f.betrag_brutto,
+        mwst_satz: ocr.mwst_satz != null ? ocr.mwst_satz : f.mwst_satz,
+        beleg_datum: ocr.datum || f.beleg_datum,
+        beschreibung: ocr.lieferant
+          ? `${ocr.lieferant}${ocr.beschreibung ? ' – ' + ocr.beschreibung : ''}`
+          : (ocr.beschreibung || f.beschreibung),
+        buchungsart: ocr.buchungsart || f.buchungsart,
+      }));
+      setQuickOcrDone(true);
+    } catch {
+      // OCR fehlgeschlagen — Felder bleiben leer, User füllt manuell aus
+    } finally {
+      setQuickOcrLoading(false);
+    }
   };
 
   const openQuickCapture = () => {
     setQuickFile(null);
     setQuickPreview(null);
+    setQuickOcrLoading(false);
+    setQuickOcrDone(false);
     setQuickForm({
       betrag_brutto: '',
       buchungsart: 'ausgabe',
@@ -4860,14 +4891,27 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   <img
                     src={quickPreview}
                     alt="Beleg-Vorschau"
-                    style={{ maxWidth: '100%', maxHeight: 280, borderRadius: 8, border: '1px solid rgba(255,255,255,.15)', objectFit: 'contain' }}
+                    style={{ maxWidth: '100%', maxHeight: 240, borderRadius: 8, border: '1px solid rgba(255,255,255,.15)', objectFit: 'contain' }}
                   />
                   <button
-                    onClick={() => { setQuickFile(null); setQuickPreview(null); }}
+                    onClick={() => { setQuickFile(null); setQuickPreview(null); setQuickOcrDone(false); }}
                     style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <X size={14} />
                   </button>
+                  {/* OCR Status Badge */}
+                  {quickOcrLoading && (
+                    <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,.85)', color: '#ffd700', borderRadius: 20, padding: '5px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                      <RefreshCw size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                      KI liest Beleg aus…
+                    </div>
+                  )}
+                  {quickOcrDone && !quickOcrLoading && (
+                    <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', background: 'rgba(16,185,129,.9)', color: '#fff', borderRadius: 20, padding: '5px 14px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                      <CheckCircle size={12} />
+                      KI hat Daten ausgelesen — bitte prüfen
+                    </div>
+                  )}
                 </div>
               ) : (
                 <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '32px 20px', border: '2px dashed rgba(255,215,0,.4)', borderRadius: 10, cursor: 'pointer', background: 'rgba(255,215,0,.03)', minHeight: 180 }}>
