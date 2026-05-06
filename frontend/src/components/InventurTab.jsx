@@ -88,12 +88,16 @@ export default function InventurTab() {
   };
 
   const buildVariantKeys = (art) => {
-    const bestandKeys = Object.keys(art.varianten_bestand || {});
-    if (bestandKeys.length > 0) return bestandKeys;
-    // Exact mirror of ArtikelFormular getVariantenKombinationen()
-    const gList = (art.varianten_groessen  || []).length > 0 ? (art.varianten_groessen  || []) : [''];
-    const fList = (art.varianten_farben    || []).length > 0 ? (art.varianten_farben    || []) : [{ name: '', hex: '' }];
-    const mList = (art.varianten_material  || []).length > 0 ? (art.varianten_material  || []) : [''];
+    const gArr = (art.varianten_groessen || []);
+    const fArr = (art.varianten_farben   || []);
+    const mArr = (art.varianten_material || []);
+    // If no dimensions configured at all, fall back to whatever is in varianten_bestand
+    if (gArr.length === 0 && fArr.length === 0 && mArr.length === 0)
+      return Object.keys(art.varianten_bestand || {});
+    // Mirror of ArtikelFormular getVariantenKombinationen() — always enumerate all combos
+    const gList = gArr.length > 0 ? gArr : [''];
+    const fList = fArr.length > 0 ? fArr : [{ name: '', hex: '' }];
+    const mList = mArr.length > 0 ? mArr : [''];
     const keys = [];
     gList.forEach(g => {
       fList.forEach(f => {
@@ -215,10 +219,10 @@ export default function InventurTab() {
   const isKorrektur = buchung.bewegungsart === 'korrektur' || buchung.bewegungsart === 'inventur';
   const variantenEntries = (() => {
     if (!selectedArtikel?.hat_varianten) return [];
-    const entries = Object.entries(selectedArtikel.varianten_bestand || {});
-    if (entries.length > 0) return entries;
-    // Fallback: build from groessen × farben with bestand 0
-    return buildVariantKeys(selectedArtikel).map(k => [k, { bestand: 0, mindestbestand: 0 }]);
+    const allKeys = buildVariantKeys(selectedArtikel);
+    const bestand = selectedArtikel.varianten_bestand || {};
+    // Always show ALL defined combinations; fill bestand from stored data (0 if missing)
+    return allKeys.map(k => [k, bestand[k] || { bestand: 0, mindestbestand: 0 }]);
   })();
 
   if (loading) {
