@@ -21,7 +21,7 @@ export default function InventurTab() {
   const [statusFilter, setStatusFilter] = useState('alle');
   const [bewegungsartFilter, setBewegungsartFilter] = useState('alle');
   const [gruppeFilter, setGruppeFilter] = useState('alle');
-  const [sortierung, setSortierung] = useState('name_asc'); // name_asc|name_desc|bestand_asc|bestand_desc|status
+  const [sortierung, setSortierung] = useState('status');
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [stats, setStats] = useState({ gesamt: 0, verfuegbar: 0, nachbestellen: 0, ausverkauft: 0, lagerwert: 0 });
 
