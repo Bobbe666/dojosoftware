@@ -17,6 +17,7 @@ import VerbandRechnungErstellen from './VerbandRechnungErstellen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useDojoContext } from '../context/DojoContext';
 import { UStVATab } from './SteuerAssistent';
+import LohnTab from './LohnTab';
 
 const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const { hasFeature } = useSubscription();
@@ -184,6 +185,19 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [abgleichBericht, setAbgleichBericht] = useState(null);
   const [abgleichFilter, setAbgleichFilter] = useState('alle'); // alle | neu | bereits_erfasst | offen
   const [dojoEinstellungen, setDojoEinstellungen] = useState({ kleinunternehmer: false, umsatzsteuerpflichtig: true });
+
+  // BWA States
+  const [bwaData, setBwaData] = useState(null);
+  const [bwaLoading, setBwaLoading] = useState(false);
+  const [bwaJahr, setBwaJahr] = useState(new Date().getFullYear());
+
+  // Altersliste States
+  const [altersliste, setAltersliste] = useState(null);
+  const [alterslisteLoading, setAlterslisteLoading] = useState(false);
+  const [showAltersliste, setShowAltersliste] = useState(false);
+
+  // Mahnung PDF States
+  const [mahnungPdfLoading, setMahnungPdfLoading] = useState({});
 
   // Beleg Form State
   const [belegForm, setBelegForm] = useState({
@@ -1240,6 +1254,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       loadOffenePosten();
     } else if (activeSubTab === 'wiederkehrend') {
       loadWiederkehrend();
+    } else if (activeSubTab === 'bwa') {
+      loadBwa();
     }
   }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchGuvSkrData, guvAnsicht, fetchBilanzData, loadAnlagen, loadKreditoren, loadOffenePosten, loadWiederkehrend]);
 
@@ -1581,6 +1597,60 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     }
   };
 
+  // BWA laden
+  const loadBwa = useCallback(async () => {
+    setBwaLoading(true);
+    try {
+      const res = await axios.get('/buchhaltung/bwa', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { jahr: bwaJahr, organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+      });
+      setBwaData(res.data);
+    } catch (err) {
+      setError('BWA konnte nicht geladen werden');
+    } finally {
+      setBwaLoading(false);
+    }
+  }, [token, bwaJahr, selectedOrg]);
+
+  // Altersliste laden
+  const loadAltersliste = useCallback(async () => {
+    setAlterslisteLoading(true);
+    try {
+      const res = await axios.get('/buchhaltung/offene-posten/altersliste', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { organisation: selectedOrg !== 'alle' ? selectedOrg : undefined }
+      });
+      setAltersliste(res.data);
+    } catch (err) {
+      setError('Altersliste konnte nicht geladen werden');
+    } finally {
+      setAlterslisteLoading(false);
+    }
+  }, [token, selectedOrg]);
+
+  // Mahnung PDF Download
+  const downloadMahnungPdf = async (mahnungId) => {
+    setMahnungPdfLoading(prev => ({ ...prev, [mahnungId]: true }));
+    try {
+      const res = await fetch(`/api/buchhaltung/mahnungen/${mahnungId}/pdf`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error(`Fehler ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Mahnung_${mahnungId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('PDF-Download fehlgeschlagen: ' + err.message);
+    } finally {
+      setMahnungPdfLoading(prev => ({ ...prev, [mahnungId]: false }));
+    }
+  };
+
   // Format currency
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(value || 0);
@@ -1603,6 +1673,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     { id: 'euer', label: 'EÜR Übersicht', icon: <PieChart size={16} /> },
     { id: 'ustVA', label: 'UStVA', icon: <Calculator size={16} /> },
     { id: 'guv', label: 'GuV', icon: <TrendingUp size={16} /> },
+    { id: 'bwa', label: 'BWA', icon: <BarChart3 size={16} /> },
     { id: 'bilanz', label: 'Bilanz', icon: <Building2 size={16} /> },
     { id: 'belege', label: 'Belegerfassung', icon: <Receipt size={16} /> },
     { id: 'rechnungen', label: 'Rechnungen', icon: <FileText size={16} /> },
@@ -1613,7 +1684,8 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     { id: 'anlagen', label: 'Anlagevermögen', icon: <Building2 size={16} /> },
     { id: 'offene-posten', label: 'Offene Posten', icon: <AlertCircle size={16} /> },
     { id: 'wiederkehrend', label: 'Wiederkehrend', icon: <RefreshCw size={16} /> },
-    { id: 'kreditoren', label: 'Kreditoren', icon: <FileText size={16} /> }
+    { id: 'kreditoren', label: 'Kreditoren', icon: <FileText size={16} /> },
+    { id: 'lohnabrechnung', label: 'Lohnabrechnung', icon: <Euro size={16} /> }
   ];
 
   return (
@@ -2204,6 +2276,94 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
 
             {guvAnsicht === 'skr' && !guvSkrData && !loading && (
               <div className="empty-state">Keine Daten für {selectedJahr}</div>
+            )}
+          </div>
+        )}
+
+        {/* ==================== BWA TAB ==================== */}
+        {activeSubTab === 'bwa' && (
+          <div className="bwa-content">
+            <div className="section-header">
+              <h3><BarChart3 size={18} /> Betriebswirtschaftliche Auswertung (BWA) {bwaJahr}</h3>
+              <div className="header-actions" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <select
+                  value={bwaJahr}
+                  onChange={e => setBwaJahr(parseInt(e.target.value))}
+                  style={{ background: 'var(--bg-secondary, rgba(255,255,255,.07))', color: 'var(--text-primary)', border: '1px solid rgba(255,255,255,.12)', borderRadius: 7, padding: '7px 12px', fontSize: 13 }}
+                >
+                  {jahre.map(j => <option key={j} value={j}>{j}</option>)}
+                </select>
+                <button className="btn btn-primary" onClick={loadBwa} disabled={bwaLoading}>
+                  <RefreshCw size={15} /> {bwaLoading ? 'Lade...' : 'Aktualisieren'}
+                </button>
+              </div>
+            </div>
+
+            {bwaLoading ? (
+              <div className="loading-state">Lade BWA...</div>
+            ) : !bwaData ? (
+              <div className="empty-hint">Keine BWA-Daten verfügbar. Bitte zuerst laden.</div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table" style={{ minWidth: 900 }}>
+                  <thead>
+                    <tr>
+                      <th>Monat</th>
+                      <th className="right">Umsatz</th>
+                      <th className="right">Rohertrag</th>
+                      <th className="right">Personal</th>
+                      <th className="right">Raum</th>
+                      <th className="right">AfA</th>
+                      <th className="right">Sonstige</th>
+                      <th className="right">EBIT</th>
+                      <th className="right">Vorjahr EBIT</th>
+                      <th className="right">Abweichung</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(bwaData.monate || []).map((m, i) => {
+                      const monatNamen = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+                      const ebit = parseFloat(m.ebit || 0);
+                      const vorjahrEbit = parseFloat(m.vorjahr_ebit || 0);
+                      const abweichung = ebit - vorjahrEbit;
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)' }}>
+                          <td style={{ fontWeight: 500 }}>{monatNamen[i] || m.monat}</td>
+                          <td className="right" style={{ fontFamily: 'monospace' }}>{formatCurrency(m.umsatz)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace' }}>{formatCurrency(m.rohertrag)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(m.personal)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(m.raum)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(m.afa)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(m.sonstige)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', fontWeight: 700, color: ebit >= 0 ? '#10b981' : '#ef4444' }}>{formatCurrency(ebit)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{formatCurrency(vorjahrEbit)}</td>
+                          <td className="right" style={{ fontFamily: 'monospace', color: abweichung >= 0 ? '#10b981' : '#ef4444' }}>
+                            {abweichung >= 0 ? '+' : ''}{formatCurrency(abweichung)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {bwaData.jahressumme && (
+                    <tfoot>
+                      <tr style={{ borderTop: '2px solid rgba(255,255,255,.12)', background: 'rgba(255,255,255,.05)', fontWeight: 700 }}>
+                        <td>Jahressumme</td>
+                        <td className="right" style={{ fontFamily: 'monospace' }}>{formatCurrency(bwaData.jahressumme.umsatz)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace' }}>{formatCurrency(bwaData.jahressumme.rohertrag)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(bwaData.jahressumme.personal)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(bwaData.jahressumme.raum)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(bwaData.jahressumme.afa)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: '#ef4444' }}>{formatCurrency(bwaData.jahressumme.sonstige)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: parseFloat(bwaData.jahressumme.ebit || 0) >= 0 ? '#10b981' : '#ef4444' }}>{formatCurrency(bwaData.jahressumme.ebit)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{formatCurrency(bwaData.jahressumme.vorjahr_ebit)}</td>
+                        <td className="right" style={{ fontFamily: 'monospace', color: (parseFloat(bwaData.jahressumme.ebit || 0) - parseFloat(bwaData.jahressumme.vorjahr_ebit || 0)) >= 0 ? '#10b981' : '#ef4444' }}>
+                          {(() => { const diff = parseFloat(bwaData.jahressumme.ebit || 0) - parseFloat(bwaData.jahressumme.vorjahr_ebit || 0); return (diff >= 0 ? '+' : '') + formatCurrency(diff); })()}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -3760,9 +3920,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           <div className="offene-posten-content">
             <div className="section-header">
               <h3><AlertCircle size={18} /> Offene Posten &amp; Mahnwesen</h3>
-              <button className="btn-primary" onClick={() => setShowMahnungForm(true)}>
-                <Plus size={14} /> Mahnung erstellen
-              </button>
+              <div className="header-actions" style={{ display: 'flex', gap: 8 }}>
+                <button className="btn btn-secondary" onClick={() => { setShowAltersliste(true); loadAltersliste(); }}>
+                  <BarChart3 size={14} /> Altersliste
+                </button>
+                <button className="btn-primary" onClick={() => setShowMahnungForm(true)}>
+                  <Plus size={14} /> Mahnung erstellen
+                </button>
+              </div>
             </div>
 
             {offenePostenLoading ? (
@@ -3852,6 +4017,14 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                               <button className="btn-sm" onClick={() => mahnungVersandt(m.mahnung_id)}>Versandt</button>
                             )}
                             <button className="btn-sm btn-success" onClick={() => mahnungBezahlt(m.mahnung_id)}>Bezahlt</button>
+                            <button
+                              className="btn-sm"
+                              onClick={() => downloadMahnungPdf(m.mahnung_id)}
+                              disabled={mahnungPdfLoading[m.mahnung_id]}
+                              title="Als PDF herunterladen"
+                            >
+                              <Download size={12} /> {mahnungPdfLoading[m.mahnung_id] ? '...' : 'PDF'}
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -3859,6 +4032,88 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </table>
                 )}
               </>
+            )}
+
+            {/* Altersliste Modal */}
+            {showAltersliste && (
+              <div className="modal-overlay" onClick={() => setShowAltersliste(false)}>
+                <div className="modal" style={{ maxWidth: 800, width: '90%' }} onClick={e => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3><BarChart3 size={18} /> Debitorenaltersliste</h3>
+                    <button className="close-btn" onClick={() => setShowAltersliste(false)}><X size={20} /></button>
+                  </div>
+                  <div className="modal-body">
+                    {alterslisteLoading ? (
+                      <div className="loading-state">Lade Altersliste...</div>
+                    ) : !altersliste ? (
+                      <div className="empty-hint">Keine Daten verfügbar.</div>
+                    ) : (
+                      <>
+                        {/* Bucket Cards */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 24 }}>
+                          {[
+                            { key: 'aktuell', label: 'Aktuell', color: '#10b981', borderColor: '#10b981' },
+                            { key: '1_30', label: '1–30 Tage', color: '#f59e0b', borderColor: '#f59e0b' },
+                            { key: '31_60', label: '31–60 Tage', color: '#f97316', borderColor: '#f97316' },
+                            { key: '61_90', label: '61–90 Tage', color: '#ef4444', borderColor: '#ef4444' },
+                            { key: '90plus', label: '90+ Tage', color: '#dc2626', borderColor: '#dc2626' },
+                          ].map(bucket => {
+                            const b = altersliste.buckets?.[bucket.key] || {};
+                            return (
+                              <div key={bucket.key} style={{ background: 'var(--bg-card)', border: `2px solid ${bucket.borderColor}`, borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
+                                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{bucket.label}</div>
+                                <div style={{ fontSize: 20, fontWeight: 700, color: bucket.color, fontFamily: 'monospace' }}>{formatCurrency(b.summe || 0)}</div>
+                                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>{b.anzahl || 0} Rechnungen</div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Detail Table */}
+                        {(altersliste.rechnungen || []).length > 0 && (
+                          <div style={{ overflowX: 'auto' }}>
+                            <table className="data-table">
+                              <thead>
+                                <tr>
+                                  <th>Rechnungsnr.</th>
+                                  <th>Schuldner</th>
+                                  <th>Fälligkeit</th>
+                                  <th className="right">Tage überfällig</th>
+                                  <th>Bucket</th>
+                                  <th className="right">Betrag</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {(altersliste.rechnungen || []).map((r, i) => {
+                                  const tage = r.tage_ueberfaellig || 0;
+                                  const bucketLabel = tage <= 0 ? 'Aktuell' : tage <= 30 ? '1–30 Tage' : tage <= 60 ? '31–60 Tage' : tage <= 90 ? '61–90 Tage' : '90+ Tage';
+                                  const bucketColor = tage <= 0 ? '#10b981' : tage <= 30 ? '#f59e0b' : tage <= 60 ? '#f97316' : tage <= 90 ? '#ef4444' : '#dc2626';
+                                  return (
+                                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                                      <td>{r.rechnungsnummer}</td>
+                                      <td>{r.schuldner || `${r.vorname || ''} ${r.nachname || ''}`.trim()}</td>
+                                      <td>{r.faelligkeitsdatum ? new Date(r.faelligkeitsdatum).toLocaleDateString('de-DE') : '—'}</td>
+                                      <td className="right" style={{ color: tage > 0 ? '#ef4444' : 'var(--text-muted)' }}>{tage > 0 ? `${tage} Tage` : '—'}</td>
+                                      <td><span style={{ background: bucketColor + '22', color: bucketColor, borderRadius: 4, padding: '2px 8px', fontSize: 12 }}>{bucketLabel}</span></td>
+                                      <td className="right" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{formatCurrency(r.betrag || r.offener_betrag)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn-secondary" onClick={() => setShowAltersliste(false)}>Schließen</button>
+                    <button className="btn btn-secondary" onClick={loadAltersliste} disabled={alterslisteLoading}>
+                      <RefreshCw size={14} /> Aktualisieren
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {showMahnungForm && (
@@ -4265,6 +4520,16 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ==================== LOHNABRECHNUNG TAB ==================== */}
+        {activeSubTab === 'lohnabrechnung' && (
+          <div className="lohnabrechnung-content">
+            <div className="section-header">
+              <h3><Euro size={18} /> Lohnabrechnung</h3>
+            </div>
+            <LohnTab token={token} />
           </div>
         )}
 

@@ -992,4 +992,141 @@ function escapeXml(str) {
     .replace(/'/g,  '&apos;');
 }
 
+// ---------------------------------------------------------------------------
+// Gewerbesteuer — Einstellungen + Berechnung
+// ---------------------------------------------------------------------------
+
+router.get('/gewerbesteuer/einstellungen', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo.' });
+    const [[row]] = await pool.query('SELECT * FROM gewerbesteuer_einstellungen WHERE dojo_id = ?', [dojoId]);
+    res.json(row || { dojo_id: dojoId, hebesatz: 400, ist_gewerbesteuerpflichtig: 1 });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/gewerbesteuer/einstellungen', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo.' });
+    const { hebesatz, gemeinde, ist_gewerbesteuerpflichtig, hinzurechnungen_miete, hinzurechnungen_leasing, hinzurechnungen_zinsen, kuerz_grundbesitz } = req.body;
+    const [[d]] = await pool.query('SELECT organisation_name FROM dojo WHERE id = ?', [dojoId]);
+    await pool.query(
+      `INSERT INTO gewerbesteuer_einstellungen (dojo_id, organisation_name, hebesatz, gemeinde, ist_gewerbesteuerpflichtig, hinzurechnungen_miete, hinzurechnungen_leasing, hinzurechnungen_zinsen, kuerz_grundbesitz)
+       VALUES (?,?,?,?,?,?,?,?,?)
+       ON DUPLICATE KEY UPDATE hebesatz=VALUES(hebesatz), gemeinde=VALUES(gemeinde), ist_gewerbesteuerpflichtig=VALUES(ist_gewerbesteuerpflichtig),
+         hinzurechnungen_miete=VALUES(hinzurechnungen_miete), hinzurechnungen_leasing=VALUES(hinzurechnungen_leasing),
+         hinzurechnungen_zinsen=VALUES(hinzurechnungen_zinsen), kuerz_grundbesitz=VALUES(kuerz_grundbesitz)`,
+      [dojoId, d?.organisation_name || '', hebesatz || 400, gemeinde || '', ist_gewerbesteuerpflichtig ? 1 : 0,
+       hinzurechnungen_miete || 0, hinzurechnungen_leasing || 0, hinzurechnungen_zinsen || 0, kuerz_grundbesitz || 0]
+    );
+    res.json({ message: 'Gespeichert' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.get('/gewerbesteuer/berechnung', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo.' });
+    const jahr = parseInt(req.query.jahr) || new Date().getFullYear();
+
+    const [[einst]] = await pool.query('SELECT * FROM gewerbesteuer_einstellungen WHERE dojo_id = ?', [dojoId]);
+    if (!einst?.ist_gewerbesteuerpflichtig) return res.json({ gewerbesteuer: 0, hinweis: 'Nicht gewerbesteuerpflichtig.' });
+
+    // Gewerbeertrag aus GuV (EBIT = Einnahmen - Ausgaben)
+    const [[einnahmen]] = await pool.query(
+      'SELECT COALESCE(SUM(betrag_brutto),0) AS summe FROM v_euer_einnahmen WHERE dojo_id = ? AND jahr = ?', [dojoId, jahr]);
+    const [[ausgaben]] = await pool.query(
+      `SELECT COALESCE(SUM(betrag_brutto),0) AS summe FROM v_euer_ausgaben
+       WHERE dojo_id = ? AND jahr = ? AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen')`, [dojoId, jahr]);
+
+    const ebit = Number(einnahmen.summe) - Number(ausgaben.summe);
+
+    // Hinzurechnungen §8 GewStG
+    const hinzuMiete   = Number(einst.hinzurechnungen_miete || 0) * 0.125;   // 12,5% unbewegliche WG
+    const hinzuLeasing = Number(einst.hinzurechnungen_leasing || 0) * 0.05;  // 5% bewegliche WG
+    const hinzuZinsen  = Number(einst.hinzurechnungen_zinsen || 0) * 0.25;   // 25% Zinsen
+    const hinzurechnungen = Math.round((hinzuMiete + hinzuLeasing + hinzuZinsen) * 100) / 100;
+
+    // Kürzungen §9 GewStG
+    const kuerzungen = Number(einst.kuerz_grundbesitz || 0) * 0.012; // 1,2% Einheitswert
+
+    // Gewerbeertrag (abgerundet auf 100 €)
+    const gewerbeertragRoh = Math.max(0, ebit + hinzurechnungen - kuerzungen);
+    const freibetrag = 24500; // §11 GewStG
+    const gewerbeertragNach = Math.max(0, Math.floor((gewerbeertragRoh - freibetrag) / 100) * 100);
+    const steuermessbetrag  = Math.round(gewerbeertragNach * 0.035 * 100) / 100; // 3,5%
+    const hebesatz = (einst.hebesatz || 400) / 100;
+    const gewerbesteuer = Math.round(steuermessbetrag * hebesatz * 100) / 100;
+
+    res.json({
+      jahr, ebit: Math.round(ebit * 100) / 100,
+      hinzurechnungen, kuerzungen: Math.round(kuerzungen * 100) / 100,
+      gewerbeertrag_roh: Math.round(gewerbeertragRoh * 100) / 100,
+      freibetrag, gewerbeertrag_nach_freibetrag: gewerbeertragNach,
+      steuermessbetrag, hebesatz: einst.hebesatz || 400,
+      gewerbesteuer, gemeinde: einst.gemeinde || ''
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ---------------------------------------------------------------------------
+// Zusammenfassende Meldung (ZM) — §18a UStG
+// ---------------------------------------------------------------------------
+
+router.get('/zm', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo.' });
+    const { jahr } = req.query;
+    const [meldungen] = await pool.query(
+      `SELECT z.*, GROUP_CONCAT(CONCAT(p.land_code,':',p.ust_id_empfaenger,':',p.betrag) SEPARATOR '|') AS positionen_raw
+       FROM zm_meldungen z LEFT JOIN zm_positionen p ON z.zm_id = p.zm_id
+       WHERE z.dojo_id = ? ${jahr ? 'AND z.jahr = ?' : ''}
+       GROUP BY z.zm_id ORDER BY z.jahr DESC, z.quartal DESC`,
+      jahr ? [dojoId, parseInt(jahr)] : [dojoId]
+    );
+    res.json({ meldungen });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/zm', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo.' });
+    const { jahr, quartal, positionen = [], notizen } = req.body;
+    if (!jahr || !quartal) return res.status(400).json({ error: 'Jahr und Quartal erforderlich.' });
+
+    const [[d]] = await pool.query('SELECT organisation_name FROM dojo WHERE id = ?', [dojoId]);
+    const betragGesamt = positionen.reduce((s, p) => s + Number(p.betrag || 0), 0);
+
+    const [result] = await pool.query(
+      `INSERT INTO zm_meldungen (dojo_id, organisation_name, jahr, quartal, betrag_gesamt, notizen)
+       VALUES (?,?,?,?,?,?)`,
+      [dojoId, d?.organisation_name || '', parseInt(jahr), parseInt(quartal), betragGesamt, notizen || null]
+    );
+    const zmId = result.insertId;
+
+    for (const pos of positionen) {
+      if (pos.ust_id && pos.betrag) {
+        await pool.query(
+          'INSERT INTO zm_positionen (zm_id, ust_id_empfaenger, land_code, betrag, art) VALUES (?,?,?,?,?)',
+          [zmId, pos.ust_id, pos.land_code || 'DE', pos.betrag, pos.art || 'sonstige_leistung']
+        );
+      }
+    }
+    res.json({ zm_id: zmId, message: 'ZM-Meldung gespeichert.' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.post('/zm/:id/einreichen', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    const [[zm]] = await pool.query('SELECT * FROM zm_meldungen WHERE zm_id = ? AND dojo_id = ?', [req.params.id, dojoId]);
+    if (!zm) return res.status(404).json({ error: 'Nicht gefunden.' });
+    await pool.query('UPDATE zm_meldungen SET meldung_status = ?, eingereicht_am = NOW() WHERE zm_id = ?', ['eingereicht', zm.zm_id]);
+    res.json({ message: 'Als eingereicht markiert.' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 module.exports = router;

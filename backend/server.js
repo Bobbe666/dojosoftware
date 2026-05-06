@@ -706,6 +706,15 @@ try {
     });
 }
 
+// LOHNABRECHNUNG ROUTES (Payroll — Gehaltsabrechnungen, Steuer/SV-Berechnung)
+try {
+  const lohnRouter = require('./routes/lohnabrechnung');
+  app.use('/api/lohnabrechnung', authenticateToken, lohnRouter);
+  logger.success('Route gemountet', { path: '/api/lohnabrechnung' });
+} catch (error) {
+  logger.error('Fehler beim Laden der Route', { route: 'lohnabrechnung', error: error.message });
+}
+
 // EMAIL-SETTINGS ROUTES (globale und Dojo-spezifische E-Mail-Konfiguration)
 try {
   const emailSettingsRoutes = require('./routes/email-settings');

@@ -6,7 +6,7 @@
  *  - Tab 2: EÜR — Jahresabschluss
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   FileText,
   Download,
@@ -771,6 +771,492 @@ const EuerTab = ({ dojoId }) => {
 };
 
 // ---------------------------------------------------------------------------
+// Gewerbesteuer Tab
+// ---------------------------------------------------------------------------
+const GewerbesteuerTab = ({ dojoId }) => {
+  const [einstellungen, setEinstellungen] = useState({
+    hebesatz: 400,
+    gemeinde: '',
+    gewerbesteuerpflichtig: true,
+    hinzurechnungen_miete: 0,
+    hinzurechnungen_leasing: 0,
+    hinzurechnungen_zinsen: 0,
+    kuerzungen_grundbesitz: 0,
+  });
+  const [einstellungenLoading, setEinstellungenLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [berechnung, setBerechnung] = useState(null);
+  const [berechnungLoading, setBerechnungLoading] = useState(false);
+  const [jahr, setJahr] = useState(currentYear);
+  const [error, setError] = useState(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const loadEinstellungen = useCallback(async () => {
+    if (!dojoId) return;
+    setEinstellungenLoading(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/gewerbesteuer/einstellungen?dojo_id=${dojoId}`);
+      if (res.ok) {
+        const json = await res.json();
+        setEinstellungen(prev => ({ ...prev, ...json }));
+      }
+    } catch (_) {}
+    finally { setEinstellungenLoading(false); }
+  }, [dojoId]);
+
+  useEffect(() => { loadEinstellungen(); }, [loadEinstellungen]);
+
+  const saveEinstellungen = async () => {
+    if (!dojoId) return;
+    setSaveLoading(true);
+    setError(null);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/gewerbesteuer/einstellungen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: dojoId, ...einstellungen }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || `Fehler ${res.status}`);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const berechnen = async () => {
+    if (!dojoId) return;
+    setBerechnungLoading(true);
+    setError(null);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/gewerbesteuer/berechnung?dojo_id=${dojoId}&jahr=${jahr}`);
+      if (!res.ok) throw new Error((await res.json()).error || `Fehler ${res.status}`);
+      setBerechnung(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBerechnungLoading(false);
+    }
+  };
+
+  const upd = (field, value) => setEinstellungen(prev => ({ ...prev, [field]: value }));
+
+  const numInput = (field, label, unit = '€') => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={einstellungen[field] || 0}
+          onChange={e => upd(field, parseFloat(e.target.value) || 0)}
+          style={{ ...selectStyle, minWidth: 120 }}
+        />
+        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{unit}</span>
+      </div>
+    </div>
+  );
+
+  const rowStyle = { display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,.06)', fontSize: 14 };
+
+  return (
+    <div>
+      {error && (
+        <div style={{ ...card, background: 'rgba(239,68,68,.1)', borderColor: '#ef4444', color: '#ef4444', display: 'flex', gap: 10 }}>
+          <AlertCircle size={16} style={{ flexShrink: 0 }} /> {error}
+        </div>
+      )}
+      {saveSuccess && (
+        <div style={{ ...card, background: 'rgba(16,185,129,.1)', borderColor: '#10b981', color: '#10b981', display: 'flex', gap: 10 }}>
+          <CheckCircle size={16} style={{ flexShrink: 0 }} /> Einstellungen gespeichert.
+        </div>
+      )}
+
+      {/* Hinweis Gemeinnützigkeit */}
+      <div style={{ ...card, background: 'rgba(59,130,246,.08)', borderColor: 'rgba(59,130,246,.3)', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 20 }}>
+        <Info size={18} color="#3b82f6" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          <strong style={{ color: 'var(--text-primary)' }}>Hinweis:</strong> Keine Gewerbesteuer bei gemeinnützigen Vereinen (§3 GewStG). Für eingetragene Vereine mit gemeinnützigem Status entfällt die Gewerbesteuerpflicht.
+        </div>
+      </div>
+
+      {/* Einstellungen */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <h3 style={{ margin: '0 0 20px 0', fontSize: 16 }}>Einstellungen</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 16 }}>
+          <div>
+            <label style={labelStyle}>Gemeinde</label>
+            <input
+              value={einstellungen.gemeinde || ''}
+              onChange={e => upd('gemeinde', e.target.value)}
+              placeholder="z.B. München"
+              style={{ ...selectStyle, width: '100%' }}
+            />
+          </div>
+          {numInput('hebesatz', 'Hebesatz', '%')}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 16 }}>
+            <input
+              type="checkbox"
+              id="gst-pflichtig"
+              checked={!!einstellungen.gewerbesteuerpflichtig}
+              onChange={e => upd('gewerbesteuerpflichtig', e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }}
+            />
+            <label htmlFor="gst-pflichtig" style={{ fontSize: 14, cursor: 'pointer', color: 'var(--text-primary)' }}>Gewerbesteuerpflichtig</label>
+          </div>
+        </div>
+
+        <h4 style={{ margin: '20px 0 12px 0', fontSize: 14, color: 'var(--text-muted)' }}>Hinzurechnungen (§ 8 GewStG)</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 16 }}>
+          {numInput('hinzurechnungen_miete', 'Miete / Pacht')}
+          {numInput('hinzurechnungen_leasing', 'Leasing')}
+          {numInput('hinzurechnungen_zinsen', 'Zinsen')}
+        </div>
+
+        <h4 style={{ margin: '20px 0 12px 0', fontSize: 14, color: 'var(--text-muted)' }}>Kürzungen (§ 9 GewStG)</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
+          {numInput('kuerzungen_grundbesitz', 'Grundbesitz-Kürzung')}
+        </div>
+
+        <button style={btnPrimary} onClick={saveEinstellungen} disabled={saveLoading || !dojoId}>
+          {saveLoading ? 'Speichere...' : 'Einstellungen speichern'}
+        </button>
+      </div>
+
+      {/* Berechnung */}
+      <div style={card}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 20 }}>
+          <div>
+            <label style={labelStyle}>Jahr</label>
+            <select style={selectStyle} value={jahr} onChange={e => setJahr(Number(e.target.value))}>
+              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <button style={btnPrimary} onClick={berechnen} disabled={berechnungLoading || !dojoId}>
+            <Calculator size={16} />
+            {berechnungLoading ? 'Berechne...' : 'Berechnen'}
+          </button>
+        </div>
+
+        {berechnung && (
+          <div>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>Gewerbesteuerberechnung {jahr}</h3>
+            <div style={{ maxWidth: 480 }}>
+              <div style={rowStyle}>
+                <span>EBIT (Gewerbeertrag roh)</span>
+                <span style={{ fontFamily: 'monospace' }}>{fmtEur(berechnung.ebit)}</span>
+              </div>
+              <div style={rowStyle}>
+                <span style={{ color: '#10b981' }}>+ Hinzurechnungen</span>
+                <span style={{ fontFamily: 'monospace', color: '#10b981' }}>+{fmtEur(berechnung.hinzurechnungen_gesamt)}</span>
+              </div>
+              <div style={rowStyle}>
+                <span style={{ color: '#ef4444' }}>− Kürzungen</span>
+                <span style={{ fontFamily: 'monospace', color: '#ef4444' }}>−{fmtEur(berechnung.kuerzungen_gesamt)}</span>
+              </div>
+              <div style={{ ...rowStyle, fontWeight: 600 }}>
+                <span>= Gewerbeertrag nach Kürzungen</span>
+                <span style={{ fontFamily: 'monospace' }}>{fmtEur(berechnung.gewerbeertrag_nach_kuerzungen)}</span>
+              </div>
+              <div style={rowStyle}>
+                <span style={{ color: '#ef4444' }}>− Freibetrag</span>
+                <span style={{ fontFamily: 'monospace', color: '#ef4444' }}>−{fmtEur(berechnung.freibetrag ?? 24500)}</span>
+              </div>
+              <div style={rowStyle}>
+                <span>= Steuermessbetrag (× 3,5%)</span>
+                <span style={{ fontFamily: 'monospace' }}>{fmtEur(berechnung.steuermessbetrag)}</span>
+              </div>
+              <div style={rowStyle}>
+                <span>× Hebesatz ({einstellungen.hebesatz}%)</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{einstellungen.hebesatz}%</span>
+              </div>
+              <div style={{ ...rowStyle, borderBottom: 'none', paddingTop: 14, marginTop: 6, borderTop: '2px solid rgba(255,255,255,.12)' }}>
+                <span style={{ fontSize: 18, fontWeight: 800 }}>= Gewerbesteuer</span>
+                <span style={{ fontSize: 22, fontWeight: 800, fontFamily: 'monospace', color: parseFloat(berechnung.gewerbesteuer || 0) > 0 ? '#ef4444' : '#10b981' }}>
+                  {fmtEur(berechnung.gewerbesteuer)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// ZM Tab (Zusammenfassende Meldung)
+// ---------------------------------------------------------------------------
+const ZMTab = ({ dojoId }) => {
+  const [jahr, setJahr] = useState(currentYear);
+  const [meldungen, setMeldungen] = useState([]);
+  const [meldungenLoading, setMeldungenLoading] = useState(false);
+  const [showNeueForm, setShowNeueForm] = useState(false);
+  const [einreichenLoading, setEinreichenLoading] = useState({});
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+
+  const [neueZM, setNeueZM] = useState({
+    jahr: currentYear,
+    quartal: 1,
+    kunden: [],
+  });
+  const [neuerKunde, setNeuerKunde] = useState({ ust_id: '', land: '', betrag: '', art: 'lieferung' });
+
+  const loadMeldungen = useCallback(async () => {
+    if (!dojoId) return;
+    setMeldungenLoading(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/zm?dojo_id=${dojoId}&jahr=${jahr}`);
+      if (res.ok) setMeldungen((await res.json()).meldungen || []);
+    } catch (_) {}
+    finally { setMeldungenLoading(false); }
+  }, [dojoId, jahr]);
+
+  useEffect(() => { loadMeldungen(); }, [loadMeldungen]);
+
+  const saveZM = async () => {
+    if (!dojoId) return;
+    setSaveLoading(true);
+    setError(null);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/zm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: dojoId, ...neueZM }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || `Fehler ${res.status}`);
+      setSuccess('ZM gespeichert.');
+      setShowNeueForm(false);
+      setNeueZM({ jahr: currentYear, quartal: 1, kunden: [] });
+      loadMeldungen();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const einreichen = async (id) => {
+    setEinreichenLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/zm/${id}/einreichen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: dojoId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || `Fehler ${res.status}`);
+      setSuccess('Als eingereicht markiert.');
+      loadMeldungen();
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setEinreichenLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const addKunde = () => {
+    if (!neuerKunde.ust_id || !neuerKunde.betrag) return;
+    setNeueZM(prev => ({ ...prev, kunden: [...prev.kunden, { ...neuerKunde }] }));
+    setNeuerKunde({ ust_id: '', land: '', betrag: '', art: 'lieferung' });
+  };
+
+  const removeKunde = (i) => {
+    setNeueZM(prev => ({ ...prev, kunden: prev.kunden.filter((_, idx) => idx !== i) }));
+  };
+
+  const statusBadge = (status) => {
+    const map = {
+      entwurf: { label: 'Entwurf', color: 'var(--text-muted)' },
+      gespeichert: { label: 'Gespeichert', color: '#3b82f6' },
+      eingereicht: { label: 'Eingereicht', color: '#10b981' },
+    };
+    const b = map[status] || map.entwurf;
+    return <span style={{ background: b.color + '22', color: b.color, borderRadius: 4, padding: '2px 8px', fontSize: 12, fontWeight: 600 }}>{b.label}</span>;
+  };
+
+  return (
+    <div>
+      {/* Hinweis */}
+      <div style={{ ...card, background: 'rgba(59,130,246,.08)', borderColor: 'rgba(59,130,246,.3)', display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 20 }}>
+        <Info size={18} color="#3b82f6" style={{ flexShrink: 0, marginTop: 2 }} />
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+          <strong style={{ color: 'var(--text-primary)' }}>Zusammenfassende Meldung (ZM)</strong> gem. §18a UStG — nur bei EU-B2B-Umsätzen (innergemeinschaftliche Lieferungen und sonstige Leistungen an andere EU-Unternehmer) erforderlich. Abgabe monatlich oder quartalsweise beim Bundeszentralamt für Steuern (BZSt).
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ ...card, background: 'rgba(239,68,68,.1)', borderColor: '#ef4444', color: '#ef4444', display: 'flex', gap: 10, marginBottom: 16 }}>
+          <AlertCircle size={16} style={{ flexShrink: 0 }} /> {error}
+          <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', marginLeft: 'auto' }}><X size={14} /></button>
+        </div>
+      )}
+      {success && (
+        <div style={{ ...card, background: 'rgba(16,185,129,.1)', borderColor: '#10b981', color: '#10b981', display: 'flex', gap: 10, marginBottom: 16 }}>
+          <CheckCircle size={16} style={{ flexShrink: 0 }} /> {success}
+        </div>
+      )}
+
+      {/* Controls */}
+      <div style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'flex-end', marginBottom: 20 }}>
+        <div>
+          <label style={labelStyle}>Jahr</label>
+          <select style={selectStyle} value={jahr} onChange={e => setJahr(Number(e.target.value))}>
+            {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </div>
+        <button style={btnPrimary} onClick={() => setShowNeueForm(true)}>
+          <Calendar size={16} /> Neue ZM
+        </button>
+      </div>
+
+      {/* Bestehende Meldungen */}
+      <div style={card}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>ZM-Meldungen {jahr}</h3>
+        {meldungenLoading ? (
+          <div style={{ color: 'var(--text-muted)' }}>Lade...</div>
+        ) : meldungen.length === 0 ? (
+          <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Keine ZM-Meldungen für {jahr}.</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid rgba(255,255,255,.1)' }}>
+                {['Zeitraum', 'Quartal', 'Status', 'Positionen', 'Gesamtbetrag', ''].map(h => (
+                  <th key={h} style={{ textAlign: h === '' || h === 'Gesamtbetrag' ? 'right' : 'left', padding: '8px 10px', fontSize: 12, color: 'var(--text-muted)' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {meldungen.map(m => (
+                <tr key={m.id} style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                  <td style={{ padding: '9px 10px' }}>{m.jahr}</td>
+                  <td style={{ padding: '9px 10px' }}>Q{m.quartal}</td>
+                  <td style={{ padding: '9px 10px' }}>{statusBadge(m.status)}</td>
+                  <td style={{ padding: '9px 10px' }}>{m.positionen_anzahl || (m.kunden || []).length}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: 600 }}>{fmtEur(m.gesamtbetrag)}</td>
+                  <td style={{ padding: '9px 10px', textAlign: 'right' }}>
+                    {m.status !== 'eingereicht' && (
+                      <button
+                        onClick={() => einreichen(m.id)}
+                        disabled={einreichenLoading[m.id]}
+                        style={{ ...btnSecondary, padding: '5px 12px', fontSize: 12 }}
+                      >
+                        <CheckCircle size={12} />
+                        {einreichenLoading[m.id] ? '...' : 'Als eingereicht markieren'}
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Neue ZM Form */}
+      {showNeueForm && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setShowNeueForm(false)}
+        >
+          <div
+            style={{ ...card, maxWidth: 700, width: '100%', maxHeight: '85vh', overflowY: 'auto', marginBottom: 0 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 18 }}>Neue ZM erstellen</h3>
+              <button onClick={() => setShowNeueForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+              <div>
+                <label style={labelStyle}>Jahr</label>
+                <select style={selectStyle} value={neueZM.jahr} onChange={e => setNeueZM(prev => ({ ...prev, jahr: Number(e.target.value) }))}>
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Quartal</label>
+                <select style={selectStyle} value={neueZM.quartal} onChange={e => setNeueZM(prev => ({ ...prev, quartal: Number(e.target.value) }))}>
+                  {QUARTALE.map(q => <option key={q.val} value={q.val}>{q.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <h4 style={{ margin: '0 0 12px 0', fontSize: 14 }}>EU-Kunden hinzufügen</h4>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12, alignItems: 'flex-end' }}>
+              <div>
+                <label style={labelStyle}>USt-ID</label>
+                <input value={neuerKunde.ust_id} onChange={e => setNeuerKunde(p => ({ ...p, ust_id: e.target.value }))} placeholder="DE123456789" style={selectStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Land (ISO)</label>
+                <input value={neuerKunde.land} onChange={e => setNeuerKunde(p => ({ ...p, land: e.target.value }))} placeholder="DE, AT, FR..." style={{ ...selectStyle, width: 80 }} maxLength={2} />
+              </div>
+              <div>
+                <label style={labelStyle}>Betrag (€)</label>
+                <input type="number" step="0.01" value={neuerKunde.betrag} onChange={e => setNeuerKunde(p => ({ ...p, betrag: e.target.value }))} style={{ ...selectStyle, width: 120 }} />
+              </div>
+              <div>
+                <label style={labelStyle}>Art</label>
+                <select value={neuerKunde.art} onChange={e => setNeuerKunde(p => ({ ...p, art: e.target.value }))} style={selectStyle}>
+                  <option value="lieferung">Lieferung</option>
+                  <option value="sonstige_leistung">Sonstige Leistung</option>
+                  <option value="dreiecksgeschaeft">Dreiecksgeschäft</option>
+                </select>
+              </div>
+              <button onClick={addKunde} style={btnPrimary}>
+                Hinzufügen
+              </button>
+            </div>
+
+            {neueZM.kunden.length > 0 && (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 20 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.1)' }}>
+                    {['USt-ID', 'Land', 'Art', 'Betrag', ''].map(h => (
+                      <th key={h} style={{ textAlign: h === 'Betrag' ? 'right' : 'left', padding: '6px 10px', color: 'var(--text-muted)', fontSize: 12 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {neueZM.kunden.map((k, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,.04)' }}>
+                      <td style={{ padding: '7px 10px' }}>{k.ust_id}</td>
+                      <td style={{ padding: '7px 10px' }}>{k.land}</td>
+                      <td style={{ padding: '7px 10px' }}>{k.art}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'monospace' }}>{fmtEur(k.betrag)}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'right' }}>
+                        <button onClick={() => removeKunde(i)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><X size={14} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button style={btnSecondary} onClick={() => setShowNeueForm(false)}>Abbrechen</button>
+              <button style={btnPrimary} onClick={saveZM} disabled={saveLoading || neueZM.kunden.length === 0}>
+                {saveLoading ? 'Speichere...' : 'ZM speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 const SteuerAssistent = () => {
@@ -782,6 +1268,8 @@ const SteuerAssistent = () => {
   const tabs = [
     { id: 'ustVA', label: 'Umsatzsteuer-Voranmeldung (UStVA)' },
     { id: 'euer', label: 'EÜR — Jahresabschluss' },
+    { id: 'gewerbesteuer', label: 'Gewerbesteuer' },
+    { id: 'zm', label: 'ZM (Zusammenfassende Meldung)' },
   ];
 
   return (
@@ -805,7 +1293,7 @@ const SteuerAssistent = () => {
       )}
 
       {/* Tab Bar */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,.08)', paddingBottom: 0 }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(255,255,255,.08)', paddingBottom: 0, flexWrap: 'wrap' }}>
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -831,6 +1319,8 @@ const SteuerAssistent = () => {
       {/* Tab Content */}
       {activeTab === 'ustVA' && <UStVATab dojoId={dojoId} />}
       {activeTab === 'euer' && <EuerTab dojoId={dojoId} />}
+      {activeTab === 'gewerbesteuer' && <GewerbesteuerTab dojoId={dojoId} />}
+      {activeTab === 'zm' && <ZMTab dojoId={dojoId} />}
     </div>
   );
 };

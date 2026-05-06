@@ -4384,6 +4384,101 @@ const KATEGORIE_SKR_MAP = {
 };
 
 // ===================================================================
+// 📊 GET /api/buchhaltung/bwa - Betriebswirtschaftliche Auswertung
+// ===================================================================
+router.get('/bwa', requireBuchhaltungAccess, async (req, res) => {
+  const { organisation, jahr } = req.query;
+  const currentYear = parseInt(jahr) || new Date().getFullYear();
+  const vorjahr = currentYear - 1;
+
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
+
+  try {
+    const pool = db.promise();
+
+    const [einnahmen] = await pool.query(
+      `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe, kategorie
+       FROM v_euer_einnahmen WHERE jahr = ? ${orgFilter}
+       GROUP BY monat, kategorie ORDER BY monat`,
+      [currentYear]
+    );
+    const [ausgaben] = await pool.query(
+      `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe, kategorie
+       FROM v_euer_ausgaben WHERE jahr = ? ${orgFilter}
+         AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen')
+       GROUP BY monat, kategorie ORDER BY monat`,
+      [currentYear]
+    );
+    const [vjEinnahmen] = await pool.query(
+      `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe
+       FROM v_euer_einnahmen WHERE jahr = ? ${orgFilter} GROUP BY monat`,
+      [vorjahr]
+    );
+    const [vjAusgaben] = await pool.query(
+      `SELECT monat, ROUND(SUM(betrag_brutto), 2) AS summe
+       FROM v_euer_ausgaben WHERE jahr = ? ${orgFilter}
+         AND kategorie NOT IN ('privateinlage','privatentnahme','anlagevermögen')
+       GROUP BY monat`,
+      [vorjahr]
+    );
+
+    const MONATE = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+
+    const monatsDaten = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1;
+      const einM = einnahmen.filter(r => r.monat === m);
+      const ausM = ausgaben.filter(r => r.monat === m);
+
+      const umsatz      = einM.reduce((s, r) => s + Number(r.summe), 0);
+      const material    = ausM.filter(r => r.kategorie === 'wareneingang').reduce((s, r) => s + Number(r.summe), 0);
+      const personal    = ausM.filter(r => r.kategorie === 'personalkosten').reduce((s, r) => s + Number(r.summe), 0);
+      const raum        = ausM.filter(r => r.kategorie === 'raumkosten').reduce((s, r) => s + Number(r.summe), 0);
+      const afa         = ausM.filter(r => r.kategorie === 'abschreibungen').reduce((s, r) => s + Number(r.summe), 0);
+      const sonstige    = ausM.filter(r => !['wareneingang','personalkosten','raumkosten','abschreibungen'].includes(r.kategorie)).reduce((s, r) => s + Number(r.summe), 0);
+      const rohertrag   = umsatz - material;
+      const ebit        = rohertrag - personal - raum - afa - sonstige;
+
+      const vjE = vjEinnahmen.find(r => r.monat === m);
+      const vjA = vjAusgaben.find(r => r.monat === m);
+      const vjErgebnis = (Number(vjE?.summe || 0)) - (Number(vjA?.summe || 0));
+
+      return {
+        monat: m, monatName: MONATE[i],
+        umsatz: Math.round(umsatz * 100) / 100,
+        material: Math.round(material * 100) / 100,
+        rohertrag: Math.round(rohertrag * 100) / 100,
+        personal: Math.round(personal * 100) / 100,
+        raumkosten: Math.round(raum * 100) / 100,
+        abschreibungen: Math.round(afa * 100) / 100,
+        sonstige_kosten: Math.round(sonstige * 100) / 100,
+        ebit: Math.round(ebit * 100) / 100,
+        vj_ergebnis: Math.round(vjErgebnis * 100) / 100,
+        abweichung: Math.round((ebit - vjErgebnis) * 100) / 100
+      };
+    });
+
+    const jahresSumme = monatsDaten.reduce((acc, m) => ({
+      umsatz: acc.umsatz + m.umsatz,
+      rohertrag: acc.rohertrag + m.rohertrag,
+      personal: acc.personal + m.personal,
+      raumkosten: acc.raumkosten + m.raumkosten,
+      abschreibungen: acc.abschreibungen + m.abschreibungen,
+      sonstige_kosten: acc.sonstige_kosten + m.sonstige_kosten,
+      ebit: acc.ebit + m.ebit,
+      vj_ergebnis: acc.vj_ergebnis + m.vj_ergebnis
+    }), { umsatz: 0, rohertrag: 0, personal: 0, raumkosten: 0, abschreibungen: 0, sonstige_kosten: 0, ebit: 0, vj_ergebnis: 0 });
+
+    Object.keys(jahresSumme).forEach(k => { jahresSumme[k] = Math.round(jahresSumme[k] * 100) / 100; });
+
+    res.json({ jahr: currentYear, vorjahr, monate: monatsDaten, jahresSumme });
+  } catch (err) {
+    console.error('BWA-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Laden der BWA', error: err.message });
+  }
+});
+
+// ===================================================================
 // 📊 GET /api/buchhaltung/guv - GuV (Gewinn- und Verlustrechnung)
 // ===================================================================
 router.get('/guv', requireBuchhaltungAccess, (req, res) => {
@@ -4777,6 +4872,157 @@ router.get('/guv/skr', requireBuchhaltungAccess, async (req, res) => {
   } catch (err) {
     console.error('GuV-SKR-Fehler:', err);
     res.status(500).json({ message: 'Fehler beim Laden der SKR-Daten', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📋 GET /api/buchhaltung/offene-posten/altersliste - Debitorenaltersliste
+// ===================================================================
+router.get('/offene-posten/altersliste', requireBuchhaltungAccess, async (req, res) => {
+  const { organisation } = req.query;
+  const dojoId = req.buchhaltungDojoId;
+  const orgFilter = dojoId ? `AND m.dojo_id = ${db.escape(dojoId)}` : '';
+  const today = new Date().toISOString().slice(0, 10);
+
+  try {
+    const pool = db.promise();
+    const [rows] = await pool.query(
+      `SELECT r.rechnung_id, r.rechnungsnummer, r.erstellt_am, r.faellig_am,
+              COALESCE(r.brutto_betrag, r.betrag) AS betrag,
+              r.status, m.vorname, m.nachname, m.email,
+              DATEDIFF(?, COALESCE(r.faellig_am, r.erstellt_am)) AS tage_ueberfaellig
+       FROM rechnungen r
+       JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+       WHERE r.status IN ('offen','teilbezahlt')
+         AND r.storniert = 0 ${orgFilter}
+       ORDER BY tage_ueberfaellig DESC`,
+      [today]
+    );
+
+    const buckets = { aktuell: [], d30: [], d60: [], d90: [], ueber90: [] };
+    let summen = { aktuell: 0, d30: 0, d60: 0, d90: 0, ueber90: 0 };
+
+    rows.forEach(r => {
+      const t = Number(r.tage_ueberfaellig);
+      const b = Number(r.betrag);
+      const key = t <= 0 ? 'aktuell' : t <= 30 ? 'd30' : t <= 60 ? 'd60' : t <= 90 ? 'd90' : 'ueber90';
+      buckets[key].push(r);
+      summen[key] += b;
+    });
+
+    Object.keys(summen).forEach(k => { summen[k] = Math.round(summen[k] * 100) / 100; });
+
+    res.json({
+      stichtag: today,
+      buckets,
+      summen,
+      gesamt: Math.round(Object.values(summen).reduce((a, b) => a + b, 0) * 100) / 100
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Fehler bei Altersliste', error: err.message });
+  }
+});
+
+// ===================================================================
+// 📄 GET /api/buchhaltung/mahnungen/:id/pdf - Mahnbrief PDF
+// ===================================================================
+router.get('/mahnungen/:id/pdf', requireBuchhaltungAccess, async (req, res) => {
+  const dojoId = req.buchhaltungDojoId;
+  try {
+    const pool = db.promise();
+    const [[mahn]] = await pool.query(
+      `SELECT m.*, d.organisation_name AS dojo_name, d.strasse AS dojo_strasse,
+              d.plz AS dojo_plz, d.ort AS dojo_ort, d.email AS dojo_email,
+              d.telefon AS dojo_telefon, d.iban AS dojo_iban, d.bic AS dojo_bic
+       FROM mahnungen m
+       LEFT JOIN dojo d ON m.dojo_id = d.id
+       WHERE m.mahnung_id = ? ${dojoId ? 'AND m.dojo_id = ' + db.escape(dojoId) : ''}`,
+      [req.params.id]
+    );
+    if (!mahn) return res.status(404).json({ error: 'Mahnung nicht gefunden' });
+
+    const PDFDocument = require('pdfkit');
+    const doc = new PDFDocument({ margin: 60, size: 'A4' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Mahnung_${mahn.mahnung_id}.pdf"`);
+    doc.pipe(res);
+
+    const fmtEur = (n) => Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString('de-DE') : '—';
+    const mahnstufeText = ['', 'Mahnung', '2. Mahnung', 'Letzte Mahnung'];
+
+    // Absender
+    doc.fontSize(9).fillColor('#666')
+       .text(`${mahn.dojo_name} · ${mahn.dojo_strasse} · ${mahn.dojo_plz} ${mahn.dojo_ort}`, 60, 60);
+
+    // Empfänger
+    doc.fontSize(11).fillColor('#000')
+       .text(mahn.schuldner_name, 60, 110)
+       .moveDown(3);
+
+    // Datum + Ort
+    doc.fontSize(10).text(`${mahn.dojo_ort || ''}, ${fmtDate(mahn.erstellt_am)}`, { align: 'right' });
+    doc.moveDown(2);
+
+    // Betreff
+    const stufe = mahnstufeText[mahn.mahnstufe] || 'Mahnung';
+    doc.fontSize(13).font('Helvetica-Bold')
+       .text(`${stufe} — Offene Forderung`, 60);
+    doc.moveDown(1);
+
+    // Anrede
+    doc.fontSize(11).font('Helvetica')
+       .text(`Sehr geehrte(r) ${mahn.schuldner_name},`).moveDown(0.5);
+
+    if (mahn.mahntext) {
+      doc.text(mahn.mahntext).moveDown(1);
+    } else {
+      doc.text(`trotz unserer freundlichen Erinnerung ist die unten genannte Forderung bisher noch nicht bei uns eingegangen. Wir bitten Sie, den offenen Betrag umgehend zu begleichen.`).moveDown(1);
+    }
+
+    // Tabelle
+    const tableTop = doc.y + 10;
+    doc.rect(60, tableTop, 475, 22).fill('#f5f5f5');
+    doc.fillColor('#000').fontSize(10).font('Helvetica-Bold');
+    doc.text('Position', 65, tableTop + 6);
+    doc.text('Fälligkeit', 250, tableTop + 6);
+    doc.text('Betrag', 430, tableTop + 6, { width: 100, align: 'right' });
+
+    const rowTop = tableTop + 28;
+    doc.font('Helvetica').fontSize(10);
+    doc.text(`Rechnung ${mahn.rechnung_id ? '#' + mahn.rechnung_id : ''}`, 65, rowTop);
+    doc.text(fmtDate(mahn.faelligkeitsdatum), 250, rowTop);
+    doc.text(fmtEur(mahn.offener_betrag), 430, rowTop, { width: 100, align: 'right' });
+
+    if (Number(mahn.mahngebuehr) > 0) {
+      const feeTop = rowTop + 20;
+      doc.text('Mahngebühr', 65, feeTop);
+      doc.text(fmtEur(mahn.mahngebuehr), 430, feeTop, { width: 100, align: 'right' });
+    }
+
+    const totalBetrag = Number(mahn.offener_betrag) + Number(mahn.mahngebuehr || 0);
+    const totalTop = rowTop + (Number(mahn.mahngebuehr) > 0 ? 50 : 30);
+    doc.moveTo(60, totalTop).lineTo(535, totalTop).stroke();
+    doc.font('Helvetica-Bold').fontSize(11);
+    doc.text('Gesamtbetrag:', 65, totalTop + 8);
+    doc.text(fmtEur(totalBetrag), 430, totalTop + 8, { width: 100, align: 'right' });
+
+    doc.moveDown(3).font('Helvetica').fontSize(10);
+    doc.text(`Bitte überweisen Sie den Betrag von ${fmtEur(totalBetrag)} bis spätestens 7 Tage nach Erhalt dieses Schreibens auf unser Konto:`);
+    doc.moveDown(0.5);
+    if (mahn.dojo_iban) doc.text(`IBAN: ${mahn.dojo_iban}  BIC: ${mahn.dojo_bic || ''}`);
+    doc.moveDown(2);
+    doc.text('Sollten Sie bereits gezahlt haben, betrachten Sie dieses Schreiben als gegenstandslos.');
+    doc.moveDown(2);
+    doc.text('Mit freundlichen Grüßen');
+    doc.moveDown(1);
+    doc.text(mahn.dojo_name || '');
+
+    doc.end();
+  } catch (err) {
+    console.error('Mahnbrief-PDF-Fehler:', err);
+    res.status(500).json({ error: 'PDF-Generierung fehlgeschlagen', details: err.message });
   }
 });
 
