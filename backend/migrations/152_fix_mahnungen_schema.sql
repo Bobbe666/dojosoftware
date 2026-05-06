@@ -57,18 +57,19 @@ CREATE OR REPLACE VIEW v_euer_ausgaben AS
   UNION ALL
 
   SELECT 'AfA' AS quelle,
-         a.anlage_id AS referenz_id,
-         a.dojo_id,
-         a.organisation_name,
-         MAKEDATE(a.afa_jahr, 1) AS datum,
-         a.afa_betrag AS betrag_brutto,
+         ap.afa_id AS referenz_id,
+         ap.dojo_id,
+         ap.organisation_name,
+         MAKEDATE(ap.afa_jahr, 1) AS datum,
+         ap.afa_betrag AS betrag_brutto,
          'abschreibungen' AS kategorie,
-         CONCAT('AfA: ', a.bezeichnung) AS beschreibung,
-         a.afa_jahr AS jahr,
+         CONCAT('AfA: ', ar.bezeichnung, ' (', ap.afa_jahr, ')') AS beschreibung,
+         ap.afa_jahr AS jahr,
          1 AS monat
-  FROM anlagevermögen a
-  WHERE a.aktiv = 1
-    AND a.afa_betrag > 0
+  FROM afa_positionen ap
+  JOIN anlage_register ar ON ar.anlage_id = ap.anlage_id
+  WHERE ap.afa_jahr <= YEAR(CURDATE())
+    AND ar.aktiv = 1
 
   UNION ALL
 
