@@ -4426,8 +4426,10 @@ router.get('/guv', requireBuchhaltungAccess, (req, res) => {
     const abschreibungen = parseFloat(data.abschreibungen || 0);
     const sonstigeAufwendungen = parseFloat(data.sonstige_aufwendungen || 0);
 
-    const gesamtaufwand = materialaufwand + personalaufwand + abschreibungen + sonstigeAufwendungen;
-    const jahresueberschuss = umsatzerloese - gesamtaufwand;
+    const gesamtaufwand    = materialaufwand + personalaufwand + abschreibungen + sonstigeAufwendungen;
+    const rohergebnis      = umsatzerloese - materialaufwand;
+    const ebit             = rohergebnis - personalaufwand - abschreibungen - sonstigeAufwendungen;
+    const jahresueberschuss = ebit;
 
     res.json({
       jahr: currentYear,
@@ -4436,10 +4438,13 @@ router.get('/guv', requireBuchhaltungAccess, (req, res) => {
       guv: {
         umsatzerloese,
         materialaufwand,
+        rohergebnis,
         personalaufwand,
         abschreibungen,
         sonstige_aufwendungen: sonstigeAufwendungen,
         gesamtaufwand,
+        ebit,
+        ebt: ebit,
         jahresueberschuss
       }
     });
@@ -4624,13 +4629,24 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
                           guvDetails.abschreibungen.gesamt +
                           guvDetails.sonstige_aufwendungen.gesamt;
 
+    // HGB §275 Zwischensummen
+    const rohergebnis    = guvDetails.umsatzerloese.gesamt - guvDetails.materialaufwand.gesamt;
+    const ebit           = rohergebnis - guvDetails.personalaufwand.gesamt
+                           - guvDetails.abschreibungen.gesamt - guvDetails.sonstige_aufwendungen.gesamt;
+    const ebt            = ebit; // kein Zinsergebnis in EÜR-Modus
+    const jahresueberschuss = ebt;
+
     res.json({
       jahr: currentYear,
       quartal: quartal || null,
       organisation: organisation || 'alle',
       ...guvDetails,
       gesamtaufwand,
-      jahresueberschuss: guvDetails.umsatzerloese.gesamt - gesamtaufwand
+      // HGB §275-Zwischensummen
+      rohergebnis,
+      ebit,
+      ebt,
+      jahresueberschuss
     });
   })
   .catch(err => {
@@ -4786,10 +4802,16 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
   const stammdatenSql = `SELECT * FROM bilanz_stammdaten WHERE jahr = ? ${dojoFilter} LIMIT 1`;
   const bankBestandSql = `SELECT COALESCE(SUM(bank_saldo), 0) as bank_saldo FROM v_bilanz_bank_bestand WHERE jahr <= ? ${orgFilter}`;
   const forderungenSql = `SELECT COALESCE(SUM(forderungen), 0) as forderungen FROM v_bilanz_forderungen WHERE jahr = ? ${dojoFilter}`;
-  // Jahresüberschuss: auto-berechnet aus EÜR für das aktuelle Jahr
   const jahresueberschussSql = `SELECT COALESCE(SUM(jahresueberschuss), 0) as jahresueberschuss FROM v_bilanz_eigenkapital WHERE jahr = ? ${dojoFilter}`;
-  // Kassenbestand: letzter Eintrag im Kassenbuch bis Jahresende
   const kassenbuchSql = `SELECT kassenstand_nachher_cent / 100 as kasse_aktuell FROM kassenbuch WHERE dojo_id = ? AND geschaeft_datum <= ? ORDER BY geschaeft_datum DESC, eintrag_timestamp DESC LIMIT 1`;
+  // Auto-Sachanlagen aus Anlagenregister
+  const anlageAutoSql = dojoIdValue
+    ? `SELECT COALESCE(SUM(buchwert_aktuell), 0) AS sachanlagen_auto FROM v_bilanz_anlagevermoegen WHERE dojo_id = ?`
+    : `SELECT COALESCE(SUM(buchwert_aktuell), 0) AS sachanlagen_auto FROM v_bilanz_anlagevermoegen`;
+  // USt-Schulden aus eingereichten Meldungen
+  const ustSchuldenSql = dojoIdValue
+    ? `SELECT COALESCE(SUM(zahllast), 0) AS ust_schulden FROM ustVA_abgaben WHERE dojo_id = ? AND jahr = ? AND abgabe_status IN ('eingereicht','korrektur')`
+    : `SELECT 0 AS ust_schulden`;
 
   Promise.all([
     new Promise((resolve, reject) => db.query(stammdatenSql, [currentYear], (err, r) => err ? reject(err) : resolve(r[0] || {}))),
@@ -4799,12 +4821,23 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
     new Promise((resolve, reject) => {
       if (!dojoIdValue) return resolve({ kasse_aktuell: 0 });
       db.query(kassenbuchSql, [dojoIdValue, `${currentYear}-12-31`], (err, r) => err ? reject(err) : resolve(r[0] || {}));
+    }),
+    new Promise((resolve, reject) => {
+      const params = dojoIdValue ? [dojoIdValue] : [];
+      db.query(anlageAutoSql, params, (err, r) => err ? resolve({ sachanlagen_auto: 0 }) : resolve(r[0] || {}));
+    }),
+    new Promise((resolve, reject) => {
+      const params = dojoIdValue ? [dojoIdValue, currentYear] : [];
+      db.query(ustSchuldenSql, params, (err, r) => err ? resolve({ ust_schulden: 0 }) : resolve(r[0] || {}));
     })
   ])
-  .then(([stammdaten, bankBestand, forderungen, jahresueberschussRow, kassenbuch]) => {
+  .then(([stammdaten, bankBestand, forderungen, jahresueberschussRow, kassenbuch, anlageAuto, ustSchuldenRow]) => {
     // --- AKTIVA ---
     const immatVG = parseFloat(stammdaten.immat_vermoegensgegenstaende || 0);
-    const sachanlagen = parseFloat(stammdaten.sachanlagen || 0);
+    // Auto-Buchwert aus Anlagenregister hat Vorrang vor manuellem Stammdaten-Wert
+    const sachanlagenAuto = parseFloat(anlageAuto.sachanlagen_auto || 0);
+    const sachanlagenManuell = parseFloat(stammdaten.sachanlagen || 0);
+    const sachanlagen = sachanlagenAuto > 0 ? sachanlagenAuto : sachanlagenManuell;
     const finanzanlagen = parseFloat(stammdaten.finanzanlagen || 0);
     const gesamtAnlage = immatVG + sachanlagen + finanzanlagen;
 
@@ -4835,7 +4868,11 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
     const darlehen = parseFloat(stammdaten.darlehen || 0);
     const verbLieferanten = parseFloat(stammdaten.verbindlichkeiten_lieferanten || 0);
     const sonstigeVerb = parseFloat(stammdaten.sonstige_verbindlichkeiten || 0);
-    const gesamtVerbindlichkeiten = darlehen + verbLieferanten + sonstigeVerb;
+    // USt-Schulden: manuell überschrieben oder auto aus eingereichten UStVA-Meldungen
+    const ustSchuldenAuto = parseFloat(ustSchuldenRow.ust_schulden || 0);
+    const ustSchuldenStamm = parseFloat(stammdaten.ust_schulden || 0);
+    const ustSchulden = (stammdaten.ust_schulden_manuell) ? ustSchuldenStamm : ustSchuldenAuto;
+    const gesamtVerbindlichkeiten = darlehen + verbLieferanten + sonstigeVerb + ustSchulden;
 
     const rapPassiv = parseFloat(stammdaten.rechnungsabgrenzung_passiv || 0);
     const gesamtPassiva = gesamtEigenkapital + gesamtRueckstellungen + gesamtVerbindlichkeiten + rapPassiv;
@@ -4848,6 +4885,8 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
         anlagevermoegen: {
           immat_vermoegensgegenstaende: immatVG,
           sachanlagen,
+          sachanlagen_auto: sachanlagenAuto,
+          sachanlagen_quelle: sachanlagenAuto > 0 ? 'auto' : 'manuell',
           finanzanlagen,
           gesamt: gesamtAnlage
         },
@@ -4878,6 +4917,9 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
           darlehen,
           verbindlichkeiten_lieferanten: verbLieferanten,
           sonstige_verbindlichkeiten: sonstigeVerb,
+          ust_schulden: ustSchulden,
+          ust_schulden_auto: ustSchuldenAuto,
+          ust_schulden_manuell: !!(stammdaten.ust_schulden_manuell),
           gesamt: gesamtVerbindlichkeiten
         },
         rechnungsabgrenzung: rapPassiv,
@@ -4903,7 +4945,9 @@ router.get('/bilanz', requireBuchhaltungAccess, (req, res) => {
         sonstige_rueckstellungen: parseFloat(stammdaten.sonstige_rueckstellungen || 0),
         verbindlichkeiten_lieferanten: parseFloat(stammdaten.verbindlichkeiten_lieferanten || 0),
         sonstige_verbindlichkeiten: parseFloat(stammdaten.sonstige_verbindlichkeiten || 0),
-        rechnungsabgrenzung_passiv: parseFloat(stammdaten.rechnungsabgrenzung_passiv || 0)
+        rechnungsabgrenzung_passiv: parseFloat(stammdaten.rechnungsabgrenzung_passiv || 0),
+        ust_schulden: parseFloat(stammdaten.ust_schulden || 0),
+        ust_schulden_manuell: !!(stammdaten.ust_schulden_manuell)
       }
     });
   })
@@ -4927,7 +4971,8 @@ router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
     darlehen, darlehen_beschreibung,
     steuerrueckstellungen, sonstige_rueckstellungen,
     verbindlichkeiten_lieferanten, sonstige_verbindlichkeiten,
-    rechnungsabgrenzung_passiv
+    rechnungsabgrenzung_passiv,
+    ust_schulden, ust_schulden_manuell
   } = req.body;
 
   let dojoId = req.buchhaltungDojoId;
@@ -4948,9 +4993,9 @@ router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
       darlehen, darlehen_beschreibung,
       steuerrueckstellungen, sonstige_rueckstellungen,
       verbindlichkeiten_lieferanten, sonstige_verbindlichkeiten,
-      rechnungsabgrenzung_passiv,
+      rechnungsabgrenzung_passiv, ust_schulden, ust_schulden_manuell,
       erstellt_von
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON DUPLICATE KEY UPDATE
       bank_anfangsbestand = VALUES(bank_anfangsbestand),
       kasse_anfangsbestand = VALUES(kasse_anfangsbestand),
@@ -4970,6 +5015,8 @@ router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
       verbindlichkeiten_lieferanten = VALUES(verbindlichkeiten_lieferanten),
       sonstige_verbindlichkeiten = VALUES(sonstige_verbindlichkeiten),
       rechnungsabgrenzung_passiv = VALUES(rechnungsabgrenzung_passiv),
+      ust_schulden = VALUES(ust_schulden),
+      ust_schulden_manuell = VALUES(ust_schulden_manuell),
       geaendert_von = VALUES(erstellt_von),
       geaendert_am = CURRENT_TIMESTAMP
   `;
@@ -4985,6 +5032,7 @@ router.post('/bilanz/stammdaten', requireBuchhaltungAccess, (req, res) => {
     steuerrueckstellungen || 0, sonstige_rueckstellungen || 0,
     verbindlichkeiten_lieferanten || 0, sonstige_verbindlichkeiten || 0,
     rechnungsabgrenzung_passiv || 0,
+    ust_schulden || 0, ust_schulden_manuell ? 1 : 0,
     userId
   ], (err, result) => {
     if (err) {

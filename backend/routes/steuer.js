@@ -528,6 +528,234 @@ router.get('/ustVA/xml', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Route 3–6: UStVA Einreichen / Korrektur / Abgabenhistorie
+// ---------------------------------------------------------------------------
+
+// Hilfsfunktion: Kennziffern für beliebigen Zeitraum berechnen (shared logic)
+async function berechnungKennziffern(dojoId, zd) {
+  const [rechnungen] = await pool.query(
+    `SELECT netto_betrag, mwst_satz, mwst_betrag FROM rechnungen
+     WHERE dojo_id = ? AND COALESCE(bezahlt_am, erstellt_am) BETWEEN ? AND ?
+       AND status IN ('bezahlt', 'offen', 'teilbezahlt')`,
+    [dojoId, zd.von, zd.bis]
+  ).catch(() => [[]]);
+
+  const [verkaeufe] = await pool.query(
+    `SELECT netto_gesamt_cent/100 AS netto_betrag, mwst_satz, mwst_gesamt_cent/100 AS mwst_betrag
+     FROM verkaeufe WHERE dojo_id = ? AND erstellt_am BETWEEN ? AND ?
+       AND (storniert IS NULL OR storniert = 0)`,
+    [dojoId, zd.von, zd.bis]
+  ).catch(() => [[]]);
+
+  const [belegeEin] = await pool.query(
+    `SELECT betrag_netto AS netto_betrag, mwst_satz, mwst_betrag FROM buchhaltung_belege
+     WHERE dojo_id = ? AND beleg_datum BETWEEN ? AND ? AND buchungsart = 'einnahme'`,
+    [dojoId, zd.von, zd.bis]
+  ).catch(() => [[]]);
+
+  const [belegeAus] = await pool.query(
+    `SELECT mwst_betrag FROM buchhaltung_belege
+     WHERE dojo_id = ? AND beleg_datum BETWEEN ? AND ? AND buchungsart = 'ausgabe' AND mwst_betrag > 0`,
+    [dojoId, zd.von, zd.bis]
+  ).catch(() => [[]]);
+
+  const [kassenbuch] = await pool.query(
+    `SELECT mwst_betrag_cent/100 AS mwst_betrag FROM kassenbuch
+     WHERE dojo_id = ? AND geschaeft_datum BETWEEN ? AND ? AND bewegungsart = 'ausgabe' AND mwst_betrag_cent > 0`,
+    [dojoId, zd.von, zd.bis]
+  ).catch(() => [[]]);
+
+  const alle  = [...rechnungen, ...verkaeufe, ...belegeEin];
+  const ein19 = alle.filter(r => Number(r.mwst_satz) === 19);
+  const ein7  = alle.filter(r => Number(r.mwst_satz) === 7);
+
+  const Kz81 = runden(ein19.reduce((s, r) => s + Number(r.netto_betrag || 0), 0));
+  const Kz86 = runden(ein7.reduce( (s, r) => s + Number(r.netto_betrag || 0), 0));
+  const Kz35 = runden(ein19.reduce((s, r) => { const mb = Number(r.mwst_betrag); return s + (mb > 0 ? mb : Number(r.netto_betrag || 0) * 0.19); }, 0));
+  const Kz36 = runden(ein7.reduce( (s, r) => { const mb = Number(r.mwst_betrag); return s + (mb > 0 ? mb : Number(r.netto_betrag || 0) * 0.07); }, 0));
+  const Kz66 = runden([...belegeAus, ...kassenbuch].reduce((s, r) => s + Math.abs(Number(r.mwst_betrag || 0)), 0));
+  const zahllast = runden(Kz35 + Kz36 - Kz66);
+
+  return { Kz81, Kz86, Kz35, Kz36, Kz66, zahllast };
+}
+
+// POST /api/steuer/ustVA/einreichen — Meldung als eingereicht markieren (Snapshot)
+router.post('/ustVA/einreichen', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt.' });
+
+    const { jahr, zeitraum_art = 'monatlich', zeitraum, notizen } = req.body;
+    const jahrInt = parseInt(jahr) || new Date().getFullYear();
+    const zeitraumNr = parseInt(zeitraum) || (zeitraum_art === 'monatlich' ? new Date().getMonth() + 1 : 1);
+    const zd = zeitraumDaten(jahrInt, zeitraum_art, zeitraumNr);
+
+    const [[dojoRow]] = await pool.query('SELECT organisation_name, kleinunternehmer, steuer_status FROM dojo WHERE id = ?', [dojoId]);
+    if (!dojoRow) return res.status(404).json({ error: 'Dojo nicht gefunden.' });
+
+    const istKleinunternehmer = !!(dojoRow.kleinunternehmer || dojoRow.steuer_status === 'kleinunternehmer');
+    const orgName = dojoRow.organisation_name || '';
+    const userId = req.user?.user_id || req.user?.id || null;
+
+    let kz = { Kz81: 0, Kz86: 0, Kz35: 0, Kz36: 0, Kz66: 0, zahllast: 0 };
+    if (!istKleinunternehmer) kz = await berechnungKennziffern(dojoId, zd);
+
+    const dateiname = `UStVA_${jahrInt}_${String(zeitraumNr).padStart(2, '0')}.xml`;
+
+    const [result] = await pool.query(
+      `INSERT INTO ustVA_abgaben
+         (dojo_id, organisation_name, jahr, zeitraum_art, zeitraum_nr,
+          kz81, kz86, kz35, kz36, kz66, zahllast,
+          ist_korrektur, abgabe_status, xml_dateiname, eingereicht_von, notizen)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'eingereicht', ?, ?, ?)`,
+      [dojoId, orgName, jahrInt, zeitraum_art, zeitraumNr,
+       kz.Kz81, kz.Kz86, kz.Kz35, kz.Kz36, kz.Kz66, kz.zahllast,
+       dateiname, userId, notizen || null]
+    );
+
+    res.json({ abgabe_id: result.insertId, ...kz, message: 'Meldung als eingereicht gespeichert.' });
+  } catch (err) {
+    logger.error('ustVA/einreichen: Fehler', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler.' });
+  }
+});
+
+// POST /api/steuer/ustVA/korrektur — Korrekturantrag erstellen
+router.post('/ustVA/korrektur', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt.' });
+
+    const { korrektur_zu_id, notizen } = req.body;
+    if (!korrektur_zu_id) return res.status(400).json({ error: 'korrektur_zu_id fehlt.' });
+
+    const [[original]] = await pool.query(
+      'SELECT * FROM ustVA_abgaben WHERE abgabe_id = ? AND dojo_id = ?',
+      [korrektur_zu_id, dojoId]
+    );
+    if (!original) return res.status(404).json({ error: 'Ursprüngliche Meldung nicht gefunden.' });
+
+    const zd = zeitraumDaten(original.jahr, original.zeitraum_art, original.zeitraum_nr);
+    const kz = await berechnungKennziffern(dojoId, zd);
+
+    const dateiname = `UStVA_${original.jahr}_${String(original.zeitraum_nr).padStart(2, '0')}_Korrektur.xml`;
+    const userId = req.user?.user_id || req.user?.id || null;
+
+    const [result] = await pool.query(
+      `INSERT INTO ustVA_abgaben
+         (dojo_id, organisation_name, jahr, zeitraum_art, zeitraum_nr,
+          kz81, kz86, kz35, kz36, kz66, zahllast,
+          ist_korrektur, korrektur_zu_id, abgabe_status, xml_dateiname, eingereicht_von, notizen)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'korrektur', ?, ?, ?)`,
+      [dojoId, original.organisation_name, original.jahr, original.zeitraum_art, original.zeitraum_nr,
+       kz.Kz81, kz.Kz86, kz.Kz35, kz.Kz36, kz.Kz66, kz.zahllast,
+       korrektur_zu_id, dateiname, userId, notizen || null]
+    );
+
+    await pool.query('UPDATE ustVA_abgaben SET abgabe_status = ? WHERE abgabe_id = ?', ['korrektur', korrektur_zu_id]);
+
+    res.json({ abgabe_id: result.insertId, ...kz, message: 'Korrekturantrag erstellt.' });
+  } catch (err) {
+    logger.error('ustVA/korrektur: Fehler', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler.' });
+  }
+});
+
+// GET /api/steuer/ustVA/abgaben — Einreichungshistorie
+router.get('/ustVA/abgaben', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt.' });
+
+    const { jahr } = req.query;
+    const jahrFilter = jahr ? 'AND jahr = ?' : '';
+    const params = jahr ? [dojoId, parseInt(jahr)] : [dojoId];
+
+    const [rows] = await pool.query(
+      `SELECT abgabe_id, jahr, zeitraum_art, zeitraum_nr, kz81, kz86, kz35, kz36, kz66, zahllast,
+              ist_korrektur, korrektur_zu_id, abgabe_status, xml_dateiname, eingereicht_am, notizen
+       FROM ustVA_abgaben WHERE dojo_id = ? ${jahrFilter}
+       ORDER BY jahr DESC, zeitraum_nr DESC, abgabe_id DESC`,
+      params
+    );
+
+    res.json({ abgaben: rows });
+  } catch (err) {
+    logger.error('ustVA/abgaben: Fehler', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler.' });
+  }
+});
+
+// GET /api/steuer/ustVA/korrektur/xml — ELSTER-XML für Korrekturantrag (mit Kz10=Berichtigung)
+router.get('/ustVA/korrektur/xml', async (req, res) => {
+  try {
+    const dojoId = getSecureDojoId(req);
+    if (!dojoId) return res.status(400).json({ error: 'Kein Dojo ausgewählt.' });
+
+    const { abgabe_id } = req.query;
+    if (!abgabe_id) return res.status(400).json({ error: 'abgabe_id fehlt.' });
+
+    const [[abgabe]] = await pool.query(
+      'SELECT * FROM ustVA_abgaben WHERE abgabe_id = ? AND dojo_id = ? AND ist_korrektur = 1',
+      [abgabe_id, dojoId]
+    );
+    if (!abgabe) return res.status(404).json({ error: 'Korrekturantrag nicht gefunden.' });
+
+    const [[dojoRow]] = await pool.query(
+      'SELECT steuernummer FROM dojo WHERE id = ?', [dojoId]
+    );
+    const steuernummerRein = (dojoRow?.steuernummer || '').replace(/[^0-9]/g, '');
+    const kz10 = kz10Wert(abgabe.zeitraum_art, abgabe.zeitraum_nr);
+    const toCent = (euro) => Math.round(euro * 100);
+    const kz = { Kz81: abgabe.kz81, Kz86: abgabe.kz86, Kz35: abgabe.kz35, Kz36: abgabe.kz36, Kz66: abgabe.kz66, zahllast: abgabe.zahllast };
+
+    const xmlBody = `<?xml version="1.0" encoding="UTF-8"?>
+<Elster xmlns="http://www.elster.de/elsterxml/schema/v12">
+  <TransferHeader version="12">
+    <Verfahren>ElsterAnmeldung</Verfahren>
+    <DatenArt>UStVA</DatenArt>
+    <Vorgang>send-Auth</Vorgang>
+    <RC><Rueckgabe><Code>0</Code><Text>Keine Fehler</Text></Rueckgabe></RC>
+    <TransferTicket/>
+    <Signaturen/>
+  </TransferHeader>
+  <DatenTeil>
+    <Nutzdatenblock>
+      <NutzdatenHeader version="12">
+        <NutzdatenTicket>1</NutzdatenTicket>
+        <Empfaenger id="F">0</Empfaenger>
+      </NutzdatenHeader>
+      <Nutzdaten>
+        <Anmeldungssteuern art="UStVA" version="${abgabe.jahr}01">
+          <Steuerfall>
+            <Steuerpflichtiger>
+              <Steuernummer>${escapeXml(steuernummerRein)}</Steuernummer>
+            </Steuerpflichtiger>
+            <Zeitraum>
+              <Voranmeldungszeitraum Kz10="${kz10}" Kz18="${abgabe.jahr}"/>
+            </Zeitraum>
+            <Steuerberechnung>
+              <Kz10>Berichtigung</Kz10>${kz.Kz81 > 0 ? `\n              <Kz81>${toCent(kz.Kz81)}</Kz81>` : ''}${kz.Kz35 > 0 ? `\n              <Kz35>${toCent(kz.Kz35)}</Kz35>` : ''}${kz.Kz86 > 0 ? `\n              <Kz86>${toCent(kz.Kz86)}</Kz86>` : ''}${kz.Kz36 > 0 ? `\n              <Kz36>${toCent(kz.Kz36)}</Kz36>` : ''}${kz.Kz66 > 0 ? `\n              <Kz66>${toCent(kz.Kz66)}</Kz66>` : ''}
+              <Kz83>${toCent(kz.zahllast)}</Kz83>
+            </Steuerberechnung>
+          </Steuerfall>
+        </Anmeldungssteuern>
+      </Nutzdaten>
+    </Nutzdatenblock>
+  </DatenTeil>
+</Elster>`;
+
+    const dateiname = abgabe.xml_dateiname || `UStVA_${abgabe.jahr}_${String(abgabe.zeitraum_nr).padStart(2,'0')}_Korrektur.xml`;
+    res.setHeader('Content-Type', 'application/xml; charset=UTF-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${dateiname}"`);
+    return res.send(xmlBody);
+  } catch (err) {
+    logger.error('ustVA/korrektur/xml: Fehler', { error: err.message });
+    res.status(500).json({ error: 'Interner Serverfehler.' });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Route 3: GET /api/steuer/euer/summary
 // ---------------------------------------------------------------------------
 router.get('/euer/summary', async (req, res) => {

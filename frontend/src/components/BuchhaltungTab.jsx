@@ -2085,6 +2085,21 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       </React.Fragment>
                     ))}
 
+                    {/* HGB §275 Zwischensummen */}
+                    <tr className="subtotal-row">
+                      <td><strong>= Betriebsergebnis (EBIT)</strong></td>
+                      <td className={`right ${(guvDetails.ebit ?? guvDetails.jahresueberschuss) >= 0 ? 'positive' : 'negative'}`}>
+                        <strong>{formatCurrency(guvDetails.ebit ?? guvDetails.jahresueberschuss)}</strong>
+                      </td>
+                    </tr>
+                    {(guvDetails.ebt !== undefined && guvDetails.ebt !== guvDetails.ebit) && (
+                      <tr className="subtotal-row">
+                        <td><strong>= Ergebnis vor Steuern (EBT)</strong></td>
+                        <td className={`right ${guvDetails.ebt >= 0 ? 'positive' : 'negative'}`}>
+                          <strong>{formatCurrency(guvDetails.ebt)}</strong>
+                        </td>
+                      </tr>
+                    )}
                     <tr className="total-row">
                       <td><strong>Jahresüberschuss / Jahresfehlbetrag</strong></td>
                       <td className={`right ${guvDetails.jahresueberschuss >= 0 ? 'positive' : 'negative'}`}>
@@ -2248,7 +2263,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                           <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.immat_vermoegensgegenstaende)}</td>
                         </tr>
                         <tr>
-                          <td className="bt-pl-2">II. Sachanlagen</td>
+                          <td className="bt-pl-2">II. Sachanlagen{bilanzData.aktiva.anlagevermoegen.sachanlagen_quelle === 'auto' && <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.6 }}>(auto)</span>}</td>
                           <td className="right">{formatCurrency(bilanzData.aktiva.anlagevermoegen.sachanlagen)}</td>
                         </tr>
                         <tr>
@@ -2396,6 +2411,12 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                           <td className="bt-pl-2">Sonstige Verbindlichkeiten</td>
                           <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.sonstige_verbindlichkeiten)}</td>
                         </tr>
+                        {bilanzData.passiva.verbindlichkeiten.ust_schulden > 0 && (
+                          <tr>
+                            <td className="bt-pl-2">Verbindlichkeiten ggü. Finanzamt (USt){bilanzData.passiva.verbindlichkeiten.ust_schulden_manuell ? '' : <span style={{ marginLeft: 6, fontSize: 11, opacity: 0.6 }}>(auto)</span>}</td>
+                            <td className="right">{formatCurrency(bilanzData.passiva.verbindlichkeiten.ust_schulden)}</td>
+                          </tr>
+                        )}
                         <tr className="subtotal-row">
                           <td className="bt-pl-1"><strong>Summe Verbindlichkeiten</strong></td>
                           <td className="right"><strong>{formatCurrency(bilanzData.passiva.verbindlichkeiten.gesamt)}</strong></td>

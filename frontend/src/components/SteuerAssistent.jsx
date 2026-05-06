@@ -189,6 +189,9 @@ export const UStVATab = ({ dojoId }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showElsterModal, setShowElsterModal] = useState(false);
   const [xmlLoading, setXmlLoading] = useState(false);
+  const [einreichenLoading, setEinreichenLoading] = useState(false);
+  const [filingHistory, setFilingHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const handleBerechnen = useCallback(async () => {
     if (!dojoId) return;
@@ -241,6 +244,67 @@ export const UStVATab = ({ dojoId }) => {
       setXmlLoading(false);
     }
   }, [dojoId, jahr, zeitraumArt, zeitraum]);
+
+  const loadFilingHistory = useCallback(async () => {
+    if (!dojoId) return;
+    setHistoryLoading(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/ustVA/abgaben?dojo_id=${dojoId}&jahr=${jahr}`);
+      if (res.ok) setFilingHistory((await res.json()).abgaben || []);
+    } catch (_) {}
+    setHistoryLoading(false);
+  }, [dojoId, jahr]);
+
+  const handleEinreichen = useCallback(async () => {
+    if (!data) return;
+    setEinreichenLoading(true);
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/ustVA/einreichen`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: dojoId, jahr, zeitraum_art: zeitraumArt, zeitraum }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Fehler');
+      alert('Meldung wurde als eingereicht markiert.');
+      loadFilingHistory();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    } finally {
+      setEinreichenLoading(false);
+    }
+  }, [data, dojoId, jahr, zeitraumArt, zeitraum, loadFilingHistory]);
+
+  const handleKorrektur = useCallback(async (abgabeId) => {
+    if (!window.confirm('Korrekturantrag für diese Meldung erstellen?')) return;
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/ustVA/korrektur`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dojo_id: dojoId, korrektur_zu_id: abgabeId }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error || 'Fehler');
+      alert('Korrekturantrag erstellt. XML kann jetzt heruntergeladen werden.');
+      loadFilingHistory();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
+  }, [dojoId, loadFilingHistory]);
+
+  const handleKorrekturXml = useCallback(async (abgabeId, dateiname) => {
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/steuer/ustVA/korrektur/xml?dojo_id=${dojoId}&abgabe_id=${abgabeId}`);
+      if (!res.ok) throw new Error('Fehler beim Download');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = dateiname || `UStVA_Korrektur_${abgabeId}.xml`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Download fehlgeschlagen: ' + err.message);
+    }
+  }, [dojoId]);
 
   // Build Kennziffern table from API data or empty defaults
   const kz = data?.kennziffern ?? {};
@@ -381,7 +445,66 @@ export const UStVATab = ({ dojoId }) => {
               <FileText size={16} />
               Manuell in ELSTER eingeben
             </button>
+            <button
+              style={{ ...btnSecondary, borderColor: '#10b981', color: '#10b981' }}
+              onClick={handleEinreichen}
+              disabled={einreichenLoading}
+            >
+              <CheckCircle size={16} />
+              {einreichenLoading ? 'Wird gespeichert…' : 'Als eingereicht markieren'}
+            </button>
+            <button style={btnSecondary} onClick={loadFilingHistory} disabled={historyLoading} title="Einreichungshistorie laden">
+              <FileText size={14} />
+              {historyLoading ? '…' : 'Eingabe-Historie'}
+            </button>
           </div>
+
+          {/* Einreichungshistorie */}
+          {filingHistory.length > 0 && (
+            <div style={{ ...card, marginBottom: 20 }}>
+              <h4 style={{ margin: '0 0 12px 0', fontSize: 14, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>
+                Einreichungshistorie {jahr}
+              </h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,.1)' }}>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)' }}>Zeitraum</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--text-muted)' }}>Zahllast</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '6px 8px', color: 'var(--text-muted)' }}>Eingereicht am</th>
+                    <th style={{ textAlign: 'right', padding: '6px 8px', color: 'var(--text-muted)' }}>Aktion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filingHistory.map((row, i) => {
+                    const zeitraumLabel = row.zeitraum_art === 'monatlich'
+                      ? ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'][row.zeitraum_nr - 1]
+                      : `Q${row.zeitraum_nr}`;
+                    const statusColor = row.abgabe_status === 'korrektur' ? '#f59e0b' : '#10b981';
+                    return (
+                      <tr key={row.abgabe_id} style={{ borderBottom: '1px solid rgba(255,255,255,.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,.02)' }}>
+                        <td style={{ padding: '8px 8px' }}>{zeitraumLabel} {row.jahr}{row.ist_korrektur ? ' (Korrektur)' : ''}</td>
+                        <td style={{ padding: '8px 8px', textAlign: 'right', fontFamily: 'monospace', color: row.zahllast > 0 ? '#ef4444' : '#10b981' }}>{fmtEur(row.zahllast)}</td>
+                        <td style={{ padding: '8px 8px' }}><span style={{ background: statusColor + '22', color: statusColor, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{row.abgabe_status}</span></td>
+                        <td style={{ padding: '8px 8px', color: 'var(--text-muted)' }}>{row.eingereicht_am ? new Date(row.eingereicht_am).toLocaleDateString('de-DE') : '—'}</td>
+                        <td style={{ padding: '8px 8px', textAlign: 'right' }}>
+                          {row.ist_korrektur ? (
+                            <button style={{ ...btnSecondary, padding: '4px 10px', fontSize: 12 }} onClick={() => handleKorrekturXml(row.abgabe_id, row.xml_dateiname)}>
+                              <Download size={12} /> XML
+                            </button>
+                          ) : (
+                            <button style={{ ...btnSecondary, padding: '4px 10px', fontSize: 12, borderColor: '#f59e0b', color: '#f59e0b' }} onClick={() => handleKorrektur(row.abgabe_id)}>
+                              Korrektur
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Details — collapsible */}
           {data.details && data.details.length > 0 && (
