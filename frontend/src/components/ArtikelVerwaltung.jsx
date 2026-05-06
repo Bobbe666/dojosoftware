@@ -18,6 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import BestellungenTab from './BestellungenTab';
 import VerbandRabatteTab from './VerbandRabatteTab';
 import Rabattsystem from './Rabattsystem';
+import InventurTab from './InventurTab';
 
 
 const ArtikelVerwaltung = () => {
@@ -1203,6 +1204,12 @@ const ArtikelVerwaltung = () => {
         >
           Rabatte
         </button>
+        <button
+          className={`sub-tab-btn ${mainTab === 'inventur' ? 'active' : ''}`}
+          onClick={() => setMainTab('inventur')}
+        >
+          Inventur
+        </button>
         {isVerbandLevel && (
           <button
             className={`sub-tab-btn ${mainTab === 'verbandrabatte' ? 'active' : ''}`}
@@ -1221,6 +1228,11 @@ const ArtikelVerwaltung = () => {
       {/* Rabatte Tab - für alle Admins (dojo-spezifisch) */}
       {mainTab === 'rabatte' && (
         <Rabattsystem />
+      )}
+
+      {/* Inventur Tab */}
+      {mainTab === 'inventur' && (
+        <InventurTab />
       )}
 
       {/* Verbands-Rabatte Tab - nur SuperAdmin + Verband */}

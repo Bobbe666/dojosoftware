@@ -447,6 +447,132 @@ router.get('/kasse', (req, res) => {
   });
 });
 
+// GET /api/artikel/inventur/uebersicht - Alle Artikel mit aktuellem Lagerbestand
+router.get('/inventur/uebersicht', (req, res) => {
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+  if (!isSuperAdmin && !req.tenant?.dojo_id) return res.status(403).json({ error: 'No tenant' });
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) return res.status(403).json({ error: 'No dojo_id available' });
+
+  const query = `
+    SELECT
+      a.artikel_id,
+      a.name,
+      a.artikel_nummer,
+      a.ean_code,
+      a.lagerbestand,
+      a.mindestbestand,
+      a.lager_tracking,
+      a.einkaufspreis_cent,
+      a.verkaufspreis_cent,
+      a.farbe_hex,
+      a.aktiv,
+      a.hat_varianten,
+      a.varianten_bestand,
+      a.varianten_groessen,
+      a.varianten_farben,
+      ak.name AS kategorie_name,
+      ag.name AS gruppe_name,
+      (SELECT lb.bewegung_timestamp FROM lager_bewegungen lb WHERE lb.artikel_id = a.artikel_id ORDER BY lb.bewegung_timestamp DESC LIMIT 1) AS letzte_bewegung
+    FROM artikel a
+    LEFT JOIN artikel_kategorien ak ON a.kategorie_id = ak.kategorie_id
+    LEFT JOIN artikelgruppen ag ON a.artikelgruppe_id = ag.id
+    WHERE a.dojo_id = ? AND a.aktiv = TRUE
+    ORDER BY ag.name, a.name
+  `;
+
+  db.query(query, [dojoId], (error, results) => {
+    if (error) {
+      logger.error('Inventur-Übersicht Fehler:', { error });
+      return res.status(500).json({ error: 'Fehler beim Laden der Inventur' });
+    }
+    const data = results.map(a => {
+      let variantenBestand = {};
+      let effectiveLagerbestand = a.lagerbestand || 0;
+      if (a.hat_varianten && a.varianten_bestand) {
+        try {
+          variantenBestand = typeof a.varianten_bestand === 'string' ? JSON.parse(a.varianten_bestand) : a.varianten_bestand;
+          effectiveLagerbestand = Object.values(variantenBestand).reduce((s, v) => s + (v.bestand || 0), 0);
+        } catch(e) {}
+      }
+      const lager_status = !a.lager_tracking ? 'kein_tracking'
+        : effectiveLagerbestand === 0 ? 'ausverkauft'
+        : effectiveLagerbestand <= a.mindestbestand ? 'nachbestellen'
+        : 'verfuegbar';
+      return {
+        artikel_id: a.artikel_id,
+        name: a.name,
+        artikel_nummer: a.artikel_nummer,
+        ean_code: a.ean_code,
+        lagerbestand: effectiveLagerbestand,
+        mindestbestand: a.mindestbestand,
+        lager_tracking: a.lager_tracking,
+        lager_status,
+        einkaufspreis: (a.einkaufspreis_cent || 0) / 100,
+        verkaufspreis: (a.verkaufspreis_cent || 0) / 100,
+        lagerwert: ((a.einkaufspreis_cent || 0) * effectiveLagerbestand) / 100,
+        farbe_hex: a.farbe_hex,
+        hat_varianten: !!a.hat_varianten,
+        varianten_bestand: variantenBestand,
+        varianten_groessen: a.varianten_groessen ? (typeof a.varianten_groessen === 'string' ? JSON.parse(a.varianten_groessen) : a.varianten_groessen) : [],
+        varianten_farben: a.varianten_farben ? (typeof a.varianten_farben === 'string' ? JSON.parse(a.varianten_farben) : a.varianten_farben) : [],
+        kategorie_name: a.kategorie_name,
+        gruppe_name: a.gruppe_name,
+        letzte_bewegung: a.letzte_bewegung
+      };
+    });
+    res.json({ success: true, data });
+  });
+});
+
+// GET /api/artikel/inventur/bewegungen - Letzte Lagerbewegungen über alle Artikel
+router.get('/inventur/bewegungen', (req, res) => {
+  const userId = req.user?.id || req.user?.user_id || req.user?.admin_id;
+  const isSuperAdmin = userId == 1 || req.user?.username === 'admin';
+  if (!isSuperAdmin && !req.tenant?.dojo_id) return res.status(403).json({ error: 'No tenant' });
+  const dojoId = req.tenant?.dojo_id || (isSuperAdmin ? 2 : null);
+  if (!dojoId) return res.status(403).json({ error: 'No dojo_id available' });
+
+  const limit = parseInt(req.query.limit) || 100;
+  const bewegungsart = req.query.bewegungsart || null;
+  const artikel_id = req.query.artikel_id || null;
+
+  let where = 'WHERE a.dojo_id = ?';
+  const params = [dojoId];
+  if (bewegungsart) { where += ' AND lb.bewegungsart = ?'; params.push(bewegungsart); }
+  if (artikel_id) { where += ' AND lb.artikel_id = ?'; params.push(artikel_id); }
+  params.push(limit);
+
+  const query = `
+    SELECT
+      lb.bewegung_id,
+      lb.artikel_id,
+      a.name AS artikel_name,
+      a.artikel_nummer,
+      lb.bewegungsart,
+      lb.menge,
+      lb.alter_bestand,
+      lb.neuer_bestand,
+      lb.grund,
+      lb.durchgefuehrt_von_name,
+      lb.bewegung_timestamp
+    FROM lager_bewegungen lb
+    JOIN artikel a ON lb.artikel_id = a.artikel_id
+    ${where}
+    ORDER BY lb.bewegung_timestamp DESC
+    LIMIT ?
+  `;
+
+  db.query(query, params, (error, results) => {
+    if (error) {
+      logger.error('Inventur-Bewegungen Fehler:', { error });
+      return res.status(500).json({ error: 'Fehler beim Laden der Bewegungen' });
+    }
+    res.json({ success: true, data: results });
+  });
+});
+
 // GET /api/artikel/:id - Einzelnen Artikel abrufen
 router.get('/:id', (req, res) => {
   // Super-Admin Check (darf alles sehen)
@@ -1053,8 +1179,8 @@ router.post('/:id/lager', (req, res) => {
       return res.status(404).json({ error: 'Artikel nicht gefunden' });
     }
 
-    const mengeDiff = bewegungsart === 'eingang' ? parseInt(menge) : -(parseInt(menge));
-    let alterBestand, neuerBestand, updateQuery, updateParams, variantenBestand;
+    const isKorrektur = bewegungsart === 'korrektur' || bewegungsart === 'inventur';
+    let mengeDiff, alterBestand, neuerBestand, updateQuery, updateParams, variantenBestand;
 
     if (variante_key) {
       // Varianten-Bestand aktualisieren
@@ -1066,7 +1192,13 @@ router.post('/:id/lager', (req, res) => {
 
       const variantData = variantenBestand[variante_key] || { bestand: 0, mindestbestand: 0 };
       alterBestand = variantData.bestand || 0;
-      neuerBestand = Math.max(0, alterBestand + mengeDiff);
+      if (isKorrektur) {
+        neuerBestand = Math.max(0, parseInt(menge));
+      } else {
+        mengeDiff = bewegungsart === 'eingang' ? parseInt(menge) : -(parseInt(menge));
+        neuerBestand = Math.max(0, alterBestand + mengeDiff);
+      }
+      mengeDiff = neuerBestand - alterBestand;
       variantenBestand[variante_key] = { ...variantData, bestand: neuerBestand };
 
       // Gesamtbestand neu berechnen
@@ -1077,22 +1209,24 @@ router.post('/:id/lager', (req, res) => {
     } else {
       // Gesamt-Bestand aktualisieren (keine Variante)
       alterBestand = results[0].lagerbestand;
-      neuerBestand = Math.max(0, alterBestand + mengeDiff);
+      if (isKorrektur) {
+        neuerBestand = Math.max(0, parseInt(menge));
+      } else {
+        mengeDiff = bewegungsart === 'eingang' ? parseInt(menge) : -(parseInt(menge));
+        neuerBestand = Math.max(0, alterBestand + mengeDiff);
+      }
+      mengeDiff = neuerBestand - alterBestand;
       updateQuery = 'UPDATE artikel SET lagerbestand = ?, aktualisiert_am = CURRENT_TIMESTAMP WHERE artikel_id = ?';
       updateParams = [neuerBestand, artikel_id];
     }
 
-    if (bewegungsart !== 'eingang' && bewegungsart !== 'ausgang') {
-      return res.status(400).json({ error: 'Ungültige Bewegungsart' });
-    }
-    
     // Bestand aktualisieren
     db.query(updateQuery, updateParams, (updateError) => {
         if (updateError) {
           logger.error('Fehler beim Aktualisieren des Lagerbestands:', { error: updateError });
           return res.status(500).json({ error: 'Fehler beim Aktualisieren des Lagerbestands' });
         }
-        
+
         // Lagerbewegung protokollieren
         createLagerbewegung(
           artikel_id,
@@ -1168,6 +1302,10 @@ router.get('/:id/lager', (req, res) => {
     res.json({ success: true, data: results });
   });
 });
+
+// =====================================================================================
+// INVENTUR
+// =====================================================================================
 
 // =====================================================================================
 // STATISTIKEN
