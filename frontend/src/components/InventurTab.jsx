@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import '../styles/InventurTab.css';
@@ -9,6 +10,7 @@ const LAGER_STATUS_COLOR = { verfuegbar: '#27ae60', nachbestellen: '#f39c12', au
 const LAGER_STATUS_LABEL = { verfuegbar: 'Verfügbar', nachbestellen: 'Nachbestellen', ausverkauft: 'Ausverkauft', kein_tracking: 'Kein Tracking' };
 
 export default function InventurTab() {
+  const navigate = useNavigate();
   const [artikel, setArtikel] = useState([]);
   const [bewegungen, setBewegungen] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +80,18 @@ export default function InventurTab() {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
+
+  const kopierenArtikel = async (artikelId) => {
+    try {
+      const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel/${artikelId}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        navigate('/dashboard/artikel/neu', { state: { copyFrom: data.data } });
+      }
+    } catch (e) {
+      alert('Fehler beim Laden des Artikels: ' + e.message);
+    }
   };
 
   const openBuchung = (art, varianteKey = null, varianteBestand = null) => {
@@ -288,9 +302,12 @@ export default function InventurTab() {
                     {/* Footer */}
                     <div className="inv-card-foot">
                       <button className="btn-buchung" onClick={e => { e.stopPropagation(); openBuchung(a); }}>Buchen</button>
-                      <button className="inv-expand-btn" onClick={() => toggleRow(a.artikel_id)}>
-                        <span className={`inv-chevron ${expanded ? 'open' : ''}`}>›</span>
-                      </button>
+                      <div className="inv-card-foot-right">
+                        <button className="inv-copy-btn" title="Artikel kopieren & neu anlegen" onClick={e => { e.stopPropagation(); kopierenArtikel(a.artikel_id); }}>⎘</button>
+                        <button className="inv-expand-btn" onClick={() => toggleRow(a.artikel_id)}>
+                          <span className={`inv-chevron ${expanded ? 'open' : ''}`}>›</span>
+                        </button>
+                      </div>
                     </div>
 
                     {/* Aufgeklappte Details */}

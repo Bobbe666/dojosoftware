@@ -392,6 +392,23 @@ const ArtikelFormular = ({ mode }) => {
     }
   }, [mode, location.state, artikelgruppen]);
 
+  // Create-Modus: Artikel kopieren (Vorausfüllen aus copyFrom-State)
+  useEffect(() => {
+    if (mode === 'create' && location.state?.copyFrom) {
+      const src = location.state.copyFrom;
+      setFormData(prev => ({
+        ...prev,
+        ...src,
+        artikel_id: undefined,
+        artikel_nummer: '',
+        artikel_nummer_auto: true,
+        lagerbestand: 0,
+        varianten_bestand: {},
+        name: `Kopie von ${src.name}`,
+      }));
+    }
+  }, [mode, location.state]);
+
   // Hauptkategorie setzen wenn artikelgruppe_id und Gruppen geladen sind (Edit + Create)
   useEffect(() => {
     if (formData.artikelgruppe_id && artikelgruppen.length > 0) {

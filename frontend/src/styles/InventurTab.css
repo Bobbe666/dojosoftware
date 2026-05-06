@@ -292,6 +292,24 @@
 }
 .btn-buchung:hover { background: var(--akzent-gold, #c9a84c); color: #fff; }
 
+.inv-card-foot-right {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.inv-copy-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0.1rem 0.2rem;
+  font-size: 0.95rem;
+  color: var(--text-sekundaer);
+  transition: color 0.15s;
+  line-height: 1;
+}
+.inv-copy-btn:hover { color: var(--akzent-gold, #c9a84c); }
+
 .inv-expand-btn {
   border: none;
   background: none;
