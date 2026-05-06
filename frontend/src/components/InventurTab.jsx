@@ -219,103 +219,60 @@ export default function InventurTab() {
         </div>
       </div>
 
-      {/* Lagerbestand — Karten-Grid */}
+      {/* Lagerbestand — kompakte Zeilen-Liste */}
       {ansicht === 'lager' && (
         filteredArtikel.length === 0
           ? <div className="inv-empty">Keine Artikel gefunden.</div>
-          : <div className="inv-grid">
+          : <div className="inv-list">
               {filteredArtikel.map(a => {
                 const expanded = expandedRows.has(a.artikel_id);
                 const variantenEntries = a.hat_varianten ? Object.entries(a.varianten_bestand) : [];
                 const statusColor = LAGER_STATUS_COLOR[a.lager_status];
+                const bestandColor = a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'var(--text-hauptfarbe)';
                 return (
-                  <div
-                    key={a.artikel_id}
-                    className={`inv-card ${a.lager_status} ${expanded ? 'expanded' : ''}`}
-                    style={{ '--status-color': statusColor }}
-                  >
-                    {/* Karten-Header: Status + Farb-Akzent */}
-                    <div className="inv-card-header" onClick={() => toggleRow(a.artikel_id)}>
-                      <div className="inv-card-title">
+                  <div key={a.artikel_id} className={`inv-list-item ${expanded ? 'expanded' : ''}`} style={{ '--status-color': statusColor }}>
+                    {/* Hauptzeile */}
+                    <div className="inv-list-row" onClick={() => toggleRow(a.artikel_id)}>
+                      {/* Name + Badges */}
+                      <div className="inv-list-name">
                         <span className="inv-farb-dot" style={{ background: a.farbe_hex || '#666' }} />
-                        <span className="inv-card-name">{a.name}</span>
+                        <span className="inv-name-text">{a.name}</span>
+                        {a.hat_varianten && variantenEntries.length > 0 && (
+                          <span className="inv-varianten-hint">{variantenEntries.length} Gr.</span>
+                        )}
                       </div>
-                      <span
-                        className="inv-status-badge"
-                        style={{ background: statusColor + '22', color: statusColor, border: `1px solid ${statusColor}` }}
-                      >
+                      {/* Status */}
+                      <span className="inv-status-badge" style={{ background: statusColor + '22', color: statusColor, border: `1px solid ${statusColor}` }}>
                         {LAGER_STATUS_LABEL[a.lager_status]}
                       </span>
-                    </div>
-
-                    {/* Bestand — zentral und groß */}
-                    <div className="inv-card-bestand" onClick={() => toggleRow(a.artikel_id)}>
-                      <span
-                        className="inv-card-bestand-zahl"
-                        style={{ color: a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'var(--text-hauptfarbe)' }}
-                      >
-                        {a.lagerbestand}
-                      </span>
-                      <span className="inv-card-bestand-label">
-                        Stk. im Lager
-                        {a.hat_varianten && variantenEntries.length > 0 && (
-                          <span className="inv-varianten-hint">{variantenEntries.length} Größen</span>
-                        )}
-                      </span>
-                      {a.mindestbestand > 0 && (
-                        <span className="inv-card-mindest">Mindest: {a.mindestbestand}</span>
-                      )}
-                    </div>
-
-                    {/* Footer: Buchen + Expand */}
-                    <div className="inv-card-footer">
-                      <button
-                        className="btn-buchung"
-                        onClick={e => { e.stopPropagation(); openBuchung(a); }}
-                      >
-                        Buchen
-                      </button>
-                      <button
-                        className="inv-card-expand-btn"
-                        onClick={() => toggleRow(a.artikel_id)}
-                        title="Details anzeigen"
-                      >
+                      {/* Bestand */}
+                      <div className="inv-list-bestand">
+                        <span className="inv-bestand-zahl" style={{ color: bestandColor }}>{a.lagerbestand}</span>
+                        {a.mindestbestand > 0 && <span className="inv-mindest-hint">/ {a.mindestbestand}</span>}
+                      </div>
+                      {/* Aktionen */}
+                      <div className="inv-list-actions" onClick={e => e.stopPropagation()}>
+                        <button className="btn-buchung" onClick={() => openBuchung(a)}>Buchen</button>
                         <span className={`inv-chevron ${expanded ? 'open' : ''}`}>›</span>
-                      </button>
+                      </div>
                     </div>
 
                     {/* Aufgeklappte Details */}
                     {expanded && (
-                      <div className="inv-card-detail">
+                      <div className="inv-list-detail">
                         <div className="inv-detail-meta">
                           {a.artikel_nummer && (
-                            <span className="inv-detail-item">
-                              <span className="inv-detail-label">Artikelnr.</span>
-                              <span className="inv-mono">{a.artikel_nummer}</span>
-                            </span>
+                            <span className="inv-detail-item"><span className="inv-detail-label">Artikelnr.</span><span className="inv-mono">{a.artikel_nummer}</span></span>
                           )}
                           {(a.gruppe_name || a.kategorie_name) && (
-                            <span className="inv-detail-item">
-                              <span className="inv-detail-label">Gruppe</span>
-                              {a.gruppe_name || a.kategorie_name}
-                            </span>
+                            <span className="inv-detail-item"><span className="inv-detail-label">Gruppe</span>{a.gruppe_name || a.kategorie_name}</span>
                           )}
-                          <span className="inv-detail-item">
-                            <span className="inv-detail-label">EK-Preis</span>
-                            {a.einkaufspreis.toFixed(2)} €
-                          </span>
-                          <span className="inv-detail-item">
-                            <span className="inv-detail-label">Lagerwert</span>
-                            {a.lagerwert.toFixed(2)} €
-                          </span>
+                          <span className="inv-detail-item"><span className="inv-detail-label">EK-Preis</span>{a.einkaufspreis.toFixed(2)} €</span>
+                          <span className="inv-detail-item"><span className="inv-detail-label">Lagerwert</span>{a.lagerwert.toFixed(2)} €</span>
                           {a.letzte_bewegung && (
-                            <span className="inv-detail-item">
-                              <span className="inv-detail-label">Letzte Buchung</span>
-                              {new Date(a.letzte_bewegung).toLocaleDateString('de-DE')}
-                            </span>
+                            <span className="inv-detail-item"><span className="inv-detail-label">Letzte Buchung</span>{new Date(a.letzte_bewegung).toLocaleDateString('de-DE')}</span>
                           )}
                         </div>
-
                         {a.hat_varianten && variantenEntries.length > 0 && (
                           <div className="inv-varianten-grid">
                             <div className="inv-detail-label" style={{ marginBottom: '0.4rem' }}>Größen</div>
@@ -326,12 +283,8 @@ export default function InventurTab() {
                                 return (
                                   <div key={key} className={`inv-variante-card ${bestand === 0 ? 'ausverkauft' : ''}`}>
                                     <span className="inv-variante-groesse">{groesse}</span>
-                                    <span className="inv-variante-bestand" style={{ color: bestand === 0 ? '#e74c3c' : 'inherit' }}>
-                                      {bestand}
-                                    </span>
-                                    <button className="btn-buchung-sm" onClick={() => openBuchung(a, key, bestand)}>
-                                      +/−
-                                    </button>
+                                    <span className="inv-variante-bestand" style={{ color: bestand === 0 ? '#e74c3c' : 'inherit' }}>{bestand}</span>
+                                    <button className="btn-buchung-sm" onClick={() => openBuchung(a, key, bestand)}>+/−</button>
                                   </div>
                                 );
                               })}
