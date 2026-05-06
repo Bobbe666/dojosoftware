@@ -22,6 +22,7 @@ export default function InventurTab() {
   const [bewegungsartFilter, setBewegungsartFilter] = useState('alle');
   const [gruppeFilter, setGruppeFilter] = useState('alle');
   const [sortierung, setSortierung] = useState('status');
+  const [layoutModus, setLayoutModus] = useState('grid'); // 'grid' | 'liste'
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [stats, setStats] = useState({ gesamt: 0, verfuegbar: 0, nachbestellen: 0, ausverkauft: 0, lagerwert: 0 });
 
@@ -225,6 +226,16 @@ export default function InventurTab() {
             Bewegungsverlauf
           </button>
         </div>
+        {ansicht === 'lager' && (
+          <div className="inv-layout-toggle">
+            <button className={`inv-layout-btn ${layoutModus === 'grid' ? 'active' : ''}`} onClick={() => setLayoutModus('grid')} title="Kachelansicht">
+              ⊞
+            </button>
+            <button className={`inv-layout-btn ${layoutModus === 'liste' ? 'active' : ''}`} onClick={() => setLayoutModus('liste')} title="Listenansicht">
+              ☰
+            </button>
+          </div>
+        )}
         <div className="inventur-filter">
           <input
             className="inv-search"
@@ -265,10 +276,73 @@ export default function InventurTab() {
         </div>
       </div>
 
-      {/* Lagerbestand — kompaktes Grid */}
+      {/* Lagerbestand — Grid oder Liste */}
       {ansicht === 'lager' && (
         filteredArtikel.length === 0
           ? <div className="inv-empty">Keine Artikel gefunden.</div>
+          : layoutModus === 'liste'
+          ? (
+            <div className="inv-list-wrap">
+              {filteredArtikel.map(a => {
+                const expanded = expandedRows.has(a.artikel_id);
+                const variantenEntries = a.hat_varianten ? Object.entries(a.varianten_bestand) : [];
+                const statusColor = LAGER_STATUS_COLOR[a.lager_status];
+                const bestandColor = a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'inherit';
+                return (
+                  <div key={a.artikel_id} className={`inv-list-item ${expanded ? 'expanded' : ''}`} style={{ '--sc': statusColor }}>
+                    <div className="inv-list-row" onClick={() => toggleRow(a.artikel_id)}>
+                      <div className="inv-list-name">
+                        <span className="inv-farb-dot" style={{ background: a.farbe_hex || '#555' }} />
+                        <span className="inv-name-text" title={a.name}>{a.name}</span>
+                        {a.hat_varianten && variantenEntries.length > 0 && <span className="inv-varianten-hint">{variantenEntries.length} Gr.</span>}
+                      </div>
+                      <span className="inv-status-badge" style={{ background: statusColor + '20', color: statusColor, border: `1px solid ${statusColor}` }}>
+                        {LAGER_STATUS_LABEL[a.lager_status]}
+                      </span>
+                      <div className="inv-list-bestand">
+                        <span style={{ fontSize: '1.1rem', fontWeight: 700, color: bestandColor }}>{a.lagerbestand}</span>
+                        {a.mindestbestand > 0 && <span className="inv-card-mindest">/ {a.mindestbestand}</span>}
+                      </div>
+                      <div className="inv-list-actions" onClick={e => e.stopPropagation()}>
+                        <button className="btn-buchung" onClick={() => openBuchung(a)}>Buchen</button>
+                        <button className="inv-copy-btn" title="Kopieren" onClick={() => kopierenArtikel(a.artikel_id)}>⎘</button>
+                        <span className={`inv-chevron ${expanded ? 'open' : ''}`}>›</span>
+                      </div>
+                    </div>
+                    {expanded && (
+                      <div className="inv-list-detail">
+                        <div className="inv-detail-meta">
+                          {a.artikel_nummer && <span className="inv-detail-item"><span className="inv-detail-label">Art.-Nr.</span><span className="inv-mono">{a.artikel_nummer}</span></span>}
+                          {(a.gruppe_name || a.kategorie_name) && <span className="inv-detail-item"><span className="inv-detail-label">Gruppe</span>{a.gruppe_name || a.kategorie_name}</span>}
+                          <span className="inv-detail-item"><span className="inv-detail-label">EK</span>{a.einkaufspreis.toFixed(2)} €</span>
+                          <span className="inv-detail-item"><span className="inv-detail-label">Wert</span>{a.lagerwert.toFixed(2)} €</span>
+                          {a.letzte_bewegung && <span className="inv-detail-item"><span className="inv-detail-label">Zuletzt</span>{new Date(a.letzte_bewegung).toLocaleDateString('de-DE')}</span>}
+                        </div>
+                        {a.hat_varianten && variantenEntries.length > 0 && (
+                          <div className="inv-varianten-grid">
+                            <div className="inv-detail-label" style={{ marginBottom: '0.35rem' }}>Größen</div>
+                            <div className="inv-varianten-row">
+                              {variantenEntries.map(([key, v]) => {
+                                const groesse = key.split('|')[0];
+                                const bestand = v.bestand ?? 0;
+                                return (
+                                  <div key={key} className={`inv-variante-card ${bestand === 0 ? 'leer' : ''}`}>
+                                    <span className="inv-variante-groesse">{groesse}</span>
+                                    <span className="inv-variante-bestand" style={{ color: bestand === 0 ? '#e74c3c' : 'inherit' }}>{bestand}</span>
+                                    <button className="btn-buchung-sm" onClick={() => openBuchung(a, key, bestand)}>+/−</button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
           : <div className="inv-grid">
               {filteredArtikel.map(a => {
                 const expanded = expandedRows.has(a.artikel_id);

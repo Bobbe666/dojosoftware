@@ -154,6 +154,99 @@
   cursor: pointer;
 }
 
+/* Layout-Toggle */
+.inv-layout-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--hintergrund-hauptfarbe);
+  border: 1px solid var(--rand-farbe);
+  border-radius: 7px;
+  padding: 3px;
+}
+.inv-layout-btn {
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-sekundaer);
+  font-size: 1rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.inv-layout-btn.active {
+  background: var(--akzent-gold, #c9a84c);
+  color: #fff;
+}
+
+/* ============================================
+   LISTENANSICHT
+   ============================================ */
+
+.inv-list-wrap {
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.inv-list-item {
+  background: var(--hintergrund-hauptfarbe);
+  border-left: 3px solid transparent;
+  transition: background 0.12s;
+}
+.inv-list-item + .inv-list-item { border-top: 1px solid rgba(255,255,255,0.06); }
+.inv-list-item:hover { background: rgba(255,255,255,0.03); }
+.inv-list-item.expanded { background: rgba(255,255,255,0.03); }
+
+.inv-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.inv-list-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.inv-name-text {
+  font-size: 0.87rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inv-list-bestand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  min-width: 50px;
+  justify-content: flex-end;
+}
+
+.inv-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.inv-list-detail {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 0.65rem 1rem 0.75rem 1.4rem;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
 /* ============================================
    GRID — fix responsive
    ============================================ */
