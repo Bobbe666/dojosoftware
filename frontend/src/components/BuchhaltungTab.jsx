@@ -88,11 +88,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [quickLoading, setQuickLoading] = useState(false);
   const [quickOcrLoading, setQuickOcrLoading] = useState(false);
   const [quickOcrDone, setQuickOcrDone] = useState(false);
+  const [quickPositionen, setQuickPositionen] = useState([]); // OCR-Positionen
   const [quickForm, setQuickForm] = useState({
-    betrag_brutto: '',
     buchungsart: 'ausgabe',
     beleg_datum: new Date().toISOString().split('T')[0],
-    beschreibung: '',
+    lieferant: '',
     kategorie: '',
     mwst_satz: 19,
   });
@@ -1293,16 +1293,16 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     return () => window.removeEventListener('keydown', handler);
   }, [showReviewModal, showKategorieModal, reviewIndex, reviewQueue]);
 
-  // Quick-Capture: Foto-Auswahl + automatisch OCR
+  // Quick-Capture: Foto-Auswahl + automatisch OCR mit Positionen
   const handleQuickFile = async (file) => {
     if (!file) return;
     setQuickFile(file);
     setQuickOcrDone(false);
+    setQuickPositionen([]);
     const reader = new FileReader();
     reader.onload = (e) => setQuickPreview(e.target.result);
     reader.readAsDataURL(file);
 
-    // OCR direkt starten
     setQuickOcrLoading(true);
     try {
       const fd = new FormData();
@@ -1313,32 +1313,42 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       const ocr = res.data;
       setQuickForm(f => ({
         ...f,
-        betrag_brutto: ocr.betrag_brutto != null ? String(ocr.betrag_brutto) : f.betrag_brutto,
-        mwst_satz: ocr.mwst_satz != null ? ocr.mwst_satz : f.mwst_satz,
         beleg_datum: ocr.datum || f.beleg_datum,
-        beschreibung: ocr.lieferant
-          ? `${ocr.lieferant}${ocr.beschreibung ? ' – ' + ocr.beschreibung : ''}`
-          : (ocr.beschreibung || f.beschreibung),
+        lieferant: ocr.lieferant || '',
         buchungsart: ocr.buchungsart || f.buchungsart,
+        mwst_satz: ocr.mwst_satz || f.mwst_satz,
       }));
+      setQuickPositionen(ocr.positionen || []);
       setQuickOcrDone(true);
     } catch {
-      // OCR fehlgeschlagen — Felder bleiben leer, User füllt manuell aus
+      // OCR fehlgeschlagen — User füllt manuell aus
     } finally {
       setQuickOcrLoading(false);
     }
   };
+
+  // Position typ umschalten (betrieb ↔ privat)
+  const togglePositionTyp = (id) => {
+    setQuickPositionen(prev => prev.map(p =>
+      p.id === id ? { ...p, typ: p.typ === 'betrieb' ? 'privat' : 'betrieb' } : p
+    ));
+  };
+
+  // Betriebssumme aus ausgewählten Positionen berechnen
+  const quickBetriebsSumme = quickPositionen
+    .filter(p => p.typ === 'betrieb')
+    .reduce((sum, p) => sum + p.betrag, 0);
 
   const openQuickCapture = () => {
     setQuickFile(null);
     setQuickPreview(null);
     setQuickOcrLoading(false);
     setQuickOcrDone(false);
+    setQuickPositionen([]);
     setQuickForm({
-      betrag_brutto: '',
       buchungsart: 'ausgabe',
       beleg_datum: new Date().toISOString().split('T')[0],
-      beschreibung: '',
+      lieferant: '',
       kategorie: '',
       mwst_satz: 19,
     });
@@ -1346,20 +1356,57 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   };
 
   const saveQuickBeleg = async () => {
-    if (!quickForm.betrag_brutto) return;
+    const betriebsPositionen = quickPositionen.filter(p => p.typ === 'betrieb');
+    const privatPositionen = quickPositionen.filter(p => p.typ === 'privat');
+    const hatPositionen = quickPositionen.length > 0;
+    const betrag = hatPositionen ? quickBetriebsSumme : 0;
+
+    if (hatPositionen && betriebsPositionen.length === 0) {
+      setError('Keine Betriebsausgaben ausgewählt — alle Positionen sind als Privat markiert.');
+      return;
+    }
+    if (!hatPositionen && !quickForm.lieferant) {
+      setError('Bitte mindestens Lieferant / Betrag angeben.');
+      return;
+    }
+
     setQuickLoading(true);
     setError('');
     try {
-      const betrag = parseFloat(quickForm.betrag_brutto);
-      const mwst = quickForm.mwst_satz;
+      // Beschreibung aus Positionen zusammenbauen
+      const beschreibung = hatPositionen
+        ? (quickForm.lieferant ? quickForm.lieferant + ': ' : '') +
+          betriebsPositionen.map(p => p.beschreibung).join(', ')
+        : quickForm.lieferant;
+
+      // Dominanten MwSt-Satz (größter Anteil) ermitteln
+      const dominantMwst = hatPositionen
+        ? betriebsPositionen.reduce((best, p) =>
+            p.betrag > (best.betrag || 0) ? p : best, {}).mwst_satz || quickForm.mwst_satz
+        : quickForm.mwst_satz;
+
+      const mwst = dominantMwst;
       const payload = {
-        ...quickForm,
-        betrag_brutto: betrag,
-        betrag_netto: mwst > 0 ? parseFloat((betrag / (1 + mwst / 100)).toFixed(2)) : betrag,
-        mwst_betrag: mwst > 0 ? parseFloat((betrag - betrag / (1 + mwst / 100)).toFixed(2)) : 0,
+        buchungsart: quickForm.buchungsart,
+        beleg_datum: quickForm.beleg_datum,
+        kategorie: quickForm.kategorie || undefined,
         organisation_name: selectedOrg !== 'alle' ? selectedOrg : undefined,
         dojo_id: dojoId,
+        betrag_brutto: Math.round(betrag * 100) / 100,
+        betrag_netto: mwst > 0
+          ? parseFloat((betrag / (1 + mwst / 100)).toFixed(2))
+          : betrag,
+        mwst_betrag: mwst > 0
+          ? parseFloat((betrag - betrag / (1 + mwst / 100)).toFixed(2))
+          : 0,
+        mwst_satz: mwst,
+        beschreibung: beschreibung.substring(0, 200),
+        // Positionen-Notiz für Transparenz
+        notizen: privatPositionen.length > 0
+          ? `Privat nicht übernommen: ${privatPositionen.map(p => `${p.beschreibung} (${p.betrag.toFixed(2)} €)`).join(', ')}`
+          : undefined,
       };
+
       const res = await axios.post('/buchhaltung/belege', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -1370,10 +1417,13 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
         });
       }
-      setSuccess('Beleg mit Foto gespeichert');
+      const privatHinweis = privatPositionen.length > 0
+        ? ` (${privatPositionen.length} private Position${privatPositionen.length > 1 ? 'en' : ''} ausgeschlossen)`
+        : '';
+      setSuccess(`Beleg gespeichert${privatHinweis}`);
       setShowQuickCapture(false);
       loadBelege();
-      setTimeout(() => setSuccess(''), 3000);
+      setTimeout(() => setSuccess(''), 4000);
     } catch (err) {
       setError(err.response?.data?.message || 'Fehler beim Speichern');
     } finally {
@@ -4930,49 +4980,18 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </label>
               )}
 
-              {/* Minimales Formular */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Betrag (brutto) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    value={quickForm.betrag_brutto}
-                    onChange={e => setQuickForm(f => ({ ...f, betrag_brutto: e.target.value }))}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 16, boxSizing: 'border-box' }}
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>MwSt.</label>
-                  <select
-                    value={quickForm.mwst_satz}
-                    onChange={e => setQuickForm(f => ({ ...f, mwst_satz: parseInt(e.target.value) }))}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
-                  >
-                    <option value={19}>19 %</option>
-                    <option value={7}>7 %</option>
-                    <option value={0}>0 % (steuerfrei)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              {/* Kopfdaten: Datum / Lieferant / Typ */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Datum</label>
-                  <input
-                    type="date"
-                    value={quickForm.beleg_datum}
+                  <input type="date" value={quickForm.beleg_datum}
                     onChange={e => setQuickForm(f => ({ ...f, beleg_datum: e.target.value }))}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
                   />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Typ</label>
-                  <select
-                    value={quickForm.buchungsart}
+                  <select value={quickForm.buchungsart}
                     onChange={e => setQuickForm(f => ({ ...f, buchungsart: e.target.value, kategorie: '' }))}
                     style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
                   >
@@ -4982,35 +5001,144 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                 </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Kategorie</label>
-                <select
-                  value={quickForm.kategorie}
-                  onChange={e => setQuickForm(f => ({ ...f, kategorie: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
-                >
-                  <option value="">— Kategorie wählen —</option>
-                  {kategorien.filter(k => !k.typ || k.typ === quickForm.buchungsart).map(k => (
-                    <option key={k.id} value={k.id}>{k.name}</option>
-                  ))}
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Lieferant / Geschäft</label>
+                  <input type="text" placeholder="z.B. REWE, MediaMarkt…"
+                    value={quickForm.lieferant}
+                    onChange={e => setQuickForm(f => ({ ...f, lieferant: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Kategorie</label>
+                  <select value={quickForm.kategorie}
+                    onChange={e => setQuickForm(f => ({ ...f, kategorie: e.target.value }))}
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                  >
+                    <option value="">— Kategorie —</option>
+                    {kategorien.filter(k => !k.typ || k.typ === quickForm.buchungsart).map(k => (
+                      <option key={k.id} value={k.id}>{k.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Beschreibung / Lieferant</label>
-                <input
-                  type="text"
-                  placeholder="z.B. Büromaterial Media Markt"
-                  value={quickForm.beschreibung}
-                  onChange={e => setQuickForm(f => ({ ...f, beschreibung: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
-                />
-              </div>
+              {/* Positionen-Liste */}
+              {quickOcrLoading && (
+                <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: 13 }}>
+                  <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite', marginRight: 6 }} />
+                  KI liest Positionen aus…
+                </div>
+              )}
 
-              {quickForm.betrag_brutto > 0 && quickForm.mwst_satz > 0 && (
-                <div style={{ background: 'rgba(255,215,0,.06)', borderRadius: 6, padding: '8px 12px', fontSize: 13, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Netto: <strong>{(parseFloat(quickForm.betrag_brutto) / (1 + quickForm.mwst_satz / 100)).toFixed(2)} €</strong></span>
-                  <span>MwSt: <strong>{(parseFloat(quickForm.betrag_brutto) - parseFloat(quickForm.betrag_brutto) / (1 + quickForm.mwst_satz / 100)).toFixed(2)} €</strong></span>
+              {!quickOcrLoading && quickPositionen.length > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
+                      Positionen — Tippe auf eine Zeile um Betrieb ↔ Privat umzuschalten
+                    </label>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                      {quickPositionen.filter(p => p.typ === 'privat').length > 0 &&
+                        `${quickPositionen.filter(p => p.typ === 'privat').length} privat`}
+                    </div>
+                  </div>
+                  <div style={{ border: '1px solid rgba(255,255,255,.1)', borderRadius: 8, overflow: 'hidden' }}>
+                    {quickPositionen.map((pos, i) => (
+                      <div
+                        key={pos.id}
+                        onClick={() => togglePositionTyp(pos.id)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',
+                          cursor: 'pointer', userSelect: 'none',
+                          borderBottom: i < quickPositionen.length - 1 ? '1px solid rgba(255,255,255,.06)' : 'none',
+                          background: pos.typ === 'privat' ? 'rgba(239,68,68,.06)' : 'rgba(16,185,129,.04)',
+                          transition: 'background .15s',
+                        }}
+                      >
+                        {/* Toggle-Pill */}
+                        <div style={{
+                          flexShrink: 0, width: 72, borderRadius: 20, padding: '3px 8px',
+                          fontSize: 11, fontWeight: 700, textAlign: 'center',
+                          background: pos.typ === 'betrieb' ? 'rgba(16,185,129,.2)' : 'rgba(239,68,68,.2)',
+                          color: pos.typ === 'betrieb' ? '#10b981' : '#ef4444',
+                          border: `1px solid ${pos.typ === 'betrieb' ? 'rgba(16,185,129,.4)' : 'rgba(239,68,68,.4)'}`,
+                        }}>
+                          {pos.typ === 'betrieb' ? 'Betrieb' : 'Privat'}
+                        </div>
+                        {/* Beschreibung */}
+                        <span style={{
+                          flex: 1, fontSize: 13, lineHeight: 1.3,
+                          color: pos.typ === 'privat' ? 'var(--text-muted)' : 'var(--text-primary)',
+                          textDecoration: pos.typ === 'privat' ? 'line-through' : 'none',
+                        }}>
+                          {pos.beschreibung}
+                        </span>
+                        {/* MwSt Badge */}
+                        <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>
+                          {pos.mwst_satz}%
+                        </span>
+                        {/* Betrag */}
+                        <span style={{
+                          fontFamily: 'monospace', fontSize: 13, fontWeight: 600, flexShrink: 0, minWidth: 60, textAlign: 'right',
+                          color: pos.typ === 'privat' ? 'var(--text-muted)' : 'var(--text-primary)',
+                        }}>
+                          {pos.betrag.toFixed(2)} €
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Keine Positionen — manuelle Eingabe */}
+              {!quickOcrLoading && quickPositionen.length === 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Betrag brutto *</label>
+                    <input type="number" step="0.01" min="0" placeholder="0,00" autoFocus
+                      value={quickForm.betrag_brutto || ''}
+                      onChange={e => setQuickForm(f => ({ ...f, betrag_brutto: e.target.value }))}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 16, boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>MwSt.</label>
+                    <select value={quickForm.mwst_satz}
+                      onChange={e => setQuickForm(f => ({ ...f, mwst_satz: parseInt(e.target.value) }))}
+                      style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,.15)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 14, boxSizing: 'border-box' }}
+                    >
+                      <option value={19}>19 %</option>
+                      <option value={7}>7 %</option>
+                      <option value={0}>0 %</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Summen-Box */}
+              {!quickOcrLoading && quickPositionen.length > 0 && (
+                <div style={{ background: 'rgba(255,215,0,.06)', border: '1px solid rgba(255,215,0,.2)', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Gesamtbetrag Beleg:</span>
+                    <span style={{ fontFamily: 'monospace' }}>
+                      {quickPositionen.reduce((s, p) => s + p.betrag, 0).toFixed(2)} €
+                    </span>
+                  </div>
+                  {quickPositionen.some(p => p.typ === 'privat') && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                      <span style={{ color: '#ef4444' }}>Privat (wird nicht gebucht):</span>
+                      <span style={{ fontFamily: 'monospace', color: '#ef4444' }}>
+                        − {quickPositionen.filter(p => p.typ === 'privat').reduce((s, p) => s + p.betrag, 0).toFixed(2)} €
+                      </span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, borderTop: '1px solid rgba(255,215,0,.2)', paddingTop: 6, marginTop: 4 }}>
+                    <span style={{ color: '#10b981' }}>Betriebsausgabe:</span>
+                    <span style={{ fontFamily: 'monospace', color: '#10b981' }}>
+                      {quickBetriebsSumme.toFixed(2)} €
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -5020,9 +5148,13 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
               <button
                 className="btn-primary"
                 onClick={saveQuickBeleg}
-                disabled={quickLoading || !quickForm.betrag_brutto}
+                disabled={quickLoading || (quickPositionen.length === 0 && !quickForm.betrag_brutto && !quickForm.lieferant)}
               >
-                {quickLoading ? 'Speichern...' : (quickFile ? '📷 Beleg speichern' : '💾 Ohne Foto speichern')}
+                {quickLoading
+                  ? 'Speichern...'
+                  : quickPositionen.length > 0
+                    ? `📷 ${quickBetriebsSumme.toFixed(2)} € buchen`
+                    : (quickFile ? '📷 Beleg speichern' : '💾 Speichern')}
               </button>
             </div>
           </div>

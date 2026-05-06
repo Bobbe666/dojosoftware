@@ -1436,7 +1436,7 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
 
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
+      max_tokens: 1024,
       messages: [{
         role: 'user',
         content: [
@@ -1446,20 +1446,32 @@ router.post('/belege/ocr', requireBuchhaltungAccess, ocrUpload.single('bild'), a
           },
           {
             type: 'text',
-            text: `Analysiere diesen Kassenbon oder Beleg und extrahiere die Daten als JSON.
+            text: `Analysiere diesen Kassenbon oder Beleg für die deutsche Buchhaltung (EÜR).
 
-Felder:
-- betrag_brutto: Gesamtbetrag inkl. MwSt als Zahl (z.B. 12.99). Falls mehrere Beträge: Endbetrag/Summe nehmen.
-- mwst_satz: Mehrwertsteuersatz in % (19, 7 oder 0). Falls unklar: 19.
-- datum: Datum im Format YYYY-MM-DD. Falls kein Jahr erkennbar: aktuelles Jahr annehmen.
-- lieferant: Name des Geschäfts oder Lieferanten (max 60 Zeichen).
-- beschreibung: Was wurde gekauft — kurz, prägnant (max 80 Zeichen, auf Deutsch).
-- buchungsart: "ausgabe" (Standard) oder "einnahme".
+Extrahiere ALLE Einzelpositionen UND die Kopfdaten. Antworte NUR mit diesem JSON (kein Markdown, keine Erklärung):
 
-Antworte NUR mit dem JSON-Objekt, ohne Markdown, ohne Erklärung.
-Falls ein Wert absolut nicht erkennbar ist: null verwenden.
+{
+  "lieferant": "Name des Geschäfts/Lieferanten (max 60 Zeichen)",
+  "datum": "YYYY-MM-DD (falls Jahr fehlt: ${new Date().getFullYear()})",
+  "buchungsart": "ausgabe oder einnahme",
+  "positionen": [
+    {
+      "beschreibung": "Artikelname kurz (max 60 Zeichen, Deutsch)",
+      "betrag": 9.99,
+      "mwst_satz": 19
+    }
+  ],
+  "betrag_brutto": 9.99,
+  "mwst_satz": 19
+}
 
-Beispiel: {"betrag_brutto":24.99,"mwst_satz":19,"datum":"2026-05-06","lieferant":"REWE","beschreibung":"Lebensmittel / Büromaterial","buchungsart":"ausgabe"}`
+Regeln:
+- Jede Zeile auf dem Kassenbon = eine Position in "positionen"
+- betrag je Position: Einzelpreis × Menge (inkl. MwSt)
+- mwst_satz je Position: 19, 7 oder 0 (aus Beleg ablesen falls möglich, sonst 19)
+- betrag_brutto = Endsumme des gesamten Belegs
+- Falls nur ein Gesamtbetrag sichtbar (keine Einzelpositionen): eine Position mit Gesamtbetrag anlegen
+- Unlesbare Werte: null`
           }
         ]
       }]
@@ -1468,21 +1480,50 @@ Beispiel: {"betrag_brutto":24.99,"mwst_satz":19,"datum":"2026-05-06","lieferant"
     const raw = response.content[0]?.text?.trim() || '{}';
     let parsed = {};
     try {
-      // Claude antwortet manchmal mit ```json ... ``` — bereinigen
       const cleaned = raw.replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
       parsed = JSON.parse(cleaned);
     } catch {
       return res.status(422).json({ error: 'KI konnte keinen strukturierten Text extrahieren', raw });
     }
 
-    // Sanity checks
+    // Positionen bereinigen
+    const positionen = Array.isArray(parsed.positionen)
+      ? parsed.positionen
+          .filter(p => p && typeof p.betrag === 'number' && p.betrag > 0)
+          .map((p, i) => ({
+            id: i + 1,
+            beschreibung: typeof p.beschreibung === 'string' ? p.beschreibung.substring(0, 60) : `Position ${i + 1}`,
+            betrag: Math.round(p.betrag * 100) / 100,
+            mwst_satz: [0, 7, 19].includes(Number(p.mwst_satz)) ? Number(p.mwst_satz) : 19,
+            typ: 'betrieb', // default: Betriebsausgabe — User kann auf "privat" umschalten
+          }))
+      : [];
+
+    // Falls keine Positionen erkannt: Fallback auf Gesamtbetrag als eine Position
+    const fallbackBetrag = typeof parsed.betrag_brutto === 'number' && parsed.betrag_brutto > 0
+      ? parsed.betrag_brutto : null;
+
+    if (positionen.length === 0 && fallbackBetrag) {
+      positionen.push({
+        id: 1,
+        beschreibung: typeof parsed.lieferant === 'string' && parsed.lieferant
+          ? parsed.lieferant
+          : 'Einkauf',
+        betrag: fallbackBetrag,
+        mwst_satz: [0, 7, 19].includes(Number(parsed.mwst_satz)) ? Number(parsed.mwst_satz) : 19,
+        typ: 'betrieb',
+      });
+    }
+
     const result = {
-      betrag_brutto: typeof parsed.betrag_brutto === 'number' && parsed.betrag_brutto > 0 ? parsed.betrag_brutto : null,
-      mwst_satz: [0, 7, 19].includes(Number(parsed.mwst_satz)) ? Number(parsed.mwst_satz) : 19,
-      datum: parsed.datum && /^\d{4}-\d{2}-\d{2}$/.test(parsed.datum) ? parsed.datum : new Date().toISOString().split('T')[0],
       lieferant: typeof parsed.lieferant === 'string' ? parsed.lieferant.substring(0, 60) : '',
-      beschreibung: typeof parsed.beschreibung === 'string' ? parsed.beschreibung.substring(0, 80) : '',
+      datum: parsed.datum && /^\d{4}-\d{2}-\d{2}$/.test(parsed.datum)
+        ? parsed.datum
+        : new Date().toISOString().split('T')[0],
       buchungsart: parsed.buchungsart === 'einnahme' ? 'einnahme' : 'ausgabe',
+      betrag_brutto: fallbackBetrag,
+      mwst_satz: [0, 7, 19].includes(Number(parsed.mwst_satz)) ? Number(parsed.mwst_satz) : 19,
+      positionen,
     };
 
     res.json(result);
