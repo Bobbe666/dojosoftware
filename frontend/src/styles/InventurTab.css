@@ -276,14 +276,20 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
   box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  cursor: pointer;
 }
 .inv-card.nachbestellen { border-top-color: #f39c12; }
 .inv-card.ausverkauft   { border-top-color: #e74c3c; }
 .inv-card:hover {
-  border-color: rgba(255,255,255,0.22);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  border-color: var(--akzent-gold, #c9a84c);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  transform: translateY(-1px);
+}
+
+.inv-list-item {
+  cursor: pointer;
 }
 
 /* Karten-Kopf */
@@ -751,3 +757,118 @@
   justify-content: flex-end;
   padding: 0 1.4rem 1.4rem;
 }
+
+/* ============================================
+   MODAL HEADER — Artikel-Info
+   ============================================ */
+
+.inv-modal-titel-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.inv-modal-artikel-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+.inv-modal-dot {
+  width: 10px !important;
+  height: 10px !important;
+  flex-shrink: 0;
+}
+
+.inv-modal-artikel-info h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-hauptfarbe);
+}
+
+/* ============================================
+   VARIANTEN-EINGABE TABELLE IM MODAL
+   ============================================ */
+
+.inv-varianten-eingabe {
+  border: 1px solid var(--rand-farbe);
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.inv-varianten-eingabe-header {
+  display: grid;
+  grid-template-columns: 1fr 54px 72px 60px;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid var(--rand-farbe);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-sekundaer);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.inv-varianten-eingabe-row {
+  display: grid;
+  grid-template-columns: 1fr 54px 72px 60px;
+  gap: 0.5rem;
+  padding: 0.32rem 0.75rem;
+  align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+
+.inv-varianten-eingabe-row:last-child { border-bottom: none; }
+.inv-varianten-eingabe-row:hover { background: rgba(255,255,255,0.03); }
+
+.inv-var-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-hauptfarbe);
+}
+
+.inv-var-bestand {
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--text-sekundaer);
+}
+
+.inv-input-sm {
+  padding: 0.22rem 0.35rem;
+  border: 1px solid var(--rand-farbe);
+  border-radius: 5px;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-hauptfarbe);
+  font-size: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+
+.inv-input-sm:focus {
+  outline: none;
+  border-color: var(--akzent-gold, #c9a84c);
+}
+
+.inv-input-sm::placeholder { color: var(--text-sekundaer); opacity: 0.5; }
+
+.inv-var-preview {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-sekundaer);
+}
+
+.inv-var-preview.pos  { color: #27ae60; }
+.inv-var-preview.neg  { color: #e74c3c; }
+.inv-var-preview.zero { color: var(--text-sekundaer); }
