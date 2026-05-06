@@ -2332,6 +2332,11 @@
   margin: 0;
   font-size: 1.3rem;
   color: var(--text-primary, #333);
+  flex-shrink: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-actions {
@@ -2346,15 +2351,22 @@
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   border-radius: var(--comp-radius-xs);
-  border: none;
+  border: 1px solid var(--border-color, rgba(255,255,255,0.15));
   cursor: pointer;
   font-size: 0.9rem;
   transition: all 0.2s;
+  /* Reset Dashboard.css .section-header webkit-text-fill-color: transparent inheritance */
+  -webkit-text-fill-color: initial;
+  -webkit-background-clip: padding-box;
+  background-clip: padding-box;
+  background-image: none;
 }
 
 .header-actions .btn-primary {
   background: var(--primary-color, #1976d2);
   color: white;
+  -webkit-text-fill-color: white;
+  border-color: transparent;
 }
 
 .header-actions .btn-primary:hover {
@@ -2362,12 +2374,23 @@
 }
 
 .header-actions .btn-secondary {
-  background: var(--bg-secondary, #f5f5f5);
-  color: var(--text-primary, #333);
+  background: var(--bg-card, rgba(255,255,255,0.06));
+  color: var(--text-primary, #e0e0e0);
+  -webkit-text-fill-color: var(--text-primary, #e0e0e0);
 }
 
 .header-actions .btn-secondary:hover {
-  background: var(--bg-hover, #e0e0e0);
+  background: var(--bg-hover, rgba(255,255,255,0.12));
+}
+
+[data-theme="light"] .header-actions .btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+  -webkit-text-fill-color: #333;
+}
+
+[data-theme="light"] .header-actions .btn-secondary:hover {
+  background: #e0e0e0;
 }
 
 .full-width {
