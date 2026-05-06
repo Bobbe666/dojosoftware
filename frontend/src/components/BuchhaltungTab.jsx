@@ -57,6 +57,10 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
 
   // GuV und Bilanz States
   const [guvDetails, setGuvDetails] = useState(null);
+  const [guvSkrData, setGuvSkrData] = useState(null);
+  const [skrKontorahmen, setSkrKontorahmen] = useState('SKR03');
+  const [guvAnsicht, setGuvAnsicht] = useState('standard');
+  const [expandedSkrKonten, setExpandedSkrKonten] = useState({});
   const [bilanzData, setBilanzData] = useState(null);
   const [expandedGuvDetails, setExpandedGuvDetails] = useState({});
   const [editingGewinnvortrag, setEditingGewinnvortrag] = useState(false);
@@ -1148,6 +1152,19 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     }
   }, [token, selectedOrg, selectedJahr, selectedQuartal]);
 
+  const fetchGuvSkrData = useCallback(async (rahmen = skrKontorahmen) => {
+    if (!token) return;
+    try {
+      const response = await axios.get('/buchhaltung/guv/skr', {
+        params: { organisation: selectedOrg, jahr: selectedJahr, kontorahmen: rahmen },
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGuvSkrData(response.data);
+    } catch (err) {
+      console.error('GuV-SKR-Fehler:', err);
+    }
+  }, [token, selectedOrg, selectedJahr, skrKontorahmen]);
+
   // ===================================================================
   // 📊 BILANZ DATA FETCHING
   // ===================================================================
@@ -1201,6 +1218,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       loadEuer();
     } else if (activeSubTab === 'guv') {
       fetchGuvData();
+      if (guvAnsicht === 'skr') fetchGuvSkrData();
     } else if (activeSubTab === 'bilanz') {
       fetchBilanzData();
     } else if (activeSubTab === 'belege') {
@@ -1223,7 +1241,7 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
     } else if (activeSubTab === 'wiederkehrend') {
       loadWiederkehrend();
     }
-  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchBilanzData, loadAnlagen, loadKreditoren, loadOffenePosten, loadWiederkehrend]);
+  }, [activeSubTab, selectedOrg, selectedJahr, selectedQuartal, belegePage, bankPage, bankStatusFilter, loadDashboard, loadEuer, loadBelege, loadAutoEinnahmen, loadBankTransaktionen, loadBankStatistik, loadSteuerauswertung, loadAbschluss, fetchGuvData, fetchGuvSkrData, guvAnsicht, fetchBilanzData, loadAnlagen, loadKreditoren, loadOffenePosten, loadWiederkehrend]);
 
   // Review Modal Tastatur-Navigation
   useEffect(() => {
@@ -1922,21 +1940,37 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
         {activeSubTab === 'guv' && (
           <div className="guv-content">
             <div className="section-header">
-              <h3>Gewinn- und Verlustrechnung</h3>
-              <div className="header-actions">
+              <h3>Gewinn- und Verlustrechnung {selectedJahr}</h3>
+              <div className="header-actions" style={{ gap: '8px', flexWrap: 'wrap' }}>
+                {/* Ansichts-Toggle */}
+                <div className="skr-toggle">
+                  <button
+                    className={`btn btn-sm ${guvAnsicht === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setGuvAnsicht('standard')}
+                  >Standard</button>
+                  <button
+                    className={`btn btn-sm ${guvAnsicht === 'skr' && skrKontorahmen === 'SKR03' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => { setGuvAnsicht('skr'); setSkrKontorahmen('SKR03'); fetchGuvSkrData('SKR03'); }}
+                  >SKR 03</button>
+                  <button
+                    className={`btn btn-sm ${guvAnsicht === 'skr' && skrKontorahmen === 'SKR04' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => { setGuvAnsicht('skr'); setSkrKontorahmen('SKR04'); fetchGuvSkrData('SKR04'); }}
+                  >SKR 04</button>
+                </div>
                 <button
                   className="btn btn-secondary"
                   onClick={() => openApiBlob(`/api/buchhaltung/guv/export?organisation=${selectedOrg}&jahr=${selectedJahr}&format=csv&quartal=${selectedQuartal}`, { download: true, filename: `guv-${selectedJahr}.csv` })}
                 >
                   <Download size={16} />
-                  CSV Export
+                  CSV
                 </button>
               </div>
             </div>
 
             {loading && <div className="loading">Lade GuV-Daten...</div>}
 
-            {guvDetails && (
+            {/* ---- STANDARD-ANSICHT ---- */}
+            {guvAnsicht === 'standard' && guvDetails && (
               <div className="guv-details">
                 <table className="guv-table">
                   <thead>
@@ -1946,14 +1980,12 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {/* Revenue Section */}
                     <tr className="section-header-row">
                       <td colSpan="2"><strong>1. Umsatzerlöse</strong></td>
                     </tr>
                     <tr
-                      className="clickable"
-                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_umsatz': !prev['guv_umsatz'] }))}
                       className="bt-cursor-pointer"
+                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_umsatz': !prev['guv_umsatz'] }))}
                     >
                       <td className="bt-pl-2">
                         {expandedKategorien['guv_umsatz'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
@@ -1984,12 +2016,11 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                       </React.Fragment>
                     ))}
 
-                    {/* Material Costs */}
                     <tr className="section-header-row">
                       <td colSpan="2"><strong>2. Materialaufwand</strong></td>
                     </tr>
                     <tr
-                      className={guvDetails.materialaufwand.details.length > 0 ? 'clickable' : ''}
+                      className={guvDetails.materialaufwand.details.length > 0 ? 'bt-cursor-pointer' : ''}
                       onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_material': !prev['guv_material'] }))}
                     >
                       <td className="bt-pl-2">
@@ -2000,111 +2031,56 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                     </tr>
                     {expandedKategorien['guv_material'] && guvDetails.materialaufwand.details.map((detail, idx) => (
                       <React.Fragment key={idx}>
-                        <tr
-                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
-                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`material_${idx}`]: !prev[`material_${idx}`] })) : undefined}
-                        >
-                          <td className="bt-pl-4">
-                            <span className="bt-flex-icon">
-                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`material_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
-                              {detail.quelle}
-                            </span>
-                          </td>
+                        <tr className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
+                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`material_${idx}`]: !prev[`material_${idx}`] })) : undefined}>
+                          <td className="bt-pl-4"><span className="bt-flex-icon">{detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`material_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}{detail.quelle}</span></td>
                           <td className="right negative">-{formatCurrency(detail.betrag)}</td>
                         </tr>
                         {expandedGuvDetails[`material_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
-                          <tr key={bIdx} className="einzelbuchung-row">
-                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
-                            <td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td>
-                          </tr>
+                          <tr key={bIdx} className="einzelbuchung-row"><td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td><td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td></tr>
                         ))}
                       </React.Fragment>
                     ))}
 
-                    {/* Personnel Costs */}
                     <tr className="section-header-row">
                       <td colSpan="2"><strong>3. Personalaufwand</strong></td>
                     </tr>
-                    <tr
-                      className={guvDetails.personalaufwand.details.length > 0 ? 'clickable' : ''}
-                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_personal': !prev['guv_personal'] }))}
-                    >
-                      <td className="bt-pl-2">
-                        {guvDetails.personalaufwand.details.length > 0 && (expandedKategorien['guv_personal'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
-                        {' '}Personalaufwand
-                      </td>
+                    <tr className={guvDetails.personalaufwand.details.length > 0 ? 'bt-cursor-pointer' : ''} onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_personal': !prev['guv_personal'] }))}>
+                      <td className="bt-pl-2">{guvDetails.personalaufwand.details.length > 0 && (expandedKategorien['guv_personal'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}{' '}Personalaufwand</td>
                       <td className="right negative">-{formatCurrency(guvDetails.personalaufwand.gesamt)}</td>
                     </tr>
                     {expandedKategorien['guv_personal'] && guvDetails.personalaufwand.details.map((detail, idx) => (
                       <React.Fragment key={idx}>
-                        <tr
-                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
-                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`personal_${idx}`]: !prev[`personal_${idx}`] })) : undefined}
-                        >
-                          <td className="bt-pl-4">
-                            <span className="bt-flex-icon">
-                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`personal_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
-                              {detail.quelle}
-                            </span>
-                          </td>
+                        <tr className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`} onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`personal_${idx}`]: !prev[`personal_${idx}`] })) : undefined}>
+                          <td className="bt-pl-4"><span className="bt-flex-icon">{detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`personal_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}{detail.quelle}</span></td>
                           <td className="right negative">-{formatCurrency(detail.betrag)}</td>
                         </tr>
                         {expandedGuvDetails[`personal_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
-                          <tr key={bIdx} className="einzelbuchung-row">
-                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
-                            <td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td>
-                          </tr>
+                          <tr key={bIdx} className="einzelbuchung-row"><td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td><td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td></tr>
                         ))}
                       </React.Fragment>
                     ))}
 
-                    {/* Depreciation */}
-                    <tr className="section-header-row">
-                      <td colSpan="2"><strong>4. Abschreibungen</strong></td>
-                    </tr>
-                    <tr>
-                      <td className="bt-pl-2">Abschreibungen auf Sachanlagen</td>
-                      <td className="right negative">-{formatCurrency(guvDetails.abschreibungen.gesamt)}</td>
-                    </tr>
+                    <tr className="section-header-row"><td colSpan="2"><strong>4. Abschreibungen</strong></td></tr>
+                    <tr><td className="bt-pl-2">Abschreibungen auf Sachanlagen</td><td className="right negative">-{formatCurrency(guvDetails.abschreibungen.gesamt)}</td></tr>
 
-                    {/* Other Operating Expenses */}
-                    <tr className="section-header-row">
-                      <td colSpan="2"><strong>5. Sonstige betriebliche Aufwendungen</strong></td>
-                    </tr>
-                    <tr
-                      className={guvDetails.sonstige_aufwendungen.details.length > 0 ? 'clickable' : ''}
-                      onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_sonstige': !prev['guv_sonstige'] }))}
-                    >
-                      <td className="bt-pl-2">
-                        {guvDetails.sonstige_aufwendungen.details.length > 0 && (expandedKategorien['guv_sonstige'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
-                        {' '}Sonstige Aufwendungen
-                      </td>
+                    <tr className="section-header-row"><td colSpan="2"><strong>5. Sonstige betriebliche Aufwendungen</strong></td></tr>
+                    <tr className={guvDetails.sonstige_aufwendungen.details.length > 0 ? 'bt-cursor-pointer' : ''} onClick={() => setExpandedKategorien(prev => ({ ...prev, 'guv_sonstige': !prev['guv_sonstige'] }))}>
+                      <td className="bt-pl-2">{guvDetails.sonstige_aufwendungen.details.length > 0 && (expandedKategorien['guv_sonstige'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}{' '}Sonstige Aufwendungen</td>
                       <td className="right negative">-{formatCurrency(guvDetails.sonstige_aufwendungen.gesamt)}</td>
                     </tr>
                     {expandedKategorien['guv_sonstige'] && guvDetails.sonstige_aufwendungen.details.map((detail, idx) => (
                       <React.Fragment key={idx}>
-                        <tr
-                          className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`}
-                          onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`sonstige_${idx}`]: !prev[`sonstige_${idx}`] })) : undefined}
-                        >
-                          <td className="bt-pl-4">
-                            <span className="bt-flex-icon">
-                              {detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`sonstige_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
-                              {detail.kategorie} ({detail.quelle})
-                            </span>
-                          </td>
+                        <tr className={`detail-row${detail.einzelbuchungen?.length > 0 ? ' bt-cursor-pointer' : ''}`} onClick={detail.einzelbuchungen?.length > 0 ? () => setExpandedGuvDetails(prev => ({ ...prev, [`sonstige_${idx}`]: !prev[`sonstige_${idx}`] })) : undefined}>
+                          <td className="bt-pl-4"><span className="bt-flex-icon">{detail.einzelbuchungen?.length > 0 && (expandedGuvDetails[`sonstige_${idx}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}{detail.kategorie} ({detail.quelle})</span></td>
                           <td className="right negative">-{formatCurrency(detail.betrag)}</td>
                         </tr>
                         {expandedGuvDetails[`sonstige_${idx}`] && detail.einzelbuchungen?.map((buch, bIdx) => (
-                          <tr key={bIdx} className="einzelbuchung-row">
-                            <td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
-                            <td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td>
-                          </tr>
+                          <tr key={bIdx} className="einzelbuchung-row"><td className="bt-cell-sub bt-pl-6">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td><td className="right bt-cell-sub-right">-{formatCurrency(buch.betrag)}</td></tr>
                         ))}
                       </React.Fragment>
                     ))}
 
-                    {/* Result */}
                     <tr className="total-row">
                       <td><strong>Jahresüberschuss / Jahresfehlbetrag</strong></td>
                       <td className={`right ${guvDetails.jahresueberschuss >= 0 ? 'positive' : 'negative'}`}>
@@ -2114,6 +2090,101 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                   </tbody>
                 </table>
               </div>
+            )}
+
+            {/* ---- SKR-ANSICHT ---- */}
+            {guvAnsicht === 'skr' && guvSkrData && (
+              <div className="guv-skr-container">
+                {guvSkrData.kleinunternehmer && (
+                  <div className="skr-hinweis">
+                    Kleinunternehmer §19 UStG — Umsätze werden als steuerfreie Erlöse ausgewiesen
+                  </div>
+                )}
+                <table className="guv-table skr-table">
+                  <thead>
+                    <tr>
+                      <th className="skr-konto-col">Konto</th>
+                      <th>Bezeichnung</th>
+                      <th className="right">Betrag</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* EINNAHMEN */}
+                    <tr className="section-header-row">
+                      <td colSpan="3"><strong>BETRIEBSEINNAHMEN</strong></td>
+                    </tr>
+                    {guvSkrData.einnahmen.map((konto, idx) => (
+                      <React.Fragment key={konto.nr}>
+                        <tr
+                          className={konto.buchungen?.length > 0 ? 'bt-cursor-pointer' : ''}
+                          onClick={() => konto.buchungen?.length > 0 && setExpandedSkrKonten(prev => ({ ...prev, [konto.nr]: !prev[konto.nr] }))}
+                        >
+                          <td className="skr-konto-nr">
+                            {konto.buchungen?.length > 0 && (expandedSkrKonten[konto.nr] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
+                            {' '}<span className="skr-badge">{konto.nr}</span>
+                          </td>
+                          <td>{konto.name}</td>
+                          <td className="right positive">{formatCurrency(konto.betrag)}</td>
+                        </tr>
+                        {expandedSkrKonten[konto.nr] && konto.buchungen?.map((buch, bIdx) => (
+                          <tr key={bIdx} className="einzelbuchung-row">
+                            <td></td>
+                            <td className="bt-cell-sub">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
+                            <td className="right bt-cell-sub-right">{formatCurrency(buch.betrag)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                    <tr className="subtotal-row">
+                      <td colSpan="2"><strong>Summe Betriebseinnahmen</strong></td>
+                      <td className="right positive"><strong>{formatCurrency(guvSkrData.summe_einnahmen)}</strong></td>
+                    </tr>
+
+                    {/* AUSGABEN */}
+                    <tr className="section-header-row">
+                      <td colSpan="3"><strong>BETRIEBSAUSGABEN</strong></td>
+                    </tr>
+                    {guvSkrData.ausgaben.map((konto, idx) => (
+                      <React.Fragment key={konto.nr}>
+                        <tr
+                          className={konto.buchungen?.length > 0 ? 'bt-cursor-pointer' : ''}
+                          onClick={() => konto.buchungen?.length > 0 && setExpandedSkrKonten(prev => ({ ...prev, [`a_${konto.nr}`]: !prev[`a_${konto.nr}`] }))}
+                        >
+                          <td className="skr-konto-nr">
+                            {konto.buchungen?.length > 0 && (expandedSkrKonten[`a_${konto.nr}`] ? <ChevronDown size={12} /> : <ChevronRight size={12} />)}
+                            {' '}<span className="skr-badge">{konto.nr}</span>
+                          </td>
+                          <td>{konto.name}</td>
+                          <td className="right negative">-{formatCurrency(konto.betrag)}</td>
+                        </tr>
+                        {expandedSkrKonten[`a_${konto.nr}`] && konto.buchungen?.map((buch, bIdx) => (
+                          <tr key={bIdx} className="einzelbuchung-row">
+                            <td></td>
+                            <td className="bt-cell-sub">{new Date(buch.datum).toLocaleDateString('de-DE')} — {buch.beschreibung}</td>
+                            <td className="right bt-cell-sub-right negative">-{formatCurrency(buch.betrag)}</td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                    <tr className="subtotal-row">
+                      <td colSpan="2"><strong>Summe Betriebsausgaben</strong></td>
+                      <td className="right negative"><strong>-{formatCurrency(guvSkrData.summe_ausgaben)}</strong></td>
+                    </tr>
+
+                    {/* ERGEBNIS */}
+                    <tr className="total-row">
+                      <td colSpan="2"><strong>Gewinn / Verlust {guvSkrData.jahr}</strong></td>
+                      <td className={`right ${guvSkrData.ergebnis >= 0 ? 'positive' : 'negative'}`}>
+                        <strong>{formatCurrency(guvSkrData.ergebnis)}</strong>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {guvAnsicht === 'skr' && !guvSkrData && !loading && (
+              <div className="empty-state">Keine Daten für {selectedJahr}</div>
             )}
           </div>
         )}

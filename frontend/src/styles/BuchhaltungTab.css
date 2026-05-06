@@ -3797,4 +3797,82 @@
   color: var(--text-secondary);
   margin-top: 0.5rem;
 }
+
+/* =============================================
+   SKR KONTORAHMEN ANSICHT
+   ============================================= */
+.skr-toggle {
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 3px;
+  background: var(--surface-bg);
+}
+
+.skr-toggle .btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.guv-skr-container {
+  margin-top: 16px;
+}
+
+.skr-hinweis {
+  background: rgba(var(--accent-rgb, 212, 175, 55), 0.12);
+  border: 1px solid rgba(var(--accent-rgb, 212, 175, 55), 0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+
+.skr-table .skr-konto-col {
+  width: 120px;
+}
+
+.skr-konto-nr {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.skr-badge {
+  display: inline-block;
+  background: var(--surface-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-gold, #d4af37);
+  letter-spacing: 0.5px;
+}
+
+.subtotal-row {
+  background: rgba(255,255,255,0.03);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.subtotal-row td {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* Light mode */
+[data-theme="light"] .skr-badge {
+  background: #f5f5f5;
+  border-color: #ddd;
+  color: #8b6914;
+}
+
+[data-theme="light"] .skr-hinweis {
+  background: rgba(139, 105, 20, 0.08);
+  border-color: rgba(139, 105, 20, 0.2);
+}
 .checkbox-label input { accent-color: var(--accent, #6366f1); width: 16px; height: 16px; }

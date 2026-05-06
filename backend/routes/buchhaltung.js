@@ -4356,6 +4356,34 @@ router.post('/bank-import/rematch-all', requireFeature('kontoauszug'), requireBu
 });
 
 // ===================================================================
+// 📋 SKR KONTORAHMEN MAPPING
+// ===================================================================
+const KATEGORIE_SKR_MAP = {
+  // Einnahmen
+  betriebseinnahmen: {
+    typ: 'einnahme',
+    skr03: { nr: '8000', name: 'Umsatzerlöse', ku_nr: '8190', ku_name: 'Steuerfreie Umsätze §19 UStG' },
+    skr04: { nr: '4000', name: 'Umsatzerlöse', ku_nr: '4120', ku_name: 'Steuerfreie Umsätze §19 UStG' }
+  },
+  // Ausgaben
+  wareneingang:     { typ: 'ausgabe', skr03: { nr: '3200', name: 'Wareneinkauf' },                   skr04: { nr: '5200', name: 'Wareneinkauf' } },
+  personalkosten:   { typ: 'ausgabe', skr03: { nr: '4000', name: 'Löhne u. Gehälter' },              skr04: { nr: '6000', name: 'Löhne u. Gehälter' } },
+  raumkosten:       { typ: 'ausgabe', skr03: { nr: '4200', name: 'Raumkosten/Miete' },               skr04: { nr: '6300', name: 'Miet-/Pachtaufwand' } },
+  versicherungen:   { typ: 'ausgabe', skr03: { nr: '4300', name: 'Versicherungen' },                 skr04: { nr: '6400', name: 'Versicherungen' } },
+  werbekosten:      { typ: 'ausgabe', skr03: { nr: '4520', name: 'Werbung/Marketing' },              skr04: { nr: '6600', name: 'Werbekosten' } },
+  kfz_kosten:       { typ: 'ausgabe', skr03: { nr: '4600', name: 'KFZ-Kosten' },                     skr04: { nr: '6640', name: 'KFZ-Kosten' } },
+  reisekosten:      { typ: 'ausgabe', skr03: { nr: '4630', name: 'Reise-/Fahrtkosten' },             skr04: { nr: '6650', name: 'Reisekosten' } },
+  buerokosten:      { typ: 'ausgabe', skr03: { nr: '4800', name: 'Bürobedarf' },                     skr04: { nr: '6800', name: 'Büromaterial' } },
+  telefon_internet: { typ: 'ausgabe', skr03: { nr: '4820', name: 'Telefon/Internet' },               skr04: { nr: '6805', name: 'Telefon/Internet' } },
+  abschreibungen:   { typ: 'ausgabe', skr03: { nr: '4830', name: 'Abschreibungen auf Sachanlagen' }, skr04: { nr: '6200', name: 'Abschreibungen' } },
+  ausstattung:      { typ: 'ausgabe', skr03: { nr: '4910', name: 'GWG-Sofortabschreibung' },         skr04: { nr: '6220', name: 'GWG-Abschreibung' } },
+  bankgebuehren:    { typ: 'ausgabe', skr03: { nr: '4970', name: 'Kontoführungsgebühren' },          skr04: { nr: '6855', name: 'Bankgebühren' } },
+  software:         { typ: 'ausgabe', skr03: { nr: '4980', name: 'EDV/Software' },                   skr04: { nr: '6815', name: 'EDV-Kosten/Software' } },
+  sonstige_kosten:  { typ: 'ausgabe', skr03: { nr: '4900', name: 'Sonstige Betriebsausgaben' },      skr04: { nr: '6900', name: 'Sonstige Betriebsausgaben' } },
+  steuerzahlungen:  { typ: 'ausgabe', skr03: { nr: '1790', name: 'Steuerzahlungen Finanzamt' },      skr04: { nr: '7610', name: 'Steuern vom Einkommen' } },
+};
+
+// ===================================================================
 // 📊 GET /api/buchhaltung/guv - GuV (Gewinn- und Verlustrechnung)
 // ===================================================================
 router.get('/guv', requireBuchhaltungAccess, (req, res) => {
@@ -4609,6 +4637,131 @@ router.get('/guv/details', requireBuchhaltungAccess, (req, res) => {
     console.error('GuV-Details-Fehler:', err);
     res.status(500).json({ message: 'Fehler beim Laden der GuV-Details', error: err.message });
   });
+});
+
+// ===================================================================
+// 📊 GET /api/buchhaltung/guv/skr - GuV nach SKR03/SKR04 Kontorahmen
+// ===================================================================
+router.get('/guv/skr', requireBuchhaltungAccess, async (req, res) => {
+  const { organisation, jahr, kontorahmen = 'SKR03' } = req.query;
+  const currentYear = parseInt(jahr) || new Date().getFullYear();
+  const rahmen = kontorahmen === 'SKR04' ? 'skr04' : 'skr03';
+
+  const _of = buildOrgFilter(req, organisation);
+  const orgFilter = _of.params.length ? _of.sql.replace('?', db.escape(_of.params[0])) : '';
+
+  try {
+    const pool = db.promise();
+
+    // Kleinunternehmer-Flag prüfen
+    let kleinunternehmer = false;
+    const dojoId = req.buchhaltungDojoId;
+    if (dojoId) {
+      const [dojoRows] = await pool.query('SELECT kleinunternehmer FROM dojo WHERE id = ?', [dojoId]);
+      kleinunternehmer = !!(dojoRows[0]?.kleinunternehmer);
+    }
+
+    const einnahmenSql = `
+      SELECT kategorie, quelle, ROUND(SUM(betrag_brutto), 2) AS summe
+      FROM v_euer_einnahmen
+      WHERE jahr = ${db.escape(currentYear)} ${orgFilter}
+      GROUP BY kategorie, quelle
+    `;
+    const ausgabenSql = `
+      SELECT kategorie, quelle, ROUND(SUM(betrag_brutto), 2) AS summe
+      FROM v_euer_ausgaben
+      WHERE jahr = ${db.escape(currentYear)} ${orgFilter}
+        AND kategorie NOT IN ('privateinlage', 'privatentnahme', 'anlagevermögen')
+      GROUP BY kategorie, quelle
+    `;
+    const einnahmenEinzelSql = `
+      SELECT kategorie, quelle, datum, betrag_brutto, beschreibung
+      FROM v_euer_einnahmen
+      WHERE jahr = ${db.escape(currentYear)} ${orgFilter}
+      ORDER BY kategorie, datum
+    `;
+    const ausgabenEinzelSql = `
+      SELECT kategorie, quelle, datum, betrag_brutto, beschreibung
+      FROM v_euer_ausgaben
+      WHERE jahr = ${db.escape(currentYear)} ${orgFilter}
+        AND kategorie NOT IN ('privateinlage', 'privatentnahme', 'anlagevermögen')
+      ORDER BY kategorie, datum
+    `;
+
+    const [[einnahmen], [ausgaben], [einnahmenEinzel], [ausgabenEinzel]] = await Promise.all([
+      pool.query(einnahmenSql),
+      pool.query(ausgabenSql),
+      pool.query(einnahmenEinzelSql),
+      pool.query(ausgabenEinzelSql)
+    ]);
+
+    // SKR-Konten aufbauen
+    const kontenMap = {};
+    const addKonto = (nr, name, betrag, typ, kategorie) => {
+      if (!kontenMap[nr]) kontenMap[nr] = { nr, name, typ, betrag: 0, positionen: [] };
+      kontenMap[nr].betrag = Math.round((kontenMap[nr].betrag + betrag) * 100) / 100;
+      if (!kontenMap[nr].positionen.includes(kategorie)) kontenMap[nr].positionen.push(kategorie);
+    };
+
+    let totalEinnahmen = 0;
+    einnahmen.forEach(row => {
+      const betrag = parseFloat(row.summe || 0);
+      totalEinnahmen += betrag;
+      const map = KATEGORIE_SKR_MAP[row.kategorie];
+      if (map?.typ === 'einnahme' && map[rahmen]) {
+        const konto = map[rahmen];
+        const nr = (kleinunternehmer && konto.ku_nr) ? konto.ku_nr : konto.nr;
+        const name = (kleinunternehmer && konto.ku_name) ? konto.ku_name : konto.name;
+        addKonto(nr, name, betrag, 'einnahme', row.kategorie);
+      } else {
+        const fallbackNr = rahmen === 'skr03' ? '8000' : '4000';
+        addKonto(fallbackNr, 'Umsatzerlöse', betrag, 'einnahme', row.kategorie);
+      }
+    });
+
+    let totalAusgaben = 0;
+    ausgaben.forEach(row => {
+      const betrag = parseFloat(row.summe || 0);
+      totalAusgaben += betrag;
+      const map = KATEGORIE_SKR_MAP[row.kategorie];
+      if (map?.typ === 'ausgabe' && map[rahmen]) {
+        addKonto(map[rahmen].nr, map[rahmen].name, betrag, 'ausgabe', row.kategorie);
+      } else {
+        const fallbackNr = rahmen === 'skr03' ? '4900' : '6900';
+        addKonto(fallbackNr, 'Sonstige Betriebsausgaben', betrag, 'ausgabe', row.kategorie);
+      }
+    });
+
+    // Einzelbuchungen je Konto hinzufügen
+    Object.values(kontenMap).forEach(konto => {
+      const quelle = konto.typ === 'einnahme' ? einnahmenEinzel : ausgabenEinzel;
+      konto.buchungen = quelle
+        .filter(e => konto.positionen.includes(e.kategorie))
+        .map(e => ({ datum: e.datum, betrag: parseFloat(e.betrag_brutto), beschreibung: e.beschreibung }))
+        .sort((a, b) => new Date(a.datum) - new Date(b.datum));
+    });
+
+    const einnahmenKonten = Object.values(kontenMap)
+      .filter(k => k.typ === 'einnahme')
+      .sort((a, b) => a.nr.localeCompare(b.nr));
+    const ausgabenKonten = Object.values(kontenMap)
+      .filter(k => k.typ === 'ausgabe')
+      .sort((a, b) => a.nr.localeCompare(b.nr));
+
+    res.json({
+      jahr: currentYear,
+      kontorahmen: rahmen === 'skr04' ? 'SKR04' : 'SKR03',
+      kleinunternehmer,
+      einnahmen: einnahmenKonten,
+      ausgaben: ausgabenKonten,
+      summe_einnahmen: Math.round(totalEinnahmen * 100) / 100,
+      summe_ausgaben: Math.round(totalAusgaben * 100) / 100,
+      ergebnis: Math.round((totalEinnahmen - totalAusgaben) * 100) / 100
+    });
+  } catch (err) {
+    console.error('GuV-SKR-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Laden der SKR-Daten', error: err.message });
+  }
 });
 
 // ===================================================================
