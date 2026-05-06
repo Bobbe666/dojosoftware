@@ -3,33 +3,10 @@ import config from '../config/config.js';
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 import '../styles/InventurTab.css';
 
-const BEWEGUNGSART_LABEL = {
-  eingang: 'Zugang',
-  ausgang: 'Abgang',
-  korrektur: 'Korrektur',
-  inventur: 'Inventur',
-};
-
-const BEWEGUNGSART_COLOR = {
-  eingang: '#27ae60',
-  ausgang: '#e74c3c',
-  korrektur: '#f39c12',
-  inventur: '#8e44ad',
-};
-
-const LAGER_STATUS_COLOR = {
-  verfuegbar: '#27ae60',
-  nachbestellen: '#f39c12',
-  ausverkauft: '#e74c3c',
-  kein_tracking: '#666',
-};
-
-const LAGER_STATUS_LABEL = {
-  verfuegbar: 'Verfügbar',
-  nachbestellen: 'Nachbestellen',
-  ausverkauft: 'Ausverkauft',
-  kein_tracking: 'Kein Tracking',
-};
+const BEWEGUNGSART_LABEL = { eingang: 'Zugang', ausgang: 'Abgang', korrektur: 'Korrektur', inventur: 'Inventur' };
+const BEWEGUNGSART_COLOR = { eingang: '#27ae60', ausgang: '#e74c3c', korrektur: '#f39c12', inventur: '#8e44ad' };
+const LAGER_STATUS_COLOR = { verfuegbar: '#27ae60', nachbestellen: '#f39c12', ausverkauft: '#e74c3c', kein_tracking: '#666' };
+const LAGER_STATUS_LABEL = { verfuegbar: 'Verfügbar', nachbestellen: 'Nachbestellen', ausverkauft: 'Ausverkauft', kein_tracking: 'Kein Tracking' };
 
 export default function InventurTab() {
   const [artikel, setArtikel] = useState([]);
@@ -37,27 +14,20 @@ export default function InventurTab() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState('');
-
-  // Ansicht
-  const [ansicht, setAnsicht] = useState('lager'); // 'lager' | 'verlauf'
-
-  // Filter
+  const [ansicht, setAnsicht] = useState('lager');
   const [suche, setSuche] = useState('');
   const [statusFilter, setStatusFilter] = useState('alle');
   const [bewegungsartFilter, setBewegungsartFilter] = useState('alle');
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const [stats, setStats] = useState({ gesamt: 0, verfuegbar: 0, nachbestellen: 0, ausverkauft: 0, lagerwert: 0 });
 
-  // Buchungs-Modal
+  // Modal
   const [showModal, setShowModal] = useState(false);
   const [selectedArtikel, setSelectedArtikel] = useState(null);
-  const [buchung, setBuchung] = useState({
-    bewegungsart: 'eingang',
-    menge: '',
-    grund: '',
-  });
+  const [selectedVarianteKey, setSelectedVarianteKey] = useState(null);
+  const [selectedVarianteBestand, setSelectedVarianteBestand] = useState(null);
+  const [buchung, setBuchung] = useState({ bewegungsart: 'eingang', menge: '', grund: '' });
   const [buchungLoading, setBuchungLoading] = useState(false);
-
-  // Stats
-  const [stats, setStats] = useState({ gesamt: 0, verfuegbar: 0, nachbestellen: 0, ausverkauft: 0, lagerwert: 0 });
 
   const loadArtikel = useCallback(async () => {
     setLoading(true);
@@ -100,32 +70,50 @@ export default function InventurTab() {
   useEffect(() => { loadArtikel(); }, [loadArtikel]);
   useEffect(() => { if (ansicht === 'verlauf') loadBewegungen(); }, [ansicht, loadBewegungen]);
 
-  const openBuchung = (art) => {
+  const toggleRow = (id) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const openBuchung = (art, varianteKey = null, varianteBestand = null) => {
     setSelectedArtikel(art);
+    setSelectedVarianteKey(varianteKey);
+    setSelectedVarianteBestand(varianteBestand);
     setBuchung({ bewegungsart: 'eingang', menge: '', grund: '' });
     setShowModal(true);
   };
 
+  const aktuellerBestand = selectedVarianteBestand !== null ? selectedVarianteBestand : selectedArtikel?.lagerbestand;
+
   const submitBuchung = async () => {
-    if (!buchung.menge || parseInt(buchung.menge) <= 0) {
+    if (!buchung.menge || parseInt(buchung.menge) < 0) {
       alert('Bitte eine gültige Menge eingeben.');
       return;
     }
     setBuchungLoading(true);
     try {
+      const body = {
+        bewegungsart: buchung.bewegungsart,
+        menge: parseInt(buchung.menge),
+        grund: buchung.grund || undefined,
+      };
+      if (selectedVarianteKey) body.variante_key = selectedVarianteKey;
+
       const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel/${selectedArtikel.artikel_id}/lager`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          bewegungsart: buchung.bewegungsart,
-          menge: parseInt(buchung.menge),
-          grund: buchung.grund || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.success) {
         setShowModal(false);
-        setSuccessMsg(`Buchung für "${selectedArtikel.name}" erfolgreich gespeichert.`);
+        const label = selectedVarianteKey
+          ? `${selectedArtikel.name} (${selectedVarianteKey.split('|')[0]})`
+          : selectedArtikel.name;
+        setSuccessMsg(`Buchung für "${label}" gespeichert.`);
         setTimeout(() => setSuccessMsg(''), 4000);
         loadArtikel();
         if (ansicht === 'verlauf') loadBewegungen();
@@ -148,9 +136,8 @@ export default function InventurTab() {
   });
 
   const filteredBewegungen = bewegungen.filter(b => {
-    const matchSuche = !suche || (b.artikel_name || '').toLowerCase().includes(suche.toLowerCase()) ||
+    return !suche || (b.artikel_name || '').toLowerCase().includes(suche.toLowerCase()) ||
       (b.artikel_nummer || '').toLowerCase().includes(suche.toLowerCase());
-    return matchSuche;
   });
 
   if (loading) {
@@ -173,15 +160,15 @@ export default function InventurTab() {
           <span className="inv-stat-value">{stats.gesamt}</span>
           <span className="inv-stat-label">Artikel gesamt</span>
         </div>
-        <div className="inv-stat-card verfuegbar">
+        <div className={`inv-stat-card verfuegbar ${stats.verfuegbar === 0 ? 'dim' : ''}`}>
           <span className="inv-stat-value">{stats.verfuegbar}</span>
           <span className="inv-stat-label">Verfügbar</span>
         </div>
-        <div className="inv-stat-card nachbestellen">
+        <div className={`inv-stat-card nachbestellen ${stats.nachbestellen === 0 ? 'dim' : ''}`}>
           <span className="inv-stat-value">{stats.nachbestellen}</span>
           <span className="inv-stat-label">Nachbestellen</span>
         </div>
-        <div className="inv-stat-card ausverkauft">
+        <div className={`inv-stat-card ausverkauft ${stats.ausverkauft === 0 ? 'dim' : ''}`}>
           <span className="inv-stat-value">{stats.ausverkauft}</span>
           <span className="inv-stat-label">Ausverkauft</span>
         </div>
@@ -193,23 +180,16 @@ export default function InventurTab() {
         </div>
       </div>
 
-      {/* Ansicht-Umschalter + Filter */}
+      {/* Toolbar */}
       <div className="inventur-toolbar">
         <div className="inventur-ansicht-tabs">
-          <button
-            className={`inv-ansicht-btn ${ansicht === 'lager' ? 'active' : ''}`}
-            onClick={() => setAnsicht('lager')}
-          >
+          <button className={`inv-ansicht-btn ${ansicht === 'lager' ? 'active' : ''}`} onClick={() => setAnsicht('lager')}>
             Lagerbestand
           </button>
-          <button
-            className={`inv-ansicht-btn ${ansicht === 'verlauf' ? 'active' : ''}`}
-            onClick={() => setAnsicht('verlauf')}
-          >
+          <button className={`inv-ansicht-btn ${ansicht === 'verlauf' ? 'active' : ''}`} onClick={() => setAnsicht('verlauf')}>
             Bewegungsverlauf
           </button>
         </div>
-
         <div className="inventur-filter">
           <input
             className="inv-search"
@@ -219,11 +199,7 @@ export default function InventurTab() {
             onChange={e => setSuche(e.target.value)}
           />
           {ansicht === 'lager' && (
-            <select
-              className="inv-select"
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-            >
+            <select className="inv-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="alle">Alle Status</option>
               <option value="verfuegbar">Verfügbar</option>
               <option value="nachbestellen">Nachbestellen</option>
@@ -232,11 +208,7 @@ export default function InventurTab() {
             </select>
           )}
           {ansicht === 'verlauf' && (
-            <select
-              className="inv-select"
-              value={bewegungsartFilter}
-              onChange={e => setBewegungsartFilter(e.target.value)}
-            >
+            <select className="inv-select" value={bewegungsartFilter} onChange={e => setBewegungsartFilter(e.target.value)}>
               <option value="alle">Alle Bewegungsarten</option>
               <option value="eingang">Zugänge</option>
               <option value="ausgang">Abgänge</option>
@@ -247,83 +219,139 @@ export default function InventurTab() {
         </div>
       </div>
 
-      {/* Lagerbestand-Tabelle */}
+      {/* Lagerbestand-Tabelle — schlank */}
       {ansicht === 'lager' && (
         <div className="inventur-table-wrap">
           <table className="inventur-table">
             <thead>
               <tr>
-                <th>Artikel</th>
-                <th>Artikelnr.</th>
-                <th>Gruppe</th>
+                <th style={{ width: '40%' }}>Artikel</th>
                 <th>Status</th>
                 <th className="text-right">Bestand</th>
-                <th className="text-right">Mindest</th>
-                <th className="text-right">EK-Preis</th>
-                <th className="text-right">Lagerwert</th>
-                <th>Letzte Bewegung</th>
-                <th>Aktion</th>
+                <th style={{ width: 100 }}></th>
               </tr>
             </thead>
             <tbody>
               {filteredArtikel.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="inv-empty">Keine Artikel gefunden.</td>
-                </tr>
-              ) : filteredArtikel.map(a => (
-                <tr key={a.artikel_id} className={`inv-row ${a.lager_status}`}>
-                  <td>
-                    <div className="inv-artikel-name">
-                      <span
-                        className="inv-farb-dot"
-                        style={{ background: a.farbe_hex || '#666' }}
-                      />
-                      {a.name}
-                    </div>
-                    {a.hat_varianten && (
-                      <div className="inv-varianten-info">
-                        {Object.entries(a.varianten_bestand).map(([key, v]) => (
-                          <span key={key} className="inv-variante-chip">
-                            {key.split('|')[0]} ({v.bestand ?? 0})
-                          </span>
-                        ))}
-                      </div>
+                <tr><td colSpan={4} className="inv-empty">Keine Artikel gefunden.</td></tr>
+              ) : filteredArtikel.map(a => {
+                const expanded = expandedRows.has(a.artikel_id);
+                const variantenEntries = a.hat_varianten ? Object.entries(a.varianten_bestand) : [];
+                return (
+                  <React.Fragment key={a.artikel_id}>
+                    {/* Hauptzeile */}
+                    <tr
+                      className={`inv-row ${a.lager_status} ${expanded ? 'expanded' : ''}`}
+                      onClick={() => toggleRow(a.artikel_id)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <td>
+                        <div className="inv-artikel-name">
+                          <span className="inv-farb-dot" style={{ background: a.farbe_hex || '#666' }} />
+                          <span>{a.name}</span>
+                          {a.hat_varianten && (
+                            <span className="inv-varianten-hint">{variantenEntries.length} Größen</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className="inv-status-badge"
+                          style={{ background: LAGER_STATUS_COLOR[a.lager_status] + '22', color: LAGER_STATUS_COLOR[a.lager_status], border: `1px solid ${LAGER_STATUS_COLOR[a.lager_status]}` }}
+                        >
+                          {LAGER_STATUS_LABEL[a.lager_status]}
+                        </span>
+                      </td>
+                      <td className="text-right inv-bestand-cell">
+                        <strong style={{ color: a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'inherit' }}>
+                          {a.lagerbestand}
+                        </strong>
+                        {a.mindestbestand > 0 && (
+                          <span className="inv-mindest-hint"> / min. {a.mindestbestand}</span>
+                        )}
+                      </td>
+                      <td onClick={e => e.stopPropagation()}>
+                        <div className="inv-row-actions">
+                          <button
+                            className="btn-buchung"
+                            onClick={() => openBuchung(a)}
+                            title="Zu-/Abgang buchen"
+                          >
+                            Buchen
+                          </button>
+                          <span className={`inv-chevron ${expanded ? 'open' : ''}`}>›</span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Aufgeklappte Details */}
+                    {expanded && (
+                      <tr className="inv-detail-row">
+                        <td colSpan={4}>
+                          <div className="inv-detail-body">
+                            {/* Meta-Infos */}
+                            <div className="inv-detail-meta">
+                              {a.artikel_nummer && (
+                                <span className="inv-detail-item">
+                                  <span className="inv-detail-label">Artikelnr.</span>
+                                  <span className="inv-mono">{a.artikel_nummer}</span>
+                                </span>
+                              )}
+                              {(a.gruppe_name || a.kategorie_name) && (
+                                <span className="inv-detail-item">
+                                  <span className="inv-detail-label">Gruppe</span>
+                                  {a.gruppe_name || a.kategorie_name}
+                                </span>
+                              )}
+                              <span className="inv-detail-item">
+                                <span className="inv-detail-label">EK-Preis</span>
+                                {a.einkaufspreis.toFixed(2)} €
+                              </span>
+                              <span className="inv-detail-item">
+                                <span className="inv-detail-label">Lagerwert</span>
+                                {a.lagerwert.toFixed(2)} €
+                              </span>
+                              {a.letzte_bewegung && (
+                                <span className="inv-detail-item">
+                                  <span className="inv-detail-label">Letzte Buchung</span>
+                                  {new Date(a.letzte_bewegung).toLocaleDateString('de-DE')}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Varianten-Grid */}
+                            {a.hat_varianten && variantenEntries.length > 0 && (
+                              <div className="inv-varianten-grid">
+                                <div className="inv-detail-label" style={{ marginBottom: '0.5rem' }}>Größen / Varianten</div>
+                                <div className="inv-varianten-row">
+                                  {variantenEntries.map(([key, v]) => {
+                                    const groesse = key.split('|')[0];
+                                    const bestand = v.bestand ?? 0;
+                                    return (
+                                      <div key={key} className={`inv-variante-card ${bestand === 0 ? 'ausverkauft' : ''}`}>
+                                        <span className="inv-variante-groesse">{groesse}</span>
+                                        <span className="inv-variante-bestand" style={{ color: bestand === 0 ? '#e74c3c' : 'inherit' }}>
+                                          {bestand} Stk.
+                                        </span>
+                                        <button
+                                          className="btn-buchung-sm"
+                                          onClick={() => openBuchung(a, key, bestand)}
+                                        >
+                                          Buchen
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="inv-mono">{a.artikel_nummer || '—'}</td>
-                  <td>{a.gruppe_name || a.kategorie_name || '—'}</td>
-                  <td>
-                    <span
-                      className="inv-status-badge"
-                      style={{ background: LAGER_STATUS_COLOR[a.lager_status] + '22', color: LAGER_STATUS_COLOR[a.lager_status], border: `1px solid ${LAGER_STATUS_COLOR[a.lager_status]}` }}
-                    >
-                      {LAGER_STATUS_LABEL[a.lager_status]}
-                    </span>
-                  </td>
-                  <td className="text-right inv-bestand-cell">
-                    <strong style={{ color: a.lager_status === 'ausverkauft' ? '#e74c3c' : a.lager_status === 'nachbestellen' ? '#f39c12' : 'inherit' }}>
-                      {a.lagerbestand}
-                    </strong>
-                  </td>
-                  <td className="text-right">{a.mindestbestand}</td>
-                  <td className="text-right">{a.einkaufspreis.toFixed(2)} €</td>
-                  <td className="text-right">{a.lagerwert.toFixed(2)} €</td>
-                  <td className="inv-datum">
-                    {a.letzte_bewegung
-                      ? new Date(a.letzte_bewegung).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                      : '—'}
-                  </td>
-                  <td>
-                    <button
-                      className="btn-buchung"
-                      onClick={() => openBuchung(a)}
-                      title="Zu-/Abgang buchen"
-                    >
-                      Buchen
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -339,26 +367,19 @@ export default function InventurTab() {
                 <th>Artikel</th>
                 <th>Art</th>
                 <th className="text-right">Menge</th>
-                <th className="text-right">Alt</th>
-                <th className="text-right">Neu</th>
-                <th>Grund / Bemerkung</th>
-                <th>Durchgeführt von</th>
+                <th className="text-right">Alt → Neu</th>
+                <th>Bemerkung</th>
               </tr>
             </thead>
             <tbody>
               {filteredBewegungen.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="inv-empty">Keine Bewegungen gefunden.</td>
-                </tr>
+                <tr><td colSpan={6} className="inv-empty">Keine Bewegungen gefunden.</td></tr>
               ) : filteredBewegungen.map(b => (
                 <tr key={b.bewegung_id} className="inv-row">
                   <td className="inv-datum">
                     {new Date(b.bewegung_timestamp).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
-                  <td>
-                    <div className="inv-artikel-name">{b.artikel_name}</div>
-                    {b.artikel_nummer && <div className="inv-mono" style={{ fontSize: '0.78rem', opacity: 0.6 }}>{b.artikel_nummer}</div>}
-                  </td>
+                  <td className="inv-artikel-name">{b.artikel_name}</td>
                   <td>
                     <span
                       className="inv-status-badge"
@@ -372,10 +393,8 @@ export default function InventurTab() {
                       {b.menge > 0 ? '+' : ''}{b.menge}
                     </span>
                   </td>
-                  <td className="text-right">{b.alter_bestand}</td>
-                  <td className="text-right">{b.neuer_bestand}</td>
+                  <td className="text-right inv-datum">{b.alter_bestand} → {b.neuer_bestand}</td>
                   <td className="inv-grund">{b.grund || '—'}</td>
-                  <td>{b.durchgefuehrt_von_name || '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -390,15 +409,18 @@ export default function InventurTab() {
             <div className="inv-modal-header">
               <div>
                 <h2>Lagerbewegung buchen</h2>
-                <p className="inv-modal-subtitle">{selectedArtikel.name}</p>
+                <p className="inv-modal-subtitle">
+                  {selectedArtikel.name}
+                  {selectedVarianteKey && <span className="inv-modal-variante"> · {selectedVarianteKey.split('|')[0]}</span>}
+                </p>
               </div>
               <button className="inv-modal-close" onClick={() => setShowModal(false)}>✕</button>
             </div>
 
             <div className="inv-modal-body">
               <div className="inv-current-stock">
-                <span>Aktueller Bestand</span>
-                <strong>{selectedArtikel.lagerbestand} Stk.</strong>
+                <span>Aktueller Bestand{selectedVarianteKey ? ` (${selectedVarianteKey.split('|')[0]})` : ''}</span>
+                <strong>{aktuellerBestand} Stk.</strong>
               </div>
 
               <div className="inv-form-group">
@@ -407,8 +429,8 @@ export default function InventurTab() {
                   {[
                     { value: 'eingang', label: 'Zugang', icon: '↑', desc: 'Waren kommen ins Lager' },
                     { value: 'ausgang', label: 'Abgang', icon: '↓', desc: 'Waren verlassen das Lager' },
-                    { value: 'korrektur', label: 'Korrektur', icon: '✏️', desc: 'Bestand auf festen Wert setzen' },
-                    { value: 'inventur', label: 'Inventur', icon: '📋', desc: 'Inventur-Zählung' },
+                    { value: 'korrektur', label: 'Korrektur', icon: '✏', desc: 'Bestand auf festen Wert setzen' },
+                    { value: 'inventur', label: 'Inventur', icon: '▣', desc: 'Inventur-Zählung' },
                   ].map(opt => (
                     <button
                       key={opt.value}
@@ -437,48 +459,43 @@ export default function InventurTab() {
                   value={buchung.menge}
                   onChange={e => setBuchung(b => ({ ...b, menge: e.target.value }))}
                   placeholder={buchung.bewegungsart === 'korrektur' || buchung.bewegungsart === 'inventur'
-                    ? `Aktuell: ${selectedArtikel.lagerbestand}`
+                    ? `Aktuell: ${aktuellerBestand}`
                     : 'Anzahl eingeben...'}
+                  autoFocus
                 />
                 {(buchung.bewegungsart === 'eingang' || buchung.bewegungsart === 'ausgang') && buchung.menge && parseInt(buchung.menge) > 0 && (
                   <div className="inv-preview">
                     Neuer Bestand: <strong>
                       {buchung.bewegungsart === 'eingang'
-                        ? selectedArtikel.lagerbestand + parseInt(buchung.menge)
-                        : Math.max(0, selectedArtikel.lagerbestand - parseInt(buchung.menge))}
+                        ? aktuellerBestand + parseInt(buchung.menge)
+                        : Math.max(0, aktuellerBestand - parseInt(buchung.menge))}
                     </strong> Stk.
                   </div>
                 )}
                 {(buchung.bewegungsart === 'korrektur' || buchung.bewegungsart === 'inventur') && buchung.menge !== '' && (
                   <div className="inv-preview">
-                    Differenz: <strong style={{ color: parseInt(buchung.menge) >= selectedArtikel.lagerbestand ? '#27ae60' : '#e74c3c' }}>
-                      {parseInt(buchung.menge) >= selectedArtikel.lagerbestand ? '+' : ''}{parseInt(buchung.menge) - selectedArtikel.lagerbestand}
+                    Differenz: <strong style={{ color: parseInt(buchung.menge) >= aktuellerBestand ? '#27ae60' : '#e74c3c' }}>
+                      {parseInt(buchung.menge) >= aktuellerBestand ? '+' : ''}{parseInt(buchung.menge) - aktuellerBestand}
                     </strong> Stk.
                   </div>
                 )}
               </div>
 
               <div className="inv-form-group">
-                <label>Bemerkung / Grund <span className="inv-optional">(optional)</span></label>
+                <label>Bemerkung <span className="inv-optional">(optional)</span></label>
                 <input
                   className="inv-input"
                   type="text"
                   value={buchung.grund}
                   onChange={e => setBuchung(b => ({ ...b, grund: e.target.value }))}
-                  placeholder="z.B. Lieferung, Schwund, Inventur Ergebnis..."
+                  placeholder="z.B. Lieferung, Schwund, Inventur-Ergebnis..."
                 />
               </div>
             </div>
 
             <div className="inv-modal-footer">
-              <button className="btn-secondary" onClick={() => setShowModal(false)}>
-                Abbrechen
-              </button>
-              <button
-                className="btn-primary"
-                onClick={submitBuchung}
-                disabled={buchungLoading || !buchung.menge}
-              >
+              <button className="btn-secondary" onClick={() => setShowModal(false)}>Abbrechen</button>
+              <button className="btn-primary" onClick={submitBuchung} disabled={buchungLoading || buchung.menge === ''}>
                 {buchungLoading ? 'Wird gebucht...' : 'Buchung speichern'}
               </button>
             </div>
