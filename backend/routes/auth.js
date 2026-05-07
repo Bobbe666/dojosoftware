@@ -182,6 +182,8 @@ router.post('/login',
              COALESCE(events_app_access, 1)    AS events_app_access,
              COALESCE(kids_app_access, 1)      AS kids_app_access,
              COALESCE(hof_app_access, 1)       AS hof_app_access,
+             COALESCE(trainer_app_access, 0)   AS trainer_app_access,
+             COALESCE(support_app_access, 1)   AS support_app_access,
              COALESCE(finanzen_app_access, 0)  AS finanzen_app_access
       FROM admin_users
       WHERE email = ? OR username = ?
@@ -371,6 +373,8 @@ router.post('/login',
           events_app_access:   isAdmin ? (user.events_app_access !== 0)   : true,
           kids_app_access:     isAdmin ? (user.kids_app_access !== 0)     : true,
           hof_app_access:      isAdmin ? (user.hof_app_access !== 0)      : true,
+          trainer_app_access:  isAdmin ? (user.trainer_app_access !== 0)  : false,
+          support_app_access:  isAdmin ? (user.support_app_access !== 0)  : false,
           finanzen_app_access: isAdmin ? (user.finanzen_app_access !== 0) : false,
           iat: Math.floor(Date.now() / 1000)
         };
@@ -401,6 +405,8 @@ router.post('/login',
           events_app_access:   isAdmin ? (user.events_app_access !== 0)   : true,
           kids_app_access:     isAdmin ? (user.kids_app_access !== 0)     : true,
           hof_app_access:      isAdmin ? (user.hof_app_access !== 0)      : true,
+          trainer_app_access:  isAdmin ? (user.trainer_app_access !== 0)  : false,
+          support_app_access:  isAdmin ? (user.support_app_access !== 0)  : false,
           finanzen_app_access: isAdmin ? (user.finanzen_app_access !== 0) : false,
           loginTime: new Date().toISOString()
         };
