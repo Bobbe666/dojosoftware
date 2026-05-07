@@ -385,14 +385,14 @@ router.patch('/app-access/:id', requireSuperAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/user-role/:id — Rolle und Super-Admin-Status eines Nutzers ändern
+// PATCH /api/admin/user/:id — Nutzerdaten vollständig bearbeiten
 const ALLOWED_ROLES = ['eingeschraenkt', 'trainer', 'mitarbeiter', 'admin'];
-router.patch('/user-role/:id', requireSuperAdmin, async (req, res) => {
+router.patch('/user/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
-  const { rolle, dojo_id, is_super_admin } = req.body;
+  const { vorname, nachname, username, email, rolle, dojo_id, is_super_admin } = req.body;
 
-  if (parseInt(id) === req.user?.id) {
-    return res.status(403).json({ error: 'Eigene Rolle kann nicht geändert werden.' });
+  if (!vorname || !nachname || !username) {
+    return res.status(400).json({ error: 'Vorname, Nachname und Benutzername sind Pflicht.' });
   }
   if (rolle && !ALLOWED_ROLES.includes(rolle)) {
     return res.status(400).json({ error: 'Ungültige Rolle.' });
@@ -401,9 +401,24 @@ router.patch('/user-role/:id', requireSuperAdmin, async (req, res) => {
   try {
     const newDojoId = is_super_admin ? null : (dojo_id || null);
     await db.promise().query(
-      'UPDATE admin_users SET rolle = ?, dojo_id = ? WHERE id = ?',
-      [rolle || 'admin', newDojoId, id]
+      `UPDATE admin_users SET vorname=?, nachname=?, username=?, email=?, rolle=?, dojo_id=? WHERE id=?`,
+      [vorname.trim(), nachname.trim(), username.trim(), email?.trim() || null, rolle || 'admin', newDojoId, id]
     );
+    res.json({ success: true });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Benutzername oder E-Mail bereits vergeben.' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Compat alias für alten user-role Endpunkt
+router.patch('/user-role/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { rolle, dojo_id, is_super_admin } = req.body;
+  if (rolle && !ALLOWED_ROLES.includes(rolle)) return res.status(400).json({ error: 'Ungültige Rolle.' });
+  try {
+    const newDojoId = is_super_admin ? null : (dojo_id || null);
+    await db.promise().query('UPDATE admin_users SET rolle = ?, dojo_id = ? WHERE id = ?', [rolle || 'admin', newDojoId, id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

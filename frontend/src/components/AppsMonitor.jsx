@@ -44,13 +44,10 @@ function AppAccessModal({ onClose }) {
   const [addMsg, setAddMsg]       = useState('');
   const [addSaving, setAddSaving] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
-  // Rollen-Editor
-  const [editingRole, setEditingRole]       = useState(null); // userId
-  const [editRolle, setEditRolle]           = useState('admin');
-  const [editIsSuperAdmin, setEditIsSuperAdmin] = useState(false);
-  const [editDojoId, setEditDojoId]         = useState('');
-  const [roleSaving, setRoleSaving]         = useState(false);
-  const [roleMsg, setRoleMsg]               = useState('');
+  // Nutzer-Edit-Modal
+  const [editUser, setEditUser]       = useState(null); // aktueller Nutzer-Entwurf
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editMsg, setEditMsg]         = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -116,31 +113,32 @@ function AppAccessModal({ onClose }) {
     } finally { setAddSaving(false); }
   };
 
-  const openRoleEdit = (u) => {
-    setEditingRole(u.id);
-    setEditIsSuperAdmin(u.dojo_id === null);
-    setEditRolle(u.rolle || 'admin');
-    setEditDojoId(u.dojo_id || '');
-    setRoleMsg('');
+  const openEditUser = (u) => {
+    setEditUser({
+      id: u.id,
+      vorname: u.vorname || '',
+      nachname: u.nachname || '',
+      username: u.username || '',
+      email: u.email || '',
+      rolle: u.rolle || 'admin',
+      dojo_id: u.dojo_id != null ? String(u.dojo_id) : '',
+      is_super_admin: u.dojo_id === null,
+    });
+    setEditMsg('');
   };
 
-  const saveRole = async (userId) => {
-    setRoleSaving(true); setRoleMsg('');
+  const saveEditUser = async () => {
+    if (!editUser.vorname || !editUser.nachname || !editUser.username) {
+      setEditMsg('Vorname, Nachname und Benutzername sind Pflicht.'); return;
+    }
+    setEditSaving(true); setEditMsg('');
     try {
-      await axios.patch(`/admin/user-role/${userId}`, {
-        rolle: editRolle,
-        dojo_id: editIsSuperAdmin ? null : editDojoId,
-        is_super_admin: editIsSuperAdmin,
-      });
-      setUsers(prev => prev.map(u => u.id === userId
-        ? { ...u, rolle: editRolle, dojo_id: editIsSuperAdmin ? null : (editDojoId || null), dojoname: editIsSuperAdmin ? null : (dojos.find(d => String(d.id) === String(editDojoId))?.dojoname || u.dojoname) }
-        : u
-      ));
-      setRoleMsg('✓');
-      setTimeout(() => { setEditingRole(null); setRoleMsg(''); load(); }, 800);
+      await axios.patch(`/admin/user/${editUser.id}`, editUser);
+      setEditMsg('✓ Gespeichert!');
+      setTimeout(() => { setEditUser(null); setEditMsg(''); load(); }, 900);
     } catch (e) {
-      setRoleMsg(e.response?.data?.error || 'Fehler');
-    } finally { setRoleSaving(false); }
+      setEditMsg(e.response?.data?.error || 'Fehler beim Speichern.');
+    } finally { setEditSaving(false); }
   };
 
   const filtered = users.filter(u =>
@@ -264,42 +262,9 @@ function AppAccessModal({ onClose }) {
                       <div className="am-access-name-row">
                         <span className="am-access-name">{u.vorname} {u.nachname}</span>
                         {u.username && <span className="am-access-username">@{u.username}</span>}
-                        {editingRole === u.id ? (
-                          <span className="am-role-editor" onClick={e => e.stopPropagation()}>
-                            <label className="am-role-superadmin-toggle">
-                              <input
-                                type="checkbox"
-                                checked={editIsSuperAdmin}
-                                onChange={e => setEditIsSuperAdmin(e.target.checked)}
-                              />
-                              <span>Super Admin</span>
-                            </label>
-                            {!editIsSuperAdmin && (
-                              <>
-                                <select className="am-role-select" value={editRolle} onChange={e => setEditRolle(e.target.value)}>
-                                  {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                                </select>
-                                <select className="am-role-select" value={editDojoId} onChange={e => setEditDojoId(e.target.value)}>
-                                  <option value="">— Dojo wählen —</option>
-                                  {dojos.map(d => <option key={d.id} value={d.id}>{d.dojoname}</option>)}
-                                </select>
-                              </>
-                            )}
-                            {roleMsg && <span className={`am-role-msg ${roleMsg.startsWith('✓') ? 'am-role-msg--ok' : 'am-role-msg--err'}`}>{roleMsg}</span>}
-                            <button className="am-role-save" onClick={() => saveRole(u.id)} disabled={roleSaving || (!editIsSuperAdmin && !editDojoId)}>
-                              {roleSaving ? '…' : '✓'}
-                            </button>
-                            <button className="am-role-cancel" onClick={() => setEditingRole(null)}>✕</button>
-                          </span>
-                        ) : (
-                          <span
-                            className={`am-access-role am-access-role--clickable ${u.dojo_id === null ? 'am-access-role--super' : ''}`}
-                            onClick={() => openRoleEdit(u)}
-                            title="Rolle bearbeiten"
-                          >
-                            {getRoleLabel(u)} ✎
-                          </span>
-                        )}
+                        <span className={`am-access-role ${u.dojo_id === null ? 'am-access-role--super' : ''}`}>
+                          {getRoleLabel(u)}
+                        </span>
                       </div>
                       {u.email && <div className="am-access-email">{u.email}</div>}
                     </div>
@@ -325,6 +290,7 @@ function AppAccessModal({ onClose }) {
 
                     {/* Actions */}
                     <div className="am-access-actions am-access-col-actions">
+                      <button className="am-edit-btn" onClick={() => openEditUser(u)} title="Nutzer bearbeiten">✎</button>
                       <button className="am-pw-btn" onClick={() => openPw(u)} title="Passwort setzen">🔑</button>
                       <button className="am-delete-btn" onClick={() => setConfirmDel(u)} title="Nutzer deaktivieren" disabled={deleting === u.id}>🗑</button>
                     </div>
@@ -358,6 +324,73 @@ function AppAccessModal({ onClose }) {
               <div className="am-pw-modal-actions">
                 <button className="am-pw-cancel" onClick={closePw}>Abbrechen</button>
                 <button className="am-pw-save" onClick={savePw} disabled={pwSaving || pw.length < 6}>{pwSaving ? '…' : 'Speichern'}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Nutzer-Edit-Modal */}
+        {editUser && (
+          <div className="am-pw-overlay" onClick={() => setEditUser(null)}>
+            <div className="am-pw-modal am-edit-modal" onClick={e => e.stopPropagation()}>
+              <div className="am-pw-modal-title">
+                ✎ Nutzer bearbeiten
+              </div>
+              <div className="am-edit-grid">
+                <div className="am-edit-field">
+                  <label className="am-edit-label">Vorname</label>
+                  <input className="am-add-input" value={editUser.vorname} onChange={e => setEditUser(p => ({...p, vorname: e.target.value}))} />
+                </div>
+                <div className="am-edit-field">
+                  <label className="am-edit-label">Nachname</label>
+                  <input className="am-add-input" value={editUser.nachname} onChange={e => setEditUser(p => ({...p, nachname: e.target.value}))} />
+                </div>
+                <div className="am-edit-field">
+                  <label className="am-edit-label">Benutzername</label>
+                  <input className="am-add-input" value={editUser.username} onChange={e => setEditUser(p => ({...p, username: e.target.value}))} autoCapitalize="none" />
+                </div>
+                <div className="am-edit-field">
+                  <label className="am-edit-label">E-Mail</label>
+                  <input className="am-add-input" type="email" value={editUser.email} onChange={e => setEditUser(p => ({...p, email: e.target.value}))} />
+                </div>
+                <div className="am-edit-field am-edit-field--full">
+                  <label className="am-edit-label am-edit-superadmin-row">
+                    <input
+                      type="checkbox"
+                      checked={editUser.is_super_admin}
+                      onChange={e => setEditUser(p => ({...p, is_super_admin: e.target.checked, dojo_id: e.target.checked ? '' : p.dojo_id}))}
+                    />
+                    <span>Super Admin (kein Dojo, volle Rechte)</span>
+                  </label>
+                </div>
+                {!editUser.is_super_admin && (
+                  <>
+                    <div className="am-edit-field">
+                      <label className="am-edit-label">Rolle</label>
+                      <select className="am-add-input am-add-select" value={editUser.rolle} onChange={e => setEditUser(p => ({...p, rolle: e.target.value}))}>
+                        {ROLES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                      </select>
+                    </div>
+                    <div className="am-edit-field">
+                      <label className="am-edit-label">Dojo</label>
+                      <select className="am-add-input am-add-select" value={editUser.dojo_id} onChange={e => setEditUser(p => ({...p, dojo_id: e.target.value}))}>
+                        <option value="">— Dojo wählen —</option>
+                        {dojos.map(d => <option key={d.id} value={d.id}>{d.dojoname}</option>)}
+                      </select>
+                    </div>
+                  </>
+                )}
+              </div>
+              {editMsg && <div className={`am-pw-msg ${editMsg.startsWith('✓') ? 'am-pw-msg--ok' : 'am-pw-msg--err'}`}>{editMsg}</div>}
+              <div className="am-pw-modal-actions">
+                <button className="am-pw-cancel" onClick={() => setEditUser(null)}>Abbrechen</button>
+                <button
+                  className="am-pw-save"
+                  onClick={saveEditUser}
+                  disabled={editSaving || !editUser.vorname || !editUser.nachname || !editUser.username || (!editUser.is_super_admin && !editUser.dojo_id)}
+                >
+                  {editSaving ? '…' : 'Speichern'}
+                </button>
               </div>
             </div>
           </div>
