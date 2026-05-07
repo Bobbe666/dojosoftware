@@ -385,6 +385,31 @@ router.patch('/app-access/:id', requireSuperAdmin, async (req, res) => {
   }
 });
 
+// PATCH /api/admin/user-role/:id — Rolle und Super-Admin-Status eines Nutzers ändern
+const ALLOWED_ROLES = ['eingeschraenkt', 'trainer', 'mitarbeiter', 'admin'];
+router.patch('/user-role/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { rolle, dojo_id, is_super_admin } = req.body;
+
+  if (parseInt(id) === req.user?.id) {
+    return res.status(403).json({ error: 'Eigene Rolle kann nicht geändert werden.' });
+  }
+  if (rolle && !ALLOWED_ROLES.includes(rolle)) {
+    return res.status(400).json({ error: 'Ungültige Rolle.' });
+  }
+
+  try {
+    const newDojoId = is_super_admin ? null : (dojo_id || null);
+    await db.promise().query(
+      'UPDATE admin_users SET rolle = ?, dojo_id = ? WHERE id = ?',
+      [rolle || 'admin', newDojoId, id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Backward-compat alias
 router.patch('/todo-access/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
