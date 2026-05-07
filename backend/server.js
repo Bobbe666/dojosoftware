@@ -1432,7 +1432,7 @@ try {
 // 10.4 INTEGRATIONS - PayPal, LexOffice, DATEV
 try {
   const integrationsRouter = require(path.join(__dirname, "routes", "integrations.js"));
-  app.use("/api/integrations", integrationsRouter);
+  app.use("/api/integrations", authenticateToken, integrationsRouter);
   logger.success('Route gemountet', { path: '/api/integrations' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1971,6 +1971,7 @@ const skipFiles = [
   "sepa-mandate.js",
   "ical.js",
   "training.js",
+  "integrations.js",
   // Sicherheit: nicht automatisch mounten
   "neuesmitgliedanlegen.js",
   "public-checkin.js",

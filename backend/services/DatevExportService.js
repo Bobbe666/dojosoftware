@@ -275,9 +275,8 @@ class DatevExportService {
                     m.nachname,
                     m.mitglied_id
                 FROM rechnungen r
-                LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
-                WHERE r.dojo_id = ?
-                AND r.rechnungsdatum BETWEEN ? AND ?
+                LEFT JOIN mitglieder m ON r.mitglied_id = m.mitglied_id AND m.dojo_id = ?
+                WHERE r.rechnungsdatum BETWEEN ? AND ?
                 ORDER BY r.rechnungsdatum ASC
             `, [dojoId, startDate, endDate]);
 

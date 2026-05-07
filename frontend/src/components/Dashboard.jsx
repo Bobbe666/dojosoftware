@@ -582,6 +582,14 @@ function Dashboard() {
       featured: true
     },
     {
+      icon: '📊',
+      title: 'DATEV Export',
+      description: 'Buchungsstapel für Steuerberater exportieren',
+      path: '/dashboard/datev-export',
+      badge: 'NEU',
+      featured: true
+    },
+    {
       icon: '📅',
       title: 'Kalender-Synchronisation',
       description: 'iCal-Links für Google, Outlook, Apple',

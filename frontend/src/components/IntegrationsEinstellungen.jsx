@@ -511,6 +511,15 @@ const IntegrationsEinstellungen = () => {
             <li>Debitoren-Stammdaten - ASCII Format</li>
           </ul>
         </div>
+
+        <a
+          href="/datev-export"
+          className="ie-datev-export-link"
+        >
+          <Calculator size={16} />
+          Zum DATEV Export
+          <ExternalLink size={14} />
+        </a>
       </div>
 
       {/* Facebook Messenger Section */}
