@@ -752,6 +752,17 @@ async function processVorlageTrigger() {
              AND m.email IS NOT NULL AND m.email != ''`,
             [t.dojo_id]
           );
+        } else if (t.trigger_typ === 'inaktiv_30' || t.trigger_typ === 'inaktiv_60' || t.trigger_typ === 'inaktiv_90') {
+          const tage = parseInt(t.trigger_typ.replace('inaktiv_', ''));
+          [mitglieder] = await pool.query(
+            `SELECT m.* FROM mitglieder m
+             WHERE m.dojo_id = ? AND m.status = 'aktiv'
+             AND m.email IS NOT NULL AND m.email != ''
+             AND DATEDIFF(CURDATE(), (
+               SELECT MAX(a.datum) FROM anwesenheit a WHERE a.mitglied_id = m.mitglied_id
+             )) = ?`,
+            [t.dojo_id, tage]
+          );
         }
 
         if (!mitglieder.length) continue;

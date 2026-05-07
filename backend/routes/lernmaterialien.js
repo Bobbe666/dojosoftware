@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { authenticateToken } = require('../middleware/auth');
+const { requireFeature } = require('../middleware/featureAccess');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const pool = db.promise();
+
+router.use(authenticateToken, requireFeature('lernplattform'));
 let puppeteer;
 try { puppeteer = require('puppeteer'); } catch(e) { puppeteer = null; }
 

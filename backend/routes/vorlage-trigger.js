@@ -23,6 +23,9 @@ const TRIGGER_LABELS = {
   zahlungsverzug_30:      'Zahlungsverzug 30 Tage',
   mitgliedschaft_ablauf_30: 'Mitgliedschaft läuft ab (30 Tage vorher)',
   lizenz_ablauf_30:       'Lizenz läuft ab (30 Tage vorher)',
+  inaktiv_30:             'Kein Training seit 30 Tagen',
+  inaktiv_60:             'Kein Training seit 60 Tagen',
+  inaktiv_90:             'Kein Training seit 90 Tagen',
 };
 
 // ── GET / — alle Trigger des Dojos ────────────────────────────────────────────

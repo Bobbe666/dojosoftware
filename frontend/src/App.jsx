@@ -215,7 +215,7 @@ const EventsDashboard = lazyWithReload(() => import(/* webpackChunkName: "events
 // LAZY LOADED - Turnierverwaltung & Lernplattform
 // ============================================================================
 const Turnierverwaltung = lazyWithReload(() => import(/* webpackChunkName: "turniere" */ "./components/Turnierverwaltung"));
-const Lernplattform = lazyWithReload(() => import(/* webpackChunkName: "lernplattform" */ "./components/Lernplattform"));
+const Lernplattform = lazyWithReload(() => import(/* webpackChunkName: "lernplattform" */ "./pages/LernplattformPage"));
 const ElternZugaenge = lazyWithReload(() => import(/* webpackChunkName: "eltern" */ "./components/ElternZugaenge"));
 const ElternPortal = lazyWithReload(() => import(/* webpackChunkName: "eltern" */ "./components/ElternPortal"));
 const HomepageDashboard = lazyWithReload(() => import(/* webpackChunkName: "homepage-builder" */ "./components/HomepageDashboard"));
