@@ -15,6 +15,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.91.1",
     "@sentry/node": "^10.48.0",
+    "@walletpass/pass-js": "^6.9.1",
     "adm-zip": "^0.5.16",
     "archiver": "^7.0.1",
     "argon2": "^0.44.0",
