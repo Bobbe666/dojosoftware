@@ -16,6 +16,7 @@ const APP_FLAGS = [
   { key: 'kids',    label: '⭐ Kids',    app: 'kids'    },
   { key: 'hof',     label: '🏅 HOF',     app: 'hof'     },
   { key: 'trainer', label: '🥋 Trainer', app: 'trainer' },
+  { key: 'support', label: '🎧 Support', app: 'support' },
 ];
 
 // ── Unified App-Zugänge Modal ─────────────────────────────────────────────────

@@ -1,0 +1,2 @@
+ALTER TABLE admin_users
+  ADD COLUMN IF NOT EXISTS support_app_access TINYINT(1) NOT NULL DEFAULT 1;

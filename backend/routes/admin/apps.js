@@ -294,6 +294,7 @@ router.get('/app-access', requireSuperAdmin, async (req, res) => {
              COALESCE(au.kids_app_access, 1)     AS kids_app_access,
              COALESCE(au.hof_app_access, 1)      AS hof_app_access,
              COALESCE(au.trainer_app_access, 0)  AS trainer_app_access,
+             COALESCE(au.support_app_access, 1)  AS support_app_access,
              d.dojoname
       FROM admin_users au
       LEFT JOIN dojo d ON d.id = au.dojo_id
@@ -319,6 +320,7 @@ const ALLOWED_APP_COLS = {
   kids:    'kids_app_access',
   hof:     'hof_app_access',
   trainer: 'trainer_app_access',
+  support: 'support_app_access',
 };
 router.patch('/app-access/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
