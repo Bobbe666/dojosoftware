@@ -1075,7 +1075,7 @@ try {
 // Temporärer Migrations-Endpoint
 try {
   const migrateRouter = require(path.join(__dirname, "routes", "migrate.js"));
-  app.use("/api/migrate", migrateRouter);
+  app.use("/api/migrate", authenticateToken, migrateRouter);
   logger.success('Route gemountet', { path: '/api/migrate' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1088,7 +1088,7 @@ try {
 // 4. STIL-VERWALTUNG (Gürtel & Graduierungen) - MODULAR REFACTORED
 try {
   const stileRouter = require(path.join(__dirname, "routes", "stile"));
-  app.use("/api/stile", stileRouter);
+  app.use("/api/stile", authenticateToken, stileRouter);
   logger.success('Route gemountet', { path: '/api/stile', file: 'stile/index.js' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1271,7 +1271,7 @@ try {
 // 9. AUSWERTUNGEN (Analytics & Reports) - NEU
 try {
   const auswertungenRouter = require(path.join(__dirname, "routes", "auswertungen.js"));
-  app.use("/api/auswertungen", auswertungenRouter);
+  app.use("/api/auswertungen", authenticateToken, auswertungenRouter);
   logger.success('Route gemountet', { path: '/api/auswertungen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1310,7 +1310,7 @@ try {
 // 9.5. MIGRATION ROUTES - NEU
 try {
   const migrationRouter = require(path.join(__dirname, "routes", "migration.js"));
-  app.use("/api/migration", migrationRouter);
+  app.use("/api/migration", authenticateToken, migrationRouter);
   logger.success('Route gemountet', { path: '/api/migration' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1349,7 +1349,7 @@ try {
 // 10. FORTSCHRITT-TRACKING (Member Progress) - NEU
 try {
   const fortschrittRouter = require(path.join(__dirname, "routes", "fortschritt.js"));
-  app.use("/api/fortschritt", fortschrittRouter);
+  app.use("/api/fortschritt", authenticateToken, fortschrittRouter);
   logger.success('Route gemountet', { path: '/api/fortschritt' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1752,18 +1752,18 @@ try {
 // 16. PRÜFUNGSVERWALTUNG (Gurtprüfungen & Exam Management) - NEU (Modular)
 try {
   const pruefungenRouter = require(path.join(__dirname, "routes", "pruefungen"));
-  app.use("/api/pruefungen", pruefungenRouter);
+  app.use("/api/pruefungen", authenticateToken, pruefungenRouter);
   const pruefungenHistorischRouter = require(path.join(__dirname, "routes", "pruefungen-historisch.js"));
-  app.use("/api/pruefungen-historisch", pruefungenHistorischRouter);
+  app.use("/api/pruefungen-historisch", authenticateToken, pruefungenHistorischRouter);
   logger.success("Route gemountet", { path: "/api/pruefungen-historisch" });
   const ehrungenLehrgaengeRouter = require(path.join(__dirname, "routes", "ehrungen-lehrgaenge.js"));
-  app.use("/api/ehrungen-lehrgaenge", ehrungenLehrgaengeRouter);
+  app.use("/api/ehrungen-lehrgaenge", authenticateToken, ehrungenLehrgaengeRouter);
   logger.success("Route gemountet", { path: "/api/ehrungen-lehrgaenge" });
   logger.success('Route gemountet', { path: '/api/pruefungen' });
 
   // Zusatzdaten Route (Lehrgänge, Ehrungen, Zertifikate)
   const zusatzdatenRouter = require(path.join(__dirname, "routes", "zusatzdaten.js"));
-  app.use("/api/zusatzdaten", zusatzdatenRouter);
+  app.use("/api/zusatzdaten", authenticateToken, zusatzdatenRouter);
   logger.success("Route gemountet", { path: "/api/zusatzdaten" });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1776,7 +1776,7 @@ try {
 // 17. TRANSAKTIONEN (Zahlungshistorie & Finanzverwaltung) - NEU
 try {
   const transaktionenRouter = require(path.join(__dirname, "routes", "transaktionen.js"));
-  app.use("/api/transaktionen", transaktionenRouter);
+  app.use("/api/transaktionen", authenticateToken, transaktionenRouter);
   logger.success('Route gemountet', { path: '/api/transaktionen' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
@@ -1953,6 +1953,27 @@ const skipFiles = [
   "standorte.js",
   "stundenplan.js",
   "badges.js",
+  // Manuell gemountet (verhindert doppeltes Mounting):
+  "migration.js",
+  "migrate.js",
+  "pruefungen-historisch.js",
+  "ehrungen-lehrgaenge.js",
+  "zusatzdaten.js",
+  "transaktionen.js",
+  "elternZugang.js",
+  "events.js",
+  "tda-turniere.js",
+  "csv-import.js",
+  "magicline-import.js",
+  "beitraege.js",
+  "mahnwesen.js",
+  "finanzcockpit.js",
+  "sepa-mandate.js",
+  "ical.js",
+  "training.js",
+  // Sicherheit: nicht automatisch mounten
+  "neuesmitgliedanlegen.js",
+  "public-checkin.js",
   // Keine Router-Module (exportieren nur Funktionen):
   "templatePdfGenerator.js",
   "vertragPdfGeneratorExtended.js",
@@ -2320,7 +2341,7 @@ try {
 // ELTERN-ZUGANG
 try {
   const elternZugangRouter = require(path.join(__dirname, 'routes', 'elternZugang.js'));
-  app.use('/api/eltern-zugang', elternZugangRouter);
+  app.use('/api/eltern-zugang', authenticateToken, elternZugangRouter);
   logger.success('Route gemountet', { path: '/api/eltern-zugang' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', { route: 'eltern-zugang', error: error.message });
