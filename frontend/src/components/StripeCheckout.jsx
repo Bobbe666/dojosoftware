@@ -140,7 +140,8 @@ const StripeCheckoutForm = ({ amount, currency, rechnungId, onSuccess, onError }
 };
 
 // Wrapper Komponente die Stripe Elements bereitstellt
-const StripeCheckout = ({ amount, currency = 'eur', rechnungId, onSuccess, onError }) => {
+// memberMode=true → nutzt /member/payment-intent (Betrag aus DB, keine Frontend-Manipulation möglich)
+const StripeCheckout = ({ amount, currency = 'eur', rechnungId, onSuccess, onError, memberMode = false }) => {
   const { token } = useAuth();
   const [clientSecret, setClientSecret] = useState(null);
   const [stripeReady, setStripeReady] = useState(false);
@@ -168,13 +169,15 @@ const StripeCheckout = ({ amount, currency = 'eur', rechnungId, onSuccess, onErr
 
       setStripe(stripeInstance);
 
-      // 2. Erstelle Payment Intent
-      const res = await axios.post('/payment-provider/payment-intent', {
-        amount: Math.round(amount * 100), // Stripe erwartet Cents
-        currency: currency,
-        rechnung_id: rechnungId,
-        description: `Rechnung #${rechnungId}`
-      }, {
+      // 2. Erstelle Payment Intent — im Member-Modus liest das Backend den Betrag aus der DB
+      const endpoint = memberMode
+        ? '/payment-provider/member/payment-intent'
+        : '/payment-provider/payment-intent';
+      const body = memberMode
+        ? { rechnung_id: rechnungId }
+        : { amount: Math.round(amount * 100), currency, rechnung_id: rechnungId, description: `Rechnung #${rechnungId}` };
+
+      const res = await axios.post(endpoint, body, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

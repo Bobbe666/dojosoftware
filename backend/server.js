@@ -1972,6 +1972,8 @@ const skipFiles = [
   "ical.js",
   "training.js",
   "integrations.js",
+  "member-payments.js",
+  "sumup.js",
   // Sicherheit: nicht automatisch mounten
   "neuesmitgliedanlegen.js",
   "public-checkin.js",

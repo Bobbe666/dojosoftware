@@ -67,6 +67,45 @@ router.get('/rechnungen', authenticateToken, async (req, res) => {
     }
 });
 
+// GET /api/member-payments/rechnung/:id
+// Mitglied ruft eine einzelne eigene Rechnung ab (Eigentümerschaft wird geprüft)
+router.get('/rechnung/:id', authenticateToken, async (req, res) => {
+    try {
+        const mitgliedId = req.user?.mitglied_id;
+        if (!mitgliedId) return res.status(403).json({ error: 'Nur für Mitglieder zugänglich' });
+
+        const rechnungId = parseInt(req.params.id);
+        if (!rechnungId) return res.status(400).json({ error: 'Ungültige Rechnungs-ID' });
+
+        const [rows] = await pool.query(
+            `SELECT r.rechnung_id, r.rechnungsnummer, r.rechnungsdatum, r.faelligkeitsdatum,
+                    r.gesamtsumme, r.betrag, r.status, r.art, r.beschreibung,
+                    r.positionen
+             FROM rechnungen r
+             JOIN mitglieder m ON r.mitglied_id = m.mitglied_id
+             WHERE r.rechnung_id = ?
+               AND r.mitglied_id = ?
+               AND r.archiviert = 0`,
+            [rechnungId, mitgliedId]
+        );
+
+        if (!rows.length) return res.status(404).json({ error: 'Rechnung nicht gefunden' });
+
+        const r = rows[0];
+        res.json({
+            success: true,
+            rechnung: {
+                ...r,
+                gesamtbetrag: parseFloat(r.gesamtsumme || r.betrag || 0),
+                positionen: r.positionen ? (typeof r.positionen === 'string' ? JSON.parse(r.positionen) : r.positionen) : []
+            }
+        });
+    } catch (error) {
+        logger.error('Member Rechnung Fehler:', { error: error.message });
+        res.status(500).json({ error: 'Fehler beim Laden der Rechnung' });
+    }
+});
+
 // GET /api/member-payments/history
 // Mitglied ruft Zahlungshistorie ab
 router.get('/history', authenticateToken, async (req, res) => {

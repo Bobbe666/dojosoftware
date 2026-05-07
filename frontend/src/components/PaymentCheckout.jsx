@@ -53,14 +53,22 @@ const PaymentCheckout = () => {
     }
   }, [searchParams]);
 
+  // Mitglieder haben mitglied_id im JWT — dann sicheren Member-Endpunkt verwenden
+  const isMemberContext = !!user?.mitglied_id;
+
   const loadData = async () => {
     setLoading(true);
     setError('');
 
     try {
+      // Member-Context: eigenen sicheren Endpunkt nutzen (prüft Eigentümerschaft)
+      const rechnungEndpoint = isMemberContext
+        ? `/member-payments/rechnung/${rechnungId}`
+        : `/rechnungen/${rechnungId}`;
+
       // Lade Rechnung und Payment-Konfiguration parallel
       const [rechnungRes, configRes] = await Promise.all([
-        axios.get(`/rechnungen/${rechnungId}`, {
+        axios.get(rechnungEndpoint, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         axios.get('/integrations/status', {
@@ -107,16 +115,20 @@ const PaymentCheckout = () => {
   const handlePaymentSuccess = async (paymentData) => {
     setPaymentStatus('success');
 
-    // Optional: Rechnung als bezahlt markieren
     try {
-      const zahlungsart = paymentMethod === 'stripe' ? 'kreditkarte' : paymentMethod === 'sumup' ? 'sumup' : 'paypal';
-      await axios.post(`/rechnungen/${rechnungId}/zahlung`, {
-        betrag: rechnung.gesamtbetrag,
-        zahlungsart: zahlungsart,
-        referenz: paymentData.id || paymentData.orderId || paymentData.transactionId
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      if (isMemberContext) {
+        // Member-sicherer Endpunkt — verifiziert PI-Status serverseitig
+        await axios.post(`/member-payments/rechnung/${rechnungId}/bezahlt`, {
+          payment_intent_id: paymentData.id
+        }, { headers: { Authorization: `Bearer ${token}` } });
+      } else {
+        const zahlungsart = paymentMethod === 'stripe' ? 'kreditkarte' : paymentMethod === 'sumup' ? 'sumup' : 'paypal';
+        await axios.post(`/rechnungen/${rechnungId}/zahlung`, {
+          betrag: rechnung.gesamtbetrag,
+          zahlungsart,
+          referenz: paymentData.id || paymentData.orderId || paymentData.transactionId
+        }, { headers: { Authorization: `Bearer ${token}` } });
+      }
     } catch (err) {
       console.error('Fehler beim Aktualisieren der Rechnung:', err);
     }
@@ -300,6 +312,7 @@ const PaymentCheckout = () => {
                 amount={parseFloat(rechnung?.gesamtbetrag || 0)}
                 currency="eur"
                 rechnungId={rechnungId}
+                memberMode={isMemberContext}
                 onSuccess={handlePaymentSuccess}
                 onError={handlePaymentError}
               />
