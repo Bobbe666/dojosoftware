@@ -14,7 +14,7 @@ import '../styles/SupportPortal.css';
 
 // ── Login-Seite des Portals ────────────────────────────────────────────────
 const SupportLogin = () => {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const [form, setForm] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,11 @@ const SupportLogin = () => {
     setError('');
     setLoading(true);
     try {
-      await login(form.username, form.password);
+      const userData = await login({ username: form.username, password: form.password });
+      if (userData && userData.support_app_access === false) {
+        logout();
+        setError('Kein Zugriff auf das Support-Portal');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login fehlgeschlagen');
     } finally {
