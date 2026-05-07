@@ -38,8 +38,11 @@ function authenticateTrainerToken(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Kein Token vorhanden' });
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) return res.status(403).json({ error: 'Token ungültig oder abgelaufen' });
-    if (!decoded.trainer_app) return res.status(403).json({ error: 'Kein Trainer-App-Token' });
-    req.trainerUser = decoded;
+    // Akzeptiert altes trainer_app-Token UND neues Standard-Auth-Token mit trainer_app_access
+    if (!decoded.trainer_app && !decoded.trainer_app_access) {
+      return res.status(403).json({ error: 'Kein Zugriff auf die Trainer-App' });
+    }
+    req.trainerUser = { ...decoded, admin_user_id: decoded.admin_user_id || decoded.id };
     next();
   });
 }
