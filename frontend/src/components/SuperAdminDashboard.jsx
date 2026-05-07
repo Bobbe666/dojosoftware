@@ -1505,28 +1505,23 @@ const SuperAdminDashboard = () => {
             {/* ── Zone 1: KPI-Leiste ──────────────────────────────────── */}
             <div className="compact-stats-bar sad2-mb-15">
               <div className="compact-stat">
-                <Building2 size={18} />
-                <span className="compact-stat-value">{globalStats?.dojos?.active_dojos || 0}</span>
+                <div className="compact-stat-top"><Building2 size={16} /><span className="compact-stat-value">{globalStats?.dojos?.active_dojos || 0}</span></div>
                 <span className="compact-stat-label">Aktive Dojos</span>
               </div>
               <div className="compact-stat">
-                <Users size={18} />
-                <span className="compact-stat-value">{globalStats?.members?.active_members || 0}</span>
+                <div className="compact-stat-top"><Users size={16} /><span className="compact-stat-value">{globalStats?.members?.active_members || 0}</span></div>
                 <span className="compact-stat-label">Mitglieder</span>
               </div>
               <div className="compact-stat">
-                <Award size={18} />
-                <span className="compact-stat-value">{overviewSummary?.goals?.find(g => g.typ === 'verband_mitglieder')?.ist_wert ?? tdaStats?.members?.active_members ?? 0}</span>
+                <div className="compact-stat-top"><Award size={16} /><span className="compact-stat-value">{overviewSummary?.goals?.find(g => g.typ === 'verband_mitglieder')?.ist_wert ?? tdaStats?.members?.active_members ?? 0}</span></div>
                 <span className="compact-stat-label">Verbandsmitglieder</span>
               </div>
               <div className="compact-stat">
-                <Activity size={18} />
-                <span className="compact-stat-value">{globalStats?.checkins?.active_checkins_today || 0}</span>
+                <div className="compact-stat-top"><Activity size={16} /><span className="compact-stat-value">{globalStats?.checkins?.active_checkins_today || 0}</span></div>
                 <span className="compact-stat-label">Check-ins heute</span>
               </div>
               <div className={`compact-stat ${globalStats?.payments?.open_payments > 0 ? 'compact-stat--warning' : ''}`}>
-                <Euro size={18} />
-                <span className="compact-stat-value">{globalStats?.payments?.open_payments || 0}</span>
+                <div className="compact-stat-top"><Euro size={16} /><span className="compact-stat-value">{globalStats?.payments?.open_payments || 0}</span></div>
                 <span className="compact-stat-label">Offene Zahlungen</span>
               </div>
               <div
@@ -1534,13 +1529,11 @@ const SuperAdminDashboard = () => {
                 onClick={() => { setActiveTab('kommunikation'); setKommunikationSubTab('pushnachrichten'); }}
                 title="Zu Benachrichtigungen"
               >
-                <Bell size={18} />
-                <span className="compact-stat-value">{unreadCount}</span>
+                <div className="compact-stat-top"><Bell size={16} /><span className="compact-stat-value">{unreadCount}</span></div>
                 <span className="compact-stat-label">Ungelesen</span>
               </div>
               <div className={`compact-stat ${(globalStats?.storage?.percent_used || 0) > 80 ? 'compact-stat--danger' : ''}`}>
-                <HardDrive size={18} />
-                <span className="compact-stat-value">{globalStats?.storage?.percent_used || 0}%</span>
+                <div className="compact-stat-top"><HardDrive size={16} /><span className="compact-stat-value">{globalStats?.storage?.percent_used || 0}%</span></div>
                 <span className="compact-stat-label">Speicher ({globalStats?.storage?.used_gb || 0}/{globalStats?.storage?.total_gb || 0} GB)</span>
               </div>
             </div>

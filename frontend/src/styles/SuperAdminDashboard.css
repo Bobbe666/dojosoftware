@@ -3026,39 +3026,58 @@
    ============================================= */
 
 .compact-stats-bar {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
 }
 
 .compact-stat {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.85rem 1rem;
   background: var(--surface-2);
   border: 1px solid var(--border-default);
   border-radius: var(--comp-radius-md);
-  min-width: 120px;
+  border-left: 3px solid var(--primary, #c9a227);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.compact-stat:hover {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+  border-left-color: var(--gold, #c9a227);
+}
+
+.compact-stat-top {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .compact-stat svg {
   color: var(--primary, var(--primary));
-  opacity: 0.8;
+  opacity: 0.75;
+  flex-shrink: 0;
 }
 
 .compact-stat-value {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--text-primary, var(--color-white));
+  line-height: 1;
 }
 
 .compact-stat-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-secondary, var(--color-gray-muted));
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Light Theme */
@@ -3448,9 +3467,16 @@
 .sad2-clickable-card {
   background: var(--bg-secondary);
   border-radius: 12px;
-  padding: 1.25rem;
+  padding: 1.1rem 1.25rem;
   border: 1px solid var(--border-default);
+  border-top: 3px solid var(--gold, #c9a227);
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.sad2-clickable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+  border-top-color: var(--primary, #c9a227);
 }
 
 .sad2-opacity-04 {
@@ -3865,8 +3891,8 @@
 /* Product cards grid */
 .sad-product-cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.875rem;
   margin-bottom: 1.5rem;
 }
 
