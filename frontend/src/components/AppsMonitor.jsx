@@ -114,13 +114,14 @@ function AppAccessModal({ onClose }) {
   };
 
   const openEditUser = (u) => {
+    const validRolle = ROLES.find(r => r.value === u.rolle) ? u.rolle : 'admin';
     setEditUser({
       id: u.id,
       vorname: u.vorname || '',
       nachname: u.nachname || '',
       username: u.username || '',
       email: u.email || '',
-      rolle: u.rolle || 'admin',
+      rolle: validRolle,
       dojo_id: u.dojo_id != null ? String(u.dojo_id) : '',
       is_super_admin: u.dojo_id === null,
     });

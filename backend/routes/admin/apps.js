@@ -394,15 +394,15 @@ router.patch('/user/:id', requireSuperAdmin, async (req, res) => {
   if (!vorname || !nachname || !username) {
     return res.status(400).json({ error: 'Vorname, Nachname und Benutzername sind Pflicht.' });
   }
-  if (rolle && !ALLOWED_ROLES.includes(rolle)) {
-    return res.status(400).json({ error: 'Ungültige Rolle.' });
-  }
+
+  // Ungültige oder fehlende Rolle → 'admin' als Fallback
+  const safeRolle = ALLOWED_ROLES.includes(rolle) ? rolle : 'admin';
+  const newDojoId = is_super_admin ? null : (dojo_id || null);
 
   try {
-    const newDojoId = is_super_admin ? null : (dojo_id || null);
     await db.promise().query(
       `UPDATE admin_users SET vorname=?, nachname=?, username=?, email=?, rolle=?, dojo_id=? WHERE id=?`,
-      [vorname.trim(), nachname.trim(), username.trim(), email?.trim() || null, rolle || 'admin', newDojoId, id]
+      [vorname.trim(), nachname.trim(), username.trim(), email?.trim() || null, safeRolle, newDojoId, id]
     );
     res.json({ success: true });
   } catch (err) {
