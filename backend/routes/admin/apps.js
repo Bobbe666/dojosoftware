@@ -389,21 +389,31 @@ router.patch('/app-access/:id', requireSuperAdmin, async (req, res) => {
 const ALLOWED_ROLES = ['eingeschraenkt', 'trainer', 'mitarbeiter', 'admin'];
 router.patch('/user/:id', requireSuperAdmin, async (req, res) => {
   const { id } = req.params;
-  const { vorname, nachname, username, email, rolle, dojo_id, is_super_admin } = req.body;
+  const { vorname, nachname, username, email, rolle, dojo_id, is_super_admin, password } = req.body;
 
   if (!vorname || !nachname || !username) {
     return res.status(400).json({ error: 'Vorname, Nachname und Benutzername sind Pflicht.' });
   }
+  if (password && password.length < 6) {
+    return res.status(400).json({ error: 'Passwort muss mindestens 6 Zeichen haben.' });
+  }
 
-  // Ungültige oder fehlende Rolle → 'admin' als Fallback
   const safeRolle = ALLOWED_ROLES.includes(rolle) ? rolle : 'admin';
   const newDojoId = is_super_admin ? null : (dojo_id || null);
 
   try {
-    await db.promise().query(
-      `UPDATE admin_users SET vorname=?, nachname=?, username=?, email=?, rolle=?, dojo_id=? WHERE id=?`,
-      [vorname.trim(), nachname.trim(), username.trim(), email?.trim() || null, safeRolle, newDojoId, id]
-    );
+    if (password) {
+      const hashed = await bcrypt.hash(password, 10);
+      await db.promise().query(
+        `UPDATE admin_users SET vorname=?, nachname=?, username=?, email=?, rolle=?, dojo_id=?, password=?, password_algorithm='bcrypt' WHERE id=?`,
+        [vorname.trim(), nachname.trim(), username.trim(), email?.trim() || null, safeRolle, newDojoId, hashed, id]
+      );
+    } else {
+      await db.promise().query(
+        `UPDATE admin_users SET vorname=?, nachname=?, username=?, email=?, rolle=?, dojo_id=? WHERE id=?`,
+        [vorname.trim(), nachname.trim(), username.trim(), email?.trim() || null, safeRolle, newDojoId, id]
+      );
+    }
     res.json({ success: true });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Benutzername oder E-Mail bereits vergeben.' });

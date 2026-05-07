@@ -45,9 +45,10 @@ function AppAccessModal({ onClose }) {
   const [addSaving, setAddSaving] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   // Nutzer-Edit-Modal
-  const [editUser, setEditUser]       = useState(null); // aktueller Nutzer-Entwurf
+  const [editUser, setEditUser]       = useState(null);
   const [editSaving, setEditSaving]   = useState(false);
   const [editMsg, setEditMsg]         = useState('');
+  const [editShowPw, setEditShowPw]   = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -121,10 +122,12 @@ function AppAccessModal({ onClose }) {
       nachname: u.nachname || '',
       username: u.username || '',
       email: u.email || '',
+      password: '',
       rolle: validRolle,
       dojo_id: u.dojo_id != null ? String(u.dojo_id) : '',
       is_super_admin: u.dojo_id === null,
     });
+    setEditShowPw(false);
     setEditMsg('');
   };
 
@@ -355,6 +358,20 @@ function AppAccessModal({ onClose }) {
                   <input className="am-add-input" type="email" value={editUser.email} onChange={e => setEditUser(p => ({...p, email: e.target.value}))} />
                 </div>
                 <div className="am-edit-field am-edit-field--full">
+                  <label className="am-edit-label">Neues Passwort <span style={{fontWeight:400,opacity:0.5}}>(leer lassen = unverändert)</span></label>
+                  <div className="am-add-pw-wrap">
+                    <input
+                      className="am-add-input"
+                      type={editShowPw ? 'text' : 'password'}
+                      placeholder="Neues Passwort (min. 6 Zeichen)"
+                      value={editUser.password}
+                      onChange={e => setEditUser(p => ({...p, password: e.target.value}))}
+                      autoComplete="new-password"
+                    />
+                    <button className="am-pw-eye am-pw-eye--add" type="button" onClick={() => setEditShowPw(s => !s)}>{editShowPw ? '🙈' : '👁'}</button>
+                  </div>
+                </div>
+                <div className="am-edit-field am-edit-field--full">
                   <label className="am-edit-label am-edit-superadmin-row">
                     <input
                       type="checkbox"
@@ -388,7 +405,7 @@ function AppAccessModal({ onClose }) {
                 <button
                   className="am-pw-save"
                   onClick={saveEditUser}
-                  disabled={editSaving || !editUser.vorname || !editUser.nachname || !editUser.username || (!editUser.is_super_admin && !editUser.dojo_id)}
+                  disabled={editSaving || !editUser.vorname || !editUser.nachname || !editUser.username || (!editUser.is_super_admin && !editUser.dojo_id) || (editUser.password && editUser.password.length < 6)}
                 >
                   {editSaving ? '…' : 'Speichern'}
                 </button>

@@ -406,6 +406,11 @@ const LoginRouteHandler = () => {
     return <CheckinLogin />;
   }
 
+  // Admin-Subdomains → normales Admin-Login (kein ClubMemberLogin)
+  if (hostname === 'support.tda-intl.org' || hostname === 'finanzen.tda-intl.org') {
+    return <Login />;
+  }
+
   // Wenn Dojo-Subdomain (z.B. demo1.dojo.tda-intl.org, dojo-3.dojo.tda-intl.org) → ClubMemberLogin
   // Sonst (dojo.tda-intl.org) → normales Login
   return isDojoSubdomain() ? <ClubMemberLogin /> : <Login />;
@@ -445,6 +450,10 @@ const RootRedirect = () => {
 
   // Wenn nicht eingeloggt
   if (!token) {
+    // Admin-Subdomains → direkt zum Login
+    if (hostname === 'support.tda-intl.org' || hostname === 'finanzen.tda-intl.org') {
+      return <Navigate to="/login" replace />;
+    }
     // Bei Subdomain → direkt zur Login-Seite
     if (isSubdomain()) {
       return <Navigate to="/login" replace />;
