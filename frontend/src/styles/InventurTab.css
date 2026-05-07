@@ -597,7 +597,7 @@
   border: 1px solid var(--rand-farbe);
   border-radius: 16px;
   width: 100%;
-  max-width: 500px;
+  max-width: 660px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
@@ -642,10 +642,10 @@
 .inv-modal-close:hover { color: var(--text-hauptfarbe); }
 
 .inv-modal-body {
-  padding: 1.1rem 1.4rem;
+  padding: 0.9rem 1.2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 0.85rem;
 }
 
 .inv-current-stock {
@@ -686,23 +686,23 @@
 }
 
 .inv-bewegungsart-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
+  display: flex;
+  gap: 0.35rem;
 }
 
 .inv-bewegungsart-btn {
+  flex: 1;
   border: 1px solid var(--rand-farbe);
-  border-radius: 10px;
+  border-radius: 8px;
   background: transparent;
-  padding: 0.6rem 0.7rem;
+  padding: 0.35rem 0.5rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.1rem;
+  align-items: center;
+  gap: 0.15rem;
   transition: all 0.18s;
-  text-align: left;
+  text-align: center;
 }
 
 .inv-bewegungsart-btn:hover {
@@ -710,20 +710,18 @@
 }
 
 .inv-bewegungsart-icon {
-  font-size: 1rem;
+  font-size: 0.9rem;
   line-height: 1;
 }
 
 .inv-bewegungsart-label {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-hauptfarbe);
 }
 
 .inv-bewegungsart-desc {
-  font-size: 0.7rem;
-  color: var(--text-sekundaer);
-  line-height: 1.3;
+  display: none;
 }
 
 .inv-input {
@@ -755,18 +753,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0 1.4rem 1.4rem;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem 1rem;
+  border-top: 1px solid var(--rand-farbe);
+}
+
+.inv-modal-footer .btn-secondary,
+.inv-modal-footer .btn-primary {
+  padding: 0.38rem 1rem;
+  font-size: 0.85rem;
 }
 
 .inv-modal-footer-right {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .inv-btn-bearbeiten {
   opacity: 0.7;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
+  padding: 0.38rem 0.75rem !important;
 }
 .inv-btn-bearbeiten:hover { opacity: 1; }
 
@@ -808,7 +814,7 @@
   border: 1px solid var(--rand-farbe);
   border-radius: 8px;
   overflow: hidden;
-  max-height: 320px;
+  max-height: 380px;
   overflow-y: auto;
 }
 
@@ -843,9 +849,12 @@
 .inv-varianten-eingabe-row:hover { background: rgba(255,255,255,0.03); }
 
 .inv-var-label {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--text-hauptfarbe);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inv-var-bestand {

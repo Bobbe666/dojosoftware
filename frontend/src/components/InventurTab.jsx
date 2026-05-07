@@ -503,7 +503,7 @@ export default function InventurTab() {
                       <span>{isKorrektur ? 'Neu' : 'Menge'}</span>
                       <span>Ergebnis</span>
                     </div>
-                    {variantenEntries.map(([key, v]) => {
+                    {variantenEntries.map(([key, v], idx) => {
                       const label = key.split('|').filter(Boolean).join(' / ');
                       const bestand = v.bestand ?? 0;
                       const mengeStr = variantMengen[key] ?? '';
@@ -526,6 +526,7 @@ export default function InventurTab() {
                             value={mengeStr}
                             onChange={e => setVariantMengen(prev => ({ ...prev, [key]: e.target.value }))}
                             placeholder="—"
+                            autoFocus={idx === 0}
                           />
                           <span className={`inv-var-preview ${diff !== null ? (diff > 0 ? 'pos' : diff < 0 ? 'neg' : 'zero') : ''}`}>
                             {neuerBestand !== null ? neuerBestand : '—'}
