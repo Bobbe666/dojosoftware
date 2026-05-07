@@ -1730,3 +1730,33 @@
   margin: 1.25rem 0;
 }
 .md-community-section { margin-top: 24px; }
+
+/* Apple Wallet Button */
+.apple-wallet-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.01em;
+}
+.apple-wallet-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.apple-wallet-btn:active { transform: translateY(0); }
+.apple-wallet-btn.loading { opacity: 0.6; cursor: not-allowed; }
+.apple-wallet-btn:disabled { cursor: not-allowed; }
+.wallet-error-hint {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-danger, #ef4444);
+  margin: 4px 0 0;
+}
