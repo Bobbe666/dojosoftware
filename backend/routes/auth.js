@@ -179,9 +179,10 @@ router.post('/login',
       SELECT id, username, email, password, password_algorithm, rolle as role, dojo_id,
              vorname, nachname, berechtigungen, aktiv, erstellt_am,
              failed_login_attempts, locked_until, todo_app_access,
-             COALESCE(events_app_access, 1) AS events_app_access,
-             COALESCE(kids_app_access, 1)   AS kids_app_access,
-             COALESCE(hof_app_access, 1)    AS hof_app_access
+             COALESCE(events_app_access, 1)    AS events_app_access,
+             COALESCE(kids_app_access, 1)      AS kids_app_access,
+             COALESCE(hof_app_access, 1)       AS hof_app_access,
+             COALESCE(finanzen_app_access, 0)  AS finanzen_app_access
       FROM admin_users
       WHERE email = ? OR username = ?
       LIMIT 1
@@ -365,11 +366,12 @@ router.post('/login',
           vorname: user.vorname || null,
           nachname: user.nachname || null,
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
-          msg_app_enabled:    isAdmin ? true : (user.msg_app_enabled !== 0),
-          todo_app_access:   isAdmin ? (user.todo_app_access !== 0)   : true,
-          events_app_access: isAdmin ? (user.events_app_access !== 0) : true,
-          kids_app_access:   isAdmin ? (user.kids_app_access !== 0)   : true,
-          hof_app_access:    isAdmin ? (user.hof_app_access !== 0)    : true,
+          msg_app_enabled:     isAdmin ? true : (user.msg_app_enabled !== 0),
+          todo_app_access:     isAdmin ? (user.todo_app_access !== 0)     : true,
+          events_app_access:   isAdmin ? (user.events_app_access !== 0)   : true,
+          kids_app_access:     isAdmin ? (user.kids_app_access !== 0)     : true,
+          hof_app_access:      isAdmin ? (user.hof_app_access !== 0)      : true,
+          finanzen_app_access: isAdmin ? (user.finanzen_app_access !== 0) : false,
           iat: Math.floor(Date.now() / 1000)
         };
 
@@ -395,10 +397,11 @@ router.post('/login',
           vorname: user.vorname || null,
           nachname: user.nachname || null,
           berechtigungen: isAdmin ? (typeof user.berechtigungen === 'string' ? JSON.parse(user.berechtigungen) : user.berechtigungen) : null,
-          todo_app_access:   isAdmin ? (user.todo_app_access !== 0)   : true,
-          events_app_access: isAdmin ? (user.events_app_access !== 0) : true,
-          kids_app_access:   isAdmin ? (user.kids_app_access !== 0)   : true,
-          hof_app_access:    isAdmin ? (user.hof_app_access !== 0)    : true,
+          todo_app_access:     isAdmin ? (user.todo_app_access !== 0)     : true,
+          events_app_access:   isAdmin ? (user.events_app_access !== 0)   : true,
+          kids_app_access:     isAdmin ? (user.kids_app_access !== 0)     : true,
+          hof_app_access:      isAdmin ? (user.hof_app_access !== 0)      : true,
+          finanzen_app_access: isAdmin ? (user.finanzen_app_access !== 0) : false,
           loginTime: new Date().toISOString()
         };
 
