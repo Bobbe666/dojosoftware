@@ -71,6 +71,9 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [expandedKategorien, setExpandedKategorien] = useState({});
+  // EÜR Kategorie inline-Edit
+  const [editingBuchung, setEditingBuchung] = useState(null); // { quelle, referenz_id, currentKat }
+  const [editingBuchungKat, setEditingBuchungKat] = useState('');
 
   // Modal States
   const [showBelegModal, setShowBelegModal] = useState(false);
@@ -287,6 +290,22 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
       setLoading(false);
     }
   }, [token, selectedOrg, selectedJahr, selectedQuartal]);
+
+  const saveBuchungKategorie = async () => {
+    if (!editingBuchung || !editingBuchungKat) return;
+    try {
+      await axios.patch(
+        `/buchhaltung/buchung/${editingBuchung.quelle}/${editingBuchung.referenz_id}/kategorie`,
+        { kategorie: editingBuchungKat },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setEditingBuchung(null);
+      setEditingBuchungKat('');
+      loadEuer();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Fehler beim Speichern der Kategorie');
+    }
+  };
 
   // Dojo-Einstellungen laden (einmalig)
   const loadEinstellungen = useCallback(async () => {
@@ -2045,25 +2064,57 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 </td>
                                 <td className="right">{formatCurrency(detail.summe)}</td>
                               </tr>
-                              {expandedKategorien[`ein_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
-                                <tr
-                                  key={`${kat}-${idx}-${bIdx}`}
-                                  className={`einzelbuchung-row${buchung.drilldown ? ' clickable bt-cursor-pointer' : ''}`}
-                                  onClick={buchung.drilldown ? () => {
-                                    if (buchung.drilldown.typ === 'beitraege') ladeBeitraegeDetail(buchung.drilldown.monat, buchung.drilldown.jahr, buchung.beschreibung, buchung.drilldown.organisation);
-                                    else if (buchung.drilldown.typ === 'verkauf') ladeVerkaufDetail(buchung.drilldown.verkauf_id, buchung.beschreibung);
-                                  } : undefined}
-                                  title={buchung.drilldown ? 'Klicken für Details' : undefined}
-                                >
-                                  <td colSpan="2">
-                                    <span className="einzelbuchung-indent">
-                                      {buchung.drilldown && <ChevronRight size={11} />}
-                                      {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
-                                    </span>
-                                  </td>
-                                  <td className="right">{formatCurrency(buchung.betrag)}</td>
-                                </tr>
-                              ))}
+                              {expandedKategorien[`ein_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => {
+                                const buchKey = `ein_${kat}_${idx}_${bIdx}`;
+                                const isEditing = editingBuchung?.key === buchKey;
+                                const canEdit = (buchung.quelle === 'Beleg' || buchung.quelle === 'Bank') && buchung.referenz_id;
+                                return (
+                                  <tr
+                                    key={buchKey}
+                                    className={`einzelbuchung-row${buchung.drilldown ? ' clickable bt-cursor-pointer' : ''}`}
+                                    onClick={buchung.drilldown && !isEditing ? () => {
+                                      if (buchung.drilldown.typ === 'beitraege') ladeBeitraegeDetail(buchung.drilldown.monat, buchung.drilldown.jahr, buchung.beschreibung, buchung.drilldown.organisation);
+                                      else if (buchung.drilldown.typ === 'verkauf') ladeVerkaufDetail(buchung.drilldown.verkauf_id, buchung.beschreibung);
+                                    } : undefined}
+                                    title={buchung.drilldown ? 'Klicken für Details' : undefined}
+                                  >
+                                    <td colSpan="2">
+                                      <span className="einzelbuchung-indent">
+                                        {buchung.drilldown && <ChevronRight size={11} />}
+                                        {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
+                                      </span>
+                                      {isEditing && (
+                                        <span className="buchung-edit-inline" onClick={e => e.stopPropagation()}>
+                                          <select
+                                            className="input-small"
+                                            value={editingBuchungKat}
+                                            onChange={e => setEditingBuchungKat(e.target.value)}
+                                          >
+                                            <option value="">Kategorie wählen…</option>
+                                            {kategorien.map(k => (
+                                              <option key={k.id} value={k.id}>{k.name}</option>
+                                            ))}
+                                          </select>
+                                          <button className="btn-icon-xs btn-success" onClick={saveBuchungKategorie} title="Speichern"><Check size={12} /></button>
+                                          <button className="btn-icon-xs" onClick={() => setEditingBuchung(null)} title="Abbrechen"><X size={12} /></button>
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="right">
+                                      {canEdit && !isEditing && (
+                                        <button
+                                          className="btn-icon-xs btn-ghost"
+                                          title="Kategorie ändern"
+                                          onClick={e => { e.stopPropagation(); setEditingBuchung({ key: buchKey, quelle: buchung.quelle, referenz_id: buchung.referenz_id }); setEditingBuchungKat(kat); }}
+                                        >
+                                          <Edit size={12} />
+                                        </button>
+                                      )}
+                                      {formatCurrency(buchung.betrag)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </React.Fragment>
                           ))}
                         </React.Fragment>
@@ -2123,16 +2174,48 @@ const BuchhaltungTab = ({ token, dojoMode = false }) => {
                                 </td>
                                 <td className="right">{formatCurrency(detail.summe)}</td>
                               </tr>
-                              {expandedKategorien[`aus_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => (
-                                <tr key={`${kat}-${idx}-${bIdx}`} className="einzelbuchung-row">
-                                  <td colSpan="2">
-                                    <span className="einzelbuchung-indent">
-                                      {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
-                                    </span>
-                                  </td>
-                                  <td className="right">{formatCurrency(buchung.betrag)}</td>
-                                </tr>
-                              ))}
+                              {expandedKategorien[`aus_${kat}_${idx}`] && detail.einzelbuchungen?.map((buchung, bIdx) => {
+                                const buchKey = `aus_${kat}_${idx}_${bIdx}`;
+                                const isEditing = editingBuchung?.key === buchKey;
+                                const canEdit = (buchung.quelle === 'Beleg' || buchung.quelle === 'Bank') && buchung.referenz_id;
+                                return (
+                                  <tr key={buchKey} className="einzelbuchung-row">
+                                    <td colSpan="2">
+                                      <span className="einzelbuchung-indent">
+                                        {new Date(buchung.datum).toLocaleDateString('de-DE')} – {buchung.beschreibung || 'Keine Beschreibung'}
+                                      </span>
+                                      {isEditing && (
+                                        <span className="buchung-edit-inline" onClick={e => e.stopPropagation()}>
+                                          <select
+                                            className="input-small"
+                                            value={editingBuchungKat}
+                                            onChange={e => setEditingBuchungKat(e.target.value)}
+                                          >
+                                            <option value="">Kategorie wählen…</option>
+                                            {kategorien.map(k => (
+                                              <option key={k.id} value={k.id}>{k.name}</option>
+                                            ))}
+                                          </select>
+                                          <button className="btn-icon-xs btn-success" onClick={saveBuchungKategorie} title="Speichern"><Check size={12} /></button>
+                                          <button className="btn-icon-xs" onClick={() => setEditingBuchung(null)} title="Abbrechen"><X size={12} /></button>
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="right">
+                                      {canEdit && !isEditing && (
+                                        <button
+                                          className="btn-icon-xs btn-ghost"
+                                          title="Kategorie ändern"
+                                          onClick={e => { e.stopPropagation(); setEditingBuchung({ key: buchKey, quelle: buchung.quelle, referenz_id: buchung.referenz_id }); setEditingBuchungKat(kat); }}
+                                        >
+                                          <Edit size={12} />
+                                        </button>
+                                      )}
+                                      {formatCurrency(buchung.betrag)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </React.Fragment>
                           ))}
                         </React.Fragment>

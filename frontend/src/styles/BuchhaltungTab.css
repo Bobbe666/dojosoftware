@@ -3949,3 +3949,38 @@
   border-color: rgba(139, 105, 20, 0.2);
 }
 .checkbox-label input { accent-color: var(--accent, #6366f1); width: 16px; height: 16px; }
+
+/* EÜR inline-Kategorie-Edit */
+.buchung-edit-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+}
+.buchung-edit-inline .input-small {
+  font-size: 11px;
+  padding: 2px 4px;
+  height: 22px;
+  background: var(--bg-secondary, #1e1e2e);
+  border: 1px solid var(--border-color, #444);
+  border-radius: 4px;
+  color: var(--text-primary);
+  max-width: 180px;
+}
+.btn-icon-xs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px 4px;
+  color: var(--text-muted);
+  line-height: 1;
+}
+.btn-icon-xs:hover { background: var(--bg-tertiary, rgba(255,255,255,0.06)); color: var(--text-primary); }
+.btn-icon-xs.btn-success { color: #34d399; }
+.btn-icon-xs.btn-success:hover { background: rgba(52,211,153,0.12); }
+.btn-icon-xs.btn-ghost { opacity: 0; transition: opacity 0.15s; }
+.euer-table .einzelbuchung-row:hover .btn-icon-xs.btn-ghost { opacity: 1; }

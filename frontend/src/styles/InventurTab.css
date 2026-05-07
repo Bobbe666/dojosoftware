@@ -897,3 +897,15 @@
 .inv-var-preview.pos  { color: #27ae60; }
 .inv-var-preview.neg  { color: #e74c3c; }
 .inv-var-preview.zero { color: var(--text-sekundaer); }
+
+.inv-autosave-msg {
+  background: rgba(39, 174, 96, 0.12);
+  border: 1px solid rgba(39, 174, 96, 0.3);
+  color: #27ae60;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}

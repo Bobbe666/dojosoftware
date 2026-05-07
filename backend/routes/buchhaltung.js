@@ -1196,7 +1196,8 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
       quelle,
       datum,
       betrag_brutto,
-      beschreibung
+      beschreibung,
+      referenz_id
     FROM v_euer_ausgaben
     WHERE ${dateFilter} ${orgFilter}
     ORDER BY kategorie, quelle, datum DESC
@@ -1273,7 +1274,9 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
         einzelbuchungen = rawBuchungen.map(d => ({
           datum: d.datum,
           betrag: parseFloat(d.betrag_brutto),
-          beschreibung: d.beschreibung
+          beschreibung: d.beschreibung,
+          referenz_id: d.referenz_id,
+          quelle: d.quelle
         }));
       }
 
@@ -1300,7 +1303,9 @@ router.get('/euer', requireBuchhaltungAccess, (req, res) => {
         .map(d => ({
           datum: d.datum,
           betrag: parseFloat(d.betrag_brutto),
-          beschreibung: d.beschreibung
+          beschreibung: d.beschreibung,
+          referenz_id: d.referenz_id,
+          quelle: d.quelle
         }));
 
       ausgabenNachKategorie[row.kategorie].details.push({
@@ -6588,6 +6593,41 @@ router.get('/export/anlage-euer', requireBuchhaltungAccess, async (req, res) => 
   } catch (err) {
     console.error('Anlage-EÜR-Export-Fehler:', err);
     res.status(500).json({ message: 'Fehler beim Anlage EÜR Export', error: err.message });
+  }
+});
+
+// PATCH /buchhaltung/buchung/:quelle/:id/kategorie — Kategorie einer EÜR-Buchung ändern
+router.patch('/buchung/:quelle/:id/kategorie', requireBuchhaltungAccess, async (req, res) => {
+  const { quelle, id } = req.params;
+  const { kategorie } = req.body;
+  const dojoId = req.buchhaltungDojoId;
+
+  if (!kategorie) return res.status(400).json({ message: 'Kategorie fehlt' });
+
+  const pool = db.promise();
+  try {
+    if (quelle === 'Beleg') {
+      // Sicherheits-Check: Beleg gehört zum richtigen Dojo
+      const [rows] = await pool.query(
+        'SELECT beleg_id FROM buchhaltung_belege WHERE beleg_id = ? AND (dojo_id = ? OR ? IS NULL)',
+        [id, dojoId, dojoId]
+      );
+      if (!rows.length) return res.status(404).json({ message: 'Beleg nicht gefunden' });
+      await pool.query('UPDATE buchhaltung_belege SET kategorie = ? WHERE beleg_id = ?', [kategorie, id]);
+    } else if (quelle === 'Bank') {
+      const [rows] = await pool.query(
+        'SELECT transaktion_id FROM bank_transaktionen WHERE transaktion_id = ? AND (dojo_id = ? OR ? IS NULL)',
+        [id, dojoId, dojoId]
+      );
+      if (!rows.length) return res.status(404).json({ message: 'Transaktion nicht gefunden' });
+      await pool.query('UPDATE bank_transaktionen SET kategorie = ? WHERE transaktion_id = ?', [kategorie, id]);
+    } else {
+      return res.status(400).json({ message: 'Ungültige Quelle — nur Beleg oder Bank' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Kategorie-Update-Fehler:', err);
+    res.status(500).json({ message: 'Fehler beim Aktualisieren der Kategorie', error: err.message });
   }
 });
 

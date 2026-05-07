@@ -32,6 +32,14 @@ export default function InventurTab() {
   const [buchung, setBuchung] = useState({ bewegungsart: 'eingang', menge: '', grund: '' });
   const [variantMengen, setVariantMengen] = useState({});
   const [buchungLoading, setBuchungLoading] = useState(false);
+  const [autoSaveMsg, setAutoSaveMsg] = useState('');
+  const [focusTrigger, setFocusTrigger] = useState(0);
+
+  useEffect(() => {
+    if (focusTrigger === 0) return;
+    const first = document.querySelector('.inv-input-sm');
+    if (first) first.focus();
+  }, [focusTrigger]);
 
   const loadArtikel = useCallback(async () => {
     setLoading(true);
@@ -119,6 +127,71 @@ export default function InventurTab() {
     setVariantMengen(initMengen);
     setBuchung({ bewegungsart: 'eingang', menge: '', grund: '' });
     setShowModal(true);
+  };
+
+  const refreshArtikelInModal = async () => {
+    const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel/inventur/uebersicht`);
+    const data = await res.json();
+    if (!data.success) return;
+    const list = data.data || [];
+    setArtikel(list);
+    setStats({
+      gesamt: list.length,
+      verfuegbar: list.filter(a => a.lager_status === 'verfuegbar').length,
+      nachbestellen: list.filter(a => a.lager_status === 'nachbestellen').length,
+      ausverkauft: list.filter(a => a.lager_status === 'ausverkauft').length,
+      lagerwert: list.reduce((s, a) => s + (a.lagerwert || 0), 0),
+    });
+    const updated = list.find(a => a.artikel_id === selectedArtikel?.artikel_id);
+    if (updated) {
+      setSelectedArtikel(updated);
+      const newMengen = {};
+      buildVariantKeys(updated).forEach(k => { newMengen[k] = ''; });
+      setVariantMengen(newMengen);
+    }
+  };
+
+  const handleBewegungsartChange = async (newArt) => {
+    if (newArt === buchung.bewegungsart) return;
+    const hasVarianten = Object.keys(variantMengen).length > 0;
+    const filledVarianten = Object.entries(variantMengen).filter(([, v]) => v !== '' && parseInt(v) >= 0);
+    const filledSingle = !hasVarianten && buchung.menge !== '';
+
+    if ((hasVarianten && filledVarianten.length > 0) || filledSingle) {
+      setBuchungLoading(true);
+      try {
+        if (hasVarianten) {
+          for (const [varianteKey, mengeStr] of filledVarianten) {
+            const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel/${selectedArtikel.artikel_id}/lager`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ bewegungsart: buchung.bewegungsart, menge: parseInt(mengeStr), variante_key: varianteKey, grund: buchung.grund || undefined }),
+            });
+            const data = await res.json();
+            if (!data.success) { alert(`Fehler: ${data.error}`); return; }
+          }
+        } else {
+          const res = await fetchWithAuth(`${config.apiBaseUrl}/artikel/${selectedArtikel.artikel_id}/lager`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bewegungsart: buchung.bewegungsart, menge: parseInt(buchung.menge), grund: buchung.grund || undefined }),
+          });
+          const data = await res.json();
+          if (!data.success) { alert(`Fehler: ${data.error}`); return; }
+        }
+        await refreshArtikelInModal();
+        setBuchung(b => ({ ...b, bewegungsart: newArt, menge: '' }));
+        setFocusTrigger(n => n + 1);
+        setAutoSaveMsg(`${BEWEGUNGSART_LABEL[buchung.bewegungsart]} gespeichert ✓`);
+        setTimeout(() => setAutoSaveMsg(''), 3000);
+      } catch (e) {
+        alert('Fehler: ' + e.message);
+      } finally {
+        setBuchungLoading(false);
+      }
+    } else {
+      setBuchung(b => ({ ...b, bewegungsart: newArt }));
+    }
   };
 
   const submitBuchung = async () => {
@@ -482,7 +555,7 @@ export default function InventurTab() {
                       style={buchung.bewegungsart === opt.value
                         ? { borderColor: BEWEGUNGSART_COLOR[opt.value], background: BEWEGUNGSART_COLOR[opt.value] + '18' }
                         : {}}
-                      onClick={() => setBuchung(b => ({ ...b, bewegungsart: opt.value }))}
+                      onClick={() => handleBewegungsartChange(opt.value)}
                     >
                       <span className="inv-bewegungsart-icon">{opt.icon}</span>
                       <span className="inv-bewegungsart-label">{opt.label}</span>
@@ -491,6 +564,8 @@ export default function InventurTab() {
                   ))}
                 </div>
               </div>
+
+              {autoSaveMsg && <div className="inv-autosave-msg">{autoSaveMsg}</div>}
 
               {/* Menge — Varianten oder Einzel */}
               {variantenEntries.length > 0 ? (
