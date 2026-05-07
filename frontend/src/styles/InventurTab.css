@@ -847,6 +847,10 @@
 
 .inv-varianten-eingabe-row:last-child { border-bottom: none; }
 .inv-varianten-eingabe-row:hover { background: rgba(255,255,255,0.03); }
+.inv-varianten-eingabe-row:focus-within {
+  background: rgba(201,168,76,0.1);
+  border-bottom-color: rgba(201,168,76,0.2);
+}
 
 .inv-var-label {
   font-size: 0.82rem;
