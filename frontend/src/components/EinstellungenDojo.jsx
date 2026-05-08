@@ -1736,39 +1736,36 @@ const EinstellungenDojo = () => {
 
   return (
     <div className="einstellungen-dojo">
-      <div className="page-header">
-        <h1>🏯 Dojo-Einstellungen</h1>
-        <p>Verwalten Sie alle wichtigen Informationen und Einstellungen Ihres Dojos</p>
-      </div>
+      <div className="ed-layout">
+        {/* Linke Sidebar */}
+        <aside className="ed-sidebar">
+          <div className="ed-sidebar-title">Einstellungen</div>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`ed-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              style={{ '--tab-color': tab.color }}
+            >
+              <tab.icon size={15} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </aside>
 
-      {message && (
-        <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>
-          {message}
-        </div>
-      )}
+        {/* Rechter Inhalt */}
+        <div className="ed-content">
+          {message && (
+            <div className={`message ${message.includes('✅') ? 'success' : 'error'}`}>
+              {message}
+            </div>
+          )}
 
-      {/* Tab Navigation */}
-      <div className="tab-navigation">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`tab-button ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-            style={{ '--tab-color': tab.color }}
-          >
-            <tab.icon size={18} />
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
+          <form onSubmit={handleSave}>
+            {renderTabContent()}
 
-      {/* Tab Content */}
-      <div className="tab-container">
-        <form onSubmit={handleSave}>
-          {renderTabContent()}
-
-          {/* Action Buttons - Nur anzeigen wenn nicht Räume, Kommunikation oder System Tab */}
-          {activeTab !== 'raeume' && activeTab !== 'kommunikation' && activeTab !== 'system' && (
+            {/* Action Buttons */}
+            {activeTab !== 'raeume' && activeTab !== 'kommunikation' && activeTab !== 'system' && (
             <div className="form-actions">
               {!isEditing ? (
                 <button
@@ -1803,7 +1800,8 @@ const EinstellungenDojo = () => {
               )}
             </div>
           )}
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
