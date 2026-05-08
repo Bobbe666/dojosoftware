@@ -32,7 +32,7 @@
 .de-settings-header {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 200;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -157,6 +157,12 @@
   padding-right: 0.75rem;
   border-right: 1px solid var(--primary-alpha-12, rgba(255,215,0,0.12));
   padding-top: 0.15rem;
+  position: sticky;
+  top: 52px;
+  align-self: flex-start;
+  max-height: calc(100vh - 52px);
+  overflow-y: auto;
+  z-index: 10;
 }
 
 .de-split-nav-group {
