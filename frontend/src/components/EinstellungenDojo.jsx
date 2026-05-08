@@ -395,10 +395,12 @@ const EinstellungenDojo = () => {
     { id: "system",        label: "Benutzer & System",    icon: Settings,      color: "#6B7280" },
   ];
 
-  // Daten laden (Theme wird jetzt vom ThemeContext verwaltet)
+  // Daten laden sobald activeDojo.id bekannt ist
   useEffect(() => {
-    loadDojoData();
-  }, []);
+    if (activeDojo?.id) {
+      loadDojoData();
+    }
+  }, [activeDojo?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Theme wechseln (nutzt jetzt ThemeContext)
   const handleThemeChange = (themeId) => {
@@ -1718,6 +1720,19 @@ const EinstellungenDojo = () => {
         return <div>Tab nicht gefunden</div>;
     }
   };
+
+  if (!activeDojo?.id) {
+    return (
+      <div className="einstellungen-dojo">
+        <div className="page-header">
+          <h1>🏯 Dojo-Einstellungen</h1>
+          <p style={{ color: 'var(--text-muted)', marginTop: '2rem' }}>
+            Bitte wähle zuerst ein Dojo im Workspace-Switcher (oben links) aus.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="einstellungen-dojo">
