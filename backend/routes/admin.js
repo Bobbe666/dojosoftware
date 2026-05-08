@@ -109,20 +109,19 @@ function getServerDiskUsage() {
 // DOJO MANAGEMENT
 // =============================================
 
-// GET /api/admin/dojos - Alle Dojos auflisten (Super-Admin: alle, Dojo-Admin: nur eigenes)
+// GET /api/admin/dojos - Dojos des eingeloggten Admins (nur die eigenen)
 router.get('/dojos', async (req, res) => {
   try {
     const user = req.user;
     if (!user) return res.status(401).json({ error: 'Nicht authentifiziert' });
 
-    const isSuperAdmin = user.rolle === 'super_admin' || user.role === 'super_admin'
-      || ((user.rolle === 'admin' || user.role === 'admin') && user.dojo_id === null)
-      || user.dojo_id === 2;
-
-    // Normaler Dojo-Admin sieht nur sein eigenes Dojo
-    const whereClause = isSuperAdmin
-      ? ''
-      : `WHERE d.id = ${parseInt(user.dojo_id)}`;
+    // Zeige nur Dojos bei denen der User in admin_users eingetragen ist
+    // Fallback: dojo_id aus JWT wenn kein admin_users-Eintrag vorhanden
+    const whereClause = `WHERE d.ist_aktiv = TRUE AND d.id IN (
+      SELECT dojo_id FROM admin_users WHERE user_id = ? AND dojo_id IS NOT NULL
+      UNION
+      SELECT ? WHERE ? IS NOT NULL
+    )`;
 
     const query = `
       SELECT
@@ -174,7 +173,8 @@ router.get('/dojos', async (req, res) => {
       ORDER BY d.dojoname
     `;
 
-    const [dojos] = await db.promise().query(query);
+    const queryParams = [user.id, user.dojo_id, user.dojo_id];
+    const [dojos] = await db.promise().query(query, queryParams);
 
     // Füge Speicherplatz-Informationen hinzu
     const dojosWithStorage = await Promise.all(
