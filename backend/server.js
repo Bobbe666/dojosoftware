@@ -1050,7 +1050,7 @@ try {
 // 2. DOJO EINSTELLUNGEN
 try {
   const einstellungendojo = require(path.join(__dirname, "routes", "einstellungendojo.js"));
-  app.use("/api/dojo", einstellungendojo);
+  app.use("/api/dojo", authenticateToken, einstellungendojo);
   logger.success('Route gemountet', { path: '/api/dojo' });
 } catch (error) {
   logger.error('Fehler beim Laden der Route', {
