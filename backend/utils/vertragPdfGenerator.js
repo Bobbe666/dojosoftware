@@ -151,6 +151,9 @@ function generateVertragPDF(vertrag, mitglied, dojo, dokumente = {}, sepaMandat 
         doc.text(`Automatische Verlängerung: Nein`);
       }
 
+      doc.moveDown(0.5);
+      doc.text(`Kündigung: Die Kündigung kann online über das Mitglieder-Dashboard (unter „Mein Vertrag") oder schriftlich eingereicht werden. Nach der Beantragung erhalten Sie eine E-Mail-Bestätigung.`);
+
       doc.moveDown(2);
 
       // NEUE SEITE für Rechtliche Akzeptanzen

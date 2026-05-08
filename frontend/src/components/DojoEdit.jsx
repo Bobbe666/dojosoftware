@@ -1143,8 +1143,8 @@ const DojoEdit = () => {
                   </div>
                   <div className="form-group">
                     <label className="checkbox-label">
-                      <input type="checkbox" checked={formData.kuendigung_schriftlich} onChange={(e) => setFormData({ ...formData, kuendigung_schriftlich: e.target.checked })} />
-                      <span>Kündigung muss schriftlich erfolgen</span>
+                      <input type="checkbox" checked={!formData.kuendigung_schriftlich} onChange={(e) => setFormData({ ...formData, kuendigung_schriftlich: !e.target.checked })} />
+                      <span>Online-Kündigung im Mitglieder-Dashboard aktiv</span>
                     </label>
                   </div>
                 </div>

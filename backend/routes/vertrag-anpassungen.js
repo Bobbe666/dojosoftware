@@ -9,6 +9,7 @@ const db = require('../db');
 const webpush = require('web-push');
 const { getSecureDojoId } = require('../middleware/tenantSecurity');
 const { authenticateToken } = require('../middleware/auth');
+const { sendEmailForDojo } = require('../services/emailService');
 
 const pool = db.promise();
 
@@ -177,6 +178,14 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
     }
 
     if (typ === 'kuendigung') {
+      // Prüfe ob Online-Kündigung für dieses Dojo aktiviert ist
+      const [[dojoSettings]] = await pool.query(
+        'SELECT kuendigung_schriftlich FROM dojo WHERE id = ?', [mem.dojo_id]
+      );
+      if (dojoSettings?.kuendigung_schriftlich) {
+        return res.status(403).json({ success: false, error: 'Online-Kündigung ist für dieses Dojo nicht aktiviert. Bitte wenden Sie sich direkt ans Dojo.' });
+      }
+
       // Aktiven Vertrag laden um Kündigungsfrist zu prüfen
       const [[vertrag]] = await pool.query(
         `SELECT kuendigungsfrist_monate, kuendigungsdatum FROM vertraege
@@ -250,6 +259,40 @@ router.post('/beantragen', authenticateToken, async (req, res) => {
         );
       } catch (notifErr) {
         console.error('[vertrag-anpassungen] Admin-Notif-Fehler:', notifErr.message);
+      }
+    }
+
+    // E-Mail-Bestätigung an Mitglied bei Kündigungs-Antrag
+    if (typ === 'kuendigung') {
+      try {
+        const [[memMail]] = await pool.query(
+          'SELECT m.email, m.vorname, m.nachname, d.dojoname FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE m.mitglied_id = ?',
+          [mitglied_id]
+        );
+        if (memMail?.email) {
+          const bisStr = gueltig_bis ? new Date(gueltig_bis).toLocaleDateString('de-DE') : '—';
+          await sendEmailForDojo({
+            to: memMail.email,
+            subject: `Kündigung eingegangen – ${memMail.dojoname}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px;border-radius:10px 10px 0 0;text-align:center">
+                <h2 style="color:#FFD700;margin:0">Kündigung eingegangen</h2>
+              </div>
+              <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
+                <p>Sehr geehrte/r ${memMail.vorname} ${memMail.nachname},</p>
+                <p>wir haben Ihren Kündigungsantrag erhalten. Die Kündigung wird durch den Administrator geprüft und bestätigt.</p>
+                <table style="width:100%;border-collapse:collapse;margin:16px 0">
+                  <tr><td style="padding:8px;color:#666;width:50%">Frühestmögliches Vertragsende:</td><td style="padding:8px;font-weight:600">${bisStr}</td></tr>
+                </table>
+                <p style="color:#555">Sie erhalten eine weitere E-Mail, sobald Ihre Kündigung bestätigt wurde.</p>
+                <p>Mit freundlichen Grüßen<br><strong>${memMail.dojoname}</strong></p>
+              </div>
+            </div>`,
+            text: `Kündigung eingegangen\n\nSehr geehrte/r ${memMail.vorname} ${memMail.nachname},\n\nwir haben Ihren Kündigungsantrag zum ${bisStr} erhalten. Die Kündigung wird durch den Administrator geprüft.\n\nMit freundlichen Grüßen\n${memMail.dojoname}`
+          }, mem.dojo_id);
+        }
+      } catch (mailErr) {
+        console.error('[vertrag-anpassungen] Kündigungs-Eingangsmail Fehler:', mailErr.message);
       }
     }
 
@@ -377,14 +420,47 @@ router.put('/:id/genehmigen', authenticateToken, async (req, res) => {
       [`%"antrag_id":${id}%`]
     );
 
-    const [[m]] = await pool.query(`SELECT email FROM mitglieder WHERE mitglied_id = ?`, [a.mitglied_id]);
+    const [[m]] = await pool.query(
+      `SELECT m.email, m.vorname, m.nachname, d.dojoname FROM mitglieder m JOIN dojo d ON m.dojo_id = d.id WHERE m.mitglied_id = ?`,
+      [a.mitglied_id]
+    );
     if (m?.email) {
-      const lbl = TYP_LABELS[a.typ] || a.typ;
-      await sendMemberNotification(
-        m.email,
-        `✅ Tarifantrag genehmigt: ${lbl}-Tarif`,
-        `Dein Antrag auf ${lbl}-Tarif wurde genehmigt! Neuer Beitrag: ${parseFloat(betrag).toFixed(2).replace('.', ',')} €/Monat. Gültig: ${new Date(a.gueltig_von).toLocaleDateString('de-DE')} – ${new Date(a.gueltig_bis).toLocaleDateString('de-DE')}.`
-      );
+      if (a.typ === 'kuendigung') {
+        const kuendigungsdatum = a.gueltig_bis || a.gueltig_von;
+        const bisStr = kuendigungsdatum ? new Date(kuendigungsdatum).toLocaleDateString('de-DE') : '—';
+        try {
+          await sendEmailForDojo({
+            to: m.email,
+            subject: `Kündigung bestätigt – ${m.dojoname}`,
+            html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+              <div style="background:linear-gradient(135deg,#1e293b,#0f172a);padding:28px;border-radius:10px 10px 0 0;text-align:center">
+                <h2 style="color:#FFD700;margin:0">Kündigung bestätigt</h2>
+              </div>
+              <div style="background:#fff;padding:28px;border-radius:0 0 10px 10px">
+                <p>Sehr geehrte/r ${m.vorname} ${m.nachname},</p>
+                <p>hiermit bestätigen wir den Eingang und die Bearbeitung Ihrer Kündigung.</p>
+                <table style="width:100%;border-collapse:collapse;margin:16px 0;background:#f9fafb;border-radius:8px">
+                  <tr><td style="padding:10px 16px;color:#666;width:50%">Vertragsende:</td><td style="padding:10px 16px;font-weight:600;font-size:16px;color:#dc2626">${bisStr}</td></tr>
+                </table>
+                <p style="color:#555">Bis zu diesem Datum nehmen Sie weiterhin an allen Trainings und Veranstaltungen teil.</p>
+                ${anmerkung_admin ? `<div style="background:#f0f9ff;border-left:4px solid #3b82f6;padding:12px 16px;margin:16px 0"><p style="margin:0;color:#1e40af"><strong>Hinweis:</strong> ${anmerkung_admin}</p></div>` : ''}
+                <p>Wir bedauern, Sie als Mitglied zu verlieren, und würden uns freuen, Sie zu einem späteren Zeitpunkt wieder bei uns begrüßen zu dürfen.</p>
+                <p>Mit freundlichen Grüßen<br><strong>${m.dojoname}</strong></p>
+              </div>
+            </div>`,
+            text: `Kündigung bestätigt\n\nSehr geehrte/r ${m.vorname} ${m.nachname},\n\nhiermit bestätigen wir Ihre Kündigung zum ${bisStr}.\n\nMit freundlichen Grüßen\n${m.dojoname}`
+          }, a.dojo_id);
+        } catch (mailErr) {
+          console.error('[vertrag-anpassungen] Kündigungsbestätigung-Mail Fehler:', mailErr.message);
+        }
+      } else {
+        const lbl = TYP_LABELS[a.typ] || a.typ;
+        await sendMemberNotification(
+          m.email,
+          `✅ Tarifantrag genehmigt: ${lbl}-Tarif`,
+          `Dein Antrag auf ${lbl}-Tarif wurde genehmigt! Neuer Beitrag: ${parseFloat(betrag).toFixed(2).replace('.', ',')} €/Monat. Gültig: ${new Date(a.gueltig_von).toLocaleDateString('de-DE')} – ${new Date(a.gueltig_bis).toLocaleDateString('de-DE')}.`
+        );
+      }
     }
 
     res.json({ success: true, angepasste_beitraege: affected });
