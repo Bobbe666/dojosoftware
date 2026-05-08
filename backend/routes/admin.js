@@ -117,11 +117,19 @@ router.get('/dojos', async (req, res) => {
 
     // Zeige nur Dojos bei denen der User in admin_users eingetragen ist
     // Fallback: dojo_id aus JWT wenn kein admin_users-Eintrag vorhanden
-    const whereClause = `WHERE d.ist_aktiv = TRUE AND d.id IN (
-      SELECT dojo_id FROM admin_users WHERE user_id = ? AND dojo_id IS NOT NULL
-      UNION
-      SELECT ? WHERE ? IS NOT NULL
-    )`;
+    let whereClause, queryParams;
+    if (user.dojo_id) {
+      whereClause = `WHERE d.ist_aktiv = TRUE AND (
+        d.id IN (SELECT dojo_id FROM admin_users WHERE user_id = ? AND dojo_id IS NOT NULL)
+        OR d.id = ?
+      )`;
+      queryParams = [user.id, user.dojo_id];
+    } else {
+      whereClause = `WHERE d.ist_aktiv = TRUE AND d.id IN (
+        SELECT dojo_id FROM admin_users WHERE user_id = ? AND dojo_id IS NOT NULL
+      )`;
+      queryParams = [user.id];
+    }
 
     const query = `
       SELECT
@@ -173,7 +181,6 @@ router.get('/dojos', async (req, res) => {
       ORDER BY d.dojoname
     `;
 
-    const queryParams = [user.id, user.dojo_id, user.dojo_id];
     const [dojos] = await db.promise().query(query, queryParams);
 
     // Füge Speicherplatz-Informationen hinzu
