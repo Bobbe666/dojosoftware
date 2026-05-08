@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, AlertCircle, Palette } from 'lucide-react';
-import FinanzamtSelector from './FinanzamtSelector';
 import BankTabs from './BankTabs';
 import AdminVerwaltung from './AdminVerwaltung';
 import MessengerKonfiguration from './MessengerKonfiguration';
@@ -990,11 +989,7 @@ const DojoEdit = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Finanzamt</label>
-                    <FinanzamtSelector
-                      value={formData.finanzamt}
-                      onChange={(finanzamt) => setFormData({ ...formData, finanzamt, finanzamt_name: finanzamt ? `${finanzamt.name}, ${finanzamt.ort}` : '' })}
-                      placeholder="Finanzamt suchen..."
-                    />
+                    <input type="text" value={formData.finanzamt_name} onChange={(e) => setFormData({ ...formData, finanzamt_name: e.target.value, finanzamt: null })} placeholder="z.B. Finanzamt München" />
                   </div>
                   <div className="form-group">
                     <label>Steuernummer</label>
