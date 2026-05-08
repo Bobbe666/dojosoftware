@@ -109,22 +109,20 @@ function getServerDiskUsage() {
 // DOJO MANAGEMENT
 // =============================================
 
-// GET /api/admin/dojos - Alle Dojos auflisten
-// Query Parameter: ?filter=managed - nur zentral verwaltete Dojos (ohne separate Tenants)
-// Query Parameter: ?filter=all oder kein Parameter - alle Dojos
-router.get('/dojos', requireSuperAdmin, async (req, res) => {
+// GET /api/admin/dojos - Alle Dojos auflisten (Super-Admin: alle, Dojo-Admin: nur eigenes)
+router.get('/dojos', async (req, res) => {
   try {
-    const { filter } = req.query;
+    const user = req.user;
+    if (!user) return res.status(401).json({ error: 'Nicht authentifiziert' });
 
-    // WHERE-Klausel nur für "managed" Filter: TDA (id=2) + Dojos ohne eigene Voll-Admins
-    // Dojos mit nur eingeschränkten Rollen (trainer, eingeschraenkt, checkin) werden trotzdem angezeigt
-    const whereClause = filter === 'managed'
-      ? `WHERE d.ist_aktiv = TRUE AND (d.id = 2 OR d.id NOT IN (
-          SELECT DISTINCT dojo_id FROM admin_users
-          WHERE dojo_id IS NOT NULL AND dojo_id != 2
-          AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
-        ))`
-      : '';
+    const isSuperAdmin = user.rolle === 'super_admin' || user.role === 'super_admin'
+      || ((user.rolle === 'admin' || user.role === 'admin') && user.dojo_id === null)
+      || user.dojo_id === 2;
+
+    // Normaler Dojo-Admin sieht nur sein eigenes Dojo
+    const whereClause = isSuperAdmin
+      ? ''
+      : `WHERE d.id = ${parseInt(user.dojo_id)}`;
 
     const query = `
       SELECT
