@@ -1,634 +1,415 @@
-/* RaumVerwaltung.css - Styles für die Raumverwaltung (Dark Theme) */
+/* RaumVerwaltung.css */
 
 .raum-verwaltung {
   padding: 0;
-  max-width: 100%;
 }
 
-.raum-verwaltung.loading {
+/* Loading */
+.rv-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
-  gap: var(--ui-form-gap);
-}
-
-.raum-verwaltung .section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--ui-header-margin-b);
-  padding: var(--ui-page-padding-sm);
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  border-radius: var(--comp-radius-xl);
-  backdrop-filter: blur(10px);
-}
-
-.raum-verwaltung .header-content {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-header-gap);
-}
-
-.raum-verwaltung .header-icon {
-  color: var(--primary) !important;
-  width: 24px;
-  height: 24px;
-}
-
-.raum-verwaltung .header-content h2 {
-  margin: 0;
-  color: var(--primary) !important;
-  font-size: var(--ui-page-title) !important;
-  font-weight: 600 !important;
-
-  text-transform: none !important;
-  font-style: normal !important;
-  letter-spacing: normal !important;
-}
-
-.raum-verwaltung .header-content p {
-  margin: 0;
-  color: var(--text-2) !important;
-  font-size: var(--ui-page-subtitle);
-}
-
-/* Formular für neuen Raum */
-.raum-verwaltung .room-form-card {
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  border-radius: var(--comp-radius-xl);
-  margin-bottom: var(--ui-stats-margin-b);
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
-
-.raum-verwaltung .form-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--ui-page-padding-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2) !important;
-}
-
-.raum-verwaltung .form-header h3 {
-  margin: 0;
-  color: var(--primary) !important;
-  font-size: var(--ui-section-title);
-  font-weight: 600;
-}
-
-.raum-verwaltung .form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: var(--ui-form-gap);
-  padding: var(--ui-page-padding-sm);
-}
-
-.raum-verwaltung .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ui-form-group-gap);
-}
-
-.raum-verwaltung .form-group label {
-  font-size: var(--ui-form-label);
-  font-weight: 500;
+  min-height: 200px;
+  gap: 1rem;
   color: var(--text-2);
 }
 
-.raum-verwaltung .form-input {
-  padding: var(--ui-btn-pad-y);
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  border-radius: var(--comp-radius-md);
-  font-size: var(--ui-form-input);
-  color: var(--text-1) !important;
-  transition: all 0.2s;
-}
-
-.raum-verwaltung .form-input:focus {
-  outline: none;
-  border-color: var(--primary) !important;
-  background: rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 0 0 3px var(--primary-alpha-10);
-}
-
-.raum-verwaltung .form-input::placeholder {
-  color: var(--text-4) !important;
-}
-
-.raum-verwaltung .color-input-group {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-header-gap);
-}
-
-.raum-verwaltung .color-input {
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--primary-alpha-30) !important;
-  border-radius: var(--comp-radius-md);
-  cursor: pointer;
-  background: transparent !important;
-}
-
-.raum-verwaltung .color-value {
-  font-family: monospace;
-  font-size: var(--ui-card-body);
-  color: var(--text-2) !important;
-}
-
-.raum-verwaltung .checkbox-label {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  color: var(--text-2) !important;
-}
-
-.raum-verwaltung .checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--primary);
-}
-
-.raum-verwaltung .form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--ui-form-gap);
-}
-
-.raum-verwaltung .form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ui-form-gap);
-  padding: var(--ui-page-padding-sm);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Räume-Grid */
-.raum-verwaltung .rooms-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.raum-verwaltung .room-card {
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  border-radius: var(--comp-radius-xl);
-  transition: all 0.2s;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-}
-
-.raum-verwaltung .room-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--primary-alpha-40) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.raum-verwaltung .room-card.inactive {
-  opacity: 0.6;
-}
-
-.raum-verwaltung .room-card.editing {
-  border: 2px solid var(--primary) !important;
-}
-
-.raum-verwaltung .room-header {
-  display: flex;
-  align-items: center;
-  gap: var(--ui-stat-card-gap);
-  padding: var(--ui-page-padding-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent !important;
-}
-
-.raum-verwaltung .room-color {
-  width: 20px;
-  height: 20px;
+.rv-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: var(--primary);
   border-radius: 50%;
-  background-color: var(--room-color, #4F46E5);
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: rv-spin 0.8s linear infinite;
 }
+@keyframes rv-spin { to { transform: rotate(360deg); } }
 
-.raum-verwaltung .room-name {
-  flex-grow: 1;
-  margin: 0;
-  font-size: var(--ui-card-title);
-  font-weight: 600;
-  color: var(--text-1) !important;
-}
-
-.raum-verwaltung .room-name-input {
-  flex-grow: 1;
-  padding: 0.5rem;
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-30) !important;
-  border-radius: var(--comp-radius-sm);
-  font-size: var(--ui-card-title);
-  font-weight: 600;
-  color: var(--text-1) !important;
-}
-
-.raum-verwaltung .room-actions {
+/* Header row */
+.rv-header-row {
   display: flex;
-  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
 }
 
-.raum-verwaltung .room-details {
-  padding: var(--ui-page-padding-sm);
-  background: transparent !important;
-}
-
-.raum-verwaltung .room-description {
-  margin: 0 0 1rem 0;
-  color: var(--text-2) !important;
-  font-size: var(--ui-card-body);
-  line-height: 1.5;
-}
-
-.raum-verwaltung .room-info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--ui-form-gap);
-  margin-bottom: 1rem;
-}
-
-.raum-verwaltung .room-info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-2) !important;
-  font-size: var(--ui-card-body);
-}
-
-.raum-verwaltung .room-info-item svg {
-  width: 14px;
-  height: 14px;
-  color: var(--primary) !important;
-}
-
-.raum-verwaltung .room-status {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: var(--comp-radius-pill);
-  font-size: var(--ui-badge-size);
-  font-weight: 500;
-}
-
-.raum-verwaltung .room-status.inactive {
-  background: var(--status-error-bg) !important;
-  color: var(--status-error) !important;
-  border: 1px solid var(--status-error-border) !important;
-}
-
-.raum-verwaltung .room-edit-form {
-  padding: var(--ui-page-padding-sm);
-  background: rgba(0, 0, 0, 0.2) !important;
-}
-
-/* Empty State */
-.raum-verwaltung .empty-state {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  text-align: center;
-  background: var(--surface-2);
-  border: 1px solid var(--primary-alpha-20);
-  border-radius: var(--comp-radius-xl);
-  backdrop-filter: blur(10px);
-}
-
-.raum-verwaltung .empty-state svg {
-  color: var(--primary-alpha-40);
-  margin-bottom: 1rem;
-}
-
-.raum-verwaltung .empty-state h3 {
-  margin: 0 0 0.5rem 0;
-  color: var(--text-1);
+.rv-title {
+  margin: 0 0 0.2rem 0;
   font-size: var(--ui-section-title);
   font-weight: 600;
+  color: var(--primary);
+  text-transform: none;
+  font-style: normal;
+  letter-spacing: normal;
 }
 
-.raum-verwaltung .empty-state p {
-  margin: 0 0 2rem 0;
-  color: var(--text-3);
+.rv-subtitle {
+  margin: 0;
   font-size: var(--ui-card-body);
+  color: var(--text-3);
 }
 
 /* Buttons */
-.raum-verwaltung .btn-primary {
+.rv-btn-add {
   display: inline-flex;
   align-items: center;
-  gap: var(--ui-btn-gap);
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
   background: var(--gradient-gold);
   color: #000;
   border: none;
   border-radius: var(--comp-radius-md);
-  font-size: var(--ui-btn-font);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rv-btn-add:hover:not(:disabled) {
+  box-shadow: 0 4px 12px var(--primary-alpha-30);
+  transform: translateY(-1px);
+}
+.rv-btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rv-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: var(--gradient-gold);
+  color: #000;
+  border: none;
+  border-radius: var(--comp-radius-md);
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
+.rv-btn-primary:hover { box-shadow: 0 4px 12px var(--primary-alpha-30); }
 
-.raum-verwaltung .btn-primary:hover:not(:disabled) {
-  transform: scale(1.02);
-  box-shadow: 0 4px 16px var(--primary-alpha-40);
-}
-
-.raum-verwaltung .btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.raum-verwaltung .btn-secondary {
+.rv-btn-secondary {
   display: inline-flex;
   align-items: center;
-  gap: var(--ui-btn-gap);
-  padding: var(--ui-btn-pad-y) var(--ui-btn-pad-x);
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
   background: var(--surface-3);
   color: var(--text-1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255,0.15);
   border-radius: var(--comp-radius-md);
-  font-size: var(--ui-btn-font);
+  font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
 }
+.rv-btn-secondary:hover { background: rgba(255,255,255,0.12); }
 
-.raum-verwaltung .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: var(--primary-alpha-30);
-}
-
-.raum-verwaltung .btn-icon {
+.rv-btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  width: 28px;
+  height: 28px;
+  background: var(--surface-3);
+  border: 1px solid rgba(255,255,255,0.15);
   border-radius: var(--comp-radius-sm);
-  background: var(--surface-2) !important;
-  color: var(--text-2) !important;
+  color: var(--text-2);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.18s;
+}
+.rv-btn-icon:hover { background: rgba(255,255,255,0.12); color: var(--text-1); }
+.rv-btn-icon--save { border-color: var(--status-success); color: var(--status-success); }
+.rv-btn-icon--save:hover { background: var(--status-success-bg); }
+.rv-btn-icon--danger { border-color: var(--status-error); color: var(--status-error); }
+.rv-btn-icon--danger:hover { background: var(--status-error-bg); }
+
+/* Add-form card */
+.rv-form-card {
+  background: var(--surface-2);
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: var(--comp-radius-xl);
+  margin-bottom: 1.25rem;
+  overflow: hidden;
 }
 
-.raum-verwaltung .btn-icon:hover {
-  background: var(--surface-3) !important;
-  border-color: var(--primary-alpha-30) !important;
-  color: var(--text-1) !important;
+.rv-form-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--primary);
 }
 
-.raum-verwaltung .btn-icon.success {
-  border-color: var(--status-success) !important;
-  color: var(--status-success) !important;
+.rv-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
 }
 
-.raum-verwaltung .btn-icon.success:hover {
-  background: var(--status-success-bg) !important;
+.rv-form-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
 }
 
-.raum-verwaltung .btn-icon.danger {
-  border-color: var(--status-error) !important;
-  color: var(--status-error) !important;
+/* Fields */
+.rv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.raum-verwaltung .btn-icon.danger:hover {
-  background: var(--status-error-bg) !important;
-}
-
-/* Loading Spinner */
-.raum-verwaltung .loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.1) !important;
-  border-top: 3px solid var(--primary) !important;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Force Dark Theme Override für DojoEdit Kontext */
-.dojo-edit-page .raum-verwaltung,
-[data-theme] .raum-verwaltung,
-.form-section .raum-verwaltung {
-  background: transparent !important;
-}
-
-.dojo-edit-page .raum-verwaltung .section-header,
-[data-theme] .raum-verwaltung .section-header,
-.form-section .raum-verwaltung .section-header {
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-}
-
-.dojo-edit-page .raum-verwaltung .section-header h2,
-.dojo-edit-page .raum-verwaltung .header-content h2,
-[data-theme] .raum-verwaltung .section-header h2,
-[data-theme] .raum-verwaltung .header-content h2,
-.form-section .raum-verwaltung .header-content h2 {
-  color: var(--primary) !important;
-  text-transform: none !important;
-  font-size: var(--ui-page-title) !important;
-
-  font-style: normal !important;
-  letter-spacing: normal !important;
-}
-
-.dojo-edit-page .raum-verwaltung .header-content p,
-[data-theme] .raum-verwaltung .header-content p,
-.form-section .raum-verwaltung .header-content p {
-  color: var(--text-2) !important;
-}
-
-.dojo-edit-page .raum-verwaltung .room-card,
-[data-theme] .raum-verwaltung .room-card,
-.form-section .raum-verwaltung .room-card {
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-}
-
-.dojo-edit-page .raum-verwaltung .room-name,
-.dojo-edit-page .raum-verwaltung .room-card h3,
-[data-theme] .raum-verwaltung .room-name,
-[data-theme] .raum-verwaltung .room-card h3,
-.form-section .raum-verwaltung .room-name {
-  color: var(--text-1) !important;
-}
-
-.dojo-edit-page .raum-verwaltung .room-header,
-.dojo-edit-page .raum-verwaltung .room-details,
-[data-theme] .raum-verwaltung .room-header,
-[data-theme] .raum-verwaltung .room-details,
-.form-section .raum-verwaltung .room-header,
-.form-section .raum-verwaltung .room-details {
-  background: transparent !important;
-}
-
-.dojo-edit-page .raum-verwaltung .btn-icon,
-[data-theme] .raum-verwaltung .btn-icon,
-.form-section .raum-verwaltung .btn-icon {
-  background: var(--surface-2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
-  color: var(--text-2) !important;
-}
-
-.dojo-edit-page .raum-verwaltung .btn-icon.danger,
-[data-theme] .raum-verwaltung .btn-icon.danger,
-.form-section .raum-verwaltung .btn-icon.danger {
-  border-color: var(--status-error) !important;
-  color: var(--status-error) !important;
-}
-
-/* TDA-VIB Theme Override - Force Dark */
-[data-theme="tda-vib"] .raum-verwaltung .section-header,
-[data-theme="tda-vib"] .raum-verwaltung .room-card,
-[data-theme="tda-vib"] .raum-verwaltung .room-form-card {
-  background: var(--surface-2) !important;
-  border-color: var(--primary-alpha-20) !important;
-}
-
-[data-theme="tda-vib"] .raum-verwaltung .header-content h2,
-[data-theme="tda-vib"] .raum-verwaltung .form-header h3 {
-  color: var(--primary) !important;
-
-  font-style: normal !important;
-  letter-spacing: normal !important;
-  text-transform: none !important;
-}
-
-[data-theme="tda-vib"] .raum-verwaltung .room-name,
-[data-theme="tda-vib"] .raum-verwaltung .form-group label {
-  color: var(--text-1) !important;
-}
-
-[data-theme="tda-vib"] .raum-verwaltung .header-content p,
-[data-theme="tda-vib"] .raum-verwaltung .room-description {
-  color: var(--text-2) !important;
-}
-
-/* CRITICAL: Override global typography for all headings in RaumVerwaltung */
-.raum-verwaltung h2,
-.raum-verwaltung h3,
-.raum-verwaltung .header-content h2,
-.raum-verwaltung .form-header h3,
-.raum-verwaltung .empty-state h3,
-div.raum-verwaltung h2,
-div.raum-verwaltung h3 {
-
-  font-style: normal !important;
-  letter-spacing: normal !important;
-  text-transform: none !important;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .raum-verwaltung .section-header {
-    flex-direction: column;
-    gap: var(--ui-form-gap);
-    align-items: stretch;
-  }
-
-  .raum-verwaltung .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .raum-verwaltung .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .raum-verwaltung .rooms-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .raum-verwaltung .form-actions {
-    flex-direction: column;
-  }
-}
-
-/* -------------------------------------------------------
-   rv2- classes: edit-form inline style replacements
-   ------------------------------------------------------- */
-
-/* Edit-form label (Beschreibung, Größe, Kapazität, Farbe) */
-.raum-verwaltung .rv2-edit-label {
-  font-size: var(--ui-form-label);
+.rv-field label {
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--text-2);
-  text-transform: none;
 }
 
-/* Edit-form text/number input */
-.raum-verwaltung .rv2-edit-input {
-  padding: var(--ui-btn-pad-y);
-  background: var(--surface-2) !important;
-  border: 1px solid var(--primary-alpha-20) !important;
-  border-radius: var(--comp-radius-md);
-  font-size: var(--ui-form-input);
-  color: var(--text-1) !important;
-}
-
-/* form-group with bottom margin (Beschreibung row) */
-.raum-verwaltung .rv2-form-group-mb {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-/* form-group aligned to bottom (Aktiv checkbox row) */
-.raum-verwaltung .rv2-form-group-end {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+.rv-field-check {
   justify-content: flex-end;
 }
 
-/* Color picker input in edit form */
-.raum-verwaltung .rv2-color-picker {
-  width: 50px;
-  height: 40px;
-  border: 1px solid var(--primary-alpha-30) !important;
+.rv-input {
+  padding: 0.55rem 0.75rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.15);
   border-radius: var(--comp-radius-md);
-  cursor: pointer;
-  background: transparent !important;
+  font-size: 0.875rem;
+  color: var(--text-1);
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rv-input:focus { outline: none; border-color: var(--primary); background: rgba(255,255,255,0.1); }
+.rv-input::placeholder { color: var(--text-4); }
+
+.rv-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-/* Checkbox label in edit form */
-.raum-verwaltung .rv2-checkbox-label {
+.rv-color-picker {
+  width: 44px;
+  height: 36px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--comp-radius-md);
+  cursor: pointer;
+  background: transparent;
+  padding: 2px;
+}
+
+.rv-color-hex {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+
+.rv-checkbox-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  font-size: 0.875rem;
   color: var(--text-2);
-  font-size: var(--ui-form-label);
   text-transform: none;
 }
 
-/* Checkbox in edit form */
-.raum-verwaltung .rv2-checkbox {
-  width: 18px;
-  height: 18px;
+.rv-checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
   accent-color: var(--primary);
+}
+
+/* Rooms grid */
+.rv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.rv-card {
+  background: var(--surface-2);
+  border: 1px solid var(--primary-alpha-15);
+  border-radius: var(--comp-radius-lg);
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.rv-card:hover { border-color: var(--primary-alpha-30); box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+.rv-card--inactive { opacity: 0.55; }
+.rv-card--editing { border: 1.5px solid var(--primary); }
+
+/* Card header */
+.rv-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.rv-color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.rv-card-name {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-1);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rv-name-input {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--primary-alpha-30);
+  border-radius: var(--comp-radius-sm);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.rv-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--comp-radius-pill);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.rv-badge--inactive {
+  background: var(--status-error-bg);
+  color: var(--status-error);
+  border: 1px solid var(--status-error-border);
+}
+
+.rv-card-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Card body */
+.rv-card-body {
+  padding: 0.75rem 0.9rem;
+}
+
+.rv-desc {
+  margin: 0 0 0.6rem 0;
+  font-size: 0.8rem;
+  color: var(--text-3);
+  line-height: 1.4;
+}
+
+.rv-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.rv-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--text-2);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--comp-radius-pill);
+}
+.rv-meta-item svg { color: var(--primary); }
+
+/* Kurse section */
+.rv-kurse {
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.rv-kurse-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-3);
+  margin-bottom: 0.4rem;
+}
+.rv-kurse-label svg { color: var(--primary); }
+
+.rv-kurse-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.rv-kurs-chip {
+  padding: 0.18rem 0.55rem;
+  background: var(--primary-alpha-10);
+  border: 1px solid var(--primary-alpha-20);
+  border-radius: var(--comp-radius-pill);
+  font-size: 0.72rem;
+  color: var(--primary);
+  white-space: nowrap;
+}
+.rv-kurs-chip--more {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.1);
+  color: var(--text-3);
+}
+
+/* Edit body */
+.rv-edit-body {
+  padding: 0.75rem 0.9rem;
+  background: rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rv-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Empty state */
+.rv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  text-align: center;
+  background: var(--surface-2);
+  border: 1px dashed var(--primary-alpha-20);
+  border-radius: var(--comp-radius-xl);
+  gap: 0.75rem;
+  color: var(--text-3);
+}
+.rv-empty svg { color: var(--primary-alpha-30); }
+.rv-empty p { margin: 0; font-size: 0.875rem; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .rv-header-row { flex-direction: column; align-items: stretch; }
+  .rv-btn-add { justify-content: center; }
+  .rv-grid { grid-template-columns: 1fr; }
+  .rv-form-grid { grid-template-columns: 1fr; }
+  .rv-edit-row { grid-template-columns: 1fr; }
 }

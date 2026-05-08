@@ -2,16 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const logger = require('../utils/logger');
 
 // Promise-Wrapper für db.query
 const queryAsync = (sql, params = []) => {
   return new Promise((resolve, reject) => {
     db.query(sql, params, (err, results) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(results);
-      }
+      if (err) reject(err);
+      else resolve(results);
     });
   });
 };
@@ -21,34 +19,29 @@ router.get('/', async (req, res) => {
     try {
         const dojoId = req.tenant?.dojo_id || req.dojo_id;
 
-        // Super-Admin (dojo_id = null): Kann Räume aller zentral verwalteten Dojos sehen
-        // Normaler Admin: Muss dojo_id haben
         if (dojoId === undefined && !req.user) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
-        const { standort_id } = req.query; // Optional standort filter
+        const { standort_id } = req.query;
 
+        // r.id as raum_id für Kompatibilität mit Frontend
         let query = `
-            SELECT r.*, s.name as standort_name, s.farbe as standort_farbe
+            SELECT r.*, r.id as raum_id, s.name as standort_name, s.farbe as standort_farbe
             FROM raeume r
             LEFT JOIN standorte s ON r.standort_id = s.standort_id
         `;
         let params = [];
 
-        // Dojo-Filter: Super-Admin kann alle zentral verwalteten Dojos sehen
         if (dojoId === null || dojoId === undefined) {
-            // Super-Admin: Nur zentral verwaltete Dojos (ohne separate Tenants)
             query += ` WHERE r.dojo_id NOT IN (
                 SELECT DISTINCT dojo_id FROM admin_users WHERE dojo_id IS NOT NULL AND rolle NOT IN ('eingeschraenkt', 'trainer', 'checkin')
             )`;
         } else {
-            // Normaler Admin: Nur eigenes Dojo
             query += ' WHERE r.dojo_id = ?';
             params.push(dojoId);
         }
 
-        // Add standort filter if provided
         if (standort_id && standort_id !== 'all') {
             query += ' AND r.standort_id = ?';
             params.push(standort_id);
@@ -59,7 +52,7 @@ router.get('/', async (req, res) => {
         const raeume = await queryAsync(query, params);
         res.json({ success: true, data: raeume });
     } catch (err) {
-        logger.error('Fehler beim Abrufen der Räume:', { error: err });
+        logger.error('Fehler beim Abrufen der Räume:', { error: err.message });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -67,7 +60,6 @@ router.get('/', async (req, res) => {
 // POST /api/raeume - Neuen Raum erstellen
 router.post('/', async (req, res) => {
     try {
-        // Tenant check
         const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id ||
                             (req.body.dojo_id ? parseInt(req.body.dojo_id, 10) : null);
         if (!_raumDojoId) {
@@ -79,10 +71,8 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Raumname ist erforderlich' });
         }
 
-        // Determine final standort_id
         let finalStandortId = standort_id;
         if (!finalStandortId) {
-            // Get main location for this dojo
             const hauptstandort = await queryAsync(
                 'SELECT standort_id FROM standorte WHERE dojo_id = ? AND ist_hauptstandort = TRUE LIMIT 1',
                 [_raumDojoId]
@@ -92,7 +82,6 @@ router.post('/', async (req, res) => {
             }
             finalStandortId = hauptstandort[0].standort_id;
         } else {
-            // Validate that standort_id belongs to this dojo
             const standort = await queryAsync(
                 'SELECT standort_id FROM standorte WHERE standort_id = ? AND dojo_id = ?',
                 [standort_id, _raumDojoId]
@@ -102,10 +91,10 @@ router.post('/', async (req, res) => {
             }
         }
 
-        // Höchste Reihenfolge ermitteln (pro dojo)
-        const maxReihenfolge = await queryAsync(`
-            SELECT MAX(reihenfolge) as max_reihenfolge FROM raeume WHERE dojo_id = ?
-        `, [_raumDojoId]);
+        const maxReihenfolge = await queryAsync(
+            'SELECT MAX(reihenfolge) as max_reihenfolge FROM raeume WHERE dojo_id = ?',
+            [_raumDojoId]
+        );
         const neueReihenfolge = (maxReihenfolge[0].max_reihenfolge || 0) + 1;
 
         const result = await queryAsync(`
@@ -122,9 +111,11 @@ router.post('/', async (req, res) => {
             _raumDojoId,
             finalStandortId
         ]);
+
         res.json({
             success: true,
             data: {
+                id: result.insertId,
                 raum_id: result.insertId,
                 name,
                 beschreibung,
@@ -138,7 +129,7 @@ router.post('/', async (req, res) => {
             }
         });
     } catch (err) {
-        logger.error('Fehler beim Erstellen des Raums:', { error: err });
+        logger.error('Fehler beim Erstellen des Raums:', { error: err.message });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -146,7 +137,6 @@ router.post('/', async (req, res) => {
 // PUT /api/raeume/:id - Raum aktualisieren
 router.put('/:id', async (req, res) => {
     try {
-        // Tenant check
         const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
@@ -158,16 +148,14 @@ router.put('/:id', async (req, res) => {
             return res.status(400).json({ error: 'Raumname ist erforderlich' });
         }
 
-        // Verify room belongs to this dojo
         const existingRaum = await queryAsync(
-            'SELECT raum_id FROM raeume WHERE raum_id = ? AND dojo_id = ?',
+            'SELECT id FROM raeume WHERE id = ? AND dojo_id = ?',
             [id, _raumDojoId]
         );
         if (existingRaum.length === 0) {
             return res.status(404).json({ error: 'Raum nicht gefunden' });
         }
 
-        // If standort_id is provided, validate it belongs to this dojo
         if (standort_id) {
             const standort = await queryAsync(
                 'SELECT standort_id FROM standorte WHERE standort_id = ? AND dojo_id = ?',
@@ -196,13 +184,13 @@ router.put('/:id', async (req, res) => {
             params.push(standort_id);
         }
 
-        updateQuery += ' WHERE raum_id = ? AND dojo_id = ?';
+        updateQuery += ' WHERE id = ? AND dojo_id = ?';
         params.push(id, _raumDojoId);
 
         await queryAsync(updateQuery, params);
         res.json({ success: true, message: 'Raum erfolgreich aktualisiert' });
     } catch (err) {
-        logger.error('Fehler beim Aktualisieren des Raums:', { error: err });
+        logger.error('Fehler beim Aktualisieren des Raums:', { error: err.message });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -210,7 +198,6 @@ router.put('/:id', async (req, res) => {
 // PUT /api/raeume/:id/reihenfolge - Reihenfolge ändern
 router.put('/:id/reihenfolge', async (req, res) => {
     try {
-        // Tenant check
         const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
@@ -218,14 +205,13 @@ router.put('/:id/reihenfolge', async (req, res) => {
 
         const { id } = req.params;
         const { neue_reihenfolge } = req.body;
-        await queryAsync(`
-            UPDATE raeume
-            SET reihenfolge = ?
-            WHERE raum_id = ? AND dojo_id = ?
-        `, [neue_reihenfolge, id, _raumDojoId]);
+        await queryAsync(
+            'UPDATE raeume SET reihenfolge = ? WHERE id = ? AND dojo_id = ?',
+            [neue_reihenfolge, id, _raumDojoId]
+        );
         res.json({ success: true, message: 'Reihenfolge erfolgreich aktualisiert' });
     } catch (err) {
-        logger.error('Fehler beim Aktualisieren der Reihenfolge:', { error: err });
+        logger.error('Fehler beim Aktualisieren der Reihenfolge:', { error: err.message });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -233,7 +219,6 @@ router.put('/:id/reihenfolge', async (req, res) => {
 // DELETE /api/raeume/:id - Raum löschen
 router.delete('/:id', async (req, res) => {
     try {
-        // Tenant check
         const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
@@ -241,20 +226,18 @@ router.delete('/:id', async (req, res) => {
 
         const { id } = req.params;
 
-        // Verify room belongs to this dojo
         const existingRaum = await queryAsync(
-            'SELECT raum_id FROM raeume WHERE raum_id = ? AND dojo_id = ?',
+            'SELECT id FROM raeume WHERE id = ? AND dojo_id = ?',
             [id, _raumDojoId]
         );
         if (existingRaum.length === 0) {
             return res.status(404).json({ error: 'Raum nicht gefunden' });
         }
 
-        // Prüfen ob Raum in Kursen verwendet wird
-        const kursVerwendung = await queryAsync(`
-            SELECT COUNT(*) as count FROM kurse WHERE raum_id = ? AND dojo_id = ?
-        `, [id, _raumDojoId]);
-
+        const kursVerwendung = await queryAsync(
+            'SELECT COUNT(*) as count FROM kurse WHERE raum_id = ? AND dojo_id = ?',
+            [id, _raumDojoId]
+        );
         if (kursVerwendung[0].count > 0) {
             return res.status(400).json({
                 error: 'Raum kann nicht gelöscht werden',
@@ -262,10 +245,10 @@ router.delete('/:id', async (req, res) => {
             });
         }
 
-        await queryAsync('DELETE FROM raeume WHERE raum_id = ? AND dojo_id = ?', [id, _raumDojoId]);
+        await queryAsync('DELETE FROM raeume WHERE id = ? AND dojo_id = ?', [id, _raumDojoId]);
         res.json({ success: true, message: 'Raum erfolgreich gelöscht' });
     } catch (err) {
-        logger.error('Fehler beim Löschen des Raums:', { error: err });
+        logger.error('Fehler beim Löschen des Raums:', { error: err.message });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
@@ -273,40 +256,34 @@ router.delete('/:id', async (req, res) => {
 // GET /api/raeume/stats - Statistiken für Räume
 router.get('/stats', async (req, res) => {
     try {
-        // Tenant check
         const _raumDojoId = req.tenant?.dojo_id || req.dojo_id || req.user?.dojo_id;
         if (!_raumDojoId) {
             return res.status(403).json({ error: 'No tenant' });
         }
 
-        const dojoId = _raumDojoId;
-        const [
-            gesamtRaeume,
-            aktiveRaeume,
-            raumVerwendung
-        ] = await Promise.all([
-            queryAsync('SELECT COUNT(*) as count FROM raeume WHERE dojo_id = ?', [dojoId]),
-            queryAsync('SELECT COUNT(*) as count FROM raeume WHERE aktiv = 1 AND dojo_id = ?', [dojoId]),
+        const [gesamtRaeume, aktiveRaeume, raumVerwendung] = await Promise.all([
+            queryAsync('SELECT COUNT(*) as count FROM raeume WHERE dojo_id = ?', [_raumDojoId]),
+            queryAsync('SELECT COUNT(*) as count FROM raeume WHERE aktiv = 1 AND dojo_id = ?', [_raumDojoId]),
             queryAsync(`
-                SELECT
-                    r.name,
-                    COUNT(k.kurs_id) as anzahl_kurse
+                SELECT r.name, COUNT(k.kurs_id) as anzahl_kurse
                 FROM raeume r
-                LEFT JOIN kurse k ON r.raum_id = k.raum_id AND k.dojo_id = ?
+                LEFT JOIN kurse k ON r.id = k.raum_id AND k.dojo_id = ?
                 WHERE r.aktiv = 1 AND r.dojo_id = ?
-                GROUP BY r.raum_id, r.name
+                GROUP BY r.id, r.name
                 ORDER BY anzahl_kurse DESC
-            `, [dojoId, dojoId])
+            `, [_raumDojoId, _raumDojoId])
         ]);
 
-        const stats = {
-            gesamtRaeume: gesamtRaeume[0].count,
-            aktiveRaeume: aktiveRaeume[0].count,
-            raumVerwendung: raumVerwendung
-        };
-        res.json({ success: true, data: stats });
+        res.json({
+            success: true,
+            data: {
+                gesamtRaeume: gesamtRaeume[0].count,
+                aktiveRaeume: aktiveRaeume[0].count,
+                raumVerwendung
+            }
+        });
     } catch (err) {
-        logger.error('Fehler beim Berechnen der Raum-Statistiken:', { error: err });
+        logger.error('Fehler beim Berechnen der Raum-Statistiken:', { error: err.message });
         res.status(500).json({ error: 'Datenbankfehler', details: err.message });
     }
 });
