@@ -115,20 +115,16 @@ router.get('/dojos', async (req, res) => {
     const user = req.user;
     if (!user) return res.status(401).json({ error: 'Nicht authentifiziert' });
 
-    // Zeige nur Dojos bei denen der User in admin_users eingetragen ist
-    // Fallback: dojo_id aus JWT wenn kein admin_users-Eintrag vorhanden
+    // Super-Admin: nur platform_managed Dojos (TDA + eigene)
+    // Dojo-Admin: nur sein eigenes Dojo
+    const isSuperAdmin = !user.dojo_id;
     let whereClause, queryParams;
-    if (user.dojo_id) {
-      whereClause = `WHERE d.ist_aktiv = TRUE AND (
-        d.id IN (SELECT dojo_id FROM admin_users WHERE user_id = ? AND dojo_id IS NOT NULL)
-        OR d.id = ?
-      )`;
-      queryParams = [user.id, user.dojo_id];
+    if (isSuperAdmin) {
+      whereClause = `WHERE d.ist_aktiv = TRUE AND d.platform_managed = 1`;
+      queryParams = [];
     } else {
-      whereClause = `WHERE d.ist_aktiv = TRUE AND d.id IN (
-        SELECT dojo_id FROM admin_users WHERE user_id = ? AND dojo_id IS NOT NULL
-      )`;
-      queryParams = [user.id];
+      whereClause = `WHERE d.ist_aktiv = TRUE AND d.id = ?`;
+      queryParams = [user.dojo_id];
     }
 
     const query = `
